@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- $Id: build.xml 10844 2007-04-26 13:32:46Z michelou $ -->
+
+<project name="schema2src" default="build">
+
+  <property file="build.properties"/>
+  <property name="scala.home" value="${user.home}/sbaz"/>
+  <property name="build.dir" value="${basedir}/classes"/>
+  <property name="dist.dir" value="${basedir}/dist"/>
+  <property name="doc.dir" value="${basedir}/doc"/>
+  <property name="test.dir" value="/tmp"/>
+  <property name="scala-compiler.jar" value="${scala.home}/lib/scala-compiler.jar"/>
+  <property name="scala-library.jar" value="${scala.home}/lib/scala-library.jar"/>
+
+  <target name="init">
+    <fail message="Property ${scala.home} not set">
+      <condition><not><and>
+        <available file="${scala-compiler.jar}"/>
+        <available file="${scala-library.jar}"/>
+      </and></not></condition>
+    </fail>
+    <taskdef resource="scala/tools/ant/antlib.xml">
+      <classpath>
+        <pathelement location="${scala-compiler.jar}"/>
+        <pathelement location="${scala-library.jar}"/>
+      </classpath>
+    </taskdef>
+  </target>
+
+  <target name="build" depends="init">
+    <mkdir dir="${build.dir}"/>
+    <buildnumber/>
+    <scalac srcdir="src" destdir="${build.dir}" classpath="${scala-library.jar}"> 
+      <include name="schema2src/**/*.scala"/>
+      <exclude name="schema2src/xsd/*.scala"/>
+    </scalac>
+  </target>
+
+  <target name="test" depends="build">
+    <ant antfile="tests/test.xml"/>
+  </target>
+
+  <target name="deploy" depends="dist"/>
+
+  <target name="dist" depends="build,doc">
+    <mkdir dir="${dist.dir}/bin"/>
+    <scalascript
+      file="${dist.dir}/bin/schema2src"
+      version="${build.number}"
+      name="schema2src"
+      class="schema2src.Main"
+      copyright="LAMP/EPFL, *Burak Emir"
+      javaFlags="-Xmx256M -Xms16M"
+    />
+
+    <mkdir dir="${dist.dir}/lib"/>
+    <jar
+      destfile="${dist.dir}/lib/schema2src.jar"
+      basedir="${build.dir}">
+      <manifest>
+        <attribute name="Signature-Version" value="${build.number}"/>
+        <attribute name="Built-By" value="${user.name}"/>
+        <attribute name="Class-Path" value="${lib.jar.name}"/>
+      </manifest>
+    </jar>
+
+    <mkdir dir="${dist.dir}/doc"/>
+    <copy todir="${dist.dir}/doc">
+      <fileset dir="${doc.dir}"/>
+    </copy>
+
+    <sbaz
+      file="${dist.dir}/schema2src-${build.number}.sbp"
+      adfile="${dist.dir}/schema2src-${build.number}.advert"
+      name="schema2src"
+      version="${build.number}"
+      desc="data binding tool. used to convert XML types to Scala classes.">
+      <binset dir="${dist.dir}/bin" includes="*"/>      
+      <docset dir="${dist.dir}/doc" includes="**"/>
+      <libset dir="${dist.dir}/lib" includes="schema2src.jar"/>
+    </sbaz>
+  </target>
+
+  <target name="doc">
+    <mkdir dir="${doc.dir}/scaladoc"/>
+    <scaladoc
+      srcdir="src" destdir="${doc.dir}/scaladoc"
+      classpath="${scala-library.jar}"
+      windowtitle="schema2src Documentation"
+      doctitle="&lt;div&gt;schema2src&lt;/div&gt;"
+    >
+      <include name="schema2src/**/*.scala"/>
+      <exclude name="schema2src/xsd/*.scala"/>
+    </scaladoc>
+  </target>
+
+  <target name="clean">
+    <delete dir="${build.dir}"/>
+    <delete dir="${doc.dir}/scaladoc/**"/>
+    <delete dir="${dist.dir}"/>
+  </target>
+
+</project>

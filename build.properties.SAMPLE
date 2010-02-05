@@ -1,0 +1,2 @@
+scala.home=${user.home}/sbaz
+test.dir=/tmp

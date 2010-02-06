@@ -12,7 +12,11 @@ abstract class XsTypeSymbol(val name: String) extends xml.TypeSymbol {
 
 object xsdAny extends XsTypeSymbol("any") {}
 
-class SimpleTypeSymbol(name: String) extends  XsTypeSymbol(name) {
+class ReferenceTypeSymbol(name: String) extends XsTypeSymbol(name) {
+  var decl: TypeDecl = null
+}
+
+class SimpleTypeSymbol(name: String) extends XsTypeSymbol(name) {
   var decl: SimpleTypeDecl = null
 }
 

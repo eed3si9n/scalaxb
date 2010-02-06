@@ -20,7 +20,8 @@ object XsdTest {
     
     val address = USAddress.fromXML(subject)
     address match {
-      case USAddress("Foo",
+      case USAddress("US",
+        "Foo",
         "1537 Paper Street",
         "Wilmington",
         "DE",

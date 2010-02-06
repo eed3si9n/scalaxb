@@ -17,6 +17,7 @@ class ParserConfig {
   var myPrefix: String = ""
   var elems: mutable.Map[String, ElemDecl] = null
   var types: mutable.Map[String, TypeDecl] = null
+  var attrs: mutable.Map[String, AttributeDecl] = null
 }
 
 object DefaultParserConfig extends ParserConfig
@@ -27,13 +28,47 @@ object AnnotationDecl {
   def fromXML(node: scala.xml.Node) = AnnotationDecl() 
 }
 
+case class AttributeDecl(name: String, typeSymbol: SimpleTypeSymbol) extends Decl
+
+object AttributeDecl {
+  def fromXML(node: scala.xml.Node, config: ParserConfig) = {
+    val ref = (node \ "@ref").text
+    if (ref != "") {
+      Main.log("AttributeDelc.fromXML: " + ref)
+      if (!config.attrs.contains(ref)) {
+        throw new Exception("xsd: Attribute ref not found " + ref)
+      }
+      
+      config.attrs(ref)
+    } else {
+      val name = (node \ "@name").text
+      Main.log("AttributeDelc.fromXML: " + name)
+      var typeSymbol: SimpleTypeSymbol = xsUnknown
+      val typeName = (node \ "@type").text
+      if (typeName != "") {
+        typeSymbol = TypeSymbolParser.toSimpleTypeSymbol(typeName, config)
+      } else {
+        for (child <- node.child) child match {
+          case <simpleType>{ _* }</simpleType> =>
+            typeSymbol = new SimpleTypeSymbol(SimpleTypeDecl.buildName(child))
+          case _ =>
+        }
+      } // if-else
+      
+      val attr = AttributeDecl(name, typeSymbol)
+      config.attrs += (attr.name -> attr)
+      attr   
+    }
+  } 
+}
+
 case class ElemDecl(name: String,
   typeSymbol: XsTypeSymbol,
   minOccurs: Int,
   maxOccurs: Int) extends Decl
 
 object ElemDecl {
-  def fromXML(node: scala.xml.Node, config: ParserConfig) = {
+  def fromXML(node: scala.xml.Node, config: ParserConfig) = {    
     val ref = (node \ "@ref").text
     if (ref != "") {
       Main.log("ElemDecl.fromXML: " + ref)
@@ -47,6 +82,7 @@ object ElemDecl {
       Main.log("ElemDecl.fromXML: " + name)
       var typeSymbol: XsTypeSymbol = xsdAny
       val typeName = (node \ "@type").text
+      
       if (typeName != "") {
         typeSymbol = TypeSymbolParser.fromString(typeName, config)
       } else {
@@ -56,7 +92,7 @@ object ElemDecl {
 
           case <simpleType>{ _* }</simpleType> =>
             typeSymbol = new SimpleTypeSymbol(SimpleTypeDecl.buildName(child))
-
+                        
           case _ =>
         }
       } // if-else
@@ -76,18 +112,6 @@ object ElemDecl {
       -1
     else
       value.toInt
-}
-
-object TypeSymbolParser {
-  def fromString(name: String, config: ParserConfig): XsTypeSymbol = {
-    val xsType = XsTypeSymbol.toTypeSymbol(name.replaceFirst(config.xsPrefix, ""))
-    if (xsType != xsUnknown) {
-      xsType
-    } else {
-      val n = name.replaceFirst(config.myPrefix, "")
-      new ComplexTypeSymbol(n)
-    }
-  }
 }
 
 abstract class CompositorDecl extends Decl
@@ -137,22 +161,30 @@ object AllDecl {
 
 abstract class TypeDecl extends Decl
 
-case class ComplexTypeDecl(name: String, derivedFrom: DerivSym, compositor: HasParticle) extends TypeDecl
+case class ComplexTypeDecl(name: String,
+  derivedFrom: DerivSym,
+  compositor: HasParticle,
+  attributes: Array[AttributeDecl]) extends TypeDecl
 
 object ComplexTypeDecl {  
   def fromXML(node: scala.xml.Node, config: ParserConfig) = {
+    import scala.collection.mutable.ArrayBuilder
+    
     Main.log("ComplexTypeDecl.fromXML: " + node.toString)
     val name = buildName(node)
     var compositor: HasParticle = null
+    val attributes = ArrayBuilder.make[AttributeDecl]
+    
     for (child <- node.child) child match {
       case <all>{ _* }</all>           => compositor = AllDecl.fromXML(child, config) 
       case <choice>{ _* }</choice>     => compositor = ChoiceDecl.fromXML(child, config)
       case <sequence>{ _* }</sequence> => compositor = SequenceDecl.fromXML(child, config)
+      case <attribute>{ _* }</attribute> => attributes += AttributeDecl.fromXML(child, config)
       case _ =>     
     }
     
     // val contentModel = ContentModel.fromSchema(firstChild(node))
-    val typ = ComplexTypeDecl(name, null, compositor)
+    val typ = ComplexTypeDecl(name, null, compositor, attributes.result)
     config.types += (typ.name -> typ) 
     typ
   }
@@ -248,8 +280,10 @@ object SchemaDecl {
       config: ParserConfig = DefaultParserConfig) = {
     val elems = mutable.Map.empty[String, ElemDecl]
     val types = mutable.Map.empty[String, TypeDecl]
+    val attrs = mutable.Map.empty[String, AttributeDecl]
     config.elems = elems
     config.types = types
+    config.attrs = attrs
     
     val children = node match {
       case <schema>{ children @ _* }</schema> =>
@@ -289,10 +323,51 @@ object SchemaDecl {
             case decl: SimpleTypeDecl => symbol.decl = decl
             case _ => throw new Exception("SchemaDecl: type does not match ")
           }
+          
+        case symbol: ReferenceTypeSymbol =>
+          if (!types.contains(symbol.name))
+            throw new Exception("SchemaDecl: type not found " + elemPair._1 + ": " + symbol.name)
+          symbol.decl = types(symbol.name)          
+      }
+      
+      for (attrPair <- attrs) {
+        val typeSymbol = attrPair._2.typeSymbol
+        typeSymbol match {
+          case symbol: BuiltInSimpleTypeSymbol => 
+          case symbol: SimpleTypeSymbol        =>
+            if (!types.contains(symbol.name))
+              throw new Exception("SchemaDecl: type not found " + attrPair._1 + ": " + symbol.name)
+            types(symbol.name) match {
+              case decl: SimpleTypeDecl => symbol.decl = decl
+              case _ => throw new Exception("SchemaDecl: type does not match ")
+            }       
+        }    
       }
     }
     
     SchemaDecl(immutable.Map.empty[String, ElemDecl] ++ elems,
       immutable.Map.empty[String, TypeDecl] ++ types)
+  }
+}
+
+object TypeSymbolParser {
+  def toSimpleTypeSymbol(name: String, config: ParserConfig): SimpleTypeSymbol = {
+    val xsType = XsTypeSymbol.toTypeSymbol(name.replaceFirst(config.xsPrefix, ""))
+    if (xsType != xsUnknown) {
+      xsType
+    } else {
+      val n = name.replaceFirst(config.myPrefix, "")
+      new SimpleTypeSymbol(n)
+    }
+  }
+  
+  def fromString(name: String, config: ParserConfig): XsTypeSymbol = {
+    val xsType = XsTypeSymbol.toTypeSymbol(name.replaceFirst(config.xsPrefix, ""))
+    if (xsType != xsUnknown) {
+      xsType
+    } else {
+      val n = name.replaceFirst(config.myPrefix, "")
+      new ReferenceTypeSymbol(n)
+    }
   }
 }

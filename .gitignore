@@ -2,3 +2,6 @@ build.number
 build.properties
 classes
 dist
+.DS_Store
+doc
+tests/tmp

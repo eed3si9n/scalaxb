@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- $Id: build.xml 10844 2007-04-26 13:32:46Z michelou $ -->
 
-<project name="schema2src" default="build">
+<project name="schema2src" default="rebuild">
 
   <property file="build.properties"/>
   <property name="scala.home" value="${user.home}/sbaz"/>
@@ -34,7 +34,7 @@
     <buildnumber/>
     <scalac srcdir="src" destdir="${build.dir}" classpath="${scala-library.jar}" deprecation="yes"> 
       <include name="schema2src/**/*.scala"/>
-      <exclude name="schema2src/xsd/*.scala"/>
+      <!-- exclude name="schema2src/xsd/*.scala"/ -->
     </scalac>
 
     <mkdir dir="${dist.dir}/lib"/>

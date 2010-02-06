@@ -1,13 +1,12 @@
-/* schema2src -- data binding tool
- * Copyright 2005-2008 LAMP/EPFL
- * @author  Burak Emir
+/**
+ * @author  e.e d3si9n
  */
-// $Id: Driver.scala 13960 2008-02-12 17:49:29Z michelou $
-
+ 
 package schema2src.xsd
 
+import schema2src.{Module, Main}
 import scala.collection.Map
-import scala.xml.xsd.{ElemDecl, TypeDecl}
+// import scala.xml.xsd.{ElemDecl, TypeDecl}
 
 object Driver extends Module {
 
@@ -15,12 +14,17 @@ object Driver extends Module {
 
   var __theConfig: XsdConfig = null
 
-  class XsdConfig extends super.ModuleConfig {}
+  class XsdConfig extends super.ModuleConfig {
+    var namespace: String = _
+    var packageName: String = _
+    
+    def conf = this //getConfig();    
+  }
 
   // %% type members
 
   type Config = XsdConfig
-  type Schema = Pair[Map[String,ElemDecl], Map[String,XsTypeSymbol]]
+  type Schema = Pair[Map[String, ElemDecl], Map[String, TypeDecl]]
 
   // %% methods
 
@@ -41,9 +45,70 @@ object Driver extends Module {
 
   def parse(): Schema = {
     val sysID = getConfig().sysID
-    new SchemaParser(inputsrc(sysID))
+    Main.log("xsd: parsing " + sysID)
+    val source = scala.xml.Source.fromSysId(sysID)
+    val schema = SchemaDecl.fromXML(scala.xml.XML.load(source))
+    Main.log("SchemaParser.parse: " + schema.toString())
+    (schema.elems, schema.types)
   }
 
+  def printUsage {
+    import Console.{ println => say }
+
+    say("usage: ... [-d <dir>] [-p <package>] <sysID> <object name>")
+    say("       binds a XSD to scala class definitions")
+    say("       will create a file [<dir>/]<object name>.scala")
+    say("<dir> is the output directory [path of <sysID> is default]")
+    say("<package> is the package name")
+    say("<sysID> is a system ID of an XML DTD")
+    say("<object name> is the name of the resulting Scala source file ")
+  }
+
+  /** handles command line arguments */
+  override def process() = {
+    val conf = getConfig()
+    Main.log("xsd: got config")
+    conf.args = conf.args.toList  // (convenient)
+
+    conf.args match {                           //- explicit outdir given?
+      case "-d" :: outdir :: rest =>
+        conf.outdir = new java.io.File(outdir)
+        conf.args = rest
+      case _ =>
+    }
+
+    conf.args match {
+      case "-p" :: packageName :: rest =>
+        conf.packageName = packageName
+        conf.args = rest
+      case _ =>
+    }
+    
+    conf.args match {
+      case sysID :: objName :: rest =>
+        conf.sysID   = sysID
+        conf.objName = objName
+        conf.args = rest
+      case _ =>
+        println("Cannot find sysID and objName " + conf.args)
+        printUsage;
+        System.exit(-1) 
+    }
+
+    conf.args match {
+      case nspace :: Nil =>
+        conf.namespace = nspace
+      case Nil =>
+      case _  =>
+        println("Cannot find Nil " + conf.args)
+        printUsage;
+        System.exit(-1) 
+    }
+
+    Main.log("xsd: parsed args")
+    super.process()
+  }
+  
   /** setter method for the config */
   def setConfig(config: Config) {
     __theConfig = config

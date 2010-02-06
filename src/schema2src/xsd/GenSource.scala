@@ -1,101 +1,250 @@
-/* schema2src -- data binding tool
- * Copyright 2005-2007 LAMP/EPFL
- * @author  Burak Emir
+/**
+ * @author  e.e d3si9n
  */
-// $Id: GenSource.scala 13960 2008-02-12 17:49:29Z michelou $
 
 package schema2src.xsd
 
-import scala.xml.xsd.{ ElemDecl, TypeDecl, XsTypeSymbol }
+import schema2src._
+// import scala.xml.xsd.{ ElemDecl, TypeDecl, XsTypeSymbol }
 import scala.collection.Map
+import scala.xml._
 
-/** transforms a set of XSD declaraions to a scala source file.
- *
- *  From the XSD contained in elemMap, we generate classes in source form
- *  which will (shallow-)validate inside the constructors.
- *
- *  Using Scala's automata library, the most convenient and efficient option
- *  is to compile the content model to a dfa and generate a source that
- *  will re-construct this dfa
- */
-class GenSource(conf: Driver.XsdConfig, elemMap: (Map[String,ElemDecl], Map[String,TypeDecl])) extends ScalaNames {
+class GenSource(conf: Driver.XsdConfig, schema: (Map[String, ElemDecl], Map[String, TypeDecl])) extends ScalaNames {
+  import conf.{outfile => fOut, objName => objectName}
+  
+  val elems = schema._1
+  val typs = schema._2
+  val newline = System.getProperty("line.separator")
+  
+  def makePackageName = {
+    <source>package {conf.packageName}
+</source>
+  }
+  
+  def makeParentClass = {
+    <source>
+abstract class DataModel
+</source>    
+  }
+  
+  def makeHelperObject = {
+    <source>
+object Helper {{
+  lazy val typeFactory = javax.xml.datatype.DatatypeFactory.newInstance()
+  
+  def toCalendar(value: String) =
+    typeFactory.newXMLGregorianCalendar(value).toGregorianCalendar
 
-  import conf.{outfile => fOut, objName => objectName, namespace}
-
-  def tpeSymName(name: String): String = name+"_tpesym"
-
-  /** template for binder, meaning the object that will play the handler
-   *  role for when parsing conforming xml 
-   *  and bind the incoming stuff to some scala class
-   */
-
-  def makeBinder: scala.xml.Node = {
-
-    def makeSymRef(name: String): String = name match {
-      case "boolean" => "scala.xml.xsd.xsBoolean"
-      case "double"  => "scala.xml.xsd.xsDouble"
-      case "float"   => "scala.xml.xsd.xsFloat"
-      case "int"     => "scala.xml.xsd.xsInt"
-      case "long"    => "scala.xml.xsd.xsLong"
-      case "string"  => "scala.xml.xsd.xsString"
-      case "date"    => "scala.xml.xsd.xsDate"
-      case _ => name+"__Type"
-    }
-
-    def makeSym(decl:TypeDecl) = decl match {
-      case SimpleTypeDecl(name) => 
-        val n = name+"__Type"
-        "new scala.xml.xsd.SimpleTypeSymbol("+n+")"
-      case ComplexTypeDecl(name, null, cmodel) =>
-        val n = name+"__Type"
-        "new scala.xml.xsd.ComplexTypeSymbol("+n+",null,"+????????+")"
-      case ComplexTypeDecl(name, Extends(sUper), cmodel) =>
-        val n = name+"__Type"
-        "new scala.xml.xsd.ComplexTypeSymbol("+n+",scala.xml.xsd.Extends"+makeSymRef(derivedFrom)+","+????????+")"
-      case ComplexTypeDecl(name, Restricts(sUper), cmodel) =>
-        "new scala.xml.xsd.ComplexTypeSymbol("+n+",scala.xml.xsd.Extends"+makeSymRef(derivedFrom)+","+????????+")"
-    }
-
-    def makeDecl(decl:ElemDecl) = 
-      "scala.xml.xsd.ElemDecl(\""+decl.name+"\", "+tpeSymRef(decl.name)+")"
+  def toDuration(value: String) =
+    typeFactory.newDuration(value)
+}}
+</source>    
+  }
+  
+/*  
+  def buildElements(sequ: ContentModel.Sequ): List[ContentModel.ElemRef] = {
+    val list = for (r <- sequ.rs.toList)
+      yield (r match {
+        case letter: ContentModel.Letter => List(letter.a)
+        case sequ2: ContentModel.Sequ => buildElements(sequ2)
+        case _ => throw new Exception("GenSource: Invalid content model" + r.toString)
+      })
+    list.flatten
+  }
+*/ 
+  
+  def buildElements(compositor: HasParticle): List[ElemDecl] = {
+    val list = for (particle <- compositor.particles)
+      yield particle match {
+        case compositor2: HasParticle => buildElements(compositor2)
+        case elem: ElemDecl           => List(elem)
+        case _ => throw new Exception("GenSource: Invalid content model" + particle.toString)
+      }
+    list.flatten
+  }
+  
+  def buildTypeName(content: SimpleTypeContent): String = content match {
+    case restriction: RestrictionDecl => restriction.base.name
+    case _ => throw new Exception("GenSource: Unsupported content " + content.toString)
+  }
+  
+  def buildTypeName(elem: ElemDecl): String = {
+    val typeSymbol = elem.typeSymbol
+    typeSymbol match {
+      case symbol: SimpleTypeSymbol  =>
+      if (!typeSymbol.name.contains("@"))
+        makeTypeName(typeSymbol.name)
+      else
+        buildTypeName(symbol.decl.content)
+      case symbol: ComplexTypeSymbol =>
+        if (!typeSymbol.name.contains("@"))
+          makeTypeName(typeSymbol.name)
+        else
+          makeTypeName(elem.name)
+      case _ => throw new Exception("GenSource: Invalid type " + typeSymbol.toString)
+    }   
+  }
+  
+  def buildParam(elem: ElemDecl) = {
+    val typeName = buildTypeName(elem)
     
-    return <moresource>
-/* */    object binder extends scala.xml.factory.Binder(true) {{
-/* */      def reportValidationError(pos:int, msg:String) = {{}; // empty
-/* */      override def elem(pos: int, pre: String, label: String, attrs: scala.xml.MetaData, pscope: scala.xml.NamespaceBinding, nodes: scala.xml.NodeSeq): scala.xml.NodeSeq = label match {{
-/* */
-      { {val sb = new StringBuffer(); 
-         val it = elemMap.values;
-         while(it.hasNext) {
-           val decl = it.next;
-           sb.append("case \"").append(decl.name).append("\" => ").append(decl.name).append("(attrs, nodes:_*)"); 
-         }
-         sb.toString()
-       }
-     }
-/* */      }; // def elem(...)
-/* */ // make type symbols
-/* */ this.syms = List(
-        { (elemMap._2.values map makeSym).mkString("",",","") }
-/* */ );
-/* */ // make declarations
-/* */ this.decls = List(
-       { (elemMap._1.values mak makeDecl).mkString("",",","") }
-/* */ }});}
-</moresource>;
+    if (elem.maxOccurs == 0 || elem.maxOccurs == 1) {
+      elem.name + ": " + typeName
+    } else {
+      elem.name + ": List[" + typeName + "]"
+    }
+  }
+  
+/*       
+  def buildParamList(elemRefs: List[ContentModel.ElemRef]) =
+    for (elemRef <- elemRefs)
+      yield buildParam(elemRef)
+*/
+      
+  def buildParamList(elems: List[ElemDecl]) =
+    for (elem <- elems)
+      yield buildParam(elem)
+  
+  def buildArg(elem: ElemDecl) = {
+    val typeSymbol = elem.typeSymbol
+    val typeName = buildTypeName(elem)
+    typeSymbol match {
+      case symbol: SimpleTypeSymbol  =>
+        
+        buildValueCode(symbol, elem.name)
+      case symbol: ComplexTypeSymbol =>
+        if (elem.maxOccurs == 0 || elem.maxOccurs == 1) {
+          typeName + ".fromXML((node \\ \"" + elem.name + "\").head)" 
+        } else {
+          typeName + ".fromSequence(node \\ \"" + elem.name + "\")" 
+        }
+      case _ => throw new Exception("GenSource: Invalid type " + typeSymbol.toString)
+    }
+  }    
+  
+  def buildValueCode(symbol: SimpleTypeSymbol, elementName: String): String = symbol match {
+    case builtIn: BuiltInSimpleTypeSymbol => buildValueCode(builtIn, elementName)
+    case _ =>
+      if (symbol.decl == null) {
+        throw new Exception("GenSource: Invalid type " + symbol.toString)
+      } // if
+      
+      symbol.decl.content match {  
+        case restriction: RestrictionDecl =>
+          restriction.base match {
+            case builtIn: BuiltInSimpleTypeSymbol => buildValueCode(builtIn, elementName)
+            case _ => throw new Exception("GenSource: Unsupported type " + restriction.base.toString) 
+          }
+        case _ => throw new Exception("GenSource: Unsupported content " + symbol.decl.content.toString)    
+      }
+  }
     
+  def buildValueCode(typeSymbol: BuiltInSimpleTypeSymbol, elementName: String): String = {
+    val stringValueCode = "(node \\ \"" + elementName + "\").text"
+    typeSymbol.name match {
+      case "String"     => stringValueCode
+      case "javax.xml.datatype.Duration" => "Helper.toDuration(" + stringValueCode + ")"
+      case "java.util.Calendar" => "Helper.toCalendar(" + stringValueCode + ")"
+      case "Boolean"    => stringValueCode + ".toBoolean"
+      case "Int"        => stringValueCode + ".toInt"
+      case "Long"       => stringValueCode + ".toLong"
+      case "Short"      => stringValueCode + ".toShort"
+      case "Float"      => stringValueCode + ".toFloat"
+      case "Double"     => stringValueCode + ".toDouble"
+      case "Byte"       => stringValueCode + ".toByte"
+      case "BigInt"     => "BigInt(" + stringValueCode + ")"
+      case "BigDecimal" => "BigDecimal(" + stringValueCode + ")"
+      case "java.net.URI" => "java.net.URI.create(" + stringValueCode + ")"
+      case "javax.xml.namespace.QName"
+        => "javax.xml.namespace.QName.valueOf(" + stringValueCode + ")"
+      case "Array[String]" => stringValueCode + ".split(' ')"
+      // case "Base64Binary" =>
+      // case "HexBinary"  => 
+      case _        => throw new Exception("GenSource: Unsupported type " + typeSymbol.toString) 
+    }        
+  }
+  
+  def buildArgList(elems: List[ElemDecl]) =
+    for (elem <- elems)
+      yield buildArg(elem)
+  
+  
+  def makeIndent(indent: Int) =
+    "  " * indent
+     
+  def makeCaseClassWithType(name: String, complexTypeDecl: ComplexTypeDecl): scala.xml.Node = {
+    val childElements = buildElements(complexTypeDecl.compositor)
+    val paramList = buildParamList(childElements)
+    val argList = buildArgList(childElements)
+    return <source>
+case class {name}(
+  {paramList.mkString("," + newline + makeIndent(1))}) extends DataModel {{
+}}
 
+object {name} {{
+  def fromXML(node: scala.xml.Node) =
+    {name}({argList.mkString("," + newline + makeIndent(3))}) 
+  
+  def fromSequence(sequence: scala.xml.NodeSeq) =
+    for (node &lt;- sequence.toList)
+      yield fromXML(node)
+}}
+</source>    
+  }
+  
+  def makeElement(decl: ElemDecl): scala.xml.Node = {
+    val complexTypeSymbol = decl.typeSymbol match {
+      case sym: ComplexTypeSymbol => sym
+      case _ => throw new Exception("GenSource: ComplexTypeSymbol is required.")
+    }
+    val complexTypeDecl = complexTypeSymbol.decl
+    val typeName = makeTypeName(decl.name)
+    
+    makeCaseClassWithType(typeName, complexTypeDecl)
+  }
+  
+  def makeType(decl: ComplexTypeDecl): scala.xml.Node =
+    makeCaseClassWithType(makeTypeName(decl.name), decl)
+    
+  def makeTypeName(name: String) =
+    if (name.contains("."))
+      name
+    else
+      name.substring(0, 1).toUpperCase() + name.substring(1)
+
+  def myprintAll(nodes: Seq[Node]) {
+    for (node <- nodes)
+      myprint(node)
+  }
+  
+  def myprint(n: Node) = n match {
+    case Text(s)          => fOut.print(s)
+    case EntityRef("lt")  => fOut.print('<')
+    case EntityRef("gt")  => fOut.print('>')
+    case EntityRef("amp") => fOut.print('&')
+    case atom: Atom[_]    => fOut.print(atom.text)
+    case _                => Main.log("error in xsd:run: encountered "
+      + n.getClass() + " " + n.toString)
   }
   
   def run {
-    def myprint(n: Node) = n match {
-      case Text(s)          => fOut.print(s)
-      case EntityRef("amp") => fOut.print('&')
-      case _                => Main.log("error in dtd:run: encountered "+n.getClass())
-    }
-
-    fOut println "object "+objectName+" {";
+    import scala.collection.mutable
+    Main.log("xsd: GenSource.run")
     
-    fOut println "}"
+    if (conf.packageName != null)
+      myprintAll(makePackageName.child)
+    
+    myprintAll(makeParentClass.child)
+    
+    for (elemPair <- elems;
+        if elemPair._2.typeSymbol.isInstanceOf[ComplexTypeSymbol];
+        if elemPair._2.typeSymbol.name.contains("@"))
+      myprintAll(makeElement(elemPair._2).child)
+    
+    for (typePair <- typs;
+        if typePair._2.isInstanceOf[ComplexTypeDecl] && !typePair._1.contains("@") )
+      myprintAll(makeType(typePair._2.asInstanceOf[ComplexTypeDecl]).child)
+      
+    myprintAll(makeHelperObject.child)
   }
 }

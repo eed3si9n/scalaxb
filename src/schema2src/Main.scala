@@ -12,7 +12,7 @@ package schema2src
 object Main {
 
   var mname: String = null
-  var args: Seq[String] = null
+  var args: List[String] = null
   var verbose = false
 
   def log(msg: String) {
@@ -20,7 +20,7 @@ object Main {
   }
 
   def main(args: Array[String]) {
-    val z: Seq[String] = args // convert with view
+    val z: List[String] = args.toList // convert with view
 
     processArgs(z)
 
@@ -48,24 +48,30 @@ object Main {
     }
     catch {
       case e: Exception =>
-        Console.println(e.getMessage())
+        e.printStackTrace
+        // Console.println(e.getMessage())
     }
   }
 
-  def processArgs(z: Seq[String]) {
+  def processArgs(z: List[String]) {
     z match {
-      case Seq("--verbose", rest @ _*) =>
-        this.verbose = true
+      case ("--verbose" | "-v") :: rest =>
+        verbose = true
+        Console.println("main:processArgs verbose set")
         processArgs(rest)
-      case Seq("--module", mname, rest @ _*) =>
-        this.mname = mname
-        this.args  = rest
-      case Seq("dtd", rest @ _*) =>
-        this.mname = "schema2src.dtd.Driver"
-        this.args  = rest
-      case Seq("xsd", rest @ _*) =>
-        this.mname = "schema2src.xsd.Driver"
-        this.args  = rest
+      
+      case "--module" :: name :: rest =>
+        mname = name
+        args  = rest
+      
+      case "dtd" :: rest =>
+        mname = "schema2src.dtd.Driver"
+        args  = rest
+      
+      case "xsd" :: rest =>
+        mname = "schema2src.xsd.Driver"
+        args  = rest
+      
       case _ =>
         Console.println("usage: ")
         Console.println("  schema2src [flags] --module mname arg* ")

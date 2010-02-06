@@ -6,6 +6,8 @@
 
 package schema2src.dtd
 
+import schema2src._
+
 import scala.collection.Map
 import scala.collection.mutable.HashMap
 
@@ -43,11 +45,12 @@ class GenSource(conf: Driver.DtdConfig, elemMap: Map[String, MyElemDecl]) extend
       case _                => Main.log("error in dtd:run: encountered "+n.getClass())
     }
     fOut println "object "+objectName+" {";
-    for (val n <- makeBinder.child) 
+    for (n <- makeBinder.child) 
       myprint(n)
 
-    for (val decl <- elemMap.values) {
-      for (val n <- makeClass(decl.name, decl.cmString, decl.theAttribs.values.toList).child ) {
+    for (decl <- elemMap.valuesIterator) {
+      for (n <- makeClass(decl.name, decl.cmString,
+        decl.theAttribs.valuesIterator.toList).child ) {
 	//Console.println("made "+n.toString());
 	myprint(n)
       }
@@ -70,7 +73,7 @@ class GenSource(conf: Driver.DtdConfig, elemMap: Map[String, MyElemDecl]) extend
   
   /* replace dash, colons with underscore, keywords with appended $ */
   private def cooked(ckd: StringBuilder, raw: String, off: Int): String = {
-    for (val i <- List.range(off, raw.length()))
+    for (i <- List.range(off, raw.length()))
       raw.charAt(i) match {
         case '-' =>
           ckd.append( '_' )
@@ -108,13 +111,13 @@ class GenSource(conf: Driver.DtdConfig, elemMap: Map[String, MyElemDecl]) extend
 
       <moresource>
 /* */   object binder extends scala.xml.factory.Binder(true) {{
-/* */     def reportValidationError(pos: int, msg: String) = {{}} // empty
-/* */     override def elem(pos: int, pre: String, label: String,
+/* */     def reportValidationError(pos: Int, msg: String) = {{}} // empty
+/* */     override def elem(pos: Int, pre: String, label: String,
                             attrs: scala.xml.MetaData,
                             pscope: scala.xml.NamespaceBinding,
                             nodes: scala.xml.NodeSeq): scala.xml.NodeSeq = label match {{
         { val sb = new StringBuilder()
-          val it = elemMap.values
+          val it = elemMap.valuesIterator
           while (it.hasNext) {
             val decl = it.next
             sb.append("case \"").append(decl.name).append("\" => ").append(decl.name).append("(attrs, nodes:_*)").append('\n')
@@ -123,7 +126,7 @@ class GenSource(conf: Driver.DtdConfig, elemMap: Map[String, MyElemDecl]) extend
         }
 /* */    }} // def elem(...)
 /* */ this.decls = List(
-/* */ { {val it = elemMap.values
+/* */ { {val it = elemMap.valuesIterator
 /* */    val sb = new StringBuilder()
 /* */    sb.append(makeDecl(it.next.name))
 /* */    while (it.hasNext) {
@@ -163,7 +166,7 @@ class GenSource(conf: Driver.DtdConfig, elemMap: Map[String, MyElemDecl]) extend
       tmp.setMetaData({ _attList() })
       def validate(_attributes: scala.xml.MetaData, child: Seq[scala.xml.Node]) =
       if(!(tmp.check(child)&amp;&amp;tmp.check(_attributes)))
-        throw new scala.xml.dtd.ValidationException(tmp.exc.toString())
+        throw new scala.xml.dtd.ValidationException(tmp.toString())
     }}
 &#x0a;
 &#x0a;
@@ -181,7 +184,7 @@ class GenSource(conf: Driver.DtdConfig, elemMap: Map[String, MyElemDecl]) extend
 
    override def text = {{
      val sb = new StringBuilder()
-     val it = child.elements
+     val it = child.iterator
      while (it.hasNext) {{
        sb.append(it.next.text)
      }}

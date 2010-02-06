@@ -4,6 +4,7 @@
 <project name="schema2src.tests" default="run">
 
   <target name="init">
+    <mkdir dir="${test.dir}"/>
     <fail message="Property ${test.dir} not set">
       <condition><not><and>
         <available file="${test.dir}" type="dir"/>
@@ -18,7 +19,8 @@
   
     <presetdef name="schema2src">
       <java classname="schema2src.Main"
-            classpath="./classes:${scala-library.jar}"/>
+            classpath="./classes:${scala-library.jar}"
+            fork="true"/>
     </presetdef>
   </target>
 
@@ -29,14 +31,14 @@
     <schema2src>
       <arg value="dtd"/>
       <arg value="-d"/><arg value="${test.dir}"/>
-      <arg value="tests/lnk.dtd"/>
+      <arg value="${basedir}/tests/lnk.dtd"/>
       <arg value="lnk"/>
     </schema2src>
 
-    <copy file="tests/lnk.scala" tofile="${test.dir}/lnkTest.scala"/>
+    <copy file="${basedir}/tests/lnk.scala" tofile="${test.dir}/lnkTest.scala"/>
    
     <scalac srcdir="${test.dir}" destdir="${test.dir}"
-            classpath="${scala-library.jar}">
+            classpath="${scala-library.jar}" deprecation="yes">
       <include name="lnk.scala"/>
       <include name="lnkTest.scala"/>
     </scalac>

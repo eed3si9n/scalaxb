@@ -16,7 +16,7 @@ import scala.collection.mutable.HashMap
 abstract class DtdHandler extends DefaultMarkupHandler {
 // DefaultMarkupHandler would override my methods??
 /*
-  def elem(pos: int, pre: String, label: String, attrs: MetaData, scope:NamespaceBinding, args: NodeSeq) = NodeSeq.Empty;
+  def elem(pos: Int, pre: String, label: String, attrs: MetaData, scope:NamespaceBinding, args: NodeSeq) = NodeSeq.Empty;
 
   def procInstr(pos: Int, target: String, txt: String) = NodeSeq.Empty;
 

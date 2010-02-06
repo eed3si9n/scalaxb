@@ -57,7 +57,7 @@ trait Module {
    */
   protected def inputsrc( sysID: String ) = 
     //    val curDir:String = System.getProperty("user.dir"); //@todo?
-    scala.io.Source.fromFile(sysID)
+    scala.io.Source.fromPath(sysID)
 
   /** parse source into a schema representation */  
   def parse(): Schema

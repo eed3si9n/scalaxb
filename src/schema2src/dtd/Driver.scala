@@ -8,6 +8,7 @@ package schema2src.dtd
 
 import scala.xml._
 import scala.xml.parsing.{ExternalSources, MarkupParser}
+import schema2src._
 
 /** main driver for the dtd module
  *  @author buraq

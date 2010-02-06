@@ -8,7 +8,7 @@
   <property name="build.dir" value="${basedir}/classes"/>
   <property name="dist.dir" value="${basedir}/dist"/>
   <property name="doc.dir" value="${basedir}/doc"/>
-  <property name="test.dir" value="/tmp"/>
+  <property name="test.dir" value="${basedir}/tests/tmp"/>
   <property name="scala-compiler.jar" value="${scala.home}/lib/scala-compiler.jar"/>
   <property name="scala-library.jar" value="${scala.home}/lib/scala-library.jar"/>
 
@@ -26,32 +26,16 @@
       </classpath>
     </taskdef>
   </target>
-
+  
+  <target name="rebuild" depends="clean,build"/>
+  
   <target name="build" depends="init">
     <mkdir dir="${build.dir}"/>
     <buildnumber/>
-    <scalac srcdir="src" destdir="${build.dir}" classpath="${scala-library.jar}"> 
+    <scalac srcdir="src" destdir="${build.dir}" classpath="${scala-library.jar}" deprecation="yes"> 
       <include name="schema2src/**/*.scala"/>
       <exclude name="schema2src/xsd/*.scala"/>
     </scalac>
-  </target>
-
-  <target name="test" depends="build">
-    <ant antfile="tests/test.xml"/>
-  </target>
-
-  <target name="deploy" depends="dist"/>
-
-  <target name="dist" depends="build,doc">
-    <mkdir dir="${dist.dir}/bin"/>
-    <scalascript
-      file="${dist.dir}/bin/schema2src"
-      version="${build.number}"
-      name="schema2src"
-      class="schema2src.Main"
-      copyright="LAMP/EPFL, *Burak Emir"
-      javaFlags="-Xmx256M -Xms16M"
-    />
 
     <mkdir dir="${dist.dir}/lib"/>
     <jar
@@ -63,7 +47,22 @@
         <attribute name="Class-Path" value="${lib.jar.name}"/>
       </manifest>
     </jar>
+  </target>
 
+  <target name="test" depends="clean,build">
+    <ant antfile="tests/test.xml"/>
+  </target>
+
+  <target name="deploy" depends="dist"/>
+
+  <target name="dist" depends="build,doc">
+    <mkdir dir="${dist.dir}/bin"/>
+    <scalascript
+      file="${dist.dir}/bin/schema2src"
+      class="schema2src.Main"
+      javaFlags="-Xmx256M -Xms16M"
+    />
+    
     <mkdir dir="${dist.dir}/doc"/>
     <copy todir="${dist.dir}/doc">
       <fileset dir="${doc.dir}"/>
@@ -86,7 +85,6 @@
     <scaladoc
       srcdir="src" destdir="${doc.dir}/scaladoc"
       classpath="${scala-library.jar}"
-      windowtitle="schema2src Documentation"
       doctitle="&lt;div&gt;schema2src&lt;/div&gt;"
     >
       <include name="schema2src/**/*.scala"/>
@@ -98,6 +96,7 @@
     <delete dir="${build.dir}"/>
     <delete dir="${doc.dir}/scaladoc/**"/>
     <delete dir="${dist.dir}"/>
+    <delete dir="${test.dir}"/>
   </target>
 
 </project>

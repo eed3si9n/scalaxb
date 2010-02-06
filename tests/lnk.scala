@@ -9,9 +9,9 @@ import lnk._;
 /*
 object LnkBinder extends Binder(true) {
 
-  def reportValidationError(pos:int, msg:String) = {}
+  def reportValidationError(pos:Int, msg:String) = {}
 
-    override def elem(pos: int, pre: String, label: String, attrs: MetaData, pscope: NamespaceBinding, nodes: NodeSeq): NodeSeq = label match {
+    override def elem(pos: Int, pre: String, label: String, attrs: MetaData, pscope: NamespaceBinding, nodes: NodeSeq): NodeSeq = label match {
    case "link"        => link(attrs, nodes:_*)
    case "lnkDB"       => lnkDB(attrs, nodes:_*)
    case "linkgroup"   => linkgroup(attrs, nodes:_*)

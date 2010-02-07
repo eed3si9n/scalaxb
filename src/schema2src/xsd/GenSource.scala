@@ -15,6 +15,28 @@ class GenSource(conf: Driver.XsdConfig, schema: (Map[String, ElemDecl], Map[Stri
   val elems = schema._1
   val typs = schema._2
   val newline = System.getProperty("line.separator")
+
+  def run {
+    import scala.collection.mutable
+    Main.log("xsd: GenSource.run")
+    
+    if (conf.packageName != null)
+      myprintAll(makePackageName.child)
+    
+    myprintAll(makeParentClass.child)
+    
+    for (elemPair <- elems;
+        if elemPair._2.typeSymbol.isInstanceOf[ComplexTypeSymbol];
+        if elemPair._2.typeSymbol.name.contains("@"))
+      myprintAll(makeElement(elemPair._2).child)
+    
+    for (typePair <- typs;
+        if typePair._2.isInstanceOf[ComplexTypeDecl];
+        if !typePair._1.contains("@"))
+      myprintAll(makeType(typePair._2.asInstanceOf[ComplexTypeDecl]).child)
+      
+    myprintAll(makeHelperObject.child)
+  }
   
   def makePackageName = {
     <source>package {conf.packageName}
@@ -29,41 +51,57 @@ abstract class DataModel
   
   def makeHelperObject = {
     <source>
+class Calendar extends java.util.GregorianCalendar {{
+  override def toString: String = Helper.toString(this)
+}}
+
+object Calendar {{
+  def apply(value: String): Calendar = Helper.toCalendar(value)
+  def unapply(value: Calendar): Option[String] = Some(Helper.toString(value))
+}}
+
 object Helper {{
   lazy val typeFactory = javax.xml.datatype.DatatypeFactory.newInstance()
   
-  def toCalendar(value: String) =
-    typeFactory.newXMLGregorianCalendar(value).toGregorianCalendar
-
+  def toCalendar(value: String) = {{
+    val gregorian = typeFactory.newXMLGregorianCalendar(value).toGregorianCalendar
+    val cal = new Calendar()
+    
+    for (i &lt;- 0 to java.util.Calendar.FIELD_COUNT - 1)
+      if (gregorian.isSet(i))
+        cal.set(i, gregorian.get(i))
+    cal
+  }}
+  
+  def toString(value: Calendar) = {{
+    val xmlGregorian = typeFactory.newXMLGregorianCalendar(value)
+    xmlGregorian.toString
+  }}
+  
   def toDuration(value: String) =
     typeFactory.newDuration(value)
 }}
 </source>    
   }
   
-  def makeIndent(indent: Int) =
-    "  " * indent
-     
+  def indent(indent: Int) = "  " * indent
+  
   def makeCaseClassWithType(name: String, complexTypeDecl: ComplexTypeDecl): scala.xml.Node = {
     val childElements = flattenElements(complexTypeDecl.compositor)
     val list = List.concat[Decl](complexTypeDecl.attributes, childElements)
-    val paramList = buildParamList(list)
-    val argList = buildArgList(list)
+    val paramList = list.map(buildParam(_))
+    val argList = list.map(buildArg(_))
     return <source>
 case class {name}(
-  {paramList.mkString("," + newline + makeIndent(1))}) extends DataModel {{
+  {paramList.mkString("," + newline + indent(1))}) extends DataModel {{
 }}
 
 object {name} {{
   def fromXML(node: scala.xml.Node) =
-    {name}({argList.mkString("," + newline + makeIndent(3))}) 
+    {name}({argList.mkString("," + newline + indent(3))}) 
 }}
 </source>    
   }
-  
-  def buildParamList(decls: List[Decl]) =
-    for (decl <- decls)
-      yield buildParam(decl)
   
   def buildParam(decl: Decl): String = decl match {
     case elem: ElemDecl => buildParam(elem)
@@ -81,10 +119,6 @@ object {name} {{
       elem.name + ": " + buildTypeName(elem.typeSymbol, elem.name)
     }    
   }
-    
-  def buildArgList(decls: List[Decl]) =
-    for (decl <- decls)
-      yield buildArg(decl)
   
   def buildArg(decl: Decl): String = decl match {
     case elem: ElemDecl       => buildArg(elem)
@@ -118,7 +152,10 @@ object {name} {{
     if (elem.maxOccurs > 1) {
       "(node \\ \"" + elem.name + "\").toList.map(" + typeName + ".fromXML(_))" 
     } else if (elem.minOccurs == 0) {
-      "Some(" + typeName + ".fromXML((node \\ \"" + elem.name + "\").head))" 
+      "(node \\ \"" + elem.name + "\").headOption match {" + newline +
+      indent(4) + "case None    => None" + newline +
+      indent(4) + "case Some(x) => Some(" +  typeName + ".fromXML(x))" + newline +
+      indent(3) + "}"
     } else {
       typeName + ".fromXML((node \\ \"" + elem.name + "\").head)" 
     }    
@@ -167,7 +204,10 @@ object {name} {{
     if (maxOccurs > 1) {
       "(node \\ \"" + nodeName + "\").toList.map(" + pre + "_.text" + post + ")"
     } else if (minOccurs == 0) {
-      "Some(" + pre + "(node \\ \"" + nodeName + "\").text" + post + ")" 
+      "(node \\ \"" + nodeName + "\").headOption match {" + newline +
+      indent(4) + "case None    => None" + newline +
+      indent(4) + "case Some(x) => Some(" + pre + "x.text" + post + ")" + newline +
+      indent(3) + "}" 
     } else {
       pre + "(node \\ \"" + nodeName + "\").text" + post
     }    
@@ -203,12 +243,19 @@ object {name} {{
   def flattenElements(compositor: HasParticle): List[ElemDecl] = {
     val list = for (particle <- compositor.particles)
       yield particle match {
-        case compositor2: HasParticle => flattenElements(compositor2)
-        case elem: ElemDecl           => List(elem)
+        case compositor2: HasParticle   => flattenElements(compositor2)
+        case elem: ElemDecl             =>
+          compositor match {
+            case sequence: SequenceDecl => List(elem)
+            case _                      => List(toOptional(elem))
+          }
         case _ => throw new Exception("GenSource: Invalid content model" + particle.toString)
       }
     list.flatten
   }
+  
+  def toOptional(elem: ElemDecl) =
+    ElemDecl(elem.name, elem.typeSymbol, 0, elem.maxOccurs)
   
   def makeElement(decl: ElemDecl): scala.xml.Node = {
     val complexTypeSymbol = decl.typeSymbol match {
@@ -243,26 +290,5 @@ object {name} {{
     case atom: Atom[_]    => fOut.print(atom.text)
     case _                => Main.log("error in xsd:run: encountered "
       + n.getClass() + " " + n.toString)
-  }
-  
-  def run {
-    import scala.collection.mutable
-    Main.log("xsd: GenSource.run")
-    
-    if (conf.packageName != null)
-      myprintAll(makePackageName.child)
-    
-    myprintAll(makeParentClass.child)
-    
-    for (elemPair <- elems;
-        if elemPair._2.typeSymbol.isInstanceOf[ComplexTypeSymbol];
-        if elemPair._2.typeSymbol.name.contains("@"))
-      myprintAll(makeElement(elemPair._2).child)
-    
-    for (typePair <- typs;
-        if typePair._2.isInstanceOf[ComplexTypeDecl] && !typePair._1.contains("@") )
-      myprintAll(makeType(typePair._2.asInstanceOf[ComplexTypeDecl]).child)
-      
-    myprintAll(makeHelperObject.child)
   }
 }

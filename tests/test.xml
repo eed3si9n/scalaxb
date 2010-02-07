@@ -28,6 +28,8 @@
 
   <target name="run" depends="init">
     <echo message="Testing schema2src"/>
+    
+    <!--
     <schema2src>
       <arg value="dtd"/>
       <arg value="-d"/><arg value="${test.dir}"/>
@@ -46,7 +48,7 @@
     <java classname="Test"
           classpath="${test.dir}:${scala-library.jar}"
           fork="true"/>
-    
+    -->
     <schema2src>
       <arg value="xsd"/>
       <arg value="-d"/><arg value="${test.dir}"/>

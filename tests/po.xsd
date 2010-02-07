@@ -15,6 +15,10 @@
     <xsd:sequence>
       <xsd:element name="shipTo" type="USAddress"/>
       <xsd:element name="billTo" type="USAddress"/>
+      <xsd:choice>
+        <xsd:element name="choice1" type="xsd:string"/>
+        <xsd:element name="choice2" type="xsd:string"/>
+      </xsd:choice>
       <xsd:element ref="comment" minOccurs="0" maxOccurs="unbounded"/>
       <xsd:element name="items"  type="Items"/>
     </xsd:sequence>

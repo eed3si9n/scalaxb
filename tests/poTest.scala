@@ -7,6 +7,7 @@ import purchaseorder._
 object XsdTest {
   def main(args: Array[String]) = {
     testUSAddress
+    testItem
   }
   
   def testUSAddress {
@@ -25,11 +26,36 @@ object XsdTest {
         "1537 Paper Street",
         "Wilmington",
         "DE",
-        zipCode) => if (zipCode != BigDecimal(19808))
-          throw new Exception("testUSAddress: " + address.toString)
-      case _ => throw new Exception("testUSAddress: " + address.toString)
+        zipCode) =>
+          if (zipCode != BigDecimal(19808))
+            throw new Exception("value doesn't match: " + address.toString)
+      case _ => throw new Exception("match failed: " + address.toString)
     }
     
     println(address.toString)
+  }
+  
+  def testItem {
+    val subject = <item partNum="639-OS">
+      <productName>Olive Soap</productName>
+      <quantity>1</quantity>
+      <USPrice>4.00</USPrice>
+      <shipDate>2010-02-06Z</shipDate>
+    </item>
+    
+    val item = Item.fromXML(subject)
+    item match {
+      case Item("639-OS",
+        "Olive Soap",
+        quantity,
+        usPrice,
+        None,
+        Some(Calendar("2010-02-06T00:00:00.000Z"))) =>
+          if (usPrice != BigDecimal(4.00) || quantity != BigInt(1))
+            throw new Exception("values don't match: " + item.toString)
+      case _ => throw new Exception("match failed: " + item.toString)
+    }
+    
+    println(item.toString)
   }
 }

@@ -105,8 +105,7 @@ object {name} {{
   
   def buildParam(decl: Decl): String = decl match {
     case elem: ElemDecl => buildParam(elem)
-    case attr: AttributeDecl =>
-      attr.name + ": " + buildTypeName(attr.typeSymbol, attr.name)
+    case attr: AttributeDecl => buildParam(attr)
     case _ => throw new Exception("GenSource: unsupported delcaration " + decl.toString)
   }
   
@@ -120,6 +119,13 @@ object {name} {{
     }    
   }
   
+  def buildParam(attr: AttributeDecl): String = 
+    if (toMinOccurs(attr) == 0)
+      attr.name + ": Option[" + buildTypeName(attr.typeSymbol, attr.name) + "]"
+    else
+      attr.name + ": " + buildTypeName(attr.typeSymbol, attr.name)
+    
+  
   def buildArg(decl: Decl): String = decl match {
     case elem: ElemDecl       => buildArg(elem)
     case attr: AttributeDecl  => buildArg(attr)
@@ -131,14 +137,14 @@ object {name} {{
     
     typeSymbol match {
       case symbol: BuiltInSimpleTypeSymbol => buildValueCode(symbol,
-          elem.name, elem.minOccurs, elem.maxOccurs)
+          elem.name, elem.defaultValue, elem.fixedValue, elem.minOccurs, elem.maxOccurs)
       case symbol: SimpleTypeSymbol  => buildValueCode(symbol.decl,
-          elem.name, elem.minOccurs, elem.maxOccurs)
+          elem.name, elem.defaultValue, elem.fixedValue, elem.minOccurs, elem.maxOccurs)
       case symbol: ComplexTypeSymbol => buildArg(elem, symbol.decl)  
       case symbol: ReferenceTypeSymbol =>
         symbol.decl match {
           case decl: SimpleTypeDecl   => buildValueCode(decl,
-            elem.name, elem.minOccurs, elem.maxOccurs)
+            elem.name, elem.defaultValue, elem.fixedValue, elem.minOccurs, elem.maxOccurs)
           case decl: ComplexTypeDecl  => buildArg(elem, decl)
           case _ => throw new Exception("GenSource: Invalid type " + symbol.decl.toString)
         }
@@ -160,24 +166,40 @@ object {name} {{
       typeName + ".fromXML((node \\ \"" + elem.name + "\").head)" 
     }    
   }
-    
+  
+  def toMinOccurs(attr: AttributeDecl) = 
+    if (attr.use == RequiredUse ||
+      attr.fixedValue.isDefined ||
+      attr.defaultValue.isDefined)
+      1
+    else
+      0
+  
   def buildArg(attr: AttributeDecl): String = attr.typeSymbol match {
-    case symbol: BuiltInSimpleTypeSymbol => buildValueCode(symbol, "@" + attr.name, 1, 1)   
-    case symbol: SimpleTypeSymbol        => buildValueCode(symbol.decl, "@" + attr.name, 1, 1)
+    case symbol: BuiltInSimpleTypeSymbol =>
+      buildValueCode(symbol, "@" + attr.name, attr.defaultValue, attr.fixedValue,
+        toMinOccurs(attr), 1)   
+    case symbol: SimpleTypeSymbol =>
+      buildValueCode(symbol.decl, "@" + attr.name, attr.defaultValue, attr.fixedValue,
+        toMinOccurs(attr), 1)
   }
 
   def buildValueCode(decl: SimpleTypeDecl, nodeName: String,
+      defaultValue: Option[String], fixedValue: Option[String],
       minOccurs: Int, maxOccurs: Int): String = decl.content match {  
     case restriction: RestrictionDecl =>
       restriction.base match {
-        case builtIn: BuiltInSimpleTypeSymbol => buildValueCode(builtIn, nodeName, minOccurs, maxOccurs)
+        case builtIn: BuiltInSimpleTypeSymbol =>
+          buildValueCode(builtIn, nodeName, defaultValue, fixedValue, minOccurs, maxOccurs)
         case _ => throw new Exception("GenSource: Unsupported type " + restriction.base.toString) 
       }
     case _ => throw new Exception("GenSource: Unsupported content " + decl.content.toString)    
   }
     
   def buildValueCode(typeSymbol: BuiltInSimpleTypeSymbol, nodeName: String,
+      defaultValue: Option[String], fixedValue: Option[String],
       minOccurs: Int, maxOccurs: Int): String = {
+        
     val stringValueCode = "(node \\ \"" + nodeName + "\").text"
     val (pre, post) = typeSymbol.name match {
       case "String"     => ("", "")
@@ -201,17 +223,26 @@ object {name} {{
       case _        => throw new Exception("GenSource: Unsupported type " + typeSymbol.toString) 
     }
     
+    def buildMatchStatement(noneValue: String, someValue: String) =
+      "(node \\ \"" + nodeName + "\").headOption match {" + newline +
+      indent(4) + "case None    => " + noneValue + newline +
+      indent(4) + "case Some(x) => " + someValue + newline +
+      indent(3) + "}"
+    
     if (maxOccurs > 1) {
       "(node \\ \"" + nodeName + "\").toList.map(" + pre + "_.text" + post + ")"
     } else if (minOccurs == 0) {
-      "(node \\ \"" + nodeName + "\").headOption match {" + newline +
-      indent(4) + "case None    => None" + newline +
-      indent(4) + "case Some(x) => Some(" + pre + "x.text" + post + ")" + newline +
-      indent(3) + "}" 
+      buildMatchStatement("None", "Some(" + pre + "x.text" + post + ")")
+    } else if (defaultValue.isDefined) {
+      buildMatchStatement(pre + quote(defaultValue.get) + post, pre + "x.text" + post)
+    } else if (fixedValue.isDefined) {
+      pre + quote(fixedValue.get) + post
     } else {
       pre + "(node \\ \"" + nodeName + "\").text" + post
     }    
   }
+  
+  def quote(value: String) = "\"" + value + "\""
   
   def buildTypeName(content: SimpleTypeContent): String = content match {
     case restriction: RestrictionDecl => restriction.base.name
@@ -254,8 +285,9 @@ object {name} {{
     list.flatten
   }
   
-  def toOptional(elem: ElemDecl) =
-    ElemDecl(elem.name, elem.typeSymbol, 0, elem.maxOccurs)
+  def toOptional(that: ElemDecl) =
+    ElemDecl(that.name, that.typeSymbol, that.defaultValue, that.fixedValue,
+      0, that.maxOccurs)
   
   def makeElement(decl: ElemDecl): scala.xml.Node = {
     val complexTypeSymbol = decl.typeSymbol match {

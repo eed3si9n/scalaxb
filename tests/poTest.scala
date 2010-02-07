@@ -11,7 +11,7 @@ object XsdTest {
   }
   
   def testUSAddress {
-    val subject = <USAddress country="US">
+    val subject = <USAddress>
       <name>Foo</name>
       <street>1537 Paper Street</street>
       <city>Wilmington</city>
@@ -47,11 +47,11 @@ object XsdTest {
     item match {
       case Item("639-OS",
         "Olive Soap",
-        quantity,
+        1,
         usPrice,
         None,
         Some(Calendar("2010-02-06T00:00:00.000Z"))) =>
-          if (usPrice != BigDecimal(4.00) || quantity != BigInt(1))
+          if (usPrice != BigDecimal(4.00))
             throw new Exception("values don't match: " + item.toString)
       case _ => throw new Exception("match failed: " + item.toString)
     }

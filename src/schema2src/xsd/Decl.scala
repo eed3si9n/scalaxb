@@ -28,7 +28,16 @@ object AnnotationDecl {
   def fromXML(node: scala.xml.Node) = AnnotationDecl() 
 }
 
-case class AttributeDecl(name: String, typeSymbol: SimpleTypeSymbol) extends Decl
+abstract class AttributeUse
+object OptionalUse extends AttributeUse
+object ProhibitedUse extends AttributeUse
+object RequiredUse extends AttributeUse
+
+case class AttributeDecl(name: String,
+  typeSymbol: SimpleTypeSymbol,
+  defaultValue: Option[String],
+  fixedValue: Option[String],
+  use: AttributeUse) extends Decl
 
 object AttributeDecl {
   def fromXML(node: scala.xml.Node, config: ParserConfig) = {
@@ -55,7 +64,22 @@ object AttributeDecl {
         }
       } // if-else
       
-      val attr = AttributeDecl(name, typeSymbol)
+      val defaultValue = (node \ "@default").headOption match {
+        case None    => None
+        case Some(x) => Some(x.text)
+      }
+      val fixedValue = (node \ "@fixed").headOption match {
+        case None    => None
+        case Some(x) => Some(x.text)
+      }
+      val use = (node \ "@use").text match {
+        case "prohibited" => ProhibitedUse
+        case "required"   => RequiredUse
+        case _            => OptionalUse
+      }
+      
+      val attr = AttributeDecl(name, typeSymbol,
+        defaultValue, fixedValue, use)
       config.attrs += (attr.name -> attr)
       attr   
     }
@@ -64,6 +88,8 @@ object AttributeDecl {
 
 case class ElemDecl(name: String,
   typeSymbol: XsTypeSymbol,
+  defaultValue: Option[String],
+  fixedValue: Option[String],  
   minOccurs: Int,
   maxOccurs: Int) extends Decl
 
@@ -86,7 +112,8 @@ object ElemDecl {
       else
         buildOccurrence((node \ "@maxOccurs").text)
       
-      ElemDecl(that.name, that.typeSymbol, minOccurs, maxOccurs)
+      ElemDecl(that.name, that.typeSymbol, that.defaultValue, that.fixedValue,
+        minOccurs, maxOccurs)
     } else {
       val name = (node \ "@name").text
       Main.log("ElemDecl.fromXML: " + name)
@@ -107,9 +134,18 @@ object ElemDecl {
         }
       } // if-else
       
+      val defaultValue = (node \ "@default").headOption match {
+        case None    => None
+        case Some(x) => Some(x.text)
+      }
+      val fixedValue = (node \ "@fixed").headOption match {
+        case None    => None
+        case Some(x) => Some(x.text)
+      }      
       val minOccurs = buildOccurrence((node \ "@minOccurs").text)
       val maxOccurs = buildOccurrence((node \ "@maxOccurs").text)
-      val elem = ElemDecl(name, typeSymbol, minOccurs, maxOccurs)
+      
+      val elem = ElemDecl(name, typeSymbol, defaultValue, fixedValue, minOccurs, maxOccurs)
       config.elems += (elem.name -> elem)
       elem   
     }

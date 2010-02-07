@@ -76,7 +76,17 @@ object ElemDecl {
         throw new Exception("xsd: Element ref not found " + ref)
       }
       
-      config.elems(ref)
+      val that = config.elems(ref)
+      val minOccurs = if ((node \ "@minOccurs").isEmpty)
+        that.minOccurs
+      else
+        buildOccurrence((node \ "@minOccurs").text)
+      val maxOccurs = if ((node \ "@maxOccurs").isEmpty)
+        that.maxOccurs
+      else
+        buildOccurrence((node \ "@maxOccurs").text)
+      
+      ElemDecl(that.name, that.typeSymbol, minOccurs, maxOccurs)
     } else {
       val name = (node \ "@name").text
       Main.log("ElemDecl.fromXML: " + name)
@@ -109,7 +119,7 @@ object ElemDecl {
     if (value == "")
       1
     else if (value == "unbounded")
-      -1
+      Integer.MAX_VALUE
     else
       value.toInt
 }

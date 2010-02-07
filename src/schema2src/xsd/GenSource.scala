@@ -40,41 +40,7 @@ object Helper {{
 }}
 </source>    
   }
-      
-  def buildValueCode(decl: SimpleTypeDecl, nodeName: String): String = decl.content match {  
-    case restriction: RestrictionDecl =>
-      restriction.base match {
-        case builtIn: BuiltInSimpleTypeSymbol => buildValueCode(builtIn, nodeName)
-        case _ => throw new Exception("GenSource: Unsupported type " + restriction.base.toString) 
-      }
-    case _ => throw new Exception("GenSource: Unsupported content " + decl.content.toString)    
-  }
-    
-  def buildValueCode(typeSymbol: BuiltInSimpleTypeSymbol, nodeName: String): String = {
-    val stringValueCode = "(node \\ \"" + nodeName + "\").text"
-    typeSymbol.name match {
-      case "String"     => stringValueCode
-      case "javax.xml.datatype.Duration" => "Helper.toDuration(" + stringValueCode + ")"
-      case "java.util.Calendar" => "Helper.toCalendar(" + stringValueCode + ")"
-      case "Boolean"    => stringValueCode + ".toBoolean"
-      case "Int"        => stringValueCode + ".toInt"
-      case "Long"       => stringValueCode + ".toLong"
-      case "Short"      => stringValueCode + ".toShort"
-      case "Float"      => stringValueCode + ".toFloat"
-      case "Double"     => stringValueCode + ".toDouble"
-      case "Byte"       => stringValueCode + ".toByte"
-      case "BigInt"     => "BigInt(" + stringValueCode + ")"
-      case "BigDecimal" => "BigDecimal(" + stringValueCode + ")"
-      case "java.net.URI" => "java.net.URI.create(" + stringValueCode + ")"
-      case "javax.xml.namespace.QName"
-        => "javax.xml.namespace.QName.valueOf(" + stringValueCode + ")"
-      case "Array[String]" => stringValueCode + ".split(' ')"
-      // case "Base64Binary" =>
-      // case "HexBinary"  => 
-      case _        => throw new Exception("GenSource: Unsupported type " + typeSymbol.toString) 
-    }        
-  }
-    
+  
   def makeIndent(indent: Int) =
     "  " * indent
      
@@ -91,10 +57,6 @@ case class {name}(
 object {name} {{
   def fromXML(node: scala.xml.Node) =
     {name}({argList.mkString("," + newline + makeIndent(3))}) 
-  
-  def fromSequence(sequence: scala.xml.NodeSeq) =
-    for (node &lt;- sequence.toList)
-      yield fromXML(node)
 }}
 </source>    
   }
@@ -103,16 +65,21 @@ object {name} {{
     for (decl <- decls)
       yield buildParam(decl)
   
-  def buildParam(decl: Decl) = decl match {
-    case elem: ElemDecl =>
-      if (elem.maxOccurs == 0 || elem.maxOccurs == 1) {
-        elem.name + ": " + buildTypeName(elem.typeSymbol, elem.name)
-      } else {
-        elem.name + ": List[" + buildTypeName(elem.typeSymbol, elem.name) + "]"
-      }
+  def buildParam(decl: Decl): String = decl match {
+    case elem: ElemDecl => buildParam(elem)
     case attr: AttributeDecl =>
       attr.name + ": " + buildTypeName(attr.typeSymbol, attr.name)
     case _ => throw new Exception("GenSource: unsupported delcaration " + decl.toString)
+  }
+  
+  def buildParam(elem: ElemDecl): String = {
+    if (elem.maxOccurs > 1) {
+      elem.name + ": List[" + buildTypeName(elem.typeSymbol, elem.name) + "]"
+    } else if (elem.minOccurs == 0) {
+      elem.name + ": Option[" + buildTypeName(elem.typeSymbol, elem.name) + "]"
+    } else {
+      elem.name + ": " + buildTypeName(elem.typeSymbol, elem.name)
+    }    
   }
     
   def buildArgList(decls: List[Decl]) =
@@ -125,36 +92,85 @@ object {name} {{
     case _ => throw new Exception("GenSource: unsupported delcaration " + decl.toString)
   }
   
-  def buildArg(elem: ElemDecl, decl: ComplexTypeDecl): String = {
-    val typeName = buildTypeName(elem.typeSymbol, elem.name)
-    
-    if (elem.maxOccurs == 0 || elem.maxOccurs == 1) {
-      typeName + ".fromXML((node \\ \"" + elem.name + "\").head)" 
-    } else {
-      typeName + ".fromSequence(node \\ \"" + elem.name + "\")" 
-    }    
-  }
-  
   def buildArg(elem: ElemDecl): String = {
     val typeSymbol = elem.typeSymbol
     
     typeSymbol match {
-      case symbol: BuiltInSimpleTypeSymbol => buildValueCode(symbol, elem.name)
-      case symbol: SimpleTypeSymbol  => buildValueCode(symbol.decl, elem.name)
+      case symbol: BuiltInSimpleTypeSymbol => buildValueCode(symbol,
+          elem.name, elem.minOccurs, elem.maxOccurs)
+      case symbol: SimpleTypeSymbol  => buildValueCode(symbol.decl,
+          elem.name, elem.minOccurs, elem.maxOccurs)
       case symbol: ComplexTypeSymbol => buildArg(elem, symbol.decl)  
       case symbol: ReferenceTypeSymbol =>
         symbol.decl match {
-          case decl: SimpleTypeDecl   => buildValueCode(decl, elem.name)
+          case decl: SimpleTypeDecl   => buildValueCode(decl,
+            elem.name, elem.minOccurs, elem.maxOccurs)
           case decl: ComplexTypeDecl  => buildArg(elem, decl)
           case _ => throw new Exception("GenSource: Invalid type " + symbol.decl.toString)
         }
       case _ => throw new Exception("GenSource: Invalid type " + typeSymbol.toString)
     }
   }
-  
+
+  def buildArg(elem: ElemDecl, decl: ComplexTypeDecl): String = {
+    val typeName = buildTypeName(elem.typeSymbol, elem.name)
+    
+    if (elem.maxOccurs > 1) {
+      "(node \\ \"" + elem.name + "\").toList.map(" + typeName + ".fromXML(_))" 
+    } else if (elem.minOccurs == 0) {
+      "Some(" + typeName + ".fromXML((node \\ \"" + elem.name + "\").head))" 
+    } else {
+      typeName + ".fromXML((node \\ \"" + elem.name + "\").head)" 
+    }    
+  }
+    
   def buildArg(attr: AttributeDecl): String = attr.typeSymbol match {
-    case symbol: BuiltInSimpleTypeSymbol => buildValueCode(symbol, "@" + attr.name)   
-    case symbol: SimpleTypeSymbol        => buildValueCode(symbol.decl, "@" + attr.name)
+    case symbol: BuiltInSimpleTypeSymbol => buildValueCode(symbol, "@" + attr.name, 1, 1)   
+    case symbol: SimpleTypeSymbol        => buildValueCode(symbol.decl, "@" + attr.name, 1, 1)
+  }
+
+  def buildValueCode(decl: SimpleTypeDecl, nodeName: String,
+      minOccurs: Int, maxOccurs: Int): String = decl.content match {  
+    case restriction: RestrictionDecl =>
+      restriction.base match {
+        case builtIn: BuiltInSimpleTypeSymbol => buildValueCode(builtIn, nodeName, minOccurs, maxOccurs)
+        case _ => throw new Exception("GenSource: Unsupported type " + restriction.base.toString) 
+      }
+    case _ => throw new Exception("GenSource: Unsupported content " + decl.content.toString)    
+  }
+    
+  def buildValueCode(typeSymbol: BuiltInSimpleTypeSymbol, nodeName: String,
+      minOccurs: Int, maxOccurs: Int): String = {
+    val stringValueCode = "(node \\ \"" + nodeName + "\").text"
+    val (pre, post) = typeSymbol.name match {
+      case "String"     => ("", "")
+      case "javax.xml.datatype.Duration" => ("Helper.toDuration(", ")")
+      case "java.util.Calendar" => ("Helper.toCalendar(", ")")
+      case "Boolean"    => ("", ".toBoolean")
+      case "Int"        => ("", ".toInt")
+      case "Long"       => ("", ".toLong")
+      case "Short"      => ("", ".toShort")
+      case "Float"      => ("", ".toFloat")
+      case "Double"     => ("", ".toDouble")
+      case "Byte"       => ("", ".toByte")
+      case "BigInt"     => ("BigInt(", ")")
+      case "BigDecimal" => ("BigDecimal(", ")")
+      case "java.net.URI" => ("java.net.URI.create(", ")")
+      case "javax.xml.namespace.QName"
+        => ("javax.xml.namespace.QName.valueOf(", ")")
+      case "Array[String]" => ("", ".split(' ')")
+      // case "Base64Binary" =>
+      // case "HexBinary"  => 
+      case _        => throw new Exception("GenSource: Unsupported type " + typeSymbol.toString) 
+    }
+    
+    if (maxOccurs > 1) {
+      "(node \\ \"" + nodeName + "\").toList.map(" + pre + "_.text" + post + ")"
+    } else if (minOccurs == 0) {
+      "Some(" + pre + "(node \\ \"" + nodeName + "\").text" + post + ")" 
+    } else {
+      pre + "(node \\ \"" + nodeName + "\").text" + post
+    }    
   }
   
   def buildTypeName(content: SimpleTypeContent): String = content match {

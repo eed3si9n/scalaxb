@@ -15,7 +15,7 @@
     <xsd:sequence>
       <xsd:element name="shipTo" type="USAddress"/>
       <xsd:element name="billTo" type="USAddress"/>
-      <xsd:element ref="comment" minOccurs="0"/>
+      <xsd:element ref="comment" minOccurs="0" maxOccurs="unbounded"/>
       <xsd:element name="items"  type="Items"/>
     </xsd:sequence>
     <xsd:attribute name="orderDate" type="xsd:date"/>

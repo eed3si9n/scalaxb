@@ -46,8 +46,7 @@ object Driver extends Module {
   def parse(): Schema = {
     val sysID = getConfig().sysID
     Main.log("xsd: parsing " + sysID)
-    val source = scala.xml.Source.fromSysId(sysID)
-    val schema = SchemaDecl.fromXML(scala.xml.XML.load(source))
+    val schema = SchemaDecl.fromXML(scala.xml.XML.load(sysID))
     Main.log("SchemaParser.parse: " + schema.toString())
     (schema.elems, schema.types)
   }

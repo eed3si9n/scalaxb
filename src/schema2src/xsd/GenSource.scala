@@ -87,6 +87,8 @@ object Helper {{
   def indent(indent: Int) = "  " * indent
   
   def makeCaseClassWithType(name: String, complexTypeDecl: ComplexTypeDecl): scala.xml.Node = {
+    Main.log("GenSource: emitting " + name)
+    
     val childElements = flattenElements(complexTypeDecl.compositor)
     val list = List.concat[Decl](complexTypeDecl.attributes, childElements)
     val paramList = list.map(buildParam(_))

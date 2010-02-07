@@ -22,6 +22,96 @@ class ParserConfig {
 
 object DefaultParserConfig extends ParserConfig
 
+case class SchemaDecl(elems: Map[String, ElemDecl], types: Map[String, TypeDecl]) {
+  override def toString(): String = {
+    "SchemaDecl(" + elems.valuesIterator.mkString(",") + "," +
+      types.valuesIterator.mkString(",")  + ")"
+  }
+}
+
+object SchemaDecl {
+  def fromXML(node: scala.xml.Node,
+      config: ParserConfig = DefaultParserConfig) = {
+    config.elems = mutable.Map.empty[String, ElemDecl]
+    config.types = mutable.Map.empty[String, TypeDecl]
+    config.attrs = mutable.Map.empty[String, AttributeDecl]
+    
+    val XML_SCHEMA_URI = "http://www.w3.org/2001/XMLSchema"
+    
+    val schema = (node \\ "schema").headOption match {
+      case Some(x) => x
+      case None    => throw new Exception("xsd: schema element not found: " + node.toString)
+    }
+    
+    val xsPrefix = schema.scope.getPrefix(XML_SCHEMA_URI)
+    if (xsPrefix != null) {
+      config.xsPrefix = xsPrefix + ":"
+    }
+    schema.attribute("targetNamespace") match {
+      case Some(x) =>
+        val myPrefix = schema.scope.getPrefix(x.text)
+        if (myPrefix != null) {
+          config.myPrefix = myPrefix + ":"
+        } 
+      case None    =>
+    }
+    
+    (schema \ "element").map(ElemDecl.fromXML(_, config))
+    (schema \\ "complexType").map(ComplexTypeDecl.fromXML(_, config))
+    (schema \\ "simpleType").map(SimpleTypeDecl.fromXML(_, config))
+    
+    resolveType(config)
+    
+    SchemaDecl(immutable.Map.empty[String, ElemDecl] ++ config.elems,
+      immutable.Map.empty[String, TypeDecl] ++ config.types)
+  }
+  
+  def resolveType(config: ParserConfig) {
+    for (elemPair <- config.elems) {
+      val typeSymbol = elemPair._2.typeSymbol
+      typeSymbol match {
+        case symbol: BuiltInSimpleTypeSymbol =>
+        case symbol: ComplexTypeSymbol =>
+          if (!config.types.contains(symbol.name))
+            throw new Exception("SchemaDecl: type not found " + elemPair._1 + ": " + symbol.name)
+          config.types(symbol.name) match {
+            case decl: ComplexTypeDecl => symbol.decl = decl
+            case _ => throw new Exception("SchemaDecl: type does not match ")
+          } // match
+          
+        case symbol: SimpleTypeSymbol => 
+          if (!config.types.contains(symbol.name))
+            throw new Exception("SchemaDecl: type not found " + elemPair._1 + ": " + symbol.name)
+          config.types(symbol.name) match {
+            case decl: SimpleTypeDecl => symbol.decl = decl
+            case _ => throw new Exception("SchemaDecl: type does not match ")
+          } // match
+          
+        case symbol: ReferenceTypeSymbol =>
+          if (!config.types.contains(symbol.name))
+            throw new Exception("SchemaDecl: type not found " + elemPair._1 + ": " + symbol.name)
+          symbol.decl = config.types(symbol.name)
+      } // match         
+    } // for
+      
+    for (attrPair <- config.attrs) {
+      val typeSymbol = attrPair._2.typeSymbol
+      typeSymbol match {
+        case symbol: BuiltInSimpleTypeSymbol => 
+        case symbol: SimpleTypeSymbol        =>
+          if (!config.types.contains(symbol.name))
+            throw new Exception("SchemaDecl: type not found " + attrPair._1 + ": " + symbol.name)
+          config.types(symbol.name) match {
+            case decl: SimpleTypeDecl => symbol.decl = decl
+            case _ => throw new Exception("SchemaDecl: type does not match ")
+          } // match
+      } // match    
+    } // for    
+  }
+
+}
+
+
 case class AnnotationDecl() extends Decl
 
 object AnnotationDecl {
@@ -41,8 +131,9 @@ case class AttributeDecl(name: String,
 
 object AttributeDecl {
   def fromXML(node: scala.xml.Node, config: ParserConfig) = {
-    val ref = (node \ "@ref").text
-    if (ref != "") {
+    if (!(node \ "@ref").isEmpty) {
+      val ref = (node \ "@ref").text.replaceFirst(config.myPrefix, "")
+      
       Main.log("AttributeDelc.fromXML: " + ref)
       if (!config.attrs.contains(ref)) {
         throw new Exception("xsd: Attribute ref not found " + ref)
@@ -94,9 +185,10 @@ case class ElemDecl(name: String,
   maxOccurs: Int) extends Decl
 
 object ElemDecl {
-  def fromXML(node: scala.xml.Node, config: ParserConfig) = {    
-    val ref = (node \ "@ref").text
-    if (ref != "") {
+  def fromXML(node: scala.xml.Node, config: ParserConfig) = {
+    if (!(node \ "@ref").isEmpty) {
+      val ref = (node \ "@ref").text.replaceFirst(config.myPrefix, "")
+      
       Main.log("ElemDecl.fromXML: " + ref)
       if (!config.elems.contains(ref)) {
         throw new Exception("xsd: Element ref not found " + ref)
@@ -311,88 +403,6 @@ object SimpleTypeDecl {
       name
     else
       "simpleType@" + node.hashCode.toString
-  }
-}
-
-case class SchemaDecl(elems: Map[String, ElemDecl], types: Map[String, TypeDecl]) {
-  override def toString(): String = {
-    "SchemaDecl(" + elems.valuesIterator.mkString(",") + "," +
-      types.valuesIterator.mkString(",")  + ")"
-  }
-}
-
-object SchemaDecl {
-  def fromXML(node: scala.xml.Node,
-      config: ParserConfig = DefaultParserConfig) = {
-    val elems = mutable.Map.empty[String, ElemDecl]
-    val types = mutable.Map.empty[String, TypeDecl]
-    val attrs = mutable.Map.empty[String, AttributeDecl]
-    config.elems = elems
-    config.types = types
-    config.attrs = attrs
-    
-    val children = node match {
-      case <schema>{ children @ _* }</schema> =>
-        Main.log("SchemaDecl: schema tag found")
-        for (child <- children; if child.isInstanceOf[scala.xml.Elem])
-          yield child
-      case _ => throw new Exception("XSD Validation error:" + node.toString)
-    }
-    
-    for (child <- children) child match {
-      case <element>{ _* }</element> => ElemDecl.fromXML(child, config)
-      case _ =>
-    }
-    
-    for (complexType <- children \\ "complexType")
-      ComplexTypeDecl.fromXML(complexType, config)
-    
-    for (simpleType <- children \\ "simpleType")
-      SimpleTypeDecl.fromXML(simpleType, config)
-        
-    for (elemPair <- elems) {
-      val typeSymbol = elemPair._2.typeSymbol
-      typeSymbol match {
-        case symbol: BuiltInSimpleTypeSymbol =>
-        case symbol: ComplexTypeSymbol =>
-          if (!types.contains(symbol.name))
-            throw new Exception("SchemaDecl: type not found " + elemPair._1 + ": " + symbol.name)
-          types(symbol.name) match {
-            case decl: ComplexTypeDecl => symbol.decl = decl
-            case _ => throw new Exception("SchemaDecl: type does not match ")
-          }
-          
-        case symbol: SimpleTypeSymbol => 
-          if (!types.contains(symbol.name))
-            throw new Exception("SchemaDecl: type not found " + elemPair._1 + ": " + symbol.name)
-          types(symbol.name) match {
-            case decl: SimpleTypeDecl => symbol.decl = decl
-            case _ => throw new Exception("SchemaDecl: type does not match ")
-          }
-          
-        case symbol: ReferenceTypeSymbol =>
-          if (!types.contains(symbol.name))
-            throw new Exception("SchemaDecl: type not found " + elemPair._1 + ": " + symbol.name)
-          symbol.decl = types(symbol.name)          
-      }
-      
-      for (attrPair <- attrs) {
-        val typeSymbol = attrPair._2.typeSymbol
-        typeSymbol match {
-          case symbol: BuiltInSimpleTypeSymbol => 
-          case symbol: SimpleTypeSymbol        =>
-            if (!types.contains(symbol.name))
-              throw new Exception("SchemaDecl: type not found " + attrPair._1 + ": " + symbol.name)
-            types(symbol.name) match {
-              case decl: SimpleTypeDecl => symbol.decl = decl
-              case _ => throw new Exception("SchemaDecl: type does not match ")
-            }       
-        }    
-      }
-    }
-    
-    SchemaDecl(immutable.Map.empty[String, ElemDecl] ++ elems,
-      immutable.Map.empty[String, TypeDecl] ++ types)
   }
 }
 

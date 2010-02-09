@@ -21,14 +21,11 @@ object XsdTest {
     
     val address = USAddress.fromXML(subject)
     address match {
-      case USAddress("US",
-        "Foo",
+      case USAddress("Foo",
         "1537 Paper Street",
         "Wilmington",
         "DE",
-        zipCode) =>
-          if (zipCode != BigDecimal(19808))
-            throw new Exception("value doesn't match: " + address.toString)
+        19808) =>
       case _ => throw new Exception("match failed: " + address.toString)
     }
     
@@ -45,12 +42,12 @@ object XsdTest {
     
     val item = Item.fromXML(subject)
     item match {
-      case Item("639-OS",
-        "Olive Soap",
+      case Item("Olive Soap",
         1,
         usPrice,
         None,
-        Some(Calendar("2010-02-06T00:00:00.000Z"))) =>
+        Some(Calendar("2010-02-06T00:00:00.000Z")),
+        "639-OS") =>
           if (usPrice != BigDecimal(4.00))
             throw new Exception("values don't match: " + item.toString)
       case _ => throw new Exception("match failed: " + item.toString)

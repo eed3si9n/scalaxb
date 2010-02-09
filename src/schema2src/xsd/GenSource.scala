@@ -93,7 +93,7 @@ object Helper {{
     Main.log("GenSource: emitting " + name)
     
     val childElements = flattenContent(complexTypeDecl.content)
-    val list = List.concat[Decl](childElements, complexTypeDecl.attributes)
+    val list = List.concat[Decl](childElements, flattenAttributes(complexTypeDecl))
     val paramList = list.map(buildParam(_))
     val argList = list.map(buildArg(_))
     return <source>
@@ -268,28 +268,18 @@ object {name} {{
     case compositor: CompositorContentDecl => flattenElements(compositor.compositor)
   }
   
-  def flattenComplexContent(content: ComplexContentDecl): List[ElemDecl] = {
-    content.content match {
-      case RestrictionDecl(symbol: BuiltInSimpleTypeSymbol, _) =>
-        Nil
-      
-      case RestrictionDecl(ReferenceTypeSymbol(base: SimpleTypeDecl), _) =>
-        Nil
-      
-      case RestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _) =>
-        flattenContent(base.content)        
-      
-      case ExtensionDecl(symbol: BuiltInSimpleTypeSymbol, _) =>
-        Nil
-      
-      case ExtensionDecl(ReferenceTypeSymbol(base: SimpleTypeDecl), _) =>
-        Nil
-      
-      case ExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _) =>
-        flattenContent(base.content)
-      
-      case _ => Nil
-    }
+  def flattenComplexContent(content: ComplexContentDecl): List[ElemDecl] = content.content match {
+    case RestrictionDecl(symbol: BuiltInSimpleTypeSymbol, _, _) => Nil
+    case RestrictionDecl(ReferenceTypeSymbol(base: SimpleTypeDecl), _, _) => Nil
+    case RestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
+      flattenContent(base.content)        
+    
+    case ExtensionDecl(symbol: BuiltInSimpleTypeSymbol, _, _) => Nil
+    case ExtensionDecl(ReferenceTypeSymbol(base: SimpleTypeDecl), _, _) => Nil
+    case ext@ExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
+      flattenContent(base.content) ::: flattenElements(ext.compositor)
+    
+    case _ => Nil
   }
   
   def flattenElements(compositor: HasParticle): List[ElemDecl] = {
@@ -305,7 +295,26 @@ object {name} {{
       }
     list.flatten
   }
+    
+  def flattenAttributes(decl: ComplexTypeDecl): List[AttributeDecl] = decl.content match {
+    case simple: SimpleContentDecl => flattenAttributes(simple.content)
+    case complex: ComplexContentDecl => flattenAttributes(complex.content)
+    case compositor: CompositorContentDecl => decl.attributes
+  }
   
+  def flattenAttributes(content: ContentTypeDecl): List[AttributeDecl] = content match {
+    case RestrictionDecl(symbol: BuiltInSimpleTypeSymbol, _, attr) => attr
+    case RestrictionDecl(ReferenceTypeSymbol(base: SimpleTypeDecl), _, attr) => attr
+    case RestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, attr) => 
+      attr ::: flattenAttributes(base)
+    case ExtensionDecl(symbol: BuiltInSimpleTypeSymbol, _, attr) => attr
+    case ExtensionDecl(ReferenceTypeSymbol(base: SimpleTypeDecl), _, attr) => attr
+    case ExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, attr) =>
+      attr ::: flattenAttributes(base)
+    
+    case _ => Nil
+  }
+    
   def toOptional(that: ElemDecl) =
     ElemDecl(that.name, that.typeSymbol, that.defaultValue, that.fixedValue,
       0, that.maxOccurs)

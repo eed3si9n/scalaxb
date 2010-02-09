@@ -8,6 +8,7 @@ import scala.xml.{TypeSymbol}
 import scala.collection.{Map}
 import schema2src.{Main}
 import scala.collection.mutable
+import scala.collection.mutable.ArrayBuilder
 import scala.collection.immutable
 
 abstract class Decl
@@ -56,9 +57,9 @@ object SchemaDecl {
       case None    =>
     }
     
-    (schema \ "element").map(ElemDecl.fromXML(_, config))
-    (schema \\ "complexType").map(ComplexTypeDecl.fromXML(_, config))
-    (schema \\ "simpleType").map(SimpleTypeDecl.fromXML(_, config))
+    (schema \ "element").foreach(ElemDecl.fromXML(_, config))
+    (schema \\ "complexType").foreach(ComplexTypeDecl.fromXML(_, config))
+    (schema \\ "simpleType").foreach(SimpleTypeDecl.fromXML(_, config))
     
     resolveType(config)
     
@@ -67,50 +68,64 @@ object SchemaDecl {
   }
   
   def resolveType(config: ParserConfig) {
-    for (elemPair <- config.elems) {
-      val typeSymbol = elemPair._2.typeSymbol
-      typeSymbol match {
+    config.elems.valuesIterator.foreach(
+      elem => resolveType(elem.typeSymbol, config))
+    
+    for (elem <- config.elems.valuesIterator) {      
+      elem.typeSymbol match {
         case symbol: BuiltInSimpleTypeSymbol =>
-        case symbol: ComplexTypeSymbol =>
-          if (!config.types.contains(symbol.name))
-            throw new Exception("SchemaDecl: type not found " + elemPair._1 + ": " + symbol.name)
-          config.types(symbol.name) match {
-            case decl: ComplexTypeDecl => symbol.decl = decl
-            case _ => throw new Exception("SchemaDecl: type does not match ")
-          } // match
-          
-        case symbol: SimpleTypeSymbol => 
-          if (!config.types.contains(symbol.name))
-            throw new Exception("SchemaDecl: type not found " + elemPair._1 + ": " + symbol.name)
-          config.types(symbol.name) match {
-            case decl: SimpleTypeDecl => symbol.decl = decl
-            case _ => throw new Exception("SchemaDecl: type does not match ")
-          } // match
-          
+        
         case symbol: ReferenceTypeSymbol =>
           if (!config.types.contains(symbol.name))
-            throw new Exception("SchemaDecl: type not found " + elemPair._1 + ": " + symbol.name)
-          symbol.decl = config.types(symbol.name)
-      } // match         
+            throw new Exception("SchemaDecl: type not found " + elem.name + ": " + symbol.name)
+          if (symbol.decl == null)
+            throw new Exception("SchemaDecl: type was found, but not mapped!!! " + elem.name + ": " + symbol.name)
+      } // match    
     } // for
-      
-    for (attrPair <- config.attrs) {
-      val typeSymbol = attrPair._2.typeSymbol
-      typeSymbol match {
-        case symbol: BuiltInSimpleTypeSymbol => 
-        case symbol: SimpleTypeSymbol        =>
+         
+    for (attr <- config.attrs.valuesIterator) {
+      attr.typeSymbol match {
+        case symbol: BuiltInSimpleTypeSymbol =>
+        
+        case symbol: ReferenceTypeSymbol =>
           if (!config.types.contains(symbol.name))
-            throw new Exception("SchemaDecl: type not found " + attrPair._1 + ": " + symbol.name)
+            throw new Exception("SchemaDecl: type not found " + attr.name + ": " + symbol.name)
           config.types(symbol.name) match {
             case decl: SimpleTypeDecl => symbol.decl = decl
             case _ => throw new Exception("SchemaDecl: type does not match ")
           } // match
       } // match    
-    } // for    
+    } // for
+    
+    for (typ <- config.types.valuesIterator) typ match {
+      case decl: SimpleTypeDecl => // do nothing
+      case ComplexTypeDecl(_, content: CompositorContentDecl, _) =>
+        // do nothing
+      
+      case ComplexTypeDecl(_, SimpleContentDecl(restriction: RestrictionDecl), _) =>
+        resolveType(restriction.base, config)
+      
+      case ComplexTypeDecl(_, SimpleContentDecl(extension: ExtensionDecl), _) =>
+        resolveType(extension.base, config)
+      
+      case ComplexTypeDecl(_, ComplexContentDecl(restriction: RestrictionDecl), _) =>
+        resolveType(restriction.base, config)
+      
+      case ComplexTypeDecl(_, ComplexContentDecl(extension: ExtensionDecl), _) =>
+        resolveType(extension.base, config)
+    }
   }
+  
+  def resolveType(value: XsTypeSymbol, config: ParserConfig): Unit = value match {
+    case symbol: BuiltInSimpleTypeSymbol =>
+      
+    case symbol: ReferenceTypeSymbol =>
+      if (!config.types.contains(symbol.name))
+        throw new Exception("SchemaDecl: type not found: " + symbol.name)
+      symbol.decl = config.types(symbol.name)
+  } // match
 
 }
-
 
 case class AnnotationDecl() extends Decl
 
@@ -124,10 +139,12 @@ object ProhibitedUse extends AttributeUse
 object RequiredUse extends AttributeUse
 
 case class AttributeDecl(name: String,
-  typeSymbol: SimpleTypeSymbol,
-  defaultValue: Option[String],
-  fixedValue: Option[String],
-  use: AttributeUse) extends Decl
+    typeSymbol: XsTypeSymbol,
+    defaultValue: Option[String],
+    fixedValue: Option[String],
+    use: AttributeUse) extends Decl {
+  override def toString = "@" + name
+}
 
 object AttributeDecl {
   def fromXML(node: scala.xml.Node, config: ParserConfig) = {
@@ -143,14 +160,14 @@ object AttributeDecl {
     } else {
       val name = (node \ "@name").text
       Main.log("AttributeDelc.fromXML: " + name)
-      var typeSymbol: SimpleTypeSymbol = xsUnknown
+      var typeSymbol: XsTypeSymbol = xsUnknown
       val typeName = (node \ "@type").text
       if (typeName != "") {
-        typeSymbol = TypeSymbolParser.toSimpleTypeSymbol(typeName, config)
+        typeSymbol = TypeSymbolParser.fromString(typeName, config)
       } else {
         for (child <- node.child) child match {
           case <simpleType>{ _* }</simpleType> =>
-            typeSymbol = new SimpleTypeSymbol(SimpleTypeDecl.buildName(child))
+            typeSymbol = new ReferenceTypeSymbol(SimpleTypeDecl.buildName(child))
           case _ =>
         }
       } // if-else
@@ -209,7 +226,7 @@ object ElemDecl {
     } else {
       val name = (node \ "@name").text
       Main.log("ElemDecl.fromXML: " + name)
-      var typeSymbol: XsTypeSymbol = xsdAny
+      var typeSymbol: XsTypeSymbol = xsAny
       val typeName = (node \ "@type").text
       
       if (typeName != "") {
@@ -217,10 +234,10 @@ object ElemDecl {
       } else {
         for (child <- node.child) child match {
           case <complexType>{ _* }</complexType> =>
-            typeSymbol = new ComplexTypeSymbol(ComplexTypeDecl.buildName(child))
+            typeSymbol = new ReferenceTypeSymbol(ComplexTypeDecl.buildName(child))
 
           case <simpleType>{ _* }</simpleType> =>
-            typeSymbol = new SimpleTypeSymbol(SimpleTypeDecl.buildName(child))
+            typeSymbol = new ReferenceTypeSymbol(SimpleTypeDecl.buildName(child))
                         
           case _ =>
         }
@@ -250,6 +267,137 @@ object ElemDecl {
       Integer.MAX_VALUE
     else
       value.toInt
+}
+
+
+abstract class TypeDecl extends Decl
+
+case class ComplexTypeDecl(name: String,
+  // derivedFrom: DerivSym,
+  content: ContentDecl,
+  attributes: Array[AttributeDecl]) extends TypeDecl
+
+object ComplexTypeDecl {  
+  def fromXML(node: scala.xml.Node, config: ParserConfig) = {
+    Main.log("ComplexTypeDecl.fromXML: " + node.toString)
+    val name = buildName(node)
+    val attributes = ArrayBuilder.make[AttributeDecl]
+    var derivedFrom = Restricts(xsAny)
+    var content: ContentDecl = CompositorContentDecl(SequenceDecl(Nil))
+    
+    for (child <- node.child) child match {
+      case <group>{ _* }</group> =>
+        throw new Exception("Unsupported content type: " + child.toString)
+      case <all>{ _* }</all> =>
+        content = CompositorContentDecl(AllDecl.fromXML(child, config))
+      case <choice>{ _* }</choice> =>
+        content = CompositorContentDecl(ChoiceDecl.fromXML(child, config))
+      case <sequence>{ _* }</sequence> =>
+        content = CompositorContentDecl(SequenceDecl.fromXML(child, config))
+      case <attribute>{ _* }</attribute> =>
+        attributes += AttributeDecl.fromXML(child, config)
+      case <simpleContent>{ _* }</simpleContent> =>
+        content = SimpleContentDecl.fromXML(child, config)
+      case <complexContent>{ _* }</complexContent> =>
+        content = ComplexContentDecl.fromXML(child, config)
+      case _ =>
+    }
+    
+    // val contentModel = ContentModel.fromSchema(firstChild(node))
+    val typ = ComplexTypeDecl(name, content, attributes.result)
+    config.types += (typ.name -> typ) 
+    typ
+  }
+  
+  def buildName(node: scala.xml.Node) = {
+    val name = (node \ "@name").text
+    if (name != "")
+      name
+    else
+      "complexType@" + node.hashCode.toString
+  }
+  
+  def firstChild(node: scala.xml.Node) = {
+    val children = for (child <- node.child; if child.isInstanceOf[scala.xml.Elem])
+      yield child
+    if (children.length == 0) {
+      throw new Exception("there are no children: " + node.toString)
+    }
+      
+    children(0)
+  }
+}
+
+case class SimpleTypeDecl(name: String, content: ContentTypeDecl) extends TypeDecl {
+  override def toString(): String = name + "(" + content.toString + ")"
+}
+
+object SimpleTypeDecl {
+  def fromXML(node: scala.xml.Node, config: ParserConfig) = {
+    Main.log("SimpleTypeDecl.fromXML: " + node.toString)
+    
+    val name = buildName(node)
+    
+    var content: ContentTypeDecl = null
+    for (child <- node.child) child match {
+      case <restriction>{ _* }</restriction>  => content = RestrictionDecl.fromXML(child, config) 
+      case <list>{ _* }</list>                => content = ListDecl.fromXML(child, config)
+      case <union>{ _* }</union>              => content = UnionDecl.fromXML(child, config)
+      case _ =>     
+    }
+        
+    val typ = SimpleTypeDecl(name, content)
+    config.types += (typ.name -> typ) 
+    typ
+  }
+  
+  def buildName(node: scala.xml.Node) = {
+    val name = (node \ "@name").text
+    if (name != "")
+      name
+    else
+      "simpleType@" + node.hashCode.toString
+  }
+}
+
+abstract class ContentDecl extends Decl
+
+case class CompositorContentDecl(compositor: HasParticle) extends ContentDecl
+
+case class SimpleContentDecl(contentType: ContentTypeDecl) extends ContentDecl
+
+object SimpleContentDecl {
+  def fromXML(node: scala.xml.Node, config: ParserConfig) = {
+    var contentType: ContentTypeDecl = RestrictionDecl.empty
+    
+    for (child <- node.child) child match {
+      case <restriction>{ _* }</restriction> =>
+        contentType = RestrictionDecl.fromXML(child, config)
+      case <extension>{ _* }</extension> =>
+        contentType = ExtensionDecl.fromXML(child, config)
+      case _ =>
+    }
+       
+    SimpleContentDecl(contentType)
+  }
+}
+
+case class ComplexContentDecl(content: ContentTypeDecl) extends ContentDecl
+
+object ComplexContentDecl {
+  def fromXML(node: scala.xml.Node, config: ParserConfig) = {
+    var content: ContentTypeDecl = RestrictionDecl.empty
+    
+    for (child <- node.child) child match {
+      case <restriction>{ _* }</restriction> =>
+        content = RestrictionDecl.fromXML(child, config)
+      case <extension>{ _* }</extension> =>
+        content = ExtensionDecl.fromXML(child, config)
+      case _ =>
+    }
+    
+    ComplexContentDecl(content)
+  }
 }
 
 abstract class CompositorDecl extends Decl
@@ -297,68 +445,70 @@ object AllDecl {
   }
 }
 
-abstract class TypeDecl extends Decl
+abstract class ContentTypeDecl extends Decl
 
-case class ComplexTypeDecl(name: String,
-  derivedFrom: DerivSym,
-  compositor: HasParticle,
-  attributes: Array[AttributeDecl]) extends TypeDecl
-
-object ComplexTypeDecl {  
-  def fromXML(node: scala.xml.Node, config: ParserConfig) = {
-    import scala.collection.mutable.ArrayBuilder
-    
-    Main.log("ComplexTypeDecl.fromXML: " + node.toString)
-    val name = buildName(node)
-    var compositor: HasParticle = null
-    val attributes = ArrayBuilder.make[AttributeDecl]
-    
-    for (child <- node.child) child match {
-      case <all>{ _* }</all>           => compositor = AllDecl.fromXML(child, config) 
-      case <choice>{ _* }</choice>     => compositor = ChoiceDecl.fromXML(child, config)
-      case <sequence>{ _* }</sequence> => compositor = SequenceDecl.fromXML(child, config)
-      case <attribute>{ _* }</attribute> => attributes += AttributeDecl.fromXML(child, config)
-      case _ =>     
-    }
-    
-    // val contentModel = ContentModel.fromSchema(firstChild(node))
-    val typ = ComplexTypeDecl(name, null, compositor, attributes.result)
-    config.types += (typ.name -> typ) 
-    typ
-  }
-  
-  def buildName(node: scala.xml.Node) = {
-    val name = (node \ "@name").text
-    if (name != "")
-      name
-    else
-      "complexType@" + node.hashCode.toString
-  }
-  
-  def firstChild(node: scala.xml.Node) = {
-    val children = for (child <- node.child; if child.isInstanceOf[scala.xml.Elem])
-      yield child
-    if (children.length == 0) {
-      throw new Exception("there are no children: " + node.toString)
-    }
-      
-    children(0)
-  }
-}
-
-abstract class SimpleTypeContent
-
-case class RestrictionDecl(base: XsTypeSymbol) extends SimpleTypeContent
+case class RestrictionDecl(base: XsTypeSymbol,
+  compositor: HasParticle) extends ContentTypeDecl
 
 object RestrictionDecl {
+  def empty =
+    RestrictionDecl(xsAny, SequenceDecl(Nil))
+  
   def fromXML(node: scala.xml.Node, config: ParserConfig) = {
     val baseName = (node \ "@base").text
     val base = TypeSymbolParser.fromString(baseName, config)
-    RestrictionDecl(base)
+    var compositor: HasParticle = SequenceDecl(Nil)
+    val attributes = ArrayBuilder.make[AttributeDecl]
+    
+    for (child <- node.child) child match {
+      case <group>{ _* }</group> =>
+        throw new Exception("Unsupported content type: " + child.toString)
+      case <all>{ _* }</all> =>
+        compositor = AllDecl.fromXML(child, config)
+      case <choice>{ _* }</choice> =>
+        compositor = ChoiceDecl.fromXML(child, config)
+      case <sequence>{ _* }</sequence> =>
+        compositor = SequenceDecl.fromXML(child, config)
+      case <attribute>{ _* }</attribute> =>
+        attributes += AttributeDecl.fromXML(child, config)
+      
+      case _ =>
+    }
+    
+    RestrictionDecl(base, compositor)
   }
 }
 
-case class ListDecl() extends SimpleTypeContent
+case class ExtensionDecl(base: XsTypeSymbol,
+  compositor: HasParticle) extends ContentTypeDecl
+
+object ExtensionDecl {
+  def fromXML(node: scala.xml.Node, config: ParserConfig) = {
+    val baseName = (node \ "@base").text
+    val base = TypeSymbolParser.fromString(baseName, config)
+    var compositor: HasParticle = SequenceDecl(Nil)
+    val attributes = ArrayBuilder.make[AttributeDecl]
+    
+    for (child <- node.child) child match {
+      case <group>{ _* }</group> =>
+        throw new Exception("Unsupported content type: " + child.toString)
+      case <all>{ _* }</all> =>
+        compositor = AllDecl.fromXML(child, config)
+      case <choice>{ _* }</choice> =>
+        compositor = ChoiceDecl.fromXML(child, config)
+      case <sequence>{ _* }</sequence> =>
+        compositor = SequenceDecl.fromXML(child, config)
+      case <attribute>{ _* }</attribute> =>
+        attributes += AttributeDecl.fromXML(child, config)
+      
+      case _ =>
+    }
+       
+    ExtensionDecl(base, compositor)
+  }  
+}
+
+case class ListDecl() extends ContentTypeDecl
 
 object ListDecl {
   def fromXML(node: scala.xml.Node, config: ParserConfig) = {
@@ -366,7 +516,7 @@ object ListDecl {
   }
 }
 
-case class UnionDecl() extends SimpleTypeContent
+case class UnionDecl() extends ContentTypeDecl
 
 object UnionDecl {
   def fromXML(node: scala.xml.Node, config: ParserConfig) = {
@@ -374,49 +524,7 @@ object UnionDecl {
   }
 }
 
-case class SimpleTypeDecl(name: String, content: SimpleTypeContent) extends TypeDecl {
-  override def toString(): String = name + "(" + content.toString + ")"
-}
-
-object SimpleTypeDecl {
-  def fromXML(node: scala.xml.Node, config: ParserConfig) = {
-    Main.log("SimpleTypeDecl.fromXML: " + node.toString)
-    
-    val name = buildName(node)
-    
-    var content: SimpleTypeContent = null
-    for (child <- node.child) child match {
-      case <restriction>{ _* }</restriction>  => content = RestrictionDecl.fromXML(child, config) 
-      case <list>{ _* }</list>                => content = ListDecl.fromXML(child, config)
-      case <union>{ _* }</union>              => content = UnionDecl.fromXML(child, config)
-      case _ =>     
-    }
-        
-    val typ = SimpleTypeDecl(name, content)
-    config.types += (typ.name -> typ) 
-    typ
-  }
-  
-  def buildName(node: scala.xml.Node) = {
-    val name = (node \ "@name").text
-    if (name != "")
-      name
-    else
-      "simpleType@" + node.hashCode.toString
-  }
-}
-
-object TypeSymbolParser {
-  def toSimpleTypeSymbol(name: String, config: ParserConfig): SimpleTypeSymbol = {
-    val xsType = XsTypeSymbol.toTypeSymbol(name.replaceFirst(config.xsPrefix, ""))
-    if (xsType != xsUnknown) {
-      xsType
-    } else {
-      val n = name.replaceFirst(config.myPrefix, "")
-      new SimpleTypeSymbol(n)
-    }
-  }
-  
+object TypeSymbolParser {  
   def fromString(name: String, config: ParserConfig): XsTypeSymbol = {
     val xsType = XsTypeSymbol.toTypeSymbol(name.replaceFirst(config.xsPrefix, ""))
     if (xsType != xsUnknown) {

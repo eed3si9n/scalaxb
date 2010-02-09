@@ -53,15 +53,15 @@
       <arg value="xsd"/>
       <arg value="-d"/><arg value="${test.dir}"/>
       <arg value="-p"/><arg value="purchaseorder"/>
-      <arg value="${basedir}/tests/po.xsd"/>
-      <arg value="po"/>
+      <arg value="${basedir}/tests/ipo.xsd"/>
+      <arg value="ipo"/>
     </schema2src>
     
     <copy file="${basedir}/tests/poTest.scala" tofile="${test.dir}/poTest.scala"/>
         
     <scalac srcdir="${test.dir}" destdir="${test.dir}"
             classpath="${scala-library.jar}" deprecation="yes">
-      <include name="po.scala"/>
+      <include name="ipo.scala"/>
       <include name="poTest.scala"/>
     </scalac>
     

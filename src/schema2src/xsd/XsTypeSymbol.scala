@@ -10,21 +10,27 @@ abstract class XsTypeSymbol(val name: String) extends xml.TypeSymbol {
   }  
 }
 
-object xsdAny extends XsTypeSymbol("any") {}
+object xsAny extends XsTypeSymbol("DataModel") {}
 
 class ReferenceTypeSymbol(name: String) extends XsTypeSymbol(name) {
   var decl: TypeDecl = null
 }
 
+object ReferenceTypeSymbol {
+  def unapply(value: ReferenceTypeSymbol): Option[TypeDecl] = Some(value.decl)
+}
+
+/*
 class SimpleTypeSymbol(name: String) extends XsTypeSymbol(name) {
   var decl: SimpleTypeDecl = null
 }
 
-class BuiltInSimpleTypeSymbol(name: String) extends SimpleTypeSymbol(name)
-
 class ComplexTypeSymbol(name: String) extends XsTypeSymbol(name) {
   var decl: ComplexTypeDecl = null
 }
+*/
+
+class BuiltInSimpleTypeSymbol(name: String) extends XsTypeSymbol(name)
 
 abstract class DerivSym
 case class Extends(sym: XsTypeSymbol) extends DerivSym

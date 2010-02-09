@@ -47,7 +47,9 @@ object ContentModel extends WordExp  {
   }
 }
 
+/*
 sealed abstract class ContentModel ;
 case class ELEMENTS(r:ContentModel.RegExp) extends ContentModel ;
 case class MIXED(r:ContentModel.RegExp) extends ContentModel ;
 case object SimpleContent extends ContentModel ;
+*/

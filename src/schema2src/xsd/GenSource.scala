@@ -97,8 +97,7 @@ object Helper {{
     val paramList = list.map(buildParam(_))
     val argList = list.map(buildArg(_))
     return <source>
-case class {name}(
-  {paramList.mkString("," + newline + indent(1))}) extends DataModel {{
+case class {name}({paramList.mkString("," + newline + indent(1))}) extends DataModel {{
 }}
 
 object {name} {{
@@ -107,7 +106,7 @@ object {name} {{
 }}
 </source>    
   }
-  
+    
   def buildParam(decl: Decl): String = decl match {
     case elem: ElemDecl => buildParam(elem)
     case attr: AttributeDecl => buildParam(attr)
@@ -265,7 +264,6 @@ object {name} {{
   def flattenContent(content: ContentDecl): List[ElemDecl] = content match {
     case simple: SimpleContentDecl => Nil
     case complex: ComplexContentDecl => flattenComplexContent(complex)
-    case compositor: CompositorContentDecl => flattenElements(compositor.compositor)
   }
   
   def flattenComplexContent(content: ComplexContentDecl): List[ElemDecl] = content.content match {
@@ -273,13 +271,22 @@ object {name} {{
     case RestrictionDecl(ReferenceTypeSymbol(base: SimpleTypeDecl), _, _) => Nil
     case RestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
       flattenContent(base.content)        
-    
+    case res@RestrictionDecl(xsAny, _, _) =>
+      flattenElements(res.compositor)
+      
     case ExtensionDecl(symbol: BuiltInSimpleTypeSymbol, _, _) => Nil
     case ExtensionDecl(ReferenceTypeSymbol(base: SimpleTypeDecl), _, _) => Nil
     case ext@ExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
       flattenContent(base.content) ::: flattenElements(ext.compositor)
-    
+    case ext@ExtensionDecl(xsAny, _, _) =>
+      flattenElements(ext.compositor)
+        
     case _ => Nil
+  }
+  
+  def flattenElements(compositor: Option[HasParticle]): List[ElemDecl] = compositor match {
+    case None => Nil
+    case Some(c) => flattenElements(c)
   }
   
   def flattenElements(compositor: HasParticle): List[ElemDecl] = {
@@ -299,7 +306,6 @@ object {name} {{
   def flattenAttributes(decl: ComplexTypeDecl): List[AttributeDecl] = decl.content match {
     case simple: SimpleContentDecl => flattenAttributes(simple.content)
     case complex: ComplexContentDecl => flattenAttributes(complex.content)
-    case compositor: CompositorContentDecl => decl.attributes
   }
   
   def flattenAttributes(content: ContentTypeDecl): List[AttributeDecl] = content match {
@@ -307,10 +313,13 @@ object {name} {{
     case RestrictionDecl(ReferenceTypeSymbol(base: SimpleTypeDecl), _, attr) => attr
     case RestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, attr) => 
       attr ::: flattenAttributes(base)
+    case RestrictionDecl(xsAny, _, attr) => attr
+    
     case ExtensionDecl(symbol: BuiltInSimpleTypeSymbol, _, attr) => attr
     case ExtensionDecl(ReferenceTypeSymbol(base: SimpleTypeDecl), _, attr) => attr
     case ExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, attr) =>
       attr ::: flattenAttributes(base)
+    case ExtensionDecl(xsAny, _, attr) => attr
     
     case _ => Nil
   }

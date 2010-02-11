@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- $Id: build.xml 10844 2007-04-26 13:32:46Z michelou $ -->
 
-<project name="schema2src" default="rebuild">
+<project name="schema2src" default="build">
 
   <property file="build.properties"/>
   <property name="scala.home" value="${user.home}/sbaz"/>

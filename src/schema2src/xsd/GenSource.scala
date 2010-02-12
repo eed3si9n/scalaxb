@@ -15,6 +15,7 @@ class GenSource(conf: Driver.XsdConfig, schema: (Map[String, ElemDecl], Map[Stri
   val elems = schema._1
   val types = schema._2
   val newline = System.getProperty("line.separator")
+  val defaultSuperName = "DataModel"
 
   def run {
     import scala.collection.mutable
@@ -25,6 +26,11 @@ class GenSource(conf: Driver.XsdConfig, schema: (Map[String, ElemDecl], Map[Stri
     
     myprintAll(makeParentClass.child)
     
+    for (typePair <- types;
+        if typePair._2.isInstanceOf[ComplexTypeDecl];
+        if !typePair._1.contains("@"))
+      myprintAll(makeType(typePair._2.asInstanceOf[ComplexTypeDecl]).child)
+      
     for (elem <- elems.valuesIterator;
         val typeSymbol = elem.typeSymbol;
         if typeSymbol.name.contains("@");
@@ -32,72 +38,31 @@ class GenSource(conf: Driver.XsdConfig, schema: (Map[String, ElemDecl], Map[Stri
         val ref = typeSymbol.asInstanceOf[ReferenceTypeSymbol];
         if ref.decl.isInstanceOf[ComplexTypeDecl])
       myprintAll(makeElement(elem).child)
-    
-    for (typePair <- types;
-        if typePair._2.isInstanceOf[ComplexTypeDecl];
-        if !typePair._1.contains("@"))
-      myprintAll(makeType(typePair._2.asInstanceOf[ComplexTypeDecl]).child)
-      
+          
     myprintAll(makeHelperObject.child)
   }
   
-  def makePackageName = {
-    <source>package {conf.packageName}
-</source>
+  def makeElement(elem: ElemDecl): scala.xml.Node = elem.typeSymbol match {
+    case ReferenceTypeSymbol(decl: ComplexTypeDecl)
+      => makeCaseClassWithType(makeTypeName(elem.name), decl)
+    case _ => throw new Exception("GenSource: Unsupported element " + elem.toString)
   }
   
-  def makeParentClass = {
-    <source>
-abstract class DataModel
-</source>    
-  }
-  
-  def makeHelperObject = {
-    <source>
-class Calendar extends java.util.GregorianCalendar {{
-  override def toString: String = Helper.toString(this)
-}}
-
-object Calendar {{
-  def apply(value: String): Calendar = Helper.toCalendar(value)
-  def unapply(value: Calendar): Option[String] = Some(Helper.toString(value))
-}}
-
-object Helper {{
-  lazy val typeFactory = javax.xml.datatype.DatatypeFactory.newInstance()
-  
-  def toCalendar(value: String) = {{
-    val gregorian = typeFactory.newXMLGregorianCalendar(value).toGregorianCalendar
-    val cal = new Calendar()
+  def makeType(decl: ComplexTypeDecl): scala.xml.Node =
+    makeCaseClassWithType(makeTypeName(decl.name), decl)
     
-    for (i &lt;- 0 to java.util.Calendar.FIELD_COUNT - 1)
-      if (gregorian.isSet(i))
-        cal.set(i, gregorian.get(i))
-    cal
-  }}
-  
-  def toString(value: Calendar) = {{
-    val xmlGregorian = typeFactory.newXMLGregorianCalendar(value)
-    xmlGregorian.toString
-  }}
-  
-  def toDuration(value: String) =
-    typeFactory.newDuration(value)
-}}
-</source>    
-  }
-  
-  def indent(indent: Int) = "  " * indent
-  
-  def makeCaseClassWithType(name: String, complexTypeDecl: ComplexTypeDecl): scala.xml.Node = {
+  def makeCaseClassWithType(name: String, decl: ComplexTypeDecl): scala.xml.Node = {
     Main.log("GenSource: emitting " + name)
     
-    val childElements = flattenContent(complexTypeDecl.content)
-    val list = List.concat[Decl](childElements, flattenAttributes(complexTypeDecl))
+    val childElements = flattenContent(decl.content)
+    val list = List.concat[Decl](childElements, flattenAttributes(decl))
     val paramList = list.map(buildParam(_))
     val argList = list.map(buildArg(_))
+    val superInit = buildSuperInit(decl.content.content)
+    
     return <source>
-case class {name}({paramList.mkString("," + newline + indent(1))}) extends DataModel {{
+case class {name}({
+  paramList.mkString("," + newline + indent(1))}) extends {superInit} {{
 }}
 
 object {name} {{
@@ -105,6 +70,12 @@ object {name} {{
     {name}({argList.mkString("," + newline + indent(3))}) 
 }}
 </source>    
+  }
+  
+  def buildSuperInit(content: ContentTypeDecl): String = content match {
+    //case ExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
+    //  makeTypeName(base.name)  
+    case _ => defaultSuperName
   }
     
   def buildParam(decl: Decl): String = decl match {
@@ -188,12 +159,10 @@ object {name} {{
   def buildValueCode(decl: SimpleTypeDecl, nodeName: String,
       defaultValue: Option[String], fixedValue: Option[String],
       minOccurs: Int, maxOccurs: Int): String = decl.content match {  
-    case restriction: RestrictionDecl =>
-      restriction.base match {
-        case builtIn: BuiltInSimpleTypeSymbol =>
-          buildValueCode(builtIn, nodeName, defaultValue, fixedValue, minOccurs, maxOccurs)
-        case _ => throw new Exception("GenSource: Unsupported type " + restriction.base.toString) 
-      }
+    
+    case SimpTypRestrictionDecl(base: BuiltInSimpleTypeSymbol) =>
+      buildValueCode(base, nodeName, defaultValue, fixedValue, minOccurs, maxOccurs)
+    
     case _ => throw new Exception("GenSource: Unsupported content " + decl.content.toString)    
   }
     
@@ -246,7 +215,8 @@ object {name} {{
   def quote(value: String) = "\"" + value + "\""
   
   def buildTypeName(content: ContentTypeDecl): String = content match {
-    case restriction: RestrictionDecl => restriction.base.name
+    case SimpTypRestrictionDecl(base: BuiltInSimpleTypeSymbol) => base.name
+    
     case _ => throw new Exception("GenSource: Unsupported content " + content.toString)
   }
   
@@ -261,24 +231,24 @@ object {name} {{
     case _ => throw new Exception("GenSource: Invalid type " + typeSymbol.toString + " in " + elemName)    
   }
     
-  def flattenContent(content: ContentDecl): List[ElemDecl] = content match {
+  def flattenContent(content: HasContent): List[ElemDecl] = content match {
     case simple: SimpleContentDecl => Nil
     case complex: ComplexContentDecl => flattenComplexContent(complex)
   }
   
   def flattenComplexContent(content: ComplexContentDecl): List[ElemDecl] = content.content match {
-    case RestrictionDecl(symbol: BuiltInSimpleTypeSymbol, _, _) => Nil
-    case RestrictionDecl(ReferenceTypeSymbol(base: SimpleTypeDecl), _, _) => Nil
-    case RestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
+    case CompContRestrictionDecl(symbol: BuiltInSimpleTypeSymbol, _, _) => Nil
+    case CompContRestrictionDecl(ReferenceTypeSymbol(base: SimpleTypeDecl), _, _) => Nil
+    case CompContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
       flattenContent(base.content)        
-    case res@RestrictionDecl(xsAny, _, _) =>
+    case res@CompContRestrictionDecl(xsAny, _, _) =>
       flattenElements(res.compositor)
       
-    case ExtensionDecl(symbol: BuiltInSimpleTypeSymbol, _, _) => Nil
-    case ExtensionDecl(ReferenceTypeSymbol(base: SimpleTypeDecl), _, _) => Nil
-    case ext@ExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
+    case CompContExtensionDecl(symbol: BuiltInSimpleTypeSymbol, _, _) => Nil
+    case CompContExtensionDecl(ReferenceTypeSymbol(base: SimpleTypeDecl), _, _) => Nil
+    case ext@CompContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
       flattenContent(base.content) ::: flattenElements(ext.compositor)
-    case ext@ExtensionDecl(xsAny, _, _) =>
+    case ext@CompContExtensionDecl(xsAny, _, _) =>
       flattenElements(ext.compositor)
         
     case _ => Nil
@@ -309,17 +279,17 @@ object {name} {{
   }
   
   def flattenAttributes(content: ContentTypeDecl): List[AttributeDecl] = content match {
-    case RestrictionDecl(symbol: BuiltInSimpleTypeSymbol, _, attr) => attr
-    case RestrictionDecl(ReferenceTypeSymbol(base: SimpleTypeDecl), _, attr) => attr
-    case RestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, attr) => 
+    case CompContRestrictionDecl(symbol: BuiltInSimpleTypeSymbol, _, attr) => attr
+    case CompContRestrictionDecl(ReferenceTypeSymbol(base: SimpleTypeDecl), _, attr) => attr
+    case CompContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, attr) => 
       attr ::: flattenAttributes(base)
-    case RestrictionDecl(xsAny, _, attr) => attr
+    case CompContRestrictionDecl(xsAny, _, attr) => attr
     
-    case ExtensionDecl(symbol: BuiltInSimpleTypeSymbol, _, attr) => attr
-    case ExtensionDecl(ReferenceTypeSymbol(base: SimpleTypeDecl), _, attr) => attr
-    case ExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, attr) =>
+    case CompContExtensionDecl(symbol: BuiltInSimpleTypeSymbol, _, attr) => attr
+    case CompContExtensionDecl(ReferenceTypeSymbol(base: SimpleTypeDecl), _, attr) => attr
+    case CompContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, attr) =>
       attr ::: flattenAttributes(base)
-    case ExtensionDecl(xsAny, _, attr) => attr
+    case CompContExtensionDecl(xsAny, _, attr) => attr
     
     case _ => Nil
   }
@@ -327,16 +297,7 @@ object {name} {{
   def toOptional(that: ElemDecl) =
     ElemDecl(that.name, that.typeSymbol, that.defaultValue, that.fixedValue,
       0, that.maxOccurs)
-  
-  def makeElement(elem: ElemDecl): scala.xml.Node = elem.typeSymbol match {
-    case ReferenceTypeSymbol(decl: ComplexTypeDecl)
-      => makeCaseClassWithType(makeTypeName(elem.name), decl)
-    case _ => throw new Exception("GenSource: Unsupported element " + elem.toString)
-  }
-  
-  def makeType(decl: ComplexTypeDecl): scala.xml.Node =
-    makeCaseClassWithType(makeTypeName(decl.name), decl)
-    
+      
   def makeTypeName(name: String) =
     if (name.contains("."))
       name
@@ -357,4 +318,52 @@ object {name} {{
     case _                => Main.log("error in xsd:run: encountered "
       + n.getClass() + " " + n.toString)
   }
+  
+  def makePackageName = {
+    <source>package {conf.packageName}
+</source>
+  }
+  
+  def makeParentClass = {
+    <source>
+abstract class {defaultSuperName}
+</source>    
+  }
+  
+  def makeHelperObject = {
+    <source>
+class Calendar extends java.util.GregorianCalendar {{
+  override def toString: String = Helper.toString(this)
+}}
+
+object Calendar {{
+  def apply(value: String): Calendar = Helper.toCalendar(value)
+  def unapply(value: Calendar): Option[String] = Some(Helper.toString(value))
+}}
+
+object Helper {{
+  lazy val typeFactory = javax.xml.datatype.DatatypeFactory.newInstance()
+
+  def toCalendar(value: String) = {{
+    val gregorian = typeFactory.newXMLGregorianCalendar(value).toGregorianCalendar
+    val cal = new Calendar()
+
+    for (i &lt;- 0 to java.util.Calendar.FIELD_COUNT - 1)
+      if (gregorian.isSet(i))
+        cal.set(i, gregorian.get(i))
+    cal
+  }}
+
+  def toString(value: Calendar) = {{
+    val xmlGregorian = typeFactory.newXMLGregorianCalendar(value)
+    xmlGregorian.toString
+  }}
+
+  def toDuration(value: String) =
+    typeFactory.newDuration(value)
+}}
+</source>    
+  }
+
+  def indent(indent: Int) = "  " * indent
 }

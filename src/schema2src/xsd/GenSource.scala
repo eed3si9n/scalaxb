@@ -7,6 +7,7 @@ package schema2src.xsd
 import schema2src._
 // import scala.xml.xsd.{ ElemDecl, TypeDecl, XsTypeSymbol }
 import scala.collection.Map
+import scala.collection.mutable
 import scala.xml._
 
 class GenSource(conf: Driver.XsdConfig, schema: (Map[String, ElemDecl], Map[String, TypeDecl])) extends ScalaNames {
@@ -16,7 +17,8 @@ class GenSource(conf: Driver.XsdConfig, schema: (Map[String, ElemDecl], Map[Stri
   val types = schema._2
   val newline = System.getProperty("line.separator")
   val defaultSuperName = "DataModel"
-
+  val baseToSubs = mutable.Map.empty[ComplexTypeDecl, List[ComplexTypeDecl]]
+  
   def run {
     import scala.collection.mutable
     Main.log("xsd: GenSource.run")
@@ -26,11 +28,33 @@ class GenSource(conf: Driver.XsdConfig, schema: (Map[String, ElemDecl], Map[Stri
     
     myprintAll(makeParentClass.child)
     
-    for (typePair <- types;
+    val namedComplexTypes = for (typePair <- types;
         if typePair._2.isInstanceOf[ComplexTypeDecl];
         if !typePair._1.contains("@"))
-      myprintAll(makeType(typePair._2.asInstanceOf[ComplexTypeDecl]).child)
-      
+      yield typePair._2.asInstanceOf[ComplexTypeDecl]
+    
+    for (typ <- namedComplexTypes)  typ.content.content match {
+      case CompContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
+        associateSubType(typ, base)
+      case CompContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
+        associateSubType(typ, base)
+      case SimpContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _) =>
+        associateSubType(typ, base)
+      case SimpContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _) =>
+        associateSubType(typ, base)
+      case _ =>
+    }
+    
+    for (base <- baseToSubs.keysIterator)
+      myprintAll(makeSuperType(base).child)
+    
+    for (base <- baseToSubs.keysIterator)
+      myprintAll(makeTrait(base).child)
+        
+    for (typ <- namedComplexTypes)
+      if (!baseToSubs.keysIterator.contains(typ))
+        myprintAll(makeType(typ).child)
+        
     for (elem <- elems.valuesIterator;
         val typeSymbol = elem.typeSymbol;
         if typeSymbol.name.contains("@");
@@ -42,27 +66,97 @@ class GenSource(conf: Driver.XsdConfig, schema: (Map[String, ElemDecl], Map[Stri
     myprintAll(makeHelperObject.child)
   }
   
+  def associateSubType(subType: ComplexTypeDecl, base: ComplexTypeDecl) {
+    if (baseToSubs.contains(base)) {
+      baseToSubs(base) = subType :: baseToSubs(base)
+    } else {
+      baseToSubs(base) = subType :: Nil
+    } // if-else
+  }
+  
+  def buildSuperName(content: ContentTypeDecl): String = content match {
+    case CompContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
+      makeTypeName(base.name)  
+    case _ => defaultSuperName
+  }
+  
   def makeElement(elem: ElemDecl): scala.xml.Node = elem.typeSymbol match {
     case ReferenceTypeSymbol(decl: ComplexTypeDecl)
-      => makeCaseClassWithType(makeTypeName(elem.name), decl)
+      => makeCaseClassWithType(makeTypeName(elem.name),
+        buildSuperName(decl.content.content), decl)
     case _ => throw new Exception("GenSource: Unsupported element " + elem.toString)
   }
   
-  def makeType(decl: ComplexTypeDecl): scala.xml.Node =
-    makeCaseClassWithType(makeTypeName(decl.name), decl)
+  def makeTrait(decl: ComplexTypeDecl): scala.xml.Node =
+    makeTrait(makeTypeName(decl.name), decl)
     
-  def makeCaseClassWithType(name: String, decl: ComplexTypeDecl): scala.xml.Node = {
+  def makeTrait(name: String, decl: ComplexTypeDecl): scala.xml.Node = {
+    Main.log("GenSource: emitting " + name)
+
+    val childElements = flattenContent(decl.content)
+    val list = List.concat[Decl](childElements, flattenAttributes(decl))
+    val paramList = list.map(buildParam(_))
+    val argList = list.map(buildArg(_))
+    val superInit = buildSuperInit(decl.content.content)
+    val defaultType = "Default" + name
+
+    return <source>
+trait {name} {{
+  {
+  val vals = for (param <- paramList)
+    yield  "val " + param + ";"
+  vals.mkString(newline + indent(1))}
+}}
+
+object {name} {{
+  def fromXML(node: scala.xml.Node) = {{
+    val typeName = (node \ "@{{http://www.w3.org/2001/XMLSchema-instance}}type").text    
+    val withoutNS = typeName.drop(typeName.indexOf(":") + 1)
+    
+    withoutNS match {{
+      {
+        val cases = for (sub <- baseToSubs(decl))
+          yield makeCaseEntry(sub)
+        cases.mkString(newline + indent(3))        
+      }
+      case _ => {defaultType}.fromXML(node)
+    }}
+  }}
+}}
+</source>    
+  }
+  
+  def makeCaseEntry(decl: ComplexTypeDecl) = {
+    val name = makeTypeName(decl.name)
+    "case " + quote(name) + " => " + name + ".fromXML(node)"
+  }
+
+  def makeSuperType(decl: ComplexTypeDecl): scala.xml.Node =
+    makeCaseClassWithType("Default" + makeTypeName(decl.name),
+      makeTypeName(decl.name), decl)
+      
+  def makeType(decl: ComplexTypeDecl): scala.xml.Node =
+    makeCaseClassWithType(makeTypeName(decl.name), 
+      buildSuperInit(decl.content.content), decl)
+  
+  def buildSuperInit(content: ContentTypeDecl): String = content match {
+    case CompContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
+      makeTypeName(base.name)  
+    case _ => defaultSuperName
+  }
+    
+  def makeCaseClassWithType(name: String, superName: String,
+      decl: ComplexTypeDecl): scala.xml.Node = {
     Main.log("GenSource: emitting " + name)
     
     val childElements = flattenContent(decl.content)
     val list = List.concat[Decl](childElements, flattenAttributes(decl))
     val paramList = list.map(buildParam(_))
     val argList = list.map(buildArg(_))
-    val superInit = buildSuperInit(decl.content.content)
     
     return <source>
 case class {name}({
-  paramList.mkString("," + newline + indent(1))}) extends {superInit} {{
+  paramList.mkString("," + newline + indent(1))}) extends {superName} {{
 }}
 
 object {name} {{
@@ -71,13 +165,7 @@ object {name} {{
 }}
 </source>    
   }
-  
-  def buildSuperInit(content: ContentTypeDecl): String = content match {
-    //case ExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
-    //  makeTypeName(base.name)  
-    case _ => defaultSuperName
-  }
-    
+      
   def buildParam(decl: Decl): String = decl match {
     case elem: ElemDecl => buildParam(elem)
     case attr: AttributeDecl => buildParam(attr)

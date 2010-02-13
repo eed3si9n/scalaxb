@@ -8,7 +8,6 @@ import scala.xml.{TypeSymbol}
 import scala.collection.{Map}
 import schema2src.{Main}
 import scala.collection.mutable
-import scala.collection.mutable.ArrayBuilder
 import scala.collection.immutable
 
 abstract class Decl

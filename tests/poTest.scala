@@ -8,6 +8,7 @@ object XsdTest {
   def main(args: Array[String]) = {
     testUSAddress
     testItem
+    testPurchaseOrder
   }
   
   def testUSAddress {
@@ -54,5 +55,47 @@ object XsdTest {
     }
     
     println(item.toString)
+  }
+  
+  def testPurchaseOrder {
+    val subject = <purchaseOrder
+        xmlns="http://www.example.com/IPO"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:ipo="http://www.example.com/IPO"
+        orderDate="1999-12-01Z">
+      <shipTo exportCode="1" xsi:type="ipo:UKAddress">
+        <name>Helen Zoe</name>
+        <street>47 Eden Street</street>
+        <city>Cambridge</city>
+        <postcode>CB1 1JR</postcode>
+      </shipTo>
+      <billTo xsi:type="ipo:USAddress">
+        <name>Foo</name>
+        <street>1537 Paper Street</street>
+        <city>Wilmington</city>
+        <state>DE</state>
+        <zip>19808</zip>   
+      </billTo>
+      <items>
+        <item partNum="639-OS">
+          <productName>Olive Soap</productName>
+          <quantity>1</quantity>
+          <USPrice>4.00</USPrice>
+          <shipDate>2010-02-06Z</shipDate>
+        </item>
+      </items>
+    </purchaseOrder>
+    
+    val purchaseOrder = PurchaseOrderType.fromXML(subject)
+    purchaseOrder match {
+      case PurchaseOrderType(
+        shipTo: UKAddress,
+        billTo: USAddress,
+        None,
+        Items(_),
+        Some(Calendar("1999-12-01T00:00:00.000Z"))) =>
+      case _ => throw new Exception("match failed: " + purchaseOrder.toString)
+    }    
+    println(purchaseOrder.toString)  
   }
 }

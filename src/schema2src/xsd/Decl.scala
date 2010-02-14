@@ -309,14 +309,14 @@ object SimpleTypeDecl {
 /** complex types may have element children and attributes.
  */
 case class ComplexTypeDecl(name: String,
-  content: HasContent,
+  content: HasComplexTypeContent,
   attributes: List[AttributeDecl]) extends TypeDecl
 
 object ComplexTypeDecl {  
   def fromXML(node: scala.xml.Node, config: ParserConfig) = {
     Main.log("ComplexTypeDecl.fromXML: " + node.toString)
     val name = buildName(node)
-    var content: HasContent = ComplexContentDecl.empty
+    var content: HasComplexTypeContent = ComplexContentDecl.empty
     
     val attributes = (node \ "attribute").toList.map(
       AttributeDecl.fromXML(_, config))
@@ -365,17 +365,21 @@ object ComplexTypeDecl {
   }
 }
 
+trait HasComplexTypeContent {
+  val content: ComplexTypeContent
+}
+
 trait HasContent {
   val content: ContentTypeDecl
 }
 
 /** complex types with simple content only allow character content.
  */
-case class SimpleContentDecl(content: ContentTypeDecl) extends Decl with HasContent
+case class SimpleContentDecl(content: ComplexTypeContent) extends Decl with HasComplexTypeContent
 
 object SimpleContentDecl {
   def fromXML(node: scala.xml.Node, config: ParserConfig) = {
-    var content: ContentTypeDecl = null
+    var content: ComplexTypeContent = null
     
     for (child <- node.child) child match {
       case <restriction>{ _* }</restriction> =>
@@ -391,7 +395,7 @@ object SimpleContentDecl {
 
 /** only complex types with complex content allow child elements
  */
-case class ComplexContentDecl(content: ContentTypeDecl) extends Decl with HasContent
+case class ComplexContentDecl(content: ComplexTypeContent) extends Decl with HasComplexTypeContent
 
 object ComplexContentDecl {
   def empty =
@@ -401,7 +405,7 @@ object ComplexContentDecl {
     ComplexContentDecl(CompContRestrictionDecl.fromCompositor(compositor, attributes))
   
   def fromXML(node: scala.xml.Node, config: ParserConfig) = {
-    var content: ContentTypeDecl = CompContRestrictionDecl.empty
+    var content: ComplexTypeContent = CompContRestrictionDecl.empty
     
     for (child <- node.child) child match {
       case <restriction>{ _* }</restriction> =>
@@ -428,6 +432,8 @@ object CompositorDecl {
     case <element>{ _* }</element>   => ElemDecl.fromXML(node, config)
     case <choice>{ _* }</choice>     => ChoiceDecl.fromXML(node, config)
     case <sequence>{ _* }</sequence> => SequenceDecl.fromXML(node, config)
+    case <all>{ _* }</all>           => AllDecl.fromXML(node, config)
+    
     case _ => throw new Exception("xsd: Unspported content type " + node.label)   
   }
 }

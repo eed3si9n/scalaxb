@@ -18,6 +18,8 @@ class GenSource(conf: Driver.XsdConfig, schema: (Map[String, ElemDecl], Map[Stri
   val newline = System.getProperty("line.separator")
   val defaultSuperName = "DataModel"
   val baseToSubs = mutable.Map.empty[ComplexTypeDecl, List[ComplexTypeDecl]]
+  val choiceNames = mutable.Map.empty[ChoiceDecl, String]
+  val typeNames = mutable.Map.empty[ComplexTypeDecl, String]
   
   def run {
     import scala.collection.mutable
@@ -33,6 +35,15 @@ class GenSource(conf: Driver.XsdConfig, schema: (Map[String, ElemDecl], Map[Stri
         if !typePair._1.contains("@"))
       yield typePair._2.asInstanceOf[ComplexTypeDecl]
     
+    val complexElems = for (elem <- elems.valuesIterator.toList;
+        val typeSymbol = elem.typeSymbol;
+        if typeSymbol.name.contains("@");
+        if typeSymbol.isInstanceOf[ReferenceTypeSymbol];
+        val ref = typeSymbol.asInstanceOf[ReferenceTypeSymbol];
+        if ref.decl.isInstanceOf[ComplexTypeDecl];
+        val decl = ref.decl.asInstanceOf[ComplexTypeDecl])
+      yield (elem, decl) 
+      
     for (typ <- namedComplexTypes)  typ.content.content match {
       case CompContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
         associateSubType(typ, base)
@@ -45,26 +56,45 @@ class GenSource(conf: Driver.XsdConfig, schema: (Map[String, ElemDecl], Map[Stri
       case _ =>
     }
     
+    for ((elem, decl) <- complexElems)
+      typeNames(decl) = elem.name.capitalize
+    
+    for (base <- baseToSubs.keysIterator)
+      typeNames(base) = base.name.capitalize + "Type"
+
+    for (typ <- namedComplexTypes)
+      if (baseToSubs.keysIterator.contains(typ))
+        typeNames(typ) = typ.name.capitalize + "Type"
+      else
+        typeNames(typ) = makeProtectedTypeName(typ)
+              
     for (base <- baseToSubs.keysIterator)
       myprintAll(makeSuperType(base).child)
     
     for (base <- baseToSubs.keysIterator)
       myprintAll(makeTrait(base).child)
-        
+    
     for (typ <- namedComplexTypes)
       if (!baseToSubs.keysIterator.contains(typ))
         myprintAll(makeType(typ).child)
-        
-    for (elem <- elems.valuesIterator;
-        val typeSymbol = elem.typeSymbol;
-        if typeSymbol.name.contains("@");
-        if typeSymbol.isInstanceOf[ReferenceTypeSymbol];
-        val ref = typeSymbol.asInstanceOf[ReferenceTypeSymbol];
-        if ref.decl.isInstanceOf[ComplexTypeDecl])
-      myprintAll(makeElement(elem).child)
-          
+    
+    for ((elem, decl) <- complexElems)
+      myprintAll(makeCaseClassWithType(typeNames(decl),
+        buildSuperName(decl), decl).child)
+    
+    for (choice <- choiceNames.keysIterator)
+      myprintAll(makeChoiceTrait(choice).child)
+      
     myprintAll(makeHelperObject.child)
   }
+  
+  def makeSuperType(decl: ComplexTypeDecl): scala.xml.Node =
+    makeCaseClassWithType(makeTypeName(decl.name),
+      typeNames(decl), decl)
+      
+  def makeType(decl: ComplexTypeDecl): scala.xml.Node =
+    makeCaseClassWithType(typeNames(decl), 
+      buildSuperName(decl), decl)
   
   def associateSubType(subType: ComplexTypeDecl, base: ComplexTypeDecl) {
     if (baseToSubs.contains(base)) {
@@ -74,32 +104,78 @@ class GenSource(conf: Driver.XsdConfig, schema: (Map[String, ElemDecl], Map[Stri
     } // if-else
   }
   
-  def buildSuperName(content: ContentTypeDecl): String = content match {
-    case CompContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
-      makeTypeName(base.name)  
-    case _ => defaultSuperName
+  def buildSuperName(decl: ComplexTypeDecl): String = 
+    decl.content.content.base match {
+      case ReferenceTypeSymbol(base: ComplexTypeDecl) => typeNames(base)
+      case _ => makeTypeName(decl.content.content.base.name) 
+    }
+  
+  def makeProtectedTypeName(decl: ComplexTypeDecl): String =
+    if (typeNames.valuesIterator.contains(decl.name))
+      makeTypeName(decl.name) + "Type"
+    else
+      makeTypeName(decl.name)
+  
+  def makeTypeName(name: String) =
+    if (name.contains("."))
+      name
+    else
+      name.capitalize
+      
+  def buildTypeName(typeSymbol: XsTypeSymbol): String = typeSymbol match {
+    case symbol: BuiltInSimpleTypeSymbol => symbol.name
+    case ReferenceTypeSymbol(decl: SimpleTypeDecl) => buildTypeName(decl.content)    
+    case ReferenceTypeSymbol(decl: ComplexTypeDecl) => typeNames(decl)
+    case _ => throw new Exception("GenSource: Invalid type " + typeSymbol.toString)    
+  }
+     
+  def buildTypeName(content: ContentTypeDecl): String = content match {
+    case SimpTypRestrictionDecl(base: BuiltInSimpleTypeSymbol) => base.name
+
+    case _ => throw new Exception("GenSource: Unsupported content " + content.toString)
   }
   
-  def makeElement(elem: ElemDecl): scala.xml.Node = elem.typeSymbol match {
-    case ReferenceTypeSymbol(decl: ComplexTypeDecl)
-      => makeCaseClassWithType(makeTypeName(elem.name),
-        buildSuperName(decl.content.content), decl)
-    case _ => throw new Exception("GenSource: Unsupported element " + elem.toString)
-  }
-  
-  def makeTrait(decl: ComplexTypeDecl): scala.xml.Node =
-    makeTrait(makeTypeName(decl.name), decl)
+  def makeChoiceTrait(choice: ChoiceDecl): scala.xml.Node = {
+    val name = makeTypeName(choiceNames(choice))
     
-  def makeTrait(name: String, decl: ComplexTypeDecl): scala.xml.Node = {
+    def makeCaseEntry(decl: Decl) = decl match {
+      case elem: ElemDecl =>
+        val name = makeTypeName(elem.name)
+        "case <" + elem.name + ">_</" + elem.name + "> => " + name + ".fromXML(node)"
+      case _ => throw new Exception("GenSource: Unsupported compositor " + decl.toString)
+    }
+    
+    return <source>
+trait {name}
+
+object {name} {{
+  def fromXML(node: scala.xml.Node) = node match {{
+    {
+      val cases = for (particle <- choice.particles)
+        yield makeCaseEntry(particle)
+      cases.mkString(newline + indent(2))        
+    }    
+  }}
+}}
+</source>    
+  }
+      
+  def makeTrait(decl: ComplexTypeDecl): scala.xml.Node = {
+    val name = typeNames(decl)
     Main.log("GenSource: emitting " + name)
 
-    val childElements = flattenContent(decl.content)
+    val childElements = flattenElements(decl, name)
     val list = List.concat[Decl](childElements, flattenAttributes(decl))
     val paramList = list.map(buildParam(_))
     val argList = list.map(buildArg(_))
-    val superInit = buildSuperInit(decl.content.content)
-    val defaultType = "Default" + name
-
+    val superName = buildSuperName(decl)
+    val defaultType = makeTypeName(decl.name)
+    
+    def makeCaseEntry(decl: ComplexTypeDecl) = {
+      val name = makeTypeName(decl.name)
+      "case " + quote(name) + " => " + name + ".fromXML(node)"
+    }
+    
     return <source>
 trait {name} {{
   {
@@ -125,31 +201,12 @@ object {name} {{
 }}
 </source>    
   }
-  
-  def makeCaseEntry(decl: ComplexTypeDecl) = {
-    val name = makeTypeName(decl.name)
-    "case " + quote(name) + " => " + name + ".fromXML(node)"
-  }
-
-  def makeSuperType(decl: ComplexTypeDecl): scala.xml.Node =
-    makeCaseClassWithType("Default" + makeTypeName(decl.name),
-      makeTypeName(decl.name), decl)
-      
-  def makeType(decl: ComplexTypeDecl): scala.xml.Node =
-    makeCaseClassWithType(makeTypeName(decl.name), 
-      buildSuperInit(decl.content.content), decl)
-  
-  def buildSuperInit(content: ContentTypeDecl): String = content match {
-    case CompContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
-      makeTypeName(base.name)  
-    case _ => defaultSuperName
-  }
-    
+        
   def makeCaseClassWithType(name: String, superName: String,
       decl: ComplexTypeDecl): scala.xml.Node = {
     Main.log("GenSource: emitting " + name)
     
-    val childElements = flattenContent(decl.content)
+    val childElements = flattenElements(decl, name)
     val list = List.concat[Decl](childElements, flattenAttributes(decl))
     val paramList = list.map(buildParam(_))
     val argList = list.map(buildArg(_))
@@ -174,19 +231,19 @@ object {name} {{
   
   def buildParam(elem: ElemDecl): String = {
     if (elem.maxOccurs > 1) {
-      elem.name + ": List[" + buildTypeName(elem.typeSymbol, elem.name) + "]"
+      elem.name + ": List[" + buildTypeName(elem.typeSymbol) + "]"
     } else if (elem.minOccurs == 0) {
-      elem.name + ": Option[" + buildTypeName(elem.typeSymbol, elem.name) + "]"
+      elem.name + ": Option[" + buildTypeName(elem.typeSymbol) + "]"
     } else {
-      elem.name + ": " + buildTypeName(elem.typeSymbol, elem.name)
+      elem.name + ": " + buildTypeName(elem.typeSymbol)
     }    
   }
   
   def buildParam(attr: AttributeDecl): String = 
     if (toMinOccurs(attr) == 0)
-      attr.name + ": Option[" + buildTypeName(attr.typeSymbol, attr.name) + "]"
+      attr.name + ": Option[" + buildTypeName(attr.typeSymbol) + "]"
     else
-      attr.name + ": " + buildTypeName(attr.typeSymbol, attr.name)
+      attr.name + ": " + buildTypeName(attr.typeSymbol)
     
   
   def buildArg(decl: Decl): String = decl match {
@@ -209,7 +266,7 @@ object {name} {{
   }
 
   def buildArg(elem: ElemDecl, decl: ComplexTypeDecl): String = {
-    val typeName = buildTypeName(elem.typeSymbol, elem.name)
+    val typeName = buildTypeName(elem.typeSymbol)
     
     if (elem.maxOccurs > 1) {
       "(node \\ \"" + elem.name + "\").toList.map(" + typeName + ".fromXML(_))" 
@@ -301,97 +358,84 @@ object {name} {{
   }
   
   def quote(value: String) = "\"" + value + "\""
-  
-  def buildTypeName(content: ContentTypeDecl): String = content match {
-    case SimpTypRestrictionDecl(base: BuiltInSimpleTypeSymbol) => base.name
-    
-    case _ => throw new Exception("GenSource: Unsupported content " + content.toString)
-  }
-  
-  def buildTypeName(typeSymbol: XsTypeSymbol, elemName: String): String = typeSymbol match {
-    case symbol: BuiltInSimpleTypeSymbol => symbol.name
-    case ReferenceTypeSymbol(decl: SimpleTypeDecl) => buildTypeName(decl.content)    
-    case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
-      if (!decl.name.contains("@"))
-        makeTypeName(decl.name)
-      else
-        makeTypeName(elemName)
-    case _ => throw new Exception("GenSource: Invalid type " + typeSymbol.toString + " in " + elemName)    
-  }
-    
-  def flattenContent(content: HasContent): List[ElemDecl] = content match {
-    case simple: SimpleContentDecl => Nil
-    case complex: ComplexContentDecl => flattenComplexContent(complex)
-  }
-  
-  def flattenComplexContent(content: ComplexContentDecl): List[ElemDecl] = content.content match {
+      
+  def flattenElements(decl: ComplexTypeDecl, name: String): List[ElemDecl] =
+      decl.content.content match {
     case CompContRestrictionDecl(symbol: BuiltInSimpleTypeSymbol, _, _) => Nil
     case CompContRestrictionDecl(ReferenceTypeSymbol(base: SimpleTypeDecl), _, _) => Nil
     case CompContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
-      flattenContent(base.content)        
+      flattenElements(base, makeTypeName(base.name))        
     case res@CompContRestrictionDecl(xsAny, _, _) =>
-      flattenElements(res.compositor)
+      flattenElements(res.compositor, name)
       
     case CompContExtensionDecl(symbol: BuiltInSimpleTypeSymbol, _, _) => Nil
     case CompContExtensionDecl(ReferenceTypeSymbol(base: SimpleTypeDecl), _, _) => Nil
     case ext@CompContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
-      flattenContent(base.content) ::: flattenElements(ext.compositor)
+      flattenElements(base, makeTypeName(base.name)) :::
+        flattenElements(ext.compositor, name)
     case ext@CompContExtensionDecl(xsAny, _, _) =>
-      flattenElements(ext.compositor)
+      flattenElements(ext.compositor, name)
         
     case _ => Nil
   }
   
-  def flattenElements(compositor: Option[HasParticle]): List[ElemDecl] = compositor match {
+  def flattenElements(compositor: Option[HasParticle], name: String): List[ElemDecl] =
+      compositor match {
     case None => Nil
-    case Some(c) => flattenElements(c)
+    case Some(c) => flattenElements(c, name)
   }
   
-  def flattenElements(compositor: HasParticle): List[ElemDecl] = {
-    val list = for (particle <- compositor.particles)
-      yield particle match {
-        case compositor2: HasParticle   => flattenElements(compositor2)
-        case elem: ElemDecl             =>
-          compositor match {
-            case sequence: SequenceDecl => List(elem)
-            case _                      => List(toOptional(elem))
-          }
-        case _ => throw new Exception("GenSource: Invalid content model" + particle.toString)
-      }
-    list.flatten
-  }
+  def flattenElements(compositor: HasParticle, name: String): List[ElemDecl] =
+      compositor match {
+    case SequenceDecl(particles: List[Decl]) =>
+      val list = for (particle <- particles)
+        yield particle match {
+          case compositor2: HasParticle => flattenElements(compositor2, "")
+          case elem: ElemDecl           => List(elem)
+        }
+      list.flatten
     
-  def flattenAttributes(decl: ComplexTypeDecl): List[AttributeDecl] = decl.content match {
-    case simple: SimpleContentDecl => flattenAttributes(simple.content)
-    case complex: ComplexContentDecl => flattenAttributes(complex.content)
+    case AllDecl(particles: List[Decl]) =>
+      val list = for (particle <- particles)
+        yield particle match {
+          case compositor2: HasParticle => flattenElements(compositor2, "")
+          case elem: ElemDecl           => List(toOptional(elem))
+        }
+      list.flatten
+    
+    case choice: ChoiceDecl =>
+      List(buildChoiceRef(choice, name))
   }
   
-  def flattenAttributes(content: ContentTypeDecl): List[AttributeDecl] = content match {
-    case CompContRestrictionDecl(symbol: BuiltInSimpleTypeSymbol, _, attr) => attr
-    case CompContRestrictionDecl(ReferenceTypeSymbol(base: SimpleTypeDecl), _, attr) => attr
-    case CompContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, attr) => 
-      attr ::: flattenAttributes(base)
-    case CompContRestrictionDecl(xsAny, _, attr) => attr
+  def buildChoiceRef(choice: ChoiceDecl, parentName: String) = {
+    if (!choiceNames.contains(choice))
+      choiceNames(choice) = "choice" + (choiceNames.size + 1)
     
-    case CompContExtensionDecl(symbol: BuiltInSimpleTypeSymbol, _, attr) => attr
-    case CompContExtensionDecl(ReferenceTypeSymbol(base: SimpleTypeDecl), _, attr) => attr
-    case CompContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, attr) =>
-      attr ::: flattenAttributes(base)
-    case CompContExtensionDecl(xsAny, _, attr) => attr
+    val symbol = new ReferenceTypeSymbol(makeTypeName(choiceNames(choice)))
+    symbol.decl = ComplexTypeDecl(symbol.name, null, Nil)
+    //val name = if (parentName == "")
+    //  symbol.name
+    //else
+    //  parentName + "Option"
+    val name = choiceNames(choice)
     
-    case _ => Nil
+    ElemDecl(name, symbol, None, None, 1, 1)
   }
-    
+  
   def toOptional(that: ElemDecl) =
     ElemDecl(that.name, that.typeSymbol, that.defaultValue, that.fixedValue,
       0, that.maxOccurs)
+        
+  def flattenAttributes(decl: ComplexTypeDecl): List[AttributeDecl] =
+    decl.content.content.attributes ::: (decl.content.content match {
+      case CompContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, attr) => 
+        flattenAttributes(base)
+      case CompContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, attr) =>
+        flattenAttributes(base)
       
-  def makeTypeName(name: String) =
-    if (name.contains("."))
-      name
-    else
-      name.substring(0, 1).toUpperCase() + name.substring(1)
-
+      case _ => List()
+    })
+  
   def myprintAll(nodes: Seq[Node]) {
     for (node <- nodes)
       myprint(node)

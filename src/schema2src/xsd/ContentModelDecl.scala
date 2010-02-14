@@ -4,10 +4,15 @@
 
 package schema2src.xsd
 
+trait ComplexTypeContent {
+  val base: XsTypeSymbol
+  val attributes: List[AttributeDecl]
+}
+
 abstract class ContentTypeDecl extends Decl
 
 case class SimpContRestrictionDecl(base: XsTypeSymbol,
-  attributes: List[AttributeDecl]) extends ContentTypeDecl
+  attributes: List[AttributeDecl]) extends ContentTypeDecl with ComplexTypeContent
 
 object SimpContRestrictionDecl {
   def fromXML(node: scala.xml.Node, config: ParserConfig) = {
@@ -27,7 +32,7 @@ object SimpContRestrictionDecl {
 }
 
 case class SimpContExtensionDecl(base: XsTypeSymbol,
-  attributes: List[AttributeDecl]) extends ContentTypeDecl
+  attributes: List[AttributeDecl]) extends ContentTypeDecl with ComplexTypeContent
 
 object SimpContExtensionDecl {
   def fromXML(node: scala.xml.Node, config: ParserConfig) = {
@@ -47,7 +52,7 @@ object SimpContExtensionDecl {
 }
 case class CompContRestrictionDecl(base: XsTypeSymbol,
   compositor: Option[HasParticle],
-  attributes: List[AttributeDecl]) extends ContentTypeDecl
+  attributes: List[AttributeDecl]) extends ContentTypeDecl with ComplexTypeContent
   
 object CompContRestrictionDecl {
   def empty =
@@ -83,7 +88,7 @@ object CompContRestrictionDecl {
 
 case class CompContExtensionDecl(base: XsTypeSymbol,
   compositor: Option[HasParticle],
-  attributes: List[AttributeDecl]) extends ContentTypeDecl
+  attributes: List[AttributeDecl]) extends ContentTypeDecl with ComplexTypeContent
 
 object CompContExtensionDecl {
   def fromXML(node: scala.xml.Node, config: ParserConfig) = {

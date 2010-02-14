@@ -68,6 +68,23 @@
     <java classname="XsdTest"
           classpath="${test.dir}:${scala-library.jar}"
           fork="true"/>
+    
+    <!--  
+    <schema2src>
+      <arg value="xsd"/>
+      <arg value="-d"/><arg value="${test.dir}"/>
+      <arg value="-p"/><arg value="whiterabbit"/>
+      <arg value="${basedir}/tests/whiterabbit.xsd"/>
+      <arg value="whiterabbit"/>
+    </schema2src>
+    
+    <copy file="${basedir}/tests/whiterabbitTest.scala" tofile="${test.dir}/whiterabbitTest.scala"/>
+    
+    <scalac srcdir="${test.dir}" destdir="${test.dir}"
+            classpath="${scala-library.jar}" deprecation="yes">
+      <include name="whiterabbit.scala"/>
+      <include name="whiterabbitTest.scala"/>
+    </scalac>
+    -->   
   </target>
-
 </project>

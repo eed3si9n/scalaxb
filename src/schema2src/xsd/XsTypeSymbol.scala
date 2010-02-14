@@ -20,16 +20,6 @@ object ReferenceTypeSymbol {
   def unapply(value: ReferenceTypeSymbol): Option[TypeDecl] = Some(value.decl)
 }
 
-/*
-class SimpleTypeSymbol(name: String) extends XsTypeSymbol(name) {
-  var decl: SimpleTypeDecl = null
-}
-
-class ComplexTypeSymbol(name: String) extends XsTypeSymbol(name) {
-  var decl: ComplexTypeDecl = null
-}
-*/
-
 class BuiltInSimpleTypeSymbol(name: String) extends XsTypeSymbol(name)
 
 abstract class DerivSym

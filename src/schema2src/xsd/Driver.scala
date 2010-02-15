@@ -24,7 +24,7 @@ object Driver extends Module {
   // %% type members
 
   type Config = XsdConfig
-  type Schema = Pair[Map[String, ElemDecl], Map[String, TypeDecl]]
+  type Schema = SchemaDecl
 
   // %% methods
 
@@ -33,7 +33,7 @@ object Driver extends Module {
     getConfig() prepareOut ;
     Main.log("xsd: prepared output file")
     Main.log("xsd: running transform ...")
-    new GenSource( getConfig(), xsd ) run; 
+    new GenSource(getConfig(), xsd) run; 
     getConfig() finalizeOut; 
     Main.log("xsd: generating done.")
   }
@@ -48,7 +48,7 @@ object Driver extends Module {
     Main.log("xsd: parsing " + sysID)
     val schema = SchemaDecl.fromXML(scala.xml.XML.load(sysID))
     Main.log("SchemaParser.parse: " + schema.toString())
-    (schema.elems, schema.types)
+    schema
   }
 
   def printUsage {

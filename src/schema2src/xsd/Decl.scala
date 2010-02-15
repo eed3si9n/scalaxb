@@ -18,11 +18,14 @@ class ParserConfig {
   var elems: mutable.Map[String, ElemDecl] = null
   var types: mutable.Map[String, TypeDecl] = null
   var attrs: mutable.Map[String, AttributeDecl] = null
+  var choices: List[ChoiceDecl] = List()
 }
 
 object DefaultParserConfig extends ParserConfig
 
-case class SchemaDecl(elems: Map[String, ElemDecl], types: Map[String, TypeDecl]) {
+case class SchemaDecl(elems: Map[String, ElemDecl],
+    types: Map[String, TypeDecl],
+    choices: List[ChoiceDecl]) {
   override def toString(): String = {
     "SchemaDecl(" + elems.valuesIterator.mkString(",") + "," +
       types.valuesIterator.mkString(",")  + ")"
@@ -63,7 +66,8 @@ object SchemaDecl {
     resolveType(config)
     
     SchemaDecl(immutable.Map.empty[String, ElemDecl] ++ config.elems,
-      immutable.Map.empty[String, TypeDecl] ++ config.types)
+      immutable.Map.empty[String, TypeDecl] ++ config.types,
+      config.choices)
   }
   
   def resolveType(config: ParserConfig) {
@@ -454,7 +458,9 @@ case class ChoiceDecl(particles: List[Decl]) extends CompositorDecl with HasPart
 
 object ChoiceDecl {
   def fromXML(node: scala.xml.Node, config: ParserConfig) = {
-    ChoiceDecl(CompositorDecl.fromNodeSeq(node.child, config))
+    val choice = ChoiceDecl(CompositorDecl.fromNodeSeq(node.child, config))
+    config.choices = choice :: config.choices
+    choice
   }
 }
 

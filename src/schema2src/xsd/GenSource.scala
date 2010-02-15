@@ -10,11 +10,12 @@ import scala.collection.Map
 import scala.collection.mutable
 import scala.xml._
 
-class GenSource(conf: Driver.XsdConfig, schema: (Map[String, ElemDecl], Map[String, TypeDecl])) extends ScalaNames {
+class GenSource(conf: Driver.XsdConfig, schema: SchemaDecl) extends ScalaNames {
   import conf.{outfile => fOut, objName => objectName}
   
-  val elems = schema._1
-  val types = schema._2
+  val elems = schema.elems
+  val types = schema.types
+  val choices = schema.choices
   val newline = System.getProperty("line.separator")
   val defaultSuperName = "DataModel"
   val baseToSubs = mutable.Map.empty[ComplexTypeDecl, List[ComplexTypeDecl]]
@@ -67,8 +68,8 @@ class GenSource(conf: Driver.XsdConfig, schema: (Map[String, ElemDecl], Map[Stri
     
     for (typ <- complexTypes)
       if (baseToSubs.keysIterator.contains(typ))
-        typeNames(typ) = typ.name + "able"
-    
+        typeNames(typ) = makeTraitName(typ)
+        
     for (base <- baseToSubs.keysIterator)
       myprintAll(makeSuperType(base).child)
     
@@ -81,6 +82,12 @@ class GenSource(conf: Driver.XsdConfig, schema: (Map[String, ElemDecl], Map[Stri
     
     myprintAll(makeHelperObject.child)
   }
+  
+  def makeTraitName(decl: ComplexTypeDecl) =
+    if (decl.name.last == 'e')
+      decl.name.dropRight(1) + "able"
+    else
+      decl.name + "able"
   
   def makeSuperType(decl: ComplexTypeDecl): scala.xml.Node =
     makeCaseClassWithType(makeProtectedTypeName(decl), decl)

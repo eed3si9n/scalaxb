@@ -1,0 +1,663 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+  <xs:complexType name="UIdent">
+    <xs:sequence>
+      <xs:element ref="UIdent"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="UIdent" type="xs:string"></xs:element>
+  <xs:complexType name="LIdent">
+    <xs:sequence>
+      <xs:element ref="LIdent"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="LIdent" type="xs:string"></xs:element>
+  <xs:complexType name="Wild">
+    <xs:sequence>
+      <xs:element ref="Wild"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="Wild" type="xs:string"></xs:element>
+  <xs:element name="Mixed">
+    <xs:complexType>
+      <xs:choice>
+        <xs:element ref="CollectedExtension"/>
+        <xs:element ref="CollectedIntension"/>
+      </xs:choice>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Selected" type="Switched"/>
+  <xs:element name="Engaged">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="Synched"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Carried" type="CoSynched"/>
+  <xs:element name="Served">
+    <xs:complexType>
+      <xs:choice>
+        <xs:element ref="SiteIdent"/>
+        <xs:element ref="SiteQuotation"/>
+      </xs:choice>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Varied" type="ProcessIdent"/>
+  <xs:element name="Emptied">
+    <xs:complexType/>
+  </xs:element>
+  <xs:element name="Stated" type="Risk"/>
+  <xs:element name="CollectedExtension">
+    <xs:complexType>
+      <xs:choice maxOccurs="unbounded">
+        <xs:element ref="Mixed"/>
+        <xs:element ref="Selected"/>
+        <xs:element ref="Engaged"/>
+        <xs:element ref="Carried"/>
+        <xs:element ref="Served"/>
+        <xs:element ref="Varied"/>
+        <xs:element ref="Emptied"/>
+        <xs:element ref="Stated"/>
+      </xs:choice>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="CollectedIntension">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:choice>
+          <xs:element ref="MixtureDestructed"/>
+          <xs:element ref="SelectionDestructed"/>
+          <xs:element ref="ReceiveDestructed"/>
+          <xs:element ref="SendDestructed"/>
+          <xs:element ref="ServeDestructed"/>
+          <xs:element ref="ProcessPtnLiteral"/>
+          <xs:element ref="ProcessPtnPVar"/>
+          <xs:element ref="ProcessPtnWild"/>
+        </xs:choice>
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+          <xs:element ref="ProcessRequired"/>
+          <xs:element ref="ProcessGenerated"/>
+        </xs:choice>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:complexType name="Switched">
+    <xs:sequence>
+      <xs:element ref="Switched"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="Switched">
+    <xs:complexType>
+      <xs:choice>
+        <xs:element ref="SwitchedExtension"/>
+        <xs:element ref="SwitchedIntension"/>
+      </xs:choice>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="SwitchedExtension">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" ref="Synched"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="SwitchedIntension">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="GuardedDestruct"/>
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+          <xs:element ref="GuardedRequired"/>
+          <xs:element ref="GuardedGenerated"/>
+        </xs:choice>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Synched">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:choice>
+          <xs:element ref="SiteIdent"/>
+          <xs:element ref="SiteQuotation"/>
+        </xs:choice>
+        <xs:element ref="Abstracted"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:complexType name="CoSynched">
+    <xs:sequence>
+      <xs:element ref="CoSynched"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="CoSynched">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:choice>
+          <xs:element ref="SiteIdent"/>
+          <xs:element ref="SiteQuotation"/>
+        </xs:choice>
+        <xs:element ref="Manifested"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Abstracted">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="ExchangeFormalSpec"/>
+        <xs:choice>
+          <xs:element ref="Mixed"/>
+          <xs:element ref="Selected"/>
+          <xs:element ref="Engaged"/>
+          <xs:element ref="Carried"/>
+          <xs:element ref="Served"/>
+          <xs:element ref="Varied"/>
+          <xs:element ref="Emptied"/>
+          <xs:element ref="Stated"/>
+        </xs:choice>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Manifested">
+    <xs:complexType>
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:element ref="Substituted"/>
+        <xs:element ref="Variable"/>
+      </xs:choice>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="ExchangeFormalSpec">
+    <xs:complexType>
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:element ref="Substituted"/>
+        <xs:element ref="Variable"/>
+      </xs:choice>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="MixtureDestructed">
+    <xs:complexType>
+      <xs:choice maxOccurs="unbounded">
+        <xs:element ref="MixtureDestructed"/>
+        <xs:element ref="SelectionDestructed"/>
+        <xs:element ref="ReceiveDestructed"/>
+        <xs:element ref="SendDestructed"/>
+        <xs:element ref="ServeDestructed"/>
+        <xs:element ref="ProcessPtnLiteral"/>
+        <xs:element ref="ProcessPtnPVar"/>
+        <xs:element ref="ProcessPtnWild"/>
+      </xs:choice>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="SelectionDestructed" type="SelectBodyDestruct"/>
+  <xs:element name="ReceiveDestructed">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="GuardedDestruct"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="SendDestructed">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:choice>
+          <xs:element ref="SiteQuotePtn"/>
+          <xs:element ref="SiteVarPtn"/>
+          <xs:element ref="SiteWildPtn"/>
+        </xs:choice>
+        <xs:element ref="InformationDestruct"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="ServeDestructed" type="SelectBodyDestruct"/>
+  <xs:element name="ProcessPtnLiteral">
+    <xs:complexType>
+      <xs:choice>
+        <xs:element ref="Mixed"/>
+        <xs:element ref="Selected"/>
+        <xs:element ref="Engaged"/>
+        <xs:element ref="Carried"/>
+        <xs:element ref="Served"/>
+        <xs:element ref="Varied"/>
+        <xs:element ref="Emptied"/>
+        <xs:element ref="Stated"/>
+      </xs:choice>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="ProcessPtnPVar" type="ProcessIdent"/>
+  <xs:element name="ProcessPtnWild" type="Wild"/>
+  <xs:complexType name="SelectBodyDestruct">
+    <xs:sequence>
+      <xs:element ref="SelectBodyDestruct"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="SelectBodyDestruct">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" ref="GuardedDestruct"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GuardedDestruct">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:choice>
+          <xs:element ref="SiteQuotePtn"/>
+          <xs:element ref="SiteVarPtn"/>
+          <xs:element ref="SiteWildPtn"/>
+        </xs:choice>
+        <xs:element ref="AbstractionDestruct"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="InformationDestruct">
+    <xs:complexType>
+      <xs:choice maxOccurs="unbounded">
+        <xs:element ref="MixtureDestructed"/>
+        <xs:element ref="SelectionDestructed"/>
+        <xs:element ref="ReceiveDestructed"/>
+        <xs:element ref="SendDestructed"/>
+        <xs:element ref="ServeDestructed"/>
+        <xs:element ref="ProcessPtnLiteral"/>
+        <xs:element ref="ProcessPtnPVar"/>
+        <xs:element ref="ProcessPtnWild"/>
+      </xs:choice>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="AbstractionDestruct">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="FormalsDestruct"/>
+        <xs:choice>
+          <xs:element ref="MixtureDestructed"/>
+          <xs:element ref="SelectionDestructed"/>
+          <xs:element ref="ReceiveDestructed"/>
+          <xs:element ref="SendDestructed"/>
+          <xs:element ref="ServeDestructed"/>
+          <xs:element ref="ProcessPtnLiteral"/>
+          <xs:element ref="ProcessPtnPVar"/>
+          <xs:element ref="ProcessPtnWild"/>
+        </xs:choice>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="SiteQuotePtn">
+    <xs:complexType>
+      <xs:choice>
+        <xs:element ref="MixtureDestructed"/>
+        <xs:element ref="SelectionDestructed"/>
+        <xs:element ref="ReceiveDestructed"/>
+        <xs:element ref="SendDestructed"/>
+        <xs:element ref="ServeDestructed"/>
+        <xs:element ref="ProcessPtnLiteral"/>
+        <xs:element ref="ProcessPtnPVar"/>
+        <xs:element ref="ProcessPtnWild"/>
+      </xs:choice>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="SiteVarPtn" type="SiteVarIdent"/>
+  <xs:element name="SiteWildPtn" type="Wild"/>
+  <xs:element name="FormalsDestruct">
+    <xs:complexType>
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:element ref="PtnLiteralDestruct"/>
+        <xs:element ref="PtnVarDestruct"/>
+      </xs:choice>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="PtnLiteralDestruct">
+    <xs:complexType>
+      <xs:choice>
+        <xs:element ref="MixtureDestructed"/>
+        <xs:element ref="SelectionDestructed"/>
+        <xs:element ref="ReceiveDestructed"/>
+        <xs:element ref="SendDestructed"/>
+        <xs:element ref="ServeDestructed"/>
+        <xs:element ref="ProcessPtnLiteral"/>
+        <xs:element ref="ProcessPtnPVar"/>
+        <xs:element ref="ProcessPtnWild"/>
+      </xs:choice>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="PtnVarDestruct" type="UIdent"/>
+  <xs:element name="Substituted">
+    <xs:complexType>
+      <xs:choice>
+        <xs:element ref="MixtureDestructed"/>
+        <xs:element ref="SelectionDestructed"/>
+        <xs:element ref="ReceiveDestructed"/>
+        <xs:element ref="SendDestructed"/>
+        <xs:element ref="ServeDestructed"/>
+        <xs:element ref="ProcessPtnLiteral"/>
+        <xs:element ref="ProcessPtnPVar"/>
+        <xs:element ref="ProcessPtnWild"/>
+      </xs:choice>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Variable" type="SiteVarIdent"/>
+  <xs:element name="ProcessRequired" type="ProcessReqExpr"/>
+  <xs:element name="ProcessGenerated" type="ProcessGenExpr"/>
+  <xs:complexType name="ProcessGenExpr">
+    <xs:sequence>
+      <xs:element ref="ProcessGenExpr"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="ProcessGenExpr">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:choice>
+          <xs:element ref="MixtureDestructed"/>
+          <xs:element ref="SelectionDestructed"/>
+          <xs:element ref="ReceiveDestructed"/>
+          <xs:element ref="SendDestructed"/>
+          <xs:element ref="ServeDestructed"/>
+          <xs:element ref="ProcessPtnLiteral"/>
+          <xs:element ref="ProcessPtnPVar"/>
+          <xs:element ref="ProcessPtnWild"/>
+        </xs:choice>
+        <xs:choice>
+          <xs:element ref="Mixed"/>
+          <xs:element ref="Selected"/>
+          <xs:element ref="Engaged"/>
+          <xs:element ref="Carried"/>
+          <xs:element ref="Served"/>
+          <xs:element ref="Varied"/>
+          <xs:element ref="Emptied"/>
+          <xs:element ref="Stated"/>
+        </xs:choice>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:complexType name="ProcessReqExpr">
+    <xs:sequence>
+      <xs:element ref="ProcessReqExpr"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="ProcessReqExpr">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:choice>
+          <xs:element ref="MixtureDestructed"/>
+          <xs:element ref="SelectionDestructed"/>
+          <xs:element ref="ReceiveDestructed"/>
+          <xs:element ref="SendDestructed"/>
+          <xs:element ref="ServeDestructed"/>
+          <xs:element ref="ProcessPtnLiteral"/>
+          <xs:element ref="ProcessPtnPVar"/>
+          <xs:element ref="ProcessPtnWild"/>
+        </xs:choice>
+        <xs:choice>
+          <xs:element ref="ProcessDisjunction"/>
+          <xs:element ref="ProcessConjunction"/>
+          <xs:element ref="ProcessNegation"/>
+          <xs:element ref="ProcessStructure"/>
+          <xs:element ref="ProcessGround"/>
+        </xs:choice>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GuardedRequired" type="GuardedReqExpr"/>
+  <xs:element name="GuardedGenerated" type="GuardedGenExpr"/>
+  <xs:complexType name="GuardedGenExpr">
+    <xs:sequence>
+      <xs:element ref="GuardedGenExpr"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="GuardedGenExpr">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="GuardedDestruct"/>
+        <xs:element ref="Synched"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:complexType name="GuardedReqExpr">
+    <xs:sequence>
+      <xs:element ref="GuardedReqExpr"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="GuardedReqExpr">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="GuardedDestruct"/>
+        <xs:element ref="GuardedProp"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="ProcessDisjunction">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:choice>
+          <xs:element ref="ProcessDisjunction"/>
+          <xs:element ref="ProcessConjunction"/>
+          <xs:element ref="ProcessNegation"/>
+          <xs:element ref="ProcessStructure"/>
+          <xs:element ref="ProcessGround"/>
+        </xs:choice>
+        <xs:choice>
+          <xs:element ref="ProcessDisjunction"/>
+          <xs:element ref="ProcessConjunction"/>
+          <xs:element ref="ProcessNegation"/>
+          <xs:element ref="ProcessStructure"/>
+          <xs:element ref="ProcessGround"/>
+        </xs:choice>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="ProcessConjunction">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:choice>
+          <xs:element ref="ProcessDisjunction"/>
+          <xs:element ref="ProcessConjunction"/>
+          <xs:element ref="ProcessNegation"/>
+          <xs:element ref="ProcessStructure"/>
+          <xs:element ref="ProcessGround"/>
+        </xs:choice>
+        <xs:choice>
+          <xs:element ref="ProcessDisjunction"/>
+          <xs:element ref="ProcessConjunction"/>
+          <xs:element ref="ProcessNegation"/>
+          <xs:element ref="ProcessStructure"/>
+          <xs:element ref="ProcessGround"/>
+        </xs:choice>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="ProcessNegation">
+    <xs:complexType>
+      <xs:choice>
+        <xs:element ref="ProcessDisjunction"/>
+        <xs:element ref="ProcessConjunction"/>
+        <xs:element ref="ProcessNegation"/>
+        <xs:element ref="ProcessStructure"/>
+        <xs:element ref="ProcessGround"/>
+      </xs:choice>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="ProcessStructure">
+    <xs:complexType>
+      <xs:choice>
+        <xs:element ref="MixtureProp"/>
+        <xs:element ref="ReceiveProp"/>
+        <xs:element ref="SendProp"/>
+        <xs:element ref="ServeProp"/>
+      </xs:choice>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="ProcessGround" type="ProcessLogicGround"/>
+  <xs:element name="MixtureProp">
+    <xs:complexType>
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:element ref="ProcessDisjunction"/>
+        <xs:element ref="ProcessConjunction"/>
+        <xs:element ref="ProcessNegation"/>
+        <xs:element ref="ProcessStructure"/>
+        <xs:element ref="ProcessGround"/>
+      </xs:choice>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="ReceiveProp">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="GuardedProp"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="SendProp">
+    <xs:complexType>
+      <xs:complexContent>
+        <xs:extension base="SiteShape">
+          <xs:sequence>
+            <xs:element ref="DataShape"/>
+          </xs:sequence>
+        </xs:extension>
+      </xs:complexContent>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="ServeProp" type="SelectBodyProp"/>
+  <xs:element name="DataShape">
+    <xs:complexType>
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:element ref="ProcessDisjunction"/>
+        <xs:element ref="ProcessConjunction"/>
+        <xs:element ref="ProcessNegation"/>
+        <xs:element ref="ProcessStructure"/>
+        <xs:element ref="ProcessGround"/>
+      </xs:choice>
+    </xs:complexType>
+  </xs:element>
+  <xs:complexType name="SelectBodyProp">
+    <xs:sequence>
+      <xs:element ref="SelectBodyProp"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="SelectBodyProp">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" maxOccurs="unbounded" ref="GuardedProp"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GuardedProp">
+    <xs:complexType>
+      <xs:complexContent>
+        <xs:extension base="SiteShape">
+          <xs:sequence>
+            <xs:element ref="AbstractedProp"/>
+          </xs:sequence>
+        </xs:extension>
+      </xs:complexContent>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="AbstractedProp">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="ParamsProp"/>
+        <xs:choice>
+          <xs:element ref="ProcessDisjunction"/>
+          <xs:element ref="ProcessConjunction"/>
+          <xs:element ref="ProcessNegation"/>
+          <xs:element ref="ProcessStructure"/>
+          <xs:element ref="ProcessGround"/>
+        </xs:choice>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:complexType name="SiteShape">
+    <xs:sequence>
+      <xs:element ref="SiteShape"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="SiteShape">
+    <xs:complexType>
+      <xs:choice>
+        <xs:element ref="ProcessDisjunction"/>
+        <xs:element ref="ProcessConjunction"/>
+        <xs:element ref="ProcessNegation"/>
+        <xs:element ref="ProcessStructure"/>
+        <xs:element ref="ProcessGround"/>
+      </xs:choice>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="ParamsProp">
+    <xs:complexType>
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:element ref="ParamIdentProp"/>
+        <xs:element ref="ParamShapeProp"/>
+      </xs:choice>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="ParamIdentProp" type="UIdent"/>
+  <xs:element name="ParamShapeProp" type="SiteShape"/>
+  <xs:complexType name="ProcessLogicGround">
+    <xs:sequence>
+      <xs:element ref="ProcessLogicGround"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="ProcessLogicGround">
+    <xs:complexType>
+      <xs:choice>
+        <xs:element ref="Verity"/>
+        <xs:element ref="Absurdity"/>
+        <xs:element ref="Nullity"/>
+      </xs:choice>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Verity">
+    <xs:complexType/>
+  </xs:element>
+  <xs:element name="Absurdity">
+    <xs:complexType/>
+  </xs:element>
+  <xs:element name="Nullity">
+    <xs:complexType/>
+  </xs:element>
+  <xs:complexType name="Risk">
+    <xs:sequence>
+      <xs:element ref="Risk"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="Risk">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:choice>
+          <xs:element ref="Agent"/>
+          <xs:element ref="Connection"/>
+        </xs:choice>
+        <xs:element ref="Manifested"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Agent">
+    <xs:complexType/>
+  </xs:element>
+  <xs:element name="Connection">
+    <xs:complexType/>
+  </xs:element>
+  <xs:element name="SiteIdent" type="LIdent"/>
+  <xs:element name="SiteQuotation">
+    <xs:complexType>
+      <xs:choice>
+        <xs:element ref="Mixed"/>
+        <xs:element ref="Selected"/>
+        <xs:element ref="Engaged"/>
+        <xs:element ref="Carried"/>
+        <xs:element ref="Served"/>
+        <xs:element ref="Varied"/>
+        <xs:element ref="Emptied"/>
+        <xs:element ref="Stated"/>
+      </xs:choice>
+    </xs:complexType>
+  </xs:element>
+  <xs:complexType name="SiteVarIdent">
+    <xs:sequence>
+      <xs:element ref="SiteVarIdent"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="SiteVarIdent" type="LIdent"/>
+  <xs:complexType name="ProcessIdent">
+    <xs:sequence>
+      <xs:element ref="ProcessIdent"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="ProcessIdent" type="UIdent"/>
+</xs:schema>

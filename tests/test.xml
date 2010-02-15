@@ -68,8 +68,7 @@
     <java classname="XsdTest"
           classpath="${test.dir}:${scala-library.jar}"
           fork="true"/>
-    
-    <!--  
+     
     <schema2src>
       <arg value="xsd"/>
       <arg value="-d"/><arg value="${test.dir}"/>
@@ -84,7 +83,6 @@
             classpath="${scala-library.jar}" deprecation="yes">
       <include name="whiterabbit.scala"/>
       <include name="whiterabbitTest.scala"/>
-    </scalac>
-    -->   
+    </scalac> 
   </target>
 </project>

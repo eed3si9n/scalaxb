@@ -5,7 +5,7 @@
 package schema2src.xsd
 
 import scala.xml.{TypeSymbol}
-import scala.collection.{Map}
+import scala.collection.{Map, Set}
 import schema2src.{Main}
 import scala.collection.mutable
 import scala.collection.immutable
@@ -18,14 +18,14 @@ class ParserConfig {
   var elems: mutable.Map[String, ElemDecl] = null
   var types: mutable.Map[String, TypeDecl] = null
   var attrs: mutable.Map[String, AttributeDecl] = null
-  var choices: List[ChoiceDecl] = List()
+  val choices = mutable.Set.empty[ChoiceDecl]
 }
 
 object DefaultParserConfig extends ParserConfig
 
 case class SchemaDecl(elems: Map[String, ElemDecl],
     types: Map[String, TypeDecl],
-    choices: List[ChoiceDecl]) {
+    choices: Set[ChoiceDecl]) {
   override def toString(): String = {
     "SchemaDecl(" + elems.valuesIterator.mkString(",") + "," +
       types.valuesIterator.mkString(",")  + ")"
@@ -459,7 +459,7 @@ case class ChoiceDecl(particles: List[Decl]) extends CompositorDecl with HasPart
 object ChoiceDecl {
   def fromXML(node: scala.xml.Node, config: ParserConfig) = {
     val choice = ChoiceDecl(CompositorDecl.fromNodeSeq(node.child, config))
-    config.choices = choice :: config.choices
+    config.choices += choice
     choice
   }
 }

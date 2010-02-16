@@ -22,7 +22,8 @@ class GenSource(conf: Driver.XsdConfig, schema: SchemaDecl) extends ScalaNames {
   val choiceNames = mutable.Map.empty[ChoiceDecl, String]
   val typeNames = mutable.Map.empty[ComplexTypeDecl, String]
   val complexTypes = mutable.HashSet.empty[ComplexTypeDecl]
-  var optionNumber = 1
+  val choiceWrapper = mutable.Map.empty[ComplexTypeDecl, ChoiceDecl]
+  var argNumber = 0
   
   def run {
     import scala.collection.mutable
@@ -69,6 +70,12 @@ class GenSource(conf: Driver.XsdConfig, schema: SchemaDecl) extends ScalaNames {
     for (typ <- complexTypes)
       if (baseToSubs.keysIterator.contains(typ))
         typeNames(typ) = makeTraitName(typ)
+    
+    var i = 0
+    for (choice <- choices) {
+      i += 1
+      choiceNames(choice) = "choice" + i
+    }
         
     for (base <- baseToSubs.keysIterator)
       myprintAll(makeSuperType(base).child)
@@ -79,6 +86,9 @@ class GenSource(conf: Driver.XsdConfig, schema: SchemaDecl) extends ScalaNames {
     for (typ <- complexTypes)
       if (!baseToSubs.keysIterator.contains(typ))
         myprintAll(makeType(typ).child)
+        
+    for (choice <- choices)
+      myprintAll(makeChoiceTrait(choice).child)
     
     myprintAll(makeHelperObject.child)
   }
@@ -143,7 +153,7 @@ class GenSource(conf: Driver.XsdConfig, schema: SchemaDecl) extends ScalaNames {
 trait {name}
 
 object {name} {{
-  def fromXML(node: scala.xml.Node) = node match {{
+  def fromXML(node: scala.xml.Node): {name} = node match {{
     {
       val cases = for (particle <- choice.particles)
         yield makeCaseEntry(particle)
@@ -164,6 +174,12 @@ object {name} {{
     val argList = list.map(buildArg(_))
     val superName = buildSuperName(decl)
     val defaultType = makeProtectedTypeName(decl)
+    val options = buildOptions(decl)
+    
+    val extendString = if (options.isEmpty)
+      ""
+    else
+      " extends " + options.mkString(" with ")
     
     def makeCaseEntry(decl: ComplexTypeDecl) = {
       val name = typeNames(decl)
@@ -171,7 +187,7 @@ object {name} {{
     }
     
     return <source>
-trait {name} {{
+trait {name}{extendString} {{
   {
   val vals = for (param <- paramList)
     yield  "val " + param + ";"
@@ -232,15 +248,18 @@ object {name} {{
       List(defaultSuperName, superName) ::: buildOptions(decl)
   }
   
-  def buildOptions(decl: ComplexTypeDecl) =
-    for (choice <- choiceNames.keysIterator.toList;
+  def buildOptions(decl: ComplexTypeDecl) = {
+    val set = mutable.Set.empty[String]
+    for (choice <- choices;
       particle <- choice.particles;
       if particle.isInstanceOf[ElemDecl];
       val elem = particle.asInstanceOf[ElemDecl];
       if elem.typeSymbol.isInstanceOf[ReferenceTypeSymbol];
       val ref = elem.typeSymbol.asInstanceOf[ReferenceTypeSymbol];
       if ref.decl == decl)
-        yield makeTypeName(choiceNames(choice))
+        set += makeTypeName(choiceNames(choice))
+    set.toList
+  }
   
   def buildSuperName(decl: ComplexTypeDecl): String = 
     decl.content.content.base match {
@@ -384,7 +403,7 @@ object {name} {{
   def quote(value: String) = "\"" + value + "\""
       
   def flattenElements(decl: ComplexTypeDecl, name: String): List[ElemDecl] = {
-    optionNumber = 0
+    argNumber = 0
     
     decl.content.content match {
       case CompContRestrictionDecl(symbol: BuiltInSimpleTypeSymbol, _, _) => Nil
@@ -430,33 +449,34 @@ object {name} {{
         }
       list.flatten
     
-    case ChoiceDecl(particles: List[Decl]) =>
-      // List(buildChoiceRef(choice, name))
+    case choice@ChoiceDecl(particles: List[Decl]) =>
+      List(buildChoiceRef(choice, name))
+      
+      /*
       val list = for (particle <- particles)
         yield particle match {
           case compositor2: HasParticle => flattenElements(compositor2, "")
           case elem: ElemDecl           => List(toOptional(elem))
         }
       list.flatten
+      */
   }
   
-  /*
-  def buildChoiceRef(choice: ChoiceDecl, parentName: String) = {
-    if (!choiceNames.contains(choice))
-      choiceNames(choice) = "choice" + (choiceNames.size + 1)
-    
+  def buildChoiceRef(choice: ChoiceDecl, parentName: String) = {    
     val symbol = new ReferenceTypeSymbol(makeTypeName(choiceNames(choice)))
     val decl = ComplexTypeDecl(symbol.name, null, Nil)
+    
+    choiceWrapper(decl) = choice
+    
     symbol.decl = decl
-    val name = choiceNames(choice)
-    typeNames(decl) = makeTypeName(name)    
+    typeNames(decl) = makeTypeName(choiceNames(choice)) 
+    argNumber += 1
+    val name = "arg" + argNumber  
     ElemDecl(name, symbol, None, None, 1, 1)
   }
-  */
   
   def toOptional(that: ElemDecl) = {
-    optionNumber += 1
-    ElemDecl("option" + optionNumber.toString, that.typeSymbol, that.defaultValue, that.fixedValue,
+    ElemDecl(that.name, that.typeSymbol, that.defaultValue, that.fixedValue,
       0, that.maxOccurs)
   }
         

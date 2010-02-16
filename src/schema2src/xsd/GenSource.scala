@@ -71,10 +71,18 @@ class GenSource(conf: Driver.XsdConfig, schema: SchemaDecl) extends ScalaNames {
       if (baseToSubs.keysIterator.contains(typ))
         typeNames(typ) = makeTraitName(typ)
     
-    var i = 0
+    var choiceIndex = 0
     for (choice <- choices) {
-      i += 1
-      choiceNames(choice) = "choice" + i
+      choiceIndex += 1
+      choiceNames(choice) = "choice" + choiceIndex
+    }
+    
+    for (typ <- complexTypes)  typ.content.content match {
+      case CompContRestrictionDecl(_, Some(choice: ChoiceDecl), _) =>
+        choiceNames(choice) = typeNames(typ) + "Option"
+      case CompContExtensionDecl(_, Some(choice: ChoiceDecl), _) =>
+        choiceNames(choice) = typeNames(typ) + "Option"
+      case _ =>
     }
         
     for (base <- baseToSubs.keysIterator)

@@ -24,6 +24,7 @@ class GenSource(conf: Driver.XsdConfig, schema: SchemaDecl) extends ScalaNames {
   val complexTypes = mutable.HashSet.empty[ComplexTypeDecl]
   val choiceWrapper = mutable.Map.empty[ComplexTypeDecl, ChoiceDecl]
   var argNumber = 0
+  var choiceNumber = 0
   
   def run {
     import scala.collection.mutable
@@ -71,20 +72,8 @@ class GenSource(conf: Driver.XsdConfig, schema: SchemaDecl) extends ScalaNames {
       if (baseToSubs.keysIterator.contains(typ))
         typeNames(typ) = makeTraitName(typ)
     
-    var choiceIndex = 0
-    for (choice <- choices) {
-      choiceIndex += 1
-      choiceNames(choice) = "choice" + choiceIndex
-    }
+    makeChoiceNames()
     
-    for (typ <- complexTypes)  typ.content.content match {
-      case CompContRestrictionDecl(_, Some(choice: ChoiceDecl), _) =>
-        choiceNames(choice) = typeNames(typ) + "Option"
-      case CompContExtensionDecl(_, Some(choice: ChoiceDecl), _) =>
-        choiceNames(choice) = typeNames(typ) + "Option"
-      case _ =>
-    }
-        
     for (base <- baseToSubs.keysIterator)
       myprintAll(makeSuperType(base).child)
     
@@ -99,6 +88,48 @@ class GenSource(conf: Driver.XsdConfig, schema: SchemaDecl) extends ScalaNames {
       myprintAll(makeChoiceTrait(choice).child)
     
     myprintAll(makeHelperObject.child)
+  }
+  
+  def makeChoiceNames() {
+    for (typ <- complexTypes) { 
+      choiceNumber = 0
+      typ.content.content match {
+        case CompContRestrictionDecl(_, Some(compositor: HasParticle), _) =>
+          makeChoiceName(compositor, typeNames(typ))
+        case CompContExtensionDecl(_, Some(compositor: HasParticle), _) =>
+          makeChoiceName(compositor, typeNames(typ))
+        case _ =>
+      }
+    }
+  }
+  
+  def makeChoiceName(compositor: HasParticle, name: String): Unit = compositor match {
+    case SequenceDecl(particles: List[Decl]) =>
+      for (particle <- particles)
+        yield particle match {
+          case compositor2: HasParticle => makeChoiceName(compositor2, name)
+          case _ =>
+        }
+    
+    case AllDecl(particles: List[Decl]) =>
+      for (particle <- particles)
+        yield particle match {
+          case compositor2: HasParticle => makeChoiceName(compositor2, name)
+          case _ =>
+        }
+    
+    case choice@ChoiceDecl(particles: List[Decl]) =>
+      choiceNumber += 1
+      if (choiceNumber == 1)
+        choiceNames(choice) = name + "Option"
+      else
+        choiceNames(choice) = name + "Option" + choiceNumber
+      
+      for (particle <- particles)
+        yield particle match {
+          case compositor2: HasParticle => makeChoiceName(compositor2, name)
+          case _ =>
+        }
   }
   
   def makeTraitName(decl: ComplexTypeDecl) =
@@ -459,15 +490,6 @@ object {name} {{
     
     case choice@ChoiceDecl(particles: List[Decl]) =>
       List(buildChoiceRef(choice, name))
-      
-      /*
-      val list = for (particle <- particles)
-        yield particle match {
-          case compositor2: HasParticle => flattenElements(compositor2, "")
-          case elem: ElemDecl           => List(toOptional(elem))
-        }
-      list.flatten
-      */
   }
   
   def buildChoiceRef(choice: ChoiceDecl, parentName: String) = {    

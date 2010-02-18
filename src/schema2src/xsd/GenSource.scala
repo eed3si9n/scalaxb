@@ -20,6 +20,7 @@ class GenSource(conf: Driver.XsdConfig, schema: SchemaDecl) extends ScalaNames {
   val defaultSuperName = "DataModel"
   val baseToSubs = mutable.Map.empty[ComplexTypeDecl, List[ComplexTypeDecl]]
   val choiceNames = mutable.Map.empty[ChoiceDecl, String]
+  val choicePositions = mutable.Map.empty[ChoiceDecl, Int]
   val typeNames = mutable.Map.empty[ComplexTypeDecl, String]
   val complexTypes = mutable.HashSet.empty[ComplexTypeDecl]
   val choiceWrapper = mutable.Map.empty[ComplexTypeDecl, ChoiceDecl]
@@ -105,28 +106,35 @@ class GenSource(conf: Driver.XsdConfig, schema: SchemaDecl) extends ScalaNames {
   
   def makeChoiceName(compositor: HasParticle, name: String): Unit = compositor match {
     case SequenceDecl(particles: List[Decl]) =>
-      for (particle <- particles)
-        yield particle match {
+      var index = 0
+      for (particle <- particles) {
+        particle match {
+          case choice: ChoiceDecl =>
+            makeChoiceName(choice, name)
+            choicePositions(choice) = index
           case compositor2: HasParticle => makeChoiceName(compositor2, name)
           case _ =>
         }
+        index += 1
+      }
     
     case AllDecl(particles: List[Decl]) =>
       for (particle <- particles)
-        yield particle match {
+        particle match {
           case compositor2: HasParticle => makeChoiceName(compositor2, name)
           case _ =>
         }
     
     case choice@ChoiceDecl(particles: List[Decl]) =>
-      choiceNumber += 1
-      if (choiceNumber == 1)
+      if (choiceNumber == 0)
         choiceNames(choice) = name + "Option"
       else
-        choiceNames(choice) = name + "Option" + choiceNumber
+        choiceNames(choice) = name + "Option" + (choiceNumber + 1)
+      choiceNumber += 1
+      choicePositions(choice) = 0
       
       for (particle <- particles)
-        yield particle match {
+        particle match {
           case compositor2: HasParticle => makeChoiceName(compositor2, name)
           case _ =>
         }
@@ -350,7 +358,10 @@ object {name} {{
   def buildArg(elem: ElemDecl, decl: ComplexTypeDecl): String = {
     val typeName = buildTypeName(elem.typeSymbol)
     
-    if (elem.maxOccurs > 1) {
+    if (choiceWrapper.keysIterator.contains(decl)) {
+      val choicePosition = choicePositions(choiceWrapper(decl))
+      typeName + ".fromXML(node.child.filter(_.isInstanceOf[scala.xml.Elem])(" + choicePosition + "))" 
+    } else if (elem.maxOccurs > 1) {
       "(node \\ \"" + elem.name + "\").toList.map(" + typeName + ".fromXML(_))" 
     } else if (elem.minOccurs == 0) {
       "(node \\ \"" + elem.name + "\").headOption match {" + newline +

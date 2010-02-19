@@ -56,11 +56,6 @@ class GenSource(conf: Driver.XsdConfig, schema: SchemaDecl) extends ScalaNames {
       complexTypes += decl
     }
     
-    for (typ <-complexTypes;
-        if typ.content == ComplexContentDecl.empty;
-        if typ.attributes == Nil) 
-      typeNames(typ) = "EmptyElement"
-    
     for (typ <- complexTypes)  typ.content.content match {
       case CompContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
         associateSubType(typ, base)

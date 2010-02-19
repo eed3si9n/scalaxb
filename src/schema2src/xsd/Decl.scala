@@ -239,6 +239,13 @@ object ElemDecl {
         typeSymbol = TypeSymbolParser.fromString(typeName, config)
       } else {
         for (child <- node.child) child match {
+          case <complexType/> =>
+            val decl = ComplexTypeDecl(name, ComplexContentDecl.empty, Nil)
+            config.types += (decl.name -> decl)             
+            val symbol = new ReferenceTypeSymbol(name)
+            symbol.decl = decl
+            typeSymbol = symbol
+            
           case <complexType>{ _* }</complexType> =>
             typeSymbol = new ReferenceTypeSymbol(ComplexTypeDecl.buildName(child))
 

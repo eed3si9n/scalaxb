@@ -51,11 +51,15 @@ class GenSource(conf: Driver.XsdConfig, schema: SchemaDecl) extends ScalaNames {
     for (typePair <- types;
         if typePair._2.isInstanceOf[ComplexTypeDecl];
         if !typePair._1.contains("@");
-        val decl = typePair._2.asInstanceOf[ComplexTypeDecl]) {
-      
+        val decl = typePair._2.asInstanceOf[ComplexTypeDecl]) {    
       typeNames(decl) = makeProtectedTypeName(decl)
       complexTypes += decl
     }
+    
+    for (typ <-complexTypes;
+        if typ.content == ComplexContentDecl.empty;
+        if typ.attributes == Nil) 
+      typeNames(typ) = "EmptyElement"
     
     for (typ <- complexTypes)  typ.content.content match {
       case CompContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
@@ -192,7 +196,8 @@ class GenSource(conf: Driver.XsdConfig, schema: SchemaDecl) extends ScalaNames {
       case elem: ElemDecl =>
         val name = makeTypeName(elem.name)
         val typeName = buildTypeName(elem.typeSymbol)
-        "case <" + elem.name + ">_</" + elem.name + "> => " + typeName + ".fromXML(node)"
+        
+        "case " + quote(elem.name) + " => " + typeName + ".fromXML(node)"
       case _ => throw new Exception("GenSource: Unsupported compositor " + decl.toString)
     }
     
@@ -200,12 +205,14 @@ class GenSource(conf: Driver.XsdConfig, schema: SchemaDecl) extends ScalaNames {
 trait {name}
 
 object {name} {{
-  def fromXML(node: scala.xml.Node): {name} = node match {{
+  def fromXML(node: scala.xml.Node): {name} = node.label match {{
     {
       val cases = for (particle <- choice.particles)
         yield makeCaseEntry(particle)
       cases.mkString(newline + indent(2))        
-    }    
+    }
+    
+    case _ => throw new Exception("Unsupported element: " + node.label + ": " +  node.toString)
   }}
 }}
 </source>    

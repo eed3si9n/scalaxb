@@ -100,4 +100,21 @@
     <restriction base="string">
     </restriction>
   </simpleType>
+  
+  <xs:element name="Element1">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:choice>
+          <xs:element ref="Choice1"/>
+          <xs:element ref="Choice2"/>
+        </xs:choice>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Choice1">
+    <xs:complexType/>
+  </xs:element>
+  <xs:element name="Choice2">
+    <xs:complexType/>
+  </xs:element>
 </schema>

@@ -83,6 +83,10 @@
             classpath="${scala-library.jar}" deprecation="yes">
       <include name="whiterabbit.scala"/>
       <include name="whiterabbitTest.scala"/>
-    </scalac> 
+    </scalac>
+    
+    <java classname="WhiteRabbitTest"
+          classpath="${test.dir}:${scala-library.jar}"
+          fork="true"/>
   </target>
 </project>

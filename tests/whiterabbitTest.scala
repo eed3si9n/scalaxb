@@ -7,6 +7,7 @@ import whiterabbit._
 object WhiteRabbitTest {
   def main(args: Array[String]) = {
     testWild
+    testRisk
   }
   
   def testWild {
@@ -14,5 +15,11 @@ object WhiteRabbitTest {
     
     val wild = Wild.fromXML(subject)    
     println(wild.toString)
+  }
+  
+  def testRisk {
+    val subject = <Agent/>    
+    val riskOption = RiskOption.fromXML(subject)
+    println(riskOption.toString)
   }
 }

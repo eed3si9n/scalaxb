@@ -210,7 +210,7 @@ object ElemDecl {
     if (!(node \ "@ref").isEmpty) {
       val ref = (node \ "@ref").text.replaceFirst(config.myPrefix, "")
       
-      Main.log("ElemDecl.fromXML: " + ref)
+      Main.log("ElemDecl.fromXML: ref " + ref)
       if (!config.elems.contains(ref)) {
         throw new Exception("xsd: Element ref not found " + ref)
       }
@@ -225,11 +225,13 @@ object ElemDecl {
       else
         buildOccurrence((node \ "@maxOccurs").text)
       
-      ElemDecl(that.name, that.typeSymbol, that.defaultValue, that.fixedValue,
+      val elem = ElemDecl(that.name, that.typeSymbol, that.defaultValue, that.fixedValue,
         minOccurs, maxOccurs)
+      config.elems += (elem.name -> elem)
+      elem
     } else {
       val name = (node \ "@name").text
-      Main.log("ElemDecl.fromXML: " + name)
+      Main.log("ElemDecl.fromXML: name " + name)
       var typeSymbol: XsTypeSymbol = xsAny
       val typeName = (node \ "@type").text
       
@@ -319,7 +321,7 @@ case class ComplexTypeDecl(name: String,
 object ComplexTypeDecl {  
   def fromXML(node: scala.xml.Node, config: ParserConfig) = {
     Main.log("ComplexTypeDecl.fromXML: " + node.toString)
-    val name = buildName(node)
+    var name = buildName(node)
     var content: HasComplexTypeContent = ComplexContentDecl.empty
     
     val attributes = (node \ "attribute").toList.map(
@@ -351,6 +353,8 @@ object ComplexTypeDecl {
   }
   
   def buildName(node: scala.xml.Node) = {
+    Main.log("ComplexTypeDecl.buildName: " + node.toString)
+    
     val name = (node \ "@name").text
     if (name != "")
       name
@@ -402,7 +406,7 @@ object SimpleContentDecl {
 case class ComplexContentDecl(content: ComplexTypeContent) extends Decl with HasComplexTypeContent
 
 object ComplexContentDecl {
-  def empty =
+  lazy val empty =
     ComplexContentDecl(CompContRestrictionDecl.empty)
   
   def fromCompositor(compositor: HasParticle, attributes: List[AttributeDecl]) =

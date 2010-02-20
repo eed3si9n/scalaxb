@@ -104,7 +104,7 @@ class GenSource(conf: Driver.XsdConfig, schema: SchemaDecl) extends ScalaNames {
   }
   
   def makeChoiceName(compositor: HasParticle, name: String): Unit = compositor match {
-    case SequenceDecl(particles: List[Decl]) =>
+    case SequenceDecl(particles: List[Decl], _, _) =>
       var index = 0
       for (particle <- particles) {
         particle match {
@@ -117,14 +117,14 @@ class GenSource(conf: Driver.XsdConfig, schema: SchemaDecl) extends ScalaNames {
         index += 1
       }
     
-    case AllDecl(particles: List[Decl]) =>
+    case AllDecl(particles: List[Decl], _, _) =>
       for (particle <- particles)
         particle match {
           case compositor2: HasParticle => makeChoiceName(compositor2, name)
           case _ =>
         }
     
-    case choice@ChoiceDecl(particles: List[Decl]) =>
+    case choice@ChoiceDecl(particles: List[Decl], _, _) =>
       if (choiceNumber == 0)
         choiceNames(choice) = name + "Option"
       else
@@ -348,10 +348,10 @@ object {name} {{
     val typeSymbol = elem.typeSymbol
     
     typeSymbol match {
-      case symbol: BuiltInSimpleTypeSymbol => buildValueCode(symbol,
-        elem.name, elem.defaultValue, elem.fixedValue, elem.minOccurs, elem.maxOccurs)
-      case ReferenceTypeSymbol(decl: SimpleTypeDecl) =>  buildValueCode(decl,
-        elem.name, elem.defaultValue, elem.fixedValue, elem.minOccurs, elem.maxOccurs)
+      case symbol: BuiltInSimpleTypeSymbol => buildArg(symbol,
+        buildSelector(elem.name), elem.defaultValue, elem.fixedValue, elem.minOccurs, elem.maxOccurs)
+      case ReferenceTypeSymbol(decl: SimpleTypeDecl) =>  buildArg(decl,
+        buildSelector(elem.name), elem.defaultValue, elem.fixedValue, elem.minOccurs, elem.maxOccurs)
       case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>  buildArg(elem, decl)
       case _ => throw new Exception("GenSource: Invalid type " + typeSymbol.toString)
     }
@@ -360,19 +360,40 @@ object {name} {{
   def buildArg(elem: ElemDecl, decl: ComplexTypeDecl): String = {
     val typeName = buildTypeName(elem.typeSymbol)
     
-    if (choiceWrapper.keysIterator.contains(decl)) {
-      val choicePosition = choicePositions(choiceWrapper(decl))
-      typeName + ".fromXML(node.child.filter(_.isInstanceOf[scala.xml.Elem])(" + choicePosition + "))" 
-    } else if (elem.maxOccurs > 1) {
-      "(node \\ \"" + elem.name + "\").toList.map(" + typeName + ".fromXML(_))" 
-    } else if (elem.minOccurs == 0) {
-      "(node \\ \"" + elem.name + "\").headOption match {" + newline +
-      indent(4) + "case None    => None" + newline +
-      indent(4) + "case Some(x) => Some(" +  typeName + ".fromXML(x))" + newline +
-      indent(3) + "}"
+    if (decl.content.isInstanceOf[SimpleContentDecl]) {
+      buildArg(decl.content.asInstanceOf[SimpleContentDecl])
+    } else if (choiceWrapper.keysIterator.contains(decl)) {
+      val choice = choiceWrapper(decl)
+      val choicePosition = choicePositions(choice)
+      if (elem.maxOccurs > 1) {
+        if (choicePosition == 0)
+          "node.child.filter(_.isInstanceOf[scala.xml.Elem]).toList.map(" + newline +
+          indent(4) + typeName + ".fromXML(_))"        
+        else
+          "node.child.filter(_.isInstanceOf[scala.xml.Elem]).drop(" +
+          choicePosition + ").toList.map(" + newline +
+          indent(4) + typeName + ".fromXML(_))"
+      } else if (elem.minOccurs == 0) {
+        "node.child.filter(_.isInstanceOf[scala.xml.Elem]).drop(" +
+          choicePosition + ").headOption match {" + newline +
+        indent(4) + "case None    => None" + newline +
+        indent(4) + "case Some(x) => Some(" +  typeName + ".fromXML(x))" + newline +
+        indent(3) + "}"         
+      } else {
+        typeName + ".fromXML(node.child.filter(_.isInstanceOf[scala.xml.Elem])(" + choicePosition + "))"
+      }
     } else {
-      typeName + ".fromXML((node \\ \"" + elem.name + "\").head)" 
-    }    
+      if (elem.maxOccurs > 1) {
+        "(node \\ \"" + elem.name + "\").toList.map(" + typeName + ".fromXML(_))" 
+      } else if (elem.minOccurs == 0) {
+        "(node \\ \"" + elem.name + "\").headOption match {" + newline +
+        indent(4) + "case None    => None" + newline +
+        indent(4) + "case Some(x) => Some(" +  typeName + ".fromXML(x))" + newline +
+        indent(3) + "}"
+      } else {
+        typeName + ".fromXML((node \\ \"" + elem.name + "\").head)" 
+      } // if-else
+    } // if-else
   }
   
   def toMinOccurs(attr: AttributeDecl) = 
@@ -385,32 +406,40 @@ object {name} {{
   
   def buildArg(attr: AttributeDecl): String = attr.typeSymbol match {
     case symbol: BuiltInSimpleTypeSymbol =>
-      buildValueCode(symbol, "@" + attr.name, attr.defaultValue, attr.fixedValue,
+      buildArg(symbol, buildSelector("@" + attr.name), attr.defaultValue, attr.fixedValue,
         toMinOccurs(attr), 1)
         
     case ReferenceTypeSymbol(decl: SimpleTypeDecl) =>
-      buildValueCode(decl, "@" + attr.name, attr.defaultValue, attr.fixedValue,
+      buildArg(decl, buildSelector("@" + attr.name), attr.defaultValue, attr.fixedValue,
         toMinOccurs(attr), 1)    
     
     case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
       throw new Exception("GenSource: Attribute with complex type " + decl.toString) 
   }
 
-  def buildValueCode(decl: SimpleTypeDecl, nodeName: String,
+  def buildArg(decl: SimpleTypeDecl, selector: String,
       defaultValue: Option[String], fixedValue: Option[String],
       minOccurs: Int, maxOccurs: Int): String = decl.content match {  
     
     case SimpTypRestrictionDecl(base: BuiltInSimpleTypeSymbol) =>
-      buildValueCode(base, nodeName, defaultValue, fixedValue, minOccurs, maxOccurs)
+      buildArg(base, selector, defaultValue, fixedValue, minOccurs, maxOccurs)
     
     case _ => throw new Exception("GenSource: Unsupported content " + decl.content.toString)    
   }
+  
+  def buildArg(content: SimpleContentDecl): String = content.content match {
+    case SimpContRestrictionDecl(base: BuiltInSimpleTypeSymbol, _) =>
+      buildArg(base, "node", None, None, 1, 1)
     
-  def buildValueCode(typeSymbol: BuiltInSimpleTypeSymbol, nodeName: String,
+    case _ => throw new Exception("GenSource: Unsupported content " + content.content.toString)    
+  }
+  
+  def buildSelector(nodeName: String) = "(node \\ \"" + nodeName + "\")"
+  
+  def buildArg(typeSymbol: BuiltInSimpleTypeSymbol, selector: String,
       defaultValue: Option[String], fixedValue: Option[String],
       minOccurs: Int, maxOccurs: Int): String = {
-        
-    val stringValueCode = "(node \\ \"" + nodeName + "\").text"
+    
     val (pre, post) = typeSymbol.name match {
       case "String"     => ("", "")
       case "javax.xml.datatype.Duration" => ("Helper.toDuration(", ")")
@@ -434,13 +463,13 @@ object {name} {{
     }
     
     def buildMatchStatement(noneValue: String, someValue: String) =
-      "(node \\ \"" + nodeName + "\").headOption match {" + newline +
+      selector + ".headOption match {" + newline +
       indent(4) + "case None    => " + noneValue + newline +
       indent(4) + "case Some(x) => " + someValue + newline +
       indent(3) + "}"
     
     if (maxOccurs > 1) {
-      "(node \\ \"" + nodeName + "\").toList.map(" + pre + "_.text" + post + ")"
+      selector + ".toList.map(" + pre + "_.text" + post + ")"
     } else if (minOccurs == 0) {
       buildMatchStatement("None", "Some(" + pre + "x.text" + post + ")")
     } else if (defaultValue.isDefined) {
@@ -448,7 +477,7 @@ object {name} {{
     } else if (fixedValue.isDefined) {
       pre + quote(fixedValue.get) + post
     } else {
-      pre + "(node \\ \"" + nodeName + "\").text" + post
+      pre + selector + ".text" + post
     }    
   }
   
@@ -485,7 +514,7 @@ object {name} {{
   
   def flattenElements(compositor: HasParticle, name: String): List[ElemDecl] =
       compositor match {
-    case SequenceDecl(particles: List[Decl]) =>
+    case SequenceDecl(particles: List[Decl], _, _) =>
       val list = for (particle <- particles)
         yield particle match {
           case compositor2: HasParticle => flattenElements(compositor2, "")
@@ -493,7 +522,7 @@ object {name} {{
         }
       list.flatten
     
-    case AllDecl(particles: List[Decl]) =>
+    case AllDecl(particles: List[Decl], _, _) =>
       val list = for (particle <- particles)
         yield particle match {
           case compositor2: HasParticle => flattenElements(compositor2, "")
@@ -501,7 +530,7 @@ object {name} {{
         }
       list.flatten
     
-    case choice@ChoiceDecl(particles: List[Decl]) =>
+    case choice@ChoiceDecl(particles: List[Decl], _, _) =>
       List(buildChoiceRef(choice, name))
   }
   
@@ -515,7 +544,7 @@ object {name} {{
     typeNames(decl) = makeTypeName(choiceNames(choice)) 
     argNumber += 1
     val name = "arg" + argNumber  
-    ElemDecl(name, symbol, None, None, 1, 1)
+    ElemDecl(name, symbol, None, None, choice.minOccurs, choice.maxOccurs)
   }
   
   def toOptional(that: ElemDecl) = {

@@ -219,11 +219,11 @@ object ElemDecl {
       val minOccurs = if ((node \ "@minOccurs").isEmpty)
         that.minOccurs
       else
-        buildOccurrence((node \ "@minOccurs").text)
+        CompositorDecl.buildOccurrence((node \ "@minOccurs").text)
       val maxOccurs = if ((node \ "@maxOccurs").isEmpty)
         that.maxOccurs
       else
-        buildOccurrence((node \ "@maxOccurs").text)
+        CompositorDecl.buildOccurrence((node \ "@maxOccurs").text)
       
       val elem = ElemDecl(that.name, that.typeSymbol, that.defaultValue, that.fixedValue,
         minOccurs, maxOccurs)
@@ -264,22 +264,14 @@ object ElemDecl {
         case None    => None
         case Some(x) => Some(x.text)
       }      
-      val minOccurs = buildOccurrence((node \ "@minOccurs").text)
-      val maxOccurs = buildOccurrence((node \ "@maxOccurs").text)
+      val minOccurs = CompositorDecl.buildOccurrence((node \ "@minOccurs").text)
+      val maxOccurs = CompositorDecl.buildOccurrence((node \ "@maxOccurs").text)
       
       val elem = ElemDecl(name, typeSymbol, defaultValue, fixedValue, minOccurs, maxOccurs)
       config.elems += (elem.name -> elem)
       elem   
     }
   }
-  
-  def buildOccurrence(value: String) =
-    if (value == "")
-      1
-    else if (value == "unbounded")
-      Integer.MAX_VALUE
-    else
-      value.toInt
 }
 
 
@@ -451,35 +443,57 @@ object CompositorDecl {
     
     case _ => throw new Exception("xsd: Unspported content type " + node.label)   
   }
+  
+  def buildOccurrence(value: String) =
+    if (value == "")
+      1
+    else if (value == "unbounded")
+      Integer.MAX_VALUE
+    else
+      value.toInt
 }
 
 trait HasParticle {
   val particles: List[Decl]
+  val minOccurs: Int
+  val maxOccurs: Int
 }
 
-case class SequenceDecl(particles: List[Decl]) extends CompositorDecl with HasParticle
+case class SequenceDecl(particles: List[Decl],
+  minOccurs: Int,
+  maxOccurs: Int) extends CompositorDecl with HasParticle
 
 object SequenceDecl {
   def fromXML(node: scala.xml.Node, config: ParserConfig) = {
-    SequenceDecl(CompositorDecl.fromNodeSeq(node.child, config))
+    val minOccurs = CompositorDecl.buildOccurrence((node \ "@minOccurs").text)
+    val maxOccurs = CompositorDecl.buildOccurrence((node \ "@maxOccurs").text)
+    SequenceDecl(CompositorDecl.fromNodeSeq(node.child, config), minOccurs, maxOccurs)
   }
 }
 
-case class ChoiceDecl(particles: List[Decl]) extends CompositorDecl with HasParticle
+case class ChoiceDecl(particles: List[Decl],
+  minOccurs: Int,
+  maxOccurs: Int) extends CompositorDecl with HasParticle
 
 object ChoiceDecl {
   def fromXML(node: scala.xml.Node, config: ParserConfig) = {
-    val choice = ChoiceDecl(CompositorDecl.fromNodeSeq(node.child, config))
+    val minOccurs = CompositorDecl.buildOccurrence((node \ "@minOccurs").text)
+    val maxOccurs = CompositorDecl.buildOccurrence((node \ "@maxOccurs").text)
+    val choice = ChoiceDecl(CompositorDecl.fromNodeSeq(node.child, config), minOccurs, maxOccurs)
     config.choices += choice
     choice
   }
 }
 
-case class AllDecl(particles: List[Decl]) extends CompositorDecl with HasParticle
+case class AllDecl(particles: List[Decl],
+  minOccurs: Int,
+  maxOccurs: Int) extends CompositorDecl with HasParticle
 
 object AllDecl {
   def fromXML(node: scala.xml.Node, config: ParserConfig) = {
-    AllDecl(CompositorDecl.fromNodeSeq(node.child, config))
+    val minOccurs = CompositorDecl.buildOccurrence((node \ "@minOccurs").text)
+    val maxOccurs = CompositorDecl.buildOccurrence((node \ "@maxOccurs").text)
+    AllDecl(CompositorDecl.fromNodeSeq(node.child, config), minOccurs, maxOccurs)
   }
 }
 

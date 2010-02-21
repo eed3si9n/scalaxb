@@ -2,7 +2,7 @@
  * @author  e.e d3si9n
  */
  
-package schema2src.xsd
+package scalaxb.xsd
 
 abstract class XsTypeSymbol(val name: String) extends xml.TypeSymbol {
   override def toString(): String = {

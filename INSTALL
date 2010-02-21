@@ -1,8 +1,8 @@
-eed3si9n/schema2src installation
+scalaxb installation
 
-eed3si9n/schema2src is tested only under Scala 2.8.
+scalaxb is tested only under Scala 2.8.
 
   $ ant dist
-  $ sudo cp dist/bin/schema2src* %SCALA_HOME%/bin/
-  $ sudo chmod a+x %SCALA_HOME%/bin/schema2src
-  $ sudo cp dist/lib/schema2src.jar %SCALA_HOME%/lib/
+  $ sudo cp dist/bin/scalaxb* %SCALA_HOME%/bin/
+  $ sudo chmod a+x %SCALA_HOME%/bin/scalaxb
+  $ sudo cp dist/lib/scalaxb.jar %SCALA_HOME%/lib/

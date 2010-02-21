@@ -1,7 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- $Id: build.xml 10844 2007-04-26 13:32:46Z michelou $ -->
-
-<project name="schema2src" default="build">
+<project name="scalaxb" default="build">
 
   <property file="build.properties"/>
   <property name="scala.home" value="${user.home}/sbaz"/>
@@ -34,13 +32,12 @@
     <buildnumber/>
     <scalac srcdir="src" destdir="${build.dir}" classpath="${scala-library.jar}"
         deprecation="yes" unchecked="yes"> 
-      <include name="schema2src/**/*.scala"/>
-      <!-- exclude name="schema2src/xsd/*.scala"/ -->
+      <include name="scalaxb/**/*.scala"/>
     </scalac>
 
     <mkdir dir="${dist.dir}/lib"/>
     <jar
-      destfile="${dist.dir}/lib/schema2src.jar"
+      destfile="${dist.dir}/lib/scalaxb.jar"
       basedir="${build.dir}">
       <manifest>
         <attribute name="Signature-Version" value="${build.number}"/>
@@ -59,8 +56,8 @@
   <target name="dist" depends="build,doc">
     <mkdir dir="${dist.dir}/bin"/>
     <scalascript
-      file="${dist.dir}/bin/schema2src"
-      class="schema2src.Main"
+      file="${dist.dir}/bin/scalaxb"
+      class="scalaxb.Main"
       javaFlags="-Xmx256M -Xms16M"
     />
     
@@ -70,14 +67,14 @@
     </copy>
 
     <sbaz
-      file="${dist.dir}/schema2src-${build.number}.sbp"
-      adfile="${dist.dir}/schema2src-${build.number}.advert"
-      name="schema2src"
+      file="${dist.dir}/scalaxb-${build.number}.sbp"
+      adfile="${dist.dir}/scalaxb-${build.number}.advert"
+      name="scalaxb"
       version="${build.number}"
-      desc="data binding tool. used to convert XML types to Scala classes.">
+      desc="XML data binding tool for Scala.">
       <binset dir="${dist.dir}/bin" includes="*"/>      
       <docset dir="${dist.dir}/doc" includes="**"/>
-      <libset dir="${dist.dir}/lib" includes="schema2src.jar"/>
+      <libset dir="${dist.dir}/lib" includes="scalaxb.jar"/>
     </sbaz>
   </target>
 
@@ -86,10 +83,9 @@
     <scaladoc
       srcdir="src" destdir="${doc.dir}/scaladoc"
       classpath="${scala-library.jar}"
-      doctitle="&lt;div&gt;schema2src&lt;/div&gt;"
+      doctitle="&lt;div&gt;scalaxb&lt;/div&gt;"
     >
-      <include name="schema2src/**/*.scala"/>
-      <exclude name="schema2src/xsd/*.scala"/>
+      <include name="scalaxb/**/*.scala"/>
     </scaladoc>
   </target>
 

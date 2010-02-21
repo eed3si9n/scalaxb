@@ -4,7 +4,7 @@
  */
 // $Id: ScalaNames.scala 13960 2008-02-12 17:49:29Z michelou $
  
-package schema2src
+package scalaxb
 
 trait ScalaNames {
 

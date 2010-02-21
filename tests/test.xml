@@ -17,8 +17,8 @@
       </classpath>
     </taskdef>
   
-    <presetdef name="schema2src">
-      <java classname="schema2src.Main"
+    <presetdef name="scalaxb">
+      <java classname="scalaxb.Main"
             classpath="./classes:${scala-library.jar}"
             fork="true"/>
     </presetdef>
@@ -27,15 +27,15 @@
   <!-- this script is run by ../build.xml, should not be run directly -->
 
   <target name="run" depends="init">
-    <echo message="Testing schema2src"/>
+    <echo message="Testing scalaxb"/>
     
     <!--
-    <schema2src>
+    <scalaxb>
       <arg value="dtd"/>
       <arg value="-d"/><arg value="${test.dir}"/>
       <arg value="${basedir}/tests/lnk.dtd"/>
       <arg value="lnk"/>
-    </schema2src>
+    </scalaxb>
 
     <copy file="${basedir}/tests/lnk.scala" tofile="${test.dir}/lnkTest.scala"/>
    
@@ -49,13 +49,13 @@
           classpath="${test.dir}:${scala-library.jar}"
           fork="true"/>
     -->
-    <schema2src>
+    <scalaxb>
       <arg value="xsd"/>
       <arg value="-d"/><arg value="${test.dir}"/>
       <arg value="-p"/><arg value="purchaseorder"/>
       <arg value="${basedir}/tests/ipo.xsd"/>
       <arg value="ipo"/>
-    </schema2src>
+    </scalaxb>
     
     <copy file="${basedir}/tests/poTest.scala" tofile="${test.dir}/poTest.scala"/>
         
@@ -69,13 +69,13 @@
           classpath="${test.dir}:${scala-library.jar}"
           fork="true"/>
      
-    <schema2src>
+    <scalaxb>
       <arg value="xsd"/>
       <arg value="-d"/><arg value="${test.dir}"/>
       <arg value="-p"/><arg value="whiterabbit"/>
       <arg value="${basedir}/tests/whiterabbit.xsd"/>
       <arg value="whiterabbit"/>
-    </schema2src>
+    </scalaxb>
     
     <copy file="${basedir}/tests/whiterabbitTest.scala" tofile="${test.dir}/whiterabbitTest.scala"/>
     

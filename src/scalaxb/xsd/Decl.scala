@@ -2,11 +2,11 @@
  * @author  e.e d3si9n
  */
 
-package schema2src.xsd
+package scalaxb.xsd
 
+import scalaxb.{Main}
 import scala.xml.{TypeSymbol}
 import scala.collection.{Map, Set}
-import schema2src.{Main}
 import scala.collection.mutable
 import scala.collection.immutable
 

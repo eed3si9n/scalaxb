@@ -2,9 +2,9 @@
  * @author  e.e d3si9n
  */
  
-package schema2src.xsd
+package scalaxb.xsd
 
-import schema2src.{Module, Main}
+import scalaxb.{Module, Main}
 import scala.collection.Map
 // import scala.xml.xsd.{ElemDecl, TypeDecl}
 

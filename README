@@ -1,0 +1,35 @@
+eed3si9n/schema2src
+
+eed3si9n/schema2src is a private fork of schema2src, an XML data-binding tool
+for Scala. schema2src was originally written by Burak Emir but was no longer
+actively maintained.
+
+In 2010 eed3si9n forked the project to work on xsd data binding.
+
+Installation
+------------
+
+eed3si9n/schema2src is tested only under Scala 2.8.
+
+Please see the file called INSTALL.
+
+Usage
+-----
+
+  $ schema2src xsd -d %output_dir% -p %package_name% %xsd_filename% %module%
+
+Bug Reporting
+-------------
+
+You can send xsd data binding bug reports to Issues
+
+  http://github.com/eed3si9n/schema2src/issues
+  
+or send me a message or an email
+
+  http://github.com/inbox/new
+  
+Contacts
+--------
+
+- eed3si9n at gmail dot com

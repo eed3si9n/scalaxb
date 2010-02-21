@@ -59,8 +59,14 @@ object SchemaDecl {
       case None    =>
     }
     
-    (schema \ "element").foreach(ElemDecl.fromXML(_, config))
-    (schema \\ "complexType").foreach(ComplexTypeDecl.fromXML(_, config))
+    for (node <- schema \ "element";
+        if (node \ "@name").headOption.isDefined)
+      ElemDecl.fromXML(node, config)
+    
+    for (node <- schema \\ "complexType";
+        if (node \ "@name").headOption.isDefined)
+      ComplexTypeDecl.fromXML(node, (node \ "@name").text, config)
+      
     (schema \\ "simpleType").foreach(SimpleTypeDecl.fromXML(_, config))
     
     resolveType(config)
@@ -123,7 +129,9 @@ object SchemaDecl {
     case symbol: ReferenceTypeSymbol =>
       if (!config.types.contains(symbol.name))
         throw new Exception("SchemaDecl: type not found: " + symbol.name)
-      symbol.decl = config.types(symbol.name)
+      
+      if (symbol.decl == null)
+        symbol.decl = config.types(symbol.name)
       
     case symbol: BuiltInSimpleTypeSymbol => // do nothing 
     case xsAny => // do nothing
@@ -198,6 +206,29 @@ object AttributeDecl {
   } 
 }
 
+case class ElemRef(ref: String,
+  minOccurs: Option[Int],
+  maxOccurs: Option[Int]) extends Decl
+
+object ElemRef {
+  def fromXML(node: scala.xml.Node, config: ParserConfig) = {
+    val ref = (node \ "@ref").text.replaceFirst(config.myPrefix, "")
+    Main.log("ElemRef.fromXML: ref " + ref)
+    
+    val minOccurs = (node \ "@minOccurs").headOption match {
+      case None    => None
+      case Some(x) => Some(CompositorDecl.buildOccurrence((node \ "@minOccurs").text))
+    }
+    
+    val maxOccurs = (node \ "@maxOccurs").headOption match {
+      case None    => None
+      case Some(x) => Some(CompositorDecl.buildOccurrence((node \ "@maxOccurs").text))
+    }
+    
+    ElemRef(ref, minOccurs, maxOccurs)
+  }
+}
+
 case class ElemDecl(name: String,
   typeSymbol: XsTypeSymbol,
   defaultValue: Option[String],
@@ -207,70 +238,52 @@ case class ElemDecl(name: String,
 
 object ElemDecl {
   def fromXML(node: scala.xml.Node, config: ParserConfig) = {
-    if (!(node \ "@ref").isEmpty) {
-      val ref = (node \ "@ref").text.replaceFirst(config.myPrefix, "")
-      
-      Main.log("ElemDecl.fromXML: ref " + ref)
-      if (!config.elems.contains(ref)) {
-        throw new Exception("xsd: Element ref not found " + ref)
-      }
-      
-      val that = config.elems(ref)
-      val minOccurs = if ((node \ "@minOccurs").isEmpty)
-        that.minOccurs
-      else
-        CompositorDecl.buildOccurrence((node \ "@minOccurs").text)
-      val maxOccurs = if ((node \ "@maxOccurs").isEmpty)
-        that.maxOccurs
-      else
-        CompositorDecl.buildOccurrence((node \ "@maxOccurs").text)
-      
-      val elem = ElemDecl(that.name, that.typeSymbol, that.defaultValue, that.fixedValue,
-        minOccurs, maxOccurs)
-      config.elems += (elem.name -> elem)
-      elem
+    val name = (node \ "@name").text
+    Main.log("ElemDecl.fromXML: name " + name)
+    var typeSymbol: XsTypeSymbol = xsAny
+    val typeName = (node \ "@type").text
+    
+    if (typeName != "") {
+      typeSymbol = TypeSymbolParser.fromString(typeName, config)
     } else {
-      val name = (node \ "@name").text
-      Main.log("ElemDecl.fromXML: name " + name)
-      var typeSymbol: XsTypeSymbol = xsAny
-      val typeName = (node \ "@type").text
-      
-      if (typeName != "") {
-        typeSymbol = TypeSymbolParser.fromString(typeName, config)
-      } else {
-        for (child <- node.child) child match {
-          case <complexType/> =>
-            val decl = ComplexTypeDecl(name, ComplexContentDecl.empty, Nil)
-            config.types += (decl.name -> decl)             
-            val symbol = new ReferenceTypeSymbol(name)
-            symbol.decl = decl
-            typeSymbol = symbol
-            
-          case <complexType>{ _* }</complexType> =>
-            typeSymbol = new ReferenceTypeSymbol(ComplexTypeDecl.buildName(child))
-
-          case <simpleType>{ _* }</simpleType> =>
-            typeSymbol = new ReferenceTypeSymbol(SimpleTypeDecl.buildName(child))
-                        
-          case _ =>
-        }
-      } // if-else
-      
-      val defaultValue = (node \ "@default").headOption match {
-        case None    => None
-        case Some(x) => Some(x.text)
+      for (child <- node.child) child match {
+        /*
+        case <complexType/> =>
+          val decl = ComplexTypeDecl("complexType@" + name, ComplexContentDecl.empty, Nil)
+          config.types += (decl.name -> decl)             
+          val symbol = new ReferenceTypeSymbol(name)
+          symbol.decl = decl
+          typeSymbol = symbol
+        */
+          
+        case <complexType>{ _* }</complexType> =>
+          val decl = ComplexTypeDecl.fromXML(child, "complexType@" + name, config)
+          config.types += (decl.name -> decl)
+          val symbol = new ReferenceTypeSymbol(decl.name)
+          symbol.decl = decl
+          typeSymbol = symbol
+          
+        case <simpleType>{ _* }</simpleType> =>
+          typeSymbol = new ReferenceTypeSymbol(SimpleTypeDecl.buildName(child))
+                      
+        case _ =>
       }
-      val fixedValue = (node \ "@fixed").headOption match {
-        case None    => None
-        case Some(x) => Some(x.text)
-      }      
-      val minOccurs = CompositorDecl.buildOccurrence((node \ "@minOccurs").text)
-      val maxOccurs = CompositorDecl.buildOccurrence((node \ "@maxOccurs").text)
-      
-      val elem = ElemDecl(name, typeSymbol, defaultValue, fixedValue, minOccurs, maxOccurs)
-      config.elems += (elem.name -> elem)
-      elem   
+    } // if-else
+    
+    val defaultValue = (node \ "@default").headOption match {
+      case None    => None
+      case Some(x) => Some(x.text)
     }
+    val fixedValue = (node \ "@fixed").headOption match {
+      case None    => None
+      case Some(x) => Some(x.text)
+    }      
+    val minOccurs = CompositorDecl.buildOccurrence((node \ "@minOccurs").text)
+    val maxOccurs = CompositorDecl.buildOccurrence((node \ "@maxOccurs").text)
+    
+    val elem = ElemDecl(name, typeSymbol, defaultValue, fixedValue, minOccurs, maxOccurs)
+    config.elems += (elem.name -> elem)
+    elem
   }
 }
 
@@ -318,9 +331,8 @@ case class ComplexTypeDecl(name: String,
   attributes: List[AttributeDecl]) extends TypeDecl
 
 object ComplexTypeDecl {  
-  def fromXML(node: scala.xml.Node, config: ParserConfig) = {
+  def fromXML(node: scala.xml.Node, name: String, config: ParserConfig) = {
     Main.log("ComplexTypeDecl.fromXML: " + node.toString)
-    var name = buildName(node)
     var content: HasComplexTypeContent = ComplexContentDecl.empty
     
     val attributes = (node \ "attribute").toList.map(
@@ -349,16 +361,6 @@ object ComplexTypeDecl {
     val typ = ComplexTypeDecl(name, content, attributes.reverse)
     config.types += (typ.name -> typ) 
     typ
-  }
-  
-  def buildName(node: scala.xml.Node) = {
-    Main.log("ComplexTypeDecl.buildName: " + node.toString)
-    
-    val name = (node \ "@name").text
-    if (name != "")
-      name
-    else
-      "complexType@" + node.hashCode.toString
   }
   
   def firstChild(node: scala.xml.Node) = {
@@ -436,7 +438,13 @@ object CompositorDecl {
   }
   
   def fromXML(node: scala.xml.Node, config: ParserConfig): Decl = node match {
-    case <element>{ _* }</element>   => ElemDecl.fromXML(node, config)
+    case <element>{ _* }</element>   =>
+      if ((node \ "@name").headOption.isDefined)
+        ElemDecl.fromXML(node, config)
+      else if ((node \ "@ref").headOption.isDefined)
+        ElemRef.fromXML(node, config)
+      else
+        throw new Exception("xsd: Unspported content type " + node.toString) 
     case <choice>{ _* }</choice>     => ChoiceDecl.fromXML(node, config)
     case <sequence>{ _* }</sequence> => SequenceDecl.fromXML(node, config)
     case <all>{ _* }</all>           => AllDecl.fromXML(node, config)

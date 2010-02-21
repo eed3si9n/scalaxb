@@ -5,7 +5,6 @@
 package schema2src.xsd
 
 import schema2src._
-// import scala.xml.xsd.{ ElemDecl, TypeDecl, XsTypeSymbol }
 import scala.collection.Map
 import scala.collection.mutable
 import scala.xml._
@@ -104,7 +103,7 @@ class GenSource(conf: Driver.XsdConfig, schema: SchemaDecl) extends ScalaNames {
   }
   
   def makeChoiceName(compositor: HasParticle, name: String): Unit = compositor match {
-    case SequenceDecl(particles: List[Decl], _, _) =>
+    case SequenceDecl(particles: List[_], _, _) =>
       var index = 0
       for (particle <- particles) {
         particle match {
@@ -117,14 +116,14 @@ class GenSource(conf: Driver.XsdConfig, schema: SchemaDecl) extends ScalaNames {
         index += 1
       }
     
-    case AllDecl(particles: List[Decl], _, _) =>
+    case AllDecl(particles: List[_], _, _) =>
       for (particle <- particles)
         particle match {
           case compositor2: HasParticle => makeChoiceName(compositor2, name)
           case _ =>
         }
     
-    case choice@ChoiceDecl(particles: List[Decl], _, _) =>
+    case choice@ChoiceDecl(particles: List[_], _, _) =>
       if (choiceNumber == 0)
         choiceNames(choice) = name + "Option"
       else
@@ -193,6 +192,14 @@ class GenSource(conf: Driver.XsdConfig, schema: SchemaDecl) extends ScalaNames {
         val typeName = buildTypeName(elem.typeSymbol)
         
         "case " + quote(elem.name) + " => " + typeName + ".fromXML(node)"
+      
+      case ref: ElemRef =>
+        val elem = buildElement(ref)  
+        val name = makeTypeName(elem.name)
+        val typeName = buildTypeName(elem.typeSymbol)
+        
+        "case " + quote(elem.name) + " => " + typeName + ".fromXML(node)"
+              
       case _ => throw new Exception("GenSource: Unsupported compositor " + decl.toString)
     }
     
@@ -288,34 +295,7 @@ object {name} {{
 }}
 </source>    
   }
-  
-  def buildSuperNames(decl: ComplexTypeDecl) = {
-    val superName = buildSuperName(decl)
-    if (superName == defaultSuperName)
-      List(superName) ::: buildOptions(decl)
-    else
-      List(defaultSuperName, superName) ::: buildOptions(decl)
-  }
-  
-  def buildOptions(decl: ComplexTypeDecl) = {
-    val set = mutable.Set.empty[String]
-    for (choice <- choices;
-      particle <- choice.particles;
-      if particle.isInstanceOf[ElemDecl];
-      val elem = particle.asInstanceOf[ElemDecl];
-      if elem.typeSymbol.isInstanceOf[ReferenceTypeSymbol];
-      val ref = elem.typeSymbol.asInstanceOf[ReferenceTypeSymbol];
-      if ref.decl == decl)
-        set += makeTypeName(choiceNames(choice))
-    set.toList
-  }
-  
-  def buildSuperName(decl: ComplexTypeDecl): String = 
-    decl.content.content.base match {
-      case ReferenceTypeSymbol(base: ComplexTypeDecl) => typeNames(base)
-      case _ => makeTypeName(decl.content.content.base.name) 
-    }
-  
+    
   def buildParam(decl: Decl): String = decl match {
     case elem: ElemDecl => buildParam(elem)
     case attr: AttributeDecl => buildParam(attr)
@@ -483,6 +463,41 @@ object {name} {{
   
   def quote(value: String) = "\"" + value + "\""
       
+  def buildSuperNames(decl: ComplexTypeDecl) = {
+    val superName = buildSuperName(decl)
+    if (superName == defaultSuperName)
+      List(superName) ::: buildOptions(decl)
+    else
+      List(defaultSuperName, superName) ::: buildOptions(decl)
+  }
+  
+  def buildOptions(decl: ComplexTypeDecl) = {
+    val set = mutable.Set.empty[String]
+    
+    for (choice <- choices;
+        particle <- choice.particles) particle match {
+      case ElemDecl(_, symbol: ReferenceTypeSymbol, _, _, _, _) =>
+        if (symbol.decl == decl)
+          set += makeTypeName(choiceNames(choice))
+      
+      case ref: ElemRef =>
+        val elem = buildElement(ref)
+        elem.typeSymbol match {
+          case symbol: ReferenceTypeSymbol =>
+            if (symbol.decl == decl)
+              set += makeTypeName(choiceNames(choice))            
+        }
+    }
+        
+    set.toList
+  }
+  
+  def buildSuperName(decl: ComplexTypeDecl): String = 
+    decl.content.content.base match {
+      case ReferenceTypeSymbol(base: ComplexTypeDecl) => typeNames(base)
+      case _ => makeTypeName(decl.content.content.base.name) 
+    }
+  
   def flattenElements(decl: ComplexTypeDecl, name: String): List[ElemDecl] = {
     argNumber = 0
     
@@ -514,24 +529,45 @@ object {name} {{
   
   def flattenElements(compositor: HasParticle, name: String): List[ElemDecl] =
       compositor match {
-    case SequenceDecl(particles: List[Decl], _, _) =>
+    case SequenceDecl(particles: List[_], _, _) =>
       val list = for (particle <- particles)
         yield particle match {
           case compositor2: HasParticle => flattenElements(compositor2, "")
           case elem: ElemDecl           => List(elem)
+          case ref: ElemRef             => List(buildElement(ref))
         }
       list.flatten
     
-    case AllDecl(particles: List[Decl], _, _) =>
+    case AllDecl(particles: List[_], _, _) =>
       val list = for (particle <- particles)
         yield particle match {
           case compositor2: HasParticle => flattenElements(compositor2, "")
           case elem: ElemDecl           => List(toOptional(elem))
+          case ref: ElemRef             => List(buildElement(ref))
         }
       list.flatten
     
-    case choice@ChoiceDecl(particles: List[Decl], _, _) =>
+    case choice: ChoiceDecl =>
       List(buildChoiceRef(choice, name))
+  }
+  
+  def buildElement(ref: ElemRef) = {
+    if (!elems.contains(ref.ref))
+      throw new Exception("GenSource: element not found: " + ref.ref)
+    val that = elems(ref.ref)
+    
+    val minOccurs = if (ref.minOccurs.isDefined)
+      ref.minOccurs.get
+    else
+      that.minOccurs
+      
+    val maxOccurs = if (ref.maxOccurs.isDefined)
+      ref.maxOccurs.get
+    else
+      that.maxOccurs
+      
+    ElemDecl(that.name, that.typeSymbol, that.defaultValue, that.fixedValue,
+      minOccurs, maxOccurs)
   }
   
   def buildChoiceRef(choice: ChoiceDecl, parentName: String) = {    

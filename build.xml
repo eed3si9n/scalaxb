@@ -32,7 +32,8 @@
   <target name="build" depends="init">
     <mkdir dir="${build.dir}"/>
     <buildnumber/>
-    <scalac srcdir="src" destdir="${build.dir}" classpath="${scala-library.jar}" deprecation="yes"> 
+    <scalac srcdir="src" destdir="${build.dir}" classpath="${scala-library.jar}"
+        deprecation="yes" unchecked="yes"> 
       <include name="schema2src/**/*.scala"/>
       <!-- exclude name="schema2src/xsd/*.scala"/ -->
     </scalac>

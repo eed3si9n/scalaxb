@@ -3,13 +3,14 @@
 
   <property file="build.properties"/>
   <property name="scala.home" value="${user.home}/sbaz"/>
+  <property name="src.dir" value="${basedir}/src"/>
   <property name="build.dir" value="${basedir}/classes"/>
   <property name="dist.dir" value="${basedir}/dist"/>
   <property name="doc.dir" value="${basedir}/doc"/>
   <property name="test.dir" value="${basedir}/tests/tmp"/>
   <property name="scala-compiler.jar" value="${scala.home}/lib/scala-compiler.jar"/>
   <property name="scala-library.jar" value="${scala.home}/lib/scala-library.jar"/>
-
+  
   <target name="init">
     <fail message="Property ${scala.home} not set">
       <condition><not><and>
@@ -25,35 +26,53 @@
     </taskdef>
   </target>
   
-  <target name="rebuild" depends="clean,build"/>
+  <target name="rebuild" depends="clean,build,jar"/>
   
   <target name="build" depends="init">
     <mkdir dir="${build.dir}"/>
-    <buildnumber/>
-    <scalac srcdir="src" destdir="${build.dir}" classpath="${scala-library.jar}"
+    <propertyfile file="build.number">
+      <entry  key="major.number" type="int" default="0" />
+      <entry  key="minor.number" type="int" default="0" />
+      <entry  key="release.number" type="int" default="0" />
+      <entry  key="build.number" type="int" default="0" />  
+    </propertyfile>  
+    <loadproperties srcFile="build.number"/>
+    <propertyfile file="build.number">
+      <entry  key="build.number" type="int" operation="+" default="0" />  
+    </propertyfile>
+    <property name="version"
+      value="${major.number}.${minor.number}.${release.number}.${build.number}"/>
+    
+    <echo message="version=${version}" />
+    
+    <scalac srcdir="${src.dir}" destdir="${build.dir}" classpath="${scala-library.jar}"
         deprecation="yes" unchecked="yes"> 
       <include name="scalaxb/**/*.scala"/>
     </scalac>
-
+  </target>
+  
+  <target name="jar" depends="build">
     <mkdir dir="${dist.dir}/lib"/>
+    <property name="jar.file"
+      value="scalaxb-${version}.jar"/>
     <jar
-      destfile="${dist.dir}/lib/scalaxb.jar"
+      destfile="${dist.dir}/lib/${jar.file}"
       basedir="${build.dir}">
       <manifest>
-        <attribute name="Signature-Version" value="${build.number}"/>
+        <attribute name="Signature-Version" value="${version}"/>
         <attribute name="Built-By" value="${user.name}"/>
         <attribute name="Class-Path" value="${lib.jar.name}"/>
       </manifest>
-    </jar>
+    </jar>    
   </target>
 
   <target name="test" depends="clean,build">
     <ant antfile="tests/test.xml"/>
   </target>
-
+  
   <target name="deploy" depends="dist"/>
 
-  <target name="dist" depends="build,doc">
+  <target name="dist" depends="jar,doc">
     <mkdir dir="${dist.dir}/bin"/>
     <scalascript
       file="${dist.dir}/bin/scalaxb"
@@ -65,33 +84,38 @@
     <copy todir="${dist.dir}/doc">
       <fileset dir="${doc.dir}"/>
     </copy>
-
+    
+    <!-- zip destfile="${dist.dir}/scalaxb-${version}.zip">
+      <fileset dir="${dist.dir}/bin" includes="*"/>      
+      <fileset dir="${dist.dir}/doc" includes="**"/>
+      <fileset dir="${dist.dir}/lib" includes="scalaxb.jar"/>
+    </zip -->
+    
     <sbaz
-      file="${dist.dir}/scalaxb-${build.number}.sbp"
-      adfile="${dist.dir}/scalaxb-${build.number}.advert"
+      file="${dist.dir}/scalaxb-${version}.sbp"
+      adfile="${dist.dir}/scalaxb-${version}.advert"
       name="scalaxb"
-      version="${build.number}"
+      version="${version}"
       desc="XML data binding tool for Scala.">
       <binset dir="${dist.dir}/bin" includes="*"/>      
       <docset dir="${dist.dir}/doc" includes="**"/>
-      <libset dir="${dist.dir}/lib" includes="scalaxb.jar"/>
+      <libset dir="${dist.dir}/lib" includes="${jar.file}"/>
     </sbaz>
   </target>
 
-  <target name="doc">
+  <target name="doc" depends="init">
     <mkdir dir="${doc.dir}/scaladoc"/>
     <scaladoc
-      srcdir="src" destdir="${doc.dir}/scaladoc"
+      srcdir="${src.dir}" destdir="${doc.dir}/scaladoc"
       classpath="${scala-library.jar}"
-      doctitle="&lt;div&gt;scalaxb&lt;/div&gt;"
-    >
-      <include name="scalaxb/**/*.scala"/>
+      doctitle="scalaxb">
+      <include name="**/*.scala" />
     </scaladoc>
   </target>
 
   <target name="clean">
     <delete dir="${build.dir}"/>
-    <delete dir="${doc.dir}/scaladoc/**"/>
+    <delete dir="${doc.dir}/scaladoc"/>
     <delete dir="${dist.dir}"/>
     <delete dir="${test.dir}"/>
   </target>

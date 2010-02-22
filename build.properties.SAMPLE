@@ -1,2 +1,3 @@
-scala.home=${user.home}/sbaz
+scala.home=/opt/local/share/scala/
+lib.jar.name=scala-library.jar
 test.dir=/tmp

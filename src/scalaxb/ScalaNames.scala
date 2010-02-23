@@ -1,8 +1,6 @@
-/* schema2src -- data binding tool
- * Copyright 2005-2008 LAMP/EPFL
- * @author  Burak Emir
+/**
+ * @author  e.e d3si9n
  */
-// $Id: ScalaNames.scala 13960 2008-02-12 17:49:29Z michelou $
  
 package scalaxb
 

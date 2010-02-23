@@ -1,93 +1,71 @@
-/* schema2src -- data binding tool
- * Copyright 2005-2008 LAMP/EPFL
- * @author  Burak Emir
+/**
+ * @author  e.e d3si9n
  */
-// $Id: Module.scala 13960 2008-02-12 17:49:29Z michelou $
  
 package scalaxb
 
+import org.github.scopt.OptionParser
+import collection.mutable.ListBuffer
 import java.io.{File, FileWriter, PrintWriter}
 
 trait Module {
-
-  // type members
   type Config <: ModuleConfig
-
   type Schema
-
-  class ModuleConfig {   // Config must at least have ...
+  
+  class ModuleConfig {
     var args: Seq[String] = Nil
-
+    var verbose = false
+    var packageName: String = _
     var doVerifySchema = false
     var doVerifyOutput = false
-
-    /** name of the object that is created as output */
-    var objName: String = _
-
-    /** output directory */
     var outdir: File = _
-
-    /** the output file */
-    var outfile: PrintWriter = _
-
-    var src: scala.io.Source = null
-
-    var sysID: String = _
-
-    /** prepare output file */
-    def prepareOut {
-      //- ?default output directory
-      if (null == outdir) outdir = new File(sysID).getParentFile()
-
-      this.outfile = new PrintWriter(new FileWriter(new File(outdir, objName+".scala")))
-    }
-
-    /** finalize output file */
-    def finalizeOut {
-      outfile.flush()
-      outfile.close()
-      Console.println("generated " + outdir + java.io.File.separator + objName+".scala")
-    }
-
   }
-
-  // methods
-
-  /** convenience - create input source from sysID
-   */
-  protected def inputsrc( sysID: String ) = 
-    //    val curDir:String = System.getProperty("user.dir"); //@todo?
-    scala.io.Source.fromPath(sysID)
-
-  /** parse source into a schema representation */  
-  def parse(): Schema
-
-  /** generate code from schema representation */  
-  def generate(sd: Schema): Unit
-
-  /** getter method for the config */
-  def getConfig(): Config
-
-  /** what modules do */
-  def process() {
-    val conf = getConfig()
-
-    import conf._
-
-    val sd  = parse()
-    var sdv = !(doVerifySchema) || verifySchema(sd);
-
-    generate(sd)
-    var outv = !(doVerifyOutput) || verifyOutput();
+  
+  def start() {    
+    val files = new ListBuffer[java.io.File]
+    val paramParser = new OptionParser {
+      opt("d", "outdir", "generated files will go into this directory",
+        { d: String => config.outdir = new java.io.File(d) })
+      opt("p", "package", "specifies the target package",
+        { p: String => config.packageName = p })
+      opt("v", "verbose", "be extra verbose",
+        { config.verbose = true })
+      arg("<schema_file>", "input schema to be converted",
+        { x: String => files += new java.io.File(x) })
+    }
+    
+    if (paramParser.parse(config.args))
+      for (file <- files)
+        if (file.exists)
+          process(file)
+        else
+          throw new Exception("file not found: " + file.toString)
   }
-
-  /** setter method for the config */
-  def setConfig(config: Config): Unit
-
-  /** should report errors as side effect */
+  
+  def parse(input: File): Schema
+  
+  def generate(schema: Schema, output: File): Unit
+  
+  def config: Config
+  
+  def process(input: File) {
+    val schama = parse(input)
+    var sdv = !(config.doVerifySchema) || verifySchema(schama);
+    generate(schama, buildOutputFile(input))
+    var outv = !(config.doVerifyOutput) || verifyOutput();
+  }
+  
+  def buildOutputFile(input: File) = {
+    val dir = if (config.outdir == null)
+      new File(".")
+    else
+      config.outdir
+    val name = input.getName
+    val namepart = name.splitAt(name.indexOf('.'))._1
+    new File(dir, namepart + ".scala") 
+  }
+  
   def verifySchema(sd: Schema): Boolean
-
-  /** should report errors as side effect */
+  
   def verifyOutput(): Boolean
-
 }

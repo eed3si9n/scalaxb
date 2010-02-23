@@ -50,11 +50,9 @@
           fork="true"/>
     -->
     <scalaxb>
-      <arg value="xsd"/>
       <arg value="-d"/><arg value="${test.dir}"/>
       <arg value="-p"/><arg value="purchaseorder"/>
       <arg value="${basedir}/tests/ipo.xsd"/>
-      <arg value="ipo"/>
     </scalaxb>
     
     <copy file="${basedir}/tests/poTest.scala" tofile="${test.dir}/poTest.scala"/>
@@ -70,11 +68,9 @@
           fork="true"/>
      
     <scalaxb>
-      <arg value="xsd"/>
       <arg value="-d"/><arg value="${test.dir}"/>
       <arg value="-p"/><arg value="whiterabbit"/>
       <arg value="${basedir}/tests/whiterabbit.xsd"/>
-      <arg value="whiterabbit"/>
     </scalaxb>
     
     <copy file="${basedir}/tests/whiterabbitTest.scala" tofile="${test.dir}/whiterabbitTest.scala"/>

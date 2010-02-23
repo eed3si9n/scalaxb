@@ -8,10 +8,11 @@ import scalaxb._
 import scala.collection.Map
 import scala.collection.mutable
 import scala.xml._
+import java.io.{File, FileWriter, PrintWriter}
 
-class GenSource(conf: Driver.XsdConfig, schema: SchemaDecl) extends ScalaNames {
-  import conf.{outfile => fOut, objName => objectName}
-  
+class GenSource(conf: Driver.XsdConfig,
+    schema: SchemaDecl,
+    out: PrintWriter) extends ScalaNames {  
   val elems = schema.elems
   val types = schema.types
   val choices = schema.choices
@@ -604,11 +605,11 @@ object {name} {{
   }
   
   def myprint(n: Node) = n match {
-    case Text(s)          => fOut.print(s)
-    case EntityRef("lt")  => fOut.print('<')
-    case EntityRef("gt")  => fOut.print('>')
-    case EntityRef("amp") => fOut.print('&')
-    case atom: Atom[_]    => fOut.print(atom.text)
+    case Text(s)          => out.print(s)
+    case EntityRef("lt")  => out.print('<')
+    case EntityRef("gt")  => out.print('>')
+    case EntityRef("amp") => out.print('&')
+    case atom: Atom[_]    => out.print(atom.text)
     case _                => Main.log("error in xsd:run: encountered "
       + n.getClass() + " " + n.toString)
   }

@@ -46,15 +46,12 @@
     <echo message="version=${version}" />
     
     <scalac srcdir="${src.dir}" destdir="${build.dir}" classpath="${scala-library.jar}"
-        deprecation="yes" unchecked="yes"> 
-      <include name="scalaxb/**/*.scala"/>
-    </scalac>
+        deprecation="yes" unchecked="yes"/>
   </target>
   
   <target name="jar" depends="build">
     <mkdir dir="${dist.dir}/lib"/>
-    <property name="jar.file"
-      value="scalaxb-${version}.jar"/>
+    <property name="jar.file" value="scalaxb.jar"/>
     <jar
       destfile="${dist.dir}/lib/${jar.file}"
       basedir="${build.dir}">

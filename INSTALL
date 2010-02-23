@@ -1,7 +1,8 @@
 scalaxb installation
 
 scalaxb is tested only under Scala 2.8.
-
+  
+  $ ant clean
   $ ant dist
   $ sudo cp dist/bin/scalaxb* %SCALA_HOME%/bin/
   $ sudo chmod a+x %SCALA_HOME%/bin/scalaxb

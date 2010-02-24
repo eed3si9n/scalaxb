@@ -6,9 +6,11 @@ Schema (xsd) as the input file.
 Installation
 ------------
 
-scalaxb is tested only under Scala 2.8.
+scalaxb is tested only under Scala 2.8. You can install it using sbaz:
 
-See the file called INSTALL.
+  $ sudo sbaz install scalaxb
+
+See the file called INSTALL for details.
 
 Usage
 -----

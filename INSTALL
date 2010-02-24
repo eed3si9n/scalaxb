@@ -1,9 +1,61 @@
 scalaxb installation
+====================
 
-scalaxb is tested only under Scala 2.8.
-  
+scalaxb is tested only under Scala 2.8. 
+
+Installation using Scala Bazaar System (sbaz)
+---------------------------------------------
+
+The following downloads and installs the latest shared build of scalaxb
+to the sbaz managed directory:
+
+  $ sudo sbaz install scalaxb
+
+Installation from source and sbaz
+---------------------------------
+
+The following builds a scalaxb package from the source and installs it
+to the sbaz managed directory:
+
   $ ant clean
   $ ant dist
-  $ sudo cp dist/bin/scalaxb* %SCALA_HOME%/bin/
-  $ sudo chmod a+x %SCALA_HOME%/bin/scalaxb
-  $ sudo cp dist/lib/scalaxb.jar %SCALA_HOME%/lib/
+  $ sudo sbaz install -f dist/scalaxb-0.0.0.0.sbp
+
+The the file name of the scalaxb package may have different version number.
+
+Build from source
+=================
+
+The following builds plain jar from source.
+
+  $ ant clean
+  $ ant jar
+  
+This produces lib/scalaxb.jar. The following instructions are copied from
+simple-build-tool (sbt).
+
+Unix
+----
+
+Put the jar in your ~/bin directory, put the line
+
+  java -Xmx512M -jar `dirname $0`/scalaxb.jar "$@"
+
+in a file called scalaxb in your ~/bin directory and do
+
+  $ chmod u+x ~/bin/scalaxb.jar
+  
+This allows you to launch scalaxb in any directory by typing scalaxb at the
+command prompt.
+
+Windows
+-------
+
+Create a batch file scalaxb.bat:
+
+  set SCRIPT_DIR=%~dp0
+  java -Xmx512M -jar "%SCRIPT_DIR%scalaxb.jar" %*
+
+and put the jar in the same directory as the batch file. Put scalaxb.bat on your
+path so that you can launch scalaxb in any directory by typing scalaxb at the
+command prompt.

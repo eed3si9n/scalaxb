@@ -42,7 +42,7 @@ object WhiteRabbitTest {
         
     val risk = Risk.fromXML(subject)
     risk match {
-      case Risk(Agent(), Manifested(List())) =>
+      case Risk(Agent(), Manifested()) =>
       case _ => throw new Exception("match failed: " + risk.toString)
     }
     

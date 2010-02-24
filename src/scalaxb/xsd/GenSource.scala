@@ -44,7 +44,23 @@ class GenSource(conf: Driver.XsdConfig,
   val choiceWrapper = mutable.Map.empty[ComplexTypeDecl, ChoiceDecl]
   var argNumber = 0
   var choiceNumber = 0
+
+  abstract class Cardinality
+  object Optional extends Cardinality
+  object Single extends Cardinality
+  object Multiple extends Cardinality
   
+  case class Param(name: String,
+    typeSymbol: XsTypeSymbol,
+    cardinality: Cardinality) {
+    
+    override def toString(): String = cardinality match {
+      case Single   => name + ": " + buildTypeName(typeSymbol)
+      case Optional => name + ": Option[" + buildTypeName(typeSymbol) + "]"
+      case Multiple => name + ": Seq[" + buildTypeName(typeSymbol) + "]"
+    }      
+  }
+    
   def run {
     import scala.collection.mutable
     Main.log("xsd: GenSource.run")
@@ -300,43 +316,58 @@ object {name} {{
     val paramList = list.map(buildParam(_))
     val argList = list.map(buildArg(_))
     
-    def superNamesString =
-      superNames.mkString(" with ")
+    def superNamesString = superNames.mkString(" with ")
+    
+    val hasSequenceParam = paramList.size == 1 &&
+      paramList.head.cardinality == Multiple
+    
+    def paramsString = if (hasSequenceParam)
+      paramList.head.name + ": " + buildTypeName(paramList.head.typeSymbol) + "*"      
+    else
+      paramList.map(_.toString).mkString("," + newline + indent(1))
+    
+    def argsString = if (hasSequenceParam)
+      argList.head + ": _*"
+    else
+      argList.mkString("," + newline + indent(3))
     
     return <source>
-case class {name}({
-  paramList.mkString("," + newline + indent(1))}) extends {superNamesString} {{
+case class {name}({paramsString}) extends {superNamesString} {{
 }}
 
 object {name} {{
   def fromXML(node: scala.xml.Node): {name} =
-    {name}({argList.mkString("," + newline + indent(3))}) 
+    {name}({argsString}) 
 }}
 </source>    
   }
     
-  def buildParam(decl: Decl): String = decl match {
+  def buildParam(decl: Decl): Param = decl match {
     case elem: ElemDecl => buildParam(elem)
     case attr: AttributeDecl => buildParam(attr)
     case _ => throw new Exception("GenSource: unsupported delcaration " + decl.toString)
   }
   
-  def buildParam(elem: ElemDecl): String = {
-    if (elem.maxOccurs > 1) {
-      elem.name + ": List[" + buildTypeName(elem.typeSymbol) + "]"
-    } else if (elem.minOccurs == 0) {
-      elem.name + ": Option[" + buildTypeName(elem.typeSymbol) + "]"
-    } else {
-      elem.name + ": " + buildTypeName(elem.typeSymbol)
-    }    
+  def buildParam(elem: ElemDecl): Param = {
+    val cardinality = if (elem.maxOccurs > 1)
+      Multiple
+    else if (elem.minOccurs == 0)
+      Optional
+    else
+      Single
+    
+    Param(elem.name, elem.typeSymbol, cardinality)
   }
   
-  def buildParam(attr: AttributeDecl): String = 
-    if (toMinOccurs(attr) == 0)
-      attr.name + ": Option[" + buildTypeName(attr.typeSymbol) + "]"
+  def buildParam(attr: AttributeDecl): Param = {
+    val cardinality = if (toMinOccurs(attr) == 0)
+      Optional
     else
-      attr.name + ": " + buildTypeName(attr.typeSymbol)
-  
+      Single
+    
+    Param(attr.name, attr.typeSymbol, cardinality)
+  } 
+    
   def buildArg(decl: Decl): String = decl match {
     case elem: ElemDecl       => buildArg(elem)
     case attr: AttributeDecl  => buildArg(attr)
@@ -366,11 +397,11 @@ object {name} {{
       val choicePosition = choicePositions(choice)
       if (elem.maxOccurs > 1) {
         if (choicePosition == 0)
-          "node.child.filter(_.isInstanceOf[scala.xml.Elem]).toList.map(" + newline +
+          "node.child.filter(_.isInstanceOf[scala.xml.Elem]).map(" + newline +
           indent(4) + typeName + ".fromXML(_))"        
         else
           "node.child.filter(_.isInstanceOf[scala.xml.Elem]).drop(" +
-          choicePosition + ").toList.map(" + newline +
+          choicePosition + ").map(" + newline +
           indent(4) + typeName + ".fromXML(_))"
       } else if (elem.minOccurs == 0) {
         "node.child.filter(_.isInstanceOf[scala.xml.Elem]).drop(" +
@@ -383,7 +414,7 @@ object {name} {{
       }
     } else {
       if (elem.maxOccurs > 1) {
-        "(node \\ \"" + elem.name + "\").toList.map(" + typeName + ".fromXML(_))" 
+        "(node \\ \"" + elem.name + "\").map(" + typeName + ".fromXML(_))" 
       } else if (elem.minOccurs == 0) {
         "(node \\ \"" + elem.name + "\").headOption match {" + newline +
         indent(4) + "case None    => None" + newline +

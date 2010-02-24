@@ -8,7 +8,7 @@ Installation
 
 scalaxb is tested only under Scala 2.8.
 
-Please see the file called INSTALL.
+See the file called INSTALL.
 
 Usage
 -----
@@ -120,7 +120,12 @@ You can send xsd data binding bug reports to Issues
 or send me a message or an email
 
   http://github.com/inbox/new
-  
+
+Licensing
+---------
+
+It's the MIT License. See the file called LICENSE.
+     
 Contacts
 --------
 

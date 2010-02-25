@@ -33,30 +33,31 @@ abstract class Decl
 class ParserConfig {
   var xsPrefix: String = "xsd:"
   var myPrefix: String = ""
-  var elems: mutable.Map[String, ElemDecl] = null
-  var types: mutable.Map[String, TypeDecl] = null
-  var attrs: mutable.Map[String, AttributeDecl] = null
-  val choices = mutable.Set.empty[ChoiceDecl]
+  val topElems  = mutable.ListMap.empty[String, ElemDecl]
+  val elemList  = mutable.ListBuffer.empty[ElemDecl]
+  val types     = mutable.ListMap.empty[String, TypeDecl]
+  val attrs     = mutable.ListMap.empty[String, AttributeDecl]
+  val choices   = mutable.Set.empty[ChoiceDecl]
 }
 
 object DefaultParserConfig extends ParserConfig
 
-case class SchemaDecl(elems: Map[String, ElemDecl],
+case class SchemaDecl(topElems: Map[String, ElemDecl],
+    elemList: List[ElemDecl],
     types: Map[String, TypeDecl],
     choices: Set[ChoiceDecl]) {
-  override def toString(): String = {
-    "SchemaDecl(" + elems.valuesIterator.mkString(",") + "," +
-      types.valuesIterator.mkString(",")  + ")"
+  
+  val newline = System.getProperty("line.separator")
+  
+  override def toString: String = {
+    "SchemaDecl(topElems(" + topElems.valuesIterator.mkString("," + newline) + "),types(" +
+      types.valuesIterator.mkString("," + newline)  + "))"
   }
 }
 
 object SchemaDecl {
   def fromXML(node: scala.xml.Node,
       config: ParserConfig = DefaultParserConfig) = {
-    config.elems = mutable.Map.empty[String, ElemDecl]
-    config.types = mutable.Map.empty[String, TypeDecl]
-    config.attrs = mutable.Map.empty[String, AttributeDecl]
-    
     val XML_SCHEMA_URI = "http://www.w3.org/2001/XMLSchema"
     
     val schema = (node \\ "schema").headOption match {
@@ -78,8 +79,10 @@ object SchemaDecl {
     }
     
     for (node <- schema \ "element";
-        if (node \ "@name").headOption.isDefined)
-      ElemDecl.fromXML(node, config)
+        if (node \ "@name").headOption.isDefined) {
+      val elem = ElemDecl.fromXML(node, config)
+      config.topElems += (elem.name -> elem)
+    }
     
     for (node <- schema \\ "complexType";
         if (node \ "@name").headOption.isDefined)
@@ -89,27 +92,16 @@ object SchemaDecl {
     
     resolveType(config)
     
-    SchemaDecl(immutable.Map.empty[String, ElemDecl] ++ config.elems,
-      immutable.Map.empty[String, TypeDecl] ++ config.types,
+    SchemaDecl(immutable.ListMap.empty[String, ElemDecl] ++ config.topElems,
+      config.elemList.toList,
+      immutable.ListMap.empty[String, TypeDecl] ++ config.types,
       config.choices)
   }
   
-  def resolveType(config: ParserConfig) {
-    config.elems.valuesIterator.foreach(
-      elem => resolveType(elem.typeSymbol, config))
-    
-    for (elem <- config.elems.valuesIterator) {      
-      elem.typeSymbol match {
-        case symbol: BuiltInSimpleTypeSymbol =>
-        
-        case symbol: ReferenceTypeSymbol =>
-          if (!config.types.contains(symbol.name))
-            throw new Exception("SchemaDecl: type not found " + elem.name + ": " + symbol.name)
-          if (symbol.decl == null)
-            throw new Exception("SchemaDecl: type was found, but not mapped!!! " + elem.name + ": " + symbol.name)
-      } // match    
-    } // for
-         
+  def resolveType(config: ParserConfig) {    
+    for (elem <- config.elemList)
+      resolveType(elem.typeSymbol, config)
+             
     for (attr <- config.attrs.valuesIterator) {
       attr.typeSymbol match {
         case symbol: BuiltInSimpleTypeSymbol =>
@@ -265,15 +257,6 @@ object ElemDecl {
       typeSymbol = TypeSymbolParser.fromString(typeName, config)
     } else {
       for (child <- node.child) child match {
-        /*
-        case <complexType/> =>
-          val decl = ComplexTypeDecl("complexType@" + name, ComplexContentDecl.empty, Nil)
-          config.types += (decl.name -> decl)             
-          val symbol = new ReferenceTypeSymbol(name)
-          symbol.decl = decl
-          typeSymbol = symbol
-        */
-          
         case <complexType>{ _* }</complexType> =>
           val decl = ComplexTypeDecl.fromXML(child, "complexType@" + name, config)
           config.types += (decl.name -> decl)
@@ -300,7 +283,7 @@ object ElemDecl {
     val maxOccurs = CompositorDecl.buildOccurrence((node \ "@maxOccurs").text)
     
     val elem = ElemDecl(name, typeSymbol, defaultValue, fixedValue, minOccurs, maxOccurs)
-    config.elems += (elem.name -> elem)
+    config.elemList += elem
     elem
   }
 }

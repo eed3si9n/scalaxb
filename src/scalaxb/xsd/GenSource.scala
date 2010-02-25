@@ -31,17 +31,18 @@ import java.io.{File, FileWriter, PrintWriter}
 class GenSource(conf: Driver.XsdConfig,
     schema: SchemaDecl,
     out: PrintWriter) extends ScalaNames {  
-  val elems = schema.elems
+  val topElems = schema.topElems
+  val elemList = schema.elemList
   val types = schema.types
   val choices = schema.choices
   val newline = System.getProperty("line.separator")
   val defaultSuperName = "DataModel"
-  val baseToSubs = mutable.Map.empty[ComplexTypeDecl, List[ComplexTypeDecl]]
-  val choiceNames = mutable.Map.empty[ChoiceDecl, String]
-  val choicePositions = mutable.Map.empty[ChoiceDecl, Int]
-  val typeNames = mutable.Map.empty[ComplexTypeDecl, String]
-  val complexTypes = mutable.HashSet.empty[ComplexTypeDecl]
-  val choiceWrapper = mutable.Map.empty[ComplexTypeDecl, ChoiceDecl]
+  val baseToSubs = mutable.ListMap.empty[ComplexTypeDecl, List[ComplexTypeDecl]]
+  val choiceNames = mutable.ListMap.empty[ChoiceDecl, String]
+  val choicePositions = mutable.ListMap.empty[ChoiceDecl, Int]
+  val typeNames = mutable.ListMap.empty[ComplexTypeDecl, String]
+  val complexTypes = mutable.Set.empty[ComplexTypeDecl]
+  val choiceWrapper = mutable.ListMap.empty[ComplexTypeDecl, ChoiceDecl]
   var argNumber = 0
   var choiceNumber = 0
 
@@ -55,9 +56,9 @@ class GenSource(conf: Driver.XsdConfig,
     cardinality: Cardinality) {
     
     override def toString(): String = cardinality match {
-      case Single   => name + ": " + buildTypeName(typeSymbol)
-      case Optional => name + ": Option[" + buildTypeName(typeSymbol) + "]"
-      case Multiple => name + ": Seq[" + buildTypeName(typeSymbol) + "]"
+      case Single   => makeParamName(name) + ": " + buildTypeName(typeSymbol)
+      case Optional => makeParamName(name) + ": Option[" + buildTypeName(typeSymbol) + "]"
+      case Multiple => makeParamName(name) + ": Seq[" + buildTypeName(typeSymbol) + "]"
     }      
   }
     
@@ -70,7 +71,7 @@ class GenSource(conf: Driver.XsdConfig,
     
     myprintAll(makeParentClass.child)
     
-    for (elem <- elems.valuesIterator.toList;
+    for (elem <- elemList;
         val typeSymbol = elem.typeSymbol;
         if typeSymbol.name.contains("@");
         if typeSymbol.isInstanceOf[ReferenceTypeSymbol];
@@ -78,7 +79,7 @@ class GenSource(conf: Driver.XsdConfig,
         if ref.decl.isInstanceOf[ComplexTypeDecl];
         val decl = ref.decl.asInstanceOf[ComplexTypeDecl]) {
       
-      typeNames(decl) = elem.name.capitalize
+      typeNames(decl) = makeTypeName(elem.name)
       complexTypes += decl
     }
     
@@ -204,7 +205,13 @@ class GenSource(conf: Driver.XsdConfig,
       name
     else
       name.capitalize
-      
+  
+  def makeParamName(name: String) =
+    if (isKeyword(name))
+      name + "Value"
+    else
+      name
+          
   def buildTypeName(typeSymbol: XsTypeSymbol): String = typeSymbol match {
     case symbol: BuiltInSimpleTypeSymbol => symbol.name
     case ReferenceTypeSymbol(decl: SimpleTypeDecl) => buildTypeName(decl.content)    
@@ -257,7 +264,7 @@ object {name} {{
       
   def makeTrait(decl: ComplexTypeDecl): scala.xml.Node = {
     val name = typeNames(decl)
-    Main.log("GenSource: emitting " + name)
+    Main.log("GenSource.makeTrait: emitting " + name)
 
     val childElements = flattenElements(decl, name)
     val list = List.concat[Decl](childElements, flattenAttributes(decl))
@@ -304,7 +311,7 @@ object {name} {{
   }
         
   def makeCaseClassWithType(name: String, decl: ComplexTypeDecl): scala.xml.Node = {
-    Main.log("GenSource: emitting " + name)
+    Main.log("GenSource.makeCaseClassWithType: emitting " + name)
     
     val superNames: List[String] = if (baseToSubs.contains(decl))
       List(defaultSuperName, typeNames(decl))
@@ -322,7 +329,7 @@ object {name} {{
       paramList.head.cardinality == Multiple
     
     def paramsString = if (hasSequenceParam)
-      paramList.head.name + ": " + buildTypeName(paramList.head.typeSymbol) + "*"      
+      makeParamName(paramList.head.name) + ": " + buildTypeName(paramList.head.typeSymbol) + "*"      
     else
       paramList.map(_.toString).mkString("," + newline + indent(1))
     
@@ -382,8 +389,20 @@ object {name} {{
         buildSelector(elem.name), elem.defaultValue, elem.fixedValue, elem.minOccurs, elem.maxOccurs)
       case ReferenceTypeSymbol(decl: SimpleTypeDecl) =>  buildArg(decl,
         buildSelector(elem.name), elem.defaultValue, elem.fixedValue, elem.minOccurs, elem.maxOccurs)
-      case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>  buildArg(elem, decl)
-      case _ => throw new Exception("GenSource: Invalid type " + typeSymbol.toString)
+      case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>  buildArg(elem, decl)              
+      
+      case symbol: ReferenceTypeSymbol =>
+        if (symbol.decl == null)
+          throw new Exception("GenSource: " + elem.toString +
+            " Invalid type " + symbol.getClass.toString + ": " +
+            symbol.toString + " with null decl")
+        else    
+          throw new Exception("GenSource: " + elem.toString +
+            " Invalid type " + symbol.getClass.toString + ": " +
+            symbol.toString + " with " + symbol.decl.toString)
+            
+      case _ => throw new Exception("GenSource: " + elem.toString +
+        " Invalid type " + typeSymbol.getClass.toString + ": " + typeSymbol.toString)
     }
   }
 
@@ -453,15 +472,25 @@ object {name} {{
     
     case SimpTypRestrictionDecl(base: BuiltInSimpleTypeSymbol) =>
       buildArg(base, selector, defaultValue, fixedValue, minOccurs, maxOccurs)
-    
+            
     case _ => throw new Exception("GenSource: Unsupported content " + decl.content.toString)    
   }
   
   def buildArg(content: SimpleContentDecl): String = content.content match {
-    case SimpContRestrictionDecl(base: BuiltInSimpleTypeSymbol, _) =>
-      buildArg(base, "node", None, None, 1, 1)
+    case SimpContRestrictionDecl(base: XsTypeSymbol, _) => buildArg(content, base)
+    case SimpContExtensionDecl(base: XsTypeSymbol, _) => buildArg(content, base)
     
     case _ => throw new Exception("GenSource: Unsupported content " + content.content.toString)    
+  }
+  
+  def buildArg(content: SimpleContentDecl, typeSymbol: XsTypeSymbol): String = typeSymbol match {
+    case base: BuiltInSimpleTypeSymbol => buildArg(base, "node", None, None, 1, 1)
+    case ReferenceTypeSymbol(ComplexTypeDecl(_, content: SimpleContentDecl, _)) =>
+      buildArg(content)
+    case ReferenceTypeSymbol(decl: SimpleTypeDecl) =>
+      buildArg(decl, "node", None, None, 1, 1)
+        
+    case _ => throw new Exception("GenSource: Unsupported type " + typeSymbol.toString)    
   }
   
   def buildSelector(nodeName: String) = "(node \\ \"" + nodeName + "\")"
@@ -602,9 +631,9 @@ object {name} {{
   }
   
   def buildElement(ref: ElemRef) = {
-    if (!elems.contains(ref.ref))
+    if (!topElems.contains(ref.ref))
       throw new Exception("GenSource: element not found: " + ref.ref)
-    val that = elems(ref.ref)
+    val that = topElems(ref.ref)
     
     val minOccurs = if (ref.minOccurs.isDefined)
       ref.minOccurs.get

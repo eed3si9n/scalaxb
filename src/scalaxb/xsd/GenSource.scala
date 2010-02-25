@@ -96,6 +96,7 @@ class GenSource(conf: Driver.XsdConfig,
         associateSubType(typ, base)
       case CompContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
         associateSubType(typ, base)
+      
       case SimpContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _) =>
         associateSubType(typ, base)
       case SimpContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _) =>
@@ -409,9 +410,7 @@ object {name} {{
   def buildArg(elem: ElemDecl, decl: ComplexTypeDecl): String = {
     val typeName = buildTypeName(elem.typeSymbol)
     
-    if (decl.content.isInstanceOf[SimpleContentDecl]) {
-      buildArg(decl.content.asInstanceOf[SimpleContentDecl])
-    } else if (choiceWrapper.keysIterator.contains(decl)) {
+    if (choiceWrapper.keysIterator.contains(decl)) {
       val choice = choiceWrapper(decl)
       val choicePosition = choicePositions(choice)
       if (elem.maxOccurs > 1) {
@@ -550,6 +549,12 @@ object {name} {{
       List(defaultSuperName, superName) ::: buildOptions(decl)
   }
   
+  def buildSuperName(decl: ComplexTypeDecl): String = 
+    decl.content.content.base match {
+      case ReferenceTypeSymbol(base: ComplexTypeDecl) => typeNames(base)
+      case _ => defaultSuperName // makeTypeName(decl.content.content.base.name) 
+    }
+  
   def buildOptions(decl: ComplexTypeDecl) = {
     val set = mutable.Set.empty[String]
     
@@ -570,13 +575,7 @@ object {name} {{
         
     set.toList
   }
-  
-  def buildSuperName(decl: ComplexTypeDecl): String = 
-    decl.content.content.base match {
-      case ReferenceTypeSymbol(base: ComplexTypeDecl) => typeNames(base)
-      case _ => makeTypeName(decl.content.content.base.name) 
-    }
-  
+    
   def flattenElements(decl: ComplexTypeDecl, name: String): List[ElemDecl] = {
     argNumber = 0
     

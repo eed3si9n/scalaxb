@@ -131,4 +131,12 @@
       <pattern value=".+[0-9]"/>
     </restriction>
   </simpleType>
+  
+  <complexType name="intWithAttr">
+    <simpleContent>
+      <extension base="int">
+         <attribute name="foo" type="string" use="optional" default="" />
+      </extension>
+    </simpleContent>
+  </complexType>
 </schema>

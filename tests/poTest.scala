@@ -10,6 +10,7 @@ object XsdTest {
     testItem
     testPurchaseOrder
     testTimeOlson
+    testIntWithAttr
   }
   
   def testUSAddress {
@@ -111,5 +112,17 @@ object XsdTest {
     }
     
     println(timeOlson.toString)
+  }
+  
+  def testIntWithAttr {
+    val subject = <some foo="test">1</some>
+    
+    val intWithAttr = IntWithAttr.fromXML(subject)
+    intWithAttr match {
+      case IntWithAttr(1, "test") =>
+      case _ => throw new Exception("match failed: " + intWithAttr.toString)
+    }
+    
+    println(intWithAttr.toString)    
   }
 }

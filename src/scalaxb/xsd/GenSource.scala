@@ -588,19 +588,22 @@ object {name} {{
     argNumber = 0
     
     decl.content.content match {
-      case SimpContRestrictionDecl(symbol: BuiltInSimpleTypeSymbol, _) => Nil
+      case SimpContRestrictionDecl(symbol: BuiltInSimpleTypeSymbol, _) =>
+        List(buildElement(symbol))
       case SimpContRestrictionDecl(ReferenceTypeSymbol(base: SimpleTypeDecl), _) =>
         List(buildElement(base))
       case SimpContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _) =>
         flattenElements(base, makeTypeName(base.name))
       
-      case SimpContExtensionDecl(symbol: BuiltInSimpleTypeSymbol, _) => Nil
+      case SimpContExtensionDecl(symbol: BuiltInSimpleTypeSymbol, _) =>
+        List(buildElement(symbol))
       case SimpContExtensionDecl(ReferenceTypeSymbol(base: SimpleTypeDecl), _) =>
         List(buildElement(base))
       case SimpContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _) =>
         flattenElements(base, makeTypeName(base.name))
       
-      case CompContRestrictionDecl(symbol: BuiltInSimpleTypeSymbol, _, _) => Nil
+      case CompContRestrictionDecl(symbol: BuiltInSimpleTypeSymbol, _, _) =>
+        List(buildElement(symbol))
       case CompContRestrictionDecl(ReferenceTypeSymbol(base: SimpleTypeDecl), _, _) =>
         List(buildElement(base))
       case CompContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
@@ -608,7 +611,8 @@ object {name} {{
       case res@CompContRestrictionDecl(xsAny, _, _) =>
         flattenElements(res.compositor, name)
       
-      case CompContExtensionDecl(symbol: BuiltInSimpleTypeSymbol, _, _) => Nil
+      case CompContExtensionDecl(symbol: BuiltInSimpleTypeSymbol, _, _) =>
+        List(buildElement(symbol))
       case CompContExtensionDecl(ReferenceTypeSymbol(base: SimpleTypeDecl), _, _) =>
         List(buildElement(base))
       case ext@CompContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
@@ -672,10 +676,13 @@ object {name} {{
   
   def buildElement(decl: SimpleTypeDecl): ElemDecl = decl.content match {
     case SimpTypRestrictionDecl(ReferenceTypeSymbol(base: SimpleTypeDecl)) => buildElement(base)
-    case SimpTypRestrictionDecl(base: BuiltInSimpleTypeSymbol) => ElemDecl("value", base, None, None, 1, 1)
+    case SimpTypRestrictionDecl(base: BuiltInSimpleTypeSymbol) => buildElement(base)
     case _ => throw new Exception("GenSource: unsupported type: " + decl)
   }
   
+  def buildElement(base: BuiltInSimpleTypeSymbol): ElemDecl = 
+    ElemDecl("value", base, None, None, 1, 1)
+    
   def buildChoiceRef(choice: ChoiceDecl, parentName: String) = {    
     val symbol = new ReferenceTypeSymbol(makeTypeName(choiceNames(choice)))
     val decl = ComplexTypeDecl(symbol.name, null, Nil)

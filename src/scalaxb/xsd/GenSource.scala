@@ -336,8 +336,16 @@ object {name} {{
     
     def argsString = if (hasSequenceParam)
       argList.head + ": _*"
-    else
-      argList.mkString("," + newline + indent(3))
+    else decl.content.content match {
+      case SimpContRestrictionDecl(base: XsTypeSymbol, _) =>
+        (buildArg(decl.content.asInstanceOf[SimpleContentDecl], base) :: argList.drop(1)).
+          mkString("," + newline + indent(3)) 
+      case SimpContExtensionDecl(base: XsTypeSymbol, _) =>
+        (buildArg(decl.content.asInstanceOf[SimpleContentDecl], base) :: argList.drop(1)).
+          mkString("," + newline + indent(3)) 
+                
+      case _ => argList.mkString("," + newline + indent(3))
+    }
     
     return <source>
 case class {name}({paramsString}) extends {superNamesString} {{
@@ -580,15 +588,29 @@ object {name} {{
     argNumber = 0
     
     decl.content.content match {
+      case SimpContRestrictionDecl(symbol: BuiltInSimpleTypeSymbol, _) => Nil
+      case SimpContRestrictionDecl(ReferenceTypeSymbol(base: SimpleTypeDecl), _) =>
+        List(buildElement(base))
+      case SimpContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _) =>
+        flattenElements(base, makeTypeName(base.name))
+      
+      case SimpContExtensionDecl(symbol: BuiltInSimpleTypeSymbol, _) => Nil
+      case SimpContExtensionDecl(ReferenceTypeSymbol(base: SimpleTypeDecl), _) =>
+        List(buildElement(base))
+      case SimpContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _) =>
+        flattenElements(base, makeTypeName(base.name))
+      
       case CompContRestrictionDecl(symbol: BuiltInSimpleTypeSymbol, _, _) => Nil
-      case CompContRestrictionDecl(ReferenceTypeSymbol(base: SimpleTypeDecl), _, _) => Nil
+      case CompContRestrictionDecl(ReferenceTypeSymbol(base: SimpleTypeDecl), _, _) =>
+        List(buildElement(base))
       case CompContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
         flattenElements(base, makeTypeName(base.name))        
       case res@CompContRestrictionDecl(xsAny, _, _) =>
         flattenElements(res.compositor, name)
       
       case CompContExtensionDecl(symbol: BuiltInSimpleTypeSymbol, _, _) => Nil
-      case CompContExtensionDecl(ReferenceTypeSymbol(base: SimpleTypeDecl), _, _) => Nil
+      case CompContExtensionDecl(ReferenceTypeSymbol(base: SimpleTypeDecl), _, _) =>
+        List(buildElement(base))
       case ext@CompContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
         flattenElements(base, makeTypeName(base.name)) :::
           flattenElements(ext.compositor, name)
@@ -646,6 +668,12 @@ object {name} {{
       
     ElemDecl(that.name, that.typeSymbol, that.defaultValue, that.fixedValue,
       minOccurs, maxOccurs)
+  }
+  
+  def buildElement(decl: SimpleTypeDecl): ElemDecl = decl.content match {
+    case SimpTypRestrictionDecl(ReferenceTypeSymbol(base: SimpleTypeDecl)) => buildElement(base)
+    case SimpTypRestrictionDecl(base: BuiltInSimpleTypeSymbol) => ElemDecl("value", base, None, None, 1, 1)
+    case _ => throw new Exception("GenSource: unsupported type: " + decl)
   }
   
   def buildChoiceRef(choice: ChoiceDecl, parentName: String) = {    

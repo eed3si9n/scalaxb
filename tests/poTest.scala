@@ -9,6 +9,7 @@ object XsdTest {
     testUSAddress
     testItem
     testPurchaseOrder
+    testTimeOlson
   }
   
   def testUSAddress {
@@ -97,5 +98,18 @@ object XsdTest {
       case _ => throw new Exception("match failed: " + purchaseOrder.toString)
     }    
     println(purchaseOrder.toString)  
+  }
+  
+  def testTimeOlson {
+    val subject = <time>00:00:00.000Z</time>
+    
+    val timeOlson = TimeOlson.fromXML(subject)
+    timeOlson match {
+      case TimeOlson(Calendar("1970-01-01T00:00:00.000Z"),
+        "") =>
+      case _ => throw new Exception("match failed: " + timeOlson.toString)
+    }
+    
+    println(timeOlson.toString)
   }
 }

@@ -101,20 +101,34 @@
     </restriction>
   </simpleType>
   
-  <xs:element name="Element1">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:choice>
-          <xs:element ref="Choice1"/>
-          <xs:element ref="Choice2"/>
-        </xs:choice>
-      </xs:sequence>
-    </xs:complexType>
-  </xs:element>
-  <xs:element name="Choice1">
-    <xs:complexType/>
-  </xs:element>
-  <xs:element name="Choice2">
-    <xs:complexType/>
-  </xs:element>
+  <element name="Element1">
+    <complexType>
+      <sequence>
+        <choice>
+          <element ref="Choice1"/>
+          <element ref="Choice2"/>
+        </choice>
+      </sequence>
+    </complexType>
+  </element>
+  <element name="Choice1">
+    <complexType/>
+  </element>
+  <element name="Choice2">
+    <complexType/>
+  </element>
+  
+  <complexType name="timeOlson">
+    <simpleContent>
+      <extension base="ipo:timeNoTZ">
+         <attribute name="olsonTZ" type="string" use="optional" default="" />
+      </extension>
+    </simpleContent>
+  </complexType>
+  
+  <simpleType name="timeNoTZ">
+    <restriction base="time">
+      <pattern value=".+[0-9]"/>
+    </restriction>
+  </simpleType>
 </schema>

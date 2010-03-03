@@ -14,12 +14,15 @@ to the sbaz managed directory:
 Installation from source and sbaz
 ---------------------------------
 
+Download and install simple-build-tool (sbt) from 
+
+   http://code.google.com/p/simple-build-tool/
+
 The following builds a scalaxb package from the source and installs it
 to the sbaz managed directory:
 
-  $ ant clean
-  $ ant dist
-  $ sudo sbaz install -f dist/scalaxb-0.0.0.0.sbp
+  $ sbt sbaz
+  $ sudo sbaz install -f target/scala_2.8.0.Beta1/scalaxb-0.0.2.sbp
 
 The the file name of the scalaxb package may have different version number.
 
@@ -28,11 +31,10 @@ Build from source
 
 The following builds plain jar from source.
 
-  $ ant clean
-  $ ant jar
+  $ sbt package
   
-This produces lib/scalaxb.jar. The following instructions are copied from
-simple-build-tool (sbt).
+This produces target/scala_2.8.0.Beta1/lib/scalaxb.jar.
+The following instructions are copied from simple-build-tool (sbt).
 
 Unix
 ----

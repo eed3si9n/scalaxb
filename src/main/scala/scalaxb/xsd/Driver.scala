@@ -19,27 +19,31 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+ 
+package scalaxb.xsd
 
-package scalaxb
+import scalaxb.{Module}
+import scala.collection.Map
+import java.io.{File, FileWriter, PrintWriter}
 
-object Main {
-  val module = scalaxb.xsd.Driver  
+object Driver extends Module {
+  type Schema = SchemaDecl
   
-  def main(args: Array[String]) {
-    try {
-      module.config.args = args
-      module.start()
-    } 
-    catch {
-      case e: Exception =>
-        e.printStackTrace
-    }
+  def generate(xsd: Schema, output: File, packageName: Option[String]) = {
+    val out = new PrintWriter(new FileWriter(output))
+    log("xsd: generating ...")
+    new GenSource(xsd, out, packageName, this) run;
+    out.flush()
+    out.close()
+    println("generated " + output)
+    output
   }
   
-  def log(msg: String) {
-    if (module.config.verbose) {
-      println("["+msg+"]")
-      Console.flush
-    }
+  def parse(input: java.io.File): Schema = {
+    log("xsd: parsing " + input)
+    val elem = scala.xml.XML.loadFile(input)
+    val schema = SchemaDecl.fromXML(elem)
+    log("SchemaParser.parse: " + schema.toString())
+    schema
   }
 }

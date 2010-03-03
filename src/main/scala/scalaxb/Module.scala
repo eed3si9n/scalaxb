@@ -26,64 +26,65 @@ import org.github.scopt.OptionParser
 import collection.mutable.ListBuffer
 import java.io.{File, FileWriter, PrintWriter}
 
-trait Module {
-  type Config <: ModuleConfig
+trait Logger {
+  def log(msg: String) {
+    println("["+msg+"]")
+    Console.flush
+  }
+}
+
+trait Module extends Logger {
   type Schema
   
+  private val config = new ModuleConfig()   
+  
   class ModuleConfig {
-    var args: Seq[String] = Nil
     var verbose = false
-    var packageName: String = _
-    var doVerifySchema = false
-    var doVerifyOutput = false
-    var outdir: File = _
+    var packageName: Option[String] = None
+    var outdir: File = new File(".")  
   }
   
-  def start() {    
+  def start(args: Seq[String]) { 
     val files = new ListBuffer[java.io.File]
     val paramParser = new OptionParser {
       opt("d", "outdir", "generated files will go into this directory",
-        { d: String => config.outdir = new java.io.File(d) })
+        { d: String => config.outdir = new File(d) })
       opt("p", "package", "specifies the target package",
-        { p: String => config.packageName = p })
+        { p: String => config.packageName = Some(p) })
       opt("v", "verbose", "be extra verbose",
         { config.verbose = true })
       arg("<schema_file>", "input schema to be converted",
-        { x: String => files += new java.io.File(x) })
+        { x: String => files += new File(x) })
     }
     
-    if (paramParser.parse(config.args))
-      for (file <- files)
-        if (file.exists)
-          process(file)
-        else
-          throw new Exception("file not found: " + file.toString)
+    if (paramParser.parse(args))
+      files.foreach(file => process(file,
+        buildOutputFile(file, config.outdir),
+        config.packageName))
+  }
+  
+  def buildOutputFile(input: File, outdir: File) = {
+    val name = input.getName
+    val namepart = name.splitAt(name.indexOf('.'))._1
+    new File(outdir, namepart + ".scala") 
   }
   
   def parse(input: File): Schema
   
-  def generate(schema: Schema, output: File): Unit
-  
-  def config: Config
-  
-  def process(input: File) {
+  def generate(schema: Schema, output: File, packageName: Option[String]): File
+    
+  def process(input: File, output: File, packageName: Option[String]) = {
+    if (!input.exists)
+      throw new Exception("file not found: " + input.toString)
+    
     val schama = parse(input)
-    var sdv = !(config.doVerifySchema) || verifySchema(schama);
-    generate(schama, buildOutputFile(input))
-    var outv = !(config.doVerifyOutput) || verifyOutput();
+    generate(schama, output, packageName)
   }
   
-  def buildOutputFile(input: File) = {
-    val dir = if (config.outdir == null)
-      new File(".")
-    else
-      config.outdir
-    val name = input.getName
-    val namepart = name.splitAt(name.indexOf('.'))._1
-    new File(dir, namepart + ".scala") 
+  override def log(msg: String) {
+    if (config.verbose) {
+      println("["+msg+"]")
+      Console.flush
+    }
   }
-  
-  def verifySchema(sd: Schema): Boolean
-  
-  def verifyOutput(): Boolean
 }

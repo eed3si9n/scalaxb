@@ -28,9 +28,10 @@ import scala.collection.mutable
 import scala.xml._
 import java.io.{File, FileWriter, PrintWriter}
 
-class GenSource(conf: Driver.XsdConfig,
-    schema: SchemaDecl,
-    out: PrintWriter) extends ScalaNames {  
+class GenSource(schema: SchemaDecl,
+    out: PrintWriter,
+    packageName: Option[String],
+    logger: Logger) extends ScalaNames {  
   val topElems = schema.topElems
   val elemList = schema.elemList
   val types = schema.types
@@ -64,9 +65,9 @@ class GenSource(conf: Driver.XsdConfig,
     
   def run {
     import scala.collection.mutable
-    Main.log("xsd: GenSource.run")
+    log("xsd: GenSource.run")
     
-    if (conf.packageName != null)
+    if (packageName.isDefined)
       myprintAll(makePackageName.child)
     
     myprintAll(makeParentClass.child)
@@ -265,7 +266,7 @@ object {name} {{
       
   def makeTrait(decl: ComplexTypeDecl): scala.xml.Node = {
     val name = typeNames(decl)
-    Main.log("GenSource.makeTrait: emitting " + name)
+    log("GenSource.makeTrait: emitting " + name)
 
     val childElements = flattenElements(decl, name)
     val list = List.concat[Decl](childElements, flattenAttributes(decl))
@@ -312,7 +313,7 @@ object {name} {{
   }
         
   def makeCaseClassWithType(name: String, decl: ComplexTypeDecl): scala.xml.Node = {
-    Main.log("GenSource.makeCaseClassWithType: emitting " + name)
+    log("GenSource.makeCaseClassWithType: emitting " + name)
     
     val superNames: List[String] = if (baseToSubs.contains(decl))
       List(defaultSuperName, typeNames(decl))
@@ -722,13 +723,14 @@ object {name} {{
     case EntityRef("gt")  => out.print('>')
     case EntityRef("amp") => out.print('&')
     case atom: Atom[_]    => out.print(atom.text)
-    case _                => Main.log("error in xsd:run: encountered "
+    case _                => log("error in xsd:run: encountered "
       + n.getClass() + " " + n.toString)
   }
   
-  def makePackageName = {
-    <source>package {conf.packageName}
+  def makePackageName = packageName match {
+    case Some(x) => <source>package {x}
 </source>
+    case None    => throw new Exception("GenSource: package name is missing")
   }
   
   def makeParentClass = {
@@ -773,4 +775,6 @@ object Helper {{
   }
 
   def indent(indent: Int) = "  " * indent
+  
+  def log(msg: String) = logger.log(msg)
 }

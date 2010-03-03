@@ -22,7 +22,6 @@
 
 package scalaxb.xsd
 
-import scalaxb.{Main}
 import scala.xml.{TypeSymbol}
 import scala.collection.{Map, Set}
 import scala.collection.mutable
@@ -40,8 +39,6 @@ class ParserConfig {
   val choices   = mutable.Set.empty[ChoiceDecl]
 }
 
-object DefaultParserConfig extends ParserConfig
-
 case class SchemaDecl(topElems: Map[String, ElemDecl],
     elemList: List[ElemDecl],
     types: Map[String, TypeDecl],
@@ -57,7 +54,7 @@ case class SchemaDecl(topElems: Map[String, ElemDecl],
 
 object SchemaDecl {
   def fromXML(node: scala.xml.Node,
-      config: ParserConfig = DefaultParserConfig) = {
+      config: ParserConfig = new ParserConfig) = {
     val XML_SCHEMA_URI = "http://www.w3.org/2001/XMLSchema"
     
     val schema = (node \\ "schema").headOption match {
@@ -172,8 +169,6 @@ object AttributeDecl {
   def fromXML(node: scala.xml.Node, config: ParserConfig) = {
     if (!(node \ "@ref").isEmpty) {
       val ref = (node \ "@ref").text.replaceFirst(config.myPrefix, "")
-      
-      Main.log("AttributeDelc.fromXML: " + ref)
       if (!config.attrs.contains(ref)) {
         throw new Exception("xsd: Attribute ref not found " + ref)
       }
@@ -181,7 +176,6 @@ object AttributeDecl {
       config.attrs(ref)
     } else {
       val name = (node \ "@name").text
-      Main.log("AttributeDelc.fromXML: " + name)
       var typeSymbol: XsTypeSymbol = xsUnknown
       val typeName = (node \ "@type").text
       if (typeName != "") {
@@ -222,9 +216,7 @@ case class ElemRef(ref: String,
 
 object ElemRef {
   def fromXML(node: scala.xml.Node, config: ParserConfig) = {
-    val ref = (node \ "@ref").text.replaceFirst(config.myPrefix, "")
-    Main.log("ElemRef.fromXML: ref " + ref)
-    
+    val ref = (node \ "@ref").text.replaceFirst(config.myPrefix, "")    
     val minOccurs = (node \ "@minOccurs").headOption match {
       case None    => None
       case Some(x) => Some(CompositorDecl.buildOccurrence((node \ "@minOccurs").text))
@@ -249,7 +241,6 @@ case class ElemDecl(name: String,
 object ElemDecl {
   def fromXML(node: scala.xml.Node, config: ParserConfig) = {
     val name = (node \ "@name").text
-    Main.log("ElemDecl.fromXML: name " + name)
     var typeSymbol: XsTypeSymbol = xsAny
     val typeName = (node \ "@type").text
     
@@ -299,8 +290,6 @@ case class SimpleTypeDecl(name: String, content: ContentTypeDecl) extends TypeDe
 
 object SimpleTypeDecl {
   def fromXML(node: scala.xml.Node, config: ParserConfig) = {
-    Main.log("SimpleTypeDecl.fromXML: " + node.toString)
-    
     val name = buildName(node)
     
     var content: ContentTypeDecl = null
@@ -333,7 +322,6 @@ case class ComplexTypeDecl(name: String,
 
 object ComplexTypeDecl {  
   def fromXML(node: scala.xml.Node, name: String, config: ParserConfig) = {
-    Main.log("ComplexTypeDecl.fromXML: " + node.toString)
     var content: HasComplexTypeContent = ComplexContentDecl.empty
     
     val attributes = (node \ "attribute").toList.map(

@@ -1,7 +1,8 @@
-build.number
-build.properties
-classes
-dist
 .DS_Store
 doc
 tests/tmp
+target/
+lib_managed/
+src_managed/
+project/boot/
+tmp/

@@ -20,10 +20,10 @@
  * THE SOFTWARE.
  */
 
-package scalaxb
+package org.scalaxb.compiler
 
 object Main {
-  val module = scalaxb.xsd.Driver  
+  val module = org.scalaxb.compiler.xsd.Driver  
   
   def main(args: Array[String]) {
     try {

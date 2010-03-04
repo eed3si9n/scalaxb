@@ -1,9 +1,9 @@
 import org.specs._
 import java.io.{File}
-import scalaxb.xsd.{SchemaDecl}
+import org.scalaxb.compiler.xsd.{SchemaDecl}
 
 class PurchaseOrderTest extends Specification with CompilerMatcher {
-  val module = scalaxb.xsd.Driver
+  val module = org.scalaxb.compiler.xsd.Driver
   val ipoxsd = new File("src/test/resources/ipo.xsd")
   val tmp = new File("tmp")
   if (tmp.exists)

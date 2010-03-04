@@ -20,9 +20,9 @@
  * THE SOFTWARE.
  */
 
-package scalaxb.xsd
+package org.scalaxb.compiler.xsd
 
-import scalaxb._
+import org.scalaxb.compiler.{ScalaNames, Logger}
 import scala.collection.Map
 import scala.collection.mutable
 import scala.xml._

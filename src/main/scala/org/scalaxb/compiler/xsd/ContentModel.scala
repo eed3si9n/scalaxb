@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-package scalaxb.xsd
+package org.scalaxb.compiler.xsd
 
 import scala.xml._
 import scala.util.regexp.WordExp

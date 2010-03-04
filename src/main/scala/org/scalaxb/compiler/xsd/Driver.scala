@@ -20,63 +20,30 @@
  * THE SOFTWARE.
  */
  
-package scalaxb
+package org.scalaxb.compiler.xsd
 
-trait ScalaNames {
+import org.scalaxb.compiler.{Module}
+import scala.collection.Map
+import java.io.{File, FileWriter, PrintWriter}
 
-  def isKeyword(str: String) =
-    str match {
-      case "abstract"
-      | "case"
-      | "class"
-      | "catch"
-      | "def"
-      | "do"
-      | "else"
-      | "extends"
-      | "false"
-      | "final"
-      | "finally"
-      | "for"
-      | "forSome"
-      | "if"
-      | "import"
-      | "new"
-      | "null"
-      | "object"
-      | "override"
-      | "package"
-      | "private"
-      | "protected"
-      | "return"
-      | "sealed"
-      | "super"
-      | "this"
-      | "throw"
-      | "trait"
-      | "true"
-      | "try"
-      | "type"
-      | "val"
-      | "var"
-      | "with"
-      | "while"
-      | "yield" => true
-
-      case _ => false
-    }
-    /* // these cannot appear as XML names
-  case "." =>
-  case "_" =>
-  case ":" =>
-  case "=" =>
-  case "=>" =>
-  case "<-" =>
-  case "<:" =>
-  case ">:" =>
-  case "<%" =>
-  case "#" =>
-  case "@" =>
-    */
-
+object Driver extends Module {
+  type Schema = SchemaDecl
+  
+  def generate(xsd: Schema, output: File, packageName: Option[String]) = {
+    val out = new PrintWriter(new FileWriter(output))
+    log("xsd: generating ...")
+    new GenSource(xsd, out, packageName, this) run;
+    out.flush()
+    out.close()
+    println("generated " + output)
+    output
+  }
+  
+  def parse(input: java.io.File): Schema = {
+    log("xsd: parsing " + input)
+    val elem = scala.xml.XML.loadFile(input)
+    val schema = SchemaDecl.fromXML(elem)
+    log("SchemaParser.parse: " + schema.toString())
+    schema
+  }
 }

@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
  
-package scalaxb.xsd
+package org.scalaxb.compiler.xsd
 
 abstract class XsTypeSymbol(val name: String) extends xml.TypeSymbol {
   override def toString(): String = {

@@ -6,28 +6,34 @@ trait ScalaScriptTask extends DefaultProject {
   
   def outputBinPath = (outputPath ##) / "bin"
   def scriptPath = outputBinPath / name
-  def mainClassName: String
-  def scriptClasspath: List[String] = Nil 
   def scriptProperties: List[Tuple2[String, String]] = Nil
   def scriptJavaFlags = "-Xmx256M -Xms16M"
   def scriptToolFlags = ""
   
-  lazy val scalascript = scalascriptTask(scriptPath.asFile, mainClassName,
-    scriptClasspath, scriptProperties,
-    scriptJavaFlags, scriptToolFlags)
-    
+  lazy val scalascript = scalascriptTask(scriptPath.asFile,
+    scriptProperties, scriptJavaFlags, scriptToolFlags)
+  
+  /** generates shell script to execute the program.
+   * uses <code>mainClassValue</code> and <code>runClasspath</code>.
+   */
   def scalascriptTask(file: File,
-      mainClass: String,
-      classpath: List[String],
       properties: List[Tuple2[String, String]],
       javaFlags: String,
       toolFlags: String) = task {        
+    
     val props = properties.map({
       case Pair(name,value) => "-D" + name + "=\"" + value + "\""
     }).mkString("", " ", "")
     
+    val mainClassValue = getMainClass(true) match {
+      case Some(x) => x
+      case None => error("mainClass was not found.")
+    }
+    
+    val classpath = runClasspath.getPaths
+    
     val patches = Map (
-      "class" -> mainClass,
+      "class" -> mainClassValue,
       "properties" -> props,
       "javaflags" -> javaFlags,
       "toolflags" -> toolFlags

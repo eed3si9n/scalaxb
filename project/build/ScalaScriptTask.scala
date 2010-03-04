@@ -4,6 +4,18 @@ import java.io.{File, InputStream, FileWriter}
 trait ScalaScriptTask extends DefaultProject {  
   def templatePath = path("project") / "build" / "templates"
   
+  def outputBinPath = (outputPath ##) / "bin"
+  def scriptPath = outputBinPath / name
+  def mainClassName: String
+  def scriptClasspath: List[String] = Nil 
+  def scriptProperties: List[Tuple2[String, String]] = Nil
+  def scriptJavaFlags = "-Xmx256M -Xms16M"
+  def scriptToolFlags = ""
+  
+  lazy val scalascript = scalascriptTask(scriptPath.asFile, mainClassName,
+    scriptClasspath, scriptProperties,
+    scriptJavaFlags, scriptToolFlags)
+    
   def scalascriptTask(file: File,
       mainClass: String,
       classpath: List[String],

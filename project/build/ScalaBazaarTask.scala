@@ -1,11 +1,11 @@
 import sbt._
 import java.io.{File, InputStream, FileWriter}
 
-trait ScalaBazaarTask extends DefaultProject {  
+trait ScalaBazaarTask extends ScalaScriptTask {  
   def ouputLibPath = (outputPath ##) / "lib"
   override val defaultJarName = name + ".jar"
   override def jarPath = ouputLibPath / defaultJarName
-  def outputBinPath = (outputPath ##) / "bin"
+  
   val bazaarPackageName = name + "-" + version + ".sbp"
   def bazaarPackagePath = outputPath / bazaarPackageName
   val bazaarAdvertName = name + "-" + version + ".advert"
@@ -13,6 +13,10 @@ trait ScalaBazaarTask extends DefaultProject {
   def outputMetaPath = (outputPath ##) / "meta"
   def descriptionPath = outputMetaPath / "description"
   def outputDocPath = (outputPath ##) / "doc"
+  def bazaarDepends: List[String] = Nil
+  def description: String
+  
+  lazy val sbaz = sbazTask(bazaarDepends, Some(description))
   
   def sbazTask(depends: List[String], description: Option[String]) = task {
     if (!outputMetaPath.asFile.exists)
@@ -46,7 +50,7 @@ if (!depends.isEmpty)
     FileUtilities.zip(List(outputBinPath, jarPath, outputDocPath, outputMetaPath),
       bazaarPackagePath, true, log)  
     None
-  }
+  }.dependsOn(`package`, doc, scalascript)
   
   private def writeFile(file: File, content: String) =
     if (file.exists() && !file.canWrite())

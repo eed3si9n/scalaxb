@@ -218,13 +218,13 @@ class GenSource(schema: SchemaDecl,
     case symbol: BuiltInSimpleTypeSymbol => symbol.name
     case ReferenceTypeSymbol(decl: SimpleTypeDecl) => buildTypeName(decl.content)    
     case ReferenceTypeSymbol(decl: ComplexTypeDecl) => typeNames(decl)
-    case _ => throw new Exception("GenSource: Invalid type " + typeSymbol.toString)    
+    case _ => error("GenSource: Invalid type " + typeSymbol.toString)    
   }
   
   def buildTypeName(content: ContentTypeDecl): String = content match {
     case SimpTypRestrictionDecl(base: BuiltInSimpleTypeSymbol) => base.name
     
-    case _ => throw new Exception("GenSource: Unsupported content " + content.toString)
+    case _ => error("GenSource: Unsupported content " + content.toString)
   }
   
   def makeChoiceTrait(choice: ChoiceDecl): scala.xml.Node = {
@@ -244,7 +244,7 @@ class GenSource(schema: SchemaDecl,
         
         "case " + quote(elem.name) + " => " + typeName + ".fromXML(node)"
               
-      case _ => throw new Exception("GenSource: Unsupported compositor " + decl.toString)
+      case _ => error("GenSource: Unsupported compositor " + decl.toString)
     }
     
     return <source>
@@ -258,7 +258,7 @@ object {name} {{
       cases.mkString(newline + indent(2))        
     }
     
-    case _ => throw new Exception("Unsupported element: " + node.label + ": " +  node.toString)
+    case _ => error("Unsupported element: " + node.label + ": " +  node.toString)
   }}
 }}
 </source>    
@@ -362,7 +362,7 @@ object {name} {{
   def buildParam(decl: Decl): Param = decl match {
     case elem: ElemDecl => buildParam(elem)
     case attr: AttributeDecl => buildParam(attr)
-    case _ => throw new Exception("GenSource: unsupported delcaration " + decl.toString)
+    case _ => error("GenSource: unsupported delcaration " + decl.toString)
   }
   
   def buildParam(elem: ElemDecl): Param = {
@@ -388,7 +388,7 @@ object {name} {{
   def buildArg(decl: Decl): String = decl match {
     case elem: ElemDecl       => buildArg(elem)
     case attr: AttributeDecl  => buildArg(attr)
-    case _ => throw new Exception("GenSource: unsupported delcaration " + decl.toString)
+    case _ => error("GenSource: unsupported delcaration " + decl.toString)
   }
   
   def buildArg(elem: ElemDecl): String = {
@@ -403,15 +403,15 @@ object {name} {{
       
       case symbol: ReferenceTypeSymbol =>
         if (symbol.decl == null)
-          throw new Exception("GenSource: " + elem.toString +
+          error("GenSource: " + elem.toString +
             " Invalid type " + symbol.getClass.toString + ": " +
             symbol.toString + " with null decl")
         else    
-          throw new Exception("GenSource: " + elem.toString +
+          error("GenSource: " + elem.toString +
             " Invalid type " + symbol.getClass.toString + ": " +
             symbol.toString + " with " + symbol.decl.toString)
             
-      case _ => throw new Exception("GenSource: " + elem.toString +
+      case _ => error("GenSource: " + elem.toString +
         " Invalid type " + typeSymbol.getClass.toString + ": " + typeSymbol.toString)
     }
   }
@@ -471,7 +471,7 @@ object {name} {{
         toMinOccurs(attr), 1)    
     
     case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
-      throw new Exception("GenSource: Attribute with complex type " + decl.toString) 
+      error("GenSource: Attribute with complex type " + decl.toString) 
   }
 
   def buildArg(decl: SimpleTypeDecl, selector: String,
@@ -481,14 +481,14 @@ object {name} {{
     case SimpTypRestrictionDecl(base: BuiltInSimpleTypeSymbol) =>
       buildArg(base, selector, defaultValue, fixedValue, minOccurs, maxOccurs)
             
-    case _ => throw new Exception("GenSource: Unsupported content " + decl.content.toString)    
+    case _ => error("GenSource: Unsupported content " + decl.content.toString)    
   }
   
   def buildArg(content: SimpleContentDecl): String = content.content match {
     case SimpContRestrictionDecl(base: XsTypeSymbol, _) => buildArg(content, base)
     case SimpContExtensionDecl(base: XsTypeSymbol, _) => buildArg(content, base)
     
-    case _ => throw new Exception("GenSource: Unsupported content " + content.content.toString)    
+    case _ => error("GenSource: Unsupported content " + content.content.toString)    
   }
   
   def buildArg(content: SimpleContentDecl, typeSymbol: XsTypeSymbol): String = typeSymbol match {
@@ -498,7 +498,7 @@ object {name} {{
     case ReferenceTypeSymbol(decl: SimpleTypeDecl) =>
       buildArg(decl, "node", None, None, 1, 1)
         
-    case _ => throw new Exception("GenSource: Unsupported type " + typeSymbol.toString)    
+    case _ => error("GenSource: Unsupported type " + typeSymbol.toString)    
   }
   
   def buildSelector(nodeName: String) = "(node \\ \"" + nodeName + "\")"
@@ -526,7 +526,7 @@ object {name} {{
       case "Array[String]" => ("", ".split(' ')")
       // case "Base64Binary" =>
       // case "HexBinary"  => 
-      case _        => throw new Exception("GenSource: Unsupported type " + typeSymbol.toString) 
+      case _        => error("GenSource: Unsupported type " + typeSymbol.toString) 
     }
     
     def buildMatchStatement(noneValue: String, someValue: String) =
@@ -658,7 +658,7 @@ object {name} {{
   
   def buildElement(ref: ElemRef) = {
     if (!topElems.contains(ref.ref))
-      throw new Exception("GenSource: element not found: " + ref.ref)
+      error("GenSource: element not found: " + ref.ref)
     val that = topElems(ref.ref)
     
     val minOccurs = if (ref.minOccurs.isDefined)
@@ -678,7 +678,7 @@ object {name} {{
   def buildElement(decl: SimpleTypeDecl): ElemDecl = decl.content match {
     case SimpTypRestrictionDecl(ReferenceTypeSymbol(base: SimpleTypeDecl)) => buildElement(base)
     case SimpTypRestrictionDecl(base: BuiltInSimpleTypeSymbol) => buildElement(base)
-    case _ => throw new Exception("GenSource: unsupported type: " + decl)
+    case _ => error("GenSource: unsupported type: " + decl)
   }
   
   def buildElement(base: BuiltInSimpleTypeSymbol): ElemDecl = 
@@ -730,7 +730,7 @@ object {name} {{
   def makePackageName = packageName match {
     case Some(x) => <source>package {x}
 </source>
-    case None    => throw new Exception("GenSource: package name is missing")
+    case None    => error("GenSource: package name is missing")
   }
   
   def makeParentClass = {

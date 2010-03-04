@@ -59,7 +59,7 @@ object SchemaDecl {
     
     val schema = (node \\ "schema").headOption match {
       case Some(x) => x
-      case None    => throw new Exception("xsd: schema element not found: " + node.toString)
+      case None    => error("xsd: schema element not found: " + node.toString)
     }
     
     val xsPrefix = schema.scope.getPrefix(XML_SCHEMA_URI)
@@ -105,10 +105,10 @@ object SchemaDecl {
         
         case symbol: ReferenceTypeSymbol =>
           if (!config.types.contains(symbol.name))
-            throw new Exception("SchemaDecl: type not found " + attr.name + ": " + symbol.name)
+            error("SchemaDecl: type not found " + attr.name + ": " + symbol.name)
           config.types(symbol.name) match {
             case decl: SimpleTypeDecl => symbol.decl = decl
-            case _ => throw new Exception("SchemaDecl: type does not match ")
+            case _ => error("SchemaDecl: type does not match ")
           } // match
       } // match    
     } // for
@@ -135,7 +135,7 @@ object SchemaDecl {
   def resolveType(value: XsTypeSymbol, config: ParserConfig): Unit = value match {
     case symbol: ReferenceTypeSymbol =>
       if (!config.types.contains(symbol.name))
-        throw new Exception("SchemaDecl: type not found: " + symbol.name)
+        error("SchemaDecl: type not found: " + symbol.name)
       
       if (symbol.decl == null)
         symbol.decl = config.types(symbol.name)
@@ -169,9 +169,8 @@ object AttributeDecl {
   def fromXML(node: scala.xml.Node, config: ParserConfig) = {
     if (!(node \ "@ref").isEmpty) {
       val ref = (node \ "@ref").text.replaceFirst(config.myPrefix, "")
-      if (!config.attrs.contains(ref)) {
-        throw new Exception("xsd: Attribute ref not found " + ref)
-      }
+      if (!config.attrs.contains(ref))
+        error("xsd: Attribute ref not found " + ref)
       
       config.attrs(ref)
     } else {
@@ -329,7 +328,7 @@ object ComplexTypeDecl {
     
     for (child <- node.child) child match {
       case <group>{ _* }</group> =>
-        throw new Exception("Unsupported content type: " + child.toString)
+        error("Unsupported content type: " + child.toString)
       case <all>{ _* }</all> =>
         content = ComplexContentDecl.fromCompositor(
           AllDecl.fromXML(child, config), attributes)
@@ -350,16 +349,6 @@ object ComplexTypeDecl {
     val typ = ComplexTypeDecl(name, content, attributes.reverse)
     config.types += (typ.name -> typ) 
     typ
-  }
-  
-  def firstChild(node: scala.xml.Node) = {
-    val children = for (child <- node.child; if child.isInstanceOf[scala.xml.Elem])
-      yield child
-    if (children.length == 0) {
-      throw new Exception("there are no children: " + node.toString)
-    }
-      
-    children(0)
   }
 }
 
@@ -433,12 +422,12 @@ object CompositorDecl {
       else if ((node \ "@ref").headOption.isDefined)
         ElemRef.fromXML(node, config)
       else
-        throw new Exception("xsd: Unspported content type " + node.toString) 
+        error("xsd: Unspported content type " + node.toString) 
     case <choice>{ _* }</choice>     => ChoiceDecl.fromXML(node, config)
     case <sequence>{ _* }</sequence> => SequenceDecl.fromXML(node, config)
     case <all>{ _* }</all>           => AllDecl.fromXML(node, config)
     
-    case _ => throw new Exception("xsd: Unspported content type " + node.label)   
+    case _ => error("xsd: Unspported content type " + node.label)   
   }
   
   def buildOccurrence(value: String) =

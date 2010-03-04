@@ -56,7 +56,7 @@ object ContentModel extends WordExp  {
     case <complexContent>{ children @ _* }</complexContent>  => Letter(ElemRef())
     case <simpleContent>{ children @ _* }</simpleContent>  => Letter(ElemRef())
     case <extension>{ children @ _* }</extension>  => Letter(ElemRef())
-    case _ => throw new Exception("XSD ContentModel error:" + node.toString)
+    case _ => error("XSD ContentModel error:" + node.toString)
   }
   
   def filterElem(nodes: Seq[Node]) = {

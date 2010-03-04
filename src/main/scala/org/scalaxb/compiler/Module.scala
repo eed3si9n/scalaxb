@@ -75,7 +75,7 @@ trait Module extends Logger {
     
   def process(input: File, output: File, packageName: Option[String]) = {
     if (!input.exists)
-      throw new Exception("file not found: " + input.toString)
+      error("file not found: " + input.toString)
     
     val schama = parse(input)
     generate(schama, output, packageName)

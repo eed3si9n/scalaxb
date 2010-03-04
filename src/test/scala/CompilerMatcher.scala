@@ -65,7 +65,7 @@ trait CompilerMatcher {
         val files = pair._2
         
         if (code.size < 1)
-          throw new Exception("At least one line of code is required.")
+          error("At least one line of code is required.")
         
         val holder = new Holder
         val classpathList = List(jarPathOfClass(holder.getClass.getName))

@@ -29,7 +29,7 @@ object XsdTest {
         "Wilmington",
         "DE",
         19808) =>
-      case _ => throw new Exception("match failed: " + address.toString)
+      case _ => error("match failed: " + address.toString)
     }
     
     println(address.toString)
@@ -52,8 +52,8 @@ object XsdTest {
         Some(Calendar("2010-02-06T00:00:00.000Z")),
         "639-OS") =>
           if (usPrice != BigDecimal(4.00))
-            throw new Exception("values don't match: " + item.toString)
-      case _ => throw new Exception("match failed: " + item.toString)
+            error("values don't match: " + item.toString)
+      case _ => error("match failed: " + item.toString)
     }
     
     println(item.toString)
@@ -96,7 +96,7 @@ object XsdTest {
         None,
         Items(_),
         Some(Calendar("1999-12-01T00:00:00.000Z"))) =>
-      case _ => throw new Exception("match failed: " + purchaseOrder.toString)
+      case _ => error("match failed: " + purchaseOrder.toString)
     }    
     println(purchaseOrder.toString)  
   }
@@ -108,7 +108,7 @@ object XsdTest {
     timeOlson match {
       case TimeOlson(Calendar("1970-01-01T00:00:00.000Z"),
         "") =>
-      case _ => throw new Exception("match failed: " + timeOlson.toString)
+      case _ => error("match failed: " + timeOlson.toString)
     }
     
     println(timeOlson.toString)
@@ -120,7 +120,7 @@ object XsdTest {
     val intWithAttr = IntWithAttr.fromXML(subject)
     intWithAttr match {
       case IntWithAttr(1, "test") =>
-      case _ => throw new Exception("match failed: " + intWithAttr.toString)
+      case _ => error("match failed: " + intWithAttr.toString)
     }
     
     println(intWithAttr.toString)    

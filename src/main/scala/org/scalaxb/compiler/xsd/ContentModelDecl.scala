@@ -87,7 +87,7 @@ object CompContRestrictionDecl {
     
     for (child <- node.child) child match {
       case <group>{ _* }</group> =>
-        throw new Exception("Unsupported content type: " + child.toString)
+        error("Unsupported content type: " + child.toString)
       case <all>{ _* }</all> =>
         compositor = Some(AllDecl.fromXML(child, config))
       case <choice>{ _* }</choice> =>
@@ -117,7 +117,7 @@ object CompContExtensionDecl {
     
     for (child <- node.child) child match {
       case <group>{ _* }</group> =>
-        throw new Exception("Unsupported content type: " + child.toString)
+        error("Unsupported content type: " + child.toString)
       case <all>{ _* }</all> =>
         compositor = Some(AllDecl.fromXML(child, config))
       case <choice>{ _* }</choice> =>

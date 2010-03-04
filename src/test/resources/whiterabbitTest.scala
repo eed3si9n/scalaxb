@@ -18,7 +18,7 @@ object WhiteRabbitTest {
     val wild = Wild.fromXML(subject)
     wild match {
       case Wild("foo") =>
-      case _ => throw new Exception("match failed: " + wild.toString)
+      case _ => error("match failed: " + wild.toString)
     } 
     println(wild.toString)
   }
@@ -28,7 +28,7 @@ object WhiteRabbitTest {
     val riskOption = RiskOption.fromXML(subject)
     riskOption match {
       case Agent() =>
-      case _ => throw new Exception("match failed: " + riskOption.toString)
+      case _ => error("match failed: " + riskOption.toString)
     }
     
     println(riskOption.toString)
@@ -43,7 +43,7 @@ object WhiteRabbitTest {
     val risk = Risk.fromXML(subject)
     risk match {
       case Risk(Agent(), Manifested()) =>
-      case _ => throw new Exception("match failed: " + risk.toString)
+      case _ => error("match failed: " + risk.toString)
     }
     
     println(risk.toString)

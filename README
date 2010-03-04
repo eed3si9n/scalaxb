@@ -17,6 +17,12 @@ scalaxb is tested only under Scala 2.8. You can install it using sbaz:
 
   $ sudo sbaz install scalaxb
 
+or build from source:
+
+  $ git clone git://github.com/eed3si9n/scalaxb.git scalaxb
+  $ cd scalaxb
+  $ sbt sbaz
+
 See the file called INSTALL for details.
 
 Usage

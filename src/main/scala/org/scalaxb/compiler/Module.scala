@@ -46,10 +46,10 @@ trait Module extends Logger {
   
   def start(args: Seq[String]) { 
     val files = new ListBuffer[java.io.File]
-    val paramParser = new OptionParser {
-      opt("d", "outdir", "generated files will go into this directory",
+    val paramParser = new OptionParser("scalaxb") {
+      opt("d", "outdir", "<directory>", "generated files will go into <directory>",
         { d: String => config.outdir = new File(d) })
-      opt("p", "package", "specifies the target package",
+      opt("p", "package", "<package>", "specifies the target package",
         { p: String => config.packageName = Some(p) })
       opt("v", "verbose", "be extra verbose",
         { config.verbose = true })

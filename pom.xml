@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <name>scalaxb</name>
+  <groupId>org.scalaxb</groupId>
+  <artifactId>scalaxb</artifactId>
+  <version>0.0-SNAPSHOT</version>
+
+  <properties>
+    <scalaVersion>2.8.0.Beta1</scalaVersion>
+  </properties>
+
+  <pluginRepositories>
+    <pluginRepository>
+      <id>scala</id>
+      <name>Scala Tools</name>
+      <url>http://scala-tools.org/repo-releases/</url>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </pluginRepository>
+    <pluginRepository>
+      <id>onejar-maven-plugin.googlecode.com</id>
+      <url>http://onejar-maven-plugin.googlecode.com/svn/mavenrepo</url>
+    </pluginRepository>
+  </pluginRepositories>
+
+  <repositories>
+    <repository>
+      <id>scala</id>
+      <name>Scala Tools</name>
+      <url>http://scala-tools.org/repo-releases/</url>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </repository>
+    <repository>
+      <id>snapshots.scala-tools.org</id>
+      <name>Scala-Tools Maven2 Snapshot Repository</name>
+      <url>http://scala-tools.org/repo-snapshots</url>
+      <snapshots>
+        <enabled>true</enabled>
+        <!--updatePolicy>never</updatePolicy-->
+        <checksumPolicy>fail</checksumPolicy>
+      </snapshots>
+      <releases>
+        <enabled>true</enabled>
+        <!--updatePolicy>never</updatePolicy-->
+        <checksumPolicy>fail</checksumPolicy>
+      </releases>
+    </repository>
+    <repository>
+      <id>nexus.snapshots.scala-tools.org</id>
+      <name>Scala-Tools Maven2 Snapshot Repository</name>
+      <url>http://nexus.scala-tools.org/content/repositories/snapshots/</url>
+      <snapshots>
+        <enabled>true</enabled>
+        <!--updatePolicy>never</updatePolicy-->
+        <checksumPolicy>fail</checksumPolicy>
+      </snapshots>
+      <releases>
+        <enabled>true</enabled>
+        <!--updatePolicy>never</updatePolicy-->
+        <checksumPolicy>fail</checksumPolicy>
+      </releases>
+    </repository>
+
+  </repositories>
+
+
+  <dependencies>
+    <dependency>
+      <groupId>org.scala-lang</groupId>
+      <artifactId>scala-library</artifactId>
+      <version>${scalaVersion}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.scala-lang</groupId>
+      <artifactId>scala-compiler</artifactId>
+      <version>${scalaVersion}</version>
+    </dependency>
+
+
+    <!-- Testing -->
+    <dependency>
+      <groupId>org.scala-tools.testing</groupId>
+      <artifactId>specs_2.8.0.Beta1</artifactId>
+      <version>1.6.2</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.7</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+
+  <build>
+    <sourceDirectory>${project.basedir}/src/main/scala</sourceDirectory>
+    <testSourceDirectory>${project.basedir}/src/test/scala</testSourceDirectory>
+    <plugins>
+      <plugin>
+        <groupId>org.scala-tools</groupId>
+        <artifactId>maven-scala-plugin</artifactId>
+
+        <configuration>
+          <scalaVersion>${scalaVersion}</scalaVersion>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>compile</goal>
+              <goal>testCompile</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>

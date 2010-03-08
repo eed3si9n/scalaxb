@@ -9,6 +9,9 @@
     </documentation>
   </annotation>
   
+  <import namespace="http://www.w3.org/XML/1998/namespace"
+      schemaLocation="http://www.w3.org/2001/xml.xsd"/>
+      
   <element name="purchaseOrder" type="ipo:PurchaseOrderType"/>
 
   <element name="comment" type="string"/>
@@ -103,6 +106,7 @@
   
   <element name="Element1">
     <complexType>
+      <!-- attribute ref="xml:lang" use="required"/ -->
       <sequence>
         <choice>
           <element ref="Choice1"/>

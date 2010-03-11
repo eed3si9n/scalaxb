@@ -22,7 +22,7 @@
  
 package org.scalaxb.compiler.xsd
 
-abstract class XsTypeSymbol(val name: String) extends xml.TypeSymbol {
+abstract class XsTypeSymbol(val name: String) extends scala.xml.TypeSymbol {
   override def toString(): String = {
     name 
   }  

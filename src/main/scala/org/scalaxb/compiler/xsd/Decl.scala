@@ -22,7 +22,6 @@
 
 package org.scalaxb.compiler.xsd
 
-import scala.xml.{TypeSymbol}
 import scala.collection.{Map, Set}
 import scala.collection.mutable
 import scala.collection.immutable
@@ -30,19 +29,64 @@ import scala.collection.immutable
 abstract class Decl
 
 class ParserConfig {
-  var xsPrefix: String = "xsd:"
-  var myPrefix: String = ""
+  var scope: scala.xml.NamespaceBinding = _
+  var targetNamespace: String = null
   val topElems  = mutable.ListMap.empty[String, ElemDecl]
   val elemList  = mutable.ListBuffer.empty[ElemDecl]
   val types     = mutable.ListMap.empty[String, TypeDecl]
   val attrs     = mutable.ListMap.empty[String, AttributeDecl]
   val choices   = mutable.Set.empty[ChoiceDecl]
+
+  def containsType(name: String) = {
+    val (namespace, typeName) = TypeSymbolParser.splitTypeName(name, this)
+    if (namespace == targetNamespace)
+      types.contains(typeName)
+    else {
+      println(namespace + ":" + typeName + " was not found")
+      false
+    }
+  }
+
+  def getType(name: String): TypeDecl = {
+    val (namespace, typeName) = TypeSymbolParser.splitTypeName(name, this)
+    if (namespace == targetNamespace)
+      types(typeName)
+    else
+      null
+  }
 }
 
-case class SchemaDecl(topElems: Map[String, ElemDecl],
+object TypeSymbolParser {
+  val XML_SCHEMA_URI = "http://www.w3.org/2001/XMLSchema"
+  val XML_URI = "http://www.w3.org/XML/1998/namespace"
+  
+  def fromString(name: String, config: ParserConfig): XsTypeSymbol = {
+    val (namespace, typeName) = splitTypeName(name, config)
+    namespace match {
+      case XML_SCHEMA_URI => XsTypeSymbol.toTypeSymbol(typeName)
+      case _ => new ReferenceTypeSymbol(name)
+    }
+  }
+
+  def splitTypeName(name: String, config: ParserConfig) = {
+    if (name.contains('@'))
+      (config.targetNamespace, name)
+    else if (name.contains(':')) {
+      val prefix = name.dropRight(name.length - name.indexOf(':'))
+      val value = name.drop(name.indexOf(':') + 1)
+
+      (config.scope.getURI(prefix), value)
+    } else
+      (config.scope.getURI(null), name)
+  }
+}
+
+case class SchemaDecl(targetNamespace: String,
+    topElems: Map[String, ElemDecl],
     elemList: List[ElemDecl],
     types: Map[String, TypeDecl],
-    choices: Set[ChoiceDecl]) {
+    choices: Set[ChoiceDecl],
+    attrs: Map[String, AttributeDecl]) {
   
   val newline = System.getProperty("line.separator")
   
@@ -55,23 +99,14 @@ case class SchemaDecl(topElems: Map[String, ElemDecl],
 object SchemaDecl {
   def fromXML(node: scala.xml.Node,
       config: ParserConfig = new ParserConfig) = {
-    val XML_SCHEMA_URI = "http://www.w3.org/2001/XMLSchema"
-    
     val schema = (node \\ "schema").headOption match {
       case Some(x) => x
       case None    => error("xsd: schema element not found: " + node.toString)
     }
-    
-    val xsPrefix = schema.scope.getPrefix(XML_SCHEMA_URI)
-    if (xsPrefix != null) {
-      config.xsPrefix = xsPrefix + ":"
-    }
+    config.scope = schema.scope
     schema.attribute("targetNamespace") match {
       case Some(x) =>
-        val myPrefix = schema.scope.getPrefix(x.text)
-        if (myPrefix != null) {
-          config.myPrefix = myPrefix + ":"
-        } 
+        config.targetNamespace = x.text
       case None    =>
     }
     
@@ -82,17 +117,24 @@ object SchemaDecl {
     }
     
     for (node <- schema \\ "complexType";
-        if (node \ "@name").headOption.isDefined)
-      ComplexTypeDecl.fromXML(node, (node \ "@name").text, config)
-      
-    (schema \\ "simpleType").foreach(SimpleTypeDecl.fromXML(_, config))
+        if (node \ "@name").headOption.isDefined) {
+      val decl = ComplexTypeDecl.fromXML(node, (node \ "@name").text, config)
+      config.types += (decl.name -> decl)
+    }
+
+    for (node <- schema \\ "simpleType") {
+      val decl = SimpleTypeDecl.fromXML(node, config)
+      config.types += (decl.name -> decl)
+    }
     
     resolveType(config)
     
-    SchemaDecl(immutable.ListMap.empty[String, ElemDecl] ++ config.topElems,
+    SchemaDecl(config.targetNamespace,
+      immutable.ListMap.empty[String, ElemDecl] ++ config.topElems,
       config.elemList.toList,
       immutable.ListMap.empty[String, TypeDecl] ++ config.types,
-      config.choices)
+      config.choices,
+      immutable.ListMap.empty[String, AttributeDecl] ++ config.attrs)
   }
   
   def resolveType(config: ParserConfig) {    
@@ -104,9 +146,9 @@ object SchemaDecl {
         case symbol: BuiltInSimpleTypeSymbol =>
         
         case symbol: ReferenceTypeSymbol =>
-          if (!config.types.contains(symbol.name))
+          if (!config.containsType(symbol.name))
             error("SchemaDecl: type not found " + attr.name + ": " + symbol.name)
-          config.types(symbol.name) match {
+          config.getType(symbol.name) match {
             case decl: SimpleTypeDecl => symbol.decl = decl
             case _ => error("SchemaDecl: type does not match ")
           } // match
@@ -134,11 +176,11 @@ object SchemaDecl {
   
   def resolveType(value: XsTypeSymbol, config: ParserConfig): Unit = value match {
     case symbol: ReferenceTypeSymbol =>
-      if (!config.types.contains(symbol.name))
+      if (!config.containsType(symbol.name))
         error("SchemaDecl: type not found: " + symbol.name)
       
       if (symbol.decl == null)
-        symbol.decl = config.types(symbol.name)
+        symbol.decl = config.getType(symbol.name)
       
     case symbol: BuiltInSimpleTypeSymbol => // do nothing 
     case xsAny => // do nothing
@@ -152,6 +194,28 @@ object AnnotationDecl {
   def fromXML(node: scala.xml.Node) = AnnotationDecl() 
 }
 
+abstract class AttributeLike extends Decl
+
+object AttributeLike {
+  def fromXML(node: scala.xml.Node, config: ParserConfig) = {
+    (node \ "@ref").headOption match {
+      case Some(x) => AttributeRef.fromXML(node, config)
+      case None => AttributeDecl.fromXML(node, config)
+    }
+  }
+}
+
+case class AttributeRef(namespace: String,
+  name: String) extends AttributeLike
+
+object AttributeRef {
+  def fromXML(node: scala.xml.Node, config: ParserConfig) = {
+    val ref = (node \ "@ref").text
+    val (namespace, typeName) = TypeSymbolParser.splitTypeName(ref, config)
+    AttributeRef(namespace, typeName)
+  }
+}
+
 abstract class AttributeUse
 object OptionalUse extends AttributeUse
 object ProhibitedUse extends AttributeUse
@@ -161,17 +225,14 @@ case class AttributeDecl(name: String,
     typeSymbol: XsTypeSymbol,
     defaultValue: Option[String],
     fixedValue: Option[String],
-    use: AttributeUse) extends Decl {
+    use: AttributeUse) extends AttributeLike {
   override def toString = "@" + name
 }
 
 object AttributeDecl {
   def fromXML(node: scala.xml.Node, config: ParserConfig) = {
     if (!(node \ "@ref").isEmpty) {
-      val ref = (node \ "@ref").text.replaceFirst(config.myPrefix, "")
-      if (!config.attrs.contains(ref))
-        error("xsd: Attribute ref not found " + ref)
-      
+      val ref = (node \ "@ref").text      
       config.attrs(ref)
     } else {
       val name = (node \ "@name").text
@@ -209,13 +270,14 @@ object AttributeDecl {
   } 
 }
 
-case class ElemRef(ref: String,
+case class ElemRef(namespace: String,
+  name: String,
   minOccurs: Option[Int],
   maxOccurs: Option[Int]) extends Decl
 
 object ElemRef {
   def fromXML(node: scala.xml.Node, config: ParserConfig) = {
-    val ref = (node \ "@ref").text.replaceFirst(config.myPrefix, "")    
+    val ref = (node \ "@ref").text   
     val minOccurs = (node \ "@minOccurs").headOption match {
       case None    => None
       case Some(x) => Some(CompositorDecl.buildOccurrence((node \ "@minOccurs").text))
@@ -226,7 +288,8 @@ object ElemRef {
       case Some(x) => Some(CompositorDecl.buildOccurrence((node \ "@maxOccurs").text))
     }
     
-    ElemRef(ref, minOccurs, maxOccurs)
+    val (namespace, typeName) = TypeSymbolParser.splitTypeName(ref, config)
+    ElemRef(namespace, typeName, minOccurs, maxOccurs)
   }
 }
 
@@ -299,9 +362,7 @@ object SimpleTypeDecl {
       case _ =>     
     }
     
-    val typ = SimpleTypeDecl(name, content)
-    config.types += (typ.name -> typ) 
-    typ
+    SimpleTypeDecl(name, content)
   }
   
   def buildName(node: scala.xml.Node) = {
@@ -317,14 +378,14 @@ object SimpleTypeDecl {
  */
 case class ComplexTypeDecl(name: String,
   content: HasComplexTypeContent,
-  attributes: List[AttributeDecl]) extends TypeDecl
+  attributes: List[AttributeLike]) extends TypeDecl
 
 object ComplexTypeDecl {  
   def fromXML(node: scala.xml.Node, name: String, config: ParserConfig) = {
     var content: HasComplexTypeContent = ComplexContentDecl.empty
     
     val attributes = (node \ "attribute").toList.map(
-      AttributeDecl.fromXML(_, config))
+      AttributeLike.fromXML(_, config))
     
     for (child <- node.child) child match {
       case <group>{ _* }</group> =>
@@ -346,9 +407,7 @@ object ComplexTypeDecl {
     }
     
     // val contentModel = ContentModel.fromSchema(firstChild(node))
-    val typ = ComplexTypeDecl(name, content, attributes.reverse)
-    config.types += (typ.name -> typ) 
-    typ
+    ComplexTypeDecl(name, content, attributes.reverse)
   }
 }
 
@@ -388,7 +447,7 @@ object ComplexContentDecl {
   lazy val empty =
     ComplexContentDecl(CompContRestrictionDecl.empty)
   
-  def fromCompositor(compositor: HasParticle, attributes: List[AttributeDecl]) =
+  def fromCompositor(compositor: HasParticle, attributes: List[AttributeLike]) =
     ComplexContentDecl(CompContRestrictionDecl.fromCompositor(compositor, attributes))
   
   def fromXML(node: scala.xml.Node, config: ParserConfig) = {
@@ -480,17 +539,5 @@ object AllDecl {
     val minOccurs = CompositorDecl.buildOccurrence((node \ "@minOccurs").text)
     val maxOccurs = CompositorDecl.buildOccurrence((node \ "@maxOccurs").text)
     AllDecl(CompositorDecl.fromNodeSeq(node.child, config), minOccurs, maxOccurs)
-  }
-}
-
-object TypeSymbolParser {  
-  def fromString(name: String, config: ParserConfig): XsTypeSymbol = {
-    val xsType = XsTypeSymbol.toTypeSymbol(name.replaceFirst(config.xsPrefix, ""))
-    if (xsType != xsUnknown) {
-      xsType
-    } else {
-      val n = name.replaceFirst(config.myPrefix, "")
-      new ReferenceTypeSymbol(n)
-    }
   }
 }

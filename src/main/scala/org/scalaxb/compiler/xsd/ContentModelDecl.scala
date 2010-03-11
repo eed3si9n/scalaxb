@@ -24,23 +24,23 @@ package org.scalaxb.compiler.xsd
 
 trait ComplexTypeContent {
   val base: XsTypeSymbol
-  val attributes: List[AttributeDecl]
+  val attributes: List[AttributeLike]
 }
 
 abstract class ContentTypeDecl extends Decl
 
 case class SimpContRestrictionDecl(base: XsTypeSymbol,
-  attributes: List[AttributeDecl]) extends ContentTypeDecl with ComplexTypeContent
+  attributes: List[AttributeLike]) extends ContentTypeDecl with ComplexTypeContent
 
 object SimpContRestrictionDecl {
   def fromXML(node: scala.xml.Node, config: ParserConfig) = {
     val baseName = (node \ "@base").text
     val base = TypeSymbolParser.fromString(baseName, config)
-    var attributes: List[AttributeDecl] = Nil
+    var attributes: List[AttributeLike] = Nil
 
     for (child <- node.child) child match {
       case <attribute>{ _* }</attribute> =>
-        attributes = AttributeDecl.fromXML(child, config) :: attributes
+        attributes = AttributeLike.fromXML(child, config) :: attributes
 
       case _ =>
     }
@@ -50,17 +50,17 @@ object SimpContRestrictionDecl {
 }
 
 case class SimpContExtensionDecl(base: XsTypeSymbol,
-  attributes: List[AttributeDecl]) extends ContentTypeDecl with ComplexTypeContent
+  attributes: List[AttributeLike]) extends ContentTypeDecl with ComplexTypeContent
 
 object SimpContExtensionDecl {
   def fromXML(node: scala.xml.Node, config: ParserConfig) = {
     val baseName = (node \ "@base").text
     val base = TypeSymbolParser.fromString(baseName, config)
-    var attributes: List[AttributeDecl] = Nil
+    var attributes: List[AttributeLike] = Nil
 
     for (child <- node.child) child match {
       case <attribute>{ _* }</attribute> =>
-        attributes = AttributeDecl.fromXML(child, config) :: attributes
+        attributes = AttributeLike.fromXML(child, config) :: attributes
 
       case _ =>
     }
@@ -70,20 +70,20 @@ object SimpContExtensionDecl {
 }
 case class CompContRestrictionDecl(base: XsTypeSymbol,
   compositor: Option[HasParticle],
-  attributes: List[AttributeDecl]) extends ContentTypeDecl with ComplexTypeContent
+  attributes: List[AttributeLike]) extends ContentTypeDecl with ComplexTypeContent
   
 object CompContRestrictionDecl {
   def empty =
     CompContRestrictionDecl(xsAny, None, Nil)
   
-  def fromCompositor(compositor: HasParticle, attributes: List[AttributeDecl]) =
+  def fromCompositor(compositor: HasParticle, attributes: List[AttributeLike]) =
     CompContRestrictionDecl(xsAny, Some(compositor), attributes)
   
   def fromXML(node: scala.xml.Node, config: ParserConfig) = {
     val baseName = (node \ "@base").text
     val base = TypeSymbolParser.fromString(baseName, config)
     var compositor: Option[HasParticle] = None
-    var attributes: List[AttributeDecl] = Nil
+    var attributes: List[AttributeLike] = Nil
     
     for (child <- node.child) child match {
       case <group>{ _* }</group> =>
@@ -95,7 +95,7 @@ object CompContRestrictionDecl {
       case <sequence>{ _* }</sequence> =>
         compositor = Some(SequenceDecl.fromXML(child, config))
       case <attribute>{ _* }</attribute> =>
-        attributes = AttributeDecl.fromXML(child, config) :: attributes
+        attributes = AttributeLike.fromXML(child, config) :: attributes
       
       case _ =>
     }
@@ -106,14 +106,14 @@ object CompContRestrictionDecl {
 
 case class CompContExtensionDecl(base: XsTypeSymbol,
   compositor: Option[HasParticle],
-  attributes: List[AttributeDecl]) extends ContentTypeDecl with ComplexTypeContent
+  attributes: List[AttributeLike]) extends ContentTypeDecl with ComplexTypeContent
 
 object CompContExtensionDecl {
   def fromXML(node: scala.xml.Node, config: ParserConfig) = {
     val baseName = (node \ "@base").text
     val base = TypeSymbolParser.fromString(baseName, config)
     var compositor: Option[HasParticle] = None
-    var attributes: List[AttributeDecl] = Nil
+    var attributes: List[AttributeLike] = Nil
     
     for (child <- node.child) child match {
       case <group>{ _* }</group> =>
@@ -125,7 +125,7 @@ object CompContExtensionDecl {
       case <sequence>{ _* }</sequence> =>
         compositor = Some(SequenceDecl.fromXML(child, config))
       case <attribute>{ _* }</attribute> =>
-        attributes = AttributeDecl.fromXML(child, config) :: attributes
+        attributes = AttributeLike.fromXML(child, config) :: attributes
       
       case _ =>
     }

@@ -10,6 +10,7 @@
 
   <properties>
     <scalaVersion>2.8.0.Beta1</scalaVersion>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
 
   <pluginRepositories>

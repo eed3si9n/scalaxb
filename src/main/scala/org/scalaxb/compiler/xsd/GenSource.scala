@@ -23,10 +23,10 @@
 package org.scalaxb.compiler.xsd
 
 import org.scalaxb.compiler.{ScalaNames, Logger}
-import scala.collection.Map
 import scala.collection.mutable
+import scala.collection.{Map}
 import scala.xml._
-import java.io.{File, FileWriter, PrintWriter}
+import java.io.{PrintWriter}
 
 class GenSource(schema: SchemaDecl,
     out: PrintWriter,
@@ -36,8 +36,10 @@ class GenSource(schema: SchemaDecl,
   val elemList = schema.elemList
   val types = schema.types
   val choices = schema.choices
+
   val newline = System.getProperty("line.separator")
   val defaultSuperName = "DataModel"
+  val XML_URI = "http://www.w3.org/XML/1998/namespace"
   val baseToSubs = mutable.ListMap.empty[ComplexTypeDecl, List[ComplexTypeDecl]]
   val choiceNames = mutable.ListMap.empty[ChoiceDecl, String]
   val choicePositions = mutable.ListMap.empty[ChoiceDecl, Int]
@@ -62,6 +64,13 @@ class GenSource(schema: SchemaDecl,
       case Multiple => makeParamName(name) + ": Seq[" + buildTypeName(typeSymbol) + "]"
     }      
   }
+
+  lazy val xmlAttrs = Map[String, AttributeDecl](
+    ("lang" -> AttributeDecl("lang", xsString, None, None, OptionalUse)),
+    ("space" -> AttributeDecl("space", xsString, None, None, OptionalUse)),
+    ("base" -> AttributeDecl("base", xsAnyURI, None, None, OptionalUse)),
+    ("id" -> AttributeDecl("id", xsID, None, None, OptionalUse))
+  )
     
   def run {
     import scala.collection.mutable
@@ -362,6 +371,7 @@ object {name} {{
   def buildParam(decl: Decl): Param = decl match {
     case elem: ElemDecl => buildParam(elem)
     case attr: AttributeDecl => buildParam(attr)
+    case ref: AttributeRef => buildParam(ref)
     case _ => error("GenSource: unsupported delcaration " + decl.toString)
   }
   
@@ -376,6 +386,9 @@ object {name} {{
     Param(elem.name, elem.typeSymbol, cardinality)
   }
   
+  def buildParam(ref: AttributeRef): Param =
+    buildParam(attrs(ref.namespace, ref.name))
+
   def buildParam(attr: AttributeDecl): Param = {
     val cardinality = if (toMinOccurs(attr) == 0)
       Optional
@@ -388,6 +401,7 @@ object {name} {{
   def buildArg(decl: Decl): String = decl match {
     case elem: ElemDecl       => buildArg(elem)
     case attr: AttributeDecl  => buildArg(attr)
+    case ref: AttributeRef    => buildArg(ref)
     case _ => error("GenSource: unsupported delcaration " + decl.toString)
   }
   
@@ -461,6 +475,9 @@ object {name} {{
     else
       0
   
+  def buildArg(ref: AttributeRef): String =
+    buildArg(attrs(ref.namespace, ref.name))
+
   def buildArg(attr: AttributeDecl): String = attr.typeSymbol match {
     case symbol: BuiltInSimpleTypeSymbol =>
       buildArg(symbol, buildSelector("@" + attr.name), attr.defaultValue, attr.fixedValue,
@@ -657,9 +674,9 @@ object {name} {{
   }
   
   def buildElement(ref: ElemRef) = {
-    if (!topElems.contains(ref.ref))
-      error("GenSource: element not found: " + ref.ref)
-    val that = topElems(ref.ref)
+    if (!topElems.contains(ref.name))
+      error("GenSource: element not found: " + ref.name)
+    val that = topElems(ref.name)
     
     val minOccurs = if (ref.minOccurs.isDefined)
       ref.minOccurs.get
@@ -702,7 +719,7 @@ object {name} {{
       0, that.maxOccurs)
   }
         
-  def flattenAttributes(decl: ComplexTypeDecl): List[AttributeDecl] =
+  def flattenAttributes(decl: ComplexTypeDecl): List[AttributeLike] =
     decl.content.content.attributes ::: (decl.content.content match {
       case CompContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, attr) => 
         flattenAttributes(base)
@@ -711,6 +728,12 @@ object {name} {{
       
       case _ => List()
     })
+
+  def attrs(namespace: String, name: String) = namespace match {
+    case schema.targetNamespace => schema.attrs(name)
+    case XML_URI => xmlAttrs(name)
+    case _ => error("GenSource: attribute not found " + namespace + ":" + name)
+  }
   
   def myprintAll(nodes: Seq[Node]) {
     for (node <- nodes)

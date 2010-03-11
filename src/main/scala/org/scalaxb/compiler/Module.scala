@@ -24,7 +24,7 @@ package org.scalaxb.compiler
 
 import org.github.scopt.OptionParser
 import collection.mutable.ListBuffer
-import java.io.{File, FileWriter, PrintWriter}
+import java.io.{File}
 
 trait Logger {
   def log(msg: String) {

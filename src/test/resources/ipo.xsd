@@ -106,7 +106,7 @@
   
   <element name="Element1">
     <complexType>
-      <!-- attribute ref="xml:lang" use="required"/ -->
+      <attribute ref="xml:lang" use="required"/>
       <sequence>
         <choice>
           <element ref="Choice1"/>

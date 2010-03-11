@@ -657,6 +657,7 @@ object {name} {{
           case compositor2: HasParticle => flattenElements(compositor2, "")
           case elem: ElemDecl           => List(elem)
           case ref: ElemRef             => List(buildElement(ref))
+          case any: AnyDecl             => Nil
         }
       list.flatten
     

@@ -485,6 +485,7 @@ object CompositorDecl {
     case <choice>{ _* }</choice>     => ChoiceDecl.fromXML(node, config)
     case <sequence>{ _* }</sequence> => SequenceDecl.fromXML(node, config)
     case <all>{ _* }</all>           => AllDecl.fromXML(node, config)
+    case <any>{ _* }</any>           => AnyDecl.fromXML(node, config)
     
     case _ => error("xsd: Unspported content type " + node.label)   
   }
@@ -539,5 +540,16 @@ object AllDecl {
     val minOccurs = CompositorDecl.buildOccurrence((node \ "@minOccurs").text)
     val maxOccurs = CompositorDecl.buildOccurrence((node \ "@maxOccurs").text)
     AllDecl(CompositorDecl.fromNodeSeq(node.child, config), minOccurs, maxOccurs)
+  }
+}
+
+case class AnyDecl(minOccurs: Int,
+  maxOccurs: Int) extends CompositorDecl
+
+object AnyDecl {
+  def fromXML(node: scala.xml.Node, config: ParserConfig) = {
+    val minOccurs = CompositorDecl.buildOccurrence((node \ "@minOccurs").text)
+    val maxOccurs = CompositorDecl.buildOccurrence((node \ "@maxOccurs").text)
+    AnyDecl(minOccurs, maxOccurs)
   }
 }

@@ -116,7 +116,11 @@
     </complexType>
   </element>
   <element name="Choice1">
-    <complexType/>
+    <complexType>
+      <sequence>
+        <any namespace="##other" processContents="lax" minOccurs="0" maxOccurs="unbounded"/>
+      </sequence>
+    </complexType>
   </element>
   <element name="Choice2">
     <complexType/>

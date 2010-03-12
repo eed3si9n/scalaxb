@@ -23,7 +23,6 @@
 package org.scalaxb.compiler.xsd
 
 import org.scalaxb.compiler.{Module}
-import scala.collection.Map
 import java.io.{File, FileWriter, PrintWriter}
 
 object Driver extends Module {
@@ -39,7 +38,7 @@ object Driver extends Module {
     output
   }
   
-  def parse(input: java.io.File): Schema = {
+  def parse(input: File, context: Seq[Schema]): Schema = {
     log("xsd: parsing " + input)
     val elem = scala.xml.XML.loadFile(input)
     val schema = SchemaDecl.fromXML(elem)

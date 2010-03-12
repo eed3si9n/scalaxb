@@ -23,7 +23,7 @@
 package org.scalaxb.compiler
 
 import org.github.scopt.OptionParser
-import collection.mutable.ListBuffer
+import collection.mutable.{ListBuffer, ListMap}
 import java.io.{File}
 
 trait Logger {
@@ -45,7 +45,7 @@ trait Module extends Logger {
   }
   
   def start(args: Seq[String]) { 
-    val files = new ListBuffer[java.io.File]
+    val files = ListBuffer.empty[File]
     val paramParser = new OptionParser("scalaxb") {
       opt("d", "outdir", "<directory>", "generated files will go into <directory>",
         { d: String => config.outdir = new File(d) })
@@ -58,28 +58,54 @@ trait Module extends Logger {
     }
     
     if (paramParser.parse(args))
-      files.foreach(file => process(file,
-        buildOutputFile(file, config.outdir),
-        config.packageName))
+      processFiles(files.map(file =>
+        (file,
+         buildOutputFile(file, config.outdir),
+         buildPackageName(file, config.packageName))))
   }
   
+  def processFiles(triples: Seq[(File, File, Option[String])]) = {
+    val files = triples.map(_._1)
+    files.foreach(file => if (!file.exists)
+      error("file not found: " + file.toString))
+    
+    val sorted = sortByDependency(files)
+    val schemas = ListMap.empty[File, Schema]
+    val outfiles = ListBuffer.empty[File]
+    val outputs = ListMap.empty[File, File] ++= triples.map(x => x._1 -> x._2)
+    val packageNames = ListMap.empty[File, Option[String]] ++=
+      triples.map(x => x._1 -> x._3)
+    
+    for (file <- sorted) {
+      val schema = parse(file, schemas.valuesIterator.toList)
+      schemas += (file -> schema)
+      val packageName = packageNames(file)
+      outfiles += generate(schema, outputs(file), packageName)
+    }
+    outfiles
+  }
+  
+  def process(file: File, output: File, packageName: Option[String]) =
+    processFiles(List((file, output, packageName)))(0)
+  
+  def buildPackageName(input: File, defaultPackageName: Option[String]) =
+    defaultPackageName
+  
+  def sortByDependency(files: Seq[File]): Seq[File] =
+    files
+
   def buildOutputFile(input: File, outdir: File) = {
     val name = input.getName
     val namepart = name.splitAt(name.indexOf('.'))._1
     new File(outdir, namepart + ".scala") 
   }
   
+  def parse(input: File, context: Seq[Schema]): Schema
+  
   def parse(input: File): Schema
+    = parse(input, Nil)
   
   def generate(schema: Schema, output: File, packageName: Option[String]): File
-    
-  def process(input: File, output: File, packageName: Option[String]) = {
-    if (!input.exists)
-      error("file not found: " + input.toString)
-    
-    val schama = parse(input)
-    generate(schama, output, packageName)
-  }
   
   override def log(msg: String) {
     if (config.verbose) {

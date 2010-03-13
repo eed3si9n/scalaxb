@@ -108,7 +108,7 @@
     <complexType>
       <attribute ref="xml:lang" use="required"/>
       <sequence>
-        <choice>
+        <choice maxOccurs="unbounded">
           <element ref="Choice1"/>
           <element ref="Choice2"/>
         </choice>

@@ -85,7 +85,7 @@ trait Module extends Logger {
         packageName, !usedPackages.contains(packageName))
       usedPackages += packageName
     }
-    outfiles
+    outfiles.toList
   }
   
   def process(file: File, output: File, packageName: Option[String]) =

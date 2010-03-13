@@ -22,11 +22,10 @@
 
 import org.specs.matcher.Matcher
 import java.io.{File, PrintWriter, BufferedWriter, BufferedReader, StringReader, OutputStreamWriter}
-import java.net.{URL}
-import scala.tools.nsc.{Global, Interpreter, Settings, GenericRunnerSettings, InterpreterLoop}
+import scala.tools.nsc.{Global, Interpreter, Settings, GenericRunnerSettings}
 import scala.tools.nsc.util.{SourceFile, BatchSourceFile}
 import scala.tools.nsc.io.{PlainFile} 
-import scala.tools.nsc.reporters.{ConsoleReporter, StoreReporter}
+import scala.tools.nsc.reporters.{ConsoleReporter}
 
 class Holder {
   var value: Any = _

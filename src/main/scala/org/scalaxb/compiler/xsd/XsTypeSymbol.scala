@@ -61,7 +61,7 @@ object xsGDay             extends BuiltInSimpleTypeSymbol("java.util.Calendar") 
 object xsGMonth           extends BuiltInSimpleTypeSymbol("java.util.Calendar") {}
 object xsBoolean          extends BuiltInSimpleTypeSymbol("Boolean") {}
 object xsFloat            extends BuiltInSimpleTypeSymbol("Float") {}
-object xsBase64Binary     extends BuiltInSimpleTypeSymbol("Base64Binary") {}
+object xsBase64Binary     extends BuiltInSimpleTypeSymbol("Array[Byte]") {}
 object xsHexBinary        extends BuiltInSimpleTypeSymbol("HexBinary") {}
 object xsDouble           extends BuiltInSimpleTypeSymbol("Double") {}
 object xsAnyURI           extends BuiltInSimpleTypeSymbol("java.net.URI") {}

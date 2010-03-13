@@ -2,15 +2,21 @@
  * @author  e.e d3si9n
  */
 
-import purchaseorder._
+import ipo._
 
-object XsdTest {
+object PurchaseOrderUsage {
   def main(args: Array[String]) = {
+    allTests
+  }
+
+  def allTests = {
     testUSAddress
     testItem
     testPurchaseOrder
     testTimeOlson
     testIntWithAttr
+    testChoices
+    true
   }
   
   def testUSAddress {
@@ -124,5 +130,17 @@ object XsdTest {
     }
     
     println(intWithAttr.toString)    
+  }
+
+  def testChoices {
+    val subject = <Element1 xml:lang="en"><Choice1/></Element1>
+
+    val obj = Element1.fromXML(subject)
+    obj match {
+      case Element1(_, _) =>
+      case _ => error("match failed: " + obj.toString)
+    }
+
+    println(obj.toString)
   }
 }

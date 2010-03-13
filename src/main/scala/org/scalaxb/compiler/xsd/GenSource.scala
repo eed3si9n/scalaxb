@@ -251,35 +251,29 @@ class GenSource(schema: SchemaDecl,
   def makeChoiceTrait(choice: ChoiceDecl): scala.xml.Node = {
     val name = makeTypeName(choiceNames(choice))
     
-    def makeCaseEntry(decl: Decl) = decl match {
-      case elem: ElemDecl =>
-        val name = makeTypeName(elem.name)
-        val typeName = buildTypeName(elem.typeSymbol)
-        
-        "case " + quote(elem.name) + " => " + typeName + ".fromXML(node)"
-      
-      case ref: ElemRef =>
-        val elem = buildElement(ref)  
-        val name = makeTypeName(elem.name)
-        val typeName = buildTypeName(elem.typeSymbol)
-        
-        "case " + quote(elem.name) + " => " + typeName + ".fromXML(node)"
-              
-      case _ => error("GenSource: Unsupported compositor " + decl.toString)
-    }
-    
     return <source>
 trait {name}
 
 object {name} {{
-  def fromXML(node: scala.xml.Node): {name} = node.label match {{
+  def fromXML: PartialFunction[scala.xml.Node, {name}] = {{
     {
-      val cases = for (particle <- choice.particles)
-        yield makeCaseEntry(particle)
+      val cases = choice.particles partialMap {
+        case elem: ElemDecl =>
+          val name = makeTypeName(elem.name)
+          val typeName = buildTypeName(elem.typeSymbol)
+          "case node@scala.xml.Elem(_, " + quote(elem.name) + ", _, _, _) => " +
+            typeName + ".fromXML(node)"
+
+        case ref: ElemRef =>
+          val elem = buildElement(ref)
+          val name = makeTypeName(elem.name)
+          val typeName = buildTypeName(elem.typeSymbol)
+          "case node@scala.xml.Elem(_, " + quote(elem.name) + ", _, _, _) => " +
+            typeName + ".fromXML(node)"
+      }
+      
       cases.mkString(newline + indent(2))        
     }
-    
-    case _ => error("Unsupported element: " + node.label + ": " +  node.toString)
   }}
 }}
 </source>    
@@ -450,17 +444,19 @@ object {name} {{
       val choicePosition = choicePositions(choice)
       if (elem.maxOccurs > 1) {
         if (choicePosition == 0)
-          "node.child.filter(_.isInstanceOf[scala.xml.Elem]).map(" + newline +
-          indent(4) + typeName + ".fromXML(_))"        
+          "node.child.filter(" + typeName + ".fromXML.isDefinedAt(_)).map(" + newline +
+          indent(4) + typeName + ".fromXML(_)).toList"
         else
           "node.child.filter(_.isInstanceOf[scala.xml.Elem]).drop(" +
-          choicePosition + ").map(" + newline +
-          indent(4) + typeName + ".fromXML(_))"
+          choicePosition + ")." + newline +
+          indent(4) + "filter(" + typeName + ".fromXML.isDefinedAt(_))." + newline +
+          indent(4) + "map(" + typeName + ".fromXML(_)).toList"
       } else if (elem.minOccurs == 0) {
         "node.child.filter(_.isInstanceOf[scala.xml.Elem]).drop(" +
           choicePosition + ").headOption match {" + newline +
-        indent(4) + "case None    => None" + newline +
-        indent(4) + "case Some(x) => Some(" +  typeName + ".fromXML(x))" + newline +
+        indent(4) + "case Some(x) if " + typeName +
+          ".fromXML.isDefinedAt(x) => Some(" + typeName + ".fromXML(x))" + newline +
+        indent(4) + "case _       => None" + newline +
         indent(3) + "}"         
       } else {
         typeName + ".fromXML(node.child.filter(_.isInstanceOf[scala.xml.Elem])(" + choicePosition + "))"
@@ -555,7 +551,7 @@ object {name} {{
       case "javax.xml.namespace.QName"
         => ("javax.xml.namespace.QName.valueOf(", ")")
       case "Array[String]" => ("", ".split(' ')")
-      // case "Base64Binary" =>
+      case "Array[Byte]" => ("org.scalaxb.runtime.Base64.decodeBuffer(", ")")
       // case "HexBinary"  => 
       case _        => error("GenSource: Unsupported type " + typeSymbol.toString) 
     }
@@ -609,8 +605,12 @@ object {name} {{
         elem.typeSymbol match {
           case symbol: ReferenceTypeSymbol =>
             if (symbol.decl == decl)
-              set += makeTypeName(choiceNames(choice))            
+              set += makeTypeName(choiceNames(choice))
+          case _ => 
         }
+
+      case any: AnyDecl => // do nothing
+      case _ => // do nothing
     }
         
     set.toList

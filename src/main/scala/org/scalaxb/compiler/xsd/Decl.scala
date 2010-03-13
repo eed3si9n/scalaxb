@@ -37,7 +37,7 @@ class ParserConfig {
   val topAttrs     = mutable.ListMap.empty[String, AttributeDecl]
   val attrList  = mutable.ListBuffer.empty[AttributeDecl]
   val choices   = mutable.Set.empty[ChoiceDecl]
-  var context: Seq[SchemaDecl] = Nil
+  var context: List[SchemaDecl] = Nil
   
   def containsType(name: String): Boolean = {
     val (namespace, typeName) = TypeSymbolParser.splitTypeName(name, this)
@@ -56,20 +56,18 @@ class ParserConfig {
     val (namespace, typeName) = TypeSymbolParser.splitTypeName(name, this)
     getType(namespace, typeName)
   }
-
-  def getType(namespace: String, typeName: String): TypeDecl = {
+  
+  def getType(namespace: String, typeName: String): TypeDecl =
     if (namespace == targetNamespace && types.contains(typeName))
       types(typeName)
-    else {
-      var retval: TypeDecl = null
-      for (schema <- context) {
-        if (schema.targetNamespace == namespace &&
-            schema.types.contains(typeName))
-          retval = schema.types(typeName)
+    else
+      (for (schema <- context;
+          if schema.targetNamespace == namespace;
+          if schema.types.contains(typeName))
+        yield schema.types(typeName)) match {
+        case x :: xs => x
+        case Nil     => error("Type not found: {" + namespace + "}:" + typeName)
       }
-      retval
-    }
-  }
 }
 
 object TypeSymbolParser {
@@ -126,7 +124,7 @@ object SchemaDecl {
         config.targetNamespace = x.text
       case None    =>
     }
-    config.context = context
+    config.context = context.toList
     
     for (node <- schema \ "element";
         if (node \ "@name").headOption.isDefined) {

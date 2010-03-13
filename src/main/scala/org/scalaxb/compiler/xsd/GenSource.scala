@@ -261,15 +261,15 @@ object {name} {{
         case elem: ElemDecl =>
           val name = makeTypeName(elem.name)
           val typeName = buildTypeName(elem.typeSymbol)
-          "case node@scala.xml.Elem(_, " + quote(elem.name) + ", _, _, _) => " +
-            typeName + ".fromXML(node)"
+          "case elem: scala.xml.Elem if elem.label == " + quote(elem.name) + " => " +
+            typeName + ".fromXML(elem)"
 
         case ref: ElemRef =>
           val elem = buildElement(ref)
           val name = makeTypeName(elem.name)
           val typeName = buildTypeName(elem.typeSymbol)
-          "case node@scala.xml.Elem(_, " + quote(elem.name) + ", _, _, _) => " +
-            typeName + ".fromXML(node)"
+          "case elem: scala.xml.Elem if elem.label == " + quote(elem.name) + " => " +
+            typeName + ".fromXML(elem)"
       }
       
       cases.mkString(newline + indent(2))        

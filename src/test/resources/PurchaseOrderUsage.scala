@@ -133,11 +133,14 @@ object PurchaseOrderUsage {
   }
 
   def testChoices {
-    val subject = <Element1 xml:lang="en"><Choice1/></Element1>
+    val subject = <Element1><Choice2/></Element1>
+
+    if (!Element1Option.fromXML.isDefinedAt(<Choice2/>))
+      error("Element1Option does not match <Choice2/>")
 
     val obj = Element1.fromXML(subject)
     obj match {
-      case Element1(_, _) =>
+      case Element1(Choice2()) =>
       case _ => error("match failed: " + obj.toString)
     }
 

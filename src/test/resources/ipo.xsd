@@ -106,17 +106,18 @@
   
   <element name="Element1">
     <complexType>
-      <attribute ref="xml:lang" use="required"/>
       <sequence>
         <choice maxOccurs="unbounded">
           <element ref="Choice1"/>
           <element ref="Choice2"/>
+          <any namespace="##other" processContents="lax" />
         </choice>
       </sequence>
     </complexType>
   </element>
   <element name="Choice1">
     <complexType>
+      <attribute ref="xml:lang" use="required"/>
       <sequence>
         <any namespace="##other" processContents="lax" minOccurs="0" maxOccurs="unbounded"/>
       </sequence>

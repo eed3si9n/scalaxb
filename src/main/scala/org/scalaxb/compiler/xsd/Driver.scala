@@ -23,15 +23,19 @@
 package org.scalaxb.compiler.xsd
 
 import org.scalaxb.compiler.{Module}
-import java.io.{File, FileWriter, PrintWriter}
+import java.io.{File}
+import collection.mutable
 
 object Driver extends Module {
   type Schema = SchemaDecl
+  val schemaLites = mutable.ListMap.empty[File, SchemaLite]
+  val schemaFiles = mutable.ListMap.empty[String, File]
   
-  def generate(xsd: Schema, output: File, packageName: Option[String]) = {
-    val out = new PrintWriter(new FileWriter(output))
+  def generate(xsd: Schema, output: File,
+      packageName: Option[String], firstOfPackage: Boolean) = {
+    val out = new java.io.PrintWriter(new java.io.FileWriter(output))
     log("xsd: generating ...")
-    new GenSource(xsd, out, packageName, this) run;
+    new GenSource(xsd, out, packageName, firstOfPackage, this) run;
     out.flush()
     out.close()
     println("generated " + output)
@@ -41,8 +45,57 @@ object Driver extends Module {
   def parse(input: File, context: Seq[Schema]): Schema = {
     log("xsd: parsing " + input)
     val elem = scala.xml.XML.loadFile(input)
-    val schema = SchemaDecl.fromXML(elem)
+    val schema = SchemaDecl.fromXML(elem, context)
     log("SchemaParser.parse: " + schema.toString())
+    schema
+  }
+
+  override def sortByDependency(files: Seq[File]): Seq[File] = {
+    schemaLites.clear
+    schemaFiles.clear
+    for (file <- files) {
+      val schemaLite = preparse(file)
+      schemaLites += (file -> schemaLite)
+      if (schemaLite.targetNamespace != null)
+         schemaFiles += (schemaLite.targetNamespace -> file)
+    }
+
+    val XML_URI = "http://www.w3.org/XML/1998/namespace"
+    val xmlxsd = new File("xml.xsd")
+    schemaFiles += (XML_URI -> xmlxsd)
+    
+    val unsorted = mutable.ListBuffer.empty[File] ++= files
+    val sorted = mutable.ListBuffer.empty[File]
+    val upperlimit = unsorted.size * unsorted.size
+
+    sorted += xmlxsd
+    def containsAll(schemaLite: SchemaLite) = schemaLite.imports.partialMap {
+      case ImportDecl(Some(namespace: String), _) => schemaFiles(namespace)
+    }.forall(file => sorted.contains(file))
+    
+    for (i <- 0 to upperlimit) {
+      if (unsorted.size > 0) {
+        val file = unsorted(i % unsorted.size)
+        val schemaLite = schemaLites(file)
+        if ((schemaLite.imports.size == 0) ||
+            containsAll(schemaLite)) {
+          unsorted -= file
+          sorted += file
+        } // if
+      } // if
+    }
+
+    sorted -= xmlxsd
+
+    if (unsorted.size > 0)
+      error("Circular import: " + unsorted.toList)
+    sorted
+  }
+
+  def preparse(input: File): SchemaLite = {
+    log("xsd: pre=parsing " + input)
+    val elem = scala.xml.XML.loadFile(input)
+    val schema = SchemaLite.fromXML(elem)
     schema
   }
 }

@@ -31,6 +31,7 @@ import java.io.{PrintWriter}
 class GenSource(schema: SchemaDecl,
     out: PrintWriter,
     packageName: Option[String],
+    firstOfPackage: Boolean,
     logger: Logger) extends ScalaNames {  
   val topElems = schema.topElems
   val elemList = schema.elemList
@@ -78,8 +79,9 @@ class GenSource(schema: SchemaDecl,
     
     if (packageName.isDefined)
       myprintAll(makePackageName.child)
-    
-    myprintAll(makeParentClass.child)
+
+    if (firstOfPackage)
+      myprintAll(makeParentClass.child)
     
     for (elem <- elemList;
         val typeSymbol = elem.typeSymbol;
@@ -88,8 +90,17 @@ class GenSource(schema: SchemaDecl,
         val ref = typeSymbol.asInstanceOf[ReferenceTypeSymbol];
         if ref.decl.isInstanceOf[ComplexTypeDecl];
         val decl = ref.decl.asInstanceOf[ComplexTypeDecl]) {
-      
-      typeNames(decl) = makeTypeName(elem.name)
+
+      val name = makeTypeName(elem.name)
+      if (!typeNames.valuesIterator.contains(name))
+        typeNames(decl) = name
+      else {
+        var i = 2
+        while (typeNames.valuesIterator.contains(name + i) || i > 100) {
+          i += 1
+        }
+        typeNames(decl) = name + i
+      }
       complexTypes += decl
     }
     
@@ -132,8 +143,9 @@ class GenSource(schema: SchemaDecl,
         
     for (choice <- choices)
       myprintAll(makeChoiceTrait(choice).child)
-    
-    myprintAll(makeHelperObject.child)
+
+    if (firstOfPackage)
+      myprintAll(makeHelperObject.child)
   }
   
   def makeChoiceNames() {
@@ -488,7 +500,9 @@ object {name} {{
         toMinOccurs(attr), 1)    
     
     case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
-      error("GenSource: Attribute with complex type " + decl.toString) 
+      error("GenSource: Attribute with complex type " + decl.toString)
+
+    case _ => error("GenSource: unsupported type: " + attr.typeSymbol)
   }
 
   def buildArg(decl: SimpleTypeDecl, selector: String,
@@ -731,7 +745,7 @@ object {name} {{
     })
 
   def attrs(namespace: String, name: String) = namespace match {
-    case schema.targetNamespace => schema.attrs(name)
+    case schema.targetNamespace => schema.topAttrs(name)
     case XML_URI => xmlAttrs(name)
     case _ => error("GenSource: attribute not found " + namespace + ":" + name)
   }

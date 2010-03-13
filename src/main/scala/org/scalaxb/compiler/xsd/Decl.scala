@@ -34,25 +34,41 @@ class ParserConfig {
   val topElems  = mutable.ListMap.empty[String, ElemDecl]
   val elemList  = mutable.ListBuffer.empty[ElemDecl]
   val types     = mutable.ListMap.empty[String, TypeDecl]
-  val attrs     = mutable.ListMap.empty[String, AttributeDecl]
+  val topAttrs     = mutable.ListMap.empty[String, AttributeDecl]
+  val attrList  = mutable.ListBuffer.empty[AttributeDecl]
   val choices   = mutable.Set.empty[ChoiceDecl]
-
-  def containsType(name: String) = {
+  var context: Seq[SchemaDecl] = Nil
+  
+  def containsType(name: String): Boolean = {
     val (namespace, typeName) = TypeSymbolParser.splitTypeName(name, this)
-    if (namespace == targetNamespace)
-      types.contains(typeName)
-    else {
-      println(namespace + ":" + typeName + " was not found")
-      false
-    }
+    containsType(namespace, typeName)
   }
-
+  
+  def containsType(namespace: String, typeName: String): Boolean = {
+    if (namespace == targetNamespace && types.contains(typeName))
+      true
+    else
+      context.exists(schema =>  schema.targetNamespace == namespace &&
+          schema.types.contains(typeName))
+  }
+  
   def getType(name: String): TypeDecl = {
     val (namespace, typeName) = TypeSymbolParser.splitTypeName(name, this)
-    if (namespace == targetNamespace)
+    getType(namespace, typeName)
+  }
+
+  def getType(namespace: String, typeName: String): TypeDecl = {
+    if (namespace == targetNamespace && types.contains(typeName))
       types(typeName)
-    else
-      null
+    else {
+      var retval: TypeDecl = null
+      for (schema <- context) {
+        if (schema.targetNamespace == namespace &&
+            schema.types.contains(typeName))
+          retval = schema.types(typeName)
+      }
+      retval
+    }
   }
 }
 
@@ -86,7 +102,7 @@ case class SchemaDecl(targetNamespace: String,
     elemList: List[ElemDecl],
     types: Map[String, TypeDecl],
     choices: Set[ChoiceDecl],
-    attrs: Map[String, AttributeDecl]) {
+    topAttrs: Map[String, AttributeDecl]) {
   
   val newline = System.getProperty("line.separator")
   
@@ -98,6 +114,7 @@ case class SchemaDecl(targetNamespace: String,
 
 object SchemaDecl {
   def fromXML(node: scala.xml.Node,
+      context: Seq[SchemaDecl] = Nil,
       config: ParserConfig = new ParserConfig) = {
     val schema = (node \\ "schema").headOption match {
       case Some(x) => x
@@ -109,11 +126,18 @@ object SchemaDecl {
         config.targetNamespace = x.text
       case None    =>
     }
+    config.context = context
     
     for (node <- schema \ "element";
         if (node \ "@name").headOption.isDefined) {
       val elem = ElemDecl.fromXML(node, config)
       config.topElems += (elem.name -> elem)
+    }
+
+    for (node <- schema \ "attribute"
+        if (node \ "@name").headOption.isDefined) {
+      val attr = AttributeDecl.fromXML(node, config)
+      config.topAttrs += (attr.name -> attr)
     }
     
     for (node <- schema \\ "complexType";
@@ -134,14 +158,14 @@ object SchemaDecl {
       config.elemList.toList,
       immutable.ListMap.empty[String, TypeDecl] ++ config.types,
       config.choices,
-      immutable.ListMap.empty[String, AttributeDecl] ++ config.attrs)
+      immutable.ListMap.empty[String, AttributeDecl] ++ config.topAttrs)
   }
   
   def resolveType(config: ParserConfig) {    
     for (elem <- config.elemList)
       resolveType(elem.typeSymbol, config)
              
-    for (attr <- config.attrs.valuesIterator) {
+    for (attr <- config.attrList) {
       attr.typeSymbol match {
         case symbol: BuiltInSimpleTypeSymbol =>
         
@@ -231,42 +255,36 @@ case class AttributeDecl(name: String,
 
 object AttributeDecl {
   def fromXML(node: scala.xml.Node, config: ParserConfig) = {
-    if (!(node \ "@ref").isEmpty) {
-      val ref = (node \ "@ref").text      
-      config.attrs(ref)
+    val name = (node \ "@name").text
+    var typeSymbol: XsTypeSymbol = xsUnknown
+    val typeName = (node \ "@type").text
+    if (typeName != "") {
+      typeSymbol = TypeSymbolParser.fromString(typeName, config)
     } else {
-      val name = (node \ "@name").text
-      var typeSymbol: XsTypeSymbol = xsUnknown
-      val typeName = (node \ "@type").text
-      if (typeName != "") {
-        typeSymbol = TypeSymbolParser.fromString(typeName, config)
-      } else {
-        for (child <- node.child) child match {
-          case <simpleType>{ _* }</simpleType> =>
-            typeSymbol = new ReferenceTypeSymbol(SimpleTypeDecl.buildName(child))
-          case _ =>
-        }
-      } // if-else
-      
-      val defaultValue = (node \ "@default").headOption match {
-        case None    => None
-        case Some(x) => Some(x.text)
+      for (child <- node.child) child match {
+        case <simpleType>{ _* }</simpleType> =>
+          typeSymbol = new ReferenceTypeSymbol(SimpleTypeDecl.buildName(child))
+        case _ =>
       }
-      val fixedValue = (node \ "@fixed").headOption match {
-        case None    => None
-        case Some(x) => Some(x.text)
-      }
-      val use = (node \ "@use").text match {
-        case "prohibited" => ProhibitedUse
-        case "required"   => RequiredUse
-        case _            => OptionalUse
-      }
-      
-      val attr = AttributeDecl(name, typeSymbol,
-        defaultValue, fixedValue, use)
-      config.attrs += (attr.name -> attr)
-      attr   
+    } // if-else
+
+    val defaultValue = (node \ "@default").headOption match {
+      case None    => None
+      case Some(x) => Some(x.text)
     }
+    val fixedValue = (node \ "@fixed").headOption match {
+      case None    => None
+      case Some(x) => Some(x.text)
+    }
+    val use = (node \ "@use").text match {
+      case "prohibited" => ProhibitedUse
+      case "required"   => RequiredUse
+      case _            => OptionalUse
+    }
+
+    val attr = AttributeDecl(name, typeSymbol, defaultValue, fixedValue, use)
+    config.attrList += attr
+    attr
   } 
 }
 
@@ -551,5 +569,48 @@ object AnyDecl {
     val minOccurs = CompositorDecl.buildOccurrence((node \ "@minOccurs").text)
     val maxOccurs = CompositorDecl.buildOccurrence((node \ "@maxOccurs").text)
     AnyDecl(minOccurs, maxOccurs)
+  }
+}
+
+case class SchemaLite(targetNamespace: String,
+    imports: List[ImportDecl])
+
+object SchemaLite {
+  def fromXML(node: scala.xml.Node) = {
+    var targetNamespace: String = null
+    val schema = (node \\ "schema").headOption match {
+      case Some(x) => x
+      case None    => error("xsd: schema element not found: " + node.toString)
+    }
+    schema.attribute("targetNamespace") match {
+      case Some(x) =>
+        targetNamespace = x.text
+      case None    =>
+    }
+
+    var importList: List[ImportDecl] = Nil
+    for (node <- schema \ "import") {
+      val decl = ImportDecl.fromXML(node)
+      importList = decl :: importList
+    }
+
+    SchemaLite(targetNamespace, importList.reverse)
+  }
+}
+
+case class ImportDecl(namespace: Option[String],
+    schemaLocation: Option[String]) extends Decl
+
+object ImportDecl {
+  def fromXML(node: scala.xml.Node) = {
+    val namespace = node.attribute("namespace") match {
+      case Some(x) => Some(x.text)
+      case None    => None
+    }
+    val schemaLocation = node.attribute("schemaLocation") match {
+      case Some(x) => Some(x.text)
+      case None    => None
+    }
+    ImportDecl(namespace, schemaLocation)
   }
 }

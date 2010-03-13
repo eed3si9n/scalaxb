@@ -55,11 +55,11 @@ trait CompilerMatcher {
    * </code>
    */
   def evaluateTo(expected: Any,
-      outdir: String = ".") = new Matcher[(List[String], List[File])] {
+      outdir: String = ".") = new Matcher[(Seq[String], Seq[File])] {
     
-    /** @param pair :=> (code: List[String], files: List[File])
+    /** @param pair :=> (code: Seq[String], files: Seq[File])
      */
-    def apply(pair: => (List[String], List[File])) = {      
+    def apply(pair: => (Seq[String], Seq[File])) = {
       try {
         val code = pair._1
         val files = pair._2
@@ -110,11 +110,11 @@ trait CompilerMatcher {
   /** compile checks if the given list of files compiles without an error.
    * @param outdir: String - output dir for the interpreter
    */
-  def compile(outdir: String = ".") = new Matcher[List[File]]() {
+  def compile(outdir: String = ".") = new Matcher[Seq[File]]() {
     
-    /** @param files :=> List[File]
+    /** @param files :=> Seq[File]
      */
-    def apply(files: => List[File]) = {        
+    def apply(files: => Seq[File]) = {
       val settings = new Settings
       val origBootclasspath = settings.bootclasspath.value
       settings.bootclasspath.value = 
@@ -126,7 +126,7 @@ trait CompilerMatcher {
       
       try {
         val run = (new compiler.Run)
-        run.compile(files.map(_.getAbsolutePath))
+        run.compile(files.map(_.getAbsolutePath).toList)
         reporter.printSummary
         (!reporter.hasErrors,
           files.mkString + " compile(s)",

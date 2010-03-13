@@ -53,7 +53,7 @@ trait Module extends Logger {
         { p: String => config.packageName = Some(p) })
       opt("v", "verbose", "be extra verbose",
         { config.verbose = true })
-      arg("<schema_file>", "input schema to be converted",
+      arglist("<schema_file>*", "input schema to be converted",
         { x: String => files += new File(x) })
     }
     
@@ -75,12 +75,15 @@ trait Module extends Logger {
     val outputs = ListMap.empty[File, File] ++= triples.map(x => x._1 -> x._2)
     val packageNames = ListMap.empty[File, Option[String]] ++=
       triples.map(x => x._1 -> x._3)
+    val usedPackages = ListBuffer.empty[Option[String]]
     
     for (file <- sorted) {
       val schema = parse(file, schemas.valuesIterator.toList)
       schemas += (file -> schema)
       val packageName = packageNames(file)
-      outfiles += generate(schema, outputs(file), packageName)
+      outfiles += generate(schema, outputs(file),
+        packageName, !usedPackages.contains(packageName))
+      usedPackages += packageName
     }
     outfiles
   }
@@ -105,7 +108,8 @@ trait Module extends Logger {
   def parse(input: File): Schema
     = parse(input, Nil)
   
-  def generate(schema: Schema, output: File, packageName: Option[String]): File
+  def generate(schema: Schema, output: File,
+    packageName: Option[String], firstOfPackage: Boolean): File
   
   override def log(msg: String) {
     if (config.verbose) {

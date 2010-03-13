@@ -32,6 +32,12 @@ object xsAny extends XsTypeSymbol("DataModel") {}
 
 class ReferenceTypeSymbol(name: String) extends XsTypeSymbol(name) {
   var decl: TypeDecl = null
+  override def toString(): String = {
+    if (decl == null)
+      "ReferenceTypeSymbol(" + name + ",null)"
+    else
+      "ReferenceTypeSymbol(" + name + "," + decl.toString + ")"
+  }
 }
 
 object ReferenceTypeSymbol {

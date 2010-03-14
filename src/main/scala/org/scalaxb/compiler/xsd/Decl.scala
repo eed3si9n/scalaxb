@@ -134,7 +134,7 @@ object SchemaDecl {
 
     for (node <- schema \ "attribute"
         if (node \ "@name").headOption.isDefined) {
-      val attr = AttributeDecl.fromXML(node, config)
+      val attr = AttributeDecl.fromXML(node, config, true)
       config.topAttrs += (attr.name -> attr)
     }
     
@@ -222,7 +222,7 @@ object AttributeLike {
   def fromXML(node: scala.xml.Node, config: ParserConfig) = {
     (node \ "@ref").headOption match {
       case Some(x) => AttributeRef.fromXML(node, config)
-      case None => AttributeDecl.fromXML(node, config)
+      case None => AttributeDecl.fromXML(node, config, false)
     }
   }
 }
@@ -236,7 +236,7 @@ case class AttributeRef(namespace: String,
   name: String,
   defaultValue: Option[String],
   fixedValue: Option[String],
-  use: Option[AttributeUse]) extends AttributeLike
+  use: AttributeUse) extends AttributeLike
 
 object AttributeRef {
   def fromXML(node: scala.xml.Node, config: ParserConfig) = {
@@ -251,25 +251,27 @@ object AttributeRef {
       case Some(x) => Some(x.text)
     }
     val use = (node \ "@use").text match {
-      case "prohibited" => Some(ProhibitedUse)
-      case "required"   => Some(RequiredUse)
-      case "optional"   => Some(OptionalUse)
-      case _            => None
+      case "prohibited" => ProhibitedUse
+      case "required"   => RequiredUse
+      case _            => OptionalUse
     }
     AttributeRef(namespace, typeName, defaultValue, fixedValue, use)
   }
 }
 
-case class AttributeDecl(name: String,
+case class AttributeDecl(namespace: String,
+    name: String,
     typeSymbol: XsTypeSymbol,
     defaultValue: Option[String],
     fixedValue: Option[String],
-    use: AttributeUse) extends AttributeLike {
+    use: AttributeUse,
+    global: Boolean) extends AttributeLike {
   override def toString = "@" + name
 }
 
 object AttributeDecl {
-  def fromXML(node: scala.xml.Node, config: ParserConfig) = {
+  def fromXML(node: scala.xml.Node,
+      config: ParserConfig, global: Boolean) = {
     val name = (node \ "@name").text
     var typeSymbol: XsTypeSymbol = xsUnknown
     val typeName = (node \ "@type").text
@@ -297,7 +299,9 @@ object AttributeDecl {
       case _            => OptionalUse
     }
 
-    val attr = AttributeDecl(name, typeSymbol, defaultValue, fixedValue, use)
+    val attr = AttributeDecl(config.targetNamespace,
+      name, typeSymbol, defaultValue, fixedValue, use,
+      global)
     config.attrList += attr
     attr
   } 
@@ -305,22 +309,14 @@ object AttributeDecl {
 
 case class ElemRef(namespace: String,
   name: String,
-  minOccurs: Option[Int],
-  maxOccurs: Option[Int]) extends Decl
+  minOccurs: Int,
+  maxOccurs: Int) extends Decl
 
 object ElemRef {
   def fromXML(node: scala.xml.Node, config: ParserConfig) = {
     val ref = (node \ "@ref").text   
-    val minOccurs = (node \ "@minOccurs").headOption match {
-      case None    => None
-      case Some(x) => Some(CompositorDecl.buildOccurrence((node \ "@minOccurs").text))
-    }
-    
-    val maxOccurs = (node \ "@maxOccurs").headOption match {
-      case None    => None
-      case Some(x) => Some(CompositorDecl.buildOccurrence((node \ "@maxOccurs").text))
-    }
-    
+    val minOccurs = CompositorDecl.buildOccurrence((node \ "@minOccurs").text)
+    val maxOccurs = CompositorDecl.buildOccurrence((node \ "@maxOccurs").text)
     val (namespace, typeName) = TypeSymbolParser.splitTypeName(ref, config)
     ElemRef(namespace, typeName, minOccurs, maxOccurs)
   }

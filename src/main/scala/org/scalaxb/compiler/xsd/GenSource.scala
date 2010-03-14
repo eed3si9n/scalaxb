@@ -67,10 +67,10 @@ class GenSource(schema: SchemaDecl,
   }
 
   lazy val xmlAttrs = Map[String, AttributeDecl](
-    ("lang" -> AttributeDecl("lang", xsString, None, None, OptionalUse)),
-    ("space" -> AttributeDecl("space", xsString, None, None, OptionalUse)),
-    ("base" -> AttributeDecl("base", xsAnyURI, None, None, OptionalUse)),
-    ("id" -> AttributeDecl("id", xsID, None, None, OptionalUse))
+    ("lang" -> AttributeDecl(XML_URI, "lang", xsString, None, None, OptionalUse, true)),
+    ("space" -> AttributeDecl(XML_URI, "space", xsString, None, None, OptionalUse, true)),
+    ("base" -> AttributeDecl(XML_URI, "base", xsAnyURI, None, None, OptionalUse, true)),
+    ("id" -> AttributeDecl(XML_URI, "id", xsID, None, None, OptionalUse, true))
   )
     
   def run {
@@ -529,11 +529,11 @@ object {name} {{
   
   def buildArg(attr: AttributeDecl): String = attr.typeSymbol match {
     case symbol: BuiltInSimpleTypeSymbol =>
-      buildArg(symbol, buildSelector("@" + attr.name), attr.defaultValue, attr.fixedValue,
+      buildArg(symbol, buildSelector(attr), attr.defaultValue, attr.fixedValue,
         toMinOccurs(attr), 1)
         
     case ReferenceTypeSymbol(decl: SimpleTypeDecl) =>
-      buildArg(decl, buildSelector("@" + attr.name), attr.defaultValue, attr.fixedValue,
+      buildArg(decl, buildSelector(attr), attr.defaultValue, attr.fixedValue,
         toMinOccurs(attr), 1)    
     
     case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
@@ -569,7 +569,13 @@ object {name} {{
     case _ => error("GenSource: Unsupported type " + typeSymbol.toString)    
   }
   
-  def buildSelector(nodeName: String) = "(node \\ \"" + nodeName + "\")"
+  def buildSelector(attr: AttributeDecl): String =
+    if (attr.global)
+      buildSelector("@{" + attr.namespace + "}" + attr.name)
+    else
+      buildSelector("@" + attr.name)
+
+  def buildSelector(nodeName: String): String = "(node \\ \"" + nodeName + "\")"
   
   def buildArg(typeSymbol: BuiltInSimpleTypeSymbol, selector: String,
       defaultValue: Option[String], fixedValue: Option[String],
@@ -737,22 +743,11 @@ object {name} {{
 
   def buildAttribute(ref: AttributeRef) = {
     val that = attrs(ref.namespace, ref.name)
-    val defaultValue = ref.defaultValue match {
-      case Some(x) => ref.defaultValue
-      case None    => that.defaultValue
-    }
-    
-    val fixedValue = ref.fixedValue match {
-      case Some(x) => ref.fixedValue
-      case None    => that.fixedValue
-    }
-
-    val use = ref.use match {
-      case Some(x) => x
-      case None    => that.use
-    }
-
-    AttributeDecl(that.name, that.typeSymbol, defaultValue, fixedValue, use)
+    // http://www.w3.org/TR/xmlschema-0/#Globals
+    // In other words, global declarations cannot contain the attributes
+    // minOccurs, maxOccurs, or use.
+    AttributeDecl(that.namespace, that.name, that.typeSymbol,
+      ref.defaultValue, ref.fixedValue, ref.use, that.global)
   }
   
   def buildElement(ref: ElemRef) = {
@@ -760,18 +755,11 @@ object {name} {{
       error("GenSource: element not found: " + ref.name)
     val that = topElems(ref.name)
     
-    val minOccurs = if (ref.minOccurs.isDefined)
-      ref.minOccurs.get
-    else
-      that.minOccurs
-      
-    val maxOccurs = if (ref.maxOccurs.isDefined)
-      ref.maxOccurs.get
-    else
-      that.maxOccurs
-      
+    // http://www.w3.org/TR/xmlschema-0/#Globals
+    // In other words, global declarations cannot contain the attributes
+    // minOccurs, maxOccurs, or use.
     ElemDecl(that.name, that.typeSymbol, that.defaultValue, that.fixedValue,
-      minOccurs, maxOccurs)
+      ref.minOccurs, ref.maxOccurs)
   }
   
   def buildElement(decl: SimpleTypeDecl): ElemDecl = decl.content match {

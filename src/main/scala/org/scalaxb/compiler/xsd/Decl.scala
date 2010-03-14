@@ -227,21 +227,38 @@ object AttributeLike {
   }
 }
 
+abstract class AttributeUse
+object OptionalUse extends AttributeUse
+object ProhibitedUse extends AttributeUse
+object RequiredUse extends AttributeUse
+
 case class AttributeRef(namespace: String,
-  name: String) extends AttributeLike
+  name: String,
+  defaultValue: Option[String],
+  fixedValue: Option[String],
+  use: Option[AttributeUse]) extends AttributeLike
 
 object AttributeRef {
   def fromXML(node: scala.xml.Node, config: ParserConfig) = {
     val ref = (node \ "@ref").text
     val (namespace, typeName) = TypeSymbolParser.splitTypeName(ref, config)
-    AttributeRef(namespace, typeName)
+    val defaultValue = (node \ "@default").headOption match {
+      case None    => None
+      case Some(x) => Some(x.text)
+    }
+    val fixedValue = (node \ "@fixed").headOption match {
+      case None    => None
+      case Some(x) => Some(x.text)
+    }
+    val use = (node \ "@use").text match {
+      case "prohibited" => Some(ProhibitedUse)
+      case "required"   => Some(RequiredUse)
+      case "optional"   => Some(OptionalUse)
+      case _            => None
+    }
+    AttributeRef(namespace, typeName, defaultValue, fixedValue, use)
   }
 }
-
-abstract class AttributeUse
-object OptionalUse extends AttributeUse
-object ProhibitedUse extends AttributeUse
-object RequiredUse extends AttributeUse
 
 case class AttributeDecl(name: String,
     typeSymbol: XsTypeSymbol,

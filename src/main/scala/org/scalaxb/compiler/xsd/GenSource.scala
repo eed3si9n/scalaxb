@@ -293,7 +293,7 @@ class GenSource(schema: SchemaDecl,
       // newline +
       // "  implicit def to" + wrapperName + "(value: " + symbol.name + ") =" + newline +
       // "    " + wrapperName + "(value)" + newline +
-      "}"
+      "}" + newline
     }
     
     def makeCaseEntry(elem: ElemDecl) = {
@@ -321,7 +321,7 @@ object {name} {{
 }}
 
 {         
-  simpleTypes.keysIterator.toList.map(wrap(_)).mkString(newline + indent(2))
+  simpleTypes.keysIterator.toList.map(wrap(_)).mkString(newline)
 }
 </source>    
   }
@@ -424,7 +424,7 @@ object {name} {{
   def buildParam(decl: Decl): Param = decl match {
     case elem: ElemDecl => buildParam(elem)
     case attr: AttributeDecl => buildParam(attr)
-    case ref: AttributeRef => buildParam(ref)
+    case ref: AttributeRef => buildParam(buildAttribute(ref))
     case _ => error("GenSource: unsupported delcaration " + decl.toString)
   }
   
@@ -439,9 +439,6 @@ object {name} {{
     Param(elem.name, elem.typeSymbol, cardinality)
   }
   
-  def buildParam(ref: AttributeRef): Param =
-    buildParam(attrs(ref.namespace, ref.name))
-
   def buildParam(attr: AttributeDecl): Param = {
     val cardinality = if (toMinOccurs(attr) == 0)
       Optional
@@ -454,7 +451,7 @@ object {name} {{
   def buildArg(decl: Decl): String = decl match {
     case elem: ElemDecl       => buildArg(elem)
     case attr: AttributeDecl  => buildArg(attr)
-    case ref: AttributeRef    => buildArg(ref)
+    case ref: AttributeRef    => buildArg(buildAttribute(ref))
     case _ => error("GenSource: unsupported delcaration " + decl.toString)
   }
   
@@ -530,9 +527,6 @@ object {name} {{
     else
       0
   
-  def buildArg(ref: AttributeRef): String =
-    buildArg(attrs(ref.namespace, ref.name))
-
   def buildArg(attr: AttributeDecl): String = attr.typeSymbol match {
     case symbol: BuiltInSimpleTypeSymbol =>
       buildArg(symbol, buildSelector("@" + attr.name), attr.defaultValue, attr.fixedValue,
@@ -734,6 +728,32 @@ object {name} {{
     case choice: ChoiceDecl =>
       List(buildChoiceRef(choice, name))
   }
+
+  def attrs(namespace: String, name: String) = namespace match {
+    case schema.targetNamespace => schema.topAttrs(name)
+    case XML_URI => xmlAttrs(name)
+    case _ => error("GenSource: attribute not found " + namespace + ":" + name)
+  }
+
+  def buildAttribute(ref: AttributeRef) = {
+    val that = attrs(ref.namespace, ref.name)
+    val defaultValue = ref.defaultValue match {
+      case Some(x) => ref.defaultValue
+      case None    => that.defaultValue
+    }
+    
+    val fixedValue = ref.fixedValue match {
+      case Some(x) => ref.fixedValue
+      case None    => that.fixedValue
+    }
+
+    val use = ref.use match {
+      case Some(x) => x
+      case None    => that.use
+    }
+
+    AttributeDecl(that.name, that.typeSymbol, defaultValue, fixedValue, use)
+  }
   
   def buildElement(ref: ElemRef) = {
     if (!topElems.contains(ref.name))
@@ -791,12 +811,6 @@ object {name} {{
       case _ => List()
     })
 
-  def attrs(namespace: String, name: String) = namespace match {
-    case schema.targetNamespace => schema.topAttrs(name)
-    case XML_URI => xmlAttrs(name)
-    case _ => error("GenSource: attribute not found " + namespace + ":" + name)
-  }
-  
   def myprintAll(nodes: Seq[Node]) {
     for (node <- nodes)
       myprint(node)

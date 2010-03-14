@@ -16,6 +16,7 @@ object PurchaseOrderUsage {
     testTimeOlson
     testIntWithAttr
     testChoices
+    testLangAttr
     true
   }
   
@@ -144,6 +145,17 @@ object PurchaseOrderUsage {
       case _ => error("match failed: " + obj.toString)
     }
 
+    println(obj.toString)
+  }
+
+  def testLangAttr {
+    val subject = <Choice1 xml:lang="" />
+    val obj = Choice1.fromXML(subject)
+    obj match {
+      case Choice1("") =>
+      case _ => error("match failed: " + obj.toString)
+    }
+    
     println(obj.toString)
   }
 }

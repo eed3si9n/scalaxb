@@ -228,14 +228,17 @@ class GenSource(schema: SchemaDecl,
     if (name.contains("."))
       name
     else
-      name.capitalize
+      identifier(name).capitalize
   
   def makeParamName(name: String) =
     if (isKeyword(name))
       name + "Value"
     else
-      name
-          
+      identifier(name)
+  
+  def identifier(value: String) =
+    """\W""".r.replaceAllIn(value, "")
+  
   def buildTypeName(typeSymbol: XsTypeSymbol): String = typeSymbol match {
     case symbol: BuiltInSimpleTypeSymbol => symbol.name
     case ReferenceTypeSymbol(decl: SimpleTypeDecl) => buildTypeName(decl)
@@ -448,7 +451,7 @@ object {name} {{
     case ref: AttributeRef => buildParam(buildAttribute(ref))
     case _ => error("GenSource: unsupported delcaration " + decl.toString)
   }
-  
+    
   def buildParam(elem: ElemDecl): Param = {
     val cardinality = if (elem.maxOccurs > 1)
       Multiple

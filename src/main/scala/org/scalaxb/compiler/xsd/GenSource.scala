@@ -238,7 +238,7 @@ class GenSource(schema: SchemaDecl,
           
   def buildTypeName(typeSymbol: XsTypeSymbol): String = typeSymbol match {
     case symbol: BuiltInSimpleTypeSymbol => symbol.name
-    case ReferenceTypeSymbol(decl: SimpleTypeDecl) => buildTypeName(baseType(decl))
+    case ReferenceTypeSymbol(decl: SimpleTypeDecl) => buildTypeName(decl)
     case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
       if (!typeNames.contains(decl))
         error(schema.targetNamespace + ": Type name not found: " + decl.toString)
@@ -247,8 +247,15 @@ class GenSource(schema: SchemaDecl,
     case xsAny => defaultSuperName  
   }
   
+  def buildTypeName(decl: SimpleTypeDecl): String = decl.content match {
+    case x: SimpTypRestrictionDecl => buildTypeName(baseType(decl))
+    case x: SimpTypListDecl => "Seq[" + buildTypeName(baseType(decl)) + "]"
+    case _ => error("GenSource: Unsupported content " +  decl.content.toString)    
+  }
+  
   def baseType(decl: SimpleTypeDecl) = decl.content match {
     case SimpTypRestrictionDecl(base: BuiltInSimpleTypeSymbol) => base
+    case SimpTypListDecl(itemType: BuiltInSimpleTypeSymbol) => itemType
     case _ => error("GenSource: Unsupported content " +  decl.content.toString)
   }
 
@@ -292,11 +299,6 @@ class GenSource(schema: SchemaDecl,
     def buildWrapperName(elem: ElemDecl) =
       name.dropRight(6) + makeTypeName(elem.name)
     
-    // def buildWrapperName(symbol: BuiltInSimpleTypeSymbol) = symbol.name match {
-    //  case "Array[Byte]" => name + "Base64Binary"
-    //  case _             => name + symbol.name
-    // }
-    
     def wrap(elem: ElemDecl) = {
       val wrapperName = buildWrapperName(elem)
       val symbol = simpleTypes(elem)
@@ -312,9 +314,6 @@ class GenSource(schema: SchemaDecl,
       "  def fromXML(node: scala.xml.Node) ="+ newline +
       "    " + wrapperName +
         "(" + buildArg(symbol, "node", None, None, 1, 1) + ")" + newline +
-      // newline +
-      // "  implicit def to" + wrapperName + "(value: " + symbol.name + ") =" + newline +
-      // "    " + wrapperName + "(value)" + newline +
       "}" + newline
     }
     
@@ -323,14 +322,14 @@ class GenSource(schema: SchemaDecl,
         buildWrapperName(elem)
       else
         buildTypeName(elem.typeSymbol)
-      "case elem: scala.xml.Elem if elem.label == " + quote(elem.name) + " => " +
-        typeName + ".fromXML(elem)"
+      "case x: scala.xml.Elem if x.label == " + quote(elem.name) + " => " +
+        typeName + ".fromXML(x)"
     }
     
     return <source>
 { if (!hasForeign)
     "trait " + name }
-object {name} {{
+object {name} {{  
   def fromXML: PartialFunction[scala.xml.Node, {targetType}] = {{
     {
       val cases = choice.particles partialMap {
@@ -575,7 +574,9 @@ object {name} {{
     
     case SimpTypRestrictionDecl(base: BuiltInSimpleTypeSymbol) =>
       buildArg(base, selector, defaultValue, fixedValue, minOccurs, maxOccurs)
-            
+    case SimpTypListDecl(itemType: BuiltInSimpleTypeSymbol) =>
+      buildArg(itemType, selector + ".text.split(' ')", None, None, 0, Int.MaxValue)
+    
     case _ => error("GenSource: Unsupported content " + decl.content.toString)    
   }
   
@@ -637,7 +638,10 @@ object {name} {{
       indent(3) + "}"
     
     if (maxOccurs > 1) {
-      selector + ".toList.map(" + pre + "_.text" + post + ")"
+      if (selector.contains("split("))
+        selector + ".toList.map(" + pre + "_" + post + ")"
+      else
+        selector + ".toList.map(" + pre + "_.text" + post + ")"
     } else if (minOccurs == 0) {
       buildMatchStatement("None", "Some(" + pre + "x.text" + post + ")")
     } else if (defaultValue.isDefined) {

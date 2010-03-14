@@ -144,11 +144,13 @@ object SimpTypRestrictionDecl {
   }
 }
 
-case class SimpTypListDecl() extends ContentTypeDecl
+case class SimpTypListDecl(itemType: XsTypeSymbol) extends ContentTypeDecl
 
 object SimpTypListDecl {
   def fromXML(node: scala.xml.Node, config: ParserConfig) = {
-    SimpTypListDecl()
+    val itemTypeName = (node \ "@itemType").text
+    val itemType = TypeSymbolParser.fromString(itemTypeName, config)
+    SimpTypListDecl(itemType)
   }
 }
 

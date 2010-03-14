@@ -138,6 +138,29 @@ trait CompilerMatcher {
       }
     }
   }
+
+  def deleteAll(file: File): Boolean = {
+    if (file.isDirectory) {
+      val children = file.listFiles
+      if (children != null)
+        children.foreach(deleteAll(_))
+    }
+    file.delete
+  }
+
+  def copyFileFromResource(source: String, dest: File) {
+    val in = getClass.getResourceAsStream(source)
+    val reader = new java.io.BufferedReader(new java.io.InputStreamReader(in))
+    val out = new java.io.PrintWriter(new java.io.FileWriter(dest))
+    var line: String = null
+    line = reader.readLine
+    while (line != null) {
+      out.println(line)
+      line = reader.readLine
+    }
+    in.close
+    out.flush
+  }
   
   private def jarPathOfClass(className: String) = {
     val resource = className.split('.').mkString("/", "/", ".class")

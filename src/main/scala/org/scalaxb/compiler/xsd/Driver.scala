@@ -26,26 +26,36 @@ import org.scalaxb.compiler.{Module}
 import java.io.{File}
 import collection.mutable
 
-object Driver extends Module {
+object Driver extends Module {  
   type Schema = SchemaDecl
+  type Context = XsdContext
+
   val schemaLites = mutable.ListMap.empty[File, SchemaLite]
   val schemaFiles = mutable.ListMap.empty[String, File]
   
-  def generate(xsd: Schema, output: File,
+  def generate(xsd: Schema, context: Context, output: File,
       packageName: Option[String], firstOfPackage: Boolean) = {
     val out = new java.io.PrintWriter(new java.io.FileWriter(output))
     log("xsd: generating ...")
-    new GenSource(xsd, out, packageName, firstOfPackage, this) run;
+    if (!context.typeNames.contains(packageName))
+      context.typeNames += (packageName -> mutable.ListMap.
+                            empty[ComplexTypeDecl, String])
+    
+    new GenSource(xsd, context, out, packageName, firstOfPackage, this) run;
     out.flush()
     out.close()
     println("generated " + output)
     output
   }
+
+  override def buildContext = XsdContext()
   
-  def parse(input: File, context: Seq[Schema]): Schema = {
+  def parse(input: File, context: Context): Schema = {
     log("xsd: parsing " + input)
     val elem = scala.xml.XML.loadFile(input)
     val schema = SchemaDecl.fromXML(elem, context)
+    context.schemas += schema
+
     log("SchemaParser.parse: " + schema.toString())
     schema
   }

@@ -8,18 +8,12 @@ class ImportTest extends SpecificationWithJUnit with CompilerMatcher {
   val reportxsd = new File("src/test/resources/report.xsd")
   val tmp = new File("tmp")
   if (tmp.exists)
-    tmp.delete
+    deleteAll(tmp)
   tmp.mkdir
 
   val iposcala = new File(tmp, "ipo.scala")
   val reportscala = new File(tmp, "report.scala")
   lazy val purchaseOrderSchema = module.parse(ipoxsd)
-
-  "report.xsd is parsable" in {
-     module.parse(reportxsd, List(purchaseOrderSchema)) must be like {
-       case schema: SchemaDecl => true
-     }
-  }
   
   lazy val generated = module.processFiles(List(
       (ipoxsd, iposcala, Some("ipo")),

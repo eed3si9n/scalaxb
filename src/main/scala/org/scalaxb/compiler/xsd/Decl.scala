@@ -28,6 +28,14 @@ import scala.collection.immutable
 
 abstract class Decl
 
+case class XsdContext(schemas: mutable.ListBuffer[SchemaDecl] =
+    mutable.ListBuffer.empty[SchemaDecl],
+  typeNames: mutable.ListMap[Option[String],
+    mutable.ListMap[ComplexTypeDecl, String]] =
+      mutable.ListMap.empty[Option[String],
+      mutable.ListMap[ComplexTypeDecl, String]]) {
+}
+
 class ParserConfig {
   var scope: scala.xml.NamespaceBinding = _
   var targetNamespace: String = null
@@ -37,7 +45,7 @@ class ParserConfig {
   val topAttrs     = mutable.ListMap.empty[String, AttributeDecl]
   val attrList  = mutable.ListBuffer.empty[AttributeDecl]
   val choices   = mutable.Set.empty[ChoiceDecl]
-  var context: List[SchemaDecl] = Nil
+  var schemas: List[SchemaDecl] = Nil
   
   def containsType(name: String): Boolean = {
     val (namespace, typeName) = TypeSymbolParser.splitTypeName(name, this)
@@ -48,7 +56,7 @@ class ParserConfig {
     if (namespace == targetNamespace && types.contains(typeName))
       true
     else
-      context.exists(schema =>  schema.targetNamespace == namespace &&
+      schemas.exists(schema => schema.targetNamespace == namespace &&
           schema.types.contains(typeName))
   }
   
@@ -61,7 +69,7 @@ class ParserConfig {
     if (namespace == targetNamespace && types.contains(typeName))
       types(typeName)
     else
-      (for (schema <- context;
+      (for (schema <- schemas;
           if schema.targetNamespace == namespace;
           if schema.types.contains(typeName))
         yield schema.types(typeName)) match {
@@ -112,7 +120,7 @@ case class SchemaDecl(targetNamespace: String,
 
 object SchemaDecl {
   def fromXML(node: scala.xml.Node,
-      context: Seq[SchemaDecl] = Nil,
+      context: XsdContext = XsdContext(),
       config: ParserConfig = new ParserConfig) = {
     val schema = (node \\ "schema").headOption match {
       case Some(x) => x
@@ -124,7 +132,7 @@ object SchemaDecl {
         config.targetNamespace = x.text
       case None    =>
     }
-    config.context = context.toList
+    config.schemas = context.schemas.toList
     
     for (node <- schema \ "element";
         if (node \ "@name").headOption.isDefined) {

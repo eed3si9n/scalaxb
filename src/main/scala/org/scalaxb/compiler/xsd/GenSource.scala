@@ -29,6 +29,7 @@ import scala.xml._
 import java.io.{PrintWriter}
 
 class GenSource(schema: SchemaDecl,
+    context: XsdContext,
     out: PrintWriter,
     packageName: Option[String],
     firstOfPackage: Boolean,
@@ -44,11 +45,13 @@ class GenSource(schema: SchemaDecl,
   val baseToSubs = mutable.ListMap.empty[ComplexTypeDecl, List[ComplexTypeDecl]]
   val choiceNames = mutable.ListMap.empty[ChoiceDecl, String]
   val choicePositions = mutable.ListMap.empty[ChoiceDecl, Int]
-  val typeNames = mutable.ListMap.empty[ComplexTypeDecl, String]
   val complexTypes = mutable.Set.empty[ComplexTypeDecl]
   val choiceWrapper = mutable.ListMap.empty[ComplexTypeDecl, ChoiceDecl]
+  val interNamespaceChoiceTypes = mutable.ListBuffer.empty[XsTypeSymbol]
   var argNumber = 0
   var choiceNumber = 0
+  val schemas = context.schemas.toList
+  val typeNames = context.typeNames(packageName)
 
   abstract class Cardinality
   object Optional extends Cardinality
@@ -90,7 +93,6 @@ class GenSource(schema: SchemaDecl,
         val ref = typeSymbol.asInstanceOf[ReferenceTypeSymbol];
         if ref.decl.isInstanceOf[ComplexTypeDecl];
         val decl = ref.decl.asInstanceOf[ComplexTypeDecl]) {
-
       val name = makeTypeName(elem.name)
       if (!typeNames.valuesIterator.contains(name))
         typeNames(decl) = name
@@ -210,11 +212,10 @@ class GenSource(schema: SchemaDecl,
     makeCaseClassWithType(typeNames(decl), decl)
   
   def associateSubType(subType: ComplexTypeDecl, base: ComplexTypeDecl) {
-    if (baseToSubs.contains(base)) {
+    if (baseToSubs.contains(base))
       baseToSubs(base) = subType :: baseToSubs(base)
-    } else {
+    else
       baseToSubs(base) = subType :: Nil
-    } // if-else
   }
     
   def makeProtectedTypeName(decl: ComplexTypeDecl): String =
@@ -238,8 +239,12 @@ class GenSource(schema: SchemaDecl,
   def buildTypeName(typeSymbol: XsTypeSymbol): String = typeSymbol match {
     case symbol: BuiltInSimpleTypeSymbol => symbol.name
     case ReferenceTypeSymbol(decl: SimpleTypeDecl) => buildTypeName(baseType(decl))
-    case ReferenceTypeSymbol(decl: ComplexTypeDecl) => typeNames(decl)
-    case _ => error("GenSource: Invalid type " + typeSymbol.toString)    
+    case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
+      if (!typeNames.contains(decl))
+        error(schema.targetNamespace + ": Type name not found: " + decl.toString)
+
+      typeNames(decl)
+    case xsAny => defaultSuperName  
   }
   
   def baseType(decl: SimpleTypeDecl) = decl.content match {
@@ -267,10 +272,22 @@ class GenSource(schema: SchemaDecl,
     }
     types
   }
-  
+
+  def containsForeignType(particles: List[Decl]) =
+    particles.exists(_ match {
+        case ref: ElemRef => ref.namespace != schema.targetNamespace
+        case _ => false
+      }
+    )
+
   def makeChoiceTrait(choice: ChoiceDecl): scala.xml.Node = {
     val name = makeTypeName(choiceNames(choice))
     val simpleTypes = particlesWithSimpleType(choice.particles)
+    val hasForeign = containsForeignType(choice.particles)
+    val targetType = if (hasForeign)
+      defaultSuperName
+    else
+      name
 
     def buildWrapperName(elem: ElemDecl) =
       name.dropRight(6) + makeTypeName(elem.name)
@@ -283,8 +300,13 @@ class GenSource(schema: SchemaDecl,
     def wrap(elem: ElemDecl) = {
       val wrapperName = buildWrapperName(elem)
       val symbol = simpleTypes(elem)
+      val mixin = if (hasForeign)
+        ""
+      else
+        " with " + name
+
       "case class " + wrapperName + "(value: " + symbol.name +
-        ") extends DataModel with " + name + newline +
+        ") extends DataModel" + mixin + newline +
       newline +
       "object " + wrapperName + " {" + newline +
       "  def fromXML(node: scala.xml.Node) ="+ newline +
@@ -306,10 +328,10 @@ class GenSource(schema: SchemaDecl,
     }
     
     return <source>
-trait {name}
-
+{ if (!hasForeign)
+    "trait " + name }
 object {name} {{
-  def fromXML: PartialFunction[scala.xml.Node, {name}] = {{
+  def fromXML: PartialFunction[scala.xml.Node, {targetType}] = {{
     {
       val cases = choice.particles partialMap {
         case elem: ElemDecl => makeCaseEntry(elem)
@@ -435,8 +457,13 @@ object {name} {{
       Optional
     else
       Single
+
+    val symbol = if (interNamespaceChoiceTypes.contains(elem.typeSymbol))
+      xsAny
+    else
+      elem.typeSymbol
     
-    Param(elem.name, elem.typeSymbol, cardinality)
+    Param(elem.name, symbol, cardinality)
   }
   
   def buildParam(attr: AttributeDecl): Param = {
@@ -644,14 +671,16 @@ object {name} {{
     for (choice <- choices;
         particle <- choice.particles) particle match {
       case ElemDecl(_, symbol: ReferenceTypeSymbol, _, _, _, _) =>
-        if (symbol.decl == decl)
+        if (!interNamespaceChoiceTypes.contains(symbol) &&
+            symbol.decl == decl)
           set += makeTypeName(choiceNames(choice))
       
       case ref: ElemRef =>
         val elem = buildElement(ref)
         elem.typeSymbol match {
           case symbol: ReferenceTypeSymbol =>
-            if (symbol.decl == decl)
+            if (!interNamespaceChoiceTypes.contains(symbol) &&
+                symbol.decl == decl)
               set += makeTypeName(choiceNames(choice))
           case _ => 
         }
@@ -735,11 +764,17 @@ object {name} {{
       List(buildChoiceRef(choice, name))
   }
 
-  def attrs(namespace: String, name: String) = namespace match {
-    case schema.targetNamespace => schema.topAttrs(name)
-    case XML_URI => xmlAttrs(name)
-    case _ => error("GenSource: attribute not found " + namespace + ":" + name)
-  }
+  def attrs(namespace: String, name: String) =
+    if (namespace == XML_URI)
+      xmlAttrs(name)
+    else
+      (for (schema <- schemas;
+            if schema.targetNamespace == namespace;
+            if schema.topAttrs.contains(name))
+          yield schema.topAttrs(name)) match {
+          case x :: xs => x
+          case Nil     => error("Attribute not found: {" + namespace + "}:" + name)
+        }
 
   def buildAttribute(ref: AttributeRef) = {
     val that = attrs(ref.namespace, ref.name)
@@ -749,11 +784,18 @@ object {name} {{
     AttributeDecl(that.namespace, that.name, that.typeSymbol,
       ref.defaultValue, ref.fixedValue, ref.use, that.global)
   }
+
+  def elements(namespace: String, name: String) =
+    (for (schema <- schemas;
+          if schema.targetNamespace == namespace;
+          if schema.topElems.contains(name))
+        yield schema.topElems(name)) match {
+        case x :: xs => x
+        case Nil     => error("Element not found: {" + namespace + "}:" + name)
+      }
   
   def buildElement(ref: ElemRef) = {
-    if (!topElems.contains(ref.name))
-      error("GenSource: element not found: " + ref.name)
-    val that = topElems(ref.name)
+    val that = elements(ref.namespace, ref.name)
     
     // http://www.w3.org/TR/xmlschema-0/#Globals
     // In other words, global declarations cannot contain the attributes
@@ -772,15 +814,20 @@ object {name} {{
     ElemDecl("value", base, None, None, 1, 1)
     
   def buildChoiceRef(choice: ChoiceDecl, parentName: String) = {    
+    argNumber += 1
+    val name = "arg" + argNumber 
+    
     val symbol = new ReferenceTypeSymbol(makeTypeName(choiceNames(choice)))
     val decl = ComplexTypeDecl(symbol.name, null, Nil)
-    
+
     choiceWrapper(decl) = choice
     
+    if (containsForeignType(choice.particles))
+      interNamespaceChoiceTypes += symbol
+    
     symbol.decl = decl
-    typeNames(decl) = makeTypeName(choiceNames(choice)) 
-    argNumber += 1
-    val name = "arg" + argNumber  
+    typeNames(decl) = makeTypeName(choiceNames(choice))
+    
     ElemDecl(name, symbol, None, None, choice.minOccurs, choice.maxOccurs)
   }
   

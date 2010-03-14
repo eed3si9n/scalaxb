@@ -108,13 +108,14 @@
     <complexType>
       <sequence>
         <choice maxOccurs="unbounded">
-          <element ref="Choice1"/>
-          <element ref="Choice2"/>
+          <element ref="ipo:Choice1"/>
+          <element ref="ipo:Choice2"/>
           <any namespace="##other" processContents="lax" />
         </choice>
       </sequence>
     </complexType>
   </element>
+  
   <element name="Choice1">
     <complexType>
       <attribute ref="xml:lang" use="required"/>
@@ -146,4 +147,6 @@
       </extension>
     </simpleContent>
   </complexType>
+
+  <attribute name="globalAttr" type="int"/>
 </schema>

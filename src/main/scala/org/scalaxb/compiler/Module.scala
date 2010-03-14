@@ -35,6 +35,7 @@ trait Logger {
 
 trait Module extends Logger {
   type Schema
+  type Context
   
   private val config = new ModuleConfig()   
   
@@ -53,7 +54,7 @@ trait Module extends Logger {
         { p: String => config.packageName = Some(p) })
       opt("v", "verbose", "be extra verbose",
         { config.verbose = true })
-      arglist("<schema_file>*", "input schema to be converted",
+      arglist("<schema_file>...", "input schema to be converted",
         { x: String => files += new File(x) })
     }
     
@@ -68,7 +69,8 @@ trait Module extends Logger {
     val files = triples.map(_._1)
     files.foreach(file => if (!file.exists)
       error("file not found: " + file.toString))
-    
+
+    val context = buildContext
     val sorted = sortByDependency(files)
     val schemas = ListMap.empty[File, Schema]
     val outfiles = ListBuffer.empty[File]
@@ -77,11 +79,13 @@ trait Module extends Logger {
       triples.map(x => x._1 -> x._3)
     val usedPackages = ListBuffer.empty[Option[String]]
     
+    for (file <- sorted) 
+      schemas += (file -> parse(file, context))
+    
     for (file <- sorted) {
-      val schema = parse(file, schemas.valuesIterator.toList)
-      schemas += (file -> schema)
+      val schema = schemas(file)
       val packageName = packageNames(file)
-      outfiles += generate(schema, outputs(file),
+      outfiles += generate(schema, context, outputs(file),
         packageName, !usedPackages.contains(packageName))
       usedPackages += packageName
     }
@@ -102,13 +106,15 @@ trait Module extends Logger {
     val namepart = name.splitAt(name.indexOf('.'))._1
     new File(outdir, namepart + ".scala") 
   }
-  
-  def parse(input: File, context: Seq[Schema]): Schema
+
+  def buildContext: Context
+
+  def parse(input: File, context: Context): Schema
   
   def parse(input: File): Schema
-    = parse(input, Nil)
+    = parse(input, buildContext)
   
-  def generate(schema: Schema, output: File,
+  def generate(schema: Schema, context: Context, output: File,
     packageName: Option[String], firstOfPackage: Boolean): File
   
   override def log(msg: String) {

@@ -19,7 +19,7 @@ class PurchaseOrderTest extends SpecificationWithJUnit with CompilerMatcher {
        case schema: SchemaDecl => true
      }
   }
-  
+  /*
   lazy val generated = module.process(ipoxsd, iposcala, Some("ipo"))
   "ipo.xsd must generate ipo.scala file" in {
     generated must exist
@@ -37,27 +37,5 @@ class PurchaseOrderTest extends SpecificationWithJUnit with CompilerMatcher {
      purchaseOrderUsagescala :: List(generated)) must evaluateTo(true,
        outdir = "./tmp")
   }
-
-  def deleteAll(file: File): Boolean = {
-    if (file.isDirectory) {
-      val children = file.listFiles
-      if (children != null)
-        children.foreach(deleteAll(_))
-    }
-    file.delete
-  }
-
-  def copyFileFromResource(source: String, dest: File) {
-    val in = getClass.getResourceAsStream(source)
-    val reader = new java.io.BufferedReader(new java.io.InputStreamReader(in))
-    val out = new java.io.PrintWriter(new java.io.FileWriter(dest))
-    var line: String = null
-    line = reader.readLine
-    while (line != null) {
-      out.println(line)
-      line = reader.readLine
-    }
-    in.close
-    out.flush
-  }
+  */
 }

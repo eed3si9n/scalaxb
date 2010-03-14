@@ -237,19 +237,73 @@ class GenSource(schema: SchemaDecl,
           
   def buildTypeName(typeSymbol: XsTypeSymbol): String = typeSymbol match {
     case symbol: BuiltInSimpleTypeSymbol => symbol.name
-    case ReferenceTypeSymbol(decl: SimpleTypeDecl) => buildTypeName(decl.content)    
+    case ReferenceTypeSymbol(decl: SimpleTypeDecl) => buildTypeName(baseType(decl))
     case ReferenceTypeSymbol(decl: ComplexTypeDecl) => typeNames(decl)
     case _ => error("GenSource: Invalid type " + typeSymbol.toString)    
   }
   
-  def buildTypeName(content: ContentTypeDecl): String = content match {
-    case SimpTypRestrictionDecl(base: BuiltInSimpleTypeSymbol) => base.name
-    
-    case _ => error("GenSource: Unsupported content " + content.toString)
+  def baseType(decl: SimpleTypeDecl) = decl.content match {
+    case SimpTypRestrictionDecl(base: BuiltInSimpleTypeSymbol) => base
+    case _ => error("GenSource: Unsupported content " +  decl.content.toString)
+  }
+
+  def particlesWithSimpleType(particles: List[Decl]) = {
+    val types = mutable.ListMap.empty[ElemDecl, BuiltInSimpleTypeSymbol]
+    for (particle <- particles) particle match {
+      case elem@ElemDecl(_, symbol: BuiltInSimpleTypeSymbol, _, _, _, _) =>
+        types += (elem -> symbol)
+      case elem@ElemDecl(_, ReferenceTypeSymbol(decl@SimpleTypeDecl(_, _)), _, _, _, _) =>
+        types += (elem -> baseType(decl))
+      case ref: ElemRef =>
+        val elem = buildElement(ref)
+        elem match {
+          case ElemDecl(_, symbol: BuiltInSimpleTypeSymbol, _, _, _, _) =>
+            types += (elem -> symbol)
+          case ElemDecl(_, ReferenceTypeSymbol(decl@SimpleTypeDecl(_, _)), _, _, _, _) =>
+            types += (elem -> baseType(decl))
+          case _ => // do nothing
+        }
+      case _ => // do nothing
+    }
+    types
   }
   
   def makeChoiceTrait(choice: ChoiceDecl): scala.xml.Node = {
     val name = makeTypeName(choiceNames(choice))
+    val simpleTypes = particlesWithSimpleType(choice.particles)
+
+    def buildWrapperName(elem: ElemDecl) =
+      name.dropRight(6) + makeTypeName(elem.name)
+    
+    // def buildWrapperName(symbol: BuiltInSimpleTypeSymbol) = symbol.name match {
+    //  case "Array[Byte]" => name + "Base64Binary"
+    //  case _             => name + symbol.name
+    // }
+    
+    def wrap(elem: ElemDecl) = {
+      val wrapperName = buildWrapperName(elem)
+      val symbol = simpleTypes(elem)
+      "case class " + wrapperName + "(value: " + symbol.name +
+        ") extends DataModel with " + name + newline +
+      newline +
+      "object " + wrapperName + " {" + newline +
+      "  def fromXML(node: scala.xml.Node) ="+ newline +
+      "    " + wrapperName +
+        "(" + buildArg(symbol, "node", None, None, 1, 1) + ")" + newline +
+      // newline +
+      // "  implicit def to" + wrapperName + "(value: " + symbol.name + ") =" + newline +
+      // "    " + wrapperName + "(value)" + newline +
+      "}"
+    }
+    
+    def makeCaseEntry(elem: ElemDecl) = {
+      val typeName = if (simpleTypes.contains(elem))
+        buildWrapperName(elem)
+      else
+        buildTypeName(elem.typeSymbol)
+      "case elem: scala.xml.Elem if elem.label == " + quote(elem.name) + " => " +
+        typeName + ".fromXML(elem)"
+    }
     
     return <source>
 trait {name}
@@ -258,24 +312,17 @@ object {name} {{
   def fromXML: PartialFunction[scala.xml.Node, {name}] = {{
     {
       val cases = choice.particles partialMap {
-        case elem: ElemDecl =>
-          val name = makeTypeName(elem.name)
-          val typeName = buildTypeName(elem.typeSymbol)
-          "case elem: scala.xml.Elem if elem.label == " + quote(elem.name) + " => " +
-            typeName + ".fromXML(elem)"
-
-        case ref: ElemRef =>
-          val elem = buildElement(ref)
-          val name = makeTypeName(elem.name)
-          val typeName = buildTypeName(elem.typeSymbol)
-          "case elem: scala.xml.Elem if elem.label == " + quote(elem.name) + " => " +
-            typeName + ".fromXML(elem)"
+        case elem: ElemDecl => makeCaseEntry(elem)
+        case ref: ElemRef   => makeCaseEntry(buildElement(ref))
       }
-      
       cases.mkString(newline + indent(2))        
     }
   }}
 }}
+
+{         
+  simpleTypes.keysIterator.toList.map(wrap(_)).mkString(newline + indent(2))
+}
 </source>    
   }
       

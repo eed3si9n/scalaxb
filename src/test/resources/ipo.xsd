@@ -123,9 +123,7 @@
       </sequence>
     </complexType>
   </element>
-  <element name="Choice2">
-    <complexType/>
-  </element>
+  <element name="Choice2" type="positiveInteger" />
   
   <complexType name="timeOlson">
     <simpleContent>

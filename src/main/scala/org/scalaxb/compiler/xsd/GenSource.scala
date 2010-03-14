@@ -219,10 +219,16 @@ class GenSource(schema: SchemaDecl,
   }
     
   def makeProtectedTypeName(decl: ComplexTypeDecl): String =
-    if (typeNames.valuesIterator.contains(decl.name))
-      makeTypeName(decl.name) + "Type"
-    else
+    if (!typeNames.valuesIterator.contains(decl.name))
       makeTypeName(decl.name)
+    else {
+      var name = makeTypeName(decl.name)  + "Type"
+      for (i <- 2 to 100) {
+        if (typeNames.valuesIterator.contains(name))
+          name = makeTypeName(decl.name)  + "Type" + i
+      }
+      name
+    }
   
   def makeTypeName(name: String) =
     if (name.contains("."))
@@ -300,8 +306,11 @@ class GenSource(schema: SchemaDecl,
       name
 
     def buildWrapperName(elem: ElemDecl) =
-      name.dropRight(6) + makeTypeName(elem.name)
-    
+      if (name.endsWith("Option"))
+        name.dropRight(6) + makeTypeName(elem.name)
+      else
+        name + makeTypeName(elem.name)
+      
     def wrap(elem: ElemDecl) = {
       val wrapperName = buildWrapperName(elem)
       val symbol = simpleTypes(elem)

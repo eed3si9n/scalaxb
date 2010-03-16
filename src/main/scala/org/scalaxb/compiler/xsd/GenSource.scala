@@ -201,18 +201,28 @@ class GenSource(schema: SchemaDecl,
         typeName + ".fromXML(x)"
     }
     
-    return <source>
+    val cases = choice.particles partialMap {
+      case elem: ElemDecl => makeCaseEntry(elem)
+      case ref: ElemRef   => makeCaseEntry(buildElement(ref))
+    }
+    
+    if (cases.size == 0)
+      <source>
+{ if (!hasForeign)
+    "trait " + name }
+object {name} {{  
+  def fromXML = new PartialFunction[scala.xml.Node, {targetType}] {{
+    def isDefinedAt(x : scala.xml.Node) = false
+    def apply(x : scala.xml.Node): {targetType} = error("Undefined")
+  }}
+}}      
+</source>
+    else <source>
 { if (!hasForeign)
     "trait " + name }
 object {name} {{  
   def fromXML: PartialFunction[scala.xml.Node, {targetType}] = {{
-    {
-      val cases = choice.particles partialMap {
-        case elem: ElemDecl => makeCaseEntry(elem)
-        case ref: ElemRef   => makeCaseEntry(buildElement(ref))
-      }
-      cases.mkString(newline + indent(2))        
-    }
+    { cases.mkString(newline + indent(2)) }
   }}
 }}
 
@@ -501,7 +511,7 @@ object {name} {{
       case "javax.xml.namespace.QName"
         => ("javax.xml.namespace.QName.valueOf(", ")")
       case "Array[String]" => ("", ".split(' ')")
-      case "Array[Byte]" => ("org.scalaxb.runtime.Base64.decodeBuffer(", ")")
+      case "Array[Byte]" => ("Helper.toByteArray(", ")")
       // case "HexBinary"  => 
       case _        => error("GenSource: Unsupported type " + typeSymbol.toString) 
     }
@@ -775,7 +785,7 @@ object Helper {{
         cal.set(i, gregorian.get(i))
     cal
   }}
-
+  
   def toString(value: Calendar) = {{
     val xmlGregorian = typeFactory.newXMLGregorianCalendar(value)
     xmlGregorian.toString
@@ -783,6 +793,9 @@ object Helper {{
 
   def toDuration(value: String) =
     typeFactory.newDuration(value)
+  
+  def toByteArray(value: String) =
+    (new sun.misc.BASE64Decoder()).decodeBuffer(value)
 }}
 </source>    
   }

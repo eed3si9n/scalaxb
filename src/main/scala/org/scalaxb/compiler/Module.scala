@@ -77,7 +77,7 @@ trait Module extends Logger {
     val outfiles = ListBuffer.empty[File]
     val outputs = ListMap.empty[File, File] ++= filePairs.map(x => x._1 -> x._2)
     val usedPackages = ListBuffer.empty[Option[String]]
-    
+        
     for (file <- sorted) 
       schemas += (file -> parse(file, context))
     
@@ -90,6 +90,16 @@ trait Module extends Logger {
         pkg, !usedPackages.contains(pkg))
       usedPackages += pkg
     }
+    
+    /*
+    if (filePairs.size > 0) {
+      val parent = filePairs(0)._2.getParentFile
+      val helper = new File(parent, "Helper.scala")
+      copyFileFromResource("/Helper.scala", helper)
+      outfiles += helper
+    }
+    */
+    
     outfiles.toList
   }
   
@@ -126,5 +136,19 @@ trait Module extends Logger {
       println("["+msg+"]")
       Console.flush
     }
+  }
+  
+  def copyFileFromResource(source: String, dest: File) {
+    val in = getClass.getResourceAsStream(source)
+    val reader = new java.io.BufferedReader(new java.io.InputStreamReader(in))
+    val out = new java.io.PrintWriter(new java.io.FileWriter(dest))
+    var line: String = null
+    line = reader.readLine
+    while (line != null) {
+      out.println(line)
+      line = reader.readLine
+    }
+    in.close
+    out.flush
   }
 }

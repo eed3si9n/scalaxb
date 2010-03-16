@@ -32,6 +32,27 @@ object Driver extends Module {
 
   val schemaLites = mutable.ListMap.empty[File, SchemaLite]
   val schemaFiles = mutable.ListMap.empty[String, File]
+  val processor = new ContextProcessor(this)
+  
+  override def buildContext = XsdContext()
+  
+  def parse(input: File, context: Context): Schema = {
+    log("xsd: parsing " + input)
+    val elem = scala.xml.XML.loadFile(input)
+    val schema = SchemaDecl.fromXML(elem, context)
+    context.schemas += schema
+
+    log("SchemaParser.parse: " + schema.toString())
+    schema
+  }
+  
+  override def processContext(context: Context,
+      packageNames: Map[String, Option[String]]) {
+    processor.processContext(context, packageNames)
+  }
+  
+  override def packageName(schema: Schema, context: Context): Option[String] =
+    processor.packageName(schema, context)
   
   def generate(xsd: Schema, context: Context, output: File,
       packageName: Option[String], firstOfPackage: Boolean) = {
@@ -47,19 +68,7 @@ object Driver extends Module {
     println("generated " + output)
     output
   }
-
-  override def buildContext = XsdContext()
   
-  def parse(input: File, context: Context): Schema = {
-    log("xsd: parsing " + input)
-    val elem = scala.xml.XML.loadFile(input)
-    val schema = SchemaDecl.fromXML(elem, context)
-    context.schemas += schema
-
-    log("SchemaParser.parse: " + schema.toString())
-    schema
-  }
-
   override def sortByDependency(files: Seq[File]): Seq[File] = {
     schemaLites.clear
     schemaFiles.clear

@@ -28,12 +28,23 @@ import scala.collection.immutable
 
 abstract class Decl
 
-case class XsdContext(schemas: mutable.ListBuffer[SchemaDecl] =
+case class XsdContext(
+  schemas: mutable.ListBuffer[SchemaDecl] =
     mutable.ListBuffer.empty[SchemaDecl],
   typeNames: mutable.ListMap[Option[String],
     mutable.ListMap[ComplexTypeDecl, String]] =
       mutable.ListMap.empty[Option[String],
-      mutable.ListMap[ComplexTypeDecl, String]]) {
+      mutable.ListMap[ComplexTypeDecl, String]],
+  packageNames: mutable.ListMap[String, Option[String]] =
+    mutable.ListMap.empty[String, Option[String]],
+  complexTypes: mutable.ListBuffer[(SchemaDecl, ComplexTypeDecl)] =
+    mutable.ListBuffer.empty[(SchemaDecl, ComplexTypeDecl)],
+  baseToSubs: mutable.ListMap[ComplexTypeDecl, List[ComplexTypeDecl]] =
+    mutable.ListMap.empty[ComplexTypeDecl, List[ComplexTypeDecl]],
+  choiceNames: mutable.ListMap[ChoiceDecl, String] =
+    mutable.ListMap.empty[ChoiceDecl, String],
+  choicePositions: mutable.ListMap[ChoiceDecl, Int] =
+    mutable.ListMap.empty[ChoiceDecl, Int]) {
 }
 
 class ParserConfig {
@@ -188,16 +199,16 @@ object SchemaDecl {
     for (typ <- config.types.valuesIterator) typ match {
       case decl: SimpleTypeDecl => // do nothing
             
-      case ComplexTypeDecl(_, SimpleContentDecl(res: SimpContRestrictionDecl), _) =>
+      case ComplexTypeDecl(_, _, SimpleContentDecl(res: SimpContRestrictionDecl), _) =>
         resolveType(res.base, config)
       
-      case ComplexTypeDecl(_, SimpleContentDecl(ext: SimpContExtensionDecl), _) =>
+      case ComplexTypeDecl(_, _, SimpleContentDecl(ext: SimpContExtensionDecl), _) =>
         resolveType(ext.base, config)
       
-      case ComplexTypeDecl(_, ComplexContentDecl(res: CompContRestrictionDecl), _) =>
+      case ComplexTypeDecl(_, _, ComplexContentDecl(res: CompContRestrictionDecl), _) =>
         resolveType(res.base, config)
       
-      case ComplexTypeDecl(_, ComplexContentDecl(ext: CompContExtensionDecl), _) =>
+      case ComplexTypeDecl(_, _, ComplexContentDecl(ext: CompContExtensionDecl), _) =>
         resolveType(ext.base, config)
         
       case _ =>
@@ -330,7 +341,8 @@ object ElemRef {
   }
 }
 
-case class ElemDecl(name: String,
+case class ElemDecl(namespace: String,
+  name: String,
   typeSymbol: XsTypeSymbol,
   defaultValue: Option[String],
   fixedValue: Option[String],  
@@ -372,7 +384,8 @@ object ElemDecl {
     val minOccurs = CompositorDecl.buildOccurrence((node \ "@minOccurs").text)
     val maxOccurs = CompositorDecl.buildOccurrence((node \ "@maxOccurs").text)
     
-    val elem = ElemDecl(name, typeSymbol, defaultValue, fixedValue, minOccurs, maxOccurs)
+    val elem = ElemDecl(config.targetNamespace, 
+      name, typeSymbol, defaultValue, fixedValue, minOccurs, maxOccurs)
     config.elemList += elem
     elem
   }
@@ -413,7 +426,8 @@ object SimpleTypeDecl {
 
 /** complex types may have element children and attributes.
  */
-case class ComplexTypeDecl(name: String,
+case class ComplexTypeDecl(namespace: String,
+  name: String,
   content: HasComplexTypeContent,
   attributes: List[AttributeLike]) extends TypeDecl
 
@@ -444,7 +458,8 @@ object ComplexTypeDecl {
     }
     
     // val contentModel = ContentModel.fromSchema(firstChild(node))
-    ComplexTypeDecl(name, content, attributes.reverse)
+    ComplexTypeDecl(config.targetNamespace,
+      name, content, attributes.reverse)
   }
 }
 
@@ -556,7 +571,8 @@ object SequenceDecl {
 
 case class ChoiceDecl(particles: List[Decl],
   minOccurs: Int,
-  maxOccurs: Int) extends CompositorDecl with HasParticle
+  maxOccurs: Int,
+  rand: Double = Math.random) extends CompositorDecl with HasParticle
 
 object ChoiceDecl {
   def fromXML(node: scala.xml.Node, config: ParserConfig) = {

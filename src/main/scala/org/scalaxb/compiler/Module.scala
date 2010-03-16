@@ -60,43 +60,44 @@ trait Module extends Logger {
     
     if (paramParser.parse(args))
       processFiles(files.map(file =>
-        (file,
-         buildOutputFile(file, config.outdir),
-         buildPackageName(file, config.packageName))))
+          (file, buildOutputFile(file, config.outdir))),
+        Map[String, Option[String]]((null, config.packageName))
+        )
   }
   
-  def processFiles(triples: Seq[(File, File, Option[String])]) = {
-    val files = triples.map(_._1)
+  def processFiles(filePairs: Seq[(File, File)],
+      packageNames: Map[String, Option[String]]) = {
+    val files = filePairs.map(_._1)
     files.foreach(file => if (!file.exists)
       error("file not found: " + file.toString))
-
+    
     val context = buildContext
     val sorted = sortByDependency(files)
     val schemas = ListMap.empty[File, Schema]
     val outfiles = ListBuffer.empty[File]
-    val outputs = ListMap.empty[File, File] ++= triples.map(x => x._1 -> x._2)
-    val packageNames = ListMap.empty[File, Option[String]] ++=
-      triples.map(x => x._1 -> x._3)
+    val outputs = ListMap.empty[File, File] ++= filePairs.map(x => x._1 -> x._2)
     val usedPackages = ListBuffer.empty[Option[String]]
     
     for (file <- sorted) 
       schemas += (file -> parse(file, context))
     
+    processContext(context, packageNames)
+    
     for (file <- sorted) {
       val schema = schemas(file)
-      val packageName = packageNames(file)
+      val pkg = packageName(schema, context)
       outfiles += generate(schema, context, outputs(file),
-        packageName, !usedPackages.contains(packageName))
-      usedPackages += packageName
+        pkg, !usedPackages.contains(pkg))
+      usedPackages += pkg
     }
     outfiles.toList
   }
   
-  def process(file: File, output: File, packageName: Option[String]) =
-    processFiles(List((file, output, packageName)))(0)
+  def packageName(schema: Schema, context: Context): Option[String]
   
-  def buildPackageName(input: File, defaultPackageName: Option[String]) =
-    defaultPackageName
+  def process(file: File, output: File, packageName: Option[String]) =
+    processFiles(List((file, output)),
+      Map[String, Option[String]]((null, packageName)))(0)
   
   def sortByDependency(files: Seq[File]): Seq[File] =
     files
@@ -108,7 +109,10 @@ trait Module extends Logger {
   }
 
   def buildContext: Context
-
+  
+  def processContext(context: Context,
+      packageNames: Map[String, Option[String]]): Unit
+  
   def parse(input: File, context: Context): Schema
   
   def parse(input: File): Schema

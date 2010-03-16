@@ -39,6 +39,9 @@ class ContextProcessor(logger: Logger) extends ScalaNames {
   def processContext(context: XsdContext,
       packageNames: Map[String, Option[String]]) {
     context.packageNames ++= packageNames
+    packageNames.valuesIterator.toList.removeDuplicates.map(
+      pkg => context.typeNames(pkg) = mutable.ListMap.empty[ComplexTypeDecl, String]
+      )
     
     val anonymousTypes = mutable.ListBuffer.empty[(SchemaDecl, ComplexTypeDecl)]
     
@@ -52,11 +55,7 @@ class ContextProcessor(logger: Logger) extends ScalaNames {
         val decl = ref.decl.asInstanceOf[ComplexTypeDecl]) {
       val pair = (schema, decl)
       anonymousTypes += pair
-      
-      val pkg = packageName(schema, context)
-      if (!context.typeNames.contains(pkg))
-        context.typeNames(pkg) = mutable.ListMap.empty[ComplexTypeDecl, String]
-      val typeNames = context.typeNames(pkg)
+      val typeNames = context.typeNames(packageName(schema, context))
       val nameCandidate = makeTypeName(elem.name)
       if (!typeNames.valuesIterator.contains(nameCandidate))
         typeNames(decl) = nameCandidate

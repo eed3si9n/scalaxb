@@ -104,7 +104,8 @@ class ContextProcessor(logger: Logger) extends ScalaNames {
       case _ =>
     }
     
-    for (base <- context.baseToSubs.keysIterator) {
+    for (base <- context.baseToSubs.keysIterator;
+        if !base.abstractValue) {
       val typeNames = context.typeNames(packageName(base.namespace, context))
       typeNames(base) = makeTraitName(base)
     }

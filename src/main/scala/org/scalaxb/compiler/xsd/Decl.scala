@@ -199,16 +199,16 @@ object SchemaDecl {
     for (typ <- config.types.valuesIterator) typ match {
       case decl: SimpleTypeDecl => // do nothing
             
-      case ComplexTypeDecl(_, _, SimpleContentDecl(res: SimpContRestrictionDecl), _) =>
+      case ComplexTypeDecl(_, _, _, _, SimpleContentDecl(res: SimpContRestrictionDecl), _) =>
         resolveType(res.base, config)
       
-      case ComplexTypeDecl(_, _, SimpleContentDecl(ext: SimpContExtensionDecl), _) =>
+      case ComplexTypeDecl(_, _, _, _, SimpleContentDecl(ext: SimpContExtensionDecl), _) =>
         resolveType(ext.base, config)
       
-      case ComplexTypeDecl(_, _, ComplexContentDecl(res: CompContRestrictionDecl), _) =>
+      case ComplexTypeDecl(_, _, _, _, ComplexContentDecl(res: CompContRestrictionDecl), _) =>
         resolveType(res.base, config)
       
-      case ComplexTypeDecl(_, _, ComplexContentDecl(ext: CompContExtensionDecl), _) =>
+      case ComplexTypeDecl(_, _, _, _, ComplexContentDecl(ext: CompContExtensionDecl), _) =>
         resolveType(ext.base, config)
         
       case _ =>
@@ -428,12 +428,24 @@ object SimpleTypeDecl {
  */
 case class ComplexTypeDecl(namespace: String,
   name: String,
+  abstractValue: Boolean,
+  mixed: Boolean,
   content: HasComplexTypeContent,
   attributes: List[AttributeLike]) extends TypeDecl
 
 object ComplexTypeDecl {  
   def fromXML(node: scala.xml.Node, name: String, config: ParserConfig) = {
     var content: HasComplexTypeContent = ComplexContentDecl.empty
+    
+    val abstractValue = (node \ "@abstract").headOption match {
+      case None    => false
+      case Some(x) => x.text.toBoolean
+    }
+    
+    val mixed = (node \ "@mixed").headOption match {
+      case None    => false
+      case Some(x) => x.text.toBoolean
+    }
     
     val attributes = (node \ "attribute").toList.map(
       AttributeLike.fromXML(_, config))
@@ -458,8 +470,8 @@ object ComplexTypeDecl {
     }
     
     // val contentModel = ContentModel.fromSchema(firstChild(node))
-    ComplexTypeDecl(config.targetNamespace,
-      name, content, attributes.reverse)
+    ComplexTypeDecl(config.targetNamespace, name, abstractValue, mixed, 
+      content, attributes.reverse)
   }
 }
 

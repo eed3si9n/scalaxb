@@ -81,6 +81,7 @@ class GenSource(schema: SchemaDecl,
       myprintAll(makeParentClass.child)
           
     for (base <- context.baseToSubs.keysIterator;
+        if !base.abstractValue;
         if context.complexTypes.contains((schema, base)))
       myprintAll(makeSuperType(base).child)
     
@@ -272,7 +273,12 @@ object {name} {{
           yield makeCaseEntry(sub)
         cases.mkString(newline + indent(3))        
       }
-      case _ => {defaultType}.fromXML(node)
+      { 
+        if (!decl.abstractValue)
+          "case _ => " + defaultType + ".fromXML(node)"
+        else
+          """case _ => error("Unknown type: " + typeName)"""
+      }
     }}
   }}
 }}
@@ -473,7 +479,7 @@ object {name} {{
   
   def buildArg(content: SimpleContentDecl, typeSymbol: XsTypeSymbol): String = typeSymbol match {
     case base: BuiltInSimpleTypeSymbol => buildArg(base, "node", None, None, 1, 1)
-    case ReferenceTypeSymbol(ComplexTypeDecl(_, _, content: SimpleContentDecl, _)) =>
+    case ReferenceTypeSymbol(ComplexTypeDecl(_, _, _, _, content: SimpleContentDecl, _)) =>
       buildArg(content)
     case ReferenceTypeSymbol(decl: SimpleTypeDecl) =>
       buildArg(decl, "node", None, None, 1, 1)
@@ -716,7 +722,7 @@ object {name} {{
     val name = "arg" + argNumber 
     
     val symbol = new ReferenceTypeSymbol(makeTypeName(context.choiceNames(choice)))
-    val decl = ComplexTypeDecl(schema.targetNamespace, symbol.name, null, Nil)
+    val decl = ComplexTypeDecl(schema.targetNamespace, symbol.name, false, false, null, Nil)
 
     choiceWrapper(decl) = choice
     

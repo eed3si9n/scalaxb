@@ -161,7 +161,7 @@ class GenSource(schema: SchemaDecl,
 
   def makeChoiceTrait(choice: ChoiceDecl): scala.xml.Node = {
     val name = makeTypeName(context.choiceNames(choice))
-    val simpleTypes = particlesWithSimpleType(choice.particles)
+    val simpleTypeParticles = particlesWithSimpleType(choice.particles)
     val hasForeign = containsForeignType(choice.particles)
     val targetType = if (hasForeign)
       defaultSuperName
@@ -176,7 +176,7 @@ class GenSource(schema: SchemaDecl,
       
     def wrap(elem: ElemDecl) = {
       val wrapperName = buildWrapperName(elem)
-      val symbol = simpleTypes(elem)
+      val symbol = simpleTypeParticles(elem)
       val mixin = if (hasForeign)
         ""
       else
@@ -193,7 +193,7 @@ class GenSource(schema: SchemaDecl,
     }
     
     def makeCaseEntry(elem: ElemDecl) = {
-      val typeName = if (simpleTypes.contains(elem))
+      val typeName = if (simpleTypeParticles.contains(elem))
         buildWrapperName(elem)
       else
         buildTypeName(elem.typeSymbol)
@@ -227,7 +227,7 @@ object {name} {{
 }}
 
 {         
-  simpleTypes.keysIterator.toList.map(wrap(_)).mkString(newline)
+  simpleTypeParticles.keysIterator.toList.map(wrap(_)).mkString(newline)
 }
 </source>    
   }
@@ -507,7 +507,7 @@ object {name} {{
       case "Byte"       => ("", ".toByte")
       case "BigInt"     => ("BigInt(", ")")
       case "BigDecimal" => ("BigDecimal(", ")")
-      case "java.net.URI" => ("java.net.URI.create(", ")")
+      case "java.net.URI" => ("Helper.toURI(", ")")
       case "javax.xml.namespace.QName"
         => ("javax.xml.namespace.QName.valueOf(", ")")
       case "Array[String]" => ("", ".split(' ')")
@@ -525,6 +525,8 @@ object {name} {{
     if (maxOccurs > 1) {
       if (selector.contains("split("))
         selector + ".toList.map(" + pre + "_" + post + ")"
+      else if (pre.contains("("))
+        selector + ".toList.map(x => " + pre + "x.text" + post + ")"
       else
         selector + ".toList.map(" + pre + "_.text" + post + ")"
     } else if (minOccurs == 0) {
@@ -796,6 +798,9 @@ object Helper {{
   
   def toByteArray(value: String) =
     (new sun.misc.BASE64Decoder()).decodeBuffer(value)
+    
+  def toURI(value: String) =
+    java.net.URI.create(value)
 }}
 </source>    
   }

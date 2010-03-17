@@ -21,7 +21,7 @@ object PurchaseOrderUsage {
   }
   
   def testUSAddress {
-    val subject = <USAddress>
+    val subject = <USAddress xmlns="http://www.example.com/IPO">
       <name>Foo</name>
       <street>1537 Paper Street</street>
       <city>Wilmington</city>
@@ -29,7 +29,7 @@ object PurchaseOrderUsage {
       <zip>19808</zip>
     </USAddress>
     
-    val address = USAddress.fromXML(subject)
+    val address = Addressable.fromXML(subject)
     address match {
       case USAddress("Foo",
         "1537 Paper Street",

@@ -251,7 +251,7 @@ object {name} {{
     
     def makeCaseEntry(decl: ComplexTypeDecl) = {
       val name = typeNames(decl)
-      "case " + quote(name) + " => " + name + ".fromXML(node)"
+      "case (" + quote(decl.namespace) + ", " + quote(name) + ") => " + name + ".fromXML(node)"
     }
     
     return <source>
@@ -265,9 +265,17 @@ trait {name}{extendString} {{
 object {name} {{
   def fromXML(node: scala.xml.Node): {name} = {{
     val typeName = (node \ "@{{http://www.w3.org/2001/XMLSchema-instance}}type").text    
-    val withoutNS = typeName.drop(typeName.indexOf(":") + 1)
+    val namespace = if (typeName.contains(':'))
+      node.scope.getURI(typeName.dropRight(typeName.length - typeName.indexOf(':')))
+    else
+      node.scope.getURI(null)
+      
+    val value = if (typeName.contains(':'))
+      typeName.drop(typeName.indexOf(':') + 1)
+    else
+      typeName
     
-    withoutNS match {{
+    (namespace, value) match {{
       {
         val cases = for (sub <- context.baseToSubs(decl))
           yield makeCaseEntry(sub)

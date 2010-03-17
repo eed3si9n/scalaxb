@@ -240,14 +240,13 @@ object {name} {{
     val list = List.concat[Decl](childElements, flattenAttributes(decl))
     val paramList = list.map(buildParam(_))
     val argList = list.map(buildArg(_))
-    val superName = buildSuperName(decl)
     val defaultType = makeProtectedTypeName(decl, context)
-    val options = buildOptions(decl)
+    val superNames = buildSuperNamesForTrait(decl)
     
-    val extendString = if (options.isEmpty)
+    val extendString = if (superNames.isEmpty)
       ""
     else
-      " extends " + options.mkString(" with ")
+      " extends " + superNames.mkString(" with ")
     
     def makeCaseEntry(decl: ComplexTypeDecl) = {
       val name = typeNames(decl)
@@ -541,13 +540,21 @@ object {name} {{
   }
   
   def quote(value: String) = "\"" + value + "\""
-      
+  
   def buildSuperNames(decl: ComplexTypeDecl) = {
     val superName = buildSuperName(decl)
     if (superName == defaultSuperName)
       List(superName) ::: buildOptions(decl)
     else
       List(defaultSuperName, superName) ::: buildOptions(decl)
+  }
+  
+  def buildSuperNamesForTrait(decl: ComplexTypeDecl) = {
+    val superName = buildSuperName(decl)
+    if (superName == defaultSuperName)
+      buildOptions(decl)
+    else
+      List(superName) ::: buildOptions(decl)
   }
   
   def buildSuperName(decl: ComplexTypeDecl): String = 

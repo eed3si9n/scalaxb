@@ -29,7 +29,7 @@ See the file called INSTALL for details.
 Usage
 -----
 
-    $ scalaxb [options] <schema_file>
+    $ scalaxb [options] <schema_file>...
 
       -d <directory> | --outdir <directory>
             generated files will go into <directory>
@@ -96,12 +96,19 @@ documents conforming to the address.xsd:
 
     object Addressable {
       def fromXML(node: scala.xml.Node): Addressable = {
-        val typeName = 
-          (node \ "@{http://www.w3.org/2001/XMLSchema-instance}type").text    
-        val withoutNS = typeName.drop(typeName.indexOf(":") + 1)
+        val typeName = (node \ "@{http://www.w3.org/2001/XMLSchema-instance}type").text    
+        val namespace = if (typeName.contains(':'))
+          node.scope.getURI(typeName.dropRight(typeName.length - typeName.indexOf(':')))
+        else
+          node.scope.getURI(null)
+      
+        val value = if (typeName.contains(':'))
+          typeName.drop(typeName.indexOf(':') + 1)
+        else
+          typeName
     
-        withoutNS match {
-          case "USAddress" => USAddress.fromXML(node)
+        (namespace, value) match {
+          case ("http://www.example.com/IPO", "USAddress") => USAddress.fromXML(node)
           case _ => Address.fromXML(node)
         }
       }
@@ -123,16 +130,12 @@ documents conforming to the address.xsd:
           (node \ "zip").text.toInt) 
     }
 
+
 Bug Reporting
 -------------
 
-You can send xsd data binding bug reports to Issues
-
-  http://github.com/eed3si9n/scalaxb/issues
-  
-or send me a message or an email
-
-  http://github.com/inbox/new
+You can send bug reports to [Issues](http://github.com/eed3si9n/scalaxb/issues),
+send me a [message](http://github.com/inbox/new), or email.
 
 Licensing
 ---------

@@ -152,7 +152,7 @@ class GenSource(schema: SchemaDecl,
     }
     types
   }
-
+  
   def containsForeignType(particles: List[Decl]) =
     particles.exists(_ match {
         case ref: ElemRef => ref.namespace != schema.targetNamespace
@@ -163,6 +163,20 @@ class GenSource(schema: SchemaDecl,
   def makeChoiceTrait(choice: ChoiceDecl): scala.xml.Node = {
     val name = makeTypeName(context.choiceNames(choice))
     val simpleTypeParticles = particlesWithSimpleType(choice.particles)
+    val sequences = choice.particles partialMap {
+      case seq: SequenceDecl => seq
+    }
+    
+    var n = 0
+    def sequenceNumber = {
+      n += 1
+      n
+    }
+    
+    val sequenceWrappers = sequences.map(x =>
+        ComplexTypeDecl(schema.targetNamespace,
+          name + "Sequence" + sequenceNumber, false, false,
+          ComplexContentDecl.fromCompositor(x, Nil), Nil))
     val hasForeign = containsForeignType(choice.particles)
     val targetType = if (hasForeign)
       defaultSuperName
@@ -222,13 +236,15 @@ object {name} {{
 { if (!hasForeign)
     "trait " + name }
 object {name} {{  
-  def fromXML: PartialFunction[scala.xml.Node, {targetType}] = {{
+  def fromXML: PartialFunction[scala.xml.NodeSeq, {targetType}] = {{
     { cases.mkString(newline + indent(2)) }
   }}
 }}
-
 {         
   simpleTypeParticles.keysIterator.toList.map(wrap(_)).mkString(newline)
+}
+{
+  sequenceWrappers.map(x => makeCaseClassWithType(x.name, x))
 }
 </source>    
   }
@@ -763,12 +779,13 @@ object {name} {{
       myprint(node)
   }
   
-  def myprint(n: Node) = n match {
+  def myprint(n: Node): Unit = n match {
     case Text(s)          => out.print(s)
     case EntityRef("lt")  => out.print('<')
     case EntityRef("gt")  => out.print('>')
     case EntityRef("amp") => out.print('&')
     case atom: Atom[_]    => out.print(atom.text)
+    case elem: Elem       => myprintAll(elem.child)
     case _                => log("error in xsd:run: encountered "
       + n.getClass() + " " + n.toString)
   }

@@ -17,7 +17,7 @@ class ImportTest extends SpecificationWithJUnit with CompilerMatcher {
   
   lazy val generated = module.processFiles(
     List((ipoxsd, iposcala), (reportxsd, reportscala)),
-    Map[String, Option[String]]((null, Some("ipo")))  
+    Map[String, Option[String]]((null, Some("ipo")), ("http://www.example.com/Report", Some("report")))  
       )
   "report.xsd must generate report.scala file" in {
     generated(0) must exist
@@ -26,6 +26,7 @@ class ImportTest extends SpecificationWithJUnit with CompilerMatcher {
 
   "report.scala file must compile so that PurchaseReport can be used" in {
     (List("import ipo._",
+          "import report._",
           "PurchaseReport(RegionsType(), PartsType(), None, None).toString"),
      generated) must evaluateTo("PurchaseReport(RegionsType(WrappedArray()),PartsType(WrappedArray()),None,None)", outdir = "./tmp")
   }

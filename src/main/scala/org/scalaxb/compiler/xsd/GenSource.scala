@@ -36,7 +36,6 @@ class GenSource(schema: SchemaDecl,
     logger: Logger) extends ContextProcessor(logger) {  
   val topElems = schema.topElems
   val elemList = schema.elemList
-  val types = schema.types
   val choices = schema.choices
   val newline = System.getProperty("line.separator")
   val defaultSuperName = "org.scalaxb.rt.DataModel"
@@ -45,7 +44,7 @@ class GenSource(schema: SchemaDecl,
   val interNamespaceChoiceTypes = mutable.ListBuffer.empty[XsTypeSymbol]
   var argNumber = 0
   val schemas = context.schemas.toList
-  val typeNames = context.typeNames(packageName)
+  // val typeNames = context.typeNames(packageName)
 
   abstract class Cardinality
   object Optional extends Cardinality
@@ -102,16 +101,37 @@ class GenSource(schema: SchemaDecl,
     val typeNames = context.typeNames(packageName(decl.namespace, context))
     makeCaseClassWithType(typeNames(decl), decl)
   }
+  
+  def types(namespace: String, name: String) =
+    (for (schema <- schemas;
+          if schema.targetNamespace == namespace;
+          if schema.types.contains(name))
+        yield schema.types(name)) match {
+        case x :: xs => x
+        case Nil     => error("Type not found: {" + namespace + "}:" + name)
+      }
       
   def buildTypeName(typeSymbol: XsTypeSymbol): String = typeSymbol match {
     case symbol: BuiltInSimpleTypeSymbol => symbol.name
     case ReferenceTypeSymbol(decl: SimpleTypeDecl) => buildTypeName(decl)
-    case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
-      if (!typeNames.contains(decl))
-        error(schema.targetNamespace + ": Type name not found: " + decl.toString)
-
-      typeNames(decl)
+    case ReferenceTypeSymbol(decl: ComplexTypeDecl) => buildTypeName(decl)
     case xsAny => defaultSuperName  
+  }
+  
+  def buildTypeName(decl: ComplexTypeDecl, localOnly: Boolean = false): String = {
+    val pkg = packageName(decl, context)
+    val typeNames = context.typeNames(pkg)
+    if (!typeNames.contains(decl))
+      error(pkg + ": Type name not found: " + decl.toString)
+    
+    if (localOnly)
+      typeNames(decl)
+    else if (pkg == packageName(schema, context))
+      typeNames(decl)
+    else pkg match {
+      case Some(x) => x + "." + typeNames(decl)
+      case None => typeNames(decl)
+    }
   }
   
   def buildTypeName(decl: SimpleTypeDecl): String = decl.content match {
@@ -244,7 +264,7 @@ object {name} {{
   }
       
   def makeTrait(decl: ComplexTypeDecl): scala.xml.Node = {
-    val name = typeNames(decl)
+    val name = buildTypeName(decl)
     log("GenSource.makeTrait: emitting " + name)
 
     val childElements = flattenElements(decl, name)
@@ -260,8 +280,9 @@ object {name} {{
       " extends " + superNames.mkString(" with ")
     
     def makeCaseEntry(decl: ComplexTypeDecl) = {
-      val name = typeNames(decl)
-      "case (" + quote(decl.namespace) + ", " + quote(name) + ") => " + name + ".fromXML(node)"
+      val localPart = buildTypeName(decl, true)
+      val name = buildTypeName(decl)
+      "case (" + quote(decl.namespace) + ", " + quote(localPart) + ") => " + name + ".fromXML(node)"
     }
     
     return <source>
@@ -307,7 +328,7 @@ object {name} {{
     log("GenSource.makeCaseClassWithType: emitting " + name)
     
     val superNames: List[String] = if (context.baseToSubs.contains(decl))
-      List(defaultSuperName, typeNames(decl))
+      List(defaultSuperName, buildTypeName(decl))
     else
       buildSuperNames(decl)
       
@@ -583,7 +604,7 @@ object {name} {{
   
   def buildSuperName(decl: ComplexTypeDecl): String = 
     decl.content.content.base match {
-      case ReferenceTypeSymbol(base: ComplexTypeDecl) => typeNames(base)
+      case ReferenceTypeSymbol(base: ComplexTypeDecl) => buildTypeName(base)
       case _ => defaultSuperName // makeTypeName(decl.content.content.base.name) 
     }
   
@@ -748,6 +769,7 @@ object {name} {{
       interNamespaceChoiceTypes += symbol
     
     symbol.decl = decl
+    val typeNames = context.typeNames(packageName(decl.namespace, context))
     typeNames(decl) = makeTypeName(context.choiceNames(choice))
     
     ElemDecl(schema.targetNamespace, name, symbol, None, None,

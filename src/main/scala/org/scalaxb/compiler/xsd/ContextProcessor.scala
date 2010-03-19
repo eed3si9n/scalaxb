@@ -29,7 +29,10 @@ class ContextProcessor(logger: Logger) extends ScalaNames {
   
   def packageName(schema: SchemaDecl, context: XsdContext): Option[String] =
     packageName(schema.targetNamespace, context)
-  
+
+  def packageName(decl: ComplexTypeDecl, context: XsdContext): Option[String] =
+    packageName(decl.namespace, context)
+      
   def packageName(namespace: String, context: XsdContext): Option[String] =
     if (context.packageNames.contains(namespace))
       context.packageNames(namespace)

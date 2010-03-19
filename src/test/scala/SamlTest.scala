@@ -24,8 +24,12 @@ class SamlTest extends SpecificationWithJUnit with CompilerMatcher {
       (xencschemaxsd, xencschemascala),
       (samlschemaassertion2xsd, samlschemaassertion2scala),
       (samlschemametadata2xsd, samlschemametadata2scala)),
-    Map[String, Option[String]]((null, Some("saml")))  
-      )
+    Map[String, Option[String]]((null, Some("saml")),
+      ("http://www.w3.org/2000/09/xmldsig#", Some("org.w3.xmldsig")),
+      ("http://www.w3.org/2001/04/xmlenc#", Some("org.w3.xmlenc")),
+      ("urn:oasis:names:tc:SAML:2.0:assertion", Some("org.xml.saml2.assertion")),
+      ("urn:oasis:names:tc:SAML:2.0:metadata", Some("org.xml.saml2.metadata"))  
+        ) )
   
   "xmldsig-core-schema.scala file must compile" in {
     generated must compile(outdir = "./tmp")

@@ -1,0 +1,29 @@
+Initial release:
+
+- Implements basic support to compile W3C XML Schema into Scala case classes.
+- Supports type resolution across multiple schema that uses `<import>`.
+- Generates `trait` for `<choice>`s and type extensions.
+
+The idea is to generate case classes from XSD files, to handle XML documents more naturally in Scala. For example,
+
+    <xs:complexType name="Address">
+      <xs:sequence>
+        <xs:element name="name"   type="xs:string"/>
+        <xs:element name="street" type="xs:string"/>
+        <xs:element name="city"   type="xs:string"/>
+      </xs:sequence>
+    </xs:complexType>
+
+turns to
+
+    case class Address(name: String,
+      street: String,
+      city: String) extends DataModel with Addressable {
+    }
+
+    object Address {
+      def fromXML(node: scala.xml.Node): Address =
+        Address((node \ "name").text,
+          (node \ "street").text,
+          (node \ "city").text) 
+    }

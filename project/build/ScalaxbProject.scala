@@ -1,6 +1,6 @@
 import sbt._
 
-class ScalaxbProject(info: ProjectInfo) extends DefaultProject(info)
+class ScalaxbProject(info: ProjectInfo) extends DefaultProject(info) with posterous.Publish
     with ScalaBazaarTask {
   val specs = "org.scala-tools.testing" % "specs_2.8.0.Beta1" % "1.6.2" % "test"
   val junit = "junit" % "junit" % "4.7" % "test"

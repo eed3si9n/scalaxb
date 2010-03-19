@@ -35,6 +35,8 @@ Usage
             generated files will go into <directory>
       -p <package> | --package <package>
             specifies the target package
+      -p:<namespaceURI>=<package> | --package:<namespaceURI>=<package>
+            specifies the target package for <namespaceURI>
       -v | --verbose
             be extra verbose
       <schema_file>

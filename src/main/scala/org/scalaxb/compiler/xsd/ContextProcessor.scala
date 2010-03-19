@@ -37,7 +37,7 @@ class ContextProcessor(logger: Logger) extends ScalaNames {
       context.packageNames(null)
   
   def processContext(context: XsdContext,
-      packageNames: Map[String, Option[String]]) {
+      packageNames: collection.Map[String, Option[String]]) {
     context.packageNames ++= packageNames
     packageNames.valuesIterator.toList.removeDuplicates.map(
       pkg => context.typeNames(pkg) = mutable.ListMap.empty[ComplexTypeDecl, String]

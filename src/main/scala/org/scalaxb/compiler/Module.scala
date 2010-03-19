@@ -41,17 +41,23 @@ trait Module extends Logger {
   
   class ModuleConfig {
     var verbose = false
-    var packageName: Option[String] = None
+    var packageNames: ListMap[String, Option[String]] =
+      ListMap.empty[String, Option[String]]
     var outdir: File = new File(".")  
   }
   
   def start(args: Seq[String]) { 
     val files = ListBuffer.empty[File]
+    
+    config.packageNames(null) = None
     val paramParser = new OptionParser("scalaxb") {
       opt("d", "outdir", "<directory>", "generated files will go into <directory>",
         { d: String => config.outdir = new File(d) })
       opt("p", "package", "<package>", "specifies the target package",
-        { p: String => config.packageName = Some(p) })
+        { p: String => config.packageNames(null) = Some(p) })
+      keyValueOpt("p", "package", "<namespaceURI>", "<package>",
+        "specifies the target package for <namespaceURI>",
+        { (key: String, value: String) => { config.packageNames(key) = Some(value) } })
       opt("v", "verbose", "be extra verbose",
         { config.verbose = true })
       arglist("<schema_file>...", "input schema to be converted",
@@ -61,12 +67,12 @@ trait Module extends Logger {
     if (paramParser.parse(args))
       processFiles(files.map(file =>
           (file, buildOutputFile(file, config.outdir))),
-        Map[String, Option[String]]((null, config.packageName))
+          config.packageNames
         )
   }
   
   def processFiles(filePairs: Seq[(File, File)],
-      packageNames: Map[String, Option[String]]) = {
+      packageNames: collection.Map[String, Option[String]]) = {
     val files = filePairs.map(_._1)
     files.foreach(file => if (!file.exists)
       error("file not found: " + file.toString))
@@ -91,14 +97,12 @@ trait Module extends Logger {
       usedPackages += pkg
     }
     
-    /*
     if (filePairs.size > 0) {
       val parent = filePairs(0)._2.getParentFile
       val helper = new File(parent, "Helper.scala")
       copyFileFromResource("/Helper.scala", helper)
       outfiles += helper
     }
-    */
     
     outfiles.toList
   }
@@ -113,6 +117,9 @@ trait Module extends Logger {
     files
 
   def buildOutputFile(input: File, outdir: File) = {
+    if (!input.exists)
+      error("file not found: " + input.toString)
+    
     val name = input.getName
     val namepart = name.splitAt(name.indexOf('.'))._1
     new File(outdir, namepart + ".scala") 
@@ -121,7 +128,7 @@ trait Module extends Logger {
   def buildContext: Context
   
   def processContext(context: Context,
-      packageNames: Map[String, Option[String]]): Unit
+      packageNames: collection.Map[String, Option[String]]): Unit
   
   def parse(input: File, context: Context): Schema
   

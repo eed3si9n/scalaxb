@@ -1,57 +1,40 @@
-package org.scalaxb.runtime
+package org.scalaxb.rt
 
-/** http://d.hatena.ne.jp/yuroyoro/20100118/1263792194
- * @author yuroyoro
- */
-object Base64 {
-  val BASE64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+abstract class DataModel
 
-  def encode(s: String) = encodeBuffer(s.getBytes)
-  def encode(s: String, charset:String) = encodeBuffer(s.getBytes(charset))
+class Calendar extends java.util.GregorianCalendar {
+  override def toString: String = Helper.toString(this)
+}
 
-  private def encodeBuffer(buf: Array[Byte]) = {
-    val bits = fill(buf.map{
-        b => if(b < 0) b + 256 else b.toInt
-      }.map{
-          i => ("00000000" + i.toBinaryString).reverse.take(8).reverse
-    }.mkString, "0", 6).toList
+object Calendar {
+  def apply(value: String): Calendar = Helper.toCalendar(value)
+  def unapply(value: Calendar): Option[String] = Some(Helper.toString(value))
+}
 
-    def encodeBits(xs: List[Char]): String = xs match{
-      case Nil => ""
-      case ss =>
-        val (h,t) = ss.splitAt(6)
-        BASE64((0 /: h.reverse.zipWithIndex){
-            case(n, (c, i)) => n + (Math.pow(2, i) * c.asDigit).toInt
-        }) + encodeBits(t)
-    }
+object Helper {
+  lazy val typeFactory = javax.xml.datatype.DatatypeFactory.newInstance()
 
-    fill(encodeBits(bits), "=", 4)
+  def toCalendar(value: String) = {
+    val gregorian = typeFactory.newXMLGregorianCalendar(value).toGregorianCalendar
+    val cal = new Calendar()
+
+    for (i <- 0 to java.util.Calendar.FIELD_COUNT - 1)
+      if (gregorian.isSet(i))
+        cal.set(i, gregorian.get(i))
+    cal
+  }
+  
+  def toString(value: Calendar) = {
+    val xmlGregorian = typeFactory.newXMLGregorianCalendar(value)
+    xmlGregorian.toString
   }
 
-  private def fill(s: String, fill: String, n: Int) = s + (fill * (n - (s.length % n)))
-
-  def decode(s: String) = new String(decodeBuffer(s))
-  def decode(s: String , charset: String) = new String(decodeBuffer(s), charset)
-
-  def decodeBuffer(s: String) = {
-    val bits = s.map{ BASE64.indexOf(_)}.
-      filter(0 <).
-      map{
-        b => ("000000" + b.toBinaryString).reverse.take(6).reverse
-      }.mkString.toList
-
-    def decodeBits(xs: List[Char]): List[Byte]= xs match {
-      case Nil => Nil
-      case ss =>
-        val (h,t) = ss.splitAt(8)
-        (((0 /: h.reverse.zipWithIndex){
-            case(n, (c, i)) => n + (Math.pow(2, i) * c.asDigit).toInt
-        }) match{
-          case b if b > 256 => (b - 256).toByte
-          case b => b.toByte
-        }) :: decodeBits(t)
-    }
-
-    decodeBits(bits).toArray
-  }
+  def toDuration(value: String) =
+    typeFactory.newDuration(value)
+  
+  def toByteArray(value: String) =
+    (new sun.misc.BASE64Decoder()).decodeBuffer(value)
+    
+  def toURI(value: String) =
+    java.net.URI.create(value)
 }

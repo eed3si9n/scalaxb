@@ -47,7 +47,7 @@ object Driver extends Module {
   }
   
   override def processContext(context: Context,
-      packageNames: Map[String, Option[String]]) {
+      packageNames: collection.Map[String, Option[String]]) {
     processor.processContext(context, packageNames)
   }
   

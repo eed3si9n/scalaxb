@@ -39,7 +39,7 @@ class GenSource(schema: SchemaDecl,
   val types = schema.types
   val choices = schema.choices
   val newline = System.getProperty("line.separator")
-  val defaultSuperName = "DataModel"
+  val defaultSuperName = "org.scalaxb.rt.DataModel"
   val XML_URI = "http://www.w3.org/XML/1998/namespace"
   val choiceWrapper = mutable.ListMap.empty[ComplexTypeDecl, ChoiceDecl]
   val interNamespaceChoiceTypes = mutable.ListBuffer.empty[XsTypeSymbol]
@@ -76,10 +76,7 @@ class GenSource(schema: SchemaDecl,
     
     if (packageName.isDefined)
       myprintAll(makePackageName.child)
-      
-    if (firstOfPackage)
-      myprintAll(makeParentClass.child)
-          
+    
     for (base <- context.baseToSubs.keysIterator;
         if !base.abstractValue;
         if context.complexTypes.contains((schema, base)))
@@ -96,9 +93,6 @@ class GenSource(schema: SchemaDecl,
         
     for (choice <- choices)
       myprintAll(makeChoiceTrait(choice).child)
-
-    if (firstOfPackage)
-      myprintAll(makeHelperObject.child)
   }
       
   def makeSuperType(decl: ComplexTypeDecl): scala.xml.Node =
@@ -198,7 +192,7 @@ class GenSource(schema: SchemaDecl,
         " with " + name
 
       "case class " + wrapperName + "(value: " + symbol.name +
-        ") extends DataModel" + mixin + newline +
+        ") extends " + defaultSuperName + mixin + newline +
       newline +
       "object " + wrapperName + " {" + newline +
       "  def fromXML(node: scala.xml.Node) ="+ newline +
@@ -525,8 +519,8 @@ object {name} {{
     
     val (pre, post) = typeSymbol.name match {
       case "String"     => ("", "")
-      case "javax.xml.datatype.Duration" => ("Helper.toDuration(", ")")
-      case "java.util.Calendar" => ("Helper.toCalendar(", ")")
+      case "javax.xml.datatype.Duration" => ("org.scalaxb.rt.Helper.toDuration(", ")")
+      case "java.util.Calendar" => ("org.scalaxb.rt.Helper.toCalendar(", ")")
       case "Boolean"    => ("", ".toBoolean")
       case "Int"        => ("", ".toInt")
       case "Long"       => ("", ".toLong")
@@ -536,11 +530,11 @@ object {name} {{
       case "Byte"       => ("", ".toByte")
       case "BigInt"     => ("BigInt(", ")")
       case "BigDecimal" => ("BigDecimal(", ")")
-      case "java.net.URI" => ("Helper.toURI(", ")")
+      case "java.net.URI" => ("org.scalaxb.rt.Helper.toURI(", ")")
       case "javax.xml.namespace.QName"
         => ("javax.xml.namespace.QName.valueOf(", ")")
       case "Array[String]" => ("", ".split(' ')")
-      case "Array[Byte]" => ("Helper.toByteArray(", ")")
+      case "Array[Byte]" => ("org.scalaxb.rt.Helper.toByteArray(", ")")
       // case "HexBinary"  => 
       case _        => error("GenSource: Unsupported type " + typeSymbol.toString) 
     }
@@ -796,53 +790,6 @@ object {name} {{
     case None    => error("GenSource: package name is missing")
   }
   
-  def makeParentClass = {
-    <source>
-abstract class {defaultSuperName}
-</source>    
-  }
-  
-  def makeHelperObject = {
-    <source>
-class Calendar extends java.util.GregorianCalendar {{
-  override def toString: String = Helper.toString(this)
-}}
-
-object Calendar {{
-  def apply(value: String): Calendar = Helper.toCalendar(value)
-  def unapply(value: Calendar): Option[String] = Some(Helper.toString(value))
-}}
-
-object Helper {{
-  lazy val typeFactory = javax.xml.datatype.DatatypeFactory.newInstance()
-
-  def toCalendar(value: String) = {{
-    val gregorian = typeFactory.newXMLGregorianCalendar(value).toGregorianCalendar
-    val cal = new Calendar()
-
-    for (i &lt;- 0 to java.util.Calendar.FIELD_COUNT - 1)
-      if (gregorian.isSet(i))
-        cal.set(i, gregorian.get(i))
-    cal
-  }}
-  
-  def toString(value: Calendar) = {{
-    val xmlGregorian = typeFactory.newXMLGregorianCalendar(value)
-    xmlGregorian.toString
-  }}
-
-  def toDuration(value: String) =
-    typeFactory.newDuration(value)
-  
-  def toByteArray(value: String) =
-    (new sun.misc.BASE64Decoder()).decodeBuffer(value)
-    
-  def toURI(value: String) =
-    java.net.URI.create(value)
-}}
-</source>    
-  }
-
   def indent(indent: Int) = "  " * indent
   
   def log(msg: String) = logger.log(msg)

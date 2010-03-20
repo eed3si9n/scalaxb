@@ -111,7 +111,7 @@ trait Module extends Logger {
   
   def process(file: File, output: File, packageName: Option[String]) =
     processFiles(List((file, output)),
-      Map[String, Option[String]]((null, packageName)))(0)
+      Map[String, Option[String]]((null, packageName)))
   
   def sortByDependency(files: Seq[File]): Seq[File] =
     files

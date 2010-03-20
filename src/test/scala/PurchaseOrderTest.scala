@@ -19,23 +19,22 @@ class PurchaseOrderTest extends SpecificationWithJUnit with CompilerMatcher {
        case schema: SchemaDecl => true
      }
   }
-  /*
+
   lazy val generated = module.process(ipoxsd, iposcala, Some("ipo"))
   "ipo.xsd must generate ipo.scala file" in {
-    generated must exist
+    generated(0) must exist
   }
   
   "ipo.scala file must compile so Address can be used" in {
     (List("import ipo._",
           "Address(\"\", \"\", \"\").toString"), 
-     List(generated)) must evaluateTo("Address(,,)", outdir = "./tmp")
+     generated) must evaluateTo("Address(,,)", outdir = "./tmp")
   }
 
   "ipo.scala file must compile together with poTest.scala" in {
     (List("import ipo._",
           "PurchaseOrderUsage.allTests"),
-     purchaseOrderUsagescala :: List(generated)) must evaluateTo(true,
+     purchaseOrderUsagescala :: generated) must evaluateTo(true,
        outdir = "./tmp")
   }
-  */
 }

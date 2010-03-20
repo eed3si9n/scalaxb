@@ -3,6 +3,7 @@
  */
 
 import ipo._
+import org.scalaxb.rt._
 
 object PurchaseOrderUsage {
   def main(args: Array[String]) = {
@@ -21,13 +22,16 @@ object PurchaseOrderUsage {
   }
   
   def testUSAddress {
-    val subject = <USAddress xmlns="http://www.example.com/IPO">
+    val subject = <shipTo xmlns="http://www.example.com/IPO"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:ipo="http://www.example.com/IPO"
+        xsi:type="ipo:USAddress">
       <name>Foo</name>
       <street>1537 Paper Street</street>
       <city>Wilmington</city>
       <state>DE</state>
       <zip>19808</zip>
-    </USAddress>
+    </shipTo>
     
     val address = Addressable.fromXML(subject)
     address match {
@@ -149,10 +153,10 @@ object PurchaseOrderUsage {
   }
 
   def testLangAttr {
-    val subject = <Choice1 xml:lang="en" />
+    val subject = <Choice1 xml:lang="en"><listOfInt>1 2 3</listOfInt></Choice1>
     val obj = Choice1.fromXML(subject)
     obj match {
-      case Choice1("en") =>
+      case Choice1(Seq(1, 2, 3), "en") =>
       case _ => error("match failed: " + obj.toString)
     }
     

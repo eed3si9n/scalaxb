@@ -28,7 +28,8 @@ abstract class XsTypeSymbol(val name: String) extends scala.xml.TypeSymbol {
   }  
 }
 
-object xsAny extends XsTypeSymbol("DataModel") {}
+object XsAny extends XsTypeSymbol("XsAny") {}
+object XsInterNamespace extends XsTypeSymbol("XsInterNamespace") {}
 
 class ReferenceTypeSymbol(name: String) extends XsTypeSymbol(name) {
   var decl: TypeDecl = null
@@ -50,96 +51,97 @@ abstract class DerivSym
 case class Extends(sym: XsTypeSymbol) extends DerivSym
 case class Restricts(sym: XsTypeSymbol) extends DerivSym
 
-object xsUnknown          extends BuiltInSimpleTypeSymbol("String") {}
-object xsDuration         extends BuiltInSimpleTypeSymbol("javax.xml.datatype.Duration") {}
-object xsDateTime         extends BuiltInSimpleTypeSymbol("java.util.Calendar") {}
-object xsTime             extends BuiltInSimpleTypeSymbol("java.util.Calendar") {}
-object xsDate             extends BuiltInSimpleTypeSymbol("java.util.Calendar") {}
-object xsGYearMonth       extends BuiltInSimpleTypeSymbol("java.util.Calendar") {}
-object xsGYear            extends BuiltInSimpleTypeSymbol("java.util.Calendar") {}
-object xsGDay             extends BuiltInSimpleTypeSymbol("java.util.Calendar") {}
-object xsGMonth           extends BuiltInSimpleTypeSymbol("java.util.Calendar") {}
-object xsBoolean          extends BuiltInSimpleTypeSymbol("Boolean") {}
-object xsFloat            extends BuiltInSimpleTypeSymbol("Float") {}
-object xsBase64Binary     extends BuiltInSimpleTypeSymbol("Array[Byte]") {}
-object xsHexBinary        extends BuiltInSimpleTypeSymbol("HexBinary") {}
-object xsDouble           extends BuiltInSimpleTypeSymbol("Double") {}
-object xsAnyURI           extends BuiltInSimpleTypeSymbol("java.net.URI") {}
-object xsQName            extends BuiltInSimpleTypeSymbol("javax.xml.namespace.QName") {}
-object xsNOTATION         extends BuiltInSimpleTypeSymbol("javax.xml.namespace.QName") {}
-object xsString           extends BuiltInSimpleTypeSymbol("String") {}
-object xsNormalizedString extends BuiltInSimpleTypeSymbol("String") {}
-object xsToken            extends BuiltInSimpleTypeSymbol("String") {}
-object xsLanguage         extends BuiltInSimpleTypeSymbol("String") {}
-object xsName             extends BuiltInSimpleTypeSymbol("String") {}
-object xsNMTOKEN          extends BuiltInSimpleTypeSymbol("String") {}
-object xsNMTOKENS         extends BuiltInSimpleTypeSymbol("Array[String]") {}
-object xsNCName           extends BuiltInSimpleTypeSymbol("String") {}
-object xsID               extends BuiltInSimpleTypeSymbol("String") {}
-object xsIDREF            extends BuiltInSimpleTypeSymbol("String") {}
-object xsIDREFS           extends BuiltInSimpleTypeSymbol("Array[String]") {}
-object xsENTITY           extends BuiltInSimpleTypeSymbol("String") {}
-object xsENTITIES         extends BuiltInSimpleTypeSymbol("Array[String]") {}
-object xsDecimal          extends BuiltInSimpleTypeSymbol("BigDecimal") {}
-object xsInteger          extends BuiltInSimpleTypeSymbol("Int") {} // BigInt
-object xsNonPositiveInteger extends BuiltInSimpleTypeSymbol("Int") {} // BigInt
-object xsNegativeInteger    extends BuiltInSimpleTypeSymbol("Int") {} // BigInt
-object xsNonNegativeInteger extends BuiltInSimpleTypeSymbol("Int") {} // BigInt
-object xsPositiveInteger    extends BuiltInSimpleTypeSymbol("Int") {} // BigInt
-object xsLong             extends BuiltInSimpleTypeSymbol("Long") {}
-object xsUnsignedLong     extends BuiltInSimpleTypeSymbol("BigInt") {}
-object xsInt              extends BuiltInSimpleTypeSymbol("Int") {}
-object xsUnsignedInt      extends BuiltInSimpleTypeSymbol("Long") {}
-object xsShort            extends BuiltInSimpleTypeSymbol("Short") {}
-object xsUnsignedShort    extends BuiltInSimpleTypeSymbol("Int") {}
-object xsByte             extends BuiltInSimpleTypeSymbol("Byte") {}
-object xsUnsignedByte     extends BuiltInSimpleTypeSymbol("Int") {}
+object XsUnknown          extends BuiltInSimpleTypeSymbol("String") {}
+object XsDuration         extends BuiltInSimpleTypeSymbol("javax.xml.datatype.Duration") {}
+object XsDateTime         extends BuiltInSimpleTypeSymbol("java.util.Calendar") {}
+object XsTime             extends BuiltInSimpleTypeSymbol("java.util.Calendar") {}
+object XsDate             extends BuiltInSimpleTypeSymbol("java.util.Calendar") {}
+object XsGYearMonth       extends BuiltInSimpleTypeSymbol("java.util.Calendar") {}
+object XsGYear            extends BuiltInSimpleTypeSymbol("java.util.Calendar") {}
+object XsGDay             extends BuiltInSimpleTypeSymbol("java.util.Calendar") {}
+object XsGMonth           extends BuiltInSimpleTypeSymbol("java.util.Calendar") {}
+object XsBoolean          extends BuiltInSimpleTypeSymbol("Boolean") {}
+object XsFloat            extends BuiltInSimpleTypeSymbol("Float") {}
+object XsBase64Binary     extends BuiltInSimpleTypeSymbol("Array[Byte]") {}
+object XsHexBinary        extends BuiltInSimpleTypeSymbol("HexBinary") {}
+object XsDouble           extends BuiltInSimpleTypeSymbol("Double") {}
+object XsAnyURI           extends BuiltInSimpleTypeSymbol("java.net.URI") {}
+object XsQName            extends BuiltInSimpleTypeSymbol("javax.xml.namespace.QName") {}
+object XsNOTATION         extends BuiltInSimpleTypeSymbol("javax.xml.namespace.QName") {}
+object XsString           extends BuiltInSimpleTypeSymbol("String") {}
+object XsNormalizedString extends BuiltInSimpleTypeSymbol("String") {}
+object XsToken            extends BuiltInSimpleTypeSymbol("String") {}
+object XsLanguage         extends BuiltInSimpleTypeSymbol("String") {}
+object XsName             extends BuiltInSimpleTypeSymbol("String") {}
+object XsNMTOKEN          extends BuiltInSimpleTypeSymbol("String") {}
+object XsNMTOKENS         extends BuiltInSimpleTypeSymbol("Array[String]") {}
+object XsNCName           extends BuiltInSimpleTypeSymbol("String") {}
+object XsID               extends BuiltInSimpleTypeSymbol("String") {}
+object XsIDREF            extends BuiltInSimpleTypeSymbol("String") {}
+object XsIDREFS           extends BuiltInSimpleTypeSymbol("Array[String]") {}
+object XsENTITY           extends BuiltInSimpleTypeSymbol("String") {}
+object XsENTITIES         extends BuiltInSimpleTypeSymbol("Array[String]") {}
+object XsDecimal          extends BuiltInSimpleTypeSymbol("BigDecimal") {}
+object XsInteger          extends BuiltInSimpleTypeSymbol("Int") {} // BigInt
+object XsNonPositiveInteger extends BuiltInSimpleTypeSymbol("Int") {} // BigInt
+object XsNegativeInteger    extends BuiltInSimpleTypeSymbol("Int") {} // BigInt
+object XsNonNegativeInteger extends BuiltInSimpleTypeSymbol("Int") {} // BigInt
+object XsPositiveInteger    extends BuiltInSimpleTypeSymbol("Int") {} // BigInt
+object XsLong             extends BuiltInSimpleTypeSymbol("Long") {}
+object XsUnsignedLong     extends BuiltInSimpleTypeSymbol("BigInt") {}
+object XsInt              extends BuiltInSimpleTypeSymbol("Int") {}
+object XsUnsignedInt      extends BuiltInSimpleTypeSymbol("Long") {}
+object XsShort            extends BuiltInSimpleTypeSymbol("Short") {}
+object XsUnsignedShort    extends BuiltInSimpleTypeSymbol("Int") {}
+object XsByte             extends BuiltInSimpleTypeSymbol("Byte") {}
+object XsUnsignedByte     extends BuiltInSimpleTypeSymbol("Int") {}
 
 object XsTypeSymbol {
   def toTypeSymbol(value: String) = value match {
-    case "duration"       => xsDuration
-    case "dateTime"       => xsDateTime
-    case "time"           => xsTime
-    case "date"           => xsDate
-    case "gYearMonth"     => xsGYearMonth
-    case "gYear"          => xsGYear
-    case "gDay"           => xsGDay
-    case "gMonth"         => xsGMonth
-    case "boolean"        => xsBoolean
-    case "float"          => xsFloat
-    case "base64Binary"   => xsBase64Binary
-    case "hexBinary"      => xsHexBinary
-    case "double"         => xsDouble
-    case "anyURI"         => xsAnyURI
-    case "QName"          => xsQName
-    case "NOTATION"       => xsNOTATION
-    case "string"         => xsString
-    case "normalizedString" => xsNormalizedString
-    case "token"          => xsToken
-    case "language"       => xsLanguage
-    case "name"           => xsName
-    case "NMTOKEN"        => xsNMTOKEN
-    case "NMTOKENS"       => xsNMTOKENS
-    case "NCName"         => xsNCName
-    case "ID"             => xsID
-    case "IDREF"          => xsIDREF
-    case "IDREFS"         => xsIDREFS
-    case "ENTITY"         => xsENTITY
-    case "ENTITIES"       => xsENTITIES
-    case "decimal"        => xsDecimal
-    case "integer"        => xsInteger
-    case "nonPositiveInteger" => xsNonPositiveInteger
-    case "negativeInteger" => xsNegativeInteger
-    case "nonNegativeInteger" => xsNonNegativeInteger
-    case "positiveInteger" => xsPositiveInteger
-    case "long"           => xsLong
-    case "unsignedLong"   => xsUnsignedLong
-    case "int"            => xsInt
-    case "unsignedInt"    => xsUnsignedInt
-    case "short"          => xsShort
-    case "unsignedShort"  => xsUnsignedShort
-    case "byte"           => xsByte
-    case "unsignedByte"   => xsUnsignedByte
-    case _                => xsUnknown  
+    case "anyType"        => XsAny
+    case "duration"       => XsDuration
+    case "dateTime"       => XsDateTime
+    case "time"           => XsTime
+    case "date"           => XsDate
+    case "gYearMonth"     => XsGYearMonth
+    case "gYear"          => XsGYear
+    case "gDay"           => XsGDay
+    case "gMonth"         => XsGMonth
+    case "boolean"        => XsBoolean
+    case "float"          => XsFloat
+    case "base64Binary"   => XsBase64Binary
+    case "hexBinary"      => XsHexBinary
+    case "double"         => XsDouble
+    case "anyURI"         => XsAnyURI
+    case "QName"          => XsQName
+    case "NOTATION"       => XsNOTATION
+    case "string"         => XsString
+    case "normalizedString" => XsNormalizedString
+    case "token"          => XsToken
+    case "language"       => XsLanguage
+    case "name"           => XsName
+    case "NMTOKEN"        => XsNMTOKEN
+    case "NMTOKENS"       => XsNMTOKENS
+    case "NCName"         => XsNCName
+    case "ID"             => XsID
+    case "IDREF"          => XsIDREF
+    case "IDREFS"         => XsIDREFS
+    case "ENTITY"         => XsENTITY
+    case "ENTITIES"       => XsENTITIES
+    case "decimal"        => XsDecimal
+    case "integer"        => XsInteger
+    case "nonPositiveInteger" => XsNonPositiveInteger
+    case "negativeInteger" => XsNegativeInteger
+    case "nonNegativeInteger" => XsNonNegativeInteger
+    case "positiveInteger" => XsPositiveInteger
+    case "long"           => XsLong
+    case "unsignedLong"   => XsUnsignedLong
+    case "int"            => XsInt
+    case "unsignedInt"    => XsUnsignedInt
+    case "short"          => XsShort
+    case "unsignedShort"  => XsUnsignedShort
+    case "byte"           => XsByte
+    case "unsignedByte"   => XsUnsignedByte
+    case _                => XsUnknown  
   }  
 }

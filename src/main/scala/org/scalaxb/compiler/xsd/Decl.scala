@@ -224,7 +224,7 @@ object SchemaDecl {
         symbol.decl = config.getType(symbol.name)
       
     case symbol: BuiltInSimpleTypeSymbol => // do nothing 
-    case xsAny => // do nothing
+    case XsAny => // do nothing
   } // match
 
 }
@@ -292,7 +292,7 @@ object AttributeDecl {
   def fromXML(node: scala.xml.Node,
       config: ParserConfig, global: Boolean) = {
     val name = (node \ "@name").text
-    var typeSymbol: XsTypeSymbol = xsUnknown
+    var typeSymbol: XsTypeSymbol = XsUnknown
     val typeName = (node \ "@type").text
     if (typeName != "") {
       typeSymbol = TypeSymbolParser.fromString(typeName, config)
@@ -352,7 +352,7 @@ case class ElemDecl(namespace: String,
 object ElemDecl {
   def fromXML(node: scala.xml.Node, config: ParserConfig) = {
     val name = (node \ "@name").text
-    var typeSymbol: XsTypeSymbol = xsAny
+    var typeSymbol: XsTypeSymbol = XsAny
     val typeName = (node \ "@type").text
     
     if (typeName != "") {

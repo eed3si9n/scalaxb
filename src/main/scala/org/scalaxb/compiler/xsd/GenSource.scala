@@ -63,10 +63,10 @@ class GenSource(schema: SchemaDecl,
   }
 
   lazy val xmlAttrs = Map[String, AttributeDecl](
-    ("lang" -> AttributeDecl(XML_URI, "lang", xsString, None, None, OptionalUse, true)),
-    ("space" -> AttributeDecl(XML_URI, "space", xsString, None, None, OptionalUse, true)),
-    ("base" -> AttributeDecl(XML_URI, "base", xsAnyURI, None, None, OptionalUse, true)),
-    ("id" -> AttributeDecl(XML_URI, "id", xsID, None, None, OptionalUse, true))
+    ("lang" -> AttributeDecl(XML_URI, "lang", XsString, None, None, OptionalUse, true)),
+    ("space" -> AttributeDecl(XML_URI, "space", XsString, None, None, OptionalUse, true)),
+    ("base" -> AttributeDecl(XML_URI, "base", XsAnyURI, None, None, OptionalUse, true)),
+    ("id" -> AttributeDecl(XML_URI, "id", XsID, None, None, OptionalUse, true))
   )
     
   def run {
@@ -112,10 +112,11 @@ class GenSource(schema: SchemaDecl,
       }
       
   def buildTypeName(typeSymbol: XsTypeSymbol): String = typeSymbol match {
+    case XsInterNamespace => defaultSuperName
+    case XsAny => "String"
     case symbol: BuiltInSimpleTypeSymbol => symbol.name
     case ReferenceTypeSymbol(decl: SimpleTypeDecl) => buildTypeName(decl)
     case ReferenceTypeSymbol(decl: ComplexTypeDecl) => buildTypeName(decl)
-    case xsAny => defaultSuperName  
   }
   
   def buildTypeName(decl: ComplexTypeDecl, localOnly: Boolean = false): String = {
@@ -149,6 +150,8 @@ class GenSource(schema: SchemaDecl,
   def particlesWithSimpleType(particles: List[Decl]) = {
     val types = mutable.ListMap.empty[ElemDecl, BuiltInSimpleTypeSymbol]
     for (particle <- particles) particle match {
+      case elem@ElemDecl(_, _, XsAny, _, _, _, _) =>
+        types += (elem -> XsString)
       case elem@ElemDecl(_, _, symbol: BuiltInSimpleTypeSymbol, _, _, _, _) =>
         types += (elem -> symbol)
       case elem@ElemDecl(_, _, ReferenceTypeSymbol(decl@SimpleTypeDecl(_, _)), _, _, _, _) =>
@@ -156,6 +159,8 @@ class GenSource(schema: SchemaDecl,
       case ref: ElemRef =>
         val elem = buildElement(ref)
         elem match {
+          case elem@ElemDecl(_, _, XsAny, _, _, _, _) =>
+            types += (elem -> XsString)
           case ElemDecl(_, _, symbol: BuiltInSimpleTypeSymbol, _, _, _, _) =>
             types += (elem -> symbol)
           case ElemDecl(_, _, ReferenceTypeSymbol(decl@SimpleTypeDecl(_, _)), _, _, _, _) =>
@@ -387,7 +392,7 @@ object {name} {{
       Single
 
     val symbol = if (interNamespaceChoiceTypes.contains(elem.typeSymbol))
-      xsAny
+      XsInterNamespace
     else
       elem.typeSymbol
     
@@ -417,20 +422,21 @@ object {name} {{
       case symbol: BuiltInSimpleTypeSymbol => buildArg(symbol,
         buildSelector(elem.name), elem.defaultValue, elem.fixedValue, elem.minOccurs, elem.maxOccurs)
       case ReferenceTypeSymbol(decl: SimpleTypeDecl) =>  buildArg(decl,
-        buildSelector(elem.name), elem.defaultValue, elem.fixedValue, elem.minOccurs, elem.maxOccurs)
-      case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>  buildArg(elem, decl)              
-      
+        buildSelector(elem.name), elem.defaultValue, elem.fixedValue, elem.minOccurs, elem.maxOccurs) 
+      case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>  buildArg(elem, decl)
       case symbol: ReferenceTypeSymbol =>
         if (symbol.decl == null)
-          error("GenSource: " + elem.toString +
+          error("GenSource#buildArg: " + elem.toString +
             " Invalid type " + symbol.getClass.toString + ": " +
             symbol.toString + " with null decl")
         else    
-          error("GenSource: " + elem.toString +
+          error("GenSource#buildArg: " + elem.toString +
             " Invalid type " + symbol.getClass.toString + ": " +
             symbol.toString + " with " + symbol.decl.toString)
+      case XsAny => buildArg(XsString,
+        buildSelector(elem.name), elem.defaultValue, elem.fixedValue, elem.minOccurs, elem.maxOccurs)
             
-      case _ => error("GenSource: " + elem.toString +
+      case _ => error("GenSource#buildArg: " + elem.toString +
         " Invalid type " + typeSymbol.getClass.toString + ": " + typeSymbol.toString)
     }
   }
@@ -659,7 +665,7 @@ object {name} {{
         List(buildElement(base))
       case CompContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
         flattenElements(base, makeTypeName(base.name))        
-      case res@CompContRestrictionDecl(xsAny, _, _) =>
+      case res@CompContRestrictionDecl(XsAny, _, _) =>
         flattenElements(res.compositor, name)
       
       case CompContExtensionDecl(symbol: BuiltInSimpleTypeSymbol, _, _) =>
@@ -669,7 +675,7 @@ object {name} {{
       case ext@CompContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
         flattenElements(base, makeTypeName(base.name)) :::
           flattenElements(ext.compositor, name)
-      case ext@CompContExtensionDecl(xsAny, _, _) =>
+      case ext@CompContExtensionDecl(XsAny, _, _) =>
         flattenElements(ext.compositor, name)
         
       case _ => Nil

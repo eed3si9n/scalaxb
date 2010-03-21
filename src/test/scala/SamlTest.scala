@@ -18,6 +18,8 @@ class SamlTest extends SpecificationWithJUnit with CompilerMatcher {
   val xencschemascala = new File(tmp, "xenc-schema.scala")
   val samlschemaassertion2scala = new File(tmp, "saml-schema-assertion-2.scala")
   val samlschemametadata2scala = new File(tmp, "saml-schema-metadata-2.scala")
+  val samlUsagescala = new File(tmp, "SamlUsage.scala")
+  copyFileFromResource("SamlUsage.scala", samlUsagescala)
   
   lazy val generated = module.processFiles(
     List((xmldsigcoreschemaxsd, xmldsigcoreschemascala),
@@ -35,4 +37,9 @@ class SamlTest extends SpecificationWithJUnit with CompilerMatcher {
     generated must compile(outdir = "./tmp")
   }
   
+  "ipo.scala file must compile together with SamlTest.scala" in {
+    (List("SamlUsage.allTests"),
+     samlUsagescala :: generated) must evaluateTo(true,
+       outdir = "./tmp")
+  }
 }

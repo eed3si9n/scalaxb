@@ -153,10 +153,10 @@ object PurchaseOrderUsage {
   }
 
   def testLangAttr {
-    val subject = <Choice1 xml:lang="en"><listOfInt>1 2 3</listOfInt></Choice1>
+    val subject = <Choice1 xml:lang="en"></Choice1>
     val obj = Choice1.fromXML(subject)
     obj match {
-      case Choice1(Seq(1, 2, 3), "en") =>
+      case Choice1("en") =>
       case _ => error("match failed: " + obj.toString)
     }
     

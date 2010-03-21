@@ -120,11 +120,6 @@
     <complexType>
       <attribute ref="xml:lang" use="required"/>
       <sequence>
-        <element name="listOfInt">
-          <simpleType>
-            <list itemType="int"/>
-          </simpleType>
-        </element>
         <any namespace="##other" processContents="lax" minOccurs="0" maxOccurs="unbounded"/>
       </sequence>
     </complexType>

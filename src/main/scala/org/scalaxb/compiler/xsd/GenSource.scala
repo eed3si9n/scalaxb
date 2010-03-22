@@ -53,13 +53,14 @@ class GenSource(schema: SchemaDecl,
   
   case class Param(name: String,
     typeSymbol: XsTypeSymbol,
-    cardinality: Cardinality) {
+    cardinality: Cardinality,
+    attribute: Boolean) {
     
     override def toString(): String = cardinality match {
       case Single   => makeParamName(name) + ": " + buildTypeName(typeSymbol)
       case Optional => makeParamName(name) + ": Option[" + buildTypeName(typeSymbol) + "]"
       case Multiple => makeParamName(name) + ": Seq[" + buildTypeName(typeSymbol) + "]"
-    }      
+    }
   }
 
   lazy val xmlAttrs = Map[String, AttributeDecl](
@@ -114,6 +115,7 @@ class GenSource(schema: SchemaDecl,
   def buildTypeName(typeSymbol: XsTypeSymbol): String = typeSymbol match {
     case XsInterNamespace => defaultSuperName
     case XsAny => "String"
+    case XsDataRecord => "org.scalaxb.rt.DataRecord"
     case symbol: BuiltInSimpleTypeSymbol => symbol.name
     case ReferenceTypeSymbol(decl: SimpleTypeDecl) => buildTypeName(decl)
     case ReferenceTypeSymbol(decl: ComplexTypeDecl) => buildTypeName(decl)
@@ -197,11 +199,7 @@ class GenSource(schema: SchemaDecl,
           name + "Sequence" + sequenceNumber, false, false,
           ComplexContentDecl.fromCompositor(x, Nil), Nil))
     val hasForeign = containsForeignType(choice.particles)
-    val targetType = if (hasForeign)
-      defaultSuperName
-    else
-      name
-
+    
     def buildWrapperName(elem: ElemDecl) =
       if (name.endsWith("Option"))
         name.dropRight(6) + makeTypeName(elem.name)
@@ -217,7 +215,10 @@ class GenSource(schema: SchemaDecl,
         " with " + name
 
       "case class " + wrapperName + "(value: " + symbol.name +
-        ") extends " + defaultSuperName + mixin + newline +
+        ") extends " + defaultSuperName + mixin + " {" + newline +
+      "  def toXML(elementLabel: String, scope: scala.xml.NamespaceBinding): scala.xml.Node =" + newline +
+      "    scala.xml.Text(value.toString)" + newline +
+      "}" + newline +    
       newline +
       "object " + wrapperName + " {" + newline +
       "  def fromXML(node: scala.xml.Node) ="+ newline +
@@ -226,43 +227,45 @@ class GenSource(schema: SchemaDecl,
       "}" + newline
     }
     
-    def makeCaseEntry(elem: ElemDecl) = {
+    def makeFromXmlCaseEntry(elem: ElemDecl) = {
       val typeName = if (simpleTypeParticles.contains(elem))
         buildWrapperName(elem)
       else
         buildTypeName(elem.typeSymbol)
-      "case x: scala.xml.Elem if x.label == " + quote(elem.name) + " => " +
-        typeName + ".fromXML(x)"
+      "case x: scala.xml.Elem if x.label == " + quote(elem.name) + " =>" + newline +
+      indent(3) + "org.scalaxb.rt.DataRecord(" + typeName + ".fromXML(x), " + quote(elem.name) + ")"
     }
     
-    val cases = choice.particles partialMap {
-      case elem: ElemDecl => makeCaseEntry(elem)
-      case ref: ElemRef   => makeCaseEntry(buildElement(ref))
+    val fromXmlCases = choice.particles partialMap {
+      case elem: ElemDecl => makeFromXmlCaseEntry(elem)
+      case ref: ElemRef   => makeFromXmlCaseEntry(buildElement(ref))
     }
     
-    if (cases.size == 0)
+    if (fromXmlCases.size == 0)
       <source>
 { if (!hasForeign)
-    "trait " + name }
+    "trait " + name + " extends " + defaultSuperName
+}
 object {name} {{  
-  def fromXML = new PartialFunction[scala.xml.Node, {targetType}] {{
+  def fromXML = new PartialFunction[scala.xml.Node, org.scalaxb.rt.DataRecord] {{
     def isDefinedAt(x : scala.xml.Node) = false
-    def apply(x : scala.xml.Node): {targetType} = error("Undefined")
+    def apply(x : scala.xml.Node): org.scalaxb.rt.DataRecord = error("Undefined")
   }}
 }}      
 </source>
     else <source>
-{ if (!hasForeign)
-    "trait " + name }
+{
+  if (!hasForeign)
+    "trait " + name + " extends " + defaultSuperName
+}
 object {name} {{  
-  def fromXML: PartialFunction[scala.xml.NodeSeq, {targetType}] = {{
-    { cases.mkString(newline + indent(2)) }
+  def fromXML: PartialFunction[scala.xml.NodeSeq, org.scalaxb.rt.DataRecord] = {{
+    { fromXmlCases.mkString(newline + indent(2)) }
   }}
 }}
 {         
   simpleTypeParticles.keysIterator.toList.map(wrap(_)).mkString(newline)
-}
-{
+}{
   sequenceWrappers.map(x => makeCaseClassWithType(x.name, x))
 }
 </source>    
@@ -277,7 +280,7 @@ object {name} {{
     val paramList = list.map(buildParam(_))
     val argList = list.map(buildArg(_))
     val defaultType = makeProtectedTypeName(decl, context)
-    val superNames = buildSuperNamesForTrait(decl)
+    val superNames = buildSuperNames(decl) // buildSuperNamesForTrait
     
     val extendString = if (superNames.isEmpty)
       ""
@@ -289,7 +292,7 @@ object {name} {{
       val name = buildTypeName(decl)
       "case (" + quote(decl.namespace) + ", " + quote(localPart) + ") => " + name + ".fromXML(node)"
     }
-    
+        
     return <source>
 trait {name}{extendString} {{
   {
@@ -365,8 +368,29 @@ object {name} {{
       case _ => argList.mkString("," + newline + indent(3))
     }
     
+    val namespaceString = if (decl.namespace == null)
+      "null"
+    else
+      quote(decl.namespace)
+    
+    val childElemParams = paramList.filter(_.attribute == false)
+    
+    def childString = decl.content.content match {
+      case SimpContRestrictionDecl(base: XsTypeSymbol, _) => "scala.xml.Text(value.toString)"
+      case SimpContExtensionDecl(base: XsTypeSymbol, _) =>   "scala.xml.Text(value.toString)"
+      case _ =>  childElemParams.map(x => 
+        buildXMLString(x)).mkString("Seq(", "," + newline + indent(4), ").flatten: _*")
+    }
+    
     return <source>
 case class {name}({paramsString}) extends {superNamesString} {{
+  
+  def toXML(elementLabel: String, scope: scala.xml.NamespaceBinding): scala.xml.Node = {{
+    val prefix = scope.getPrefix({namespaceString})
+    scala.xml.Elem(prefix, elementLabel,
+      scala.xml.Null, scope,
+      { childString })
+  }}
 }}
 
 object {name} {{
@@ -375,7 +399,63 @@ object {name} {{
 }}
 </source>    
   }
+  
+  def buildXMLString(param: Param) = param.typeSymbol match {
+    case symbol: BuiltInSimpleTypeSymbol => buildXMLStringForSimpleType(param)
+    case ReferenceTypeSymbol(decl: SimpleTypeDecl) => buildXMLStringForSimpleType(param)
+    case ReferenceTypeSymbol(decl: ComplexTypeDecl) => buildXMLStringForComplexType(param)
+    case XsAny => buildXMLStringForSimpleType(param)
+    case XsInterNamespace => buildXMLStringForComplexType(param)
+    case XsDataRecord => buildXMLStringForChoiceWrapper(param)
+    case _ => error("GenSource#buildXMLString: " + param.toString +
+      " Invalid type " + param.typeSymbol.getClass.toString + ": " + param.typeSymbol.toString)    
+  }
+  
+  def buildXMLStringForChoiceWrapper(param: Param) = {
+    val typeName = buildTypeName(param.typeSymbol)
     
+    param.cardinality match {
+      case Single =>
+        makeParamName(param.name) + ".value.toXML(" +
+          makeParamName(param.name) + ".elementLabel , scope)"
+      case Optional =>
+        makeParamName(param.name) + " match {" + newline +
+        indent(5) + "case Some(x) => x.value.toXML(x.elementLabel, scope)" + newline +
+        indent(5) + "case None => Seq()" + newline +
+        indent(4) + "}"
+      case Multiple =>
+        makeParamName(param.name) + ".map(x => x.value.toXML(x.elementLabel, scope))"   
+    }
+  } 
+  
+  def buildXMLStringForComplexType(param: Param) = param.cardinality match {
+    case Single =>
+      makeParamName(param.name) + ".toXML(" + quote(param.name) + ", scope)"
+    case Optional =>
+      makeParamName(param.name) + " match {" + newline +
+      indent(5) + "case Some(x) => x.toXML(" + quote(param.name) + 
+        ", scope)" + newline +
+      indent(5) + "case None => Seq()" + newline +
+      indent(4) + "}"
+    case Multiple =>
+      makeParamName(param.name) + ".map(x => x.toXML(" + quote(param.name) + ", scope))"    
+  }
+  
+  def buildXMLStringForSimpleType(param: Param) = param.cardinality match {
+    case Single =>    
+      "scala.xml.Elem(prefix, " + quote(param.name) + ", " +
+      "scala.xml.Null, scope, scala.xml.Text(" + makeParamName(param.name)  + ".toString))"
+    case Optional =>
+      makeParamName(param.name) + " match {" + newline +
+      indent(5) + "case Some(x) => Seq(scala.xml.Elem(prefix, " + quote(param.name) + ", " + 
+        "scala.xml.Null, scope, scala.xml.Text(" + makeParamName(param.name)  + ".toString)))" + newline +
+      indent(5) + "case None => Seq()" + newline +
+      indent(4) + "}"
+    case Multiple =>
+      makeParamName(param.name) + ".map(x => scala.xml.Elem(prefix, " + quote(param.name) + ", " +
+      "scala.xml.Null, scope, scala.xml.Text(x.toString)))"      
+  }
+  
   def buildParam(decl: Decl): Param = decl match {
     case elem: ElemDecl => buildParam(elem)
     case attr: AttributeDecl => buildParam(attr)
@@ -390,13 +470,17 @@ object {name} {{
       Optional
     else
       Single
-
-    val symbol = if (interNamespaceChoiceTypes.contains(elem.typeSymbol))
-      XsInterNamespace
-    else
-      elem.typeSymbol
     
-    Param(elem.name, symbol, cardinality)
+    val symbol = elem.typeSymbol match {
+      case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
+        if (choiceWrapper.keysIterator.contains(decl))
+          XsDataRecord
+        else
+          elem.typeSymbol
+      case _ => elem.typeSymbol
+    }
+        
+    Param(elem.name, symbol, cardinality, false)
   }
   
   def buildParam(attr: AttributeDecl): Param = {
@@ -405,9 +489,9 @@ object {name} {{
     else
       Single
     
-    Param(attr.name, attr.typeSymbol, cardinality)
-  } 
-    
+    Param(attr.name, attr.typeSymbol, cardinality, true)
+  }
+      
   def buildArg(decl: Decl): String = decl match {
     case elem: ElemDecl       => buildArg(elem)
     case attr: AttributeDecl  => buildArg(attr)
@@ -449,19 +533,19 @@ object {name} {{
       val choicePosition = context.choicePositions(choice)
       if (elem.maxOccurs > 1) {
         if (choicePosition == 0)
-          "node.child.filter(" + typeName + ".fromXML.isDefinedAt(_)).map(" + newline +
-          indent(4) + typeName + ".fromXML(_)).toList"
+          "node.child.filter(" + typeName + ".fromXML.isDefinedAt(_)).map(x =>" + newline +
+          indent(3) + typeName + ".fromXML(x)).toList"
         else
-          "node.child.filter(_.isInstanceOf[scala.xml.Elem]).drop(" +
-          choicePosition + ")." + newline +
+          "node.child.filter(_.isInstanceOf[scala.xml.Elem]).drop(" + choicePosition + ")." + newline +
           indent(4) + "filter(" + typeName + ".fromXML.isDefinedAt(_))." + newline +
-          indent(4) + "map(" + typeName + ".fromXML(_)).toList"
+          indent(4) + "map(x =>" + newline +
+          indent(5) + typeName + ".fromXML(x)).toList"
       } else if (elem.minOccurs == 0) {
         "node.child.filter(_.isInstanceOf[scala.xml.Elem]).drop(" +
           choicePosition + ").headOption match {" + newline +
-        indent(4) + "case Some(x) if " + typeName +
-          ".fromXML.isDefinedAt(x) => Some(" + typeName + ".fromXML(x))" + newline +
-        indent(4) + "case _       => None" + newline +
+        indent(4) + "case Some(x) if " + typeName + ".fromXML.isDefinedAt(x) => " + newline +
+        indent(5) + "Some(" + typeName + ".fromXML(x))" + newline +
+        indent(4) + "case _ => None" + newline +
         indent(3) + "}"         
       } else {
         typeName + ".fromXML(node.child.filter(_.isInstanceOf[scala.xml.Elem])(" + choicePosition + "))"

@@ -30,6 +30,7 @@ abstract class XsTypeSymbol(val name: String) extends scala.xml.TypeSymbol {
 
 object XsAny extends XsTypeSymbol("XsAny") {}
 object XsInterNamespace extends XsTypeSymbol("XsInterNamespace") {}
+object XsDataRecord extends XsTypeSymbol("XsDataRecord") {}
 
 class ReferenceTypeSymbol(name: String) extends XsTypeSymbol(name) {
   var decl: TypeDecl = null

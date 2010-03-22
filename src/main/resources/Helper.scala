@@ -1,6 +1,10 @@
 package org.scalaxb.rt
 
-abstract class DataModel
+abstract class DataModel {
+  def toXML(elementLabel: String, scope: scala.xml.NamespaceBinding): scala.xml.Node 
+}
+
+case class DataRecord(value: DataModel, elementLabel: String)
 
 class Calendar extends java.util.GregorianCalendar {
   override def toString: String = Helper.toString(this)

@@ -18,6 +18,7 @@ object PurchaseOrderUsage {
     testIntWithAttr
     testChoices
     testLangAttr
+    testRoundTrip
     true
   }
   
@@ -161,5 +162,35 @@ object PurchaseOrderUsage {
     }
     
     println(obj.toString)
+  }
+
+  def testRoundTrip {
+    import scala.xml.{TopScope, NamespaceBinding}
+    
+    val subject = <shipTo xmlns="http://www.example.com/IPO"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:ipo="http://www.example.com/IPO"
+        xsi:type="ipo:USAddress">
+      <name>Foo</name>
+      <street>1537 Paper Street</street>
+      <city>Wilmington</city>
+      <state>DE</state>
+      <zip>19808</zip>
+    </shipTo>
+    
+    val obj = USAddress.fromXML(subject)
+    var scope: NamespaceBinding = TopScope
+    scope = NamespaceBinding("ipo", "http://www.example.com/IPO", scope)
+    scope = NamespaceBinding("xsi", "http://www.w3.org/2001/XMLSchema-instance", scope)
+    scope = NamespaceBinding(null, "http://www.example.com/IPO", scope)    
+    val document = obj.toXML("shipTo", scope)
+    val obj2 = USAddress.fromXML(document)
+    
+    obj2 match {
+      case `obj` =>
+      case _ => error("match failed: " + obj2.toString)
+    }
+    
+    println(obj2.toString)
   }
 }

@@ -341,7 +341,8 @@ object {name} {{
       buildSuperNames(decl)
       
     val childElements = flattenElements(decl, name)
-    val list = List.concat[Decl](childElements, flattenAttributes(decl))
+    val attributes = flattenAttributes(decl)
+    val list = List.concat[Decl](childElements, attributes)
     val paramList = list.map(buildParam(_))
     val argList = list.map(buildArg(_))
     
@@ -373,7 +374,7 @@ object {name} {{
     else
       quote(decl.namespace)
     
-    val childElemParams = paramList.filter(_.attribute == false)
+    val childElemParams = paramList.filter(!_.attribute)
     
     def childString = decl.content.content match {
       case SimpContRestrictionDecl(base: XsTypeSymbol, _) => "scala.xml.Text(value.toString)"
@@ -382,13 +383,18 @@ object {name} {{
         buildXMLString(x)).mkString("Seq(", "," + newline + indent(4), ").flatten: _*")
     }
     
+    def attributeString = attributes.map(x => buildAttributeString(x)).mkString(newline + indent(2))
+    
     return <source>
 case class {name}({paramsString}) extends {superNamesString} {{
   
   def toXML(elementLabel: String, scope: scala.xml.NamespaceBinding): scala.xml.Node = {{
     val prefix = scope.getPrefix({namespaceString})
+    var attribute: scala.xml.MetaData  = scala.xml.Null
+    { attributeString }
+    
     scala.xml.Elem(prefix, elementLabel,
-      scala.xml.Null, scope,
+      attribute, scope,
       { childString })
   }}
 }}
@@ -398,6 +404,29 @@ object {name} {{
     {name}({argsString}) 
 }}
 </source>    
+  }
+  
+  def buildAttributeString(attr: AttributeLike): String = attr match {
+    case ref: AttributeRef => buildAttributeString(buildAttribute(ref))
+    case x: AttributeDecl  => buildAttributeString(x)
+  }
+  
+  def buildAttributeString(attr: AttributeDecl): String = {
+    val namespaceString = if (attr.global)
+      "scope.getPrefix(" + quote(attr.namespace) + ")"
+    else
+      "null"
+    
+    if (toMinOccurs(attr) == 0)
+      makeParamName(attr.name) + " match {" + newline +
+      indent(3) + "case Some(x: " + buildTypeName(attr.typeSymbol) + ") =>" + newline +
+      indent(4) + "attribute = scala.xml.Attribute(" + namespaceString + ", " + quote(attr.name) +
+        ", x.toString, attribute)" + newline +
+      indent(3) + "case None    =>" + newline +
+      indent(2) + "}"
+    else
+      "attribute = scala.xml.Attribute(" + namespaceString + ", " + quote(attr.name) + ", " + 
+      makeParamName(attr.name) + ".toString, attribute)"      
   }
   
   def buildXMLString(param: Param) = param.typeSymbol match {

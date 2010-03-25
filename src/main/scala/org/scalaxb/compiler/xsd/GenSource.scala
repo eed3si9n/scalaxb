@@ -227,13 +227,16 @@ class GenSource(schema: SchemaDecl,
       "}" + newline
     }
     
-    def makeFromXmlCaseEntry(elem: ElemDecl) = {
-      val typeName = if (simpleTypeParticles.contains(elem))
-        buildWrapperName(elem)
-      else
-        buildTypeName(elem.typeSymbol)
+    def makeFromXmlCaseEntry(elem: ElemDecl) = if (simpleTypeParticles.contains(elem)) {
+      val symbol = simpleTypeParticles(elem)
+      
       "case x: scala.xml.Elem if x.label == " + quote(elem.name) + " =>" + newline +
-      indent(3) + "org.scalaxb.rt.DataRecord(" + quote(elem.name) + ", " + typeName + ".fromXML(x))"
+      indent(3) + "org.scalaxb.rt.DataRecord(" + quote(elem.name) + ", " + 
+        buildArg(symbol, "x", None, None, 1, 1) + ")"
+    } else {
+      "case x: scala.xml.Elem if x.label == " + quote(elem.name) + " =>" + newline +
+      indent(3) + "org.scalaxb.rt.DataRecord(" + quote(elem.name) + ", " + 
+        buildTypeName(elem.typeSymbol) + ".fromXML(x))"  
     }
     
     val fromXmlCases = choice.particles partialMap {
@@ -263,9 +266,7 @@ object {name} {{
     { fromXmlCases.mkString(newline + indent(2)) }
   }}
 }}
-{         
-  simpleTypeParticles.keysIterator.toList.map(wrap(_)).mkString(newline)
-}{
+{
   sequenceWrappers.map(x => makeCaseClassWithType(x.name, x))
 }
 </source>    

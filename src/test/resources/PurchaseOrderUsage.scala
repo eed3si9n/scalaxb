@@ -19,6 +19,7 @@ object PurchaseOrderUsage {
     testChoices
     testLangAttr
     testRoundTrip
+    testChoiceRoundTrip
     true
   }
   
@@ -146,7 +147,7 @@ object PurchaseOrderUsage {
 
     val obj = Element1.fromXML(subject)
     obj match {
-      case Element1(DataRecord("Choice2", Element1Choice2(1))) =>
+      case Element1(DataRecord("Choice2", 1)) =>
       case _ => error("match failed: " + obj.toString)
     }
 
@@ -193,6 +194,18 @@ object PurchaseOrderUsage {
         println(obj2.toString)
         
       case _ => error("parsed object is not USAddress") 
+    }
+  }
+  
+  def testChoiceRoundTrip {
+    val subject = <Element1><Choice2>1</Choice2></Element1>
+    val obj = Element1.fromXML(subject)
+    val document = obj.toXML("Element1", scala.xml.TopScope)
+    println(document)
+    val obj2 = Element1.fromXML(document)
+    obj2 match {
+      case `obj` =>
+      case _ => error("match failed: " + obj2.toString)
     }
   }
 }

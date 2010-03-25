@@ -178,19 +178,21 @@ object PurchaseOrderUsage {
       <zip>19808</zip>
     </shipTo>
     
-    val obj = USAddress.fromXML(subject)
-    var scope: NamespaceBinding = TopScope
-    scope = NamespaceBinding("ipo", "http://www.example.com/IPO", scope)
-    scope = NamespaceBinding("xsi", "http://www.w3.org/2001/XMLSchema-instance", scope)
-    scope = NamespaceBinding(null, "http://www.example.com/IPO", scope)    
-    val document = obj.toXML("shipTo", scope)
-    val obj2 = USAddress.fromXML(document)
-    
-    obj2 match {
-      case `obj` =>
-      case _ => error("match failed: " + obj2.toString)
+    val obj = Addressable.fromXML(subject)
+    obj match {
+      case usaddress: USAddress =>
+        val document = usaddress.toXML("shipTo")
+        println(document)
+        val obj2 = Addressable.fromXML(document)
+        
+        obj2 match {
+          case `usaddress` =>
+          case _ => error("match failed: " + obj2.toString)
+        }
+
+        println(obj2.toString)
+        
+      case _ => error("parsed object is not USAddress") 
     }
-    
-    println(obj2.toString)
   }
 }

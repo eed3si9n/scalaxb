@@ -385,9 +385,49 @@ object {name} {{
     
     def attributeString = attributes.map(x => buildAttributeString(x)).mkString(newline + indent(2))
     
+    def scopeString(scope: scala.xml.NamespaceBinding): List[String] = {
+      if (scope == null || scope.uri == null)
+        Nil
+      else {
+        if (scope.prefix == null)
+          ("scope = scala.xml.NamespaceBinding(null, " + quote(scope.uri) +
+            ", scope)") :: scopeString(scope.parent)
+        else
+          ("scope = scala.xml.NamespaceBinding(" + quote(scope.prefix) +
+            ", " + quote(scope.uri) + ", scope)") :: scopeString(scope.parent)
+      }
+    }
+    
+    def getPrefix(namespace: String, scope: scala.xml.NamespaceBinding): String = {
+      if (scope == null || scope.uri == null)
+        null
+      else
+        if (scope.prefix != null && scope.uri == namespace)
+          scope.prefix
+        else
+          getPrefix(namespace, scope.parent)
+    }
+        
+    def typeNameString =
+      getPrefix(schema.targetNamespace, schema.scope) + ":" + decl.name
+    
+    def makeToXml = <source>
+  def toXML(elementLabel: String): scala.xml.Node = {{
+    var scope: scala.xml.NamespaceBinding = scala.xml.TopScope
+    { scopeString(schema.scope).reverse.mkString(newline + indent(2)) }
+    val node = toXML(elementLabel, scope)
+    node match {{
+      case elem: scala.xml.Elem => elem % new scala.xml.PrefixedAttribute("xsi", "type",
+        { quote(typeNameString) }, elem.attributes)
+      case _ => node
+    }}
+  }} 
+</source>
+    
     return <source>
 case class {name}({paramsString}) extends {superNamesString} {{
-  
+  { if (!decl.name.contains('@'))
+      makeToXml }  
   def toXML(elementLabel: String, scope: scala.xml.NamespaceBinding): scala.xml.Node = {{
     val prefix = scope.getPrefix({namespaceString})
     var attribute: scala.xml.MetaData  = scala.xml.Null

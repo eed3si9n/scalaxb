@@ -119,7 +119,8 @@ case class SchemaDecl(targetNamespace: String,
     elemList: List[ElemDecl],
     types: Map[String, TypeDecl],
     choices: Set[ChoiceDecl],
-    topAttrs: Map[String, AttributeDecl]) {
+    topAttrs: Map[String, AttributeDecl],
+    scope: scala.xml.NamespaceBinding) {
   
   val newline = System.getProperty("line.separator")
   
@@ -170,12 +171,27 @@ object SchemaDecl {
     
     resolveType(config)
     
+    var scopeToBuild = scala.xml.NamespaceBinding("xsi", "http://www.w3.org/2001/XMLSchema-instance", 
+      scala.xml.TopScope) 
+    for (s <- config.schemas.map(_.scope) ::: List(config.scope)) {
+      var scope = s
+      while (scope != null) {
+        if (scope.prefix != null && scope.uri != null &&
+            scopeToBuild.getPrefix(scope.uri) == null)
+          scopeToBuild = scala.xml.NamespaceBinding(scope.prefix, scope.uri, scopeToBuild)
+        scope = scope.parent
+      }
+    }
+    if (config.targetNamespace != null)
+      scopeToBuild = scala.xml.NamespaceBinding(null, config.targetNamespace, scopeToBuild)
+    
     SchemaDecl(config.targetNamespace,
       immutable.ListMap.empty[String, ElemDecl] ++ config.topElems,
       config.elemList.toList,
       immutable.ListMap.empty[String, TypeDecl] ++ config.types,
       config.choices,
-      immutable.ListMap.empty[String, AttributeDecl] ++ config.topAttrs)
+      immutable.ListMap.empty[String, AttributeDecl] ++ config.topAttrs,
+      scopeToBuild)
   }
   
   def resolveType(config: ParserConfig) {    

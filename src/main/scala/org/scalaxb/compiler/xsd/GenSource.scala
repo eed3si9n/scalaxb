@@ -199,34 +199,7 @@ class GenSource(schema: SchemaDecl,
           name + "Sequence" + sequenceNumber, false, false,
           ComplexContentDecl.fromCompositor(x, Nil), Nil))
     val hasForeign = containsForeignType(choice.particles)
-    
-    def buildWrapperName(elem: ElemDecl) =
-      if (name.endsWith("Option"))
-        name.dropRight(6) + makeTypeName(elem.name)
-      else
-        name + makeTypeName(elem.name)
-      
-    def wrap(elem: ElemDecl) = {
-      val wrapperName = buildWrapperName(elem)
-      val symbol = simpleTypeParticles(elem)
-      val mixin = if (hasForeign)
-        ""
-      else
-        " with " + name
-
-      "case class " + wrapperName + "(value: " + symbol.name +
-        ") extends " + defaultSuperName + mixin + " {" + newline +
-      "  def toXML(elementLabel: String, scope: scala.xml.NamespaceBinding): scala.xml.Node =" + newline +
-      "    scala.xml.Text(value.toString)" + newline +
-      "}" + newline +    
-      newline +
-      "object " + wrapperName + " {" + newline +
-      "  def fromXML(node: scala.xml.Node) ="+ newline +
-      "    " + wrapperName +
-        "(" + buildArg(symbol, "node", None, None, 1, 1) + ")" + newline +
-      "}" + newline
-    }
-    
+        
     def makeFromXmlCaseEntry(elem: ElemDecl) = if (simpleTypeParticles.contains(elem)) {
       val symbol = simpleTypeParticles(elem)
       

@@ -146,7 +146,7 @@ object PurchaseOrderUsage {
 
     val obj = Element1.fromXML(subject)
     obj match {
-      case Element1(DataRecord(Element1Choice2(1), "Choice2")) =>
+      case Element1(DataRecord("Choice2", Element1Choice2(1))) =>
       case _ => error("match failed: " + obj.toString)
     }
 

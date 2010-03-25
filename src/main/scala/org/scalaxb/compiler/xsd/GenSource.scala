@@ -115,7 +115,7 @@ class GenSource(schema: SchemaDecl,
   def buildTypeName(typeSymbol: XsTypeSymbol): String = typeSymbol match {
     case XsInterNamespace => defaultSuperName
     case XsAny => "String"
-    case XsDataRecord => "org.scalaxb.rt.DataRecord"
+    case XsDataRecord => "org.scalaxb.rt.DataRecord[Any]"
     case symbol: BuiltInSimpleTypeSymbol => symbol.name
     case ReferenceTypeSymbol(decl: SimpleTypeDecl) => buildTypeName(decl)
     case ReferenceTypeSymbol(decl: ComplexTypeDecl) => buildTypeName(decl)
@@ -233,7 +233,7 @@ class GenSource(schema: SchemaDecl,
       else
         buildTypeName(elem.typeSymbol)
       "case x: scala.xml.Elem if x.label == " + quote(elem.name) + " =>" + newline +
-      indent(3) + "org.scalaxb.rt.DataRecord(" + typeName + ".fromXML(x), " + quote(elem.name) + ")"
+      indent(3) + "org.scalaxb.rt.DataRecord(" + quote(elem.name) + ", " + typeName + ".fromXML(x))"
     }
     
     val fromXmlCases = choice.particles partialMap {
@@ -247,9 +247,9 @@ class GenSource(schema: SchemaDecl,
     "trait " + name + " extends " + defaultSuperName
 }
 object {name} {{  
-  def fromXML = new PartialFunction[scala.xml.Node, org.scalaxb.rt.DataRecord] {{
+  def fromXML = new PartialFunction[scala.xml.Node, org.scalaxb.rt.DataRecord[Any]] {{
     def isDefinedAt(x : scala.xml.Node) = false
-    def apply(x : scala.xml.Node): org.scalaxb.rt.DataRecord = error("Undefined")
+    def apply(x : scala.xml.Node): org.scalaxb.rt.DataRecord[Any] = error("Undefined")
   }}
 }}      
 </source>
@@ -259,7 +259,7 @@ object {name} {{
     "trait " + name + " extends " + defaultSuperName
 }
 object {name} {{  
-  def fromXML: PartialFunction[scala.xml.NodeSeq, org.scalaxb.rt.DataRecord] = {{
+  def fromXML: PartialFunction[scala.xml.NodeSeq, org.scalaxb.rt.DataRecord[Any]] = {{
     { fromXmlCases.mkString(newline + indent(2)) }
   }}
 }}
@@ -485,15 +485,15 @@ object {name} {{
     
     param.cardinality match {
       case Single =>
-        makeParamName(param.name) + ".value.toXML(" +
-          makeParamName(param.name) + ".elementLabel , scope)"
+        makeParamName(param.name) + ".toXML(" +
+          makeParamName(param.name) + ".key, scope)"
       case Optional =>
         makeParamName(param.name) + " match {" + newline +
-        indent(5) + "case Some(x) => x.value.toXML(x.elementLabel, scope)" + newline +
+        indent(5) + "case Some(x) => x.toXML(x.key, scope)" + newline +
         indent(5) + "case None => Seq()" + newline +
         indent(4) + "}"
       case Multiple =>
-        makeParamName(param.name) + ".map(x => x.value.toXML(x.elementLabel, scope))"   
+        makeParamName(param.name) + ".map(x => x.toXML(x.key, scope))"   
     }
   } 
   

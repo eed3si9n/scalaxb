@@ -20,6 +20,7 @@ object PurchaseOrderUsage {
     testLangAttr
     testRoundTrip
     testChoiceRoundTrip
+    testAny
     true
   }
   
@@ -158,7 +159,7 @@ object PurchaseOrderUsage {
     val subject = <Choice1 xml:lang="en"></Choice1>
     val obj = Choice1.fromXML(subject)
     obj match {
-      case Choice1("en") =>
+      case Choice1(_, "en") =>
       case _ => error("match failed: " + obj.toString)
     }
     
@@ -207,5 +208,35 @@ object PurchaseOrderUsage {
       case `obj` =>
       case _ => error("match failed: " + obj2.toString)
     }
+  }
+  
+  def testAny {
+    val subject = <choice1 xmlns="http://www.example.com/IPO"
+        xmlns:ipo="http://www.example.com/IPO"
+        xml:lang="en">
+      <math xmlns="http://www.w3.org/1998/Math/MathML">
+        <apply>
+          <log/>
+          <logbase><cn>3</cn></logbase>
+          <ci>x</ci>
+        </apply>
+      </math>
+    </choice1>
+    val obj = Choice1.fromXML(subject)
+    obj match {
+      case Choice1(_, "en") =>
+      case _ => error("match failed: " + obj.toString)
+    }
+    
+    val document = obj.toXML("choice1", subject.scope)
+    println(document)
+    
+    /*
+    val obj2 = Choice1.fromXML(document)
+    obj2 match {
+      case `obj` =>
+      case _ => error("match failed: " + obj2.toString)
+    } 
+    */   
   }
 }

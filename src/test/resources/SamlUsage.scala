@@ -34,10 +34,10 @@ object SamlUsage {
     
     val obj = AttributeType.fromXML(subject)
     obj match {
-      case attr: AttributeType => AttributeType(Seq("member", "staff"),
+      case AttributeType(Seq(x@DataRecord(_, _), y@DataRecord(_, _) ),
         "urn:oid:1.3.6.1.4.1.5923.1.1.1.1",
-        Some(new java.net.URI("urn:oasis:names:tc:SAML:2.0:attrname-format:uri")),
-        Some("eduPersonAffiliation"))
+        Some(_),
+        Some("eduPersonAffiliation")) => 
       case _ => error("match failed: " + obj.toString)
     }
     

@@ -114,7 +114,7 @@ class GenSource(schema: SchemaDecl,
       
   def buildTypeName(typeSymbol: XsTypeSymbol): String = typeSymbol match {
     case XsInterNamespace => defaultSuperName
-    case XsAny => "String"
+    case XsAny => "org.scalaxb.rt.DataRecord[scala.xml.Node]"
     case XsDataRecord => "org.scalaxb.rt.DataRecord[Any]"
     case symbol: BuiltInSimpleTypeSymbol => symbol.name
     case ReferenceTypeSymbol(decl: SimpleTypeDecl) => buildTypeName(decl)
@@ -152,8 +152,6 @@ class GenSource(schema: SchemaDecl,
   def particlesWithSimpleType(particles: List[Decl]) = {
     val types = mutable.ListMap.empty[ElemDecl, BuiltInSimpleTypeSymbol]
     for (particle <- particles) particle match {
-      case elem@ElemDecl(_, _, XsAny, _, _, _, _) =>
-        types += (elem -> XsString)
       case elem@ElemDecl(_, _, symbol: BuiltInSimpleTypeSymbol, _, _, _, _) =>
         types += (elem -> symbol)
       case elem@ElemDecl(_, _, ReferenceTypeSymbol(decl@SimpleTypeDecl(_, _)), _, _, _, _) =>
@@ -161,8 +159,6 @@ class GenSource(schema: SchemaDecl,
       case ref: ElemRef =>
         val elem = buildElement(ref)
         elem match {
-          case elem@ElemDecl(_, _, XsAny, _, _, _, _) =>
-            types += (elem -> XsString)
           case ElemDecl(_, _, symbol: BuiltInSimpleTypeSymbol, _, _, _, _) =>
             types += (elem -> symbol)
           case ElemDecl(_, _, ReferenceTypeSymbol(decl@SimpleTypeDecl(_, _)), _, _, _, _) =>
@@ -200,17 +196,16 @@ class GenSource(schema: SchemaDecl,
           ComplexContentDecl.fromCompositor(x, Nil), Nil))
     val hasForeign = containsForeignType(choice.particles)
         
-    def makeFromXmlCaseEntry(elem: ElemDecl) = if (simpleTypeParticles.contains(elem)) {
-      val symbol = simpleTypeParticles(elem)
-      
+    def makeFromXmlCaseEntry(elem: ElemDecl) = 
       "case x: scala.xml.Elem if x.label == " + quote(elem.name) + " =>" + newline +
-      indent(3) + "org.scalaxb.rt.DataRecord(" + quote(elem.name) + ", " + 
-        buildArg(symbol, "x", None, None, 1, 1) + ")"
-    } else {
-      "case x: scala.xml.Elem if x.label == " + quote(elem.name) + " =>" + newline +
-      indent(3) + "org.scalaxb.rt.DataRecord(" + quote(elem.name) + ", " + 
-        buildTypeName(elem.typeSymbol) + ".fromXML(x))"  
-    }
+        indent(3) + "org.scalaxb.rt.DataRecord(" + quote(elem.name) + ", " +
+      (if (elem.typeSymbol == XsAny)
+        "x"      
+      else if (simpleTypeParticles.contains(elem))  
+        buildArg(simpleTypeParticles(elem), "x", None, None, 1, 1)
+      else
+        buildTypeName(elem.typeSymbol) + ".fromXML(x)"
+      ) + ")"
     
     val fromXmlCases = choice.particles partialMap {
       case elem: ElemDecl => makeFromXmlCaseEntry(elem)
@@ -447,7 +442,7 @@ object {name} {{
     case symbol: BuiltInSimpleTypeSymbol => buildXMLStringForSimpleType(param)
     case ReferenceTypeSymbol(decl: SimpleTypeDecl) => buildXMLStringForSimpleType(param)
     case ReferenceTypeSymbol(decl: ComplexTypeDecl) => buildXMLStringForComplexType(param)
-    case XsAny => buildXMLStringForSimpleType(param)
+    case XsAny => buildXMLStringForChoiceWrapper(param)
     case XsInterNamespace => buildXMLStringForComplexType(param)
     case XsDataRecord => buildXMLStringForChoiceWrapper(param)
     case _ => error("GenSource#buildXMLString: " + param.toString +
@@ -560,8 +555,8 @@ object {name} {{
           error("GenSource#buildArg: " + elem.toString +
             " Invalid type " + symbol.getClass.toString + ": " +
             symbol.toString + " with " + symbol.decl.toString)
-      case XsAny => buildArg(XsString,
-        buildSelector(elem.name), elem.defaultValue, elem.fixedValue, elem.minOccurs, elem.maxOccurs)
+      case XsAny => buildArgForAny(buildSelector(elem.name), elem.name,
+        elem.defaultValue, elem.fixedValue, elem.minOccurs, elem.maxOccurs)
             
       case _ => error("GenSource#buildArg: " + elem.toString +
         " Invalid type " + typeSymbol.getClass.toString + ": " + typeSymbol.toString)
@@ -667,6 +662,40 @@ object {name} {{
 
   def buildSelector(nodeName: String): String = "(node \\ \"" + nodeName + "\")"
   
+  def buildArgForAny(selector: String, elementLabel: String,
+      defaultValue: Option[String], fixedValue: Option[String],
+      minOccurs: Int, maxOccurs: Int) = {
+    
+    // any should generate DataRecord(null, Elem) since in case of 
+    // <choice> content, I wouldn't know the element name up front.
+    
+    def buildMatchStatement(noneValue: String, someValue: String) =
+      selector + ".headOption match {" + newline +
+      indent(4) + "case None    => " + noneValue + newline +
+      indent(4) + "case Some(x) => " + someValue + newline +
+      indent(3) + "}"
+    
+    if (maxOccurs > 1) {
+        selector + ".toList.map(x => org.scalaxb.rt.DataRecord(null, x))"
+    } else if (minOccurs == 0) {
+      buildMatchStatement("None", "Some(org.scalaxb.rt.DataRecord(null, x))")
+    } else if (defaultValue.isDefined) {
+      buildMatchStatement("org.scalaxb.rt.DataRecord(null, " +
+        indent(4) + "scala.xml.Elem(node.scope.getPrefix(" + quote(schema.targetNamespace) + "), " +
+        indent(4) + quote(elementLabel) + ", scala.xml.Null, node.scope, " + 
+        indent(4) + "scala.xml.Text(" + quote(defaultValue.get) + ")))",
+        "org.scalaxb.rt.DataRecord(null, x)")
+    } else if (fixedValue.isDefined) {
+      "org.scalaxb.rt.DataRecord(null, " +
+        indent(4) + "scala.xml.Elem(node.scope.getPrefix(" + quote(schema.targetNamespace) + "), " 
+        indent(4) + quote(elementLabel) + ", scala.xml.Null, node.scope, " + 
+        indent(4) + "scala.xml.Text(" + quote(fixedValue.get) + ")))"
+    } else {
+      buildMatchStatement("error(" + quote("required element is missing: " + elementLabel)  + ")",
+        "org.scalaxb.rt.DataRecord(null, x)")
+    }
+  }
+  
   def buildArg(typeSymbol: BuiltInSimpleTypeSymbol, selector: String,
       defaultValue: Option[String], fixedValue: Option[String],
       minOccurs: Int, maxOccurs: Int): String = {
@@ -690,7 +719,7 @@ object {name} {{
       case "Array[String]" => ("", ".split(' ')")
       case "Array[Byte]" => ("org.scalaxb.rt.Helper.toByteArray(", ")")
       // case "HexBinary"  => 
-      case _        => error("GenSource: Unsupported type " + typeSymbol.toString) 
+      case _        => error("GenSource#buildArg: Unsupported type " + typeSymbol.toString) 
     }
     
     def buildMatchStatement(noneValue: String, someValue: String) =
@@ -823,7 +852,7 @@ object {name} {{
           case compositor2: HasParticle => flattenElements(compositor2, "")
           case elem: ElemDecl           => List(elem)
           case ref: ElemRef             => List(buildElement(ref))
-          case any: AnyDecl             => Nil
+          case any: AnyDecl             => List(buildAnyRef(any))
         }
       list.flatten
     
@@ -837,7 +866,7 @@ object {name} {{
       list.flatten
     
     case choice: ChoiceDecl =>
-      List(buildChoiceRef(choice, name))
+      List(buildChoiceRef(choice))
   }
 
   def attrs(namespace: String, name: String) =
@@ -889,7 +918,7 @@ object {name} {{
   def buildElement(base: BuiltInSimpleTypeSymbol): ElemDecl = 
     ElemDecl(schema.targetNamespace, "value", base, None, None, 1, 1)
     
-  def buildChoiceRef(choice: ChoiceDecl, parentName: String) = {    
+  def buildChoiceRef(choice: ChoiceDecl) = {    
     argNumber += 1
     val name = "arg" + argNumber 
     
@@ -912,7 +941,11 @@ object {name} {{
   def toOptional(that: ElemDecl) =
     ElemDecl(that.namespace, that.name, that.typeSymbol,
       that.defaultValue, that.fixedValue, 0, that.maxOccurs)
-        
+  
+  def buildAnyRef(any: AnyDecl) =
+    ElemDecl(schema.targetNamespace, "any", XsAny, None, None,
+      any.minOccurs, any.maxOccurs)
+    
   def flattenAttributes(decl: ComplexTypeDecl): List[AttributeLike] =
     decl.content.content.attributes ::: (decl.content.content match {
       case CompContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, attr) => 

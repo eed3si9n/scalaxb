@@ -44,7 +44,6 @@ class GenSource(schema: SchemaDecl,
   val interNamespaceChoiceTypes = mutable.ListBuffer.empty[XsTypeSymbol]
   var argNumber = 0
   val schemas = context.schemas.toList
-  // val typeNames = context.typeNames(packageName)
 
   abstract class Cardinality
   object Optional extends Cardinality
@@ -207,10 +206,17 @@ class GenSource(schema: SchemaDecl,
         buildTypeName(elem.typeSymbol) + ".fromXML(x)"
       ) + ")"
     
-    val fromXmlCases = choice.particles partialMap {
+    def makeFromXmlCaseEntryForAny = 
+      "case x: scala.xml.Elem =>" + newline +
+        indent(3) + "org.scalaxb.rt.DataRecord(x.label, x)"
+      
+    val fromXmlCases = (choice.particles partialMap {
       case elem: ElemDecl => makeFromXmlCaseEntry(elem)
       case ref: ElemRef   => makeFromXmlCaseEntry(buildElement(ref))
-    }
+    }) ::: (if (choice.particles.exists(_.isInstanceOf[AnyDecl]))
+      List(makeFromXmlCaseEntryForAny)
+    else
+      List())
     
     if (fromXmlCases.size == 0)
       <source>

@@ -7,6 +7,7 @@ abstract class DataModel {
 case class DataRecord[A](key: String, value: A) {
   def toXML(elementLabel: String,
       scope: scala.xml.NamespaceBinding): scala.xml.Node = value match {
+    case x: scala.xml.Node => x
     case x: DataModel => x.toXML(elementLabel, scope)
     case _ => scala.xml.Elem(null, elementLabel, scala.xml.Null, scope,
       scala.xml.Text(value.toString))

@@ -21,6 +21,7 @@ object PurchaseOrderUsage {
     testRoundTrip
     testChoiceRoundTrip
     testAny
+    testAnyChoice
     true
   }
   
@@ -229,14 +230,27 @@ object PurchaseOrderUsage {
     }
     
     val document = obj.toXML("choice1", subject.scope)
+    println(document)  
+  }
+  
+  def testAnyChoice {
+    val subject = <Element1 xmlns="http://www.example.com/IPO"
+        xmlns:ipo="http://www.example.com/IPO">
+      <math xmlns="http://www.w3.org/1998/Math/MathML">
+        <apply>
+          <log/>
+          <logbase><cn>3</cn></logbase>
+          <ci>x</ci>
+        </apply>
+      </math>
+    </Element1>
+    val obj = Element1.fromXML(subject)
+    val document = obj.toXML("Element1", subject.scope)
     println(document)
-    
-    /*
-    val obj2 = Choice1.fromXML(document)
+    val obj2 = Element1.fromXML(document)
     obj2 match {
-      case `obj` =>
-      case _ => error("match failed: " + obj2.toString)
-    } 
-    */   
+      case Element1(DataRecord("math", _)) =>
+      case _ => error("match failed: " + document.toString)
+    }    
   }
 }

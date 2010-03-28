@@ -433,9 +433,12 @@ object {name} {{
     case any: AnyAttributeDecl => buildAttributeString(any)
   }
   
-  def buildAttributeString(any: AnyAttributeDecl): String = {
-    ""
-  }
+  def buildAttributeString(any: AnyAttributeDecl): String =
+    "anyAttribute.foreach(x =>" + newline +
+    indent(3) + "if (x.namespace == null)" + newline +
+    indent(3) + "  attribute = scala.xml.Attribute(null, x.key, x.value, attribute)" + newline +
+    indent(3) + "else" + newline +
+    indent(3) + "  attribute = scala.xml.Attribute(scope.getPrefix(x.namespace), x.key, x.value, attribute))"
   
   def buildAttributeString(attr: AttributeDecl): String = {
     val namespaceString = if (attr.global)

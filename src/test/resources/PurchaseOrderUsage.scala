@@ -164,7 +164,7 @@ object PurchaseOrderUsage {
     val subject = <Choice1 xml:lang="en"></Choice1>
     val obj = Choice1.fromXML(subject)
     obj match {
-      case Choice1(_, "en") =>
+      case Choice1(_, "en", _) =>
       case _ => error("match failed: " + obj.toString)
     }
     
@@ -218,7 +218,9 @@ object PurchaseOrderUsage {
   def testAny {
     val subject = <choice1 xmlns="http://www.example.com/IPO"
         xmlns:ipo="http://www.example.com/IPO"
-        xml:lang="en">
+        xmlns:h="http://www.w3.org/1999/xhtml"
+        xml:lang="en"
+        h:href="4Q99.html">
       <math xmlns="http://www.w3.org/1998/Math/MathML">
         <apply>
           <log/>
@@ -229,7 +231,8 @@ object PurchaseOrderUsage {
     </choice1>
     val obj = Choice1.fromXML(subject)
     obj match {
-      case Choice1(_, "en") =>
+      case Choice1(_, "en",
+        Seq(DataRecord("http://www.w3.org/1999/xhtml", "href", "4Q99.html"))) =>
       case _ => error("match failed: " + obj.toString)
     }
     

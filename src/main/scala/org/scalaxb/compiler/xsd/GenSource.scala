@@ -116,6 +116,7 @@ class GenSource(schema: SchemaDecl,
     case XsInterNamespace => defaultSuperName
     case XsAny => "org.scalaxb.rt.DataRecord[scala.xml.Node]"
     case XsDataRecord => "org.scalaxb.rt.DataRecord[Any]"
+    case XsAnyAttribute => "org.scalaxb.rt.DataRecord[String]"
     case symbol: BuiltInSimpleTypeSymbol => symbol.name
     case ReferenceTypeSymbol(decl: SimpleTypeDecl) => buildTypeName(decl)
     case ReferenceTypeSymbol(decl: ComplexTypeDecl) => buildTypeName(decl)
@@ -255,7 +256,10 @@ object {name} {{
     val childElements = flattenElements(decl, name)
     val list = List.concat[Decl](childElements, flattenAttributes(decl))
     val paramList = list.map(buildParam(_))
-    val argList = list.map(buildArg(_))
+    val argList = list map {
+      case any: AnyAttributeDecl => buildArgForAnyAttribute(decl)
+      case x => buildArg(x)
+    }
     val defaultType = makeProtectedTypeName(decl, context)
     val superNames = buildSuperNames(decl) // buildSuperNamesForTrait
     
@@ -321,12 +325,16 @@ object {name} {{
     val attributes = flattenAttributes(decl)
     val list = List.concat[Decl](childElements, attributes)
     val paramList = list.map(buildParam(_))
-    val argList = list.map(buildArg(_))
+    val argList = list map {
+      case any: AnyAttributeDecl => buildArgForAnyAttribute(decl)
+      case x => buildArg(x)
+    }
     
     def superNamesString = superNames.mkString(" with ")
     
     val hasSequenceParam = paramList.size == 1 &&
-      paramList.head.cardinality == Multiple
+      paramList.head.cardinality == Multiple &&
+      paramList.head.attribute == false
     
     def paramsString = if (hasSequenceParam)
       makeParamName(paramList.head.name) + ": " + buildTypeName(paramList.head.typeSymbol) + "*"      
@@ -343,7 +351,8 @@ object {name} {{
         (buildArg(decl.content.asInstanceOf[SimpleContentDecl], base) :: argList.drop(1)).
           mkString("," + newline + indent(3)) 
                 
-      case _ => argList.mkString("," + newline + indent(3))
+      case _ =>
+        argList.mkString("," + newline + indent(3))
     }
         
     val childElemParams = paramList.filter(!_.attribute)
@@ -421,6 +430,11 @@ object {name} {{
   def buildAttributeString(attr: AttributeLike): String = attr match {
     case ref: AttributeRef => buildAttributeString(buildAttribute(ref))
     case x: AttributeDecl  => buildAttributeString(x)
+    case any: AnyAttributeDecl => buildAttributeString(any)
+  }
+  
+  def buildAttributeString(any: AnyAttributeDecl): String = {
+    ""
   }
   
   def buildAttributeString(attr: AttributeDecl): String = {
@@ -505,7 +519,8 @@ object {name} {{
     case elem: ElemDecl => buildParam(elem)
     case attr: AttributeDecl => buildParam(attr)
     case ref: AttributeRef => buildParam(buildAttribute(ref))
-    case _ => error("GenSource: unsupported delcaration " + decl.toString)
+    case any: AnyAttributeDecl => buildParam(any)
+    case _ => error("GenSource#buildParam: unsupported delcaration " + decl.toString)
   }
     
   def buildParam(elem: ElemDecl): Param = {
@@ -536,14 +551,17 @@ object {name} {{
     
     Param(attr.namespace, attr.name, attr.typeSymbol, cardinality, true)
   }
+  
+  def buildParam(any: AnyAttributeDecl): Param =
+    Param(null, "anyAttribute", XsAnyAttribute, Multiple, true)
       
   def buildArg(decl: Decl): String = decl match {
-    case elem: ElemDecl       => buildArg(elem)
-    case attr: AttributeDecl  => buildArg(attr)
-    case ref: AttributeRef    => buildArg(buildAttribute(ref))
-    case _ => error("GenSource: unsupported delcaration " + decl.toString)
+    case elem: ElemDecl        => buildArg(elem)
+    case attr: AttributeDecl   => buildArg(attr)
+    case ref: AttributeRef     => buildArg(buildAttribute(ref))
+    case _ => error("GenSource#buildArg unsupported delcaration " + decl.toString)
   }
-  
+    
   def buildArg(elem: ElemDecl): String = {
     val typeSymbol = elem.typeSymbol
     
@@ -669,6 +687,33 @@ object {name} {{
 
   def buildSelector(nodeName: String): String = "(node \\ \"" + nodeName + "\")"
   
+  def buildArgForAnyAttribute(parent: ComplexTypeDecl): String = {
+    val attributes = flattenAttributes(parent) partialMap {
+      case attr: AttributeDecl   => attr
+      case ref: AttributeRef     => buildAttribute(ref) 
+    }
+    
+    def makeCaseEntry(attr: AttributeDecl) = if (attr.global)
+      "case scala.xml.PrefixedAttribute(pre, key, value, _) if pre == elem.scope.getPrefix(" +
+        quote(attr.namespace) + ") &&" + newline +
+      indent(7) + "key == " + quote(attr.name) + " => Nil"
+    else
+      "case scala.xml.UnprefixedAttribute(key, value, _) if key == " + quote(attr.name) + " => Nil"
+    
+    "node match {" + newline +
+    indent(4) + "case elem: scala.xml.Elem =>" + newline +
+    indent(4) + "  (elem.attributes.toList) flatMap {" + newline +
+    attributes.map(x => makeCaseEntry(x)).mkString(indent(6), newline + indent(6), newline) +
+    indent(4) + "    case scala.xml.UnprefixedAttribute(key, value, _) =>" + newline +
+    indent(4) + "      List(org.scalaxb.rt.DataRecord(null, key, value.text))" + newline +
+    indent(4) + "    case scala.xml.PrefixedAttribute(pre, key, value, _) =>" + newline +
+    indent(4) + "      List(org.scalaxb.rt.DataRecord(elem.scope.getURI(pre), key, value.text))" + newline +
+    indent(4) + "    case _ => Nil" + newline +
+    indent(4) + "  }" + newline +
+    indent(4) + "case _ => Nil" + newline +
+    indent(3) + "}" 
+  }
+  
   def buildArgForAny(selector: String, namespace: String, elementLabel: String,
       defaultValue: Option[String], fixedValue: Option[String],
       minOccurs: Int, maxOccurs: Int) = {
@@ -680,28 +725,28 @@ object {name} {{
       indent(3) + "}"
     
     if (maxOccurs > 1) {
-        selector + ".toList.map(x => org.scalaxb.rt.DataRecord(" +
+        selector + ".toList.map(x => org.scalaxb.rt.DataRecord(" + newline +
           indent(4) + quote(namespace) + ", " + quote(elementLabel) + ", x))"
     } else if (minOccurs == 0) {
-      buildMatchStatement("None", "Some(org.scalaxb.rt.DataRecord(" +
+      buildMatchStatement("None", "Some(org.scalaxb.rt.DataRecord(" + newline +
         indent(4) + quote(namespace) + ", " + quote(elementLabel) + ", x))")
     } else if (defaultValue.isDefined) {
-      buildMatchStatement("org.scalaxb.rt.DataRecord(" +
-        indent(4) + quote(namespace) + ", " + quote(elementLabel) + ", " +
-        indent(4) + "scala.xml.Elem(node.scope.getPrefix(" + quote(schema.targetNamespace) + "), " +
-        indent(4) + quote(elementLabel) + ", scala.xml.Null, node.scope, " + 
+      buildMatchStatement("org.scalaxb.rt.DataRecord(" + newline +
+        indent(4) + quote(namespace) + ", " + quote(elementLabel) + ", " + newline +
+        indent(4) + "scala.xml.Elem(node.scope.getPrefix(" + quote(schema.targetNamespace) + "), " + newline +
+        indent(4) + quote(elementLabel) + ", scala.xml.Null, node.scope, " +  newline +
         indent(4) + "scala.xml.Text(" + quote(defaultValue.get) + ")))",
-        "org.scalaxb.rt.DataRecord(" +
+        "org.scalaxb.rt.DataRecord(" + newline +
           indent(4) + quote(namespace) + ", " + quote(elementLabel) + ", x)")
     } else if (fixedValue.isDefined) {
-      "org.scalaxb.rt.DataRecord(" +
-        indent(4) + quote(namespace) + ", " + quote(elementLabel) + ", " +
-        indent(4) + "scala.xml.Elem(node.scope.getPrefix(" + quote(schema.targetNamespace) + "), " 
-        indent(4) + quote(elementLabel) + ", scala.xml.Null, node.scope, " + 
+      "org.scalaxb.rt.DataRecord(" + newline +
+        indent(4) + quote(namespace) + ", " + quote(elementLabel) + ", " + newline +
+        indent(4) + "scala.xml.Elem(node.scope.getPrefix(" + quote(schema.targetNamespace) + "), "  + newline +
+        indent(4) + quote(elementLabel) + ", scala.xml.Null, node.scope, " +  newline +
         indent(4) + "scala.xml.Text(" + quote(fixedValue.get) + ")))"
     } else {
       buildMatchStatement("error(" + quote("required element is missing: " + elementLabel)  + ")",
-        "org.scalaxb.rt.DataRecord(" +
+        "org.scalaxb.rt.DataRecord(" + newline +
           indent(4) + quote(namespace) + ", " + quote(elementLabel) + ", x)")
     }
   }
@@ -962,7 +1007,6 @@ object {name} {{
         flattenAttributes(base)
       case CompContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, attr) =>
         flattenAttributes(base)
-      
       case _ => List()
     })
 

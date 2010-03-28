@@ -122,6 +122,7 @@
       <sequence>
         <any namespace="##other" processContents="lax" minOccurs="0" maxOccurs="unbounded"/>
       </sequence>
+      <anyAttribute namespace="##any"/>
     </complexType>
   </element>
   <element name="Choice2" type="positiveInteger" />

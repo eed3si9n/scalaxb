@@ -255,10 +255,35 @@ abstract class AttributeLike extends Decl
 
 object AttributeLike {
   def fromXML(node: scala.xml.Node, config: ParserConfig) = {
-    (node \ "@ref").headOption match {
+    if (node.label == "anyAttribute")
+      AnyAttributeDecl.fromXML(node, config)
+    else (node \ "@ref").headOption match {
       case Some(x) => AttributeRef.fromXML(node, config)
       case None => AttributeDecl.fromXML(node, config, false)
     }
+  }
+}
+
+abstract class ProcessContents
+object LaxProcess extends ProcessContents
+object SkipProcess extends ProcessContents
+object StrictProcess extends ProcessContents
+
+case class AnyAttributeDecl(namespace: String,
+  processContents: ProcessContents) extends AttributeLike
+
+object AnyAttributeDecl {
+  def fromXML(node: scala.xml.Node, config: ParserConfig) = {
+    val namespace = (node \ "namespace").headOption match {
+      case None    => "##any"
+      case Some(x) => x.text
+    }
+    val processContents = (node \ "@processContents").text match {
+      case "lax"  => LaxProcess
+      case "skip" => SkipProcess
+      case _      => StrictProcess
+    }
+    AnyAttributeDecl(namespace, processContents)
   }
 }
 
@@ -464,7 +489,10 @@ object ComplexTypeDecl {
     }
     
     val attributes = (node \ "attribute").toList.map(
-      AttributeLike.fromXML(_, config))
+      AttributeLike.fromXML(_, config)) ::: ((node \ "anyAttribute").headOption match {
+        case None => Nil
+        case Some(x) => List(AttributeLike.fromXML(x, config))
+      })
     
     for (child <- node.child) child match {
       case <group>{ _* }</group> =>

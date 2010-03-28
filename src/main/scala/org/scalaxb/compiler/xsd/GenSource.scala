@@ -50,7 +50,8 @@ class GenSource(schema: SchemaDecl,
   object Single extends Cardinality
   object Multiple extends Cardinality
   
-  case class Param(name: String,
+  case class Param(namespace: String,
+    name: String,
     typeSymbol: XsTypeSymbol,
     cardinality: Cardinality,
     attribute: Boolean) {
@@ -196,8 +197,9 @@ class GenSource(schema: SchemaDecl,
     val hasForeign = containsForeignType(choice.particles)
         
     def makeFromXmlCaseEntry(elem: ElemDecl) = 
-      "case x: scala.xml.Elem if x.label == " + quote(elem.name) + " =>" + newline +
-        indent(3) + "org.scalaxb.rt.DataRecord(" + quote(elem.name) + ", " +
+      "case x: scala.xml.Elem if (x.label == " + quote(elem.name) + " && " + newline + 
+        indent(4) + "x.scope.getURI(x.prefix) == " + quote(elem.namespace) + ") =>" + newline +
+        indent(3) + "org.scalaxb.rt.DataRecord(x.scope.getURI(x.prefix), x.label, " +
       (if (elem.typeSymbol == XsAny)
         "x"      
       else if (simpleTypeParticles.contains(elem))  
@@ -208,7 +210,7 @@ class GenSource(schema: SchemaDecl,
     
     def makeFromXmlCaseEntryForAny = 
       "case x: scala.xml.Elem =>" + newline +
-        indent(3) + "org.scalaxb.rt.DataRecord(x.label, x)"
+        indent(3) + "org.scalaxb.rt.DataRecord(x.scope.getURI(x.prefix), x.label, x)"
       
     val fromXmlCases = (choice.particles partialMap {
       case elem: ElemDecl => makeFromXmlCaseEntry(elem)
@@ -343,12 +345,7 @@ object {name} {{
                 
       case _ => argList.mkString("," + newline + indent(3))
     }
-    
-    val namespaceString = if (decl.namespace == null)
-      "null"
-    else
-      quote(decl.namespace)
-    
+        
     val childElemParams = paramList.filter(!_.attribute)
     
     def childString = decl.content.content match {
@@ -387,10 +384,10 @@ object {name} {{
       getPrefix(schema.targetNamespace, schema.scope) + ":" + decl.name
     
     def makeToXml = <source>
-  def toXML(elementLabel: String): scala.xml.Node = {{
+  def toXML(namespace: String, elementLabel: String): scala.xml.Node = {{
     var scope: scala.xml.NamespaceBinding = scala.xml.TopScope
     { scopeString(schema.scope).reverse.mkString(newline + indent(2)) }
-    val node = toXML(elementLabel, scope)
+    val node = toXML(namespace, elementLabel, scope)
     node match {{
       case elem: scala.xml.Elem => elem % new scala.xml.PrefixedAttribute("xsi", "type",
         { quote(typeNameString) }, elem.attributes)
@@ -403,8 +400,8 @@ object {name} {{
 case class {name}({paramsString}) extends {superNamesString} {{
   { if (!decl.name.contains('@'))
       makeToXml }  
-  def toXML(elementLabel: String, scope: scala.xml.NamespaceBinding): scala.xml.Node = {{
-    val prefix = scope.getPrefix({namespaceString})
+  def toXML(namespace: String, elementLabel: String, scope: scala.xml.NamespaceBinding): scala.xml.Node = {{
+    val prefix = scope.getPrefix(namespace)
     var attribute: scala.xml.MetaData  = scala.xml.Null
     { attributeString }
     
@@ -460,29 +457,33 @@ object {name} {{
     
     param.cardinality match {
       case Single =>
-        makeParamName(param.name) + ".toXML(" +
+        makeParamName(param.name) + ".toXML(" + quote(param.namespace) + ", " +
           makeParamName(param.name) + ".key, scope)"
       case Optional =>
         makeParamName(param.name) + " match {" + newline +
-        indent(5) + "case Some(x) => x.toXML(x.key, scope)" + newline +
+        indent(5) + "case Some(x) => x.toXML(" + quote(param.namespace) + 
+          ", x.key, scope)" + newline +
         indent(5) + "case None => Seq()" + newline +
         indent(4) + "}"
       case Multiple =>
-        makeParamName(param.name) + ".map(x => x.toXML(x.key, scope))"   
+        makeParamName(param.name) + ".map(x => x.toXML(" + quote(param.namespace) +
+          ", x.key, scope))"   
     }
   } 
   
   def buildXMLStringForComplexType(param: Param) = param.cardinality match {
     case Single =>
-      makeParamName(param.name) + ".toXML(" + quote(param.name) + ", scope)"
+      makeParamName(param.name) + ".toXML(" + quote(param.namespace) + "," + 
+        quote(param.name) + ", scope)"
     case Optional =>
       makeParamName(param.name) + " match {" + newline +
-      indent(5) + "case Some(x) => x.toXML(" + quote(param.name) + 
-        ", scope)" + newline +
+      indent(5) + "case Some(x) => x.toXML(" + quote(param.namespace) + "," + 
+        quote(param.name) + ", scope)" + newline +
       indent(5) + "case None => Seq()" + newline +
       indent(4) + "}"
     case Multiple =>
-      makeParamName(param.name) + ".map(x => x.toXML(" + quote(param.name) + ", scope))"    
+      makeParamName(param.name) + ".map(x => x.toXML(" + quote(param.namespace) + "," + 
+        quote(param.name) + ", scope))"    
   }
   
   def buildXMLStringForSimpleType(param: Param) = param.cardinality match {
@@ -524,7 +525,7 @@ object {name} {{
       case _ => elem.typeSymbol
     }
         
-    Param(elem.name, symbol, cardinality, false)
+    Param(elem.namespace, elem.name, symbol, cardinality, false)
   }
   
   def buildParam(attr: AttributeDecl): Param = {
@@ -533,7 +534,7 @@ object {name} {{
     else
       Single
     
-    Param(attr.name, attr.typeSymbol, cardinality, true)
+    Param(attr.namespace, attr.name, attr.typeSymbol, cardinality, true)
   }
       
   def buildArg(decl: Decl): String = decl match {
@@ -561,7 +562,7 @@ object {name} {{
           error("GenSource#buildArg: " + elem.toString +
             " Invalid type " + symbol.getClass.toString + ": " +
             symbol.toString + " with " + symbol.decl.toString)
-      case XsAny => buildArgForAny(buildSelector(elem.name), elem.name,
+      case XsAny => buildArgForAny(buildSelector(elem.name), elem.namespace, elem.name,
         elem.defaultValue, elem.fixedValue, elem.minOccurs, elem.maxOccurs)
             
       case _ => error("GenSource#buildArg: " + elem.toString +
@@ -668,13 +669,10 @@ object {name} {{
 
   def buildSelector(nodeName: String): String = "(node \\ \"" + nodeName + "\")"
   
-  def buildArgForAny(selector: String, elementLabel: String,
+  def buildArgForAny(selector: String, namespace: String, elementLabel: String,
       defaultValue: Option[String], fixedValue: Option[String],
       minOccurs: Int, maxOccurs: Int) = {
-    
-    // any should generate DataRecord(null, Elem) since in case of 
-    // <choice> content, I wouldn't know the element name up front.
-    
+        
     def buildMatchStatement(noneValue: String, someValue: String) =
       selector + ".headOption match {" + newline +
       indent(4) + "case None    => " + noneValue + newline +
@@ -682,23 +680,29 @@ object {name} {{
       indent(3) + "}"
     
     if (maxOccurs > 1) {
-        selector + ".toList.map(x => org.scalaxb.rt.DataRecord(null, x))"
+        selector + ".toList.map(x => org.scalaxb.rt.DataRecord(" +
+          indent(4) + quote(namespace) + ", " + quote(elementLabel) + ", x))"
     } else if (minOccurs == 0) {
-      buildMatchStatement("None", "Some(org.scalaxb.rt.DataRecord(null, x))")
+      buildMatchStatement("None", "Some(org.scalaxb.rt.DataRecord(" +
+        indent(4) + quote(namespace) + ", " + quote(elementLabel) + ", x))")
     } else if (defaultValue.isDefined) {
-      buildMatchStatement("org.scalaxb.rt.DataRecord(null, " +
+      buildMatchStatement("org.scalaxb.rt.DataRecord(" +
+        indent(4) + quote(namespace) + ", " + quote(elementLabel) + ", " +
         indent(4) + "scala.xml.Elem(node.scope.getPrefix(" + quote(schema.targetNamespace) + "), " +
         indent(4) + quote(elementLabel) + ", scala.xml.Null, node.scope, " + 
         indent(4) + "scala.xml.Text(" + quote(defaultValue.get) + ")))",
-        "org.scalaxb.rt.DataRecord(null, x)")
+        "org.scalaxb.rt.DataRecord(" +
+          indent(4) + quote(namespace) + ", " + quote(elementLabel) + ", x)")
     } else if (fixedValue.isDefined) {
-      "org.scalaxb.rt.DataRecord(null, " +
+      "org.scalaxb.rt.DataRecord(" +
+        indent(4) + quote(namespace) + ", " + quote(elementLabel) + ", " +
         indent(4) + "scala.xml.Elem(node.scope.getPrefix(" + quote(schema.targetNamespace) + "), " 
         indent(4) + quote(elementLabel) + ", scala.xml.Null, node.scope, " + 
         indent(4) + "scala.xml.Text(" + quote(fixedValue.get) + ")))"
     } else {
       buildMatchStatement("error(" + quote("required element is missing: " + elementLabel)  + ")",
-        "org.scalaxb.rt.DataRecord(null, x)")
+        "org.scalaxb.rt.DataRecord(" +
+          indent(4) + quote(namespace) + ", " + quote(elementLabel) + ", x)")
     }
   }
   

@@ -34,7 +34,7 @@ object SamlUsage {
     
     val obj = AttributeType.fromXML(subject)
     obj match {
-      case AttributeType(Seq(x@DataRecord(_, _), y@DataRecord(_, _) ),
+      case AttributeType(Seq(x@DataRecord(_, _, _), y@DataRecord(_, _, _) ),
         "urn:oid:1.3.6.1.4.1.5923.1.1.1.1",
         Some(_),
         Some("eduPersonAffiliation")) => 

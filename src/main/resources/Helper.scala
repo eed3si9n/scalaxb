@@ -1,16 +1,17 @@
 package org.scalaxb.rt
 
 abstract class DataModel {
-  def toXML(elementLabel: String, scope: scala.xml.NamespaceBinding): scala.xml.Node 
+  def toXML(namespace: String, elementLabel: String,
+    scope: scala.xml.NamespaceBinding): scala.xml.Node 
 }
 
-case class DataRecord[A](key: String, value: A) {
-  def toXML(elementLabel: String,
+case class DataRecord[A](namespace: String, key: String, value: A) {
+  def toXML(namespace: String, elementLabel: String,
       scope: scala.xml.NamespaceBinding): scala.xml.Node = value match {
     case x: scala.xml.Node => x
-    case x: DataModel => x.toXML(elementLabel, scope)
-    case _ => scala.xml.Elem(null, elementLabel, scala.xml.Null, scope,
-      scala.xml.Text(value.toString))
+    case x: DataModel => x.toXML(namespace, elementLabel, scope)
+    case _ => scala.xml.Elem(scope.getPrefix(namespace), elementLabel,
+      scala.xml.Null, scope, scala.xml.Text(value.toString))
   }
 }
 

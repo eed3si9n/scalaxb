@@ -717,7 +717,7 @@ object {name} {{
       defaultValue: Option[String], fixedValue: Option[String],
       minOccurs: Int, maxOccurs: Int) = {
     
-    val selector = "node.child.filter(_.isInstanceOf[scala.xml.Elem])"
+    val selector = "(node.child.partialMap { case elem: scala.xml.Elem => elem })"
     
     def buildMatchStatement(noneValue: String, someValue: String) =
       selector + ".headOption match {" + newline +
@@ -726,19 +726,19 @@ object {name} {{
       indent(3) + "}"
     
     if (maxOccurs > 1) {
-        selector + ".toList.map(x => org.scalaxb.rt.DataRecord(" + newline +
-          indent(4) + quote(namespace) + ", " + quote(elementLabel) + ", x))"
+      "(node.child.partialMap {" + newline +
+      indent(3) + "case x: scala.xml.Elem =>" + newline +
+      indent(3) + "  org.scalaxb.rt.DataRecord(x.scope.getURI(x.prefix), x.label, x) }).toList"
     } else if (minOccurs == 0) {
-      buildMatchStatement("None", "Some(org.scalaxb.rt.DataRecord(" + newline +
-        indent(4) + quote(namespace) + ", " + quote(elementLabel) + ", x))")
+      buildMatchStatement("None",
+        "Some(org.scalaxb.rt.DataRecord(x.scope.getURI(x.prefix), x.label, x))")
     } else if (defaultValue.isDefined) {
       buildMatchStatement("org.scalaxb.rt.DataRecord(" + newline +
         indent(4) + quote(namespace) + ", " + quote(elementLabel) + ", " + newline +
         indent(4) + "scala.xml.Elem(node.scope.getPrefix(" + quote(schema.targetNamespace) + "), " + newline +
         indent(4) + quote(elementLabel) + ", scala.xml.Null, node.scope, " +  newline +
         indent(4) + "scala.xml.Text(" + quote(defaultValue.get) + ")))",
-        "org.scalaxb.rt.DataRecord(" + newline +
-          indent(4) + quote(namespace) + ", " + quote(elementLabel) + ", x)")
+        "org.scalaxb.rt.DataRecord(x.scope.getURI(x.prefix), x.label, x)")
     } else if (fixedValue.isDefined) {
       "org.scalaxb.rt.DataRecord(" + newline +
         indent(4) + quote(namespace) + ", " + quote(elementLabel) + ", " + newline +

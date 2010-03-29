@@ -22,6 +22,7 @@ object PurchaseOrderUsage {
     testChoiceRoundTrip
     testAny
     testAnyChoice
+    testAnyAttribute
     true
   }
   
@@ -258,6 +259,27 @@ object PurchaseOrderUsage {
     obj2 match {
       case Element1(DataRecord("http://www.w3.org/1998/Math/MathML", "math", _)) =>
       case _ => error("match failed: " + document.toString)
+    }    
+  }
+  
+  def testAnyAttribute {
+    val subject = <foo xmlns="http://www.example.com/IPO"
+        xmlns:ipo="http://www.example.com/IPO"
+        xmlns:h="http://www.w3.org/1999/xhtml"
+        h:href="4Q99.html">
+    </foo>
+    val obj = Element2.fromXML(subject)
+    obj match {
+      case Element2(Seq(DataRecord("http://www.w3.org/1999/xhtml", "href", "4Q99.html"))) =>
+      case _ => error("match failed: " + obj.toString)
+    }
+    
+    val document = obj.toXML(null, "foo", subject.scope)
+    println(document)
+    val obj2 = Element2.fromXML(document)
+    obj2 match {
+      case Element2(Seq(DataRecord("http://www.w3.org/1999/xhtml", "href", "4Q99.html"))) =>
+      case _ => error("match failed: " + obj2.toString)
     }    
   }
 }

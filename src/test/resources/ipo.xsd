@@ -148,6 +148,12 @@
       </extension>
     </simpleContent>
   </complexType>
-
+  
+  <element name="Element2">
+    <complexType>
+      <anyAttribute namespace="##any"/>
+    </complexType>
+  </element>
+  
   <attribute name="globalAttr" type="int"/>
 </schema>

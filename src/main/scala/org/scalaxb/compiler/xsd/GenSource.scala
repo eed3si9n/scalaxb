@@ -314,7 +314,7 @@ object {name} {{
   }
         
   def makeCaseClassWithType(name: String, decl: ComplexTypeDecl): scala.xml.Node = {
-    log("GenSource.makeCaseClassWithType: emitting " + name)
+    log("GenSource#makeCaseClassWithType: emitting " + name)
     
     val superNames: List[String] = if (context.baseToSubs.contains(decl))
       List(defaultSuperName, buildTypeName(decl))
@@ -323,6 +323,8 @@ object {name} {{
       
     val childElements = flattenElements(decl, name)
     val attributes = flattenAttributes(decl)
+    log("GenSource#makeCaseClassWithType: > attributes " + attributes)
+    
     val list = List.concat[Decl](childElements, attributes)
     val paramList = list.map(buildParam(_))
     val argList = list map {

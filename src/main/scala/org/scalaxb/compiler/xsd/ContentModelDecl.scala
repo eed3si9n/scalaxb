@@ -76,6 +76,9 @@ object CompContRestrictionDecl {
   def empty =
     CompContRestrictionDecl(XsAny, None, Nil)
   
+  def fromAttributes(attributes: List[AttributeLike]) = 
+    CompContRestrictionDecl(XsAny, None, attributes)
+  
   def fromCompositor(compositor: HasParticle, attributes: List[AttributeLike]) =
     CompContRestrictionDecl(XsAny, Some(compositor), attributes)
   

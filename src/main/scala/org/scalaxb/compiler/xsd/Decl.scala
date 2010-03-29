@@ -476,8 +476,6 @@ case class ComplexTypeDecl(namespace: String,
 
 object ComplexTypeDecl {  
   def fromXML(node: scala.xml.Node, name: String, config: ParserConfig) = {
-    var content: HasComplexTypeContent = ComplexContentDecl.empty
-    
     val abstractValue = (node \ "@abstract").headOption match {
       case None    => false
       case Some(x) => x.text.toBoolean
@@ -493,6 +491,7 @@ object ComplexTypeDecl {
         case None => Nil
         case Some(x) => List(AttributeLike.fromXML(x, config))
       })
+    var content: HasComplexTypeContent = ComplexContentDecl.fromAttributes(attributes)
     
     for (child <- node.child) child match {
       case <group>{ _* }</group> =>
@@ -554,6 +553,9 @@ case class ComplexContentDecl(content: ComplexTypeContent) extends Decl with Has
 object ComplexContentDecl {
   lazy val empty =
     ComplexContentDecl(CompContRestrictionDecl.empty)
+  
+  def fromAttributes(attributes: List[AttributeLike]) =
+    ComplexContentDecl(CompContRestrictionDecl.fromAttributes(attributes))
   
   def fromCompositor(compositor: HasParticle, attributes: List[AttributeLike]) =
     ComplexContentDecl(CompContRestrictionDecl.fromCompositor(compositor, attributes))

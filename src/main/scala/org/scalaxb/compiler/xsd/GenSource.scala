@@ -565,30 +565,26 @@ object {name} {{
     case _ => error("GenSource#buildArg unsupported delcaration " + decl.toString)
   }
     
-  def buildArg(elem: ElemDecl): String = {
-    val typeSymbol = elem.typeSymbol
-    
-    typeSymbol match {
-      case symbol: BuiltInSimpleTypeSymbol => buildArg(symbol,
-        buildSelector(elem.name), elem.defaultValue, elem.fixedValue, elem.minOccurs, elem.maxOccurs)
-      case ReferenceTypeSymbol(decl: SimpleTypeDecl) =>  buildArg(decl,
-        buildSelector(elem.name), elem.defaultValue, elem.fixedValue, elem.minOccurs, elem.maxOccurs) 
-      case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>  buildArg(elem, decl)
-      case symbol: ReferenceTypeSymbol =>
-        if (symbol.decl == null)
-          error("GenSource#buildArg: " + elem.toString +
-            " Invalid type " + symbol.getClass.toString + ": " +
-            symbol.toString + " with null decl")
-        else    
-          error("GenSource#buildArg: " + elem.toString +
-            " Invalid type " + symbol.getClass.toString + ": " +
-            symbol.toString + " with " + symbol.decl.toString)
-      case XsAny => buildArgForAny(buildSelector(elem.name), elem.namespace, elem.name,
-        elem.defaultValue, elem.fixedValue, elem.minOccurs, elem.maxOccurs)
-            
-      case _ => error("GenSource#buildArg: " + elem.toString +
-        " Invalid type " + typeSymbol.getClass.toString + ": " + typeSymbol.toString)
-    }
+  def buildArg(elem: ElemDecl): String = elem.typeSymbol match {
+    case symbol: BuiltInSimpleTypeSymbol => buildArg(symbol,
+      buildSelector(elem.name), elem.defaultValue, elem.fixedValue, elem.minOccurs, elem.maxOccurs)
+    case ReferenceTypeSymbol(decl: SimpleTypeDecl) =>  buildArg(decl,
+      buildSelector(elem.name), elem.defaultValue, elem.fixedValue, elem.minOccurs, elem.maxOccurs) 
+    case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>  buildArg(elem, decl)
+    case symbol: ReferenceTypeSymbol =>
+      if (symbol.decl == null)
+        error("GenSource#buildArg: " + elem.toString +
+          " Invalid type " + symbol.getClass.toString + ": " +
+          symbol.toString + " with null decl")
+      else    
+        error("GenSource#buildArg: " + elem.toString +
+          " Invalid type " + symbol.getClass.toString + ": " +
+          symbol.toString + " with " + symbol.decl.toString)
+    case XsAny => buildArgForAny(elem.namespace, elem.name,
+      elem.defaultValue, elem.fixedValue, elem.minOccurs, elem.maxOccurs)
+          
+    case _ => error("GenSource#buildArg: " + elem.toString +
+      " Invalid type " + elem.typeSymbol.getClass.toString + ": " + elem.typeSymbol.toString)
   }
 
   def buildArg(elem: ElemDecl, decl: ComplexTypeDecl): String = {
@@ -717,10 +713,12 @@ object {name} {{
     indent(3) + "}" 
   }
   
-  def buildArgForAny(selector: String, namespace: String, elementLabel: String,
+  def buildArgForAny(namespace: String, elementLabel: String,
       defaultValue: Option[String], fixedValue: Option[String],
       minOccurs: Int, maxOccurs: Int) = {
-        
+    
+    val selector = "node.child.filter(_.isInstanceOf[scala.xml.Elem])"
+    
     def buildMatchStatement(noneValue: String, someValue: String) =
       selector + ".headOption match {" + newline +
       indent(4) + "case None    => " + noneValue + newline +

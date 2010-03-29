@@ -474,29 +474,27 @@ object {name} {{
     
     param.cardinality match {
       case Single =>
-        makeParamName(param.name) + ".toXML(" + quote(param.namespace) + ", " +
+        makeParamName(param.name) + ".toXML(" + makeParamName(param.name) + ".namespace, " +
           makeParamName(param.name) + ".key, scope)"
       case Optional =>
         makeParamName(param.name) + " match {" + newline +
-        indent(5) + "case Some(x) => x.toXML(" + quote(param.namespace) + 
-          ", x.key, scope)" + newline +
-        indent(5) + "case None => Seq()" + newline +
+        indent(5) + "case Some(x) => x.toXML(x.namespace, x.key, scope)" + newline +
+        indent(5) + "case None => Nil" + newline +
         indent(4) + "}"
       case Multiple =>
-        makeParamName(param.name) + ".map(x => x.toXML(" + quote(param.namespace) +
-          ", x.key, scope))"   
+        makeParamName(param.name) + ".map(x => x.toXML(x.namespace, x.key, scope))"   
     }
   } 
   
   def buildXMLStringForComplexType(param: Param) = param.cardinality match {
     case Single =>
       makeParamName(param.name) + ".toXML(" + quote(param.namespace) + "," + 
-        quote(param.name) + ", scope)"
+        quote(param.name)  + ", scope)"
     case Optional =>
       makeParamName(param.name) + " match {" + newline +
       indent(5) + "case Some(x) => x.toXML(" + quote(param.namespace) + "," + 
         quote(param.name) + ", scope)" + newline +
-      indent(5) + "case None => Seq()" + newline +
+      indent(5) + "case None => Nil" + newline +
       indent(4) + "}"
     case Multiple =>
       makeParamName(param.name) + ".map(x => x.toXML(" + quote(param.namespace) + "," + 

@@ -32,6 +32,7 @@ object XsAny extends XsTypeSymbol("scala.xml.Node") {}
 object XsInterNamespace extends XsTypeSymbol("XsInterNamespace") {}
 object XsDataRecord extends XsTypeSymbol("XsDataRecord") {}
 object XsAnyAttribute extends XsTypeSymbol("XsAnyAttribute") {}
+object XsMixed extends XsTypeSymbol("XsMixed") {}
 
 class ReferenceTypeSymbol(name: String) extends XsTypeSymbol(name) {
   var decl: TypeDecl = null

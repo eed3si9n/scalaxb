@@ -23,6 +23,7 @@ object PurchaseOrderUsage {
     testAny
     testAnyChoice
     testAnyAttribute
+    testMixed
     true
   }
   
@@ -281,5 +282,18 @@ object PurchaseOrderUsage {
       case Element2(Seq(DataRecord("http://www.w3.org/1999/xhtml", "href", "4Q99.html"))) =>
       case _ => error("match failed: " + obj2.toString)
     }    
+  }
+  
+  def testMixed {
+    val subject = <foo xmlns="http://www.example.com/IPO"
+        xmlns:ipo="http://www.example.com/IPO">foo<Choice2>2</Choice2>bar</foo>
+    val obj = Element3.fromXML(subject)
+    obj match {
+      case Element3(Seq(DataRecord("http://www.example.com/IPO", "Choice2", 2)),
+        Seq(DataRecord(null, null, "foo"), _, DataRecord(null, null, "bar"))) =>
+      case _ => error("match failed: " + obj.toString)
+    }
+    val document = obj.toXML(null, "foo", subject.scope)
+    println(document)
   }
 }

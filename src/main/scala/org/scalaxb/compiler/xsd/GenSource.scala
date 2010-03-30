@@ -44,6 +44,7 @@ class GenSource(schema: SchemaDecl,
   val interNamespaceChoiceTypes = mutable.ListBuffer.empty[XsTypeSymbol]
   var argNumber = 0
   val schemas = context.schemas.toList
+  val INTERNAL_NAMESPACE = "http://scalaxb.org/internal"
 
   abstract class Cardinality
   object Optional extends Cardinality
@@ -116,6 +117,7 @@ class GenSource(schema: SchemaDecl,
     case XsInterNamespace => defaultSuperName
     case XsAny => "org.scalaxb.rt.DataRecord[scala.xml.Node]"
     case XsDataRecord => "org.scalaxb.rt.DataRecord[Any]"
+    case XsMixed => "org.scalaxb.rt.DataRecord[Any]"
     case XsAnyAttribute => "org.scalaxb.rt.DataRecord[String]"
     case symbol: BuiltInSimpleTypeSymbol => symbol.name
     case ReferenceTypeSymbol(decl: SimpleTypeDecl) => buildTypeName(decl)
@@ -321,20 +323,23 @@ object {name} {{
     else
       buildSuperNames(decl)
       
-    val childElements = flattenElements(decl, name)
+    val childElements = flattenElements(decl, name) ::: flattenMixed(decl)
     val attributes = flattenAttributes(decl)    
     val list = List.concat[Decl](childElements, attributes)
     val paramList = list.map(buildParam(_))
     val argList = list map {
       case any: AnyAttributeDecl => buildArgForAnyAttribute(decl)
+      case ElemDecl(INTERNAL_NAMESPACE, "mixed", XsMixed, _, _, _, _) =>
+        buildArgForMixed(decl)
       case x => buildArg(x)
     }
     
     def superNamesString = superNames.mkString(" with ")
     
-    val hasSequenceParam = paramList.size == 1 &&
-      paramList.head.cardinality == Multiple &&
-      paramList.head.attribute == false
+    val hasSequenceParam = (paramList.size == 1) &&
+      (paramList.head.cardinality == Multiple) &&
+      (!paramList.head.attribute) &&
+      (!decl.mixed)
     
     def paramsString = if (hasSequenceParam)
       makeParamName(paramList.head.name) + ": " + buildTypeName(paramList.head.typeSymbol) + "*"      
@@ -357,7 +362,9 @@ object {name} {{
         
     val childElemParams = paramList.filter(!_.attribute)
     
-    def childString = decl.content.content match {
+    def childString = if (decl.mixed)
+      "mixed.map(x => x.toXML(x.namespace, x.key, scope)): _*"
+    else decl.content.content match {
       case SimpContRestrictionDecl(base: XsTypeSymbol, _) => "scala.xml.Text(value.toString)"
       case SimpContExtensionDecl(base: XsTypeSymbol, _) =>   "scala.xml.Text(value.toString)"
       case _ =>  childElemParams.map(x => 
@@ -580,7 +587,6 @@ object {name} {{
           symbol.toString + " with " + symbol.decl.toString)
     case XsAny => buildArgForAny(elem.namespace, elem.name,
       elem.defaultValue, elem.fixedValue, elem.minOccurs, elem.maxOccurs)
-          
     case _ => error("GenSource#buildArg: " + elem.toString +
       " Invalid type " + elem.typeSymbol.getClass.toString + ": " + elem.typeSymbol.toString)
   }
@@ -709,6 +715,15 @@ object {name} {{
     indent(4) + "  }" + newline +
     indent(4) + "case _ => Nil" + newline +
     indent(3) + "}" 
+  }
+  
+  def buildArgForMixed(parent: ComplexTypeDecl): String = {
+    "(node.child.map {" + newline +
+    indent(3) + "case x: scala.xml.Elem =>" + newline +
+    indent(3) + "  org.scalaxb.rt.DataRecord(x.scope.getURI(x.prefix), x.label, x)" + newline +
+    indent(3) + "case x: scala.xml.Text =>" + newline +
+    indent(3) + "  org.scalaxb.rt.DataRecord(null, null, x.text)" + newline +
+    indent(2) + "}).toList"
   }
   
   def buildArgForAny(namespace: String, elementLabel: String,
@@ -901,24 +916,20 @@ object {name} {{
   def flattenElements(compositor: HasParticle, name: String): List[ElemDecl] =
       compositor match {
     case SequenceDecl(particles: List[_], _, _) =>
-      val list = for (particle <- particles)
-        yield particle match {
-          case compositor2: HasParticle => flattenElements(compositor2, "")
-          case elem: ElemDecl           => List(elem)
-          case ref: ElemRef             => List(buildElement(ref))
-          case any: AnyDecl             => List(buildAnyRef(any))
-        }
-      list.flatten
-    
+      particles flatMap {
+        case compositor2: HasParticle => flattenElements(compositor2, "")
+        case elem: ElemDecl           => List(elem)
+        case ref: ElemRef             => List(buildElement(ref))
+        case any: AnyDecl             => List(buildAnyRef(any))        
+      }
+      
     case AllDecl(particles: List[_], _, _) =>
-      val list = for (particle <- particles)
-        yield particle match {
-          case compositor2: HasParticle => flattenElements(compositor2, "")
-          case elem: ElemDecl           => List(toOptional(elem))
-          case ref: ElemRef             => List(buildElement(ref))
-        }
-      list.flatten
-    
+      particles flatMap {
+        case compositor2: HasParticle => flattenElements(compositor2, "")
+        case elem: ElemDecl           => List(toOptional(elem))
+        case ref: ElemRef             => List(buildElement(ref))        
+      }
+          
     case choice: ChoiceDecl =>
       List(buildChoiceRef(choice))
   }
@@ -950,7 +961,7 @@ object {name} {{
           if schema.topElems.contains(name))
         yield schema.topElems(name)) match {
         case x :: xs => x
-        case Nil     => error("Element not found: {" + namespace + "}:" + name)
+        case Nil     => error("Element not found: {" + namespace + "}" + name)
       }
   
   def buildElement(ref: ElemRef) = {
@@ -999,6 +1010,11 @@ object {name} {{
   def buildAnyRef(any: AnyDecl) =
     ElemDecl(schema.targetNamespace, "any", XsAny, None, None,
       any.minOccurs, any.maxOccurs)
+      
+  def flattenMixed(decl: ComplexTypeDecl) = if (decl.mixed)
+    List(ElemDecl(INTERNAL_NAMESPACE, "mixed", XsMixed, None, None, 0, Integer.MAX_VALUE))
+  else
+    Nil
     
   def flattenAttributes(decl: ComplexTypeDecl): List[AttributeLike] =
     decl.content.content.attributes ::: (decl.content.content match {

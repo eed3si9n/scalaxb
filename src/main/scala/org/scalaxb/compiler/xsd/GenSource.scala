@@ -278,7 +278,7 @@ object {name} {{
 trait {name}{extendString} {{
   {
   val vals = for (param <- paramList)
-    yield  "val " + param + ";"
+    yield  "val " + param
   vals.mkString(newline + indent(1))}
 }}
 
@@ -322,9 +322,7 @@ object {name} {{
       buildSuperNames(decl)
       
     val childElements = flattenElements(decl, name)
-    val attributes = flattenAttributes(decl)
-    log("GenSource#makeCaseClassWithType: > attributes " + attributes)
-    
+    val attributes = flattenAttributes(decl)    
     val list = List.concat[Decl](childElements, attributes)
     val paramList = list.map(buildParam(_))
     val argList = list map {

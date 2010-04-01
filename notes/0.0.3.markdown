@@ -1,0 +1,11 @@
+- Implements options to pick different package names for namespaces. 
+- Implements support for `<any>`, `<anyAttribute>`, and mixed content.
+- Implements round trip from XML document to case class object, and back to XML document.
+
+The following code demonstrates a round trip:
+
+    val subject = <foo xmlns="urn:example:ipo"
+      xmlns:ipo="urn:example:ipo">
+        foo<Choice2>2</Choice2>bar</foo>
+    val obj = Element3.fromXML(subject)
+    val document = obj.toXML(null, "foo", subject.scope)

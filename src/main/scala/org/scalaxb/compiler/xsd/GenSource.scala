@@ -108,11 +108,11 @@ class GenSource(schema: SchemaDecl,
     (for (schema <- schemas;
           if schema.targetNamespace == namespace;
           if schema.types.contains(name))
-        yield schema.types(name)) match {
+      yield schema.types(name)) match {
         case x :: xs => x
         case Nil     => error("Type not found: {" + namespace + "}:" + name)
       }
-      
+  
   def buildTypeName(typeSymbol: XsTypeSymbol): String = typeSymbol match {
     case XsInterNamespace => defaultSuperName
     case XsAny => "org.scalaxb.rt.DataRecord[scala.xml.Node]"
@@ -172,14 +172,14 @@ class GenSource(schema: SchemaDecl,
     }
     types
   }
-  
+          
   def containsForeignType(particles: List[Decl]) =
     particles.exists(_ match {
         case ref: ElemRef => ref.namespace != schema.targetNamespace
         case _ => false
       }
     )
-
+  
   def makeChoiceTrait(choice: ChoiceDecl): scala.xml.Node = {
     val name = makeTypeName(context.choiceNames(choice))
     val simpleTypeParticles = particlesWithSimpleType(choice.particles)
@@ -198,32 +198,9 @@ class GenSource(schema: SchemaDecl,
           name + "Sequence" + sequenceNumber, false, false,
           ComplexContentDecl.fromCompositor(x, Nil), Nil))
     val hasForeign = containsForeignType(choice.particles)
-        
-    def makeFromXmlCaseEntry(elem: ElemDecl) = 
-      "case x: scala.xml.Elem if (x.label == " + quote(elem.name) + " && " + newline + 
-        indent(4) + "x.scope.getURI(x.prefix) == " + quote(elem.namespace) + ") =>" + newline +
-        indent(3) + "org.scalaxb.rt.DataRecord(x.scope.getURI(x.prefix), x.label, " +
-      (if (elem.typeSymbol == XsAny)
-        "x"      
-      else if (simpleTypeParticles.contains(elem))  
-        buildArg(simpleTypeParticles(elem), "x", None, None, 1, 1)
-      else
-        buildTypeName(elem.typeSymbol) + ".fromXML(x)"
-      ) + ")"
+    val cases = fromXmlCases(choice.particles, 2)
     
-    def makeFromXmlCaseEntryForAny = 
-      "case x: scala.xml.Elem =>" + newline +
-        indent(3) + "org.scalaxb.rt.DataRecord(x.scope.getURI(x.prefix), x.label, x)"
-      
-    val fromXmlCases = (choice.particles partialMap {
-      case elem: ElemDecl => makeFromXmlCaseEntry(elem)
-      case ref: ElemRef   => makeFromXmlCaseEntry(buildElement(ref))
-    }) ::: (if (choice.particles.exists(_.isInstanceOf[AnyDecl]))
-      List(makeFromXmlCaseEntryForAny)
-    else
-      List())
-    
-    if (fromXmlCases.size == 0)
+    if (cases.isEmpty)
       <source>
 { if (!hasForeign)
     "trait " + name + " extends " + defaultSuperName
@@ -242,7 +219,7 @@ object {name} {{
 }
 object {name} {{  
   def fromXML: PartialFunction[scala.xml.NodeSeq, org.scalaxb.rt.DataRecord[Any]] = {{
-    { fromXmlCases.mkString(newline + indent(2)) }
+    { cases.mkString(newline + indent(2)) }
   }}
 }}
 {
@@ -322,15 +299,16 @@ object {name} {{
       List(defaultSuperName, buildTypeName(decl))
     else
       buildSuperNames(decl)
-      
-    val childElements = flattenElements(decl, name) ::: flattenMixed(decl)
+    
+    val particles = flattenElements(decl, name)
+    val childElements = particles ::: flattenMixed(decl)
     val attributes = flattenAttributes(decl)    
     val list = List.concat[Decl](childElements, attributes)
     val paramList = list.map(buildParam(_))
     val argList = list map {
       case any: AnyAttributeDecl => buildArgForAnyAttribute(decl)
       case ElemDecl(INTERNAL_NAMESPACE, "mixed", XsMixed, _, _, _, _) =>
-        buildArgForMixed(decl)
+        buildArgForMixed(particles)
       case x => buildArg(x)
     }
     
@@ -717,10 +695,9 @@ object {name} {{
     indent(3) + "}" 
   }
   
-  def buildArgForMixed(parent: ComplexTypeDecl): String = {
+  def buildArgForMixed(particles: List[Decl]): String = {
     "(node.child.map {" + newline +
-    indent(3) + "case x: scala.xml.Elem =>" + newline +
-    indent(3) + "  org.scalaxb.rt.DataRecord(x.scope.getURI(x.prefix), x.label, x)" + newline +
+    indent(3) + fromXmlCases(particles, 3).mkString(newline + indent(3)) + newline +
     indent(3) + "case x: scala.xml.Text =>" + newline +
     indent(3) + "  org.scalaxb.rt.DataRecord(null, null, x.text)" + newline +
     indent(2) + "}).toList"
@@ -763,6 +740,41 @@ object {name} {{
         "org.scalaxb.rt.DataRecord(" + newline +
           indent(4) + quote(namespace) + ", " + quote(elementLabel) + ", x)")
     }
+  }
+  
+  def fromXmlCases(particles: List[Decl], indentBase: Int) = {
+    def makeCaseEntry(elem: ElemDecl) = elem.typeSymbol match {
+      case ReferenceTypeSymbol(decl: ComplexTypeDecl) if choiceWrapper.keysIterator.contains(decl) =>
+        val typeName = buildTypeName(elem.typeSymbol)
+        "case x: scala.xml.Elem if " + typeName + ".fromXML.isDefinedAt(x) =>" + newline +
+        indent(indentBase + 1) + typeName + ".fromXML(x)"
+      case _ =>
+        "case x: scala.xml.Elem if (x.label == " + quote(elem.name) + " && " + newline + 
+          indent(indentBase + 2) + "x.scope.getURI(x.prefix) == " + quote(elem.namespace) + ") =>" + newline +
+          indent(indentBase + 1) + "org.scalaxb.rt.DataRecord(x.scope.getURI(x.prefix), x.label, " +
+        (elem.typeSymbol match {
+          case XsAny => "x"
+          case symbol: BuiltInSimpleTypeSymbol =>
+            buildArg(symbol, "x", None, None, 1, 1)
+          case ReferenceTypeSymbol(decl@SimpleTypeDecl(_, _)) =>
+            buildArg(baseType(decl), "x", None, None, 1, 1)
+          case _ =>
+            buildTypeName(elem.typeSymbol) + ".fromXML(x)"
+        }) + ")"
+    }
+    
+    def makeListForAny = if (particles.exists(x => x.isInstanceOf[AnyDecl] ||
+        (x.isInstanceOf[ElemDecl] && (x.asInstanceOf[ElemDecl].typeSymbol == XsAny)) ||
+        (x.isInstanceOf[ElemRef] && (buildElement(x.asInstanceOf[ElemRef]).typeSymbol == XsAny))  ))
+      List("case x: scala.xml.Elem =>" + newline +
+        indent(indentBase + 1) + "org.scalaxb.rt.DataRecord(x.scope.getURI(x.prefix), x.label, x)")
+    else
+      Nil
+    
+    particles.partialMap {
+      case elem: ElemDecl if elem.typeSymbol != XsAny => makeCaseEntry(elem)
+      case ref: ElemRef if buildElement(ref).typeSymbol != XsAny => makeCaseEntry(buildElement(ref))
+    } ::: makeListForAny   
   }
   
   def buildArg(typeSymbol: BuiltInSimpleTypeSymbol, selector: String,
@@ -814,7 +826,7 @@ object {name} {{
       pre + selector + ".text" + post
     }    
   }
-  
+    
   def quote(value: String) = "\"" + value + "\""
   
   def buildSuperNames(decl: ComplexTypeDecl) = {
@@ -1008,7 +1020,7 @@ object {name} {{
       that.defaultValue, that.fixedValue, 0, that.maxOccurs)
   
   def buildAnyRef(any: AnyDecl) =
-    ElemDecl(schema.targetNamespace, "any", XsAny, None, None,
+    ElemDecl(INTERNAL_NAMESPACE, "any", XsAny, None, None,
       any.minOccurs, any.maxOccurs)
       
   def flattenMixed(decl: ComplexTypeDecl) = if (decl.mixed)

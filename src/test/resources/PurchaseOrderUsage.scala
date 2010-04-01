@@ -290,7 +290,9 @@ object PurchaseOrderUsage {
     val obj = Element3.fromXML(subject)
     obj match {
       case Element3(Seq(DataRecord("http://www.example.com/IPO", "Choice2", 2)),
-        Seq(DataRecord(null, null, "foo"), _, DataRecord(null, null, "bar"))) =>
+        Seq(DataRecord(null, null, "foo"),
+          DataRecord("http://www.example.com/IPO", "Choice2", 2),
+          DataRecord(null, null, "bar"))) =>
       case _ => error("match failed: " + obj.toString)
     }
     val document = obj.toXML(null, "foo", subject.scope)

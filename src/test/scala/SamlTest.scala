@@ -37,7 +37,7 @@ class SamlTest extends SpecificationWithJUnit with CompilerMatcher {
     generated must compile(outdir = "./tmp")
   }
   
-  "ipo.scala file must compile together with SamlTest.scala" in {
+  "generated files must compile together with SamlTest.scala" in {
     (List("SamlUsage.allTests"),
      samlUsagescala :: generated) must evaluateTo(true,
        outdir = "./tmp")

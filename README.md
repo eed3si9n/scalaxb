@@ -42,45 +42,63 @@ Usage
       <schema_file>
             input schema to be converted
 
+Documents
+---------
+
+Further info is available at [scalaxb.org](http://scalaxb.org/).
+
 Example
 -------
 
 Suppose you have address.xsd:
 
-    <xs:schema targetNamespace="http://www.example.com/IPO"
-            xmlns="http://www.example.com/IPO"
-            xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    <schema targetNamespace="http://www.example.com/IPO"
+            xmlns="http://www.w3.org/2001/XMLSchema"
             xmlns:ipo="http://www.example.com/IPO">
-      <xs:complexType name="Address">
-        <xs:sequence>
-          <xs:element name="name"   type="xs:string"/>
-          <xs:element name="street" type="xs:string"/>
-          <xs:element name="city"   type="xs:string"/>
-        </xs:sequence>
-      </xs:complexType>
-
-      <xs:complexType name="USAddress">
-        <xs:complexContent>
-          <xs:extension base="ipo:Address">
-            <xs:sequence>
-              <xs:element name="state" type="xs:string"/>
-              <xs:element name="zip"   type="xs:positiveInteger"/>
-            </xs:sequence>
-          </xs:extension>
-        </xs:complexContent>
-      </xs:complexType>
-    </xs:schema>
+      <complexType name="Address">
+        <sequence>
+          <element name="name"   type="string"/>
+          <element name="street" type="string"/>
+          <element name="city"   type="string"/>
+        </sequence>
+      </complexType>
+    </schema>
 
 You then run the following:
 
     $ scalaxb address.xsd
   
-You get address.scala that contains case classes that can parse XML 
-documents conforming to the address.xsd:
+You get address.scala that contains case classes that can convert XML 
+documents conforming to the address.xsd into a case class object, and turn it back again
+into XML document:
 
     case class Address(name: String,
       street: String,
-      city: String) extends DataModel with Addressable {
+      city: String) extends org.scalaxb.rt.DataModel {
+  
+      def toXML(namespace: String, elementLabel: String): scala.xml.Node = {
+        var scope: scala.xml.NamespaceBinding = scala.xml.TopScope
+        scope = scala.xml.NamespaceBinding("xsi", "http://www.w3.org/2001/XMLSchema-instance", scope)
+        scope = scala.xml.NamespaceBinding("ipo", "http://www.example.com/IPO", scope)
+        scope = scala.xml.NamespaceBinding(null, "http://www.example.com/IPO", scope)
+        val node = toXML(namespace, elementLabel, scope)
+        node match {
+          case elem: scala.xml.Elem => elem % new scala.xml.PrefixedAttribute("xsi", "type",
+            "ipo:Address", elem.attributes)
+          case _ => node
+        }
+      } 
+  
+      def toXML(namespace: String, elementLabel: String, scope: scala.xml.NamespaceBinding): scala.xml.Node = {
+        val prefix = scope.getPrefix(namespace)
+        var attribute: scala.xml.MetaData  = scala.xml.Null
+        
+        scala.xml.Elem(prefix, elementLabel,
+          attribute, scope,
+          Seq(scala.xml.Elem(prefix, "name", scala.xml.Null, scope, scala.xml.Text(name.toString)),
+            scala.xml.Elem(prefix, "street", scala.xml.Null, scope, scala.xml.Text(street.toString)),
+            scala.xml.Elem(prefix, "city", scala.xml.Null, scope, scala.xml.Text(city.toString))).flatten: _*)
+      }
     }
 
     object Address {
@@ -89,49 +107,6 @@ documents conforming to the address.xsd:
           (node \ "street").text,
           (node \ "city").text) 
     }
-
-    trait Addressable {
-      val name: String;
-      val street: String;
-      val city: String;
-    }
-
-    object Addressable {
-      def fromXML(node: scala.xml.Node): Addressable = {
-        val typeName = (node \ "@{http://www.w3.org/2001/XMLSchema-instance}type").text    
-        val namespace = if (typeName.contains(':'))
-          node.scope.getURI(typeName.dropRight(typeName.length - typeName.indexOf(':')))
-        else
-          node.scope.getURI(null)
-      
-        val value = if (typeName.contains(':'))
-          typeName.drop(typeName.indexOf(':') + 1)
-        else
-          typeName
-    
-        (namespace, value) match {
-          case ("http://www.example.com/IPO", "USAddress") => USAddress.fromXML(node)
-          case _ => Address.fromXML(node)
-        }
-      }
-    }
-
-    case class USAddress(name: String,
-      street: String,
-      city: String,
-      state: String,
-      zip: Int) extends DataModel with Addressable {
-    }
-
-    object USAddress {
-      def fromXML(node: scala.xml.Node): USAddress =
-        USAddress((node \ "name").text,
-          (node \ "street").text,
-          (node \ "city").text,
-          (node \ "state").text,
-          (node \ "zip").text.toInt) 
-    }
-
 
 Bug Reporting
 -------------
@@ -148,3 +123,4 @@ Contacts
 --------
 
 - eed3si9n at gmail dot com
+- [@eed3si9n](http://twitter.com/eed3si9n)

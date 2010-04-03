@@ -10,8 +10,9 @@ case class DataRecord[+A](namespace: String, key: String, value: A) {
       scope: scala.xml.NamespaceBinding): scala.xml.Node = value match {
     case x: scala.xml.Node => x
     case x: DataModel => x.toXML(namespace, elementLabel, scope)
-    case _ => scala.xml.Elem(scope.getPrefix(namespace), elementLabel,
-      scala.xml.Null, scope, scala.xml.Text(value.toString))
+    case x: String if key == null => scala.xml.Text(x)
+    case x => scala.xml.Elem(scope.getPrefix(namespace), elementLabel,
+          scala.xml.Null, scope, scala.xml.Text(value.toString))
   }
 }
 
@@ -37,11 +38,14 @@ object Helper {
     cal
   }
   
-  def toString(value: Calendar) = {
+  def toString(value: java.util.GregorianCalendar) = {
     val xmlGregorian = typeFactory.newXMLGregorianCalendar(value)
     xmlGregorian.toString
   }
-
+  
+  def toString(value: Array[Byte]) =
+    (new sun.misc.BASE64Encoder()).encodeBuffer(value)
+  
   def toDuration(value: String) =
     typeFactory.newDuration(value)
   

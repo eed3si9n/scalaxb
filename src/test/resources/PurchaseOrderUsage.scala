@@ -24,6 +24,7 @@ object PurchaseOrderUsage {
     testAnyChoice
     testAnyAttribute
     testMixed
+    testDatedData
     true
   }
   
@@ -293,6 +294,21 @@ object PurchaseOrderUsage {
         Seq(DataRecord(null, null, "foo"),
           DataRecord("http://www.example.com/IPO", "Choice2", 2),
           DataRecord(null, null, "bar"))) =>
+      case _ => error("match failed: " + obj.toString)
+    }
+    val document = obj.toXML(null, "foo", subject.scope)
+    println(document)
+  }
+  
+  def testDatedData {
+    val subject = <foo xmlns="http://www.example.com/IPO"
+        xmlns:ipo="http://www.example.com/IPO">
+      <date>2010-02-06Z</date>
+      <data>QUJDREVGRw==</data>
+    </foo>
+    val obj = DatedData.fromXML(subject)
+    obj match {
+      case DatedData(_, _) =>
       case _ => error("match failed: " + obj.toString)
     }
     val document = obj.toXML(null, "foo", subject.scope)

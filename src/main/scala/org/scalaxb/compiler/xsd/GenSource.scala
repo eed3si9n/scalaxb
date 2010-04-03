@@ -486,19 +486,34 @@ object {name} {{
         quote(param.name) + ", scope))"    
   }
   
+  def buildToString(selector: String, typeSymbol: XsTypeSymbol): String = typeSymbol match {
+    case symbol: BuiltInSimpleTypeSymbol if (buildTypeName(symbol) == "java.util.GregorianCalendar") ||
+      (buildTypeName(symbol) == "Array[Byte]")  =>
+      "org.scalaxb.rt.Helper.toString(" + selector + ")"
+    case symbol: BuiltInSimpleTypeSymbol => selector + ".toString"
+    case ReferenceTypeSymbol(decl: SimpleTypeDecl) => buildToString(selector, decl)
+    case _ => selector + ".toString"
+  }
+  
+  def buildToString(selector: String, decl: SimpleTypeDecl): String = decl.content match {
+    case x: SimpTypRestrictionDecl => buildToString(selector, baseType(decl))
+    case x: SimpTypListDecl => selector + ".map(x => " + buildToString("x", baseType(decl)) + ").mkString(\" \")"
+    case _ => error("GenSource#buildToString Unsupported content " +  decl.content.toString)    
+  }
+  
   def buildXMLStringForSimpleType(param: Param) = param.cardinality match {
     case Single =>    
       "scala.xml.Elem(prefix, " + quote(param.name) + ", " +
-      "scala.xml.Null, scope, scala.xml.Text(" + makeParamName(param.name)  + ".toString))"
+      "scala.xml.Null, scope, scala.xml.Text(" + buildToString(makeParamName(param.name), param.typeSymbol) + "))"
     case Optional =>
       makeParamName(param.name) + " match {" + newline +
       indent(5) + "case Some(x) => Seq(scala.xml.Elem(prefix, " + quote(param.name) + ", " + 
-        "scala.xml.Null, scope, scala.xml.Text(" + makeParamName(param.name)  + ".toString)))" + newline +
+        "scala.xml.Null, scope, scala.xml.Text(" + buildToString("x", param.typeSymbol) + ")))" + newline +
       indent(5) + "case None => Seq()" + newline +
       indent(4) + "}"
     case Multiple =>
       makeParamName(param.name) + ".map(x => scala.xml.Elem(prefix, " + quote(param.name) + ", " +
-      "scala.xml.Null, scope, scala.xml.Text(x.toString)))"      
+      "scala.xml.Null, scope, scala.xml.Text(" + buildToString("x", param.typeSymbol) + ")))"      
   }
   
   def buildParam(decl: Decl): Param = decl match {
@@ -784,7 +799,7 @@ object {name} {{
     val (pre, post) = typeSymbol.name match {
       case "String"     => ("", "")
       case "javax.xml.datatype.Duration" => ("org.scalaxb.rt.Helper.toDuration(", ")")
-      case "java.util.Calendar" => ("org.scalaxb.rt.Helper.toCalendar(", ")")
+      case "java.util.GregorianCalendar" => ("org.scalaxb.rt.Helper.toCalendar(", ")")
       case "Boolean"    => ("", ".toBoolean")
       case "Int"        => ("", ".toInt")
       case "Long"       => ("", ".toLong")

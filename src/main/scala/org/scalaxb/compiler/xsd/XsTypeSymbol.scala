@@ -56,13 +56,13 @@ case class Restricts(sym: XsTypeSymbol) extends DerivSym
 
 object XsUnknown          extends BuiltInSimpleTypeSymbol("String") {}
 object XsDuration         extends BuiltInSimpleTypeSymbol("javax.xml.datatype.Duration") {}
-object XsDateTime         extends BuiltInSimpleTypeSymbol("java.util.Calendar") {}
-object XsTime             extends BuiltInSimpleTypeSymbol("java.util.Calendar") {}
-object XsDate             extends BuiltInSimpleTypeSymbol("java.util.Calendar") {}
-object XsGYearMonth       extends BuiltInSimpleTypeSymbol("java.util.Calendar") {}
-object XsGYear            extends BuiltInSimpleTypeSymbol("java.util.Calendar") {}
-object XsGDay             extends BuiltInSimpleTypeSymbol("java.util.Calendar") {}
-object XsGMonth           extends BuiltInSimpleTypeSymbol("java.util.Calendar") {}
+object XsDateTime         extends BuiltInSimpleTypeSymbol("java.util.GregorianCalendar") {}
+object XsTime             extends BuiltInSimpleTypeSymbol("java.util.GregorianCalendar") {}
+object XsDate             extends BuiltInSimpleTypeSymbol("java.util.GregorianCalendar") {}
+object XsGYearMonth       extends BuiltInSimpleTypeSymbol("java.util.GregorianCalendar") {}
+object XsGYear            extends BuiltInSimpleTypeSymbol("java.util.GregorianCalendar") {}
+object XsGDay             extends BuiltInSimpleTypeSymbol("java.util.GregorianCalendar") {}
+object XsGMonth           extends BuiltInSimpleTypeSymbol("java.util.GregorianCalendar") {}
 object XsBoolean          extends BuiltInSimpleTypeSymbol("Boolean") {}
 object XsFloat            extends BuiltInSimpleTypeSymbol("Float") {}
 object XsBase64Binary     extends BuiltInSimpleTypeSymbol("Array[Byte]") {}

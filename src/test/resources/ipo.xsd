@@ -164,6 +164,13 @@
       </choice>
     </complexType>
   </element>
-  
+
+  <complexType name="DatedData">
+    <sequence>
+      <element name="date"   type="dateTime"/>
+      <element name="data"   type="base64Binary"/>
+    </sequence>
+  </complexType>
+
   <attribute name="globalAttr" type="int"/>
 </schema>

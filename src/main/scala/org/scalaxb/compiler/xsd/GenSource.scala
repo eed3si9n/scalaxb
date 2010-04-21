@@ -183,7 +183,7 @@ class GenSource(schema: SchemaDecl,
   def makeChoiceTrait(choice: ChoiceDecl): scala.xml.Node = {
     val name = makeTypeName(context.choiceNames(choice))
     val simpleTypeParticles = particlesWithSimpleType(choice.particles)
-    val sequences = choice.particles partialMap {
+    val sequences = choice.particles collect {
       case seq: SequenceDecl => seq
     }
     
@@ -684,7 +684,7 @@ object {name} {{
   def buildSelector(nodeName: String): String = "(node \\ \"" + nodeName + "\")"
   
   def buildArgForAnyAttribute(parent: ComplexTypeDecl): String = {
-    val attributes = flattenAttributes(parent) partialMap {
+    val attributes = flattenAttributes(parent) collect {
       case attr: AttributeDecl   => attr
       case ref: AttributeRef     => buildAttribute(ref) 
     }
@@ -722,7 +722,7 @@ object {name} {{
       defaultValue: Option[String], fixedValue: Option[String],
       minOccurs: Int, maxOccurs: Int) = {
     
-    val selector = "(node.child.partialMap { case elem: scala.xml.Elem => elem })"
+    val selector = "(node.child.collect { case elem: scala.xml.Elem => elem })"
     
     def buildMatchStatement(noneValue: String, someValue: String) =
       selector + ".headOption match {" + newline +
@@ -731,7 +731,7 @@ object {name} {{
       indent(3) + "}"
     
     if (maxOccurs > 1) {
-      "(node.child.partialMap {" + newline +
+      "(node.child.collect {" + newline +
       indent(3) + "case x: scala.xml.Elem =>" + newline +
       indent(3) + "  org.scalaxb.rt.DataRecord(x.scope.getURI(x.prefix), x.label, x) }).toList"
     } else if (minOccurs == 0) {
@@ -786,7 +786,7 @@ object {name} {{
     else
       Nil
     
-    particles.partialMap {
+    particles.collect {
       case elem: ElemDecl if elem.typeSymbol != XsAny => makeCaseEntry(elem)
       case ref: ElemRef if buildElement(ref).typeSymbol != XsAny => makeCaseEntry(buildElement(ref))
     } ::: makeListForAny   

@@ -88,7 +88,7 @@ object Driver extends Module {
     val upperlimit = unsorted.size * unsorted.size
 
     sorted += xmlxsd
-    def containsAll(schemaLite: SchemaLite) = schemaLite.imports.partialMap {
+    def containsAll(schemaLite: SchemaLite) = schemaLite.imports.collect {
       case ImportDecl(Some(namespace: String), _) => schemaFiles(namespace)
     }.forall(file => sorted.contains(file))
     

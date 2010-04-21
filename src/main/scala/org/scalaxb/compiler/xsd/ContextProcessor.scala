@@ -42,7 +42,7 @@ class ContextProcessor(logger: Logger) extends ScalaNames {
   def processContext(context: XsdContext,
       packageNames: collection.Map[String, Option[String]]) {
     context.packageNames ++= packageNames
-    packageNames.valuesIterator.toList.removeDuplicates.map(
+    packageNames.valuesIterator.toList.distinct.map(
       pkg => context.typeNames(pkg) = mutable.ListMap.empty[ComplexTypeDecl, String]
       )
     
@@ -84,8 +84,8 @@ class ContextProcessor(logger: Logger) extends ScalaNames {
       typeNames(decl) = makeProtectedTypeName(decl, context)
     }
     
-    context.complexTypes ++= anonymousTypes.toList.removeDuplicates :::
-      namedTypes.toList.removeDuplicates
+    context.complexTypes ++= anonymousTypes.toList.distinct :::
+      namedTypes.toList.distinct
     
     def associateSubType(subType: ComplexTypeDecl, base: ComplexTypeDecl) {
       if (context.baseToSubs.contains(base))

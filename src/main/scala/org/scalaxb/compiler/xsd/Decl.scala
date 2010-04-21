@@ -630,7 +630,7 @@ object SequenceDecl {
 case class ChoiceDecl(particles: List[Decl],
   minOccurs: Int,
   maxOccurs: Int,
-  rand: Double = Math.random) extends CompositorDecl with HasParticle
+  rand: Double = math.random) extends CompositorDecl with HasParticle
 
 object ChoiceDecl {
   def fromXML(node: scala.xml.Node, config: ParserConfig) = {

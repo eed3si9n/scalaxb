@@ -76,11 +76,11 @@ trait CompilerMatcher {
         val origBootclasspath = settings.bootclasspath.value
         
         settings.bootclasspath.value = 
-          (origBootclasspath :: bootPathList).mkString(java.io.File.separator)
+          (origBootclasspath :: bootPathList).mkString(java.io.File.pathSeparator)
         
         val originalClasspath = settings.classpath.value
         settings.classpath.value =
-          classpathList.mkString(java.io.File.separator)
+          classpathList.mkString(java.io.File.pathSeparator)
         settings.outdir.value = outdir
         
         val interpreter = new Interpreter(settings)
@@ -117,7 +117,7 @@ trait CompilerMatcher {
       val settings = new Settings
       val origBootclasspath = settings.bootclasspath.value
       settings.bootclasspath.value = 
-        (origBootclasspath :: bootPathList).mkString(java.io.File.separator)
+        (origBootclasspath :: bootPathList).mkString(java.io.File.pathSeparator)
       settings.outdir.value = outdir
       
       val reporter = new ConsoleReporter(settings)

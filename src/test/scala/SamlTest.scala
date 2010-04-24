@@ -2,7 +2,7 @@ import org.specs._
 import java.io.{File}
 import org.scalaxb.compiler.xsd.{SchemaDecl}
 
-class SamlTest extends SpecificationWithJUnit with CompilerMatcher {
+object SamlTest extends SpecificationWithJUnit with CompilerMatcher {
   val module = org.scalaxb.compiler.xsd.Driver
   val xmldsigcoreschemaxsd = new File("src/test/resources/xmldsig-core-schema.xsd")
   val xencschemaxsd = new File("src/test/resources/xenc-schema.xsd")

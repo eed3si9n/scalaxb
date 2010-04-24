@@ -2,7 +2,7 @@ import org.specs._
 import java.io.{File}
 import org.scalaxb.compiler.xsd.{SchemaDecl}
 
-class ImportTest extends SpecificationWithJUnit with CompilerMatcher {
+object ImportTest extends SpecificationWithJUnit with CompilerMatcher {
   val module = org.scalaxb.compiler.xsd.Driver
   val ipoxsd    = new File("src/test/resources/ipo.xsd")
   val reportxsd = new File("src/test/resources/report.xsd")

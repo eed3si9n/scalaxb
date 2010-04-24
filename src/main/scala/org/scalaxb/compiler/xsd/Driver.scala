@@ -83,7 +83,8 @@ object Driver extends Module {
     val xmlxsd = new File("xml.xsd")
     schemaFiles += (XML_URI -> xmlxsd)
     
-    val unsorted = mutable.ListBuffer.empty[File] ++= files
+    val unsorted = mutable.ListBuffer.empty[File]
+    unsorted.appendAll(files)
     val sorted = mutable.ListBuffer.empty[File]
     val upperlimit = unsorted.size * unsorted.size
 

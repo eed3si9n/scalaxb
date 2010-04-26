@@ -18,9 +18,17 @@ Install git.
 
   http://git-scm.com/
 
-Download and install simple-build-tool (sbt) from 
+Download and install simple-build-tool (sbt):
 
-  http://code.google.com/p/simple-build-tool/
+  http://code.google.com/p/simple-build-tool/wiki/Build
+
+Build the latest 0.7.4-SNAPSHOT from source:
+
+  $ git clone git://github.com/harrah/xsbt.git
+  $ cd xsbt
+  $ sbt update proguard "project Simple Build Tool" publish-local
+  
+Grab scalaxb's source and build:
    
   $ git clone git://github.com/eed3si9n/scalaxb.git scalaxb
   $ cd scalaxb

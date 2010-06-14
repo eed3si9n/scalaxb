@@ -26,6 +26,7 @@ object PurchaseOrderUsage {
     testAnyAttribute
     testMixed
     testDatedData
+    testNillable
   
     true
   }
@@ -329,6 +330,23 @@ object PurchaseOrderUsage {
       case DatedData(_, _) =>
       case _ => error("match failed: " + obj.toString)
     }
+    val document = obj.toXML(null, "foo", subject.scope)
+    println(document)
+  }
+  
+  def testNillable {
+    val subject = <foo xmlns="http://www.example.com/IPO"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xmlns:ipo="http://www.example.com/IPO">
+      <price xsi:nil="true" />
+      <shipTo xsi:nil="true" />
+    </foo>
+    val obj = NillableTest.fromXML(subject)
+    obj match {
+      case NillableTest(None, None) =>
+      case _ => error("match failed: " + obj.toString)
+    }
+    
     val document = obj.toXML(null, "foo", subject.scope)
     println(document)
   }

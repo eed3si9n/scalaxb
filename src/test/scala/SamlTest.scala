@@ -31,7 +31,7 @@ object SamlTest extends SpecificationWithJUnit with CompilerMatcher {
       ("http://www.w3.org/2001/04/xmlenc#", Some("org.w3.xmlenc")),
       ("urn:oasis:names:tc:SAML:2.0:assertion", Some("org.xml.saml2.assertion")),
       ("urn:oasis:names:tc:SAML:2.0:metadata", Some("org.xml.saml2.metadata"))  
-        ) )
+        ), None )
   
   "xmldsig-core-schema.scala file must compile" in {
     generated must compile(outdir = "./tmp")

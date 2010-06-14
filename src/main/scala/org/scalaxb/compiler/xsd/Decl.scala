@@ -381,7 +381,8 @@ object AttributeDecl {
 case class ElemRef(namespace: String,
   name: String,
   minOccurs: Int,
-  maxOccurs: Int) extends Decl with Particle
+  maxOccurs: Int,
+  nillable: Option[Boolean]) extends Decl with Particle
 
 object ElemRef {
   def fromXML(node: scala.xml.Node, config: ParserConfig) = {
@@ -389,7 +390,12 @@ object ElemRef {
     val minOccurs = CompositorDecl.buildOccurrence((node \ "@minOccurs").text)
     val maxOccurs = CompositorDecl.buildOccurrence((node \ "@maxOccurs").text)
     val (namespace, typeName) = TypeSymbolParser.splitTypeName(ref, config)
-    ElemRef(namespace, typeName, minOccurs, maxOccurs)
+    val nillable = (node \ "@nillable").headOption match {
+      case None    => None
+      case Some(x) => Some(x.text == "true") 
+    }
+    
+    ElemRef(namespace, typeName, minOccurs, maxOccurs, nillable)
   }
 }
 
@@ -399,7 +405,8 @@ case class ElemDecl(namespace: String,
   defaultValue: Option[String],
   fixedValue: Option[String],  
   minOccurs: Int,
-  maxOccurs: Int) extends Decl with Particle
+  maxOccurs: Int,
+  nillable: Option[Boolean]) extends Decl with Particle
 
 object ElemDecl {
   def fromXML(node: scala.xml.Node, config: ParserConfig) = {
@@ -435,9 +442,13 @@ object ElemDecl {
     }      
     val minOccurs = CompositorDecl.buildOccurrence((node \ "@minOccurs").text)
     val maxOccurs = CompositorDecl.buildOccurrence((node \ "@maxOccurs").text)
+    val nillable = (node \ "@nillable").headOption match {
+      case None    => None
+      case Some(x) => Some(x.text == "true") 
+    }
     
     val elem = ElemDecl(config.targetNamespace, 
-      name, typeSymbol, defaultValue, fixedValue, minOccurs, maxOccurs)
+      name, typeSymbol, defaultValue, fixedValue, minOccurs, maxOccurs, nillable)
     config.elemList += elem
     elem
   }

@@ -19,6 +19,7 @@ case class DataRecord[+A](namespace: String, key: String, value: A) {
 case class ElemName(namespace: String, name: String) {
   var node: scala.xml.Node = _
   def text = node.text
+  def nil = Helper.isNil(node)
 }
 
 trait ElemNameParser[A] extends scala.util.parsing.combinator.Parsers {
@@ -121,4 +122,10 @@ object Helper {
     
   def toURI(value: String) =
     java.net.URI.create(value)
+    
+  def isNil(node: scala.xml.Node) =
+    (node \ "@{http://www.w3.org/2001/XMLSchema-instance}nil").headOption match {
+      case None    => false
+      case Some(x) => x.text == "true" 
+    }
 }

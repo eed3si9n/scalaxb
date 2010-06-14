@@ -173,4 +173,14 @@
   </complexType>
 
   <attribute name="globalAttr" type="int"/>
+
+  <element name="NillableTest">
+    <complexType>
+      <sequence>
+        <element name="price" type="positiveInteger" nillable="true"/>
+        <element name="shipTo" type="ipo:Address" nillable="true"/>
+      </sequence>
+    </complexType>
+  </element>
+  
 </schema>

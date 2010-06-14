@@ -67,12 +67,19 @@ trait Module extends Logger {
     if (paramParser.parse(args))
       processFiles(files.map(file =>
           (file, buildOutputFile(file, config.outdir))),
-          config.packageNames
+          config.packageNames,
+          None
         )
   }
   
   def processFiles(filePairs: Seq[(File, File)],
-      packageNames: collection.Map[String, Option[String]]) = {
+      packageNames: collection.Map[String, Option[String]],
+      verbose: Option[Boolean]) = {
+    verbose match {
+      case None    =>
+      case Some(x) => config.verbose = x
+    }
+    
     val files = filePairs.map(_._1)
     files.foreach(file => if (!file.exists)
       error("file not found: " + file.toString))
@@ -109,9 +116,10 @@ trait Module extends Logger {
   
   def packageName(schema: Schema, context: Context): Option[String]
   
-  def process(file: File, output: File, packageName: Option[String]) =
+  def process(file: File, output: File, packageName: Option[String],
+      verbose: Option[Boolean]) =
     processFiles(List((file, output)),
-      Map[String, Option[String]]((null, packageName)))
+      Map[String, Option[String]]((null, packageName)), verbose)
   
   def sortByDependency(files: Seq[File]): Seq[File] =
     files

@@ -47,20 +47,31 @@ class GenSource(schema: SchemaDecl,
   val INTERNAL_NAMESPACE = "http://scalaxb.org/internal"
 
   abstract class Cardinality
-  object Optional extends Cardinality
-  object Single extends Cardinality
-  object Multiple extends Cardinality
+  case object Optional extends Cardinality
+  case object Single extends Cardinality
+  case object Multiple extends Cardinality
   
   case class Param(namespace: String,
     name: String,
     typeSymbol: XsTypeSymbol,
     cardinality: Cardinality,
+    nillable: Boolean,
     attribute: Boolean) {
     
-    override def toString(): String = cardinality match {
-      case Single   => makeParamName(name) + ": " + buildTypeName(typeSymbol)
-      case Optional => makeParamName(name) + ": Option[" + buildTypeName(typeSymbol) + "]"
-      case Multiple => makeParamName(name) + ": Seq[" + buildTypeName(typeSymbol) + "]"
+    def toScalaCode: String = {
+      val base = buildTypeName(typeSymbol)
+      val typeName = cardinality match {
+        case Single   =>
+          if (nillable) "Option[" + base + "]"
+          else base
+        case Optional => "Option[" + base + "]"
+        case Multiple => 
+          "Seq[" + base + "]"
+          // if (nillable) "Option[Seq[" + base + "]]"
+          // else "Seq[" + base + "]"
+      }
+      
+      makeParamName(name) + ": " + typeName
     }
   }
 
@@ -154,16 +165,16 @@ class GenSource(schema: SchemaDecl,
   def particlesWithSimpleType(particles: List[Decl]) = {
     val types = mutable.ListMap.empty[ElemDecl, BuiltInSimpleTypeSymbol]
     for (particle <- particles) particle match {
-      case elem@ElemDecl(_, _, symbol: BuiltInSimpleTypeSymbol, _, _, _, _) =>
+      case elem@ElemDecl(_, _, symbol: BuiltInSimpleTypeSymbol, _, _, _, _, _) =>
         types += (elem -> symbol)
-      case elem@ElemDecl(_, _, ReferenceTypeSymbol(decl@SimpleTypeDecl(_, _)), _, _, _, _) =>
+      case elem@ElemDecl(_, _, ReferenceTypeSymbol(decl@SimpleTypeDecl(_, _)), _, _, _, _, _) =>
         types += (elem -> baseType(decl))
       case ref: ElemRef =>
         val elem = buildElement(ref)
         elem match {
-          case ElemDecl(_, _, symbol: BuiltInSimpleTypeSymbol, _, _, _, _) =>
+          case ElemDecl(_, _, symbol: BuiltInSimpleTypeSymbol, _, _, _, _, _) =>
             types += (elem -> symbol)
-          case ElemDecl(_, _, ReferenceTypeSymbol(decl@SimpleTypeDecl(_, _)), _, _, _, _) =>
+          case ElemDecl(_, _, ReferenceTypeSymbol(decl@SimpleTypeDecl(_, _)), _, _, _, _, _) =>
             types += (elem -> baseType(decl))
           case _ => // do nothing
         }
@@ -201,7 +212,7 @@ class GenSource(schema: SchemaDecl,
 trait {name}{extendString} {{
   {
   val vals = for (param <- paramList)
-    yield  "val " + param
+    yield  "val " + param.toScalaCode
   vals.mkString(newline + indent(1))}
 }}
 
@@ -274,7 +285,7 @@ object {name} {{
     def paramsString = if (hasSequenceParam)
       makeParamName(paramList.head.name) + ": " + buildTypeName(paramList.head.typeSymbol) + "*"      
     else
-      paramList.map(_.toString).mkString("," + newline + indent(1))
+      paramList.map(_.toScalaCode).mkString("," + newline + indent(1))
     
     val simpleFromXml: Boolean = decl.content.isInstanceOf[SimpleContentDecl]
     
@@ -464,8 +475,16 @@ case class {name}({paramsString}) extends {superNamesString} {{
   
   def buildXMLStringForComplexType(param: Param) = param.cardinality match {
     case Single =>
-      makeParamName(param.name) + ".toXML(" + quote(param.namespace) + "," + 
-        quote(param.name)  + ", scope)"
+      if (param.nillable)
+        makeParamName(param.name) + " match {" + newline +
+        indent(5) + "case Some(x) => x.toXML(" + quote(param.namespace) + "," + 
+          quote(param.name) + ", scope)" + newline +
+        indent(5) + "case None =>   Seq(scala.xml.Elem(prefix, " + quote(param.name) + ", " + 
+          "scala.xml.Attribute(\"xsi\", \"nil\", \"true\", scala.xml.Null), scope, Seq(): _*))" + newline +
+        indent(4) + "}"
+      else
+        makeParamName(param.name) + ".toXML(" + quote(param.namespace) + "," + 
+          quote(param.name)  + ", scope)"
     case Optional =>
       makeParamName(param.name) + " match {" + newline +
       indent(5) + "case Some(x) => x.toXML(" + quote(param.namespace) + "," + 
@@ -494,8 +513,16 @@ case class {name}({paramsString}) extends {superNamesString} {{
   
   def buildXMLStringForSimpleType(param: Param) = param.cardinality match {
     case Single =>    
-      "scala.xml.Elem(prefix, " + quote(param.name) + ", " +
-      "scala.xml.Null, scope, scala.xml.Text(" + buildToString(makeParamName(param.name), param.typeSymbol) + "))"
+      if (param.nillable)
+        makeParamName(param.name) + " match {" + newline +
+        indent(5) + "case Some(x) => Seq(scala.xml.Elem(prefix, " + quote(param.name) + ", " + 
+          "scala.xml.Null, scope, scala.xml.Text(" + buildToString("x", param.typeSymbol) + ")))" + newline +
+        indent(5) + "case None =>   Seq(scala.xml.Elem(prefix, " + quote(param.name) + ", " + 
+          "scala.xml.Attribute(\"xsi\", \"nil\", \"true\", scala.xml.Null), scope, Seq(): _*))" + newline +
+        indent(4) + "}"
+      else
+        "scala.xml.Elem(prefix, " + quote(param.name) + ", " +
+        "scala.xml.Null, scope, scala.xml.Text(" + buildToString(makeParamName(param.name), param.typeSymbol) + "))"
     case Optional =>
       makeParamName(param.name) + " match {" + newline +
       indent(5) + "case Some(x) => Seq(scala.xml.Elem(prefix, " + quote(param.name) + ", " + 
@@ -516,23 +543,24 @@ case class {name}({paramsString}) extends {superNamesString} {{
   }
     
   def buildParam(elem: ElemDecl): Param = {
-    val cardinality = if (elem.maxOccurs > 1)
-      Multiple
-    else if (elem.minOccurs == 0)
-      Optional
-    else
-      Single
+    val cardinality = if (elem.maxOccurs > 1) Multiple
+    else if (elem.minOccurs == 0) Optional
+    else Single
     
     val symbol = elem.typeSymbol match {
       case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
-        if (compositorWrapper.keysIterator.contains(decl))
-          XsDataRecord
-        else
-          elem.typeSymbol
+        if (compositorWrapper.keysIterator.contains(decl)) XsDataRecord
+        else elem.typeSymbol
       case _ => elem.typeSymbol
     }
-        
-    Param(elem.namespace, elem.name, symbol, cardinality, false)
+    val nillable = elem.nillable match {
+      case None    => false
+      case Some(x) => x
+    }
+    
+    val retval = Param(elem.namespace, elem.name, symbol, cardinality, nillable, false)
+    log("GenSource#buildParam:  " + retval)
+    retval
   }
   
   def buildParam(attr: AttributeDecl): Param = {
@@ -541,11 +569,13 @@ case class {name}({paramsString}) extends {superNamesString} {{
     else
       Single
     
-    Param(attr.namespace, attr.name, attr.typeSymbol, cardinality, true)
+    val retval = Param(attr.namespace, attr.name, attr.typeSymbol, cardinality, false, true)
+    log("GenSource#buildParam:  " + retval)
+    retval
   }
   
   def buildParam(any: AnyAttributeDecl): Param =
-    Param(null, "anyAttribute", XsAnyAttribute, Multiple, true)
+    Param(null, "anyAttribute", XsAnyAttribute, Multiple, false, true)
     
   def buildConverter(seq: SequenceDecl): String = {
     val name = makeTypeName(context.compositorNames(seq))
@@ -722,9 +752,11 @@ case class {name}({paramsString}) extends {superNamesString} {{
     
   def buildArg(elem: ElemDecl, pos: Int): String = elem.typeSymbol match {
     case symbol: BuiltInSimpleTypeSymbol => buildArg(symbol,
-      buildSelector(pos), elem.defaultValue, elem.fixedValue, elem.minOccurs, elem.maxOccurs)
+      buildSelector(pos), elem.defaultValue, elem.fixedValue,
+      elem.minOccurs, elem.maxOccurs, elem.nillable)
     case ReferenceTypeSymbol(decl: SimpleTypeDecl) =>  buildArg(decl,
-      buildSelector(pos), elem.defaultValue, elem.fixedValue, elem.minOccurs, elem.maxOccurs) 
+      buildSelector(pos), elem.defaultValue, elem.fixedValue,
+      elem.minOccurs, elem.maxOccurs, elem.nillable) 
     case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>  buildArg(elem, decl, buildSelector(pos))
     case XsAny => buildArgForAny(elem.namespace, elem.name,
       elem.defaultValue, elem.fixedValue, elem.minOccurs, elem.maxOccurs)
@@ -761,7 +793,12 @@ case class {name}({paramsString}) extends {superNamesString} {{
         indent(4) + "case Some(x) => Some(" +  typeName + ".fromXML(x.node))" + newline +
         indent(3) + "}"
       else
-        typeName + ".fromXML(" + selector + ".node)" 
+        elem.nillable match {
+          case Some(true) =>
+            "if (" + selector + ".nil) None" + newline +
+            indent(3) + "else Some(" +  typeName + ".fromXML(" + selector + ".node))" + newline
+          case _ => typeName + ".fromXML(" + selector + ".node)" 
+        }
     } // if-else
   }
   
@@ -776,11 +813,11 @@ case class {name}({paramsString}) extends {superNamesString} {{
   def buildArg(attr: AttributeDecl): String = attr.typeSymbol match {
     case symbol: BuiltInSimpleTypeSymbol =>
       buildArg(symbol, buildSelector(attr), attr.defaultValue, attr.fixedValue,
-        toMinOccurs(attr), 1)
+        toMinOccurs(attr), 1, None)
         
     case ReferenceTypeSymbol(decl: SimpleTypeDecl) =>
       buildArg(decl, buildSelector(attr), attr.defaultValue, attr.fixedValue,
-        toMinOccurs(attr), 1)    
+        toMinOccurs(attr), 1, None)    
     
     case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
       error("GenSource: Attribute with complex type " + decl.toString)
@@ -790,12 +827,12 @@ case class {name}({paramsString}) extends {superNamesString} {{
 
   def buildArg(decl: SimpleTypeDecl, selector: String,
       defaultValue: Option[String], fixedValue: Option[String],
-      minOccurs: Int, maxOccurs: Int): String = decl.content match {  
+      minOccurs: Int, maxOccurs: Int, nillable: Option[Boolean]): String = decl.content match {  
     
     case SimpTypRestrictionDecl(base: BuiltInSimpleTypeSymbol) =>
-      buildArg(base, selector, defaultValue, fixedValue, minOccurs, maxOccurs)
+      buildArg(base, selector, defaultValue, fixedValue, minOccurs, maxOccurs, nillable)
     case SimpTypListDecl(itemType: BuiltInSimpleTypeSymbol) =>
-      buildArg(itemType, selector + ".text.split(' ')", None, None, 0, Int.MaxValue)
+      buildArg(itemType, selector + ".text.split(' ')", None, None, 0, Int.MaxValue, None)
     
     case _ => error("GenSource: Unsupported content " + decl.content.toString)    
   }
@@ -808,11 +845,11 @@ case class {name}({paramsString}) extends {superNamesString} {{
   }
   
   def buildArg(content: SimpleContentDecl, typeSymbol: XsTypeSymbol): String = typeSymbol match {
-    case base: BuiltInSimpleTypeSymbol => buildArg(base, "node", None, None, 1, 1)
+    case base: BuiltInSimpleTypeSymbol => buildArg(base, "node", None, None, 1, 1, None)
     case ReferenceTypeSymbol(ComplexTypeDecl(_, _, _, _, content: SimpleContentDecl, _)) =>
       buildArg(content)
     case ReferenceTypeSymbol(decl: SimpleTypeDecl) =>
-      buildArg(decl, "node", None, None, 1, 1)
+      buildArg(decl, "node", None, None, 1, 1, None)
         
     case _ => error("GenSource: Unsupported type " + typeSymbol.toString)    
   }
@@ -905,9 +942,9 @@ case class {name}({paramsString}) extends {superNamesString} {{
   def buildArg(selector: String, typeSymbol: XsTypeSymbol): String = typeSymbol match {
     case XsAny => selector
     case symbol: BuiltInSimpleTypeSymbol =>
-      buildArg(symbol, selector, None, None, 1, 1)
+      buildArg(symbol, selector, None, None, 1, 1, None)
     case ReferenceTypeSymbol(decl@SimpleTypeDecl(_, _)) =>
-      buildArg(baseType(decl), selector, None, None, 1, 1)
+      buildArg(baseType(decl), selector, None, None, 1, 1, None)
     case _ =>
       buildTypeName(typeSymbol) + ".fromXML(" + selector + ")"
   }
@@ -944,7 +981,7 @@ case class {name}({paramsString}) extends {superNamesString} {{
   
   def buildArg(typeSymbol: BuiltInSimpleTypeSymbol, selector: String,
       defaultValue: Option[String], fixedValue: Option[String],
-      minOccurs: Int, maxOccurs: Int): String = {
+      minOccurs: Int, maxOccurs: Int, nillable: Option[Boolean]): String = {
     
     val (pre, post) = typeSymbol.name match {
       case "String"     => ("", "")
@@ -992,9 +1029,12 @@ case class {name}({paramsString}) extends {superNamesString} {{
       buildMatchStatement(pre + quote(defaultValue.get) + post, pre + "x.text" + post)
     } else if (fixedValue.isDefined) {
       pre + quote(fixedValue.get) + post
-    } else {
-      pre + selector + ".text" + post
-    }    
+    } else nillable match {
+      case Some(true) => 
+        "if (" + selector + ".nil) None" + newline +
+        indent(3) + "else Some(" + pre + selector + ".text" + post + ")"
+      case _ => pre + selector + ".text" + post
+    }
   }
     
   def quote(value: String) = "\"" + value + "\""
@@ -1026,7 +1066,7 @@ case class {name}({paramsString}) extends {superNamesString} {{
     
     for (choice <- choices;
         particle <- choice.particles) particle match {
-      case ElemDecl(_, _, symbol: ReferenceTypeSymbol, _, _, _, _) =>
+      case ElemDecl(_, _, symbol: ReferenceTypeSymbol, _, _, _, _, _) =>
         if (!interNamespaceCompositorTypes.contains(symbol) &&
             symbol.decl == decl)
           set += makeTypeName(context.compositorNames(choice))
@@ -1162,7 +1202,10 @@ case class {name}({paramsString}) extends {superNamesString} {{
     // In other words, global declarations cannot contain the attributes
     // minOccurs, maxOccurs, or use.
     ElemDecl(that.namespace, that.name, that.typeSymbol, that.defaultValue,
-      that.fixedValue, ref.minOccurs, ref.maxOccurs)
+      that.fixedValue, ref.minOccurs, ref.maxOccurs, ref.nillable match {
+        case None => that.nillable
+        case _    => ref.nillable
+      })
   }
   
   def buildElement(decl: SimpleTypeDecl): ElemDecl = decl.content match {
@@ -1172,7 +1215,7 @@ case class {name}({paramsString}) extends {superNamesString} {{
   }
   
   def buildElement(base: BuiltInSimpleTypeSymbol): ElemDecl = 
-    ElemDecl(schema.targetNamespace, "value", base, None, None, 1, 1)
+    ElemDecl(schema.targetNamespace, "value", base, None, None, 1, 1, None)
   
   def buildCompositorRef(compositor: HasParticle) = {    
     argNumber += 1
@@ -1198,7 +1241,8 @@ case class {name}({paramsString}) extends {superNamesString} {{
       compositor match {
         case choice: ChoiceDecl => (compositor.maxOccurs :: compositor.particles.map(_.maxOccurs)).max
         case _ => compositor.maxOccurs
-      })
+      },
+      None)
   }
   
   def containsForeignType(compositor: HasParticle) =
@@ -1210,14 +1254,14 @@ case class {name}({paramsString}) extends {superNamesString} {{
     
   def toOptional(that: ElemDecl) =
     ElemDecl(that.namespace, that.name, that.typeSymbol,
-      that.defaultValue, that.fixedValue, 0, that.maxOccurs)
+      that.defaultValue, that.fixedValue, 0, that.maxOccurs, that.nillable)
   
   def buildAnyRef(any: AnyDecl) =
     ElemDecl(INTERNAL_NAMESPACE, "any", XsAny, None, None,
-      any.minOccurs, any.maxOccurs)
+      any.minOccurs, any.maxOccurs, None)
       
   def flattenMixed(decl: ComplexTypeDecl) = if (decl.mixed)
-    List(ElemDecl(INTERNAL_NAMESPACE, "mixed", XsMixed, None, None, 0, Integer.MAX_VALUE))
+    List(ElemDecl(INTERNAL_NAMESPACE, "mixed", XsMixed, None, None, 0, Integer.MAX_VALUE, None))
   else
     Nil
     

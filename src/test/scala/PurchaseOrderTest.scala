@@ -31,7 +31,7 @@ object PurchaseOrderTest extends SpecificationWithJUnit with CompilerMatcher {
      generated) must evaluateTo("Address(,,)", outdir = "./tmp")
   }
 
-  "ipo.scala file must compile together with poTest.scala" in {
+  "ipo.scala file must compile together with PurchaseOrderUsage.scala" in {
     (List("import ipo._",
           "PurchaseOrderUsage.allTests"),
      purchaseOrderUsagescala :: generated) must evaluateTo(true,

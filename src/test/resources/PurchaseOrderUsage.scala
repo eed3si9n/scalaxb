@@ -13,6 +13,7 @@ object PurchaseOrderUsage {
   def allTests = {
     testUSAddress
     testItem
+    testItems
     testPurchaseOrder
     testTimeOlson
     testIntWithAttr
@@ -25,6 +26,7 @@ object PurchaseOrderUsage {
     testAnyAttribute
     testMixed
     testDatedData
+  
     true
   }
   
@@ -54,7 +56,7 @@ object PurchaseOrderUsage {
   }
   
   def testItem {
-    val subject = <item partNum="639-OS">
+    val subject = <item partNum="639-OS" xmlns="http://www.example.com/IPO">
       <productName>Olive Soap</productName>
       <quantity>1</quantity>
       <USPrice>4.00</USPrice>
@@ -75,6 +77,25 @@ object PurchaseOrderUsage {
     }
     
     println(item.toString)
+  }
+  
+  def testItems {
+    val subject = <items xmlns="http://www.example.com/IPO">
+      <item partNum="639-OS">
+        <productName>Olive Soap</productName>
+        <quantity>1</quantity>
+        <USPrice>4.00</USPrice>
+        <shipDate>2010-02-06Z</shipDate>
+      </item>
+    </items>
+        
+    val items = Items.fromXML(subject)
+    items match {
+      case Items(_) =>
+      case _ => error("match failed: " + items.toString)
+    }    
+    println(items.toString)    
+    
   }
   
   def testPurchaseOrder {
@@ -120,7 +141,7 @@ object PurchaseOrderUsage {
   }
   
   def testTimeOlson {
-    val subject = <time>00:00:00.000Z</time>
+    val subject = <time xmlns="http://www.example.com/IPO">00:00:00.000Z</time>
     
     val timeOlson = TimeOlson.fromXML(subject)
     timeOlson match {
@@ -133,7 +154,7 @@ object PurchaseOrderUsage {
   }
   
   def testIntWithAttr {
-    val subject = <some foo="test">1</some>
+    val subject = <some foo="test" xmlns="http://www.example.com/IPO">1</some>
     
     val intWithAttr = IntWithAttr.fromXML(subject)
     intWithAttr match {
@@ -150,10 +171,7 @@ object PurchaseOrderUsage {
         xmlns:ipo="http://www.example.com/IPO">
       <Choice2>1</Choice2>
     </Element1>
-
-    if (!Element1Option.fromXML.isDefinedAt(<Choice2/>))
-      error("Element1Option does not match <Choice2/>")
-
+    
     val obj = Element1.fromXML(subject)
     obj match {
       case Element1(DataRecord("http://www.example.com/IPO", "Choice2", 1)) =>
@@ -164,7 +182,7 @@ object PurchaseOrderUsage {
   }
 
   def testLangAttr {
-    val subject = <Choice1 xml:lang="en"></Choice1>
+    val subject = <Choice1 xml:lang="en" xmlns="http://www.example.com/IPO"></Choice1>
     val obj = Choice1.fromXML(subject)
     obj match {
       case Choice1(_, "en", _) =>
@@ -207,9 +225,9 @@ object PurchaseOrderUsage {
   }
   
   def testChoiceRoundTrip {
-    val subject = <Element1><Choice2>1</Choice2></Element1>
+    val subject = <Element1 xmlns="http://www.example.com/IPO"><Choice2>1</Choice2></Element1>
     val obj = Element1.fromXML(subject)
-    val document = obj.toXML(null, "Element1", scala.xml.TopScope)
+    val document = obj.toXML("http://www.example.com/IPO", "Element1", subject.scope)
     println(document)
     val obj2 = Element1.fromXML(document)
     obj2 match {
@@ -292,7 +310,7 @@ object PurchaseOrderUsage {
     obj match {
       case Element3(Seq(DataRecord("http://www.example.com/IPO", "Choice2", 2)),
         Seq(DataRecord(null, null, "foo"),
-          DataRecord("http://www.example.com/IPO", "Choice2", 2),
+          DataRecord("http://www.example.com/IPO", "Choice2", _),
           DataRecord(null, null, "bar"))) =>
       case _ => error("match failed: " + obj.toString)
     }

@@ -113,59 +113,65 @@ class ContextProcessor(logger: Logger) extends ScalaNames {
       typeNames(base) = makeTraitName(base)
     }
     
-    makeChoiceNames(context)
+    makeCompositorNames(context)
   }
   
-  def makeChoiceNames(context: XsdContext) {
+  def makeCompositorNames(context: XsdContext) {
+    var sequenceNumber = 0
     var choiceNumber = 0
+    var allNumber = 0
     
     for ((schema, decl) <- context.complexTypes) { 
+      sequenceNumber = 0
       choiceNumber = 0
-      val typeNames = context.typeNames(packageName(decl.namespace, context))
+      allNumber = 0
       decl.content.content match {
         case CompContRestrictionDecl(_, Some(compositor: HasParticle), _) =>
-          makeChoiceName(compositor, typeNames(decl))
+          makeCompositorName(compositor, decl)
         case CompContExtensionDecl(_, Some(compositor: HasParticle), _) =>
-          makeChoiceName(compositor, typeNames(decl))
+          makeCompositorName(compositor, decl)
         case _ =>
       }
     }
     
-    def makeChoiceName(compositor: HasParticle, name: String): Unit = compositor match {
-      case SequenceDecl(particles: List[_], _, _) =>
-        var index = 0
-        for (particle <- particles) {
-          particle match {
-            case choice: ChoiceDecl =>
-              makeChoiceName(choice, name)
-              context.choicePositions(choice) = index
-            case compositor2: HasParticle => makeChoiceName(compositor2, name)
-            case _ =>
+    def isFirstCompositor =
+      (sequenceNumber + choiceNumber + allNumber == 0)
+    
+    def makeCompositorName(compositor: HasParticle, decl: ComplexTypeDecl) {
+      val typeNames = context.typeNames(packageName(decl.namespace, context))
+      val typeName = typeNames(decl)
+      
+      compositor match {
+        case SequenceDecl(particles: List[_], _, _) =>
+          if (isFirstCompositor)
+            context.compositorNames(compositor) = typeName
+          else {
+            context.compositorNames(compositor) = typeName + "Sequence" + (sequenceNumber + 1)
+            context.compositorParents(compositor) = decl
           }
-          index += 1
-        }
-
-      case AllDecl(particles: List[_], _, _) =>
-        for (particle <- particles)
-          particle match {
-            case compositor2: HasParticle => makeChoiceName(compositor2, name)
-            case _ =>
-          }
-
-      case choice@ChoiceDecl(particles: List[_], _, _, _) =>
-        if (choiceNumber == 0)
-          context.choiceNames(choice) = name + "Option"
-        else
-          context.choiceNames(choice) = name + "Option" + (choiceNumber + 1)
-        choiceNumber += 1
-        context.choicePositions(choice) = 0
-
-        for (particle <- particles)
-          particle match {
-            case compositor2: HasParticle => makeChoiceName(compositor2, name)
-            case _ =>
-          }
-    }
+          sequenceNumber += 1
+             
+        case ChoiceDecl(particles: List[_], _, _, _) =>
+          context.compositorParents(compositor) = decl
+          if (choiceNumber == 0)
+            context.compositorNames(compositor) = typeName + "Option"
+          else
+            context.compositorNames(compositor) = typeName + "Option" + (choiceNumber + 1)
+          choiceNumber += 1
+          
+        case AllDecl(particles: List[_], _, _) =>
+          context.compositorParents(compositor) = decl
+          if (allNumber == 0)
+            context.compositorNames(compositor) = typeName + "All"
+          else
+            context.compositorNames(compositor) = typeName + "All" + (allNumber + 1)
+          allNumber += 1
+      }
+      
+      compositor.particles collect {
+        case compositor2: HasParticle => makeCompositorName(compositor2, decl)
+      }
+    } // makeCompositorName
   }
     
   def makeProtectedTypeName(decl: ComplexTypeDecl, context: XsdContext): String = {

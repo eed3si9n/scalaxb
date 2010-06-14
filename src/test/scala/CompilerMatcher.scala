@@ -54,7 +54,8 @@ trait CompilerMatcher {
    * </code>
    */
   def evaluateTo(expected: Any,
-      outdir: String = ".") = new Matcher[(Seq[String], Seq[File])] {
+      outdir: String = ".",
+      unchecked: Boolean = true) = new Matcher[(Seq[String], Seq[File])] {
     
     /** @param pair :=> (code: Seq[String], files: Seq[File])
      */
@@ -82,6 +83,7 @@ trait CompilerMatcher {
         settings.classpath.value =
           classpathList.mkString(java.io.File.pathSeparator)
         settings.outdir.value = outdir
+        settings.unchecked.value = unchecked
         
         val interpreter = new Interpreter(settings)
         interpreter.bind("$r_", holder.getClass.getName , holder)

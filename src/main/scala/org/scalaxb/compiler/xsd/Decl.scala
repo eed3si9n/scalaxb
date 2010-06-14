@@ -41,10 +41,10 @@ case class XsdContext(
     mutable.ListBuffer.empty[(SchemaDecl, ComplexTypeDecl)],
   baseToSubs: mutable.ListMap[ComplexTypeDecl, List[ComplexTypeDecl]] =
     mutable.ListMap.empty[ComplexTypeDecl, List[ComplexTypeDecl]],
-  choiceNames: mutable.ListMap[ChoiceDecl, String] =
-    mutable.ListMap.empty[ChoiceDecl, String],
-  choicePositions: mutable.ListMap[ChoiceDecl, Int] =
-    mutable.ListMap.empty[ChoiceDecl, Int]) {
+  compositorParents: mutable.ListMap[HasParticle, ComplexTypeDecl] =
+    mutable.ListMap.empty[HasParticle, ComplexTypeDecl],
+  compositorNames: mutable.ListMap[HasParticle, String] =
+    mutable.ListMap.empty[HasParticle, String]) {
 }
 
 class ParserConfig {
@@ -112,6 +112,17 @@ object TypeSymbolParser {
     } else
       (config.scope.getURI(null), name)
   }
+}
+
+trait Particle {
+  val minOccurs: Int
+  val maxOccurs: Int  
+}
+
+trait HasParticle extends Particle {
+  val particles: List[Particle]
+  val minOccurs: Int
+  val maxOccurs: Int
 }
 
 case class SchemaDecl(targetNamespace: String,
@@ -370,7 +381,7 @@ object AttributeDecl {
 case class ElemRef(namespace: String,
   name: String,
   minOccurs: Int,
-  maxOccurs: Int) extends Decl
+  maxOccurs: Int) extends Decl with Particle
 
 object ElemRef {
   def fromXML(node: scala.xml.Node, config: ParserConfig) = {
@@ -388,7 +399,7 @@ case class ElemDecl(namespace: String,
   defaultValue: Option[String],
   fixedValue: Option[String],  
   minOccurs: Int,
-  maxOccurs: Int) extends Decl
+  maxOccurs: Int) extends Decl with Particle
 
 object ElemDecl {
   def fromXML(node: scala.xml.Node, config: ParserConfig) = {
@@ -584,7 +595,7 @@ object CompositorDecl {
       yield fromXML(child, config)
   }
   
-  def fromXML(node: scala.xml.Node, config: ParserConfig): Decl = node match {
+  def fromXML(node: scala.xml.Node, config: ParserConfig): Particle = node match {
     case <element>{ _* }</element>   =>
       if ((node \ "@name").headOption.isDefined)
         ElemDecl.fromXML(node, config)
@@ -609,13 +620,7 @@ object CompositorDecl {
       value.toInt
 }
 
-trait HasParticle {
-  val particles: List[Decl]
-  val minOccurs: Int
-  val maxOccurs: Int
-}
-
-case class SequenceDecl(particles: List[Decl],
+case class SequenceDecl(particles: List[Particle],
   minOccurs: Int,
   maxOccurs: Int) extends CompositorDecl with HasParticle
 
@@ -627,7 +632,7 @@ object SequenceDecl {
   }
 }
 
-case class ChoiceDecl(particles: List[Decl],
+case class ChoiceDecl(particles: List[Particle],
   minOccurs: Int,
   maxOccurs: Int,
   rand: Double = math.random) extends CompositorDecl with HasParticle
@@ -642,7 +647,7 @@ object ChoiceDecl {
   }
 }
 
-case class AllDecl(particles: List[Decl],
+case class AllDecl(particles: List[Particle],
   minOccurs: Int,
   maxOccurs: Int) extends CompositorDecl with HasParticle
 
@@ -655,7 +660,7 @@ object AllDecl {
 }
 
 case class AnyDecl(minOccurs: Int,
-  maxOccurs: Int) extends CompositorDecl
+  maxOccurs: Int) extends CompositorDecl with Particle
 
 object AnyDecl {
   def fromXML(node: scala.xml.Node, config: ParserConfig) = {

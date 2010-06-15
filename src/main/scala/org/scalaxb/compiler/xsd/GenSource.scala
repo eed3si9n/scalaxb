@@ -38,7 +38,6 @@ class GenSource(schema: SchemaDecl,
   val elemList = schema.elemList
   val choices = schema.choices
   val newline = System.getProperty("line.separator")
-  val defaultSuperName = "rt.DataModel"
   val XML_URI = "http://www.w3.org/XML/1998/namespace"
   val compositorWrapper = mutable.ListMap.empty[ComplexTypeDecl, HasParticle]
   val interNamespaceCompositorTypes = mutable.ListBuffer.empty[XsTypeSymbol]
@@ -124,7 +123,7 @@ class GenSource(schema: SchemaDecl,
       }
   
   def buildTypeName(typeSymbol: XsTypeSymbol): String = typeSymbol match {
-    case XsInterNamespace => defaultSuperName
+    case XsInterNamespace => "rt.DataRecord[Any]"
     case XsAny          => "rt.DataRecord[scala.xml.Node]"
     case XsDataRecord   => "rt.DataRecord[Any]"
     case XsMixed        => "rt.DataRecord[Any]"
@@ -197,10 +196,8 @@ class GenSource(schema: SchemaDecl,
     val defaultType = makeProtectedTypeName(decl, context)
     val superNames = buildSuperNames(decl)
     
-    val extendString = if (superNames.isEmpty)
-      ""
-    else
-      " extends " + superNames.mkString(" with ")
+    val extendString = if (superNames.isEmpty) ""
+    else " extends " + superNames.mkString(" with ")
     
     def makeCaseEntry(decl: ComplexTypeDecl) = {
       val localPart = buildTypeName(decl, true)
@@ -278,7 +275,8 @@ object {name} {{
       x => x._2 == decl).keysIterator
     val compositorsList = compositors map(makeCompositor(_))
     
-    def superNamesString = superNames.mkString(" with ")
+    val extendString = if (superNames.isEmpty) ""
+    else " extends " + superNames.mkString(" with ")
     
     val hasSequenceParam = (paramList.size == 1) &&
       (paramList.head.cardinality == Multiple) &&
@@ -371,7 +369,7 @@ object {name} {{
 </source>
     
     return <source>
-case class {name}({paramsString}) extends {superNamesString} {{
+case class {name}({paramsString}){extendString} {{
   { if (!decl.name.contains('@'))
       makeToXml }  
   def toXML(namespace: String, elementLabel: String, scope: scala.xml.NamespaceBinding): scala.xml.Node = {{

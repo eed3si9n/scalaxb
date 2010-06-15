@@ -214,6 +214,9 @@ trait {name}{extendString} {{
   val vals = for (param <- paramList)
     yield  "val " + param.toScalaCode
   vals.mkString(newline + indent(1))}
+  
+  def toXML(namespace: String, elementLabel: String,
+    scope: scala.xml.NamespaceBinding): scala.xml.Node
 }}
 
 object {name} {{  
@@ -251,7 +254,7 @@ object {name} {{
     log("GenSource#makeCaseClassWithType: emitting " + name)
     
     val superNames: List[String] = if (context.baseToSubs.contains(decl))
-      List(defaultSuperName, buildTypeName(decl))
+      List(buildTypeName(decl))
     else
       buildSuperNames(decl)
     
@@ -403,13 +406,13 @@ case class {name}({paramsString}) extends {superNamesString} {{
         
         makeCaseClassWithType(name, decl)
       case _ =>
-        <source>trait  {name} extends {defaultSuperName}
+        <source>trait  {name}
 </source>
     }
     
     // <source>{
     //   if (!hasForeign)
-    //     "trait " + name + " extends " + defaultSuperName
+    //     "trait " + name
     // }
     // </source>    
   }
@@ -1039,26 +1042,13 @@ case class {name}({paramsString}) extends {superNamesString} {{
     
   def quote(value: String) = "\"" + value + "\""
   
-  def buildSuperNames(decl: ComplexTypeDecl) = {
-    val superName = buildSuperName(decl)
-    if (superName == defaultSuperName)
-      List(superName) ::: buildOptions(decl)
-    else
-      List(defaultSuperName, superName) ::: buildOptions(decl)
-  }
+  def buildSuperNames(decl: ComplexTypeDecl) =
+    buildSuperName(decl) ::: buildOptions(decl)
   
-  def buildSuperNamesForTrait(decl: ComplexTypeDecl) = {
-    val superName = buildSuperName(decl)
-    if (superName == defaultSuperName)
-      buildOptions(decl)
-    else
-      List(superName) ::: buildOptions(decl)
-  }
-  
-  def buildSuperName(decl: ComplexTypeDecl): String = 
+  def buildSuperName(decl: ComplexTypeDecl) = 
     decl.content.content.base match {
-      case ReferenceTypeSymbol(base: ComplexTypeDecl) => buildTypeName(base)
-      case _ => defaultSuperName // makeTypeName(decl.content.content.base.name) 
+      case ReferenceTypeSymbol(base: ComplexTypeDecl) => List(buildTypeName(base))
+      case _ => List()
     }
   
   def buildOptions(decl: ComplexTypeDecl) = {

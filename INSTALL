@@ -28,12 +28,12 @@ Grab scalaxb's source and build:
   $ cd scalaxb
   $ sbt sbaz
 
-This produces target/scala_2.8.0.Beta3/lib/scalaxb.jar and 
-target/scala_2.8.0.Beta3/scalaxb-0.0.2.sbp.
+This produces target/scala_2.8.0.Beta5/lib/scalaxb.jar and 
+target/scala_2.8.0.Beta5/scalaxb-0.0.2.sbp.
 
 You can use sbaz to install scalaxb package under the managed directory:
 
-  $ sudo sbaz install -f target/scala_2.8.0.Beta3/scalaxb-0.0.2.sbp
+  $ sudo sbaz install -f target/scala_2.8.0.Beta5/scalaxb-0.0.2.sbp
 
 Alternatively, you can manually install the jar files. The following
 instructions are copied from simple-build-tool (sbt).

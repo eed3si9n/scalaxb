@@ -72,9 +72,11 @@ You get address.scala that contains case classes that can convert XML
 documents conforming to the address.xsd into a case class object, and turn it back again
 into XML document:
 
+    import org.scalaxb.rt
+
     case class Address(name: String,
       street: String,
-      city: String) extends org.scalaxb.rt.DataModel {
+      city: String) extends rt.DataModel {
   
       def toXML(namespace: String, elementLabel: String): scala.xml.Node = {
         var scope: scala.xml.NamespaceBinding = scala.xml.TopScope
@@ -101,11 +103,18 @@ into XML document:
       }
     }
 
-    object Address {
-      def fromXML(node: scala.xml.Node): Address =
-        Address((node \ "name").text,
-          (node \ "street").text,
-          (node \ "city").text) 
+    object Address extends rt.ElemNameParser[Address] {
+      val targetNamespace = "http://www.example.com/IPO"
+    
+      def parser(node: scala.xml.Node): Parser[Address] =
+        (rt.ElemName(targetNamespace, "name")) ~ 
+          (rt.ElemName(targetNamespace, "street")) ~ 
+          (rt.ElemName(targetNamespace, "city")) ^^
+            { case p1 ~ 
+          p2 ~ 
+          p3 => Address(p1.text,
+          p2.text,
+          p3.text) }
     }
 
 Bug Reporting

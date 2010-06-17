@@ -316,9 +316,8 @@ object {name} {{
     
     def attributeString = attributes.map(x => buildAttributeString(x)).mkString(newline + indent(2))
     
-    def scopeString(scope: scala.xml.NamespaceBinding): List[String] = {
-      if (scope == null || scope.uri == null)
-        Nil
+    def scopeString(scope: scala.xml.NamespaceBinding): List[String] =
+      if (scope == null || scope.uri == null) Nil
       else {
         if (scope.prefix == null)
           ("scope = scala.xml.NamespaceBinding(null, " + quote(scope.uri) +
@@ -327,17 +326,12 @@ object {name} {{
           ("scope = scala.xml.NamespaceBinding(" + quote(scope.prefix) +
             ", " + quote(scope.uri) + ", scope)") :: scopeString(scope.parent)
       }
-    }
     
-    def getPrefix(namespace: String, scope: scala.xml.NamespaceBinding): String = {
-      if (scope == null || scope.uri == null)
-        null
+    def getPrefix(namespace: String, scope: scala.xml.NamespaceBinding): String =
+      if (scope == null || scope.uri == null) null
       else
-        if (scope.prefix != null && scope.uri == namespace)
-          scope.prefix
-        else
-          getPrefix(namespace, scope.parent)
-    }
+        if (scope.prefix != null && scope.uri == namespace) scope.prefix
+        else getPrefix(namespace, scope.parent)
         
     def typeNameString =
       getPrefix(schema.targetNamespace, schema.scope) + ":" + decl.name
@@ -376,7 +370,6 @@ case class {name}({paramsString}){extendString} {{
     val prefix = scope.getPrefix(namespace)
     var attribute: scala.xml.MetaData  = scala.xml.Null
     { attributeString }
-    
     scala.xml.Elem(prefix, elementLabel,
       attribute, scope,
       { childString })

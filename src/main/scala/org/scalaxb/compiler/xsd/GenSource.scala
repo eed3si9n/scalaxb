@@ -474,17 +474,25 @@ case class {name}({paramsString}){extendString} {{
         indent(5) + "case Some(x) => x.toXML(" + quote(param.namespace) + "," + 
           quote(param.name) + ", scope)" + newline +
         indent(5) + "case None =>   Seq(scala.xml.Elem(prefix, " + quote(param.name) + ", " + 
-          "scala.xml.Attribute(\"xsi\", \"nil\", \"true\", scala.xml.Null), scope, Seq(): _*))" + newline +
+          "scala.xml.Attribute(\"xsi\", \"nil\", \"true\", scala.xml.Null), scope, Nil: _*))" + newline +
         indent(4) + "}"
       else
         makeParamName(param.name) + ".toXML(" + quote(param.namespace) + "," + 
           quote(param.name)  + ", scope)"
     case Optional =>
-      makeParamName(param.name) + " match {" + newline +
-      indent(5) + "case Some(x) => x.toXML(" + quote(param.namespace) + "," + 
-        quote(param.name) + ", scope)" + newline +
-      indent(5) + "case None => Nil" + newline +
-      indent(4) + "}"
+      if (param.nillable)
+        makeParamName(param.name) + " match {" + newline +
+        indent(5) + "case Some(x) => x.toXML(" + quote(param.namespace) + "," + 
+          quote(param.name) + ", scope)" + newline +
+        indent(5) + "case None =>   Seq(scala.xml.Elem(prefix, " + quote(param.name) + ", " + 
+          "scala.xml.Attribute(\"xsi\", \"nil\", \"true\", scala.xml.Null), scope, Nil: _*))" + newline +
+        indent(4) + "}"    
+      else
+        makeParamName(param.name) + " match {" + newline +
+        indent(5) + "case Some(x) => x.toXML(" + quote(param.namespace) + "," + 
+          quote(param.name) + ", scope)" + newline +
+        indent(5) + "case None => Nil" + newline +
+        indent(4) + "}"
     case Multiple =>
       makeParamName(param.name) + ".map(x => x.toXML(" + quote(param.namespace) + "," + 
         quote(param.name) + ", scope))"    
@@ -512,17 +520,25 @@ case class {name}({paramsString}){extendString} {{
         indent(5) + "case Some(x) => Seq(scala.xml.Elem(prefix, " + quote(param.name) + ", " + 
           "scala.xml.Null, scope, scala.xml.Text(" + buildToString("x", param.typeSymbol) + ")))" + newline +
         indent(5) + "case None =>   Seq(scala.xml.Elem(prefix, " + quote(param.name) + ", " + 
-          "scala.xml.Attribute(\"xsi\", \"nil\", \"true\", scala.xml.Null), scope, Seq(): _*))" + newline +
+          "scala.xml.Attribute(\"xsi\", \"nil\", \"true\", scala.xml.Null), scope, Nil: _*))" + newline +
         indent(4) + "}"
       else
         "scala.xml.Elem(prefix, " + quote(param.name) + ", " +
         "scala.xml.Null, scope, scala.xml.Text(" + buildToString(makeParamName(param.name), param.typeSymbol) + "))"
     case Optional =>
-      makeParamName(param.name) + " match {" + newline +
-      indent(5) + "case Some(x) => Seq(scala.xml.Elem(prefix, " + quote(param.name) + ", " + 
-        "scala.xml.Null, scope, scala.xml.Text(" + buildToString("x", param.typeSymbol) + ")))" + newline +
-      indent(5) + "case None => Seq()" + newline +
-      indent(4) + "}"
+      if (param.nillable)
+        makeParamName(param.name) + " match {" + newline +
+        indent(5) + "case Some(x) => Seq(scala.xml.Elem(prefix, " + quote(param.name) + ", " + 
+          "scala.xml.Null, scope, scala.xml.Text(" + buildToString("x", param.typeSymbol) + ")))" + newline +
+        indent(5) + "case None =>   Seq(scala.xml.Elem(prefix, " + quote(param.name) + ", " + 
+          "scala.xml.Attribute(\"xsi\", \"nil\", \"true\", scala.xml.Null), scope, Nil: _*))" + newline +
+        indent(4) + "}"    
+      else
+        makeParamName(param.name) + " match {" + newline +
+        indent(5) + "case Some(x) => Seq(scala.xml.Elem(prefix, " + quote(param.name) + ", " + 
+          "scala.xml.Null, scope, scala.xml.Text(" + buildToString("x", param.typeSymbol) + ")))" + newline +
+        indent(5) + "case None => Seq()" + newline +
+        indent(4) + "}"
     case Multiple =>
       makeParamName(param.name) + ".map(x => scala.xml.Elem(prefix, " + quote(param.name) + ", " +
       "scala.xml.Null, scope, scala.xml.Text(" + buildToString("x", param.typeSymbol) + ")))"      
@@ -774,23 +790,30 @@ case class {name}({paramsString}){extendString} {{
     if (compositorWrapper.keysIterator.contains(decl)) {
       val compositor = compositorWrapper(decl)
       
-      if (elem.maxOccurs > 1)
-        selector + ".toList"
-      else
-        selector
+      if (elem.maxOccurs > 1) selector + ".toList"
+      else selector
     } else {
       if (elem.maxOccurs > 1)
         selector + ".map(x => " + typeName + ".fromXML(x.node)).toList" 
       else if (elem.minOccurs == 0)
-        selector + " match {" + newline +
-        indent(4) + "case None    => None" + newline +
-        indent(4) + "case Some(x) => Some(" +  typeName + ".fromXML(x.node))" + newline +
-        indent(3) + "}"
+        elem.nillable match {
+          case Some(true) =>
+            selector + " match {" + newline +
+            indent(4) + "case Some(x) => if (x.nil) None" + newline +
+            indent(4) + "  else Some(" +  typeName + ".fromXML(x.node))" + newline +
+            indent(4) + "case None    => None" + newline +
+            indent(3) + "}"
+          case _ =>
+            selector + " match {" + newline +
+            indent(4) + "case Some(x) => Some(" +  typeName + ".fromXML(x.node))" + newline +
+            indent(4) + "case None    => None" + newline +
+            indent(3) + "}"
+        }
       else
         elem.nillable match {
           case Some(true) =>
             "if (" + selector + ".nil) None" + newline +
-            indent(3) + "else Some(" +  typeName + ".fromXML(" + selector + ".node))" + newline
+            indent(3) + "else Some(" +  typeName + ".fromXML(" + selector + ".node))"
           case _ => typeName + ".fromXML(" + selector + ".node)" 
         }
     } // if-else
@@ -1004,11 +1027,19 @@ case class {name}({paramsString}){extendString} {{
     else
       selector
     
-    def buildMatchStatement(noneValue: String, someValue: String) =
-      optionSelector + " match {" + newline +
-      indent(4) + "case None    => " + noneValue + newline +
-      indent(4) + "case Some(x) => " + someValue + newline +
-      indent(3) + "}"
+    def buildMatchStatement(noneValue: String, someValue: String) = nillable match {
+      case Some(true) =>
+        optionSelector + " match {" + newline +
+          indent(4) + "case Some(x) => if (x.nil) " + noneValue + newline +
+          indent(4) + "  else " + someValue + newline +
+          indent(4) + "case None    => " + noneValue + newline +
+          indent(3) + "}" 
+      case _ =>
+        optionSelector + " match {" + newline +
+          indent(4) + "case Some(x) => " + someValue + newline +
+          indent(4) + "case None    => " + noneValue + newline +
+          indent(3) + "}"      
+    }
     
     if (maxOccurs > 1) {
       if (selector.contains("split("))

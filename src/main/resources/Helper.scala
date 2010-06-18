@@ -30,6 +30,7 @@ case class ElemName(namespace: String, name: String) {
   var node: scala.xml.Node = _
   def text = node.text
   def nil = Helper.isNil(node)
+  def toDataRecord = DataRecord(namespace, name, node)
 }
 
 trait ElemNameParser[A] extends scala.util.parsing.combinator.Parsers {

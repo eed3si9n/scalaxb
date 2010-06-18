@@ -340,12 +340,17 @@ object PurchaseOrderUsage {
       xmlns:ipo="http://www.example.com/IPO">
       <price xsi:nil="true" />
       <tax xsi:nil="true" />
+      <tag xsi:nil="true" />
+      <tag xsi:nil="true" />
       <shipTo xsi:nil="true" />
       <billTo xsi:nil="true" />
+      <via xsi:nil="true" />
+      <via xsi:nil="true" />
     </foo>
     val obj = NillableTest.fromXML(subject)
     obj match {
-      case NillableTest(None, None, None, None) =>
+      case NillableTest(None, None, Seq(None, None),
+        None, None, Seq(None, None)) =>
       case _ => error("match failed: " + obj.toString)
     }
     

@@ -179,8 +179,11 @@
       <sequence>
         <element name="price" type="positiveInteger" nillable="true"/>
         <element name="tax" type="positiveInteger" minOccurs="0" nillable="true"/>
+        <element name="tag" type="positiveInteger" minOccurs="0" maxOccurs="unbounded" nillable="true"/>
+        
         <element name="shipTo" type="ipo:Address" nillable="true"/>
         <element name="billTo" type="ipo:Address" minOccurs="0" nillable="true" />
+        <element name="via" type="ipo:Address" minOccurs="0" maxOccurs="unbounded" nillable="true" />
       </sequence>
     </complexType>
   </element>

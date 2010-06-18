@@ -65,9 +65,9 @@ class GenSource(schema: SchemaDecl,
           else base
         case Optional => "Option[" + base + "]"
         case Multiple => 
-          "Seq[" + base + "]"
-          // if (nillable) "Option[Seq[" + base + "]]"
-          // else "Seq[" + base + "]"
+          // "Seq[" + base + "]"
+          if (nillable) "Seq[Option[" + base + "]]"
+          else "Seq[" + base + "]"
       }
       
       makeParamName(name) + ": " + typeName
@@ -224,10 +224,8 @@ object {name} {{
     else
       node.scope.getURI(null)
       
-    val value = if (typeName.contains(':'))
-      typeName.drop(typeName.indexOf(':') + 1)
-    else
-      typeName
+    val value = if (typeName.contains(':')) typeName.drop(typeName.indexOf(':') + 1)
+    else typeName
     
     (namespace, value) match {{
       {
@@ -252,8 +250,7 @@ object {name} {{
     
     val superNames: List[String] = if (context.baseToSubs.contains(decl))
       List(buildTypeName(decl))
-    else
-      buildSuperNames(decl)
+    else buildSuperNames(decl)
     
     val particles = flattenElements(decl, name)
     val childElements = particles ::: flattenMixed(decl)
@@ -285,8 +282,7 @@ object {name} {{
     
     def paramsString = if (hasSequenceParam)
       makeParamName(paramList.head.name) + ": " + buildTypeName(paramList.head.typeSymbol) + "*"      
-    else
-      paramList.map(_.toScalaCode).mkString("," + newline + indent(1))
+    else paramList.map(_.toScalaCode).mkString("," + newline + indent(1))
     
     val simpleFromXml: Boolean = decl.content.isInstanceOf[SimpleContentDecl]
     
@@ -364,8 +360,7 @@ object {name} {{
     
     return <source>
 case class {name}({paramsString}){extendString} {{
-  { if (!decl.name.contains('@'))
-      makeToXml }  
+  { if (!decl.name.contains('@')) makeToXml }  
   def toXML(namespace: String, elementLabel: String, scope: scala.xml.NamespaceBinding): scala.xml.Node = {{
     val prefix = scope.getPrefix(namespace)
     var attribute: scala.xml.MetaData  = scala.xml.Null
@@ -455,15 +450,37 @@ case class {name}({paramsString}){extendString} {{
     
     param.cardinality match {
       case Single =>
-        makeParamName(param.name) + ".toXML(" + makeParamName(param.name) + ".namespace, " +
-          makeParamName(param.name) + ".key, scope)"
+        if (param.nillable)
+          makeParamName(param.name) + " match {" + newline +
+          indent(5) + "case Some(x) => x.toXML(" + makeParamName(param.name) + ".namespace, " +
+            makeParamName(param.name) + ".key, scope)" + newline +
+          indent(5) + "case None =>   Seq(scala.xml.Elem(prefix, " + quote(param.name) + ", " + 
+            "scala.xml.Attribute(\"xsi\", \"nil\", \"true\", scala.xml.Null), scope, Nil: _*))" + newline +
+          indent(4) + "}"
+        else
+          makeParamName(param.name) + ".toXML(" + makeParamName(param.name) + ".namespace, " +
+            makeParamName(param.name) + ".key, scope)"
       case Optional =>
-        makeParamName(param.name) + " match {" + newline +
-        indent(5) + "case Some(x) => x.toXML(x.namespace, x.key, scope)" + newline +
-        indent(5) + "case None => Nil" + newline +
-        indent(4) + "}"
+        if (param.nillable)
+          makeParamName(param.name) + " match {" + newline +
+          indent(5) + "case Some(x) => x.toXML(x.namespace, x.key, scope)" + newline +
+          indent(5) + "case None =>   Seq(scala.xml.Elem(prefix, " + quote(param.name) + ", " + 
+            "scala.xml.Attribute(\"xsi\", \"nil\", \"true\", scala.xml.Null), scope, Nil: _*))" + newline +
+          indent(4) + "}"    
+        else
+          makeParamName(param.name) + " match {" + newline +
+          indent(5) + "case Some(x) => x.toXML(x.namespace, x.key, scope)" + newline +
+          indent(5) + "case None => Nil" + newline +
+          indent(4) + "}"
       case Multiple =>
-        makeParamName(param.name) + ".map(x => x.toXML(x.namespace, x.key, scope))"   
+        if (param.nillable)
+          makeParamName(param.name) + ".map(x => x match {" + newline +
+          indent(5) + "case Some(x) => x.toXML(x.namespace, x.key, scope)" + newline +
+          indent(5) + "case None =>   scala.xml.Elem(prefix, " + quote(param.name) + ", " + 
+            "scala.xml.Attribute(\"xsi\", \"nil\", \"true\", scala.xml.Null), scope, Nil: _*)" + newline +
+          indent(4) + "} )"        
+        else  
+          makeParamName(param.name) + ".map(x => x.toXML(x.namespace, x.key, scope))"
     }
   } 
   
@@ -494,8 +511,16 @@ case class {name}({paramsString}){extendString} {{
         indent(5) + "case None => Nil" + newline +
         indent(4) + "}"
     case Multiple =>
-      makeParamName(param.name) + ".map(x => x.toXML(" + quote(param.namespace) + "," + 
-        quote(param.name) + ", scope))"    
+      if (param.nillable)
+        makeParamName(param.name) + ".map(x => x match {" + newline +
+        indent(5) + "case Some(x) => x.toXML(" + quote(param.namespace) + "," + 
+          quote(param.name) + ", scope)" + newline +
+        indent(5) + "case None =>   scala.xml.Elem(prefix, " + quote(param.name) + ", " + 
+          "scala.xml.Attribute(\"xsi\", \"nil\", \"true\", scala.xml.Null), scope, Nil: _*)" + newline +
+        indent(4) + "} )"        
+      else  
+        makeParamName(param.name) + ".map(x => x.toXML(" + quote(param.namespace) + "," + 
+          quote(param.name) + ", scope))"    
   }
   
   def buildToString(selector: String, typeSymbol: XsTypeSymbol): String = typeSymbol match {
@@ -540,8 +565,16 @@ case class {name}({paramsString}){extendString} {{
         indent(5) + "case None => Seq()" + newline +
         indent(4) + "}"
     case Multiple =>
-      makeParamName(param.name) + ".map(x => scala.xml.Elem(prefix, " + quote(param.name) + ", " +
-      "scala.xml.Null, scope, scala.xml.Text(" + buildToString("x", param.typeSymbol) + ")))"      
+      if (param.nillable)
+        makeParamName(param.name) + ".map(x => x match {" + newline +
+        indent(5) + "case Some(x) => scala.xml.Elem(prefix, " + quote(param.name) + ", " + 
+          "scala.xml.Null, scope, scala.xml.Text(" + buildToString("x", param.typeSymbol) + "))" + newline +
+        indent(5) + "case None =>   scala.xml.Elem(prefix, " + quote(param.name) + ", " + 
+          "scala.xml.Attribute(\"xsi\", \"nil\", \"true\", scala.xml.Null), scope, Nil: _*)" + newline +
+        indent(4) + "} )"
+      else 
+        makeParamName(param.name) + ".map(x => scala.xml.Elem(prefix, " + quote(param.name) + ", " +
+        "scala.xml.Null, scope, scala.xml.Text(" + buildToString("x", param.typeSymbol) + ")))"      
   }
   
   def buildParam(decl: Decl): Param = decl match {
@@ -768,8 +801,8 @@ case class {name}({paramsString}){extendString} {{
       buildSelector(pos), elem.defaultValue, elem.fixedValue,
       elem.minOccurs, elem.maxOccurs, elem.nillable) 
     case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>  buildArg(elem, decl, buildSelector(pos))
-    case XsAny => buildArgForAny(elem.namespace, elem.name,
-      elem.defaultValue, elem.fixedValue, elem.minOccurs, elem.maxOccurs)
+    case XsAny => buildArgForAny(buildSelector(pos), elem.namespace, elem.name,
+      elem.defaultValue, elem.fixedValue, elem.minOccurs, elem.maxOccurs, elem.nillable)
     
     case symbol: ReferenceTypeSymbol =>
       if (symbol.decl == null)
@@ -794,7 +827,13 @@ case class {name}({paramsString}){extendString} {{
       else selector
     } else {
       if (elem.maxOccurs > 1)
-        selector + ".map(x => " + typeName + ".fromXML(x.node)).toList" 
+        elem.nillable match {
+          case Some(true) =>
+            selector + ".toList.map(x => if (x.nil) None" + newline +
+            indent(3) + "else Some(" + typeName + ".fromXML(x.node)) )" 
+          case _ =>
+            selector + ".toList.map(x => " + typeName + ".fromXML(x.node))" 
+        }
       else if (elem.minOccurs == 0)
         elem.nillable match {
           case Some(true) =>
@@ -817,6 +856,52 @@ case class {name}({paramsString}){extendString} {{
           case _ => typeName + ".fromXML(" + selector + ".node)" 
         }
     } // if-else
+  }
+  
+  def buildArgForAny(selector: String, namespace: String, elementLabel: String,
+      defaultValue: Option[String], fixedValue: Option[String],
+      minOccurs: Int, maxOccurs: Int, nillable: Option[Boolean]) = {
+    
+    def buildMatchStatement(noneValue: String, someValue: String) = nillable match {
+      case Some(true) =>        
+        selector + " match {" + newline +
+          indent(4) + "case Some(x) => if (x.nil) " + noneValue + newline +
+          indent(4) + "  else " + someValue + newline +
+          indent(4) + "case None    => " + noneValue + newline +
+          indent(3) + "}"
+      case _ =>
+        selector + " match {" + newline +
+        indent(4) + "case Some(x) => " + someValue + newline +
+        indent(4) + "case None    => " + noneValue + newline +
+        indent(3) + "}"    
+    }
+        
+    if (maxOccurs > 1) {
+      nillable match {
+        case Some(true) =>
+          selector + ".toList.map(x => if (x.nil) None" + newline +
+          indent(3) + "else Some(x.toDataRecord) )" 
+        case _ =>
+          selector + ".toList.map(_.toDataRecord)" 
+      }
+    } else if (minOccurs == 0) {
+      buildMatchStatement("None",
+        "Some(x.toDataRecord)")
+    } else if (defaultValue.isDefined) {
+      buildMatchStatement("rt.DataRecord(" + newline +
+        indent(4) + quote(namespace) + ", " + quote(elementLabel) + ", " + newline +
+        indent(4) + "scala.xml.Elem(node.scope.getPrefix(" + quote(schema.targetNamespace) + "), " + newline +
+        indent(4) + quote(elementLabel) + ", scala.xml.Null, node.scope, " +  newline +
+        indent(4) + "scala.xml.Text(" + quote(defaultValue.get) + ")))",
+        "x.toDataRecord")
+    } else if (fixedValue.isDefined) {
+      "rt.DataRecord(" + newline +
+        indent(4) + quote(namespace) + ", " + quote(elementLabel) + ", " + newline +
+        indent(4) + "scala.xml.Elem(node.scope.getPrefix(" + quote(schema.targetNamespace) + "), "  + newline +
+        indent(4) + quote(elementLabel) + ", scala.xml.Null, node.scope, " +  newline +
+        indent(4) + "scala.xml.Text(" + quote(fixedValue.get) + ")))"
+    }
+    else selector + ".toDataRecord"
   }
   
   def toMinOccurs(attr: AttributeDecl) = 
@@ -916,46 +1001,7 @@ case class {name}({paramsString}){extendString} {{
     indent(3) + "  rt.DataRecord(null, null, x.text)" + newline +
     indent(2) + "}).toList"
   }
-  
-  def buildArgForAny(namespace: String, elementLabel: String,
-      defaultValue: Option[String], fixedValue: Option[String],
-      minOccurs: Int, maxOccurs: Int) = {
     
-    val selector = "(node.child.collect { case elem: scala.xml.Elem => elem })"
-    
-    def buildMatchStatement(noneValue: String, someValue: String) =
-      selector + ".headOption match {" + newline +
-      indent(4) + "case None    => " + noneValue + newline +
-      indent(4) + "case Some(x) => " + someValue + newline +
-      indent(3) + "}"
-    
-    if (maxOccurs > 1) {
-      "(node.child.collect {" + newline +
-      indent(3) + "case x: scala.xml.Elem =>" + newline +
-      indent(3) + "  rt.DataRecord(x.scope.getURI(x.prefix), x.label, x) }).toList"
-    } else if (minOccurs == 0) {
-      buildMatchStatement("None",
-        "Some(rt.DataRecord(x.scope.getURI(x.prefix), x.label, x))")
-    } else if (defaultValue.isDefined) {
-      buildMatchStatement("rt.DataRecord(" + newline +
-        indent(4) + quote(namespace) + ", " + quote(elementLabel) + ", " + newline +
-        indent(4) + "scala.xml.Elem(node.scope.getPrefix(" + quote(schema.targetNamespace) + "), " + newline +
-        indent(4) + quote(elementLabel) + ", scala.xml.Null, node.scope, " +  newline +
-        indent(4) + "scala.xml.Text(" + quote(defaultValue.get) + ")))",
-        "rt.DataRecord(x.scope.getURI(x.prefix), x.label, x)")
-    } else if (fixedValue.isDefined) {
-      "rt.DataRecord(" + newline +
-        indent(4) + quote(namespace) + ", " + quote(elementLabel) + ", " + newline +
-        indent(4) + "scala.xml.Elem(node.scope.getPrefix(" + quote(schema.targetNamespace) + "), "  + newline +
-        indent(4) + quote(elementLabel) + ", scala.xml.Null, node.scope, " +  newline +
-        indent(4) + "scala.xml.Text(" + quote(fixedValue.get) + ")))"
-    } else {
-      buildMatchStatement("error(" + quote("required element is missing: " + elementLabel)  + ")",
-        "rt.DataRecord(" + newline +
-          indent(4) + quote(namespace) + ", " + quote(elementLabel) + ", x)")
-    }
-  }
-  
   def buildArg(selector: String, typeSymbol: XsTypeSymbol): String = typeSymbol match {
     case XsAny => selector
     case symbol: BuiltInSimpleTypeSymbol =>
@@ -1044,10 +1090,13 @@ case class {name}({paramsString}){extendString} {{
     if (maxOccurs > 1) {
       if (selector.contains("split("))
         selector + ".toList.map(" + pre + "_" + post + ")"
-      else if (pre.contains("("))
-        selector + ".toList.map(x => " + pre + "x.text" + post + ")"
       else
-        selector + ".toList.map(" + pre + "_.text" + post + ")"
+        nillable match {
+          case Some(true) =>
+            selector + ".toList.map(x => if (x.nil) None" + newline +
+            indent(3) + "else Some(" + pre + "x.text" + post + ") )"
+          case _ => selector + ".toList.map(x => " + pre + "x.text" + post + ")"
+        } 
     } else if (minOccurs == 0) {
       buildMatchStatement("None", "Some(" + pre + "x.text" + post + ")")
     } else if (defaultValue.isDefined) {

@@ -105,6 +105,8 @@ object Calendar {
 }
 
 object Helper {
+  val XSI_URL = "http://www.w3.org/2001/XMLSchema-instance"
+  val XSI_PREFIX = "xsi"
   lazy val typeFactory = javax.xml.datatype.DatatypeFactory.newInstance()
 
   def toCalendar(value: String) = {
@@ -139,4 +141,10 @@ object Helper {
       case None    => false
       case Some(x) => x.text == "true" 
     }
+
+  def nilElem(namespace: String, elementLabel: String,
+      scope: scala.xml.NamespaceBinding) =
+    scala.xml.Elem(scope.getPrefix(namespace), elementLabel,
+      scala.xml.Attribute(scope.getPrefix(XSI_URL), "nil", "true", scala.xml.Null),
+      scope, Nil: _*)
 }

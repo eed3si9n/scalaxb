@@ -338,8 +338,10 @@ object {name} {{
     { scopeString(schema.scope).reverse.mkString(newline + indent(2)) }
     val node = toXML(namespace, elementLabel, scope)
     node match {{
-      case elem: scala.xml.Elem => elem % new scala.xml.PrefixedAttribute("xsi", "type",
-        { quote(typeNameString) }, elem.attributes)
+      case elem: scala.xml.Elem =>
+        elem % new scala.xml.PrefixedAttribute(scope.getPrefix(rt.Helper.XSI_URL),
+          "type",
+          { quote(typeNameString) }, elem.attributes)
       case _ => node
     }}
   }} 
@@ -452,20 +454,20 @@ case class {name}({paramsString}){extendString} {{
       case Single =>
         if (param.nillable)
           makeParamName(param.name) + " match {" + newline +
-          indent(5) + "case Some(x) => x.toXML(" + makeParamName(param.name) + ".namespace, " +
+          indent(5) + "case Some(x) => x.toXML(" + quote(param.namespace) + ", " +
             makeParamName(param.name) + ".key, scope)" + newline +
-          indent(5) + "case None =>   Seq(scala.xml.Elem(prefix, " + quote(param.name) + ", " + 
-            "scala.xml.Attribute(\"xsi\", \"nil\", \"true\", scala.xml.Null), scope, Nil: _*))" + newline +
+          indent(5) + "case None => Seq(rt.Helper.nilElem(" + quote(param.namespace) + ", " + 
+            quote(param.name) + ", scope))" + newline +
           indent(4) + "}"
         else
-          makeParamName(param.name) + ".toXML(" + makeParamName(param.name) + ".namespace, " +
+          makeParamName(param.name) + ".toXML(" + quote(param.namespace) + ", " +
             makeParamName(param.name) + ".key, scope)"
       case Optional =>
         if (param.nillable)
           makeParamName(param.name) + " match {" + newline +
           indent(5) + "case Some(x) => x.toXML(x.namespace, x.key, scope)" + newline +
-          indent(5) + "case None =>   Seq(scala.xml.Elem(prefix, " + quote(param.name) + ", " + 
-            "scala.xml.Attribute(\"xsi\", \"nil\", \"true\", scala.xml.Null), scope, Nil: _*))" + newline +
+          indent(5) + "case None => Seq(rt.Helper.nilElem(" + quote(param.namespace) + ", " + 
+            quote(param.name) + ", scope))" + newline +
           indent(4) + "}"    
         else
           makeParamName(param.name) + " match {" + newline +
@@ -476,8 +478,8 @@ case class {name}({paramsString}){extendString} {{
         if (param.nillable)
           makeParamName(param.name) + ".map(x => x match {" + newline +
           indent(5) + "case Some(x) => x.toXML(x.namespace, x.key, scope)" + newline +
-          indent(5) + "case None =>   scala.xml.Elem(prefix, " + quote(param.name) + ", " + 
-            "scala.xml.Attribute(\"xsi\", \"nil\", \"true\", scala.xml.Null), scope, Nil: _*)" + newline +
+          indent(5) + "case None => rt.Helper.nilElem(" + quote(param.namespace) + ", " + 
+            quote(param.name) + ", scope)" + newline +
           indent(4) + "} )"        
         else  
           makeParamName(param.name) + ".map(x => x.toXML(x.namespace, x.key, scope))"
@@ -490,8 +492,8 @@ case class {name}({paramsString}){extendString} {{
         makeParamName(param.name) + " match {" + newline +
         indent(5) + "case Some(x) => x.toXML(" + quote(param.namespace) + "," + 
           quote(param.name) + ", scope)" + newline +
-        indent(5) + "case None =>   Seq(scala.xml.Elem(prefix, " + quote(param.name) + ", " + 
-          "scala.xml.Attribute(\"xsi\", \"nil\", \"true\", scala.xml.Null), scope, Nil: _*))" + newline +
+        indent(5) + "case None => Seq(rt.Helper.nilElem(" + quote(param.namespace) + ", " + 
+          quote(param.name) + ", scope))" + newline +
         indent(4) + "}"
       else
         makeParamName(param.name) + ".toXML(" + quote(param.namespace) + "," + 
@@ -501,22 +503,22 @@ case class {name}({paramsString}){extendString} {{
         makeParamName(param.name) + " match {" + newline +
         indent(5) + "case Some(x) => x.toXML(" + quote(param.namespace) + "," + 
           quote(param.name) + ", scope)" + newline +
-        indent(5) + "case None =>   Seq(scala.xml.Elem(prefix, " + quote(param.name) + ", " + 
-          "scala.xml.Attribute(\"xsi\", \"nil\", \"true\", scala.xml.Null), scope, Nil: _*))" + newline +
+        indent(5) + "case None => Seq(rt.Helper.nilElem(" + quote(param.namespace) + ", " + 
+          quote(param.name) + ", scope))" + newline +
         indent(4) + "}"    
       else
         makeParamName(param.name) + " match {" + newline +
-        indent(5) + "case Some(x) => x.toXML(" + quote(param.namespace) + "," + 
+        indent(5) + "case Some(x) => x.toXML(" + quote(param.namespace) + ", " + 
           quote(param.name) + ", scope)" + newline +
         indent(5) + "case None => Nil" + newline +
         indent(4) + "}"
     case Multiple =>
       if (param.nillable)
         makeParamName(param.name) + ".map(x => x match {" + newline +
-        indent(5) + "case Some(x) => x.toXML(" + quote(param.namespace) + "," + 
+        indent(5) + "case Some(x) => x.toXML(" + quote(param.namespace) + ", " + 
           quote(param.name) + ", scope)" + newline +
-        indent(5) + "case None =>   scala.xml.Elem(prefix, " + quote(param.name) + ", " + 
-          "scala.xml.Attribute(\"xsi\", \"nil\", \"true\", scala.xml.Null), scope, Nil: _*)" + newline +
+        indent(5) + "case None => rt.Helper.nilElem(" + quote(param.namespace) + ", " + 
+          quote(param.name) + ", scope)" + newline +
         indent(4) + "} )"        
       else  
         makeParamName(param.name) + ".map(x => x.toXML(" + quote(param.namespace) + "," + 
@@ -544,8 +546,8 @@ case class {name}({paramsString}){extendString} {{
         makeParamName(param.name) + " match {" + newline +
         indent(5) + "case Some(x) => Seq(scala.xml.Elem(prefix, " + quote(param.name) + ", " + 
           "scala.xml.Null, scope, scala.xml.Text(" + buildToString("x", param.typeSymbol) + ")))" + newline +
-        indent(5) + "case None =>   Seq(scala.xml.Elem(prefix, " + quote(param.name) + ", " + 
-          "scala.xml.Attribute(\"xsi\", \"nil\", \"true\", scala.xml.Null), scope, Nil: _*))" + newline +
+        indent(5) + "case None => Seq(rt.Helper.nilElem(" + quote(param.namespace) + ", " + 
+          quote(param.name) + ", scope))" + newline +
         indent(4) + "}"
       else
         "scala.xml.Elem(prefix, " + quote(param.name) + ", " +
@@ -555,22 +557,22 @@ case class {name}({paramsString}){extendString} {{
         makeParamName(param.name) + " match {" + newline +
         indent(5) + "case Some(x) => Seq(scala.xml.Elem(prefix, " + quote(param.name) + ", " + 
           "scala.xml.Null, scope, scala.xml.Text(" + buildToString("x", param.typeSymbol) + ")))" + newline +
-        indent(5) + "case None =>   Seq(scala.xml.Elem(prefix, " + quote(param.name) + ", " + 
-          "scala.xml.Attribute(\"xsi\", \"nil\", \"true\", scala.xml.Null), scope, Nil: _*))" + newline +
+        indent(5) + "case None => Seq(rt.Helper.nilElem(" + quote(param.namespace) + ", " + 
+          quote(param.name) + ", scope))" + newline +
         indent(4) + "}"    
       else
         makeParamName(param.name) + " match {" + newline +
         indent(5) + "case Some(x) => Seq(scala.xml.Elem(prefix, " + quote(param.name) + ", " + 
           "scala.xml.Null, scope, scala.xml.Text(" + buildToString("x", param.typeSymbol) + ")))" + newline +
-        indent(5) + "case None => Seq()" + newline +
+        indent(5) + "case None => Nil" + newline +
         indent(4) + "}"
     case Multiple =>
       if (param.nillable)
         makeParamName(param.name) + ".map(x => x match {" + newline +
         indent(5) + "case Some(x) => scala.xml.Elem(prefix, " + quote(param.name) + ", " + 
           "scala.xml.Null, scope, scala.xml.Text(" + buildToString("x", param.typeSymbol) + "))" + newline +
-        indent(5) + "case None =>   scala.xml.Elem(prefix, " + quote(param.name) + ", " + 
-          "scala.xml.Attribute(\"xsi\", \"nil\", \"true\", scala.xml.Null), scope, Nil: _*)" + newline +
+        indent(5) + "case None =>   rt.Helper.nilElem(" + quote(param.namespace) + ", " + 
+          quote(param.name) + ", scope)" + newline +
         indent(4) + "} )"
       else 
         makeParamName(param.name) + ".map(x => scala.xml.Elem(prefix, " + quote(param.name) + ", " +

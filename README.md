@@ -76,8 +76,8 @@ into XML document:
 
     case class Address(name: String,
       street: String,
-      city: String) extends rt.DataModel {
-  
+      city: String) {
+
       def toXML(namespace: String, elementLabel: String): scala.xml.Node = {
         var scope: scala.xml.NamespaceBinding = scala.xml.TopScope
         scope = scala.xml.NamespaceBinding("xsi", "http://www.w3.org/2001/XMLSchema-instance", scope)
@@ -90,11 +90,11 @@ into XML document:
           case _ => node
         }
       } 
-  
+
       def toXML(namespace: String, elementLabel: String, scope: scala.xml.NamespaceBinding): scala.xml.Node = {
         val prefix = scope.getPrefix(namespace)
         var attribute: scala.xml.MetaData  = scala.xml.Null
-        
+
         scala.xml.Elem(prefix, elementLabel,
           attribute, scope,
           Seq(scala.xml.Elem(prefix, "name", scala.xml.Null, scope, scala.xml.Text(name.toString)),
@@ -105,7 +105,7 @@ into XML document:
 
     object Address extends rt.ElemNameParser[Address] {
       val targetNamespace = "http://www.example.com/IPO"
-    
+
       def parser(node: scala.xml.Node): Parser[Address] =
         (rt.ElemName(targetNamespace, "name")) ~ 
           (rt.ElemName(targetNamespace, "street")) ~ 

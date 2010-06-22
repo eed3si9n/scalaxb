@@ -34,17 +34,17 @@ class ContextProcessor(logger: Logger) extends ScalaNames {
     packageName(decl.namespace, context)
       
   def packageName(namespace: String, context: XsdContext): Option[String] =
-    if (context.packageNames.contains(namespace))
-      context.packageNames(namespace)
-    else
-      context.packageNames(null)
-  
+    if (context.packageNames.contains(namespace)) context.packageNames(namespace)
+    else if (context.packageNames.contains(null)) context.packageNames(null)
+    else None
+      
   def processContext(context: XsdContext,
       packageNames: collection.Map[String, Option[String]]) {
     context.packageNames ++= packageNames
     packageNames.valuesIterator.toList.distinct.map(
       pkg => context.typeNames(pkg) = mutable.ListMap.empty[ComplexTypeDecl, String]
       )
+    context.typeNames(None) = mutable.ListMap.empty[ComplexTypeDecl, String]
     
     val anonymousTypes = mutable.ListBuffer.empty[(SchemaDecl, ComplexTypeDecl)]
     

@@ -57,7 +57,7 @@ object Driver extends Module {
   def generate(xsd: Schema, context: Context, output: File,
       packageName: Option[String], firstOfPackage: Boolean) = {
     val out = new java.io.PrintWriter(new java.io.FileWriter(output))
-    log("xsd: generating ...")
+    log("xsd: generating " + output + " for package " + packageName)
     if (!context.typeNames.contains(packageName))
       context.typeNames += (packageName -> mutable.ListMap.
                             empty[ComplexTypeDecl, String])

@@ -779,14 +779,10 @@ case class {name}({paramsString}){extendString} {{
     buildParserString(base, minOccurs, maxOccurs)
   }
   
-  def buildParserString(base: String, minOccurs: Int, maxOccurs: Int) = {
-    if (maxOccurs > 1)
-      "rep(" + base + ")"
-    else if (minOccurs == 0)
-      "opt(" + base + ")"
-    else
-      "(" + base + ")"
-  }
+  def buildParserString(base: String, minOccurs: Int, maxOccurs: Int) =
+    if (maxOccurs > 1) "rep(" + base + ")"
+    else if (minOccurs == 0) "opt(" + base + ")"
+    else "(" + base + ")"
   
   def buildArg(decl: Decl): String = decl match {
     case elem: ElemDecl        => buildArg(elem, 0)
@@ -1113,7 +1109,8 @@ case class {name}({paramsString}){extendString} {{
     }
   }
     
-  def quote(value: String) = "\"" + value + "\""
+  def quote(value: String) = if (value == null) "null"
+  else "\"" + value + "\""
   
   def buildSuperNames(decl: ComplexTypeDecl) =
     buildSuperName(decl) ::: buildOptions(decl)

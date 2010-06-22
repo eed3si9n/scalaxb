@@ -1,0 +1,18 @@
+- Implements parsing of content models using [parser combinators](http://scalaxb.org/parser-combinator). 
+- Implements support for [`xsi:nillable`](http://scalaxb.org/nillable) ([GH-3](http://github.com/eed3si9n/scalaxb/issues/3)).
+
+The following code is an example of a generated parser:
+
+    object Address extends rt.ElemNameParser[Address] {
+      val targetNamespace = "http://www.example.com/IPO"
+
+      def parser(node: scala.xml.Node): Parser[Address] =
+        (rt.ElemName(targetNamespace, "name")) ~ 
+          (rt.ElemName(targetNamespace, "street")) ~ 
+          (rt.ElemName(targetNamespace, "city")) ^^
+            { case p1 ~ 
+          p2 ~ 
+          p3 => Address(p1.text,
+          p2.text,
+          p3.text) }
+    }

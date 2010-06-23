@@ -139,10 +139,8 @@ class GenSource(schema: SchemaDecl,
     if (!typeNames.contains(decl))
       error(pkg + ": Type name not found: " + decl.toString)
     
-    if (localOnly)
-      typeNames(decl)
-    else if (pkg == packageName(schema, context))
-      typeNames(decl)
+    if (localOnly) typeNames(decl)
+    else if (pkg == packageName(schema, context)) typeNames(decl)
     else pkg match {
       case Some(x) => x + "." + typeNames(decl)
       case None => typeNames(decl)
@@ -155,8 +153,9 @@ class GenSource(schema: SchemaDecl,
     case _ => error("GenSource: Unsupported content " +  decl.content.toString)    
   }
   
-  def baseType(decl: SimpleTypeDecl) = decl.content match {
+  def baseType(decl: SimpleTypeDecl): BuiltInSimpleTypeSymbol = decl.content match {
     case SimpTypRestrictionDecl(base: BuiltInSimpleTypeSymbol) => base
+    case SimpTypRestrictionDecl(ReferenceTypeSymbol(decl2@SimpleTypeDecl(_, _))) => baseType(decl2)
     case SimpTypListDecl(itemType: BuiltInSimpleTypeSymbol) => itemType
     case _ => error("GenSource: Unsupported content " +  decl.content.toString)
   }
@@ -257,7 +256,7 @@ object {name} {{
     val attributes = flattenAttributes(decl)    
     val list = List.concat[Decl](childElements, attributes)
     val paramList = list.map(buildParam(_))
-    val parserList = particles map(buildParser(_))
+    val parserList = particles map(buildParser(_, decl.mixed))
     val parserVariableList =  for (i <- 0 to particles.size - 1)
       yield "p" + (i + 1)
     val argList = (for (i <- 0 to particles.size - 1)
@@ -622,7 +621,7 @@ case class {name}({paramsString}){extendString} {{
   def buildParam(any: AnyAttributeDecl): Param =
     Param(null, "anyAttribute", XsAnyAttribute, Multiple, false, true)
     
-  def buildConverter(seq: SequenceDecl): String = {
+  def buildConverter(seq: SequenceDecl, mixed: Boolean): String = {
     val name = makeTypeName(context.compositorNames(seq))
     val particles = buildParticles(seq)
     val parserVariableList =  for (i <- 0 to particles.size - 1)
@@ -633,11 +632,11 @@ case class {name}({paramsString}){extendString} {{
     
     val paramList = particles.map(buildParam(_))
     
-    val parent = context.compositorParents(seq)
+    // val parent = context.compositorParents(seq)
     val hasSequenceParam = (paramList.size == 1) &&
       (paramList.head.cardinality == Multiple) &&
       (!paramList.head.attribute) &&
-      (!parent.mixed)
+      (!mixed)
     
     def argsString = if (hasSequenceParam) argList.head + ": _*"
     else argList.mkString("," + newline + indent(3))
@@ -670,13 +669,16 @@ case class {name}({paramsString}){extendString} {{
       "(x => rt.DataRecord(x.namespace, x.name, " + buildArg("x.node", typeSymbol) + "))"
   
   // called by makeCaseClassWithType
-  def buildParser(particle: Particle): String = particle match {
-    case elem: ElemDecl       => buildParser(elem, elem.minOccurs, elem.maxOccurs)
+  def buildParser(particle: Particle, mixed: Boolean): String = particle match {
+    case elem: ElemDecl       => buildParser(elem, elem.minOccurs, elem.maxOccurs, mixed)
     case ref: ElemRef         =>
       val elem = buildElement(ref)
-      buildParser(elem, elem.minOccurs, elem.maxOccurs)
-    case any: AnyDecl         => buildParser(any, any.minOccurs, any.maxOccurs)
-    case choice: ChoiceDecl   => buildParser(choice, choice.minOccurs, choice.maxOccurs)
+      buildParser(elem, elem.minOccurs, elem.maxOccurs, mixed)
+    case ref: GroupRef        =>
+      val group = buildGroup(ref)
+      buildParser(group, group.minOccurs, group.maxOccurs, mixed)
+    case compositor: HasParticle =>
+      buildParser(compositor, compositor.minOccurs, compositor.maxOccurs, mixed)  
   }
   
   def buildParser(any: AnyDecl, minOccurs: Int, maxOccurs: Int): String =
@@ -684,21 +686,32 @@ case class {name}({paramsString}){extendString} {{
   
   // minOccurs and maxOccurs may come from the declaration of the compositor,
   // or from the element declaration.
-  def buildParser(compositor: HasParticle, minOccurs: Int, maxOccurs: Int): String = compositor match {
-    case seq: SequenceDecl    => buildParser(seq, minOccurs, maxOccurs)
-    case choice: ChoiceDecl   => buildParser(choice, minOccurs, maxOccurs)
-    case all: AllDecl         => buildParser(all, minOccurs, maxOccurs)
+  def buildParser(compositor: HasParticle,
+      minOccurs: Int, maxOccurs: Int, mixed: Boolean): String = compositor match {
+    case seq: SequenceDecl    => buildParser(seq, minOccurs, maxOccurs, mixed)
+    case choice: ChoiceDecl   => buildParser(choice, minOccurs, maxOccurs, mixed)
+    case all: AllDecl         => buildParser(all, minOccurs, maxOccurs, mixed)
+    case group: GroupDecl     => buildParser(group, minOccurs, maxOccurs, mixed)
   }
   
-  def buildParser(seq: SequenceDecl, minOccurs: Int, maxOccurs: Int): String = {
-    val parserList = seq.particles.map(x => buildParser(x))
+  def buildParser(group: GroupDecl, minOccurs: Int, maxOccurs: Int, mixed: Boolean): String = 
+    if (group.particles.size == 1) group.particles(0) match {
+      case seq: SequenceDecl    => buildParser(seq, minOccurs, maxOccurs, mixed)
+      case choice: ChoiceDecl   => buildParser(choice, minOccurs, maxOccurs, mixed)
+      case all: AllDecl         => buildParser(all, minOccurs, maxOccurs, mixed)   
+    }
+    else error("GenSource#buildParser: group must contain one content model: " + group)
+  
+  def buildParser(seq: SequenceDecl,
+      minOccurs: Int, maxOccurs: Int, mixed: Boolean): String = {
+    val parserList = seq.particles.map(x => buildParser(x, mixed))
     val base = parserList.mkString("(", " ~ " + newline + indent(2), ")") + " ^^ " + newline +
-    indent(3) + buildConverter(seq)
+    indent(3) + buildConverter(seq, mixed)
     buildParserString(base, minOccurs, maxOccurs)
   }
   
-  def buildParser(all: AllDecl, minOccurs: Int, maxOccurs: Int): String = {
-    val parserList = all.particles.map(x => buildParser(x))
+  def buildParser(all: AllDecl, minOccurs: Int, maxOccurs: Int, mixed: Boolean): String = {
+    val parserList = all.particles.map(x => buildParser(x, mixed))
     val base = parserList.mkString("(", " ~ " + newline + indent(2), ")") + " ^^ " + newline +
     indent(3) + buildConverter(all)
     buildParserString(base, minOccurs, maxOccurs)   
@@ -711,20 +724,24 @@ case class {name}({paramsString}){extendString} {{
   // choice repeatable in case any one particle is repeatable.
   // this may violate the schema, but it is a compromise as long as plurals are
   // treated as Seq[DataRecord].
-  def buildParser(choice: ChoiceDecl, minOccurs: Int, maxOccurs: Int): String = {
+  def buildParser(choice: ChoiceDecl,
+      minOccurs: Int, maxOccurs: Int, mixed: Boolean): String = {
     def buildChoiceParser(particle: Particle): String = particle match {
       case compositor: HasParticle =>
-        buildParser(compositor, math.max(compositor.minOccurs, 1), 1)
+        buildParser(compositor, math.max(compositor.minOccurs, 1), 1, mixed)
       case elem: ElemDecl       =>
-        "(" + buildParser(elem, math.max(elem.minOccurs, 1), 1) + " ^^ " + newline +
+        "(" + buildParser(elem, math.max(elem.minOccurs, 1), 1, mixed) + " ^^ " + newline +
         indent(3) + buildConverter(elem, math.max(elem.minOccurs, 1), 1) + ")"
       case any: AnyDecl         =>
         "(" + buildParser(any, math.max(any.minOccurs, 1), 1) + " ^^ " + newline +
         indent(3) + buildConverter(XsAny, math.max(any.minOccurs, 1), 1) + ")"
       case ref: ElemRef         =>
         val elem = buildElement(ref)
-        "(" + buildParser(elem, math.max(elem.minOccurs, 1), 1) + " ^^ " + newline +
+        "(" + buildParser(elem, math.max(elem.minOccurs, 1), 1, mixed) + " ^^ " + newline +
         indent(3) + buildConverter(elem, math.max(elem.minOccurs, 1), 1) + ")"
+      case ref: GroupRef        =>
+        val group = buildGroup(ref)
+        buildParser(group, math.max(group.minOccurs, 1), 1, mixed)
     }
     
     val parserList = choice.particles filterNot(
@@ -745,10 +762,10 @@ case class {name}({paramsString}){extendString} {{
   }
   
   def buildParser(elem: ElemDecl,
-      minOccurs: Int, maxOccurs: Int): String = elem.typeSymbol match {
+      minOccurs: Int, maxOccurs: Int, mixed: Boolean): String = elem.typeSymbol match {
     case symbol: BuiltInSimpleTypeSymbol => buildParserString(elem, minOccurs, maxOccurs)
     case ReferenceTypeSymbol(decl: SimpleTypeDecl) =>  buildParserString(elem, minOccurs, maxOccurs)
-    case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>  buildParser(elem, decl, minOccurs, maxOccurs)
+    case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>  buildParser(elem, decl, minOccurs, maxOccurs, mixed)
     case XsAny => buildParserString("any", minOccurs, maxOccurs)
     case symbol: ReferenceTypeSymbol =>
       if (symbol.decl == null)
@@ -764,12 +781,12 @@ case class {name}({paramsString}){extendString} {{
   }
   
   def buildParser(elem: ElemDecl, decl: ComplexTypeDecl,
-      minOccurs: Int, maxOccurs: Int): String =
+      minOccurs: Int, maxOccurs: Int, mixed: Boolean): String =
     if (compositorWrapper.keysIterator.contains(decl)) {
       val compositor = compositorWrapper(decl)
-      buildParser(compositor, minOccurs, maxOccurs)
-    } else
-      buildParserString(elem, minOccurs, maxOccurs)
+      buildParser(compositor, minOccurs, maxOccurs, mixed)
+    }
+    else buildParserString(elem, minOccurs, maxOccurs)
   
   def buildParserString(elem: ElemDecl, minOccurs: Int, maxOccurs: Int): String = {
     val base = if (elem.namespace == schema.targetNamespace)
@@ -916,9 +933,9 @@ case class {name}({paramsString}){extendString} {{
         toMinOccurs(attr), 1, None)
         
     case ReferenceTypeSymbol(decl: SimpleTypeDecl) =>
-      buildArg(decl, buildSelector(attr), attr.defaultValue, attr.fixedValue,
-        toMinOccurs(attr), 1, None)    
-    
+      buildArg(baseType(decl), buildSelector(attr), attr.defaultValue, attr.fixedValue,
+        toMinOccurs(attr), 1, None)
+        
     case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
       error("GenSource: Attribute with complex type " + decl.toString)
 
@@ -1198,19 +1215,26 @@ case class {name}({paramsString}){extendString} {{
   
   def flattenElements(compositor: HasParticle, name: String): List[ElemDecl] =
       compositor match {
+    case GroupDecl(_, _, particles: List[_], _, _) =>
+      particles flatMap {
+        case compositor2: HasParticle => flattenElements(compositor2, "")
+      }    
+    
     case SequenceDecl(particles: List[_], _, _) =>
       particles flatMap {
         case compositor2: HasParticle => flattenElements(compositor2, "")
         case elem: ElemDecl           => List(elem)
         case ref: ElemRef             => List(buildElement(ref))
-        case any: AnyDecl             => List(buildAnyRef(any))        
+        case any: AnyDecl             => List(buildAnyRef(any))
+        case ref: GroupRef            => flattenElements(buildGroup(ref), "")
       }
       
     case AllDecl(particles: List[_], _, _) =>
       particles flatMap {
         case compositor2: HasParticle => flattenElements(compositor2, "")
         case elem: ElemDecl           => List(toOptional(elem))
-        case ref: ElemRef             => List(buildElement(ref))        
+        case ref: ElemRef             => List(buildElement(ref))
+        case ref: GroupRef            => flattenElements(buildGroup(ref), "")      
       }
           
     case choice: ChoiceDecl =>
@@ -1276,6 +1300,25 @@ case class {name}({paramsString}){extendString} {{
   
   def buildElement(base: BuiltInSimpleTypeSymbol): ElemDecl = 
     ElemDecl(schema.targetNamespace, "value", base, None, None, 1, 1, None)
+  
+  def groups(namespace: String, name: String) =
+    (for (schema <- schemas;
+          if schema.targetNamespace == namespace;
+          if schema.topGroups.contains(name))
+        yield schema.topGroups(name)) match {
+        case x :: xs => x
+        case Nil     => error("Group not found: {" + namespace + "}" + name)
+      }
+      
+  def buildGroup(ref: GroupRef) = {
+    val that = groups(ref.namespace, ref.name)
+    
+    // http://www.w3.org/TR/xmlschema-0/#Globals
+    // In other words, global declarations cannot contain the attributes
+    // minOccurs, maxOccurs, or use.
+    GroupDecl(that.namespace, that.name, that.particles,
+      ref.minOccurs, ref.maxOccurs)    
+  }
   
   def buildCompositorRef(compositor: HasParticle) = {    
     argNumber += 1

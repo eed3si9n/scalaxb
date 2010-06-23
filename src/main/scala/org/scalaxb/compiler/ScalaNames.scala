@@ -23,7 +23,29 @@
 package org.scalaxb.compiler
 
 trait ScalaNames {
-
+  def isCommonlyUsedWord(s: String) = s match {
+    case "Option"
+    | "Boolean"
+    | "Char"
+    | "Byte"
+    | "Int"
+    | "Double"
+    | "Long"
+    | "Short"
+    | "Unit"
+    | "String"
+    | "Float"
+    | "BigInt"
+    | "BigDecimal"
+    | "Array"
+    | "Map"
+    | "Product"
+    | "Function"
+     => true
+    case _ => false
+  }
+  
+  
   def isKeyword(str: String) =
     str match {
       case "abstract"

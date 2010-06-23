@@ -86,7 +86,13 @@ class ContextProcessor(logger: Logger) extends ScalaNames {
     
     context.complexTypes ++= anonymousTypes.toList.distinct :::
       namedTypes.toList.distinct
-    
+      
+    for (schema <- context.schemas;
+        group <- schema.topGroups.valuesIterator.toList) {
+      val pair = (schema, group)
+      context.groups += pair
+    }
+        
     def associateSubType(subType: ComplexTypeDecl, base: ComplexTypeDecl) {
       if (context.baseToSubs.contains(base))
         context.baseToSubs(base) = subType :: context.baseToSubs(base)
@@ -134,8 +140,43 @@ class ContextProcessor(logger: Logger) extends ScalaNames {
       }
     }
     
+    for ((schema, group) <- context.groups) {
+      sequenceNumber = 0
+      choiceNumber = 0
+      allNumber = 0
+      if (group.particles.size == 1) group.particles(0) match {
+        case compositor: HasParticle => makeGroupCompositorName(compositor, group)
+      }
+      else error("ContextProcessor#makeCompositorNames: group must contain one content model: " + group)
+    }
+    
     def isFirstCompositor =
       (sequenceNumber + choiceNumber + allNumber == 0)
+    
+    def makeGroupCompositorName(compositor: HasParticle, group: GroupDecl) {
+      val groupName = group.name
+      
+      compositor match {
+        case SequenceDecl(particles: List[_], _, _) =>
+          if (isFirstCompositor) context.compositorNames(compositor) = groupName
+          else context.compositorNames(compositor) = groupName + "Sequence" + (sequenceNumber + 1)
+          sequenceNumber += 1
+             
+        case ChoiceDecl(particles: List[_], _, _, _) =>
+          if (isFirstCompositor) context.compositorNames(compositor) = groupName
+          else context.compositorNames(compositor) = groupName + "Option" + (choiceNumber + 1)
+          choiceNumber += 1
+          
+        case AllDecl(particles: List[_], _, _) =>
+          if (isFirstCompositor) context.compositorNames(compositor) = groupName
+          else context.compositorNames(compositor) = groupName + "All" + (allNumber + 1)
+          allNumber += 1
+      }
+      
+      compositor.particles collect {
+        case compositor2: HasParticle => makeGroupCompositorName(compositor2, group)
+      }      
+    }
     
     def makeCompositorName(compositor: HasParticle, decl: ComplexTypeDecl) {
       val typeNames = context.typeNames(packageName(decl.namespace, context))
@@ -190,21 +231,23 @@ class ContextProcessor(logger: Logger) extends ScalaNames {
   
   def makeTraitName(decl: ComplexTypeDecl) =
     if (decl.name.last == 'e')
-      decl.name.dropRight(1) + "able"
-    else
-      decl.name + "able"
+      makeTypeName(decl.name.dropRight(1) + "able")
+    else makeTypeName(decl.name + "able")
   
-  def makeTypeName(name: String) =
-    if (name.contains("."))
-      name
-    else
-      identifier(name).capitalize
+  def makeTypeName(name: String) = name match {
+    case "javax.xml.datatype.Duration" => name
+    case "java.util.GregorianCalendar" => name
+    case "java.net.URI" => name
+    case "javax.xml.namespace.QName" => name
+    case _ =>
+      val base = identifier(name).capitalize
+      if (isCommonlyUsedWord(base)) base + "Type"
+      else base
+  }
   
   def makeParamName(name: String) =
-    if (isKeyword(name))
-      name + "Value"
-    else
-      identifier(name)
+    if (isKeyword(name)) name + "Value"
+    else identifier(name)
   
   def identifier(value: String) =
     """\W""".r.replaceAllIn(value, "")

@@ -44,7 +44,10 @@ case class XsdContext(
   compositorParents: mutable.ListMap[HasParticle, ComplexTypeDecl] =
     mutable.ListMap.empty[HasParticle, ComplexTypeDecl],
   compositorNames: mutable.ListMap[HasParticle, String] =
-    mutable.ListMap.empty[HasParticle, String]) {
+    mutable.ListMap.empty[HasParticle, String],
+  groups: mutable.ListBuffer[(SchemaDecl, GroupDecl)] =
+    mutable.ListBuffer.empty[(SchemaDecl, GroupDecl)] 
+    ) {
 }
 
 class ParserConfig {
@@ -53,8 +56,9 @@ class ParserConfig {
   val topElems  = mutable.ListMap.empty[String, ElemDecl]
   val elemList  = mutable.ListBuffer.empty[ElemDecl]
   val types     = mutable.ListMap.empty[String, TypeDecl]
-  val topAttrs     = mutable.ListMap.empty[String, AttributeDecl]
+  val topAttrs  = mutable.ListMap.empty[String, AttributeDecl]
   val attrList  = mutable.ListBuffer.empty[AttributeDecl]
+  val topGroups = mutable.ListMap.empty[String, GroupDecl]
   val choices   = mutable.Set.empty[ChoiceDecl]
   var schemas: List[SchemaDecl] = Nil
   
@@ -131,6 +135,7 @@ case class SchemaDecl(targetNamespace: String,
     types: Map[String, TypeDecl],
     choices: Set[ChoiceDecl],
     topAttrs: Map[String, AttributeDecl],
+    topGroups: Map[String, GroupDecl],
     scope: scala.xml.NamespaceBinding) {
   
   val newline = System.getProperty("line.separator")
@@ -169,6 +174,12 @@ object SchemaDecl {
       config.topAttrs += (attr.name -> attr)
     }
     
+    for (node <- schema \ "group";
+        if (node \ "@name").headOption.isDefined) {
+      val group = GroupDecl.fromXML(node, config)
+      config.topGroups += (group.name -> group)
+    }
+    
     for (node <- schema \\ "complexType";
         if (node \ "@name").headOption.isDefined) {
       val decl = ComplexTypeDecl.fromXML(node, (node \ "@name").text, config)
@@ -202,6 +213,7 @@ object SchemaDecl {
       immutable.ListMap.empty[String, TypeDecl] ++ config.types,
       config.choices,
       immutable.ListMap.empty[String, AttributeDecl] ++ config.topAttrs,
+      immutable.ListMap.empty[String, GroupDecl] ++ config.topGroups,
       scopeToBuild)
   }
   
@@ -224,17 +236,16 @@ object SchemaDecl {
     } // for
     
     for (typ <- config.types.valuesIterator) typ match {
-      case decl: SimpleTypeDecl => // do nothing
-            
+      case SimpleTypeDecl(_, res: SimpTypRestrictionDecl) =>
+        resolveType(res.base, config)
+      case SimpleTypeDecl(_, list: SimpTypListDecl) =>
+        resolveType(list.itemType, config) 
       case ComplexTypeDecl(_, _, _, _, SimpleContentDecl(res: SimpContRestrictionDecl), _) =>
         resolveType(res.base, config)
-      
       case ComplexTypeDecl(_, _, _, _, SimpleContentDecl(ext: SimpContExtensionDecl), _) =>
-        resolveType(ext.base, config)
-      
+        resolveType(ext.base, config)      
       case ComplexTypeDecl(_, _, _, _, ComplexContentDecl(res: CompContRestrictionDecl), _) =>
         resolveType(res.base, config)
-      
       case ComplexTypeDecl(_, _, _, _, ComplexContentDecl(ext: CompContExtensionDecl), _) =>
         resolveType(ext.base, config)
         
@@ -602,22 +613,25 @@ abstract class CompositorDecl extends Decl
 object CompositorDecl {
   def fromNodeSeq(seq: scala.xml.NodeSeq, config: ParserConfig) = {
     for (child <- seq.toList;
-        if (child.isInstanceOf[scala.xml.Elem]) && (child.label != "attribute"))
+        if (child.isInstanceOf[scala.xml.Elem])
+          && (child.label != "annotation")
+          && (child.label != "attribute"))
       yield fromXML(child, config)
   }
   
   def fromXML(node: scala.xml.Node, config: ParserConfig): Particle = node match {
     case <element>{ _* }</element>   =>
-      if ((node \ "@name").headOption.isDefined)
-        ElemDecl.fromXML(node, config)
-      else if ((node \ "@ref").headOption.isDefined)
-        ElemRef.fromXML(node, config)
-      else
-        error("xsd: Unspported content type " + node.toString) 
+      if ((node \ "@name").headOption.isDefined) ElemDecl.fromXML(node, config)
+      else if ((node \ "@ref").headOption.isDefined) ElemRef.fromXML(node, config)
+      else error("xsd: Unspported content type " + node.toString) 
     case <choice>{ _* }</choice>     => ChoiceDecl.fromXML(node, config)
     case <sequence>{ _* }</sequence> => SequenceDecl.fromXML(node, config)
     case <all>{ _* }</all>           => AllDecl.fromXML(node, config)
     case <any>{ _* }</any>           => AnyDecl.fromXML(node, config)
+    case <group>{ _* }</group>       =>
+      if ((node \ "@name").headOption.isDefined) GroupDecl.fromXML(node, config)
+      else if ((node \ "@ref").headOption.isDefined) GroupRef.fromXML(node, config)
+      else error("xsd: Unspported content type " + node.toString)
     
     case _ => error("xsd: Unspported content type " + node.label)   
   }
@@ -678,6 +692,40 @@ object AnyDecl {
     val minOccurs = CompositorDecl.buildOccurrence((node \ "@minOccurs").text)
     val maxOccurs = CompositorDecl.buildOccurrence((node \ "@maxOccurs").text)
     AnyDecl(minOccurs, maxOccurs)
+  }
+}
+
+case class GroupRef(namespace: String,
+  name: String,
+  minOccurs: Int,
+  maxOccurs: Int) extends CompositorDecl with Particle
+
+object GroupRef {
+  def fromXML(node: scala.xml.Node, config: ParserConfig) = {
+    val ref = (node \ "@ref").text   
+    val minOccurs = CompositorDecl.buildOccurrence((node \ "@minOccurs").text)
+    val maxOccurs = CompositorDecl.buildOccurrence((node \ "@maxOccurs").text)
+    val (namespace, typeName) = TypeSymbolParser.splitTypeName(ref, config)
+    
+    GroupRef(namespace, typeName, minOccurs, maxOccurs)
+  }
+}
+
+case class GroupDecl(namespace: String,
+  name: String,
+  particles: List[Particle],
+  minOccurs: Int,
+  maxOccurs: Int) extends CompositorDecl with HasParticle
+
+object GroupDecl {
+  def fromXML(node: scala.xml.Node, config: ParserConfig) = {
+    val name = (node \ "@name").text
+    val minOccurs = CompositorDecl.buildOccurrence((node \ "@minOccurs").text)
+    val maxOccurs = CompositorDecl.buildOccurrence((node \ "@maxOccurs").text)
+    val group = GroupDecl(config.targetNamespace, name,
+      CompositorDecl.fromNodeSeq(node.child, config), minOccurs, maxOccurs)
+    // config.choices += choice
+    group
   }
 }
 

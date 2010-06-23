@@ -15,7 +15,7 @@ object XhtmlTest extends SpecificationWithJUnit with CompilerMatcher {
   lazy val generated = module.processFiles(
     List((xhtml1strictxsd, xhtml1strictscala)),
     Map[String, Option[String]](),
-    Some(true)
+    None
       )
   
   "xhtml1-strict.scala file must compile so that Html can be used" in {

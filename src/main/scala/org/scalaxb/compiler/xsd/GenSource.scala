@@ -103,6 +103,10 @@ class GenSource(schema: SchemaDecl,
         if sch == schema;
         if !context.baseToSubs.keysIterator.contains(typ))
       myprintAll(makeType(typ).child)
+      
+    for ((sch, group) <- context.groups;
+        if sch == schema)
+      myprintAll(makeGroup(group).child)
   }
       
   def makeSuperType(decl: ComplexTypeDecl): scala.xml.Node =
@@ -269,7 +273,7 @@ object {name} {{
       })
     val compositors = context.compositorParents.filter(
       x => x._2 == decl).keysIterator
-    val compositorsList = compositors map(makeCompositor(_))
+    val compositorsList = compositors map(makeCompositor(_, decl.mixed))
     
     val extendString = if (superNames.isEmpty) ""
     else " extends " + superNames.mkString(" with ")
@@ -377,17 +381,16 @@ case class {name}({paramsString}){extendString} {{
 </source>    
   }
       
-  def makeCompositor(compositor: HasParticle) = {
+  def makeCompositor(compositor: HasParticle, mixed: Boolean) = {
     val name = makeTypeName(context.compositorNames(compositor))
     val hasForeign = containsForeignType(compositor)
     
     compositor match {
       case seq: SequenceDecl    =>
-        val parent = context.compositorParents(seq)
-        val decl = ComplexTypeDecl(parent.namespace,
+        val decl = ComplexTypeDecl(schema.targetNamespace,
           name,
           false,
-          parent.mixed,
+          mixed,
           ComplexContentDecl.fromCompositor(seq, Nil),
           Nil)
         
@@ -403,6 +406,12 @@ case class {name}({paramsString}){extendString} {{
     // }
     // </source>    
   }
+  
+  def makeGroup(group: GroupDecl) =
+    if (group.particles.size == 1) group.particles(0) match {
+      case compositor: HasParticle => makeCompositor(compositor, false) 
+    }
+    else error("GenSource#makeGroup: group must contain one content model: " + group)
   
   def buildAttributeString(attr: AttributeLike): String = attr match {
     case ref: AttributeRef => buildAttributeString(buildAttribute(ref))

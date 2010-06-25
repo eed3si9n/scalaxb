@@ -3,14 +3,14 @@ package org.scalaxb.rt
 case class DataRecord[+A](namespace: String, key: String, value: A)
     (implicit m : scala.reflect.Manifest[A]) {
   type DataModel = {
-    def toXML(namespace: String, elementLabel: String,
-      scope: scala.xml.NamespaceBinding): scala.xml.Node 
+    def toXML(__namespace: String, __elementLabel: String,
+      __scope: scala.xml.NamespaceBinding): scala.xml.Node 
   }
   
-  def toXML(namespace: String, elementLabel: String,
-      scope: scala.xml.NamespaceBinding): scala.xml.Node =
+  def toXML(__namespace: String, __elementLabel: String,
+      __scope: scala.xml.NamespaceBinding): scala.xml.Node =
     try
-      value.asInstanceOf[DataModel].toXML(namespace, elementLabel, scope)
+      value.asInstanceOf[DataModel].toXML(__namespace, __elementLabel, __scope)
     catch {
       case _ => 
         value match {
@@ -20,8 +20,8 @@ case class DataRecord[+A](namespace: String, key: String, value: A)
           // for now the structural type does not work within pattern matching,
           // but it might in the future.
           // case x: DataModel => x.toXML(namespace, elementLabel, scope)
-          case x => scala.xml.Elem(scope.getPrefix(namespace), elementLabel,
-                scala.xml.Null, scope, scala.xml.Text(value.toString))
+          case x => scala.xml.Elem(__scope.getPrefix(namespace), __elementLabel,
+                scala.xml.Null, __scope, scala.xml.Text(value.toString))
         }
     } // catch
 }

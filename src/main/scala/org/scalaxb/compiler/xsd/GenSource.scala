@@ -215,8 +215,8 @@ trait {name}{extendString} {{
     yield  "val " + param.toScalaCode
   vals.mkString(newline + indent(1))}
   
-  def toXML(namespace: String, elementLabel: String,
-    scope: scala.xml.NamespaceBinding): scala.xml.Node
+  def toXML(__namespace: String, __elementLabel: String,
+    __scope: scala.xml.NamespaceBinding): scala.xml.Node
 }}
 
 object {name} {{  
@@ -224,9 +224,8 @@ object {name} {{
     val typeName = (node \ "@{{http://www.w3.org/2001/XMLSchema-instance}}type").text    
     val namespace = if (typeName.contains(':'))
       node.scope.getURI(typeName.dropRight(typeName.length - typeName.indexOf(':')))
-    else
-      node.scope.getURI(null)
-      
+    else node.scope.getURI(null)
+    
     val value = if (typeName.contains(':')) typeName.drop(typeName.indexOf(':') + 1)
     else typeName
     
@@ -237,10 +236,8 @@ object {name} {{
         cases.mkString(newline + indent(3))        
       }
       { 
-        if (!decl.abstractValue)
-          "case _ => " + defaultType + ".fromXML(node)"
-        else
-          """case _ => error("Unknown type: " + typeName)"""
+        if (!decl.abstractValue) "case _ => " + defaultType + ".fromXML(node)"
+        else """case _ => error("Unknown type: " + typeName)"""
       }
     }}
   }}
@@ -305,7 +302,7 @@ object {name} {{
     val childElemParams = paramList.filter(!_.attribute)
     
     def childString = if (decl.mixed)
-      "mixed.map(x => x.toXML(x.namespace, x.key, scope)): _*"
+      "mixed.map(x => x.toXML(x.namespace, x.key, __scope)): _*"
     else decl.content.content match {
       case SimpContRestrictionDecl(base: XsTypeSymbol, _) => "scala.xml.Text(value.toString)"
       case SimpContExtensionDecl(base: XsTypeSymbol, _) =>   "scala.xml.Text(value.toString)"
@@ -319,11 +316,11 @@ object {name} {{
       if (scope == null || scope.uri == null) Nil
       else {
         if (scope.prefix == null)
-          ("scope = scala.xml.NamespaceBinding(null, " + quote(scope.uri) +
-            ", scope)") :: scopeString(scope.parent)
+          ("__scope = scala.xml.NamespaceBinding(null, " + quote(scope.uri) +
+            ", __scope)") :: scopeString(scope.parent)
         else
-          ("scope = scala.xml.NamespaceBinding(" + quote(scope.prefix) +
-            ", " + quote(scope.uri) + ", scope)") :: scopeString(scope.parent)
+          ("__scope = scala.xml.NamespaceBinding(" + quote(scope.prefix) +
+            ", " + quote(scope.uri) + ", __scope)") :: scopeString(scope.parent)
       }
     
     def getPrefix(namespace: String, scope: scala.xml.NamespaceBinding): String =
@@ -336,13 +333,13 @@ object {name} {{
       getPrefix(schema.targetNamespace, schema.scope) + ":" + decl.name
     
     def makeToXml = <source>
-  def toXML(namespace: String, elementLabel: String): scala.xml.Node = {{
-    var scope: scala.xml.NamespaceBinding = scala.xml.TopScope
+  def toXML(__namespace: String, __elementLabel: String): scala.xml.Node = {{
+    var __scope: scala.xml.NamespaceBinding = scala.xml.TopScope
     { scopeString(schema.scope).reverse.mkString(newline + indent(2)) }
-    val node = toXML(namespace, elementLabel, scope)
+    val node = toXML(__namespace, __elementLabel, __scope)
     node match {{
       case elem: scala.xml.Elem =>
-        elem % new scala.xml.PrefixedAttribute(scope.getPrefix(rt.Helper.XSI_URL),
+        elem % new scala.xml.PrefixedAttribute(__scope.getPrefix(rt.Helper.XSI_URL),
           "type",
           { quote(typeNameString) }, elem.attributes)
       case _ => node
@@ -366,12 +363,12 @@ object {name} {{
     return <source>
 case class {name}({paramsString}){extendString} {{
   { if (!decl.name.contains('@')) makeToXml }  
-  def toXML(namespace: String, elementLabel: String, scope: scala.xml.NamespaceBinding): scala.xml.Node = {{
-    val prefix = scope.getPrefix(namespace)
+  def toXML(__namespace: String, __elementLabel: String, __scope: scala.xml.NamespaceBinding): scala.xml.Node = {{
+    val prefix = __scope.getPrefix(__namespace)
     var attribute: scala.xml.MetaData  = scala.xml.Null
     { attributeString }
-    scala.xml.Elem(prefix, elementLabel,
-      attribute, scope,
+    scala.xml.Elem(prefix, __elementLabel,
+      attribute, __scope,
       { childString })
   }}
 }}
@@ -421,16 +418,13 @@ case class {name}({paramsString}){extendString} {{
   
   def buildAttributeString(any: AnyAttributeDecl): String =
     "anyAttribute.foreach(x =>" + newline +
-    indent(3) + "if (x.namespace == null)" + newline +
-    indent(3) + "  attribute = scala.xml.Attribute(null, x.key, x.value, attribute)" + newline +
-    indent(3) + "else" + newline +
-    indent(3) + "  attribute = scala.xml.Attribute(scope.getPrefix(x.namespace), x.key, x.value, attribute))"
+    indent(3) + "if (x.namespace == null) attribute = scala.xml.Attribute(null, x.key, x.value, attribute)" + newline +
+    indent(3) + "else attribute = scala.xml.Attribute(__scope.getPrefix(x.namespace), x.key, x.value, attribute))"
   
   def buildAttributeString(attr: AttributeDecl): String = {
     val namespaceString = if (attr.global)
-      "scope.getPrefix(" + quote(attr.namespace) + ")"
-    else
-      "null"
+      "__scope.getPrefix(" + quote(attr.namespace) + ")"
+    else "null"
     
     if (toMinOccurs(attr) == 0)
       makeParamName(attr.name) + " match {" + newline +
@@ -463,34 +457,34 @@ case class {name}({paramsString}){extendString} {{
         if (param.nillable)
           makeParamName(param.name) + " match {" + newline +
           indent(5) + "case Some(x) => x.toXML(" + quote(param.namespace) + ", " +
-            makeParamName(param.name) + ".key, scope)" + newline +
+            makeParamName(param.name) + ".key, __scope)" + newline +
           indent(5) + "case None => Seq(rt.Helper.nilElem(" + quote(param.namespace) + ", " + 
-            quote(param.name) + ", scope))" + newline +
+            quote(param.name) + ", __scope))" + newline +
           indent(4) + "}"
         else
           makeParamName(param.name) + ".toXML(" + quote(param.namespace) + ", " +
-            makeParamName(param.name) + ".key, scope)"
+            makeParamName(param.name) + ".key, __scope)"
       case Optional =>
         if (param.nillable)
           makeParamName(param.name) + " match {" + newline +
-          indent(5) + "case Some(x) => x.toXML(x.namespace, x.key, scope)" + newline +
+          indent(5) + "case Some(x) => x.toXML(x.namespace, x.key, __scope)" + newline +
           indent(5) + "case None => Seq(rt.Helper.nilElem(" + quote(param.namespace) + ", " + 
-            quote(param.name) + ", scope))" + newline +
+            quote(param.name) + ", __scope))" + newline +
           indent(4) + "}"    
         else
           makeParamName(param.name) + " match {" + newline +
-          indent(5) + "case Some(x) => x.toXML(x.namespace, x.key, scope)" + newline +
+          indent(5) + "case Some(x) => x.toXML(x.namespace, x.key, __scope)" + newline +
           indent(5) + "case None => Nil" + newline +
           indent(4) + "}"
       case Multiple =>
         if (param.nillable)
           makeParamName(param.name) + ".map(x => x match {" + newline +
-          indent(5) + "case Some(x) => x.toXML(x.namespace, x.key, scope)" + newline +
+          indent(5) + "case Some(x) => x.toXML(x.namespace, x.key, __scope)" + newline +
           indent(5) + "case None => rt.Helper.nilElem(" + quote(param.namespace) + ", " + 
-            quote(param.name) + ", scope)" + newline +
+            quote(param.name) + ", __scope)" + newline +
           indent(4) + "} )"        
         else  
-          makeParamName(param.name) + ".map(x => x.toXML(x.namespace, x.key, scope))"
+          makeParamName(param.name) + ".map(x => x.toXML(x.namespace, x.key, __scope))"
     }
   } 
   
@@ -499,38 +493,38 @@ case class {name}({paramsString}){extendString} {{
       if (param.nillable)
         makeParamName(param.name) + " match {" + newline +
         indent(5) + "case Some(x) => x.toXML(" + quote(param.namespace) + "," + 
-          quote(param.name) + ", scope)" + newline +
+          quote(param.name) + ", __scope)" + newline +
         indent(5) + "case None => Seq(rt.Helper.nilElem(" + quote(param.namespace) + ", " + 
-          quote(param.name) + ", scope))" + newline +
+          quote(param.name) + ", __scope))" + newline +
         indent(4) + "}"
       else
         makeParamName(param.name) + ".toXML(" + quote(param.namespace) + "," + 
-          quote(param.name)  + ", scope)"
+          quote(param.name)  + ", __scope)"
     case Optional =>
       if (param.nillable)
         makeParamName(param.name) + " match {" + newline +
         indent(5) + "case Some(x) => x.toXML(" + quote(param.namespace) + "," + 
-          quote(param.name) + ", scope)" + newline +
+          quote(param.name) + ", __scope)" + newline +
         indent(5) + "case None => Seq(rt.Helper.nilElem(" + quote(param.namespace) + ", " + 
-          quote(param.name) + ", scope))" + newline +
+          quote(param.name) + ", __scope))" + newline +
         indent(4) + "}"    
       else
         makeParamName(param.name) + " match {" + newline +
         indent(5) + "case Some(x) => x.toXML(" + quote(param.namespace) + ", " + 
-          quote(param.name) + ", scope)" + newline +
+          quote(param.name) + ", __scope)" + newline +
         indent(5) + "case None => Nil" + newline +
         indent(4) + "}"
     case Multiple =>
       if (param.nillable)
         makeParamName(param.name) + ".map(x => x match {" + newline +
         indent(5) + "case Some(x) => x.toXML(" + quote(param.namespace) + ", " + 
-          quote(param.name) + ", scope)" + newline +
+          quote(param.name) + ", __scope)" + newline +
         indent(5) + "case None => rt.Helper.nilElem(" + quote(param.namespace) + ", " + 
-          quote(param.name) + ", scope)" + newline +
+          quote(param.name) + ", __scope)" + newline +
         indent(4) + "} )"        
       else  
         makeParamName(param.name) + ".map(x => x.toXML(" + quote(param.namespace) + "," + 
-          quote(param.name) + ", scope))"    
+          quote(param.name) + ", __scope))"    
   }
   
   def buildToString(selector: String, typeSymbol: XsTypeSymbol): String = typeSymbol match {
@@ -553,38 +547,38 @@ case class {name}({paramsString}){extendString} {{
       if (param.nillable)
         makeParamName(param.name) + " match {" + newline +
         indent(5) + "case Some(x) => Seq(scala.xml.Elem(prefix, " + quote(param.name) + ", " + 
-          "scala.xml.Null, scope, scala.xml.Text(" + buildToString("x", param.typeSymbol) + ")))" + newline +
+          "scala.xml.Null, __scope, scala.xml.Text(" + buildToString("x", param.typeSymbol) + ")))" + newline +
         indent(5) + "case None => Seq(rt.Helper.nilElem(" + quote(param.namespace) + ", " + 
-          quote(param.name) + ", scope))" + newline +
+          quote(param.name) + ", __scope))" + newline +
         indent(4) + "}"
       else
         "scala.xml.Elem(prefix, " + quote(param.name) + ", " +
-        "scala.xml.Null, scope, scala.xml.Text(" + buildToString(makeParamName(param.name), param.typeSymbol) + "))"
+        "scala.xml.Null, __scope, scala.xml.Text(" + buildToString(makeParamName(param.name), param.typeSymbol) + "))"
     case Optional =>
       if (param.nillable)
         makeParamName(param.name) + " match {" + newline +
         indent(5) + "case Some(x) => Seq(scala.xml.Elem(prefix, " + quote(param.name) + ", " + 
-          "scala.xml.Null, scope, scala.xml.Text(" + buildToString("x", param.typeSymbol) + ")))" + newline +
+          "scala.xml.Null, __scope, scala.xml.Text(" + buildToString("x", param.typeSymbol) + ")))" + newline +
         indent(5) + "case None => Seq(rt.Helper.nilElem(" + quote(param.namespace) + ", " + 
-          quote(param.name) + ", scope))" + newline +
+          quote(param.name) + ", __scope))" + newline +
         indent(4) + "}"    
       else
         makeParamName(param.name) + " match {" + newline +
         indent(5) + "case Some(x) => Seq(scala.xml.Elem(prefix, " + quote(param.name) + ", " + 
-          "scala.xml.Null, scope, scala.xml.Text(" + buildToString("x", param.typeSymbol) + ")))" + newline +
+          "scala.xml.Null, __scope, scala.xml.Text(" + buildToString("x", param.typeSymbol) + ")))" + newline +
         indent(5) + "case None => Nil" + newline +
         indent(4) + "}"
     case Multiple =>
       if (param.nillable)
         makeParamName(param.name) + ".map(x => x match {" + newline +
         indent(5) + "case Some(x) => scala.xml.Elem(prefix, " + quote(param.name) + ", " + 
-          "scala.xml.Null, scope, scala.xml.Text(" + buildToString("x", param.typeSymbol) + "))" + newline +
+          "scala.xml.Null, __scope, scala.xml.Text(" + buildToString("x", param.typeSymbol) + "))" + newline +
         indent(5) + "case None =>   rt.Helper.nilElem(" + quote(param.namespace) + ", " + 
-          quote(param.name) + ", scope)" + newline +
+          quote(param.name) + ", __scope)" + newline +
         indent(4) + "} )"
       else 
         makeParamName(param.name) + ".map(x => scala.xml.Elem(prefix, " + quote(param.name) + ", " +
-        "scala.xml.Null, scope, scala.xml.Text(" + buildToString("x", param.typeSymbol) + ")))"      
+        "scala.xml.Null, __scope, scala.xml.Text(" + buildToString("x", param.typeSymbol) + ")))"      
   }
   
   def buildParam(decl: Decl): Param = decl match {

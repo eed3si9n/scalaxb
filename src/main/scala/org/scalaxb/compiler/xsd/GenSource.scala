@@ -685,7 +685,9 @@ case class {name}({paramsString}){extendString} {{
       val group = buildGroup(ref)
       buildParser(group, group.minOccurs, group.maxOccurs, mixed)
     case compositor: HasParticle =>
-      buildParser(compositor, compositor.minOccurs, compositor.maxOccurs, mixed)  
+      buildParser(compositor, compositor.minOccurs, compositor.maxOccurs, mixed)
+    case any: AnyDecl =>
+      buildParser(any, any.minOccurs, any.maxOccurs)
   }
   
   def buildParser(any: AnyDecl, minOccurs: Int, maxOccurs: Int): String =
@@ -952,7 +954,7 @@ case class {name}({paramsString}){extendString} {{
         toMinOccurs(attr), 1, None)
         
     case ReferenceTypeSymbol(decl: SimpleTypeDecl) =>
-      buildArg(baseType(decl), buildSelector(attr), attr.defaultValue, attr.fixedValue,
+      buildArg(decl, buildSelector(attr), attr.defaultValue, attr.fixedValue,
         toMinOccurs(attr), 1, None)
         
     case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
@@ -965,10 +967,10 @@ case class {name}({paramsString}){extendString} {{
       defaultValue: Option[String], fixedValue: Option[String],
       minOccurs: Int, maxOccurs: Int, nillable: Option[Boolean]): String = decl.content match {  
     
-    case SimpTypRestrictionDecl(base: BuiltInSimpleTypeSymbol) =>
-      buildArg(base, selector, defaultValue, fixedValue, minOccurs, maxOccurs, nillable)
+    case SimpTypRestrictionDecl(_) =>
+      buildArg(baseType(decl), selector, defaultValue, fixedValue, minOccurs, maxOccurs, nillable)
     case SimpTypListDecl(itemType: BuiltInSimpleTypeSymbol) =>
-      buildArg(itemType, selector + ".text.split(' ')", None, None, 0, Int.MaxValue, None)
+      buildArg(baseType(decl), selector + ".text.split(' ')", None, None, 0, Int.MaxValue, None)
     
     case _ => error("GenSource: Unsupported content " + decl.content.toString)    
   }
@@ -1236,12 +1238,12 @@ case class {name}({paramsString}){extendString} {{
       compositor match {
     case GroupDecl(_, _, particles: List[_], _, _) =>
       particles flatMap {
-        case compositor2: HasParticle => buildParticles(compositor2)
+        case compositor2: HasParticle => List(buildCompositorRef(compositor2))
       }    
     
     case SequenceDecl(particles: List[_], _, _) =>
       particles flatMap {
-        case compositor2: HasParticle => buildParticles(compositor2)
+        case compositor2: HasParticle => List(buildCompositorRef(compositor2))
         case elem: ElemDecl           => List(elem)
         case ref: ElemRef             => List(buildElement(ref))
         case any: AnyDecl             => List(buildAnyRef(any))
@@ -1250,7 +1252,7 @@ case class {name}({paramsString}){extendString} {{
       
     case AllDecl(particles: List[_], _, _) =>
       particles flatMap {
-        case compositor2: HasParticle => buildParticles(compositor2)
+        case compositor2: HasParticle => List(buildCompositorRef(compositor2))
         case elem: ElemDecl           => List(toOptional(elem))
         case ref: ElemRef             => List(buildElement(ref))
         case ref: GroupRef            => buildParticles(buildGroup(ref))      

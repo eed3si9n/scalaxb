@@ -408,10 +408,10 @@ case class {name}({paramsString}){extendString} {{
   }
   
   def makeGroup(group: GroupDecl) =
-    if (group.particles.size == 1) group.particles(0) match {
-      case compositor: HasParticle => makeCompositor(compositor, false) 
-    }
-    else error("GenSource#makeGroup: group must contain one content model: " + group)
+    <source>{
+    val compositors = context.compositorParents.filter(
+      x => x._2 == makeGroupComplexType(group)).keysIterator
+    compositors map(makeCompositor(_, false))}</source>
   
   def buildAttributeString(attr: AttributeLike): String = attr match {
     case ref: AttributeRef => buildAttributeString(buildAttribute(ref))
@@ -640,8 +640,6 @@ case class {name}({paramsString}){extendString} {{
       yield buildArg(particles(i), i) ).toList
     
     val paramList = particles.map(buildParam(_))
-    
-    // val parent = context.compositorParents(seq)
     val hasSequenceParam = (paramList.size == 1) &&
       (paramList.head.cardinality == Multiple) &&
       (!paramList.head.attribute) &&
@@ -697,15 +695,24 @@ case class {name}({paramsString}){extendString} {{
   // or from the element declaration.
   def buildParser(compositor: HasParticle,
       minOccurs: Int, maxOccurs: Int, mixed: Boolean): String = compositor match {
-    case seq: SequenceDecl    => buildParser(seq, minOccurs, maxOccurs, mixed)
+    case seq: SequenceDecl    => 
+      if (containsSingleChoice(seq)) buildParser(singleChoice(seq), minOccurs, maxOccurs, mixed)
+      else buildParser(seq, minOccurs, maxOccurs, mixed)
     case choice: ChoiceDecl   => buildParser(choice, minOccurs, maxOccurs, mixed)
     case all: AllDecl         => buildParser(all, minOccurs, maxOccurs, mixed)
-    case group: GroupDecl     => buildParser(group, minOccurs, maxOccurs, mixed)
+    case group: GroupDecl     => buildParser(group, minOccurs, maxOccurs, false)
   }
   
   def buildParser(group: GroupDecl, minOccurs: Int, maxOccurs: Int, mixed: Boolean): String = 
     if (group.particles.size == 1) group.particles(0) match {
-      case seq: SequenceDecl    => buildParser(seq, minOccurs, maxOccurs, mixed)
+      case seq: SequenceDecl    => 
+        if (containsSingleChoice(seq)) {
+          val choice = singleChoice(seq) 
+          buildParser(choice,
+            math.min(minOccurs, choice.minOccurs),
+            math.max(maxOccurs, choice.maxOccurs), mixed)
+        }
+        else buildParser(seq, minOccurs, maxOccurs, mixed)
       case choice: ChoiceDecl   => buildParser(choice, minOccurs, maxOccurs, mixed)
       case all: AllDecl         => buildParser(all, minOccurs, maxOccurs, mixed)   
     }
@@ -716,7 +723,10 @@ case class {name}({paramsString}){extendString} {{
     val parserList = seq.particles.map(x => buildParser(x, mixed))
     val base = parserList.mkString("(", " ~ " + newline + indent(2), ")") + " ^^ " + newline +
     indent(3) + buildConverter(seq, mixed)
-    buildParserString(base, minOccurs, maxOccurs)
+    
+    val retval = buildParserString(base, minOccurs, maxOccurs)
+    log("GenSource#buildParser:  " + seq + newline + retval)
+    retval
   }
   
   def buildParser(all: AllDecl, minOccurs: Int, maxOccurs: Int, mixed: Boolean): String = {
@@ -750,7 +760,7 @@ case class {name}({paramsString}){extendString} {{
         indent(3) + buildConverter(elem, math.max(elem.minOccurs, 1), 1) + ")"
       case ref: GroupRef        =>
         val group = buildGroup(ref)
-        buildParser(group, math.max(group.minOccurs, 1), 1, mixed)
+        buildParser(group, math.max(group.minOccurs, 1), 1, false)
     }
     
     val parserList = choice.particles filterNot(
@@ -1226,24 +1236,24 @@ case class {name}({paramsString}){extendString} {{
       compositor match {
     case GroupDecl(_, _, particles: List[_], _, _) =>
       particles flatMap {
-        case compositor2: HasParticle => flattenElements(compositor2, "")
+        case compositor2: HasParticle => buildParticles(compositor2)
       }    
     
     case SequenceDecl(particles: List[_], _, _) =>
       particles flatMap {
-        case compositor2: HasParticle => flattenElements(compositor2, "")
+        case compositor2: HasParticle => buildParticles(compositor2)
         case elem: ElemDecl           => List(elem)
         case ref: ElemRef             => List(buildElement(ref))
         case any: AnyDecl             => List(buildAnyRef(any))
-        case ref: GroupRef            => flattenElements(buildGroup(ref), "")
+        case ref: GroupRef            => buildParticles(buildGroup(ref))
       }
       
     case AllDecl(particles: List[_], _, _) =>
       particles flatMap {
-        case compositor2: HasParticle => flattenElements(compositor2, "")
+        case compositor2: HasParticle => buildParticles(compositor2)
         case elem: ElemDecl           => List(toOptional(elem))
         case ref: ElemRef             => List(buildElement(ref))
-        case ref: GroupRef            => flattenElements(buildGroup(ref), "")      
+        case ref: GroupRef            => buildParticles(buildGroup(ref))      
       }
           
     case choice: ChoiceDecl =>
@@ -1251,7 +1261,21 @@ case class {name}({paramsString}){extendString} {{
   }
   
   def buildParticles(compositor: HasParticle): List[ElemDecl] =
-    compositor.particles collect {
+    compositor.particles map {
+      case ref: GroupRef            =>
+        val group = buildGroup(ref)
+        if (group.particles.size == 1) group.particles(0) match {
+          case seq: SequenceDecl        =>
+            if (containsSingleChoice(seq)) buildCompositorRef(singleChoice(seq))
+            else buildCompositorRef(seq)
+          case compositor2: HasParticle => buildCompositorRef(compositor2)
+          case _ => error ("GenSource#buildParticles: group must contain a content model.")
+        }
+        else error ("GenSource#buildParticles: group must contain a content model.")
+        
+      case seq: SequenceDecl        =>
+        if (containsSingleChoice(seq)) buildCompositorRef(singleChoice(seq))
+        else buildCompositorRef(seq)
       case compositor2: HasParticle => buildCompositorRef(compositor)
       case elem: ElemDecl           => elem
       case ref: ElemRef             => buildElement(ref)

@@ -122,6 +122,20 @@ class ContextProcessor(logger: Logger) extends ScalaNames {
     makeCompositorNames(context)
   }
   
+  def makeGroupComplexType(group: GroupDecl) =
+    ComplexTypeDecl(group.namespace, group.name, false, false,
+      ComplexContentDecl.empty, Nil)
+
+  def containsSingleChoice(seq: SequenceDecl) = seq.particles match {
+    case ChoiceDecl(_, _, _, _) :: Nil => true
+    case _ => false
+  }
+
+  def singleChoice(seq: SequenceDecl): ChoiceDecl = seq.particles match {
+    case (choice@ChoiceDecl(_, _, _, _)) :: Nil => choice
+    case _ => error("Does not cointain single choice.")
+  }
+  
   def makeCompositorNames(context: XsdContext) {
     var sequenceNumber = 0
     var choiceNumber = 0
@@ -152,23 +166,29 @@ class ContextProcessor(logger: Logger) extends ScalaNames {
     
     def isFirstCompositor =
       (sequenceNumber + choiceNumber + allNumber == 0)
-    
+        
     def makeGroupCompositorName(compositor: HasParticle, group: GroupDecl) {
       val groupName = group.name
       
       compositor match {
-        case SequenceDecl(particles: List[_], _, _) =>
-          if (isFirstCompositor) context.compositorNames(compositor) = groupName
+        case seq@SequenceDecl(particles: List[_], _, _) =>
+          if (!isFirstCompositor ||
+              !containsSingleChoice(seq))
+            context.compositorParents(compositor) = makeGroupComplexType(group)
+          
+          if (isFirstCompositor) context.compositorNames(compositor) = groupName + "Sequence"
           else context.compositorNames(compositor) = groupName + "Sequence" + (sequenceNumber + 1)
           sequenceNumber += 1
              
         case ChoiceDecl(particles: List[_], _, _, _) =>
-          if (isFirstCompositor) context.compositorNames(compositor) = groupName
+          context.compositorParents(compositor) = makeGroupComplexType(group)
+          if (isFirstCompositor) context.compositorNames(compositor) = groupName + "Option"
           else context.compositorNames(compositor) = groupName + "Option" + (choiceNumber + 1)
           choiceNumber += 1
           
         case AllDecl(particles: List[_], _, _) =>
-          if (isFirstCompositor) context.compositorNames(compositor) = groupName
+          context.compositorParents(compositor) = makeGroupComplexType(group)
+          if (isFirstCompositor) context.compositorNames(compositor) = groupName + "All"
           else context.compositorNames(compositor) = groupName + "All" + (allNumber + 1)
           allNumber += 1
       }

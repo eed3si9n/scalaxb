@@ -425,9 +425,10 @@ case class {name}({paramsString}){extendString} {{
     val namespaceString = if (attr.global)
       "__scope.getPrefix(" + quote(attr.namespace) + ")"
     else "null"
+    val name = makeParamName(buildParam(attr).name)
     
     if (toMinOccurs(attr) == 0)
-      makeParamName(attr.name) + " match {" + newline +
+      name + " match {" + newline +
       indent(3) + "case Some(x: " + buildTypeName(attr.typeSymbol) + ") =>" + newline +
       indent(4) + "attribute = scala.xml.Attribute(" + namespaceString + ", " + quote(attr.name) +
         ", x.toString, attribute)" + newline +
@@ -435,7 +436,7 @@ case class {name}({paramsString}){extendString} {{
       indent(2) + "}"
     else
       "attribute = scala.xml.Attribute(" + namespaceString + ", " + quote(attr.name) + ", " + 
-      makeParamName(attr.name) + ".toString, attribute)"      
+      name + ".toString, attribute)"      
   }
   
   def buildXMLString(param: Param) = param.typeSymbol match {
@@ -611,12 +612,15 @@ case class {name}({paramsString}){extendString} {{
   }
   
   def buildParam(attr: AttributeDecl): Param = {
-    val cardinality = if (toMinOccurs(attr) == 0)
-      Optional
-    else
-      Single
+    val cardinality = if (toMinOccurs(attr) == 0) Optional
+    else Single
+    val name = if (!attr.global) attr.name
+    else schema.scope.getPrefix(attr.namespace) match {
+      case null => attr.name
+      case x => x + attr.name
+    }
     
-    val retval = Param(attr.namespace, attr.name, attr.typeSymbol, cardinality, false, true)
+    val retval = Param(attr.namespace, name, attr.typeSymbol, cardinality, false, true)
     log("GenSource#buildParam:  " + retval)
     retval
   }
@@ -761,8 +765,15 @@ case class {name}({paramsString}){extendString} {{
     
     val parserList = choice.particles filterNot(
       _.isInstanceOf[AnyDecl]) map(buildChoiceParser(_))
+    val choiceOperator = if (choice.particles exists(_ match {
+      case elem: ElemDecl => false
+      case ref: ElemRef => false
+      case _ => true
+      })) "|||"
+    else "|"
+      
     val nonany = if (parserList.size > 0)
-      parserList.mkString(" ||| " + newline + indent(2))
+      parserList.mkString(" " + choiceOperator + " " + newline + indent(2))
     else ""
     
     val anyList = choice.particles filter(
@@ -990,10 +1001,8 @@ case class {name}({paramsString}){extendString} {{
     "p" + (pos + 1)
   
   def buildSelector(attr: AttributeDecl): String =
-    if (attr.global)
-      buildSelector("@{" + attr.namespace + "}" + attr.name)
-    else
-      buildSelector("@" + attr.name)
+    if (attr.global) buildSelector("@{" + attr.namespace + "}" + attr.name)
+    else buildSelector("@" + attr.name)
 
   def buildSelector(nodeName: String): String = "(node \\ \"" + nodeName + "\")"
   

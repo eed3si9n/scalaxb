@@ -15,22 +15,17 @@ object XhtmlTest extends SpecificationWithJUnit with CompilerMatcher {
   lazy val generated = module.processFiles(
     List((xhtml1strictxsd, xhtml1strictscala)),
     Map[String, Option[String]](),
-    Some(true)
+    None
       )
   
   "xhtml1-strict.scala file must compile so that Html can be used" in {
     (List("""Html.fromXML(
 <html xmlns="http://www.w3.org/1999/xhtml">
-  <head>
-    <base href="here.com"/>
-    <title>a basic xhtml page</title>
-  </head>
-  <body>
-    <h1>Welcome to xhtml in scala</h1>
-    <p>a paragraph</p>
-    <p>another, with a <a href="http://scalaxb.org/">example link</a>.</p>
-  </body>
-</html>).toString"""),
-     generated) must evaluateTo("Foo(a,b)", outdir = "./tmp")
+<head><title>foo</title></head>
+<body></body></html>).toString"""),
+     generated) must evaluateTo("Html(" + 
+     "Head(List(),DataRecord(null,null," +
+     "HeadSequence2(Title(List(DataRecord(null,null,foo)),None),List(),None)),None,None)," +
+     "Body(List(),None,None),None)", outdir = "./tmp")
   }
 }

@@ -158,6 +158,8 @@ class ContextProcessor(logger: Logger) extends ScalaNames {
       sequenceNumber = 0
       choiceNumber = 0
       allNumber = 0
+      
+      context.compositorNames(group) = group.name + "Group"
       if (group.particles.size == 1) group.particles(0) match {
         case compositor: HasParticle => makeGroupCompositorName(compositor, group)
       }

@@ -50,6 +50,11 @@ class GenSource(schema: SchemaDecl,
   case object Single extends Cardinality
   case object Multiple extends Cardinality
   
+  def toCardinality(minOccurs: Int, maxOccurs: Int) =
+    if (maxOccurs > 1) Multiple
+    else if (minOccurs == 0) Optional
+    else Single
+  
   case class Param(namespace: String,
     name: String,
     typeSymbol: XsTypeSymbol,
@@ -57,9 +62,9 @@ class GenSource(schema: SchemaDecl,
     nillable: Boolean,
     attribute: Boolean) {
     
-    def toScalaCode: String = {
+    def typeName: String = {
       val base = buildTypeName(typeSymbol)
-      val typeName = cardinality match {
+      cardinality match {
         case Single   =>
           if (nillable) "Option[" + base + "]"
           else base
@@ -68,10 +73,11 @@ class GenSource(schema: SchemaDecl,
           // "Seq[" + base + "]"
           if (nillable) "Seq[Option[" + base + "]]"
           else "Seq[" + base + "]"
-      }
-      
-      makeParamName(name) + ": " + typeName
+      }      
     }
+    
+    def toScalaCode: String =
+      makeParamName(name) + ": " + typeName
   }
 
   lazy val xmlAttrs = Map[String, AttributeDecl](
@@ -346,12 +352,16 @@ object {name} {{
     }}
   }} 
 </source>
-        
+    
+    val groups = filterGroup(decl)
+    val objSuperNames: List[String] = "rt.ElemNameParser[" + name + "]" ::
+      groups.map(x => makeTypeName(context.compositorNames(x)))
+    
     def makeObject = if (simpleFromXml || particles.isEmpty) <source>object {name} {{
   def fromXML(node: scala.xml.Node): {name} =
     {name}({argsString})
 }}
-</source> else <source>object {name} extends rt.ElemNameParser[{name}] {{
+</source> else <source>object {name} extends {objSuperNames.mkString(" with ")} {{
   val targetNamespace = { quote(schema.targetNamespace) }
     
   def parser(node: scala.xml.Node): Parser[{name}] =
@@ -404,11 +414,28 @@ case class {name}({paramsString}){extendString} {{
     // </source>    
   }
   
-  def makeGroup(group: GroupDecl) =
-    <source>{
+  def makeGroup(group: GroupDecl) = {
     val compositors = context.compositorParents.filter(
       x => x._2 == makeGroupComplexType(group)).keysIterator
-    compositors map(makeCompositor(_, false))}</source>
+    val name = makeTypeName(context.compositorNames(group))  
+    val compositor = primaryCompositor(group)
+    val param = buildParam(compositor)
+    val parser = buildParser(compositor, compositor.minOccurs, compositor.maxOccurs,
+      false)
+    val groups = filterGroup(compositor)
+    val superNames: List[String] = 
+      if (groups.isEmpty) List("rt.AnyElemNameParser")
+      else groups.map(x => makeTypeName(context.compositorNames(x)))
+    
+    <source>trait {name} extends {superNames.mkString(" with ")} {{
+  def parse{name}: Parser[{param.typeName}] =
+    {parser}
+}}
+
+{compositors map(makeCompositor(_, false))}
+</source>
+  }
+    
   
   def buildAttributeString(attr: AttributeLike): String = attr match {
     case ref: AttributeRef => buildAttributeString(buildAttribute(ref))
@@ -589,12 +616,8 @@ case class {name}({paramsString}){extendString} {{
     case any: AnyAttributeDecl => buildParam(any)
     case _ => error("GenSource#buildParam: unsupported delcaration " + decl.toString)
   }
-    
+  
   def buildParam(elem: ElemDecl): Param = {
-    val cardinality = if (elem.maxOccurs > 1) Multiple
-    else if (elem.minOccurs == 0) Optional
-    else Single
-    
     val symbol = elem.typeSymbol match {
       case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
         if (compositorWrapper.keysIterator.contains(decl)) XsDataRecord
@@ -606,7 +629,8 @@ case class {name}({paramsString}){extendString} {{
       case Some(x) => x
     }
     
-    val retval = Param(elem.namespace, elem.name, symbol, cardinality, nillable, false)
+    val retval = Param(elem.namespace, elem.name, symbol, 
+      toCardinality(elem.minOccurs, elem.maxOccurs), nillable, false)
     log("GenSource#buildParam:  " + retval)
     retval
   }
@@ -624,6 +648,11 @@ case class {name}({paramsString}){extendString} {{
     log("GenSource#buildParam:  " + retval)
     retval
   }
+  
+  /// called by makeGroup
+  def buildParam(compositor: HasParticle): Param =
+    Param(null, "arg1", XsDataRecord,
+    toCardinality(compositor.minOccurs, compositor.maxOccurs), false, false)
   
   def buildParam(any: AnyAttributeDecl): Param =
     Param(null, "anyAttribute", XsAnyAttribute, Multiple, false, true)
@@ -703,21 +732,19 @@ case class {name}({paramsString}){extendString} {{
     case group: GroupDecl     => buildParser(group, minOccurs, maxOccurs, false)
   }
   
-  def buildParser(group: GroupDecl, minOccurs: Int, maxOccurs: Int, mixed: Boolean): String = 
+  def primaryCompositor(group: GroupDecl): HasParticle =
     if (group.particles.size == 1) group.particles(0) match {
       case seq: SequenceDecl    => 
-        if (containsSingleChoice(seq)) {
-          val choice = singleChoice(seq) 
-          buildParser(choice,
-            math.min(minOccurs, choice.minOccurs),
-            math.max(maxOccurs, choice.maxOccurs), mixed)
-        }
-        else buildParser(seq, minOccurs, maxOccurs, mixed)
-      case choice: ChoiceDecl   => buildParser(choice, minOccurs, maxOccurs, mixed)
-      case all: AllDecl         => buildParser(all, minOccurs, maxOccurs, mixed)   
+        if (containsSingleChoice(seq)) singleChoice(seq)
+        else seq
+      case choice: ChoiceDecl   => choice
+      case all: AllDecl         => all  
     }
-    else error("GenSource#buildParser: group must contain one content model: " + group)
+    else error("GenSource#primaryCompositor: group must contain one content model: " + group)
   
+  def buildParser(group: GroupDecl, minOccurs: Int, maxOccurs: Int, mixed: Boolean): String = 
+    "parse" + makeTypeName(context.compositorNames(group))
+    
   def buildParser(seq: SequenceDecl,
       minOccurs: Int, maxOccurs: Int, mixed: Boolean): String = {
     val parserList = seq.particles.map(x => buildParser(x, mixed))
@@ -1188,7 +1215,41 @@ case class {name}({paramsString}){extendString} {{
         
     set.toList
   }
+  
+  
+  def filterGroup(decl: ComplexTypeDecl): List[GroupDecl] = decl.content.content match {
+    // complex content means 1. has child elements 2. has attributes
+    case CompContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
+      filterGroup(base)        
+    case res@CompContRestrictionDecl(XsAny, _, _) =>
+      filterGroup(res.compositor)
     
+    case ext@CompContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
+      filterGroup(base) :::
+        filterGroup(ext.compositor)
+    case ext@CompContExtensionDecl(XsAny, _, _) =>
+      filterGroup(ext.compositor)
+      
+    case _ => Nil    
+  }
+
+  def filterGroup(compositor: Option[HasParticle]): List[GroupDecl] =
+      compositor match {
+    case Some(c) => filterGroup(c)
+    case None => Nil
+  }
+  
+  def filterGroup(compositor: HasParticle): List[GroupDecl] = compositor match {
+    case group: GroupDecl => List(group)
+    case _ =>
+      (compositor.particles flatMap {
+        case ref: GroupRef    => List(buildGroup(ref))
+        case group: GroupDecl => List(group)
+        case compositor2: HasParticle => filterGroup(compositor2)
+        case _ => Nil
+      }).distinct
+  }
+  
   def flattenElements(decl: ComplexTypeDecl, name: String): List[ElemDecl] = {
     argNumber = 0
     
@@ -1269,15 +1330,7 @@ case class {name}({paramsString}){extendString} {{
     compositor.particles map {
       case ref: GroupRef            =>
         val group = buildGroup(ref)
-        if (group.particles.size == 1) group.particles(0) match {
-          case seq: SequenceDecl        =>
-            if (containsSingleChoice(seq)) buildCompositorRef(singleChoice(seq))
-            else buildCompositorRef(seq)
-          case compositor2: HasParticle => buildCompositorRef(compositor2)
-          case _ => error ("GenSource#buildParticles: group must contain a content model.")
-        }
-        else error ("GenSource#buildParticles: group must contain a content model.")
-        
+        buildCompositorRef(primaryCompositor(group))        
       case seq: SequenceDecl        =>
         if (containsSingleChoice(seq)) buildCompositorRef(singleChoice(seq))
         else buildCompositorRef(seq)
@@ -1286,7 +1339,7 @@ case class {name}({paramsString}){extendString} {{
       case ref: ElemRef             => buildElement(ref)
       case any: AnyDecl             => buildAnyRef(any)
     }
-  
+    
   def attrs(namespace: String, name: String) =
     if (namespace == XML_URI)
       xmlAttrs(name)

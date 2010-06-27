@@ -33,9 +33,16 @@ case class ElemName(namespace: String, name: String) {
   def toDataRecord = DataRecord(namespace, name, node)
 }
 
-trait ElemNameParser[A] extends scala.util.parsing.combinator.Parsers {
+trait AnyElemNameParser extends scala.util.parsing.combinator.Parsers {
   type Elem = ElemName
+  
+  def targetNamespace: String
+  
+  def any: Parser[ElemName] = 
+    accept("any", { case x: ElemName => x })  
+}
 
+trait ElemNameParser[A] extends AnyElemNameParser {
   def fromXML(node: scala.xml.Node): A =
     parse(parser(node), node.child.collect { case elem: scala.xml.Elem => elem }) match {
       case x: Success[_] => x.get
@@ -56,9 +63,6 @@ trait ElemNameParser[A] extends scala.util.parsing.combinator.Parsers {
   
   def parseElemNames[A](p: Parser[A], in: Seq[ElemName]): ParseResult[A] = 
     p(new ElemNameSeqReader(in))
-    
-  def any: Parser[ElemName] = 
-    accept("any", { case x: ElemName => x })
 }
 
 class ElemNameSeqReader(seq: Seq[ElemName],

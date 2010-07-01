@@ -336,7 +336,8 @@ object {name} {{
         else getPrefix(namespace, scope.parent)
         
     def typeNameString =
-      getPrefix(schema.targetNamespace, schema.scope) + ":" + decl.name
+      if (getPrefix(schema.targetNamespace, schema.scope)  == null) decl.name
+      else getPrefix(schema.targetNamespace, schema.scope) + ":" + decl.name
     
     def makeToXml = <source>
   def toXML(__namespace: String, __elementLabel: String): scala.xml.Node = {{

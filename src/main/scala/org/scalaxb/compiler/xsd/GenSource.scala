@@ -209,7 +209,9 @@ class GenSource(schema: SchemaDecl,
     else " extends " + superNames.mkString(" with ")
     
     def makeCaseEntry(decl: ComplexTypeDecl) = {
-      val localPart = buildTypeName(decl, true)
+      val localPart = if (decl.name.startsWith("complexType@")) decl.name.drop("complexType@".size)
+      else decl.name
+      
       val name = buildTypeName(decl)
       "case (" + quote(decl.namespace) + ", " + quote(localPart) + ") => " + name + ".fromXML(node)"
     }

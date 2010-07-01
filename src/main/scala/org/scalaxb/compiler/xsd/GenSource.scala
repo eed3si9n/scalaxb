@@ -1034,10 +1034,7 @@ case class {name}({paramsString}){extendString} {{
   def buildSelector(nodeName: String): String = "(node \\ \"" + nodeName + "\")"
   
   def buildArgForAnyAttribute(parent: ComplexTypeDecl): String = {
-    val attributes = flattenAttributes(parent) collect {
-      case attr: AttributeDecl   => attr
-      case ref: AttributeRef     => buildAttribute(ref) 
-    }
+    val attributes = flattenAttributes(parent)
     
     def makeCaseEntry(attr: AttributeDecl) = if (attr.global)
       "case scala.xml.PrefixedAttribute(pre, key, value, _) if pre == elem.scope.getPrefix(" +
@@ -1049,7 +1046,9 @@ case class {name}({paramsString}){extendString} {{
     "node match {" + newline +
     indent(4) + "case elem: scala.xml.Elem =>" + newline +
     indent(4) + "  (elem.attributes.toList) flatMap {" + newline +
-    attributes.map(x => makeCaseEntry(x)).mkString(indent(6), newline + indent(6), newline) +
+    attributes.collect {
+      case x: AttributeDecl => makeCaseEntry(x)
+    }.mkString(indent(6), newline + indent(6), newline) +
     indent(4) + "    case scala.xml.UnprefixedAttribute(key, value, _) =>" + newline +
     indent(4) + "      List(rt.DataRecord(null, key, value.text))" + newline +
     indent(4) + "    case scala.xml.PrefixedAttribute(pre, key, value, _) =>" + newline +
@@ -1456,18 +1455,40 @@ case class {name}({paramsString}){extendString} {{
       
   def flattenMixed(decl: ComplexTypeDecl) = if (decl.mixed)
     List(ElemDecl(INTERNAL_NAMESPACE, "mixed", XsMixed, None, None, 0, Integer.MAX_VALUE, None))
-  else
-    Nil
+  else Nil
     
+  def attributeGroups(namespace: String, name: String) =
+    (for (schema <- schemas;
+          if schema.targetNamespace == namespace;
+          if schema.topAttrGroups.contains(name))
+        yield schema.topAttrGroups(name)) match {
+        case x :: xs => x
+        case Nil     => error("Attribute group not found: {" + namespace + "}" + name)
+      }
+      
+  def buildAttributeGroup(ref: AttributeGroupRef) =
+    attributeGroups(ref.namespace, ref.name)
+  
   def flattenAttributes(decl: ComplexTypeDecl): List[AttributeLike] =
-    decl.content.content.attributes ::: (decl.content.content match {
+    flattenAttributes(decl.content.content.attributes) ::: (
+    decl.content.content match {
       case CompContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, attr) => 
         flattenAttributes(base)
       case CompContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, attr) =>
         flattenAttributes(base)
       case _ => List()
     })
-
+  
+  // return a list of either AttributeDecl or AnyAttributeDecl
+  def flattenAttributes(attributes: List[AttributeLike]): List[AttributeLike] =
+    attributes flatMap {
+      case any: AnyAttributeDecl => List(any)
+      case attr: AttributeDecl => List(attr)
+      case ref: AttributeRef   => List(buildAttribute(ref))
+      case group: AttributeGroupDecl => flattenAttributes(group.attributes)
+      case ref: AttributeGroupRef    => flattenAttributes(buildAttributeGroup(ref).attributes)
+    }
+  
   def myprintAll(nodes: Seq[Node]) {
     for (node <- nodes)
       myprint(node)

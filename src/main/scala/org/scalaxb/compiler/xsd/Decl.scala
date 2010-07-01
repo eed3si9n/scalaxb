@@ -59,6 +59,7 @@ class ParserConfig {
   val topAttrs  = mutable.ListMap.empty[String, AttributeDecl]
   val attrList  = mutable.ListBuffer.empty[AttributeDecl]
   val topGroups = mutable.ListMap.empty[String, GroupDecl]
+  val topAttrGroups = mutable.ListMap.empty[String, AttributeGroupDecl]
   val choices   = mutable.Set.empty[ChoiceDecl]
   var schemas: List[SchemaDecl] = Nil
   
@@ -136,13 +137,19 @@ case class SchemaDecl(targetNamespace: String,
     choices: Set[ChoiceDecl],
     topAttrs: Map[String, AttributeDecl],
     topGroups: Map[String, GroupDecl],
+    topAttrGroups: Map[String, AttributeGroupDecl],
     scope: scala.xml.NamespaceBinding) {
   
   val newline = System.getProperty("line.separator")
   
   override def toString: String = {
-    "SchemaDecl(topElems(" + topElems.valuesIterator.mkString("," + newline) + "),types(" +
-      types.valuesIterator.mkString("," + newline)  + "))"
+    "SchemaDecl(" + newline +
+    "topElems(" + topElems.valuesIterator.mkString("," + newline) + ")," + newline +
+    "types(" + types.valuesIterator.mkString("," + newline)  + ")," + newline + 
+    "topAttrs(" + topAttrs.valuesIterator.mkString("," + newline)  + ")," + newline + 
+    "topGroups(" + topGroups.valuesIterator.mkString("," + newline)  + ")," + newline + 
+    "topAttrGroups(" + topAttrGroups.valuesIterator.mkString("," + newline)  + ")" + newline + 
+    ")"
   }
 }
 
@@ -172,6 +179,12 @@ object SchemaDecl {
         if (node \ "@name").headOption.isDefined) {
       val attr = AttributeDecl.fromXML(node, config, true)
       config.topAttrs += (attr.name -> attr)
+    }
+    
+    for (node <- schema \ "attributeGroup"
+        if (node \ "@name").headOption.isDefined) {
+      val attrGroup = AttributeGroupDecl.fromXML(node, config)
+      config.topAttrGroups += (attrGroup.name -> attrGroup)
     }
     
     for (node <- schema \ "group";
@@ -214,6 +227,7 @@ object SchemaDecl {
       config.choices,
       immutable.ListMap.empty[String, AttributeDecl] ++ config.topAttrs,
       immutable.ListMap.empty[String, GroupDecl] ++ config.topGroups,
+      immutable.ListMap.empty[String, AttributeGroupDecl] ++ config.topAttrGroups,
       scopeToBuild)
   }
   
@@ -276,9 +290,21 @@ object AnnotationDecl {
 abstract class AttributeLike extends Decl
 
 object AttributeLike {
-  def fromXML(node: scala.xml.Node, config: ParserConfig) = {
+  def fromParentNode(parent: scala.xml.Node, config: ParserConfig): List[AttributeLike] =
+    for (child <- parent.child.toList;
+        if child.isInstanceOf[scala.xml.Elem];
+        if List("attribute", "anyAttribute", "attributeGroup").contains(
+          child.label))
+      yield fromXML(child, config)
+  
+  def fromXML(node: scala.xml.Node, config: ParserConfig): AttributeLike  = {
     if (node.label == "anyAttribute")
       AnyAttributeDecl.fromXML(node, config)
+    else if (node.label == "attributeGroup")
+      (node \ "@ref").headOption match {
+        case Some(x) => AttributeGroupRef.fromXML(node, config)
+        case None => AttributeGroupDecl.fromXML(node, config)
+      }  
     else (node \ "@ref").headOption match {
       case Some(x) => AttributeRef.fromXML(node, config)
       case None => AttributeDecl.fromXML(node, config, false)
@@ -291,12 +317,12 @@ object LaxProcess extends ProcessContents
 object SkipProcess extends ProcessContents
 object StrictProcess extends ProcessContents
 
-case class AnyAttributeDecl(namespace: String,
+case class AnyAttributeDecl(namespaceRange: String,
   processContents: ProcessContents) extends AttributeLike
 
 object AnyAttributeDecl {
   def fromXML(node: scala.xml.Node, config: ParserConfig) = {
-    val namespace = (node \ "namespace").headOption match {
+    val namespaceRange = (node \ "namespace").headOption match {
       case None    => "##any"
       case Some(x) => x.text
     }
@@ -305,7 +331,7 @@ object AnyAttributeDecl {
       case "skip" => SkipProcess
       case _      => StrictProcess
     }
-    AnyAttributeDecl(namespace, processContents)
+    AnyAttributeDecl(namespaceRange, processContents)
   }
 }
 
@@ -386,6 +412,34 @@ object AttributeDecl {
       global)
     config.attrList += attr
     attr
+  } 
+}
+
+case class AttributeGroupRef(namespace: String,
+  name: String) extends AttributeLike
+
+object AttributeGroupRef {
+  def fromXML(node: scala.xml.Node,
+      config: ParserConfig) = {
+    val ref = (node \ "@ref").text
+    val (namespace, typeName) = TypeSymbolParser.splitTypeName(ref, config)
+    
+    AttributeGroupRef(namespace, typeName)
+  }    
+}
+
+case class AttributeGroupDecl(namespace: String,
+  name: String,
+  attributes: List[AttributeLike]) extends AttributeLike
+  
+object AttributeGroupDecl {
+  def fromXML(node: scala.xml.Node,
+      config: ParserConfig) = {
+    val name = (node \ "@name").text
+    val attributes = AttributeLike.fromParentNode(node, config)
+    
+    AttributeGroupDecl(config.targetNamespace,
+      name, attributes.toList.reverse)
   } 
 }
 
@@ -519,11 +573,7 @@ object ComplexTypeDecl {
       case Some(x) => x.text.toBoolean
     }
     
-    val attributes = (node \ "attribute").toList.map(
-      AttributeLike.fromXML(_, config)) ::: ((node \ "anyAttribute").headOption match {
-        case None => Nil
-        case Some(x) => List(AttributeLike.fromXML(x, config))
-      })
+    val attributes = AttributeLike.fromParentNode(node, config)
     var content: HasComplexTypeContent = ComplexContentDecl.fromAttributes(attributes)
     
     for (child <- node.child) child match {

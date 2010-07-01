@@ -170,8 +170,20 @@
       <element name="date"   type="dateTime"/>
       <element name="data"   type="base64Binary"/>
     </sequence>
+    <attributeGroup ref="ipo:coreattrs"/>
   </complexType>
 
+  <attributeGroup name="coreattrs">
+    <annotation>
+      <documentation>
+      core attributes common to most elements
+      id       document-wide unique id
+      </documentation>
+    </annotation>
+    <attribute name="id" type="ID"/>
+    <attribute name="class" type="NMTOKENS"/>
+  </attributeGroup>
+  
   <attribute name="globalAttr" type="int"/>
 
   <element name="NillableTest">

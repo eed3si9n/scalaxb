@@ -321,13 +321,13 @@ object PurchaseOrderUsage {
   
   def testDatedData {
     val subject = <foo xmlns="http://www.example.com/IPO"
-        xmlns:ipo="http://www.example.com/IPO">
+        xmlns:ipo="http://www.example.com/IPO" id="foo">
       <date>2010-02-06Z</date>
       <data>QUJDREVGRw==</data>
     </foo>
     val obj = DatedData.fromXML(subject)
     obj match {
-      case DatedData(_, _) =>
+      case DatedData(_, _, _, _) =>
       case _ => error("match failed: " + obj.toString)
     }
     val document = obj.toXML(null, "foo", subject.scope)

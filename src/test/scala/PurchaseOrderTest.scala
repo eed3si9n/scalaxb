@@ -20,7 +20,11 @@ object PurchaseOrderTest extends SpecificationWithJUnit with CompilerMatcher {
      }
   }
 
-  lazy val generated = module.process(ipoxsd, iposcala, Some("ipo"), None)
+  lazy val generated = module.process(ipoxsd,
+    iposcala,
+    Some("ipo"),
+    None)
+  
   "ipo.xsd must generate ipo.scala file" in {
     generated(0) must exist
   }

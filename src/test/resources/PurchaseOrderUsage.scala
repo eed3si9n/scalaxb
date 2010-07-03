@@ -327,7 +327,7 @@ object PurchaseOrderUsage {
     </foo>
     val obj = DatedData.fromXML(subject)
     obj match {
-      case DatedData(_, _, _, _) =>
+      case DatedData(_, _, _) =>
       case _ => error("match failed: " + obj.toString)
     }
     val document = obj.toXML(null, "foo", subject.scope)

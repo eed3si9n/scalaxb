@@ -96,6 +96,11 @@ class GenSource(schema: SchemaDecl,
     
     myprintAll(makeImports.child)
     
+    for ((sch, typ) <- context.complexTypes;
+        if sch == schema;
+        if !context.baseToSubs.keysIterator.contains(typ))
+      myprintAll(makeType(typ).child)
+      
     for (base <- context.baseToSubs.keysIterator;
         if !base.abstractValue;
         if context.complexTypes.contains((schema, base)))
@@ -104,15 +109,13 @@ class GenSource(schema: SchemaDecl,
     for (base <- context.baseToSubs.keysIterator;
         if context.complexTypes.contains((schema, base)))
       myprintAll(makeTrait(base).child)
-    
-    for ((sch, typ) <- context.complexTypes;
-        if sch == schema;
-        if !context.baseToSubs.keysIterator.contains(typ))
-      myprintAll(makeType(typ).child)
-      
+          
     for ((sch, group) <- context.groups;
         if sch == schema)
       myprintAll(makeGroup(group).child)
+    
+    for (group <- schema.topAttrGroups.valuesIterator)
+      myprintAll(makeAttributeGroup(group).child)
   }
       
   def makeSuperType(decl: ComplexTypeDecl): scala.xml.Node =
@@ -141,6 +144,7 @@ class GenSource(schema: SchemaDecl,
     case symbol: BuiltInSimpleTypeSymbol => symbol.name
     case ReferenceTypeSymbol(decl: SimpleTypeDecl) => buildTypeName(decl)
     case ReferenceTypeSymbol(decl: ComplexTypeDecl) => buildTypeName(decl)
+    case symbol:AttributeGroupSymbol => buildTypeName(attributeGroups(symbol.namespace, symbol.name))
   }
   
   def buildTypeName(decl: ComplexTypeDecl, localOnly: Boolean = false): String = {
@@ -162,6 +166,9 @@ class GenSource(schema: SchemaDecl,
     case x: SimpTypListDecl => "Seq[" + buildTypeName(baseType(decl)) + "]"
     case _ => error("GenSource: Unsupported content " +  decl.content.toString)    
   }
+  
+  def buildTypeName(group: AttributeGroupDecl): String =
+    makeTypeName(group.name)
   
   def baseType(decl: SimpleTypeDecl): BuiltInSimpleTypeSymbol = decl.content match {
     case SimpTypRestrictionDecl(base: BuiltInSimpleTypeSymbol) => base
@@ -196,7 +203,7 @@ class GenSource(schema: SchemaDecl,
     log("GenSource.makeTrait: emitting " + name)
 
     val childElements = flattenElements(decl, name)
-    val list = List.concat[Decl](childElements, flattenAttributes(decl))
+    val list = List.concat[Decl](childElements, buildAttributes(decl))
     val paramList = list.map(buildParam(_))
     val argList = list map {
       case any: AnyAttributeDecl => buildArgForAnyAttribute(decl)
@@ -262,7 +269,7 @@ object {name} {{
     
     val particles = flattenElements(decl, name)
     val childElements = particles ::: flattenMixed(decl)
-    val attributes = flattenAttributes(decl)    
+    val attributes = buildAttributes(decl)    
     val list = List.concat[Decl](childElements, attributes)
     val paramList = list.map(buildParam(_))
     val parserList = particles map(buildParser(_, decl.mixed))
@@ -438,12 +445,42 @@ case class {name}({paramsString}){extendString} {{
 {compositors map(makeCompositor(_, false))}
 </source>
   }
-    
+  
+  def makeAttributeGroup(group: AttributeGroupDecl) = {
+    val name = buildTypeName(group)
+    val attributes = buildAttributes(group.attributes)  
+    val paramList = attributes.map(buildParam(_))
+    val argList = attributes map {
+        case any: AnyAttributeDecl => buildArgForAnyAttribute(group)
+        case x => buildArg(x) 
+      }
+    val paramsString =paramList.map(
+      _.toScalaCode).mkString("," + newline + indent(1))
+    val argsString = argList.mkString("," + newline + indent(3))  
+    val attributeString = attributes.map(x => buildAttributeString(x)).mkString(newline + indent(2))
+    <source>case class {name}({paramsString}) {{
+  
+  def toAttribute(attr: scala.xml.MetaData, __scope: scala.xml.NamespaceBinding) = {{
+    var attribute: scala.xml.MetaData  = attr
+    {attributeString}
+    attribute
+  }}
+}}
+
+object {name} {{
+  def fromXML(node: scala.xml.Node): {name} = {{
+    {name}({argsString})
+  }}  
+}}
+
+</source>
+  }
   
   def buildAttributeString(attr: AttributeLike): String = attr match {
     case ref: AttributeRef => buildAttributeString(buildAttribute(ref))
     case x: AttributeDecl  => buildAttributeString(x)
     case any: AnyAttributeDecl => buildAttributeString(any)
+    case group: AttributeGroupDecl => buildAttributeString(group)
   }
   
   def buildAttributeString(any: AnyAttributeDecl): String =
@@ -468,6 +505,9 @@ case class {name}({paramsString}){extendString} {{
       "attribute = scala.xml.Attribute(" + namespaceString + ", " + quote(attr.name) + ", " + 
       name + ".toString, attribute)"      
   }
+  
+  def buildAttributeString(group: AttributeGroupDecl): String =
+    "attribute = " + makeParamName(buildParam(group).name) + ".toAttribute(attribute, __scope)"
   
   def buildXMLString(param: Param) = param.typeSymbol match {
     case symbol: BuiltInSimpleTypeSymbol => buildXMLStringForSimpleType(param)
@@ -615,8 +655,8 @@ case class {name}({paramsString}){extendString} {{
   def buildParam(decl: Decl): Param = decl match {
     case elem: ElemDecl => buildParam(elem)
     case attr: AttributeDecl => buildParam(attr)
-    case ref: AttributeRef => buildParam(buildAttribute(ref))
     case any: AnyAttributeDecl => buildParam(any)
+    case group: AttributeGroupDecl => buildParam(group)
     case _ => error("GenSource#buildParam: unsupported delcaration " + decl.toString)
   }
   
@@ -650,6 +690,13 @@ case class {name}({paramsString}){extendString} {{
     val retval = Param(attr.namespace, name, attr.typeSymbol, cardinality, false, true)
     log("GenSource#buildParam:  " + retval)
     retval
+  }
+  
+  def buildParam(group: AttributeGroupDecl): Param = {
+    val retval = Param(group.namespace, group.name,
+      new AttributeGroupSymbol(group.namespace, group.name), Single, false, true)
+    log("GenSource#buildParam:  " + retval)
+    retval    
   }
   
   /// called by makeGroup
@@ -861,6 +908,7 @@ case class {name}({paramsString}){extendString} {{
     case elem: ElemDecl        => buildArg(elem, 0)
     case attr: AttributeDecl   => buildArg(attr)
     case ref: AttributeRef     => buildArg(buildAttribute(ref))
+    case group: AttributeGroupDecl => buildArg(group)
     case _ => error("GenSource#buildArg unsupported delcaration " + decl.toString)
   }
     
@@ -1036,9 +1084,13 @@ case class {name}({paramsString}){extendString} {{
 
   def buildSelector(nodeName: String): String = "(node \\ \"" + nodeName + "\")"
   
-  def buildArgForAnyAttribute(parent: ComplexTypeDecl): String = {
-    val attributes = flattenAttributes(parent)
-    
+  def buildArgForAnyAttribute(parent: ComplexTypeDecl): String =
+    buildArgForAnyAttribute(flattenAttributes(parent))
+  
+  def buildArgForAnyAttribute(parent: AttributeGroupDecl): String =
+    buildArgForAnyAttribute(flattenAttributes(parent.attributes))
+  
+  def buildArgForAnyAttribute(attributes: List[AttributeLike]): String = {
     def makeCaseEntry(attr: AttributeDecl) = if (attr.global)
       "case scala.xml.PrefixedAttribute(pre, key, value, _) if pre == elem.scope.getPrefix(" +
         quote(attr.namespace) + ") &&" + newline +
@@ -1099,8 +1151,7 @@ case class {name}({paramsString}){extendString} {{
         (x.isInstanceOf[ElemRef] && (isAnyOrChoice(buildElement(x.asInstanceOf[ElemRef]).typeSymbol)))  ))
       List("case x: scala.xml.Elem =>" + newline +
         indent(indentBase + 1) + "rt.DataRecord(x.scope.getURI(x.prefix), x.label, x)")
-    else
-      Nil
+    else Nil
     
     particles.collect {
       case elem: ElemDecl if !isAnyOrChoice(elem.typeSymbol) =>
@@ -1136,10 +1187,8 @@ case class {name}({paramsString}){extendString} {{
       case _        => error("GenSource#buildArg: Unsupported type " + typeSymbol.toString) 
     }
     
-    val optionSelector = if (selector contains("@"))
-      selector + ".headOption"
-    else
-      selector
+    val optionSelector = if (selector contains("@")) selector + ".headOption"
+      else selector
     
     def buildMatchStatement(noneValue: String, someValue: String) = nillable match {
       case Some(true) =>
@@ -1178,9 +1227,14 @@ case class {name}({paramsString}){extendString} {{
       case _ => pre + selector + ".text" + post
     }
   }
-    
+  
+  def buildArg(group: AttributeGroupDecl): String = {
+    val typeName = buildTypeName(group)
+    typeName + ".fromXML(node)"
+  }
+  
   def quote(value: String) = if (value == null) "null"
-  else "\"" + value + "\""
+    else "\"" + value + "\""
   
   def buildSuperNames(decl: ComplexTypeDecl) =
     buildSuperName(decl) ::: buildOptions(decl)
@@ -1472,6 +1526,25 @@ case class {name}({paramsString}){extendString} {{
   def buildAttributeGroup(ref: AttributeGroupRef) =
     attributeGroups(ref.namespace, ref.name)
   
+  def buildAttributes(decl: ComplexTypeDecl): List[AttributeLike] =
+    buildAttributes(decl.content.content.attributes) ::: (
+    decl.content.content match {
+      case CompContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, attr) => 
+        buildAttributes(base)
+      case CompContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, attr) =>
+        buildAttributes(base)
+      case _ => Nil
+    })
+
+  def buildAttributes(attributes: List[AttributeLike]): List[AttributeLike] =
+    attributes map {
+      case any: AnyAttributeDecl => any
+      case attr: AttributeDecl => attr
+      case ref: AttributeRef   => buildAttribute(ref)
+      case group: AttributeGroupDecl => group
+      case ref: AttributeGroupRef    => buildAttributeGroup(ref)
+    }
+    
   def flattenAttributes(decl: ComplexTypeDecl): List[AttributeLike] =
     flattenAttributes(decl.content.content.attributes) ::: (
     decl.content.content match {
@@ -1479,7 +1552,7 @@ case class {name}({paramsString}){extendString} {{
         flattenAttributes(base)
       case CompContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, attr) =>
         flattenAttributes(base)
-      case _ => List()
+      case _ => Nil
     })
   
   // return a list of either AttributeDecl or AnyAttributeDecl

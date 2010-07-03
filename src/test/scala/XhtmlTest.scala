@@ -20,13 +20,14 @@ object XhtmlTest extends SpecificationWithJUnit with CompilerMatcher {
     None )
   
   "xhtml1-strict.scala file must compile so that Html can be used" in {
-    (List("""Html.fromXML(
-<html xmlns="http://www.w3.org/1999/xhtml">
-<head><title>foo</title></head>
-<body></body></html>).toString"""),
-     generated) must evaluateTo("Html(" + 
-     "Head(List(),DataRecord(null,null," +
-     "HeadSequence2(Title(List(DataRecord(null,null,foo)),None),List(),None)),None,None)," +
-     "Body(List(),None,None),None)", outdir = "./tmp")
+    (List("import org.w3.xhtml._",
+      """val document = <html xmlns="http://www.w3.org/1999/xhtml" lang="en">""" + // "
+      """<head><title>foo</title></head><body></body></html>""",
+      """Html.fromXML(document).toXML(
+        "http://www.w3.org/1999/xhtml", "html", document.scope).toString""" // "
+     ),
+     generated) must evaluateTo("""<html lang="en" xmlns="http://www.w3.org/1999/xhtml">""" + // "
+     """<head><null><title>foo</title></null></head><body></body></html>""", // "
+  outdir = "./tmp")
   }
 }

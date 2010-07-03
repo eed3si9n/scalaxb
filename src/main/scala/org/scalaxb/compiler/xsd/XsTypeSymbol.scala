@@ -37,10 +37,8 @@ object XsMixed extends XsTypeSymbol("XsMixed") {}
 class ReferenceTypeSymbol(name: String) extends XsTypeSymbol(name) {
   var decl: TypeDecl = null
   override def toString(): String = {
-    if (decl == null)
-      "ReferenceTypeSymbol(" + name + ",null)"
-    else
-      "ReferenceTypeSymbol(" + name + "," + decl.toString + ")"
+    if (decl == null) "ReferenceTypeSymbol(" + name + ",null)"
+    else "ReferenceTypeSymbol(" + name + "," + decl.toString + ")"
   }
 }
 
@@ -49,6 +47,9 @@ object ReferenceTypeSymbol {
 }
 
 class BuiltInSimpleTypeSymbol(name: String) extends XsTypeSymbol(name)
+
+class AttributeGroupSymbol(val namespace: String,
+  name: String) extends XsTypeSymbol(name)
 
 abstract class DerivSym
 case class Extends(sym: XsTypeSymbol) extends DerivSym

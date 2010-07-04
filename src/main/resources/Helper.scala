@@ -4,17 +4,17 @@ case class DataRecord[+A](namespace: String, key: String, value: A)
     (implicit m : scala.reflect.Manifest[A]) {
   type DataModel = {
     def toXML(__namespace: String, __elementLabel: String,
-      __scope: scala.xml.NamespaceBinding): scala.xml.Node 
+      __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq
   }
   
   def toXML(__namespace: String, __elementLabel: String,
-      __scope: scala.xml.NamespaceBinding): scala.xml.Node =
+      __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq =
     try
       value.asInstanceOf[DataModel].toXML(__namespace, __elementLabel, __scope)
     catch {
       case _ => 
         value match {
-          case x: scala.xml.Node => x
+          case x: scala.xml.NodeSeq => x
           case x: String if key == null => scala.xml.Text(x)
 
           // for now the structural type does not work within pattern matching,
@@ -43,6 +43,11 @@ trait AnyElemNameParser extends scala.util.parsing.combinator.Parsers {
 }
 
 trait ElemNameParser[A] extends AnyElemNameParser {
+  def fromXML(seq: scala.xml.NodeSeq): A = seq match {
+    case node: scala.xml.Node => fromXML(node)
+    case _ => error("fromXML failed: seq must be scala.xml.Node")
+  }
+  
   def fromXML(node: scala.xml.Node): A =
     parse(parser(node), node.child.collect { case elem: scala.xml.Elem => elem }) match {
       case x: Success[_] => x.get

@@ -27,7 +27,7 @@ object XhtmlTest extends SpecificationWithJUnit with CompilerMatcher {
         "http://www.w3.org/1999/xhtml", "html", document.scope).toString""" // "
      ),
      generated) must evaluateTo("""<html lang="en" xmlns="http://www.w3.org/1999/xhtml">""" + // "
-     """<head><null><title>foo</title></null></head><body></body></html>""", // "
+     """<head><title>foo</title></head><body></body></html>""", // "
   outdir = "./tmp")
   }
 }

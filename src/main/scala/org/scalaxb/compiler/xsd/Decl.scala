@@ -63,6 +63,7 @@ class ParserConfig {
   val topAttrGroups = mutable.ListMap.empty[String, AttributeGroupDecl]
   val choices   = mutable.Set.empty[ChoiceDecl]
   var schemas: List[SchemaDecl] = Nil
+  val typeToAnnotatable = mutable.ListMap.empty[TypeDecl, Annotatable]
   
   def containsType(name: String): Boolean = {
     val (namespace, typeName) = TypeSymbolParser.splitTypeName(name, this)
@@ -129,6 +130,10 @@ trait HasParticle extends Particle {
   val maxOccurs: Int
 }
 
+trait Annotatable {
+  val annotation: Option[AnnotationDecl]
+}
+
 case class SchemaDecl(targetNamespace: String,
     topElems: Map[String, ElemDecl],
     elemList: List[ElemDecl],
@@ -138,8 +143,9 @@ case class SchemaDecl(targetNamespace: String,
     topAttrs: Map[String, AttributeDecl],
     topGroups: Map[String, GroupDecl],
     topAttrGroups: Map[String, AttributeGroupDecl],
+    typeToAnnotatable: Map[TypeDecl, Annotatable],
     annotation: Option[AnnotationDecl],
-    scope: scala.xml.NamespaceBinding) {
+    scope: scala.xml.NamespaceBinding) extends Annotatable {
   
   val newline = System.getProperty("line.separator")
   
@@ -241,6 +247,7 @@ object SchemaDecl {
       immutable.ListMap.empty[String, AttributeDecl] ++ config.topAttrs,
       immutable.ListMap.empty[String, GroupDecl] ++ config.topGroups,
       immutable.ListMap.empty[String, AttributeGroupDecl] ++ config.topAttrGroups,
+      immutable.ListMap.empty[TypeDecl, Annotatable] ++ config.typeToAnnotatable,
       annotation,
       scopeToBuild)
   }
@@ -266,17 +273,17 @@ object SchemaDecl {
     } // for
     
     for (typ <- config.typeList) typ match {
-      case SimpleTypeDecl(_, res: SimpTypRestrictionDecl) =>
+      case SimpleTypeDecl(_, res: SimpTypRestrictionDecl, _) =>
         resolveType(res.base, config)
-      case SimpleTypeDecl(_, list: SimpTypListDecl) =>
+      case SimpleTypeDecl(_, list: SimpTypListDecl, _) =>
         resolveType(list.itemType, config) 
-      case ComplexTypeDecl(_, _, _, _, SimpleContentDecl(res: SimpContRestrictionDecl), _) =>
+      case ComplexTypeDecl(_, _, _, _, SimpleContentDecl(res: SimpContRestrictionDecl), _, _) =>
         resolveType(res.base, config)
-      case ComplexTypeDecl(_, _, _, _, SimpleContentDecl(ext: SimpContExtensionDecl), _) =>
+      case ComplexTypeDecl(_, _, _, _, SimpleContentDecl(ext: SimpContExtensionDecl), _, _) =>
         resolveType(ext.base, config)      
-      case ComplexTypeDecl(_, _, _, _, ComplexContentDecl(res: CompContRestrictionDecl), _) =>
+      case ComplexTypeDecl(_, _, _, _, ComplexContentDecl(res: CompContRestrictionDecl), _, _) =>
         resolveType(res.base, config)
-      case ComplexTypeDecl(_, _, _, _, ComplexContentDecl(ext: CompContExtensionDecl), _) =>
+      case ComplexTypeDecl(_, _, _, _, ComplexContentDecl(ext: CompContExtensionDecl), _, _) =>
         resolveType(ext.base, config)
         
       case _ =>
@@ -384,7 +391,8 @@ case class AttributeDecl(namespace: String,
     defaultValue: Option[String],
     fixedValue: Option[String],
     use: AttributeUse,
-    global: Boolean) extends AttributeLike {
+    annotation: Option[AnnotationDecl],
+    global: Boolean) extends AttributeLike with Annotatable {
   override def toString = "@" + name
 }
 
@@ -422,9 +430,13 @@ object AttributeDecl {
       case "required"   => RequiredUse
       case _            => OptionalUse
     }
+    val annotation = (node \ "annotation").headOption match {
+      case Some(x) => Some(AnnotationDecl.fromXML(x, config))
+      case None    => None
+    }
 
     val attr = AttributeDecl(config.targetNamespace,
-      name, typeSymbol, defaultValue, fixedValue, use,
+      name, typeSymbol, defaultValue, fixedValue, use, annotation,
       global)
     config.attrList += attr
     attr
@@ -446,16 +458,21 @@ object AttributeGroupRef {
 
 case class AttributeGroupDecl(namespace: String,
   name: String,
-  attributes: List[AttributeLike]) extends AttributeLike
+  attributes: List[AttributeLike],
+  annotation: Option[AnnotationDecl]) extends AttributeLike with Annotatable
   
 object AttributeGroupDecl {
   def fromXML(node: scala.xml.Node,
       config: ParserConfig) = {
     val name = (node \ "@name").text
     val attributes = AttributeLike.fromParentNode(node, config)
+    val annotation = (node \ "annotation").headOption match {
+      case Some(x) => Some(AnnotationDecl.fromXML(x, config))
+      case None    => None
+    }
     
     AttributeGroupDecl(config.targetNamespace,
-      name, attributes.toList.reverse)
+      name, attributes.toList.reverse, annotation)
   } 
 }
 
@@ -487,7 +504,8 @@ case class ElemDecl(namespace: String,
   fixedValue: Option[String],  
   minOccurs: Int,
   maxOccurs: Int,
-  nillable: Option[Boolean]) extends Decl with Particle
+  nillable: Option[Boolean],
+  annotation: Option[AnnotationDecl]) extends Decl with Particle with Annotatable
 
 object ElemDecl {
   def fromXML(node: scala.xml.Node, config: ParserConfig) = {
@@ -531,20 +549,35 @@ object ElemDecl {
       case None    => None
       case Some(x) => Some(x.text == "true") 
     }
+    val annotation = (node \ "annotation").headOption match {
+      case Some(x) => Some(AnnotationDecl.fromXML(x, config))
+      case None    => None
+    }
     
     val elem = ElemDecl(config.targetNamespace, 
-      name, typeSymbol, defaultValue, fixedValue, minOccurs, maxOccurs, nillable)
+      name, typeSymbol, defaultValue, fixedValue, minOccurs, maxOccurs, nillable,
+      annotation)
     config.elemList += elem
+    if (typeName == "") typeSymbol match {
+      case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
+        config.typeToAnnotatable += (decl -> elem)
+      case ReferenceTypeSymbol(decl: SimpleTypeDecl) =>
+        config.typeToAnnotatable += (decl -> elem)
+      case _ =>
+    }
+    
     elem
   }
 }
 
 
-abstract class TypeDecl extends Decl
+trait TypeDecl extends Decl with Annotatable
 
 /** simple types cannot have element children or attributes.
  */
-case class SimpleTypeDecl(name: String, content: ContentTypeDecl) extends TypeDecl {
+case class SimpleTypeDecl(name: String,
+    content: ContentTypeDecl,
+    annotation: Option[AnnotationDecl]) extends TypeDecl {
   override def toString(): String = name + "(" + content.toString + ")"
 }
 
@@ -560,7 +593,12 @@ object SimpleTypeDecl {
       case _ =>     
     }
     
-    SimpleTypeDecl(name, content)
+    val annotation = (node \ "annotation").headOption match {
+      case Some(x) => Some(AnnotationDecl.fromXML(x, config))
+      case None    => None
+    }
+    
+    SimpleTypeDecl(name, content, annotation)
   }
   
   def buildName(node: scala.xml.Node) = {
@@ -579,7 +617,8 @@ case class ComplexTypeDecl(namespace: String,
   abstractValue: Boolean,
   mixed: Boolean,
   content: HasComplexTypeContent,
-  attributes: List[AttributeLike]) extends TypeDecl
+  attributes: List[AttributeLike],
+  annotation: Option[AnnotationDecl]) extends TypeDecl
 
 object ComplexTypeDecl {  
   def fromXML(node: scala.xml.Node, name: String, config: ParserConfig) = {
@@ -615,9 +654,14 @@ object ComplexTypeDecl {
       case _ =>
     }
     
+    val annotation = (node \ "annotation").headOption match {
+      case Some(x) => Some(AnnotationDecl.fromXML(x, config))
+      case None    => None
+    }
+    
     // val contentModel = ContentModel.fromSchema(firstChild(node))
     ComplexTypeDecl(config.targetNamespace, name, abstractValue, mixed, 
-      content, attributes.reverse)
+      content, attributes.reverse, annotation)
   }
 }
 
@@ -785,15 +829,22 @@ case class GroupDecl(namespace: String,
   name: String,
   particles: List[Particle],
   minOccurs: Int,
-  maxOccurs: Int) extends CompositorDecl with HasParticle
+  maxOccurs: Int,
+  annotation: Option[AnnotationDecl]) extends CompositorDecl with HasParticle with Annotatable
 
 object GroupDecl {
   def fromXML(node: scala.xml.Node, config: ParserConfig) = {
     val name = (node \ "@name").text
     val minOccurs = CompositorDecl.buildOccurrence((node \ "@minOccurs").text)
     val maxOccurs = CompositorDecl.buildOccurrence((node \ "@maxOccurs").text)
+    
+    val annotation = (node \ "annotation").headOption match {
+      case Some(x) => Some(AnnotationDecl.fromXML(x, config))
+      case None    => None
+    }
     val group = GroupDecl(config.targetNamespace, name,
-      CompositorDecl.fromNodeSeq(node.child, config), minOccurs, maxOccurs)
+      CompositorDecl.fromNodeSeq(node.child, config), minOccurs, maxOccurs,
+      annotation)
     // config.choices += choice
     group
   }

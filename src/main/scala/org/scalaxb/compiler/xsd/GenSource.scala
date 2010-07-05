@@ -81,10 +81,10 @@ class GenSource(schema: SchemaDecl,
   }
 
   lazy val xmlAttrs = Map[String, AttributeDecl](
-    ("lang" -> AttributeDecl(XML_URI, "lang", XsString, None, None, OptionalUse, true)),
-    ("space" -> AttributeDecl(XML_URI, "space", XsString, None, None, OptionalUse, true)),
-    ("base" -> AttributeDecl(XML_URI, "base", XsAnyURI, None, None, OptionalUse, true)),
-    ("id" -> AttributeDecl(XML_URI, "id", XsID, None, None, OptionalUse, true))
+    ("lang" -> AttributeDecl(XML_URI, "lang", XsString, None, None, OptionalUse, None, true)),
+    ("space" -> AttributeDecl(XML_URI, "space", XsString, None, None, OptionalUse, None, true)),
+    ("base" -> AttributeDecl(XML_URI, "base", XsAnyURI, None, None, OptionalUse, None, true)),
+    ("id" -> AttributeDecl(XML_URI, "id", XsID, None, None, OptionalUse, None, true))
   )
     
   def run {
@@ -170,7 +170,7 @@ class GenSource(schema: SchemaDecl,
   
   def baseType(decl: SimpleTypeDecl): BuiltInSimpleTypeSymbol = decl.content match {
     case SimpTypRestrictionDecl(base: BuiltInSimpleTypeSymbol) => base
-    case SimpTypRestrictionDecl(ReferenceTypeSymbol(decl2@SimpleTypeDecl(_, _))) => baseType(decl2)
+    case SimpTypRestrictionDecl(ReferenceTypeSymbol(decl2@SimpleTypeDecl(_, _, _))) => baseType(decl2)
     case SimpTypListDecl(itemType: BuiltInSimpleTypeSymbol) => itemType
     case _ => error("GenSource: Unsupported content " +  decl.content.toString)
   }
@@ -178,16 +178,16 @@ class GenSource(schema: SchemaDecl,
   def particlesWithSimpleType(particles: List[Decl]) = {
     val types = mutable.ListMap.empty[ElemDecl, BuiltInSimpleTypeSymbol]
     for (particle <- particles) particle match {
-      case elem@ElemDecl(_, _, symbol: BuiltInSimpleTypeSymbol, _, _, _, _, _) =>
+      case elem@ElemDecl(_, _, symbol: BuiltInSimpleTypeSymbol, _, _, _, _, _, _) =>
         types += (elem -> symbol)
-      case elem@ElemDecl(_, _, ReferenceTypeSymbol(decl@SimpleTypeDecl(_, _)), _, _, _, _, _) =>
+      case elem@ElemDecl(_, _, ReferenceTypeSymbol(decl@SimpleTypeDecl(_, _, _)), _, _, _, _, _, _) =>
         types += (elem -> baseType(decl))
       case ref: ElemRef =>
         val elem = buildElement(ref)
         elem match {
-          case ElemDecl(_, _, symbol: BuiltInSimpleTypeSymbol, _, _, _, _, _) =>
+          case ElemDecl(_, _, symbol: BuiltInSimpleTypeSymbol, _, _, _, _, _, _) =>
             types += (elem -> symbol)
-          case ElemDecl(_, _, ReferenceTypeSymbol(decl@SimpleTypeDecl(_, _)), _, _, _, _, _) =>
+          case ElemDecl(_, _, ReferenceTypeSymbol(decl@SimpleTypeDecl(_, _, _)), _, _, _, _, _, _) =>
             types += (elem -> baseType(decl))
           case _ => // do nothing
         }
@@ -222,7 +222,7 @@ class GenSource(schema: SchemaDecl,
     }
         
     return <source>
-trait {name}{extendString} {{
+{ buildComment(decl) }trait {name}{extendString} {{
   {
   val vals = for (param <- paramList)
     yield  "val " + param.toScalaCode
@@ -386,9 +386,9 @@ object {name} {{
         {{ case { parserVariableList.mkString(" ~ " + newline + indent(3)) } => {name}({argsString}) }}
 }}
 </source>
-    
+      
     return <source>
-case class {name}({paramsString}){extendString} {{
+{ buildComment(decl) }case class {name}({paramsString}){extendString} {{
   { if (!decl.name.contains('@')) makeToXml }  
   def toXML(__namespace: String, __elementLabel: String, __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq = {{
     val prefix = __scope.getPrefix(__namespace)
@@ -404,7 +404,17 @@ case class {name}({paramsString}){extendString} {{
 { compositorsList }
 </source>    
   }
-      
+    
+  def buildComment(p: Product) = p match {
+    case decl: TypeDecl =>
+      if (schema.typeToAnnotatable.contains(decl))
+        makeAnnotation(schema.typeToAnnotatable(decl).annotation)
+      else makeAnnotation(decl.annotation)
+    case anno: Annotatable =>
+      makeAnnotation(anno.annotation)
+    case _ => ""
+  }
+  
   def makeCompositor(compositor: HasParticle, mixed: Boolean) = {
     val name = makeTypeName(context.compositorNames(compositor))
     val hasForeign = containsForeignType(compositor)
@@ -440,7 +450,7 @@ case class {name}({paramsString}){extendString} {{
       else paramList.map(x => 
         buildXMLString(x)).mkString("Seq.concat(", "," + newline + indent(4), ")")
     
-    <source>case class {name}({paramsString}) {{
+    <source>{ buildComment(seq) }case class {name}({paramsString}) {{
   def toXML(__namespace: String, __elementLabel: String, __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq = {{
     val prefix = __scope.getPrefix(__namespace)
     var attribute: scala.xml.MetaData  = scala.xml.Null
@@ -464,7 +474,7 @@ case class {name}({paramsString}){extendString} {{
       if (groups.isEmpty) List("rt.AnyElemNameParser")
       else groups.map(x => makeTypeName(context.compositorNames(x)))
     
-    <source>trait {name} extends {superNames.mkString(" with ")} {{
+    <source>{ buildComment(group) }trait {name} extends {superNames.mkString(" with ")} {{
   def parse{name}: Parser[{param.typeName}] =
     {parser}
 }}
@@ -485,7 +495,7 @@ case class {name}({paramsString}){extendString} {{
       _.toScalaCode).mkString("," + newline + indent(1))
     val argsString = argList.mkString("," + newline + indent(3))  
     val attributeString = attributes.map(x => buildAttributeString(x)).mkString(newline + indent(2))
-    <source>case class {name}({paramsString}) {{
+    <source>{ buildComment(group) }case class {name}({paramsString}) {{
   
   def toAttribute(attr: scala.xml.MetaData, __scope: scala.xml.NamespaceBinding) = {{
     var attribute: scala.xml.MetaData  = attr
@@ -1094,7 +1104,7 @@ object {name} {{
   
   def buildArg(content: SimpleContentDecl, typeSymbol: XsTypeSymbol): String = typeSymbol match {
     case base: BuiltInSimpleTypeSymbol => buildArg(base, "node", None, None, 1, 1, None)
-    case ReferenceTypeSymbol(ComplexTypeDecl(_, _, _, _, content: SimpleContentDecl, _)) =>
+    case ReferenceTypeSymbol(ComplexTypeDecl(_, _, _, _, content: SimpleContentDecl, _, _)) =>
       buildArg(content)
     case ReferenceTypeSymbol(decl: SimpleTypeDecl) =>
       buildArg(decl, "node", None, None, 1, 1, None)
@@ -1153,7 +1163,7 @@ object {name} {{
     case XsAny => selector
     case symbol: BuiltInSimpleTypeSymbol =>
       buildArg(symbol, selector, None, None, 1, 1, None)
-    case ReferenceTypeSymbol(decl@SimpleTypeDecl(_, _)) =>
+    case ReferenceTypeSymbol(decl@SimpleTypeDecl(_, _, _)) =>
       buildArg(baseType(decl), selector, None, None, 1, 1, None)
     case _ =>
       buildTypeName(typeSymbol) + ".fromXML(" + selector + ")"
@@ -1277,7 +1287,7 @@ object {name} {{
     
     for (choice <- choices;
         particle <- choice.particles) particle match {
-      case ElemDecl(_, _, symbol: ReferenceTypeSymbol, _, _, _, _, _) =>
+      case ElemDecl(_, _, symbol: ReferenceTypeSymbol, _, _, _, _, _, _) =>
         if (!interNamespaceCompositorTypes.contains(symbol) &&
             symbol.decl == decl)
           set += makeTypeName(context.compositorNames(choice))
@@ -1383,7 +1393,7 @@ object {name} {{
   
   def flattenElements(compositor: HasParticle, name: String): List[ElemDecl] =
       compositor match {
-    case GroupDecl(_, _, particles: List[_], _, _) =>
+    case GroupDecl(_, _, particles: List[_], _, _, _) =>
       particles flatMap {
         case compositor2: HasParticle => List(buildCompositorRef(compositor2))
       }    
@@ -1423,83 +1433,19 @@ object {name} {{
       case any: AnyDecl             => buildAnyRef(any)
     }
     
-  def attrs(namespace: String, name: String) =
-    if (namespace == XML_URI)
-      xmlAttrs(name)
-    else
-      (for (schema <- schemas;
-            if schema.targetNamespace == namespace;
-            if schema.topAttrs.contains(name))
-          yield schema.topAttrs(name)) match {
-          case x :: xs => x
-          case Nil     => error("Attribute not found: {" + namespace + "}:" + name)
-        }
-
-  def buildAttribute(ref: AttributeRef) = {
-    val that = attrs(ref.namespace, ref.name)
-    // http://www.w3.org/TR/xmlschema-0/#Globals
-    // In other words, global declarations cannot contain the attributes
-    // minOccurs, maxOccurs, or use.
-    AttributeDecl(that.namespace, that.name, that.typeSymbol,
-      ref.defaultValue, ref.fixedValue, ref.use, that.global)
-  }
-
-  def elements(namespace: String, name: String) =
-    (for (schema <- schemas;
-          if schema.targetNamespace == namespace;
-          if schema.topElems.contains(name))
-        yield schema.topElems(name)) match {
-        case x :: xs => x
-        case Nil     => error("Element not found: {" + namespace + "}" + name)
-      }
-  
-  def buildElement(ref: ElemRef) = {
-    val that = elements(ref.namespace, ref.name)
-    
-    // http://www.w3.org/TR/xmlschema-0/#Globals
-    // In other words, global declarations cannot contain the attributes
-    // minOccurs, maxOccurs, or use.
-    ElemDecl(that.namespace, that.name, that.typeSymbol, that.defaultValue,
-      that.fixedValue, ref.minOccurs, ref.maxOccurs, ref.nillable match {
-        case None => that.nillable
-        case _    => ref.nillable
-      })
-  }
-  
   def buildElement(decl: SimpleTypeDecl): ElemDecl = decl.content match {
     case SimpTypRestrictionDecl(ReferenceTypeSymbol(base: SimpleTypeDecl)) => buildElement(base)
     case SimpTypRestrictionDecl(base: BuiltInSimpleTypeSymbol) => buildElement(base)
     case _ => error("GenSource: unsupported type: " + decl)
   }
-  
-  def buildElement(base: BuiltInSimpleTypeSymbol): ElemDecl = 
-    ElemDecl(schema.targetNamespace, "value", base, None, None, 1, 1, None)
-  
-  def groups(namespace: String, name: String) =
-    (for (schema <- schemas;
-          if schema.targetNamespace == namespace;
-          if schema.topGroups.contains(name))
-        yield schema.topGroups(name)) match {
-        case x :: xs => x
-        case Nil     => error("Group not found: {" + namespace + "}" + name)
-      }
-      
-  def buildGroup(ref: GroupRef) = {
-    val that = groups(ref.namespace, ref.name)
     
-    // http://www.w3.org/TR/xmlschema-0/#Globals
-    // In other words, global declarations cannot contain the attributes
-    // minOccurs, maxOccurs, or use.
-    GroupDecl(that.namespace, that.name, that.particles,
-      ref.minOccurs, ref.maxOccurs)    
-  }
-  
   def buildCompositorRef(compositor: HasParticle) = {    
     argNumber += 1
     val name = "arg" + argNumber 
     
     val symbol = new ReferenceTypeSymbol(makeTypeName(context.compositorNames(compositor)))
-    val decl = ComplexTypeDecl(schema.targetNamespace, symbol.name, false, false, null, Nil)
+    val decl = ComplexTypeDecl(schema.targetNamespace, symbol.name,
+      false, false, null, Nil, None)
     
     compositorWrapper(decl) = compositor
     
@@ -1519,6 +1465,7 @@ object {name} {{
         case choice: ChoiceDecl => (compositor.maxOccurs :: compositor.particles.map(_.maxOccurs)).max
         case _ => compositor.maxOccurs
       },
+      None,
       None)
   }
   
@@ -1528,31 +1475,12 @@ object {name} {{
         case _ => false
       }
     )
-    
-  def toOptional(that: ElemDecl) =
-    ElemDecl(that.namespace, that.name, that.typeSymbol,
-      that.defaultValue, that.fixedValue, 0, that.maxOccurs, that.nillable)
-  
-  def buildAnyRef(any: AnyDecl) =
-    ElemDecl(INTERNAL_NAMESPACE, "any", XsAny, None, None,
-      any.minOccurs, any.maxOccurs, None)
-      
+        
   def flattenMixed(decl: ComplexTypeDecl) = if (decl.mixed)
-    List(ElemDecl(INTERNAL_NAMESPACE, "mixed", XsMixed, None, None, 0, Integer.MAX_VALUE, None))
+    List(ElemDecl(INTERNAL_NAMESPACE, "mixed", XsMixed,
+      None, None, 0, Integer.MAX_VALUE, None, None))
   else Nil
     
-  def attributeGroups(namespace: String, name: String) =
-    (for (schema <- schemas;
-          if schema.targetNamespace == namespace;
-          if schema.topAttrGroups.contains(name))
-        yield schema.topAttrGroups(name)) match {
-        case x :: xs => x
-        case Nil     => error("Attribute group not found: {" + namespace + "}" + name)
-      }
-      
-  def buildAttributeGroup(ref: AttributeGroupRef) =
-    attributeGroups(ref.namespace, ref.name)
-  
   def buildAttributes(decl: ComplexTypeDecl): List[AttributeLike] =
     buildAttributes(decl.content.content.attributes) ::: (
     decl.content.content match {
@@ -1592,6 +1520,91 @@ object {name} {{
       case ref: AttributeGroupRef    => flattenAttributes(buildAttributeGroup(ref).attributes)
     }
   
+  def toOptional(that: ElemDecl) =
+    ElemDecl(that.namespace, that.name, that.typeSymbol,
+      that.defaultValue, that.fixedValue, 0, that.maxOccurs, that.nillable, None)
+
+  def buildAnyRef(any: AnyDecl) =
+    ElemDecl(INTERNAL_NAMESPACE, "any", XsAny, None, None,
+      any.minOccurs, any.maxOccurs, None, None)
+
+      def attrs(namespace: String, name: String) =
+        if (namespace == XML_URI)
+          xmlAttrs(name)
+        else
+          (for (schema <- schemas;
+                if schema.targetNamespace == namespace;
+                if schema.topAttrs.contains(name))
+              yield schema.topAttrs(name)) match {
+              case x :: xs => x
+              case Nil     => error("Attribute not found: {" + namespace + "}:" + name)
+            }
+
+  def buildAttribute(ref: AttributeRef) = {
+    val that = attrs(ref.namespace, ref.name)
+    // http://www.w3.org/TR/xmlschema-0/#Globals
+    // In other words, global declarations cannot contain the attributes
+    // minOccurs, maxOccurs, or use.
+    AttributeDecl(that.namespace, that.name, that.typeSymbol,
+      ref.defaultValue, ref.fixedValue, ref.use, that.annotation, that.global)
+  }
+
+  def elements(namespace: String, name: String) =
+    (for (schema <- schemas;
+          if schema.targetNamespace == namespace;
+          if schema.topElems.contains(name))
+        yield schema.topElems(name)) match {
+        case x :: xs => x
+        case Nil     => error("Element not found: {" + namespace + "}" + name)
+      }
+
+  def buildElement(ref: ElemRef) = {
+    val that = elements(ref.namespace, ref.name)
+
+    // http://www.w3.org/TR/xmlschema-0/#Globals
+    // In other words, global declarations cannot contain the attributes
+    // minOccurs, maxOccurs, or use.
+    ElemDecl(that.namespace, that.name, that.typeSymbol, that.defaultValue,
+      that.fixedValue, ref.minOccurs, ref.maxOccurs, ref.nillable match {
+        case None => that.nillable
+        case _    => ref.nillable
+      }, that.annotation)
+  }
+  
+  def buildElement(base: BuiltInSimpleTypeSymbol): ElemDecl = 
+    ElemDecl(schema.targetNamespace, "value", base, None, None, 1, 1, None, None)
+  
+  def groups(namespace: String, name: String) =
+    (for (schema <- schemas;
+          if schema.targetNamespace == namespace;
+          if schema.topGroups.contains(name))
+        yield schema.topGroups(name)) match {
+        case x :: xs => x
+        case Nil     => error("Group not found: {" + namespace + "}" + name)
+      }
+      
+  def buildGroup(ref: GroupRef) = {
+    val that = groups(ref.namespace, ref.name)
+    
+    // http://www.w3.org/TR/xmlschema-0/#Globals
+    // In other words, global declarations cannot contain the attributes
+    // minOccurs, maxOccurs, or use.
+    GroupDecl(that.namespace, that.name, that.particles,
+      ref.minOccurs, ref.maxOccurs, that.annotation)    
+  }
+
+  def attributeGroups(namespace: String, name: String) =
+    (for (schema <- schemas;
+          if schema.targetNamespace == namespace;
+          if schema.topAttrGroups.contains(name))
+        yield schema.topAttrGroups(name)) match {
+        case x :: xs => x
+        case Nil     => error("Attribute group not found: {" + namespace + "}" + name)
+      }
+      
+  def buildAttributeGroup(ref: AttributeGroupRef) =
+    attributeGroups(ref.namespace, ref.name)
+      
   def myprintAll(nodes: Seq[Node]) {
     for (node <- nodes)
       myprint(node)

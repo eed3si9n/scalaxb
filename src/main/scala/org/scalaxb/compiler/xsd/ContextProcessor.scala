@@ -124,7 +124,7 @@ class ContextProcessor(logger: Logger) extends ScalaNames {
   
   def makeGroupComplexType(group: GroupDecl) =
     ComplexTypeDecl(group.namespace, group.name, false, false,
-      ComplexContentDecl.empty, Nil)
+      ComplexContentDecl.empty, Nil, None)
 
   def containsSingleChoice(seq: SequenceDecl) = seq.particles match {
     case ChoiceDecl(_, _, _, _) :: Nil => true

@@ -74,10 +74,10 @@ class ContextProcessor(logger: Logger) extends ScalaNames {
     val namedTypes = mutable.ListBuffer.empty[(SchemaDecl, ComplexTypeDecl)]
     
     for (schema <- context.schemas;
-        typePair <- schema.types;
-        if typePair._2.isInstanceOf[ComplexTypeDecl];
-        if !typePair._1.contains("@");
-        val decl = typePair._2.asInstanceOf[ComplexTypeDecl]) {    
+        typ <- schema.typeList;
+        if typ.isInstanceOf[ComplexTypeDecl];
+        val decl = typ.asInstanceOf[ComplexTypeDecl];
+        if !decl.name.contains("@")) {    
       val pair = (schema, decl)
       namedTypes += pair
       val typeNames = context.typeNames(packageName(schema, context))

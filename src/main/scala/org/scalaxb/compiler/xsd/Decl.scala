@@ -55,7 +55,8 @@ class ParserConfig {
   var targetNamespace: String = null
   val topElems  = mutable.ListMap.empty[String, ElemDecl]
   val elemList  = mutable.ListBuffer.empty[ElemDecl]
-  val types     = mutable.ListMap.empty[String, TypeDecl]
+  val topTypes  = mutable.ListMap.empty[String, TypeDecl]
+  val typeList  = mutable.ListBuffer.empty[TypeDecl]
   val topAttrs  = mutable.ListMap.empty[String, AttributeDecl]
   val attrList  = mutable.ListBuffer.empty[AttributeDecl]
   val topGroups = mutable.ListMap.empty[String, GroupDecl]
@@ -69,11 +70,10 @@ class ParserConfig {
   }
   
   def containsType(namespace: String, typeName: String): Boolean = {
-    if (namespace == targetNamespace && types.contains(typeName))
-      true
+    if (namespace == targetNamespace && topTypes.contains(typeName)) true
     else
       schemas.exists(schema => schema.targetNamespace == namespace &&
-          schema.types.contains(typeName))
+          schema.topTypes.contains(typeName))
   }
   
   def getType(name: String): TypeDecl = {
@@ -82,13 +82,12 @@ class ParserConfig {
   }
   
   def getType(namespace: String, typeName: String): TypeDecl =
-    if (namespace == targetNamespace && types.contains(typeName))
-      types(typeName)
+    if (namespace == targetNamespace && topTypes.contains(typeName)) topTypes(typeName)
     else
       (for (schema <- schemas;
           if schema.targetNamespace == namespace;
-          if schema.types.contains(typeName))
-        yield schema.types(typeName)) match {
+          if schema.topTypes.contains(typeName))
+        yield schema.topTypes(typeName)) match {
         case x :: xs => x
         case Nil     => error("Type not found: {" + namespace + "}:" + typeName)
       }
@@ -133,11 +132,13 @@ trait HasParticle extends Particle {
 case class SchemaDecl(targetNamespace: String,
     topElems: Map[String, ElemDecl],
     elemList: List[ElemDecl],
-    types: Map[String, TypeDecl],
+    topTypes: Map[String, TypeDecl],
+    typeList: List[TypeDecl],
     choices: Set[ChoiceDecl],
     topAttrs: Map[String, AttributeDecl],
     topGroups: Map[String, GroupDecl],
     topAttrGroups: Map[String, AttributeGroupDecl],
+    annotation: Option[AnnotationDecl],
     scope: scala.xml.NamespaceBinding) {
   
   val newline = System.getProperty("line.separator")
@@ -145,7 +146,7 @@ case class SchemaDecl(targetNamespace: String,
   override def toString: String = {
     "SchemaDecl(" + newline +
     "topElems(" + topElems.valuesIterator.mkString("," + newline) + ")," + newline +
-    "types(" + types.valuesIterator.mkString("," + newline)  + ")," + newline + 
+    "topTypes(" + topTypes.valuesIterator.mkString("," + newline)  + ")," + newline + 
     "topAttrs(" + topAttrs.valuesIterator.mkString("," + newline)  + ")," + newline + 
     "topGroups(" + topGroups.valuesIterator.mkString("," + newline)  + ")," + newline + 
     "topAttrGroups(" + topAttrGroups.valuesIterator.mkString("," + newline)  + ")" + newline + 
@@ -163,45 +164,51 @@ object SchemaDecl {
     }
     config.scope = schema.scope
     schema.attribute("targetNamespace") match {
-      case Some(x) =>
-        config.targetNamespace = x.text
+      case Some(x) => config.targetNamespace = x.text
       case None    =>
     }
     config.schemas = context.schemas.toList
     
-    for (node <- schema \ "element";
-        if (node \ "@name").headOption.isDefined) {
-      val elem = ElemDecl.fromXML(node, config)
-      config.topElems += (elem.name -> elem)
-    }
-
-    for (node <- schema \ "attribute"
-        if (node \ "@name").headOption.isDefined) {
-      val attr = AttributeDecl.fromXML(node, config, true)
-      config.topAttrs += (attr.name -> attr)
-    }
-    
-    for (node <- schema \ "attributeGroup"
-        if (node \ "@name").headOption.isDefined) {
-      val attrGroup = AttributeGroupDecl.fromXML(node, config)
-      config.topAttrGroups += (attrGroup.name -> attrGroup)
-    }
-    
-    for (node <- schema \ "group";
-        if (node \ "@name").headOption.isDefined) {
-      val group = GroupDecl.fromXML(node, config)
-      config.topGroups += (group.name -> group)
-    }
-    
-    for (node <- schema \\ "complexType";
-        if (node \ "@name").headOption.isDefined) {
-      val decl = ComplexTypeDecl.fromXML(node, (node \ "@name").text, config)
-      config.types += (decl.name -> decl)
-    }
-
-    for (node <- schema \\ "simpleType") {
-      val decl = SimpleTypeDecl.fromXML(node, config)
-      config.types += (decl.name -> decl)
+    for (child <- schema.child) child match {
+      case <element>{ _* }</element>  =>
+        if ((child \ "@name").headOption.isDefined) {
+          val elem = ElemDecl.fromXML(child, config)
+          config.topElems += (elem.name -> elem)
+        }
+      
+      case <attribute>{ _* }</attribute>  =>
+        if ((child \ "@name").headOption.isDefined) {
+          val attr = AttributeDecl.fromXML(child, config, true)
+          config.topAttrs += (attr.name -> attr)
+        }
+      
+      case <attributeGroup>{ _* }</attributeGroup>  =>
+        if ((child \ "@name").headOption.isDefined) {
+          val attrGroup = AttributeGroupDecl.fromXML(child, config)
+          config.topAttrGroups += (attrGroup.name -> attrGroup)
+        }
+        
+      case <group>{ _* }</group>  =>
+        if ((child \ "@name").headOption.isDefined) {
+          val group = GroupDecl.fromXML(child, config)
+          config.topGroups += (group.name -> group)
+        }
+        
+      case <complexType>{ _* }</complexType>  =>
+        if ((child \ "@name").headOption.isDefined) {
+          val decl = ComplexTypeDecl.fromXML(child, (child \ "@name").text, config)
+          config.typeList += decl
+          config.topTypes += (decl.name -> decl)
+        }
+        
+      case <simpleType>{ _* }</simpleType>  =>
+        if ((child \ "@name").headOption.isDefined) {
+          val decl = SimpleTypeDecl.fromXML(child, config)
+          config.typeList += decl
+          config.topTypes += (decl.name -> decl)
+        }
+      
+      case _ =>
     }
     
     resolveType(config)
@@ -220,14 +227,21 @@ object SchemaDecl {
     if (config.targetNamespace != null)
       scopeToBuild = scala.xml.NamespaceBinding(null, config.targetNamespace, scopeToBuild)
     
+    val annotation = (node \ "annotation").headOption match {
+      case Some(x) => Some(AnnotationDecl.fromXML(x, config))
+      case None    => None
+    }
+      
     SchemaDecl(config.targetNamespace,
       immutable.ListMap.empty[String, ElemDecl] ++ config.topElems,
       config.elemList.toList,
-      immutable.ListMap.empty[String, TypeDecl] ++ config.types,
+      immutable.ListMap.empty[String, TypeDecl] ++ config.topTypes,
+      config.typeList.toList,
       config.choices,
       immutable.ListMap.empty[String, AttributeDecl] ++ config.topAttrs,
       immutable.ListMap.empty[String, GroupDecl] ++ config.topGroups,
       immutable.ListMap.empty[String, AttributeGroupDecl] ++ config.topAttrGroups,
+      annotation,
       scopeToBuild)
   }
   
@@ -240,16 +254,18 @@ object SchemaDecl {
         case symbol: BuiltInSimpleTypeSymbol =>
         
         case symbol: ReferenceTypeSymbol =>
-          if (!config.containsType(symbol.name))
-            error("SchemaDecl: type not found " + attr.name + ": " + symbol.name)
-          config.getType(symbol.name) match {
-            case decl: SimpleTypeDecl => symbol.decl = decl
-            case _ => error("SchemaDecl: type does not match ")
-          } // match
+          if (symbol.decl == null) {
+            if (!config.containsType(symbol.name))
+              error("SchemaDecl: type not found " + attr.name + ": " + symbol.name)
+            config.getType(symbol.name) match {
+              case decl: SimpleTypeDecl => symbol.decl = decl
+              case _ => error("SchemaDecl: type does not match ")
+            } // match            
+          } // if
       } // match    
     } // for
     
-    for (typ <- config.types.valuesIterator) typ match {
+    for (typ <- config.typeList) typ match {
       case SimpleTypeDecl(_, res: SimpTypRestrictionDecl) =>
         resolveType(res.base, config)
       case SimpleTypeDecl(_, list: SimpTypListDecl) =>
@@ -269,22 +285,17 @@ object SchemaDecl {
   
   def resolveType(value: XsTypeSymbol, config: ParserConfig): Unit = value match {
     case symbol: ReferenceTypeSymbol =>
-      if (!config.containsType(symbol.name))
-        error("SchemaDecl: type not found: " + symbol.name)
-      
-      if (symbol.decl == null)
+      if (symbol.decl == null) {
+        if (!config.containsType(symbol.name))
+          error("SchemaDecl: type not found: " + symbol.name)
         symbol.decl = config.getType(symbol.name)
+         
+      } // if
       
     case symbol: BuiltInSimpleTypeSymbol => // do nothing 
     case XsAny => // do nothing
   } // match
 
-}
-
-case class AnnotationDecl() extends Decl
-
-object AnnotationDecl {
-  def fromXML(node: scala.xml.Node) = AnnotationDecl() 
 }
 
 abstract class AttributeLike extends Decl
@@ -388,7 +399,12 @@ object AttributeDecl {
     } else {
       for (child <- node.child) child match {
         case <simpleType>{ _* }</simpleType> =>
-          typeSymbol = new ReferenceTypeSymbol(SimpleTypeDecl.buildName(child))
+          val decl = SimpleTypeDecl.fromXML(child, config)
+          config.typeList += decl
+          val symbol = new ReferenceTypeSymbol(decl.name)
+          symbol.decl = decl
+          typeSymbol = symbol
+          
         case _ =>
       }
     } // if-else
@@ -485,14 +501,18 @@ object ElemDecl {
       for (child <- node.child) child match {
         case <complexType>{ _* }</complexType> =>
           val decl = ComplexTypeDecl.fromXML(child, "complexType@" + name, config)
-          config.types += (decl.name -> decl)
+          config.typeList += decl
           val symbol = new ReferenceTypeSymbol(decl.name)
           symbol.decl = decl
           typeSymbol = symbol
           
         case <simpleType>{ _* }</simpleType> =>
-          typeSymbol = new ReferenceTypeSymbol(SimpleTypeDecl.buildName(child))
-                      
+          val decl = SimpleTypeDecl.fromXML(child, config)
+          config.typeList += decl
+          val symbol = new ReferenceTypeSymbol(decl.name)
+          symbol.decl = decl
+          typeSymbol = symbol
+        
         case _ =>
       }
     } // if-else
@@ -820,4 +840,24 @@ object ImportDecl {
     }
     ImportDecl(namespace, schemaLocation)
   }
+}
+
+case class AnnotationDecl(documentations: Seq[DocumentationDecl]) extends Decl
+
+object AnnotationDecl {
+  def fromXML(node: scala.xml.Node, config: ParserConfig) = {
+    AnnotationDecl(
+      for (child <- node \ "documentation")
+        yield DocumentationDecl.fromXML(child, config))
+  }  
+}
+
+case class DocumentationDecl(any: Seq[Any]) extends Decl
+
+object DocumentationDecl {
+  def fromXML(node: scala.xml.Node, config: ParserConfig) =
+    DocumentationDecl(node.child.collect {
+      case x: scala.xml.Text => x.data
+      case x => x
+    })
 }

@@ -25,10 +25,6 @@ object PurchaseOrderTest extends SpecificationWithJUnit with CompilerMatcher {
     Some("ipo"),
     None)
   
-  "ipo.xsd must generate ipo.scala file" in {
-    generated(0) must exist
-  }
-  
   "ipo.scala file must compile so Address can be used" in {
     (List("import ipo._",
           "Address(\"\", \"\", \"\").toString"), 

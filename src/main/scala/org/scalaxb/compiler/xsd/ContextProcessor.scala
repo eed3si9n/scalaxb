@@ -193,6 +193,8 @@ class ContextProcessor(logger: Logger) extends ScalaNames {
           if (isFirstCompositor) context.compositorNames(compositor) = groupName + "All"
           else context.compositorNames(compositor) = groupName + "All" + (allNumber + 1)
           allNumber += 1
+        
+        case _ =>
       }
       
       compositor.particles collect {
@@ -229,6 +231,8 @@ class ContextProcessor(logger: Logger) extends ScalaNames {
           else
             context.compositorNames(compositor) = typeName + "All" + (allNumber + 1)
           allNumber += 1
+          
+        case _ =>
       }
       
       compositor.particles collect {

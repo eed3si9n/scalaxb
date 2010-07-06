@@ -294,9 +294,9 @@ object SchemaDecl {
     case symbol: ReferenceTypeSymbol =>
       if (symbol.decl == null) {
         if (!config.containsType(symbol.name))
-          error("SchemaDecl: type not found: " + symbol.name)
+          error("SchemaDecl#resolveType type not found: " + symbol.name + " " +
+            symbol)
         symbol.decl = config.getType(symbol.name)
-         
       } // if
       
     case symbol: BuiltInSimpleTypeSymbol => // do nothing 
@@ -582,7 +582,7 @@ case class SimpleTypeDecl(name: String,
 }
 
 object SimpleTypeDecl {
-  def fromXML(node: scala.xml.Node, config: ParserConfig) = {
+  def fromXML(node: scala.xml.Node, config: ParserConfig): SimpleTypeDecl = {
     val name = buildName(node)
     
     var content: ContentTypeDecl = null
@@ -637,16 +637,17 @@ object ComplexTypeDecl {
     
     for (child <- node.child) child match {
       case <group>{ _* }</group> =>
-        error("Unsupported content type: " + child.toString)
+        content = ComplexContentDecl.fromCompositor(
+          CompositorDecl.fromXML(child, config), attributes)
       case <all>{ _* }</all> =>
         content = ComplexContentDecl.fromCompositor(
-          AllDecl.fromXML(child, config), attributes)
+          CompositorDecl.fromXML(child, config), attributes)
       case <choice>{ _* }</choice> =>
         content = ComplexContentDecl.fromCompositor(
-          ChoiceDecl.fromXML(child, config), attributes)
+          CompositorDecl.fromXML(child, config), attributes)
       case <sequence>{ _* }</sequence> =>
         content = ComplexContentDecl.fromCompositor(
-          SequenceDecl.fromXML(child, config), attributes)
+          CompositorDecl.fromXML(child, config), attributes)
       case <simpleContent>{ _* }</simpleContent> =>
         content = SimpleContentDecl.fromXML(child, config)
       case <complexContent>{ _* }</complexContent> =>
@@ -725,38 +726,46 @@ object ComplexContentDecl {
 abstract class CompositorDecl extends Decl
 
 object CompositorDecl {
-  def fromNodeSeq(seq: scala.xml.NodeSeq, config: ParserConfig) = {
-    for (child <- seq.toList;
-        if (child.isInstanceOf[scala.xml.Elem])
-          && (child.label != "annotation")
-          && (child.label != "attribute"))
-      yield fromXML(child, config)
-  }
+  def fromNodeSeq(seq: scala.xml.NodeSeq, config: ParserConfig): List[Particle] =
+    (seq.toList.collect {
+      case elem: scala.xml.Elem
+        if (elem.label != "annotation") &&
+          (elem.label != "attribute") => elem
+    }) map(node =>
+      node match {
+        case <element>{ _* }</element>   =>
+          if ((node \ "@name").headOption.isDefined) ElemDecl.fromXML(node, config)
+          else if ((node \ "@ref").headOption.isDefined) ElemRef.fromXML(node, config)
+          else error("xsd: Unspported content type " + node.toString) 
+        case <choice>{ _* }</choice>     => ChoiceDecl.fromXML(node, config)
+        case <sequence>{ _* }</sequence> => SequenceDecl.fromXML(node, config)
+        case <all>{ _* }</all>           => AllDecl.fromXML(node, config)
+        case <any>{ _* }</any>           => AnyDecl.fromXML(node, config)
+        case <group>{ _* }</group>       =>
+          if ((node \ "@name").headOption.isDefined) GroupDecl.fromXML(node, config)
+          else if ((node \ "@ref").headOption.isDefined) GroupRef.fromXML(node, config)
+          else error("xsd: Unspported content type " + node.toString) 
+
+        case _ => error("xsd: Unspported content type " + node.label)    
+      }
+    )
   
-  def fromXML(node: scala.xml.Node, config: ParserConfig): Particle = node match {
-    case <element>{ _* }</element>   =>
-      if ((node \ "@name").headOption.isDefined) ElemDecl.fromXML(node, config)
-      else if ((node \ "@ref").headOption.isDefined) ElemRef.fromXML(node, config)
-      else error("xsd: Unspported content type " + node.toString) 
+  def fromXML(node: scala.xml.Node, config: ParserConfig): HasParticle = node match {
     case <choice>{ _* }</choice>     => ChoiceDecl.fromXML(node, config)
     case <sequence>{ _* }</sequence> => SequenceDecl.fromXML(node, config)
     case <all>{ _* }</all>           => AllDecl.fromXML(node, config)
-    case <any>{ _* }</any>           => AnyDecl.fromXML(node, config)
     case <group>{ _* }</group>       =>
       if ((node \ "@name").headOption.isDefined) GroupDecl.fromXML(node, config)
       else if ((node \ "@ref").headOption.isDefined) GroupRef.fromXML(node, config)
       else error("xsd: Unspported content type " + node.toString)
     
-    case _ => error("xsd: Unspported content type " + node.label)   
+    case _ => error("xsd: Unspported content type " + node.label)
   }
   
   def buildOccurrence(value: String) =
-    if (value == "")
-      1
-    else if (value == "unbounded")
-      Integer.MAX_VALUE
-    else
-      value.toInt
+    if (value == "") 1
+    else if (value == "unbounded") Integer.MAX_VALUE
+    else value.toInt
 }
 
 case class SequenceDecl(particles: List[Particle],
@@ -811,8 +820,9 @@ object AnyDecl {
 
 case class GroupRef(namespace: String,
   name: String,
+  particles: List[Particle],
   minOccurs: Int,
-  maxOccurs: Int) extends CompositorDecl with Particle
+  maxOccurs: Int) extends CompositorDecl with HasParticle
 
 object GroupRef {
   def fromXML(node: scala.xml.Node, config: ParserConfig) = {
@@ -821,7 +831,7 @@ object GroupRef {
     val maxOccurs = CompositorDecl.buildOccurrence((node \ "@maxOccurs").text)
     val (namespace, typeName) = TypeSymbolParser.splitTypeName(ref, config)
     
-    GroupRef(namespace, typeName, minOccurs, maxOccurs)
+    GroupRef(namespace, typeName, Nil, minOccurs, maxOccurs)
   }
 }
 

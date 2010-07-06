@@ -461,6 +461,11 @@ object {name} {{
 </source>
   }
   
+  // context.compositorNames contains the definition of GroupDecl,
+  // while particle GroupDecl may differ in cardinality.
+  def groupTypeName(group: GroupDecl) =
+    makeTypeName(context.compositorNames(groups(group.namespace, group.name)))
+  
   def makeGroup(group: GroupDecl) = {
     val compositors = context.compositorParents.filter(
       x => x._2 == makeGroupComplexType(group)).keysIterator
@@ -472,7 +477,7 @@ object {name} {{
     val groups = filterGroup(compositor)
     val superNames: List[String] = 
       if (groups.isEmpty) List("rt.AnyElemNameParser")
-      else groups.map(x => makeTypeName(context.compositorNames(x)))
+      else groups.map(groupTypeName(_))
     
     <source>{ buildComment(group) }trait {name} extends {superNames.mkString(" with ")} {{
   def parse{name}: Parser[{param.typeName}] =
@@ -530,17 +535,17 @@ object {name} {{
       "__scope.getPrefix(" + quote(attr.namespace) + ")"
     else "null"
     val name = makeParamName(buildParam(attr).name)
-    
+        
     if (toMinOccurs(attr) == 0)
       name + " match {" + newline +
-      indent(3) + "case Some(x: " + buildTypeName(attr.typeSymbol) + ") =>" + newline +
+      indent(3) + "case Some(x) =>" + newline +
       indent(4) + "attribute = scala.xml.Attribute(" + namespaceString + ", " + quote(attr.name) +
-        ", x.toString, attribute)" + newline +
+        ", " + buildToString("x", attr.typeSymbol) + ", attribute)" + newline +
       indent(3) + "case None    =>" + newline +
       indent(2) + "}"
     else
       "attribute = scala.xml.Attribute(" + namespaceString + ", " + quote(attr.name) + ", " + 
-      name + ".toString, attribute)"      
+      buildToString(name, attr.typeSymbol) + ", attribute)"      
   }
   
   def buildAttributeString(group: AttributeGroupDecl): String =
@@ -830,7 +835,7 @@ object {name} {{
     else error("GenSource#primaryCompositor: group must contain one content model: " + group)
   
   def buildParser(group: GroupDecl, minOccurs: Int, maxOccurs: Int, mixed: Boolean): String = 
-    "parse" + makeTypeName(context.compositorNames(group))
+    "parse" + groupTypeName(group)
     
   def buildParser(seq: SequenceDecl,
       minOccurs: Int, maxOccurs: Int, mixed: Boolean): String = {
@@ -860,6 +865,9 @@ object {name} {{
   def buildParser(choice: ChoiceDecl,
       minOccurs: Int, maxOccurs: Int, mixed: Boolean): String = {
     def buildChoiceParser(particle: Particle): String = particle match {
+      case ref: GroupRef        =>
+        val group = buildGroup(ref)
+        buildParser(group, math.max(group.minOccurs, 1), 1, false)
       case compositor: HasParticle =>
         buildParser(compositor, math.max(compositor.minOccurs, 1), 1, mixed)
       case elem: ElemDecl       =>
@@ -872,9 +880,6 @@ object {name} {{
         val elem = buildElement(ref)
         "(" + buildParser(elem, math.max(elem.minOccurs, 1), 1, mixed) + " ^^ " + newline +
         indent(3) + buildConverter(elem, math.max(elem.minOccurs, 1), 1) + ")"
-      case ref: GroupRef        =>
-        val group = buildGroup(ref)
-        buildParser(group, math.max(group.minOccurs, 1), 1, false)
     }
     
     val parserList = choice.particles filterNot(
@@ -1400,19 +1405,19 @@ object {name} {{
     
     case SequenceDecl(particles: List[_], _, _) =>
       particles flatMap {
+        case ref: GroupRef            => buildParticles(buildGroup(ref))
         case compositor2: HasParticle => List(buildCompositorRef(compositor2))
         case elem: ElemDecl           => List(elem)
         case ref: ElemRef             => List(buildElement(ref))
         case any: AnyDecl             => List(buildAnyRef(any))
-        case ref: GroupRef            => buildParticles(buildGroup(ref))
       }
       
     case AllDecl(particles: List[_], _, _) =>
       particles flatMap {
+        case ref: GroupRef            => buildParticles(buildGroup(ref))  
         case compositor2: HasParticle => List(buildCompositorRef(compositor2))
         case elem: ElemDecl           => List(toOptional(elem))
-        case ref: ElemRef             => List(buildElement(ref))
-        case ref: GroupRef            => buildParticles(buildGroup(ref))      
+        case ref: ElemRef             => List(buildElement(ref))    
       }
           
     case choice: ChoiceDecl =>
@@ -1443,7 +1448,11 @@ object {name} {{
     argNumber += 1
     val name = "arg" + argNumber 
     
-    val symbol = new ReferenceTypeSymbol(makeTypeName(context.compositorNames(compositor)))
+    val typeName = compositor match {
+      case group: GroupDecl => groupTypeName(group)
+      case _ => makeTypeName(context.compositorNames(compositor))
+    }
+    val symbol = new ReferenceTypeSymbol(typeName)
     val decl = ComplexTypeDecl(schema.targetNamespace, symbol.name,
       false, false, null, Nil, None)
     
@@ -1454,7 +1463,7 @@ object {name} {{
     
     symbol.decl = decl
     val typeNames = context.typeNames(packageName(decl.namespace, context))
-    typeNames(decl) = makeTypeName(context.compositorNames(compositor))
+    typeNames(decl) = typeName
     
     ElemDecl(schema.targetNamespace, name, symbol, None, None,
       compositor match {

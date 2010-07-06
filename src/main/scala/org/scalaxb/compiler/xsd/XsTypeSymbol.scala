@@ -35,6 +35,8 @@ object XsAnyAttribute extends XsTypeSymbol("XsAnyAttribute") {}
 object XsMixed extends XsTypeSymbol("XsMixed") {}
 
 class ReferenceTypeSymbol(name: String) extends XsTypeSymbol(name) {
+  if (name == "") error("ReferenceTypeSymbol#: name cannot be blank.");
+  
   var decl: TypeDecl = null
   override def toString(): String = {
     if (decl == null) "ReferenceTypeSymbol(" + name + ",null)"

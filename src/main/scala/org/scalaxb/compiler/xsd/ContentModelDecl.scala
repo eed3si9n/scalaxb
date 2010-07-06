@@ -90,13 +90,13 @@ object CompContRestrictionDecl {
     
     for (child <- node.child) child match {
       case <group>{ _* }</group> =>
-        error("Unsupported content type: " + child.toString)
+        compositor = Some(CompositorDecl.fromXML(child, config))
       case <all>{ _* }</all> =>
-        compositor = Some(AllDecl.fromXML(child, config))
+        compositor = Some(CompositorDecl.fromXML(child, config))
       case <choice>{ _* }</choice> =>
-        compositor = Some(ChoiceDecl.fromXML(child, config))
+        compositor = Some(CompositorDecl.fromXML(child, config))
       case <sequence>{ _* }</sequence> =>
-        compositor = Some(SequenceDecl.fromXML(child, config))
+        compositor = Some(CompositorDecl.fromXML(child, config))
       case <attribute>{ _* }</attribute> =>
         attributes = AttributeLike.fromXML(child, config) :: attributes
       
@@ -120,13 +120,13 @@ object CompContExtensionDecl {
     
     for (child <- node.child) child match {
       case <group>{ _* }</group> =>
-        error("Unsupported content type: " + child.toString)
+        compositor = Some(CompositorDecl.fromXML(child, config))
       case <all>{ _* }</all> =>
-        compositor = Some(AllDecl.fromXML(child, config))
+        compositor = Some(CompositorDecl.fromXML(child, config))
       case <choice>{ _* }</choice> =>
-        compositor = Some(ChoiceDecl.fromXML(child, config))
+        compositor = Some(CompositorDecl.fromXML(child, config))
       case <sequence>{ _* }</sequence> =>
-        compositor = Some(SequenceDecl.fromXML(child, config))
+        compositor = Some(CompositorDecl.fromXML(child, config))
       case <attribute>{ _* }</attribute> =>
         attributes = AttributeLike.fromXML(child, config) :: attributes
       
@@ -141,8 +141,21 @@ case class SimpTypRestrictionDecl(base: XsTypeSymbol) extends ContentTypeDecl
 
 object SimpTypRestrictionDecl {  
   def fromXML(node: scala.xml.Node, config: ParserConfig) = {
-    val baseName = (node \ "@base").text
-    val base = TypeSymbolParser.fromString(baseName, config)
+    val base = (node \ "@base").headOption match {
+      case Some(x) => TypeSymbolParser.fromString(x.text, config)
+      case None    =>
+        (node \ "simpleType").headOption match {
+          case Some(x) => Some(x.text)
+            val decl = SimpleTypeDecl.fromXML(x, config)
+            config.typeList += decl
+            val symbol = new ReferenceTypeSymbol(decl.name)
+            symbol.decl = decl
+            symbol
+          
+          case None    => error("SimpTypRestrictionDecl#fromXML: restriction must have either base attribute or simpleType.")
+        }
+    }
+    
     SimpTypRestrictionDecl(base)
   }
 }
@@ -151,8 +164,21 @@ case class SimpTypListDecl(itemType: XsTypeSymbol) extends ContentTypeDecl
 
 object SimpTypListDecl {
   def fromXML(node: scala.xml.Node, config: ParserConfig) = {
-    val itemTypeName = (node \ "@itemType").text
-    val itemType = TypeSymbolParser.fromString(itemTypeName, config)
+    val itemType = (node \ "@itemType").headOption match {
+      case Some(x) => TypeSymbolParser.fromString(x.text, config)
+      case None    =>
+        (node \ "simpleType").headOption match {
+          case Some(x) => Some(x.text)
+            val decl = SimpleTypeDecl.fromXML(x, config)
+            config.typeList += decl
+            val symbol = new ReferenceTypeSymbol(decl.name)
+            symbol.decl = decl
+            symbol
+          
+          case None    => error("SimpTypListDecl#fromXML: restriction must have either itemType attribute or simpleType.")
+        }
+    }
+    
     SimpTypListDecl(itemType)
   }
 }

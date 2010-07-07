@@ -59,16 +59,7 @@ class ContextProcessor(logger: Logger) extends ScalaNames {
       val pair = (schema, decl)
       anonymousTypes += pair
       val typeNames = context.typeNames(packageName(schema, context))
-      val nameCandidate = makeTypeName(elem.name)
-      if (!typeNames.valuesIterator.contains(nameCandidate))
-        typeNames(decl) = nameCandidate
-      else {
-        var i = 2
-        while (typeNames.valuesIterator.contains(nameCandidate + i) || i > 100) {
-          i += 1
-        }
-        typeNames(decl) = nameCandidate + i
-      }
+      typeNames(decl) = makeProtectedTypeName(elem, context)
     }
     
     val namedTypes = mutable.ListBuffer.empty[(SchemaDecl, ComplexTypeDecl)]
@@ -240,11 +231,27 @@ class ContextProcessor(logger: Logger) extends ScalaNames {
       }
     } // makeCompositorName
   }
+  
+  def makeProtectedTypeName(elem: ElemDecl, context: XsdContext): String = {
+    val typeNames = context.typeNames(packageName(elem.namespace, context))
+    var name = makeTypeName(elem.name)
     
+    if (!typeNames.valuesIterator.contains(name)) name
+    else {
+      name = makeTypeName(elem.name)
+      for (i <- 2 to 100) {
+        if (typeNames.valuesIterator.contains(name))
+          name = makeTypeName(elem.name)  + i
+      } // for i
+      name
+    }    
+  }
+  
   def makeProtectedTypeName(decl: ComplexTypeDecl, context: XsdContext): String = {
     val typeNames = context.typeNames(packageName(decl.namespace, context))
-    if (!typeNames.valuesIterator.contains(decl.name))
-      makeTypeName(decl.name)
+    var name = makeTypeName(decl.name)
+    
+    if (!typeNames.valuesIterator.contains(name)) name
     else {
       var name = makeTypeName(decl.name)  + "Type"
       for (i <- 2 to 100) {

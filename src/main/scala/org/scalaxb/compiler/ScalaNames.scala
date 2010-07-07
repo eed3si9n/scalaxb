@@ -39,8 +39,12 @@ trait ScalaNames {
     | "BigDecimal"
     | "Array"
     | "Map"
+    | "List"
     | "Product"
     | "Function"
+    | "Any"
+    | "AnyRef"
+    | "Object"
      => true
     case _ => false
   }

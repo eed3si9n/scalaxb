@@ -29,6 +29,7 @@ abstract class XsTypeSymbol(val name: String) extends scala.xml.TypeSymbol {
 }
 
 object XsAny extends XsTypeSymbol("scala.xml.Node") {}
+object XsAnySimpleType extends XsTypeSymbol("scala.xml.Node") {}
 object XsInterNamespace extends XsTypeSymbol("XsInterNamespace") {}
 object XsDataRecord extends XsTypeSymbol("XsDataRecord") {}
 object XsAnyAttribute extends XsTypeSymbol("XsAnyAttribute") {}
@@ -103,8 +104,11 @@ object XsByte             extends BuiltInSimpleTypeSymbol("Byte") {}
 object XsUnsignedByte     extends BuiltInSimpleTypeSymbol("Int") {}
 
 object XsTypeSymbol {
-  def toTypeSymbol(value: String) = value match {
+  type -->[A,B] = PartialFunction[A,B]
+  
+  val toTypeSymbol: String --> XsTypeSymbol = {
     case "anyType"        => XsAny
+    case "anySimpleType"  => XsAnySimpleType
     case "duration"       => XsDuration
     case "dateTime"       => XsDateTime
     case "time"           => XsTime
@@ -147,7 +151,6 @@ object XsTypeSymbol {
     case "short"          => XsShort
     case "unsignedShort"  => XsUnsignedShort
     case "byte"           => XsByte
-    case "unsignedByte"   => XsUnsignedByte
-    case _                => XsUnknown  
+    case "unsignedByte"   => XsUnsignedByte 
   }  
 }

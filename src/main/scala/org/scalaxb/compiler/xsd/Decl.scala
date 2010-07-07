@@ -101,7 +101,9 @@ object TypeSymbolParser {
   def fromString(name: String, config: ParserConfig): XsTypeSymbol = {
     val (namespace, typeName) = splitTypeName(name, config)
     namespace match {
-      case XML_SCHEMA_URI => XsTypeSymbol.toTypeSymbol(typeName)
+      case XML_SCHEMA_URI =>
+        if (XsTypeSymbol.toTypeSymbol.isDefinedAt(typeName)) XsTypeSymbol.toTypeSymbol(typeName)
+        else new ReferenceTypeSymbol(name)
       case _ => new ReferenceTypeSymbol(name)
     }
   }
@@ -300,6 +302,7 @@ object SchemaDecl {
       } // if
       
     case symbol: BuiltInSimpleTypeSymbol => // do nothing 
+    case XsAnySimpleType => // do nothing
     case XsAny => // do nothing
   } // match
 

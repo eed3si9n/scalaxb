@@ -162,7 +162,7 @@ class GenSource(schema: SchemaDecl,
   def buildTypeName(decl: SimpleTypeDecl): String = decl.content match {
     case x: SimpTypRestrictionDecl => buildTypeName(baseType(decl))
     case x: SimpTypListDecl => "Seq[" + buildTypeName(baseType(decl)) + "]"
-    case _ => error("GenSource: Unsupported content " +  decl.content.toString)    
+    case x: SimpTypUnionDecl => buildTypeName(baseType(decl))
   }
   
   def buildTypeName(group: AttributeGroupDecl): String =
@@ -172,6 +172,9 @@ class GenSource(schema: SchemaDecl,
     case SimpTypRestrictionDecl(base: BuiltInSimpleTypeSymbol) => base
     case SimpTypRestrictionDecl(ReferenceTypeSymbol(decl2@SimpleTypeDecl(_, _, _))) => baseType(decl2)
     case SimpTypListDecl(itemType: BuiltInSimpleTypeSymbol) => itemType
+    case SimpTypListDecl(ReferenceTypeSymbol(decl2@SimpleTypeDecl(_, _, _))) => baseType(decl2)
+    case SimpTypUnionDecl() => XsString
+    
     case _ => error("GenSource: Unsupported content " +  decl.content.toString)
   }
 
@@ -220,7 +223,10 @@ class GenSource(schema: SchemaDecl,
       val name = buildTypeName(decl)
       "case (" + quote(decl.namespace) + ", " + quote(localPart) + ") => " + name + ".fromXML(node)"
     }
-        
+    
+    val compositors = context.compositorParents.filter(
+      x => x._2 == decl).keysIterator
+    
     return <source>
 { buildComment(decl) }trait {name}{extendString} {{
   {
@@ -257,6 +263,9 @@ object {name} {{
     case _ => error("fromXML failed: seq must be scala.xml.Node")
   }}
 }}
+
+{ if (decl.abstractValue) compositors map(makeCompositor(_, decl.mixed))
+  else Nil }
 </source>    
   }
         
@@ -285,8 +294,7 @@ object {name} {{
       })
     val compositors = context.compositorParents.filter(
       x => x._2 == decl).keysIterator
-    val compositorsList = compositors map(makeCompositor(_, decl.mixed))
-    
+        
     val extendString = if (superNames.isEmpty) ""
     else " extends " + superNames.mkString(" with ")
     
@@ -369,7 +377,7 @@ object {name} {{
     
     val groups = filterGroup(decl)
     val objSuperNames: List[String] = "rt.ElemNameParser[" + name + "]" ::
-      groups.map(x => makeTypeName(context.compositorNames(x)))
+      groups.map(groupTypeName)
     
     def makeObject = if (simpleFromXml || particles.isEmpty) <source>object {name} {{
   def fromXML(seq: scala.xml.NodeSeq): {name} = seq match {{
@@ -401,7 +409,7 @@ object {name} {{
 }}
 
 { makeObject }
-{ compositorsList }
+{ compositors map(makeCompositor(_, decl.mixed)) }
 </source>    
   }
     
@@ -650,9 +658,8 @@ object {name} {{
   }
   
   def buildToString(selector: String, decl: SimpleTypeDecl): String = decl.content match {
-    case x: SimpTypRestrictionDecl => buildToString(selector, baseType(decl))
-    case x: SimpTypListDecl => selector + ".map(x => " + buildToString("x", baseType(decl)) + ").mkString(\" \")"
-    case _ => error("GenSource#buildToString Unsupported content " +  decl.content.toString)    
+    case x: SimpTypListDecl => selector + ".map(x => " + buildToString("x", baseType(decl)) + ").mkString(\" \")" 
+    case _ => buildToString(selector, baseType(decl))
   }
   
   def buildXMLStringForSimpleType(param: Param) = param.cardinality match {
@@ -1094,8 +1101,10 @@ object {name} {{
     
     case SimpTypRestrictionDecl(_) =>
       buildArg(baseType(decl), selector, defaultValue, fixedValue, minOccurs, maxOccurs, nillable)
-    case SimpTypListDecl(itemType: BuiltInSimpleTypeSymbol) =>
+    case SimpTypListDecl(_) =>
       buildArg(baseType(decl), selector + ".text.split(' ')", None, None, 0, Int.MaxValue, None)
+    case SimpTypUnionDecl() =>
+      buildArg(baseType(decl), selector, defaultValue, fixedValue, minOccurs, maxOccurs, nillable)
     
     case _ => error("GenSource: Unsupported content " + decl.content.toString)    
   }
@@ -1398,6 +1407,9 @@ object {name} {{
   
   def flattenElements(compositor: HasParticle, name: String): List[ElemDecl] =
       compositor match {
+    case ref:GroupRef =>
+      flattenElements(buildGroup(ref), name)
+      
     case GroupDecl(_, _, particles: List[_], _, _, _) =>
       particles flatMap {
         case compositor2: HasParticle => List(buildCompositorRef(compositor2))

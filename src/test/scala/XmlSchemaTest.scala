@@ -17,9 +17,9 @@ object XmlSchemaTest extends SpecificationWithJUnit with CompilerMatcher {
     Map[String, Option[String]](
       ("http://www.w3.org/2001/XMLSchema", Some("org.w3.xmlschema"))
       ),
-    Some(true) )
+    None )
   
-  // "XMLSchema.scala file must compile" in {
-  //   generated must compile(outdir = "./tmp")
-  // }
+  "XMLSchema.scala file must compile" in {
+    generated must compile(outdir = "./tmp")
+  }
 }

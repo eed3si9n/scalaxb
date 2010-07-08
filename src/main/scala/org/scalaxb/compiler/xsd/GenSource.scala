@@ -276,17 +276,17 @@ object {name} {{
       List(buildTypeName(decl))
     else buildSuperNames(decl)
     
-    val particles = flattenElements(decl, name)
-    val childElements = particles ::: flattenMixed(decl)
+    val flatParticles = flattenElements(decl, name)
+    val childElements = flatParticles ::: flattenMixed(decl)
     val attributes = buildAttributes(decl)    
     val list = List.concat[Decl](childElements, attributes)
     val paramList = list.map(buildParam(_))
-    val parserList = particles map(buildParser(_, decl.mixed))
-    val parserVariableList =  for (i <- 0 to particles.size - 1)
+    val parserList = flatParticles map(buildParser(_, decl.mixed))
+    val parserVariableList =  for (i <- 0 to flatParticles.size - 1)
       yield "p" + (i + 1)
-    val argList = (for (i <- 0 to particles.size - 1)
-      yield buildArg(particles(i), i) ).toList ::: (if (decl.mixed)
-        List(buildArgForMixed(particles))
+    val argList = (for (i <- 0 to flatParticles.size - 1)
+      yield buildArg(flatParticles(i), i) ).toList ::: (if (decl.mixed)
+        List(buildArgForMixed(flatParticles))
       else
         Nil) ::: (attributes map {
         case any: AnyAttributeDecl => buildArgForAnyAttribute(decl)
@@ -379,7 +379,7 @@ object {name} {{
     val objSuperNames: List[String] = "rt.ElemNameParser[" + name + "]" ::
       groups.map(groupTypeName)
     
-    def makeObject = if (simpleFromXml || particles.isEmpty) <source>object {name} {{
+    def makeObject = if (simpleFromXml || flatParticles.isEmpty) <source>object {name} {{
   def fromXML(seq: scala.xml.NodeSeq): {name} = seq match {{
     case node: scala.xml.Node => {name}({argsString})
     case _ => error("fromXML failed: seq must be scala.xml.Node")
@@ -807,9 +807,6 @@ object {name} {{
     case ref: ElemRef         =>
       val elem = buildElement(ref)
       buildParser(elem, elem.minOccurs, elem.maxOccurs, mixed)
-    case ref: GroupRef        =>
-      val group = buildGroup(ref)
-      buildParser(group, group.minOccurs, group.maxOccurs, mixed)
     case compositor: HasParticle =>
       buildParser(compositor, compositor.minOccurs, compositor.maxOccurs, mixed)
     case any: AnyDecl =>
@@ -823,6 +820,9 @@ object {name} {{
   // or from the element declaration.
   def buildParser(compositor: HasParticle,
       minOccurs: Int, maxOccurs: Int, mixed: Boolean): String = compositor match {
+    case ref: GroupRef        =>
+      val group = buildGroup(ref)
+      buildParser(group, group.minOccurs, group.maxOccurs, mixed)
     case seq: SequenceDecl    => 
       if (containsSingleChoice(seq)) buildParser(singleChoice(seq), minOccurs, maxOccurs, mixed)
       else buildParser(seq, minOccurs, maxOccurs, mixed)
@@ -842,8 +842,8 @@ object {name} {{
     else error("GenSource#primaryCompositor: group must contain one content model: " + group)
   
   def buildParser(group: GroupDecl, minOccurs: Int, maxOccurs: Int, mixed: Boolean): String = 
-    "parse" + groupTypeName(group)
-    
+    buildParserString("parse" + groupTypeName(group), minOccurs, maxOccurs) 
+  
   def buildParser(seq: SequenceDecl,
       minOccurs: Int, maxOccurs: Int, mixed: Boolean): String = {
     val parserList = seq.particles.map(x => buildParser(x, mixed))
@@ -1075,10 +1075,8 @@ object {name} {{
   def toMinOccurs(attr: AttributeDecl) = 
     if (attr.use == RequiredUse ||
       attr.fixedValue.isDefined ||
-      attr.defaultValue.isDefined)
-      1
-    else
-      0
+      attr.defaultValue.isDefined) 1
+    else 0
   
   def buildArg(attr: AttributeDecl): String = attr.typeSymbol match {
     case symbol: BuiltInSimpleTypeSymbol =>
@@ -1102,7 +1100,7 @@ object {name} {{
     case SimpTypRestrictionDecl(_) =>
       buildArg(baseType(decl), selector, defaultValue, fixedValue, minOccurs, maxOccurs, nillable)
     case SimpTypListDecl(_) =>
-      buildArg(baseType(decl), selector + ".text.split(' ')", None, None, 0, Int.MaxValue, None)
+      buildArg(baseType(decl), selector, defaultValue, fixedValue, minOccurs, maxOccurs, nillable, true)
     case SimpTypUnionDecl() =>
       buildArg(baseType(decl), selector, defaultValue, fixedValue, minOccurs, maxOccurs, nillable)
     
@@ -1214,7 +1212,8 @@ object {name} {{
   
   def buildArg(typeSymbol: BuiltInSimpleTypeSymbol, selector: String,
       defaultValue: Option[String], fixedValue: Option[String],
-      minOccurs: Int, maxOccurs: Int, nillable: Option[Boolean]): String = {
+      minOccurs: Int, maxOccurs: Int, nillable: Option[Boolean],
+      list: Boolean = false): String = {
     
     val (pre, post) = typeSymbol.name match {
       case "String"     => ("", "")
@@ -1255,7 +1254,11 @@ object {name} {{
           indent(3) + "}"      
     }
     
-    if (maxOccurs > 1) {
+    if (list) {
+      if (minOccurs == 0)
+        buildMatchStatement("None", "Some(x.text.split(' ').toList.map(" + pre + "_" + post + ") )")
+      else selector + ".text.split(' ').toList.map(" + pre + "_" + post + ")"
+    } else if (maxOccurs > 1) {
       if (selector.contains("split("))
         selector + ".toList.map(" + pre + "_" + post + ")"
       else
@@ -1347,6 +1350,7 @@ object {name} {{
   }
   
   def filterGroup(compositor: HasParticle): List[GroupDecl] = compositor match {
+    case ref: GroupRef    => List(buildGroup(ref))
     case group: GroupDecl => List(group)
     case _ =>
       (compositor.particles flatMap {
@@ -1503,24 +1507,54 @@ object {name} {{
   else Nil
     
   def buildAttributes(decl: ComplexTypeDecl): List[AttributeLike] =
-    buildAttributes(decl.content.content.attributes) ::: (
-    decl.content.content match {
+    mergeAttributes(decl.content.content match {
       case CompContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, attr) => 
         buildAttributes(base)
       case CompContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, attr) =>
         buildAttributes(base)
       case _ => Nil
-    })
+    }, buildAttributes(decl.content.content.attributes))
 
   def buildAttributes(attributes: List[AttributeLike]): List[AttributeLike] =
-    attributes map {
-      case any: AnyAttributeDecl => any
-      case attr: AttributeDecl => attr
-      case ref: AttributeRef   => buildAttribute(ref)
-      case group: AttributeGroupDecl => group
-      case ref: AttributeGroupRef    => buildAttributeGroup(ref)
-    }
+    attributes map(resolveRef)
+  
+  def resolveRef(attribute: AttributeLike): AttributeLike = attribute match {
+    case any: AnyAttributeDecl => any
+    case attr: AttributeDecl => attr
+    case ref: AttributeRef   => buildAttribute(ref)
+    case group: AttributeGroupDecl => group
+    case ref: AttributeGroupRef    => buildAttributeGroup(ref)    
+  }
     
+  def mergeAttributes(parent: List[AttributeLike],
+      child: List[AttributeLike]): List[AttributeLike] = child match {
+    case x :: xs => mergeAttributes(mergeAttributes(parent, x), xs)
+    case Nil => parent
+  }
+  
+  def mergeAttributes(parent: List[AttributeLike],
+      child: AttributeLike): List[AttributeLike] =
+    if (!parent.exists(x => isSame(x, child))) parent ::: List(child)
+    else parent.map (x =>
+      if (isSame(x, child)) child match {
+        // since OO's hierarchy does not allow base members to be ommited,
+        // child overrides needs to be implemented some other way.
+        case attr: AttributeDecl =>
+          Some(x)
+        case _ => Some(x)
+      }
+      else Some(x) ).flatten
+      
+  def isSame(lhs: AttributeLike, rhs: AttributeLike) =
+    (resolveRef(lhs), resolveRef(rhs)) match {
+      case (x: AnyAttributeDecl, y: AnyAttributeDecl) => true
+      case (x: AttributeDecl, y: AttributeDecl) =>
+        (x.name == y.name && x.namespace == y.namespace)
+      case (x: AttributeGroupDecl, y: AttributeGroupDecl) =>
+        (x.name == y.name && x.namespace == y.namespace)
+      case _ => false
+    }
+  
   def flattenAttributes(decl: ComplexTypeDecl): List[AttributeLike] =
     flattenAttributes(decl.content.content.attributes) ::: (
     decl.content.content match {

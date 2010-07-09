@@ -35,12 +35,13 @@ object XmlSchemaTest extends SpecificationWithJUnit with CompilerMatcher {
       """Schema.fromXML(document).toXML(
         "http://www.w3.org/2001/XMLSchema", "schema", document.scope).toString""" // "
      ),
-     generated) must evaluateTo("""<schema elementFormDefault="unqualified" attributeFormDefault="unqualified" blockDefault="" finalDefault="" targetNamespace="http://www.example.com/IPO" xmlns:ipo="http://www.example.com/IPO" """ +
+     generated) must evaluateTo("""<schema targetNamespace="http://www.example.com/IPO" """ +
+       """xmlns:ipo="http://www.example.com/IPO" """ +
        """xmlns="http://www.w3.org/2001/XMLSchema">""" +
-       """<complexType abstract="false" mixed="false" name="Address">""" +
-       """<sequence><element abstract="false" nillable="false" type="string"></element>""" + 
-       """<element abstract="false" nillable="false" type="string"></element>""" + 
-       """<element abstract="false" nillable="false" type="string"></element>""" +
+       """<complexType name="Address">""" +
+       """<sequence><element type="string"></element>""" + 
+       """<element type="string"></element>""" + 
+       """<element type="string"></element>""" +
        """</sequence></complexType></schema>""", // "
      outdir = "./tmp")
   }

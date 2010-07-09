@@ -551,9 +551,15 @@ object {name} {{
         ", " + buildToString("x", attr.typeSymbol) + ", attribute)" + newline +
       indent(3) + "case None    =>" + newline +
       indent(2) + "}"
-    else
-      "attribute = scala.xml.Attribute(" + namespaceString + ", " + quote(attr.name) + ", " + 
-      buildToString(name, attr.typeSymbol) + ", attribute)"      
+    else attr.defaultValue match {
+      case Some(x) =>
+        "if (" + buildToString(name, attr.typeSymbol) + " != " + quote(x) + ") " + newline +
+        indent(3) + "attribute = scala.xml.Attribute(" + namespaceString + ", " + quote(attr.name) + ", " + 
+        buildToString(name, attr.typeSymbol) + ", attribute)"
+      case None =>
+        "attribute = scala.xml.Attribute(" + namespaceString + ", " + quote(attr.name) + ", " + 
+        buildToString(name, attr.typeSymbol) + ", attribute)"
+    }
   }
   
   def buildAttributeString(group: AttributeGroupDecl): String =

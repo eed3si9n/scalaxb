@@ -104,7 +104,7 @@ object XsByte             extends BuiltInSimpleTypeSymbol("Byte") {}
 object XsUnsignedByte     extends BuiltInSimpleTypeSymbol("Int") {}
 
 object XsTypeSymbol {
-  type -->[A,B] = PartialFunction[A,B]
+  type -->[A, B] = PartialFunction[A, B]
   
   val toTypeSymbol: String --> XsTypeSymbol = {
     case "anyType"        => XsAny

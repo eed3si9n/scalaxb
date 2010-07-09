@@ -18,8 +18,30 @@ object XmlSchemaTest extends SpecificationWithJUnit with CompilerMatcher {
       ("http://www.w3.org/2001/XMLSchema", Some("org.w3.xmlschema"))
       ),
     None )
-  
-  "XMLSchema.scala file must compile" in {
-    generated must compile(outdir = "./tmp")
+    
+  "XMLSchema.scala file must compile so that Schema can be used" in {
+    (List("import org.w3.xmlschema._",
+      """val document = <schema targetNamespace="http://www.example.com/IPO"
+              xmlns="http://www.w3.org/2001/XMLSchema"
+              xmlns:ipo="http://www.example.com/IPO">
+        <complexType name="Address">
+          <sequence>
+            <element name="name"   type="string"/>
+            <element name="street" type="string"/>
+            <element name="city"   type="string"/>
+          </sequence>
+        </complexType>
+      </schema>""", // " 
+      """Schema.fromXML(document).toXML(
+        "http://www.w3.org/2001/XMLSchema", "schema", document.scope).toString""" // "
+     ),
+     generated) must evaluateTo("""<schema elementFormDefault="unqualified" attributeFormDefault="unqualified" blockDefault="" finalDefault="" targetNamespace="http://www.example.com/IPO" xmlns:ipo="http://www.example.com/IPO" """ +
+       """xmlns="http://www.w3.org/2001/XMLSchema">""" +
+       """<complexType abstract="false" mixed="false" name="Address">""" +
+       """<sequence><element abstract="false" nillable="false" type="string"></element>""" + 
+       """<element abstract="false" nillable="false" type="string"></element>""" + 
+       """<element abstract="false" nillable="false" type="string"></element>""" +
+       """</sequence></complexType></schema>""", // "
+     outdir = "./tmp")
   }
 }

@@ -34,6 +34,8 @@ class GenSource(schema: SchemaDecl,
     packageName: Option[String],
     firstOfPackage: Boolean,
     logger: Logger) extends ContextProcessor(logger) {  
+  type -->[A, B] = PartialFunction[A, B]
+  
   val topElems = schema.topElems
   val elemList = schema.elemList
   val choices = schema.choices
@@ -62,19 +64,17 @@ class GenSource(schema: SchemaDecl,
     nillable: Boolean,
     attribute: Boolean) {
     
-    def typeName: String = {
-      val base = buildTypeName(typeSymbol)
-      cardinality match {
-        case Single   =>
-          if (nillable) "Option[" + base + "]"
-          else base
-        case Optional => "Option[" + base + "]"
-        case Multiple => 
-          // "Seq[" + base + "]"
-          if (nillable) "Seq[Option[" + base + "]]"
-          else "Seq[" + base + "]"
-      }      
-    }
+    def baseTypeName: String = buildTypeName(typeSymbol)
+    
+    def typeName: String = cardinality match {
+      case Single   =>
+        if (nillable) "Option[" + baseTypeName + "]"
+        else baseTypeName
+      case Optional => "Option[" + baseTypeName + "]"
+      case Multiple => 
+        if (nillable) "Seq[Option[" + baseTypeName + "]]"
+        else "Seq[" + baseTypeName + "]"
+    }      
     
     def toScalaCode: String =
       makeParamName(name) + ": " + typeName
@@ -277,6 +277,7 @@ object {name} {{
     else buildSuperNames(decl)
     
     val flatParticles = flattenElements(decl, name)
+    // val particles = buildParticles(decl, name)
     val childElements = flatParticles ::: flattenMixed(decl)
     val attributes = buildAttributes(decl)    
     val list = List.concat[Decl](childElements, attributes)
@@ -480,15 +481,14 @@ object {name} {{
     val name = makeTypeName(context.compositorNames(group))  
     val compositor = primaryCompositor(group)
     val param = buildParam(compositor)
-    val parser = buildParser(compositor, compositor.minOccurs, compositor.maxOccurs,
-      false)
+    val parser = buildParser(compositor, 1, 1, false)
     val groups = filterGroup(compositor)
     val superNames: List[String] = 
       if (groups.isEmpty) List("rt.AnyElemNameParser")
       else groups.map(groupTypeName(_))
     
     <source>{ buildComment(group) }trait {name} extends {superNames.mkString(" with ")} {{
-  def parse{name}: Parser[{param.typeName}] =
+  def parse{name}: Parser[{param.baseTypeName}] =
     {parser}
 }}
 
@@ -822,7 +822,7 @@ object {name} {{
       minOccurs: Int, maxOccurs: Int, mixed: Boolean): String = compositor match {
     case ref: GroupRef        =>
       val group = buildGroup(ref)
-      buildParser(group, group.minOccurs, group.maxOccurs, mixed)
+      buildParser(group, minOccurs, maxOccurs, mixed)
     case seq: SequenceDecl    => 
       if (containsSingleChoice(seq)) buildParser(singleChoice(seq), minOccurs, maxOccurs, mixed)
       else buildParser(seq, minOccurs, maxOccurs, mixed)
@@ -841,8 +841,12 @@ object {name} {{
     }
     else error("GenSource#primaryCompositor: group must contain one content model: " + group)
   
-  def buildParser(group: GroupDecl, minOccurs: Int, maxOccurs: Int, mixed: Boolean): String = 
-    buildParserString("parse" + groupTypeName(group), minOccurs, maxOccurs) 
+  def buildParser(group: GroupDecl, minOccurs: Int, maxOccurs: Int, mixed: Boolean): String = {
+    val compositor = primaryCompositor(group)
+    buildParserString("parse" + groupTypeName(group), 
+      math.min(minOccurs, compositor.minOccurs),
+      math.max(maxOccurs, compositor.maxOccurs) )
+  }
   
   def buildParser(seq: SequenceDecl,
       minOccurs: Int, maxOccurs: Int, mixed: Boolean): String = {
@@ -1364,35 +1368,17 @@ object {name} {{
   def flattenElements(decl: ComplexTypeDecl, name: String): List[ElemDecl] = {
     argNumber = 0
     
-    decl.content.content match {
-      case SimpContRestrictionDecl(symbol: BuiltInSimpleTypeSymbol, _) =>
-        List(buildElement(symbol))
-      case SimpContRestrictionDecl(ReferenceTypeSymbol(base: SimpleTypeDecl), _) =>
-        List(buildElement(base))
+    val build: ComplexTypeContent --> List[ElemDecl] = {
       case SimpContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _) =>
         flattenElements(base, makeTypeName(base.name))
-      
-      case SimpContExtensionDecl(symbol: BuiltInSimpleTypeSymbol, _) =>
-        List(buildElement(symbol))
-      case SimpContExtensionDecl(ReferenceTypeSymbol(base: SimpleTypeDecl), _) =>
-        List(buildElement(base))
       case SimpContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _) =>
         flattenElements(base, makeTypeName(base.name))
       
       // complex content means 1. has child elements 2. has attributes
-      case CompContRestrictionDecl(symbol: BuiltInSimpleTypeSymbol, _, _) =>
-        List(buildElement(symbol))
-      case CompContRestrictionDecl(ReferenceTypeSymbol(base: SimpleTypeDecl), _, _) =>
-        List(buildElement(base))
       case CompContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
         flattenElements(base, makeTypeName(base.name))        
       case res@CompContRestrictionDecl(XsAny, _, _) =>
         flattenElements(res.compositor, name)
-      
-      case CompContExtensionDecl(symbol: BuiltInSimpleTypeSymbol, _, _) =>
-        List(buildElement(symbol))
-      case CompContExtensionDecl(ReferenceTypeSymbol(base: SimpleTypeDecl), _, _) =>
-        List(buildElement(base))
       case ext@CompContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
         flattenElements(base, makeTypeName(base.name)) :::
           flattenElements(ext.compositor, name)
@@ -1401,6 +1387,9 @@ object {name} {{
         
       case _ => Nil
     }
+    
+    val pf = buildSimpleTypeRef orElse  build
+    pf(decl.content.content)
   }
   
   def flattenElements(compositor: Option[HasParticle], name: String): List[ElemDecl] =
@@ -1414,14 +1403,12 @@ object {name} {{
     case ref:GroupRef =>
       flattenElements(buildGroup(ref), name)
       
-    case GroupDecl(_, _, particles: List[_], _, _, _) =>
-      particles flatMap {
-        case compositor2: HasParticle => List(buildCompositorRef(compositor2))
-      }    
+    case group:GroupDecl =>
+      List(buildCompositorRef(group))
     
     case SequenceDecl(particles: List[_], _, _) =>
       particles flatMap {
-        case ref: GroupRef            => buildParticles(buildGroup(ref))
+        case ref: GroupRef            => List(buildCompositorRef(buildGroup(ref)))
         case compositor2: HasParticle => List(buildCompositorRef(compositor2))
         case elem: ElemDecl           => List(elem)
         case ref: ElemRef             => List(buildElement(ref))
@@ -1430,7 +1417,7 @@ object {name} {{
       
     case AllDecl(particles: List[_], _, _) =>
       particles flatMap {
-        case ref: GroupRef            => buildParticles(buildGroup(ref))  
+        case ref: GroupRef            => List(buildCompositorRef(buildGroup(ref)))
         case compositor2: HasParticle => List(buildCompositorRef(compositor2))
         case elem: ElemDecl           => List(toOptional(elem))
         case ref: ElemRef             => List(buildElement(ref))    
@@ -1438,6 +1425,53 @@ object {name} {{
           
     case choice: ChoiceDecl =>
       List(buildCompositorRef(choice))
+  }
+  
+  val buildSimpleTypeRef: ComplexTypeContent --> List[ElemDecl] = {
+    case content: ComplexTypeContent
+        if content.base.isInstanceOf[BuiltInSimpleTypeSymbol] =>
+      val symbol = content.base.asInstanceOf[BuiltInSimpleTypeSymbol]
+      List(buildElement(symbol))
+    case content: ComplexTypeContent
+        if content.base.isInstanceOf[ReferenceTypeSymbol] &&
+        content.base.asInstanceOf[ReferenceTypeSymbol].decl.isInstanceOf[SimpleTypeDecl] =>
+      val symbol = content.base.asInstanceOf[ReferenceTypeSymbol].decl.asInstanceOf[SimpleTypeDecl]
+      List(buildElement(symbol))    
+  } 
+  
+  def buildParticles(decl: ComplexTypeDecl, name: String): List[ElemDecl] = {
+    argNumber = 0
+    
+    val build: ComplexTypeContent --> List[ElemDecl] = {
+      case SimpContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _) =>
+        buildParticles(base, makeTypeName(base.name))
+      
+      case SimpContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _) =>
+        buildParticles(base, makeTypeName(base.name))
+      
+      // complex content means 1. has child elements 2. has attributes
+      case CompContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
+        buildParticles(base, makeTypeName(base.name))        
+      case res@CompContRestrictionDecl(XsAny, _, _) =>
+        buildParticles(res.compositor, name)
+      
+      case ext@CompContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
+        buildParticles(base, makeTypeName(base.name)) :::
+          buildParticles(ext.compositor, name)
+      case ext@CompContExtensionDecl(XsAny, _, _) =>
+        buildParticles(ext.compositor, name)
+        
+      case _ => Nil
+    }
+    
+    val pf = buildSimpleTypeRef orElse  build
+    
+    pf(decl.content.content)
+  }
+  
+  def buildParticles(com: Option[HasParticle], name: String): List[ElemDecl] = com match {
+    case Some(c) => buildParticles(c)
+    case None => Nil
   }
   
   def buildParticles(compositor: HasParticle): List[ElemDecl] =
@@ -1483,10 +1517,17 @@ object {name} {{
     
     ElemDecl(schema.targetNamespace, name, symbol, None, None,
       compositor match {
+        case group: GroupDecl =>
+          val primary = primaryCompositor(group)
+          math.min(group.minOccurs, primary.minOccurs)
         case choice: ChoiceDecl => (compositor.minOccurs :: compositor.particles.map(_.minOccurs)).min
         case _ => compositor.minOccurs
       },
       compositor match {
+        case group: GroupDecl =>
+          val primary = primaryCompositor(group)
+          math.max(group.maxOccurs, primary.maxOccurs)
+        
         case choice: ChoiceDecl => (compositor.maxOccurs :: compositor.particles.map(_.maxOccurs)).max
         case _ => compositor.maxOccurs
       },

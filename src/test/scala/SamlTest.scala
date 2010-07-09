@@ -33,10 +33,6 @@ object SamlTest extends SpecificationWithJUnit with CompilerMatcher {
       ("urn:oasis:names:tc:SAML:2.0:metadata", Some("org.xml.saml2.metadata"))  
         ), None )
   
-  "xmldsig-core-schema.scala file must compile" in {
-    generated must compile(outdir = "./tmp")
-  }
-  
   "generated files must compile together with SamlTest.scala" in {
     (List("SamlUsage.allTests"),
      samlUsagescala :: generated) must evaluateTo(true,

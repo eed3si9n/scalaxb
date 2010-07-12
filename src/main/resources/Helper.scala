@@ -13,8 +13,10 @@ object DataRecord {
       scala.xml.NodeSeq = (__obj.value) match {
     case x: scala.xml.NodeSeq => x
     case x: String if __obj.key == null => scala.xml.Text(x)
-    case x: Product =>
-      x.asInstanceOf[XMLWriter].toXML(__namespace, __elementLabel, __scope)
+    // case x: Product =>
+    //   if (x.isInstanceOf[XMLWriter]) x.asInstanceOf[XMLWriter].toXML(__namespace, __elementLabel, __scope)
+    //   else scala.xml.Elem(__scope.getPrefix(__obj.namespace), __elementLabel,
+    //          scala.xml.Null, __scope, scala.xml.Text(__obj.value.toString))
     case x => scala.xml.Elem(__scope.getPrefix(__obj.namespace), __elementLabel,
               scala.xml.Null, __scope, scala.xml.Text(__obj.value.toString))
   }
@@ -71,12 +73,9 @@ class ElemNameSeqReader(seq: Seq[ElemName],
   def this(seq: Seq[ElemName]) = this(seq, 0)
   
   override def first: ElemName  =
-    if (seq.isDefinedAt(offset))
-      seq(offset)
-    else
-      null
-      //error("ElemNameSeqReader#first: no element at position " + offset + " of " + seq)
-  
+    if (seq.isDefinedAt(offset)) seq(offset)
+    else null
+    
   def rest: ElemNameSeqReader =
     if (seq.isDefinedAt(offset)) new ElemNameSeqReader(seq, offset + 1)
     else this

@@ -272,7 +272,7 @@ object {name} {{
       cases.mkString(newline + indent(2))        
     }
     {
-      if (!decl.abstractValue) "case x:" + defaultType + " => " + defaultType + ".toXML(x, __namespace, __elementLabel, __scope)"
+      if (!decl.abstractValue) "case x: " + defaultType + " => " + defaultType + ".toXML(x, __namespace, __elementLabel, __scope)"
       else """case _ => error("Unknown type: " + __obj)"""
     }
   }}
@@ -646,12 +646,9 @@ object {name} {{
     val name = "__obj." + makeParamName(buildParam(attr).name)
         
     if (toMinOccurs(attr) == 0)
-      name + " match {" + newline +
-      indent(3) + "case Some(x) =>" + newline +
-      indent(4) + "attribute = scala.xml.Attribute(" + namespaceString + ", " + quote(attr.name) +
-        ", " + buildToString("x", attr.typeSymbol) + ", attribute)" + newline +
-      indent(3) + "case None    =>" + newline +
-      indent(2) + "}"
+      name + " foreach { x =>" + newline +
+      indent(3) + "attribute = scala.xml.Attribute(" + namespaceString + ", " + quote(attr.name) +
+        ", " + buildToString("x", attr.typeSymbol) + ", attribute) }"
     else attr.defaultValue match {
       case Some(x) =>
         "if (" + buildToString(name, attr.typeSymbol) + " != " + quote(x) + ") " + newline +
@@ -922,10 +919,9 @@ object {name} {{
       "(p => p.toList map(x => rt.DataRecord(x.namespace, x.name, " +
       buildArg("x.node", typeSymbol) + ")))"
     else if (minOccurs == 0)
-      "(p => p match {" + newline +
-      indent(3) + "case Some(x) => Some(rt.DataRecord(x.namespace, x.name, " +
-      buildArg("x.node", typeSymbol) + "))" + newline +
-      indent(3) + "case None => None })"
+      "(p => p map { x =>" + newline +
+      indent(3) + "rt.DataRecord(x.namespace, x.name, " +
+      buildArg("x.node", typeSymbol) + ") })"
     else
       "(x => rt.DataRecord(x.namespace, x.name, " + buildArg("x.node", typeSymbol) + "))"
   
@@ -1143,10 +1139,7 @@ object {name} {{
             indent(4) + "case None    => None" + newline +
             indent(3) + "}"
           case _ =>
-            selector + " match {" + newline +
-            indent(4) + "case Some(x) => Some(" +  typeName + ".fromXML(x.node))" + newline +
-            indent(4) + "case None    => None" + newline +
-            indent(3) + "}"
+            selector + " map { x => " + typeName + ".fromXML(x.node) }"
         }
       else
         elem.nillable match {
@@ -1386,10 +1379,18 @@ object {name} {{
           indent(3) + "}"      
     }
     
+    def buildMapStatement(someValue: String) =
+      optionSelector + " map { x => " + someValue + " }"
+    
     if (list) {
-      if (minOccurs == 0)
-        buildMatchStatement("None", "Some(x.text.split(' ').toList.map(" + pre + "_" + post + ") )")
-      else selector + ".text.split(' ').toList.map(" + pre + "_" + post + ")"
+      val splitter = ".text.split(' ').toList.map(" + pre + "_" + post + ")"
+      
+      if (minOccurs == 0) {
+        nillable match {
+          case Some(true) => buildMatchStatement("None", "Some(x" + splitter + ")")
+          case _ => buildMapStatement("x" + splitter)
+        }
+      } else selector + splitter
     } else if (maxOccurs > 1) {
       if (selector.contains("split("))
         selector + ".toList.map(" + pre + "_" + post + ")"
@@ -1401,7 +1402,10 @@ object {name} {{
           case _ => selector + ".toList.map(x => " + pre + "x.text" + post + ")"
         } 
     } else if (minOccurs == 0) {
-      buildMatchStatement("None", "Some(" + pre + "x.text" + post + ")")
+      nillable match {
+        case Some(true) => buildMatchStatement("None", "Some(" + pre + "x.text" + post + ")")
+        case _ => buildMapStatement(pre + "x.text" + post)
+      }
     } else if (defaultValue.isDefined) {
       buildMatchStatement(pre + quote(defaultValue.get) + post, pre + "x.text" + post)
     } else if (fixedValue.isDefined) {

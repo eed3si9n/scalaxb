@@ -166,55 +166,46 @@ object SchemaDecl {
   def fromXML(node: scala.xml.Node,
       context: XsdContext = XsdContext(),
       config: ParserConfig = new ParserConfig) = {
-    val schema = (node \\ "schema").headOption match {
-      case Some(x) => x
-      case None    => error("xsd: schema element not found: " + node.toString)
-    }
+    val schema = (node \\ "schema").headOption.getOrElse {
+      error("xsd: schema element not found: " + node.toString) }
+    
     config.scope = schema.scope
-    schema.attribute("targetNamespace") match {
-      case Some(x) => config.targetNamespace = x.text
-      case None    =>
-    }
+    schema.attribute("targetNamespace") foreach { x =>
+      config.targetNamespace = x.text }
     config.schemas = context.schemas.toList
     
     for (child <- schema.child) child match {
       case <element>{ _* }</element>  =>
-        if ((child \ "@name").headOption.isDefined) {
+        (child \ "@name").headOption foreach {  x =>
           val elem = ElemDecl.fromXML(child, config)
-          config.topElems += (elem.name -> elem)
-        }
+          config.topElems += (elem.name -> elem) }
       
       case <attribute>{ _* }</attribute>  =>
-        if ((child \ "@name").headOption.isDefined) {
+        (child \ "@name").headOption foreach {  x =>
           val attr = AttributeDecl.fromXML(child, config, true)
-          config.topAttrs += (attr.name -> attr)
-        }
-      
+          config.topAttrs += (attr.name -> attr) }
+            
       case <attributeGroup>{ _* }</attributeGroup>  =>
-        if ((child \ "@name").headOption.isDefined) {
+        (child \ "@name").headOption foreach {  x =>
           val attrGroup = AttributeGroupDecl.fromXML(child, config)
-          config.topAttrGroups += (attrGroup.name -> attrGroup)
-        }
-        
+          config.topAttrGroups += (attrGroup.name -> attrGroup) }
+      
       case <group>{ _* }</group>  =>
-        if ((child \ "@name").headOption.isDefined) {
+        (child \ "@name").headOption foreach {  x =>
           val group = GroupDecl.fromXML(child, config)
-          config.topGroups += (group.name -> group)
-        }
-        
+          config.topGroups += (group.name -> group) }
+      
       case <complexType>{ _* }</complexType>  =>
-        if ((child \ "@name").headOption.isDefined) {
+        (child \ "@name").headOption foreach {  x =>
           val decl = ComplexTypeDecl.fromXML(child, (child \ "@name").text, config)
           config.typeList += decl
-          config.topTypes += (decl.name -> decl)
-        }
-        
+          config.topTypes += (decl.name -> decl) }
+      
       case <simpleType>{ _* }</simpleType>  =>
-        if ((child \ "@name").headOption.isDefined) {
+        (child \ "@name").headOption foreach {  x =>
           val decl = SimpleTypeDecl.fromXML(child, config)
           config.typeList += decl
-          config.topTypes += (decl.name -> decl)
-        }
+          config.topTypes += (decl.name -> decl) }
       
       case _ =>
     }
@@ -235,10 +226,8 @@ object SchemaDecl {
     if (config.targetNamespace != null)
       scopeToBuild = scala.xml.NamespaceBinding(null, config.targetNamespace, scopeToBuild)
     
-    val annotation = (node \ "annotation").headOption match {
-      case Some(x) => Some(AnnotationDecl.fromXML(x, config))
-      case None    => None
-    }
+    val annotation = (node \ "annotation").headOption map { x =>
+      AnnotationDecl.fromXML(x, config) }
       
     SchemaDecl(config.targetNamespace,
       immutable.ListMap.empty[String, ElemDecl] ++ config.topElems,
@@ -371,14 +360,8 @@ object AttributeRef {
   def fromXML(node: scala.xml.Node, config: ParserConfig) = {
     val ref = (node \ "@ref").text
     val (namespace, typeName) = TypeSymbolParser.splitTypeName(ref, config)
-    val defaultValue = (node \ "@default").headOption match {
-      case None    => None
-      case Some(x) => Some(x.text)
-    }
-    val fixedValue = (node \ "@fixed").headOption match {
-      case None    => None
-      case Some(x) => Some(x.text)
-    }
+    val defaultValue = (node \ "@default").headOption map { _.text }
+    val fixedValue = (node \ "@fixed").headOption map { _.text }
     val use = (node \ "@use").text match {
       case "prohibited" => ProhibitedUse
       case "required"   => RequiredUse
@@ -420,23 +403,15 @@ object AttributeDecl {
       }
     } // if-else
 
-    val defaultValue = (node \ "@default").headOption match {
-      case None    => None
-      case Some(x) => Some(x.text)
-    }
-    val fixedValue = (node \ "@fixed").headOption match {
-      case None    => None
-      case Some(x) => Some(x.text)
-    }
+    val defaultValue = (node \ "@default").headOption map { _.text }
+    val fixedValue = (node \ "@fixed").headOption map { _.text }
     val use = (node \ "@use").text match {
       case "prohibited" => ProhibitedUse
       case "required"   => RequiredUse
       case _            => OptionalUse
     }
-    val annotation = (node \ "annotation").headOption match {
-      case Some(x) => Some(AnnotationDecl.fromXML(x, config))
-      case None    => None
-    }
+    val annotation = (node \ "annotation").headOption map { x =>
+      AnnotationDecl.fromXML(x, config) }
 
     val attr = AttributeDecl(config.targetNamespace,
       name, typeSymbol, defaultValue, fixedValue, use, annotation,
@@ -469,10 +444,8 @@ object AttributeGroupDecl {
       config: ParserConfig) = {
     val name = (node \ "@name").text
     val attributes = AttributeLike.fromParentNode(node, config)
-    val annotation = (node \ "annotation").headOption match {
-      case Some(x) => Some(AnnotationDecl.fromXML(x, config))
-      case None    => None
-    }
+    val annotation = (node \ "annotation").headOption map { x =>
+      AnnotationDecl.fromXML(x, config) }
     
     AttributeGroupDecl(config.targetNamespace,
       name, attributes.toList.reverse, annotation)
@@ -491,10 +464,7 @@ object ElemRef {
     val minOccurs = CompositorDecl.buildOccurrence((node \ "@minOccurs").text)
     val maxOccurs = CompositorDecl.buildOccurrence((node \ "@maxOccurs").text)
     val (namespace, typeName) = TypeSymbolParser.splitTypeName(ref, config)
-    val nillable = (node \ "@nillable").headOption match {
-      case None    => None
-      case Some(x) => Some(x.text == "true") 
-    }
+    val nillable = (node \ "@nillable").headOption map { _.text == "true" }
     
     ElemRef(namespace, typeName, minOccurs, maxOccurs, nillable)
   }
@@ -538,24 +508,13 @@ object ElemDecl {
       }
     } // if-else
     
-    val defaultValue = (node \ "@default").headOption match {
-      case None    => None
-      case Some(x) => Some(x.text)
-    }
-    val fixedValue = (node \ "@fixed").headOption match {
-      case None    => None
-      case Some(x) => Some(x.text)
-    }      
+    val defaultValue = (node \ "@default").headOption map { _.text }
+    val fixedValue = (node \ "@fixed").headOption map { _.text }
     val minOccurs = CompositorDecl.buildOccurrence((node \ "@minOccurs").text)
     val maxOccurs = CompositorDecl.buildOccurrence((node \ "@maxOccurs").text)
-    val nillable = (node \ "@nillable").headOption match {
-      case None    => None
-      case Some(x) => Some(x.text == "true") 
-    }
-    val annotation = (node \ "annotation").headOption match {
-      case Some(x) => Some(AnnotationDecl.fromXML(x, config))
-      case None    => None
-    }
+    val nillable = (node \ "@nillable").headOption map { _.text == "true" }
+    val annotation = (node \ "annotation").headOption map { x =>
+      AnnotationDecl.fromXML(x, config) }
     
     val elem = ElemDecl(config.targetNamespace, 
       name, typeSymbol, defaultValue, fixedValue, minOccurs, maxOccurs, nillable,
@@ -596,10 +555,8 @@ object SimpleTypeDecl {
       case _ =>     
     }
     
-    val annotation = (node \ "annotation").headOption match {
-      case Some(x) => Some(AnnotationDecl.fromXML(x, config))
-      case None    => None
-    }
+    val annotation = (node \ "annotation").headOption map { x =>
+      AnnotationDecl.fromXML(x, config) }
     
     SimpleTypeDecl(name, content, annotation)
   }
@@ -626,13 +583,13 @@ case class ComplexTypeDecl(namespace: String,
 object ComplexTypeDecl {  
   def fromXML(node: scala.xml.Node, name: String, config: ParserConfig) = {
     val abstractValue = (node \ "@abstract").headOption match {
-      case None    => false
       case Some(x) => x.text.toBoolean
+      case None    => false
     }
     
     val mixed = (node \ "@mixed").headOption match {
-      case None    => false
       case Some(x) => x.text.toBoolean
+      case None    => false
     }
     
     val attributes = AttributeLike.fromParentNode(node, config)
@@ -658,10 +615,8 @@ object ComplexTypeDecl {
       case _ =>
     }
     
-    val annotation = (node \ "annotation").headOption match {
-      case Some(x) => Some(AnnotationDecl.fromXML(x, config))
-      case None    => None
-    }
+    val annotation = (node \ "annotation").headOption map { x =>
+      AnnotationDecl.fromXML(x, config) }
     
     // val contentModel = ContentModel.fromSchema(firstChild(node))
     ComplexTypeDecl(config.targetNamespace, name, abstractValue, mixed, 
@@ -851,10 +806,8 @@ object GroupDecl {
     val minOccurs = CompositorDecl.buildOccurrence((node \ "@minOccurs").text)
     val maxOccurs = CompositorDecl.buildOccurrence((node \ "@maxOccurs").text)
     
-    val annotation = (node \ "annotation").headOption match {
-      case Some(x) => Some(AnnotationDecl.fromXML(x, config))
-      case None    => None
-    }
+    val annotation = (node \ "annotation").headOption map { x =>
+      AnnotationDecl.fromXML(x, config) }
     val group = GroupDecl(config.targetNamespace, name,
       CompositorDecl.fromNodeSeq(node.child, config), minOccurs, maxOccurs,
       annotation)
@@ -869,16 +822,14 @@ case class SchemaLite(targetNamespace: String,
 object SchemaLite {
   def fromXML(node: scala.xml.Node) = {
     var targetNamespace: String = null
-    val schema = (node \\ "schema").headOption match {
-      case Some(x) => x
-      case None    => error("xsd: schema element not found: " + node.toString)
+    val schema = (node \\ "schema").headOption getOrElse {
+      error("xsd: schema element not found: " + node.toString)
     }
-    schema.attribute("targetNamespace") match {
-      case Some(x) =>
-        targetNamespace = x.text
-      case None    =>
+    
+    schema.attribute("targetNamespace") foreach { x =>
+      targetNamespace = x.text
     }
-
+    
     var importList: List[ImportDecl] = Nil
     for (node <- schema \ "import") {
       val decl = ImportDecl.fromXML(node)
@@ -894,14 +845,8 @@ case class ImportDecl(namespace: Option[String],
 
 object ImportDecl {
   def fromXML(node: scala.xml.Node) = {
-    val namespace = node.attribute("namespace") match {
-      case Some(x) => Some(x.text)
-      case None    => None
-    }
-    val schemaLocation = node.attribute("schemaLocation") match {
-      case Some(x) => Some(x.text)
-      case None    => None
-    }
+    val namespace = (node \ "@namespace").headOption map { _.text }
+    val schemaLocation = (node \ "@schemaLocation").headOption map { _.text }
     ImportDecl(namespace, schemaLocation)
   }
 }

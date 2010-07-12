@@ -136,7 +136,7 @@ class GenSource(schema: SchemaDecl,
   def buildTypeName(typeSymbol: XsTypeSymbol): String = typeSymbol match {
     case XsInterNamespace => "rt.DataRecord[Any]"
     case XsAny          => "rt.DataRecord[scala.xml.Node]"
-    case XsDataRecord   => "rt.DataRecord[Any]"
+    case r: XsDataRecord => "rt.DataRecord[Any]"
     case XsMixed        => "rt.DataRecord[Any]"
     case XsAnyAttribute => "rt.DataRecord[String]"
     case symbol: BuiltInSimpleTypeSymbol => symbol.name
@@ -224,6 +224,11 @@ class GenSource(schema: SchemaDecl,
       "case (" + quote(decl.namespace) + ", " + quote(localPart) + ") => " + name + ".fromXML(node)"
     }
     
+    def makeToXmlCaseEntry(decl: ComplexTypeDecl) = {
+      val name = buildTypeName(decl)
+      "case x: " + name + " => " + name + ".toXML(x, __namespace, __elementLabel, __scope)"
+    }
+    
     val compositors = context.compositorParents.filter(
       x => x._2 == decl).keysIterator
     
@@ -233,9 +238,6 @@ class GenSource(schema: SchemaDecl,
   val vals = for (param <- paramList)
     yield  "val " + param.toScalaCode
   vals.mkString(newline + indent(1))}
-  
-  def toXML(__namespace: String, __elementLabel: String,
-    __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq
 }}
 
 object {name} {{
@@ -253,7 +255,7 @@ object {name} {{
         {
           val cases = for (sub <- context.baseToSubs(decl))
             yield makeCaseEntry(sub)
-          cases.mkString(newline + indent(3))        
+          cases.mkString(newline + indent(4))        
         }
         { 
           if (!decl.abstractValue) "case _ => " + defaultType + ".fromXML(node)"
@@ -262,12 +264,34 @@ object {name} {{
       }}
     case _ => error("fromXML failed: seq must be scala.xml.Node")
   }}
+  
+  def toXML(__obj: {name}, __namespace: String, __elementLabel: String,
+      __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq = __obj match {{
+    { val cases = for (sub <- context.baseToSubs(decl))
+        yield makeToXmlCaseEntry(sub)
+      cases.mkString(newline + indent(2))        
+    }
+    {
+      if (!decl.abstractValue) "case x:" + defaultType + " => " + defaultType + ".toXML(x, __namespace, __elementLabel, __scope)"
+      else """case _ => error("Unknown type: " + __obj)"""
+    }
+  }}
+  
+  {makeToXMLWriter(name)}
+
 }}
 
 { if (decl.abstractValue) compositors map(makeCompositor(_, decl.mixed))
   else Nil }
 </source>    
   }
+  
+  def makeToXMLWriter(name: String) = <source>implicit def toXMLWriter(__obj: {name}): rt.XMLWriter = new rt.XMLWriter {{
+     def toXML(__namespace: String, __elementLabel: String,
+         __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq =
+      {name}.toXML(__obj, __namespace, __elementLabel, __scope)
+  }}
+</source>
         
   def makeCaseClassWithType(name: String, decl: ComplexTypeDecl): scala.xml.Node = {
     log("GenSource#makeCaseClassWithType: emitting " + name)
@@ -294,7 +318,7 @@ object {name} {{
         case x => buildArg(x) 
       })
     val compositors = context.compositorParents.filter(
-      x => x._2 == decl).keysIterator
+      x => x._2 == decl).keysIterator.toList
         
     val extendString = if (superNames.isEmpty) ""
     else " extends " + superNames.mkString(" with ")
@@ -326,10 +350,10 @@ object {name} {{
     val childElemParams = paramList.filter(!_.attribute)
     
     def childString = if (decl.mixed)
-      "mixed.flatMap(x => x.toXML(x.namespace, x.key, __scope).toSeq): _*"
+      "__obj.mixed.flatMap(x => rt.DataRecord.toXML(x, x.namespace, x.key, __scope).toSeq): _*"
     else decl.content.content match {
-      case SimpContRestrictionDecl(base: XsTypeSymbol, _) => "scala.xml.Text(value.toString)"
-      case SimpContExtensionDecl(base: XsTypeSymbol, _) =>   "scala.xml.Text(value.toString)"
+      case SimpContRestrictionDecl(base: XsTypeSymbol, _) => "scala.xml.Text(__obj.value.toString)"
+      case SimpContExtensionDecl(base: XsTypeSymbol, _) =>   "scala.xml.Text(__obj.value.toString)"
       case _ =>  
         if (childElemParams.isEmpty) "Nil: _*"
         else if (childElemParams.size == 1)
@@ -360,22 +384,7 @@ object {name} {{
     def typeNameString =
       if (getPrefix(schema.targetNamespace, schema.scope)  == null) decl.name
       else getPrefix(schema.targetNamespace, schema.scope) + ":" + decl.name
-    
-    def makeToXml = <source>
-  def toXML(__namespace: String, __elementLabel: String): scala.xml.NodeSeq = {{
-    var __scope: scala.xml.NamespaceBinding = scala.xml.TopScope
-    { scopeString(schema.scope).reverse.mkString(newline + indent(2)) }
-    val node = toXML(__namespace, __elementLabel, __scope)
-    node match {{
-      case elem: scala.xml.Elem =>
-        elem % new scala.xml.PrefixedAttribute(__scope.getPrefix(rt.Helper.XSI_URL),
-          "type",
-          { quote(typeNameString) }, elem.attributes)
-      case _ => node
-    }}
-  }} 
-</source>
-    
+        
     val groups = filterGroup(decl)
     val objSuperNames: List[String] = "rt.ElemNameParser[" + name + "]" ::
       groups.map(groupTypeName)
@@ -385,21 +394,39 @@ object {name} {{
     case node: scala.xml.Node => {name}({argsString})
     case _ => error("fromXML failed: seq must be scala.xml.Node")
   }}
-    
+  
+  { if (!decl.name.contains('@')) makeToXml
+  makeToXml2 }
 }}
 </source> else <source>object {name} extends {objSuperNames.mkString(" with ")} {{
+  { compositors map(makeCompositorImport(_)) }
+  
   val targetNamespace = { quote(schema.targetNamespace) }
     
   def parser(node: scala.xml.Node): Parser[{name}] =
     { parserList.mkString(" ~ " + newline + indent(3)) } ^^
         {{ case { parserVariableList.mkString(" ~ " + newline + indent(3)) } => {name}({argsString}) }}
+        
+  { if (!decl.name.contains('@')) makeToXml }{ makeToXml2 }
 }}
 </source>
-      
-    return <source>
-{ buildComment(decl) }case class {name}({paramsString}){extendString} {{
-  { if (!decl.name.contains('@')) makeToXml }  
-  def toXML(__namespace: String, __elementLabel: String, __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq = {{
+    
+    def makeToXml = <source>def toXML(__obj: {name}, __namespace: String, __elementLabel: String): scala.xml.NodeSeq = {{
+    var __scope: scala.xml.NamespaceBinding = scala.xml.TopScope
+    { scopeString(schema.scope).reverse.mkString(newline + indent(2)) }
+    val node = toXML(__obj, __namespace, __elementLabel, __scope)
+    node match {{
+      case elem: scala.xml.Elem =>
+        elem % new scala.xml.PrefixedAttribute(__scope.getPrefix(rt.Helper.XSI_URL),
+          "type",
+          { quote(typeNameString) }, elem.attributes)
+      case _ => node
+    }}
+  }}
+  
+  </source>
+    
+    def makeToXml2 = <source>def toXML(__obj: {name}, __namespace: String, __elementLabel: String, __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq = {{
     val prefix = __scope.getPrefix(__namespace)
     var attribute: scala.xml.MetaData  = scala.xml.Null
     { attributeString }
@@ -407,7 +434,12 @@ object {name} {{
       attribute, __scope,
       { childString })
   }}
-}}
+  
+  {makeToXMLWriter(name)}
+</source>
+      
+    return <source>
+{ buildComment(decl) }case class {name}({paramsString}){extendString}
 
 { makeObject }
 { compositors map(makeCompositor(_, decl.mixed)) }
@@ -429,10 +461,13 @@ object {name} {{
     val hasForeign = containsForeignType(compositor)
     
     compositor match {
-      case seq: SequenceDecl    =>
+      case seq: SequenceDecl  =>
         makeSequence(seq)
+      case choice: ChoiceDecl =>  
+        makeChoice(choice)
       case _ =>
         <source>trait  {name}
+        
 </source>
     }
     
@@ -441,6 +476,61 @@ object {name} {{
     //     "trait " + name
     // }
     // </source>    
+  }
+  
+  def makeChoice(choice: ChoiceDecl) = {
+    val name = makeTypeName(context.compositorNames(choice))
+    
+    def buildDataRecordXMLString(typeName: String): String =
+      "case x: " + typeName + " => " + typeName + ".toXML(__obj, __namespace, __elementLabel, __scope)"
+
+    def buildElemXMLString(typeName: String): String =
+      "case x: " + typeName + " => " + typeName + ".toXML(x, __namespace, __elementLabel, __scope)"
+    
+    val particleTypes = ((choice.particles collect {
+      case elem: ElemDecl => elem.typeSymbol
+      case ref: ElemRef => buildElement(ref).typeSymbol
+    }) collect {
+      case ReferenceTypeSymbol(decl: ComplexTypeDecl) => decl
+    }).toList.distinct
+    
+    val particleTypeNames = particleTypes.map(buildTypeName(_))
+    val pruned: List[ComplexTypeDecl] = (particleTypes map (decl =>       
+      if (flattenSuperNames(decl).exists(x => particleTypeNames.contains(x))) None
+      else Some(decl)
+    )).flatten
+    
+    val cases = (choice.particles collect {
+      case ref: GroupRef =>
+        val group = buildGroup(ref)
+        val primary = primaryCompositor(group)
+        buildDataRecordXMLString(makeTypeName(context.compositorNames(primary)))
+      case group: GroupDecl =>
+        val primary = primaryCompositor(group)
+        buildDataRecordXMLString(makeTypeName(context.compositorNames(primary)))
+      case x: HasParticle =>
+        buildDataRecordXMLString(makeTypeName(context.compositorNames(x)))
+    }) ::: (pruned map (x => buildElemXMLString(buildTypeName(x))))
+    
+    <source>trait  {name}
+
+object {name} {{
+  def toXML(__obj: rt.DataRecord[Any], __namespace: String, __elementLabel: String,
+      __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq = (__obj.value: @unchecked) match {{
+    { cases.distinct.mkString(newline + indent(2)) }
+    case _ => rt.DataRecord.toXML(__obj, __namespace, __elementLabel, __scope)
+  }}  
+}}
+
+</source>
+  }
+  
+  def makeCompositorImport(compositor: HasParticle) = compositor match {
+    case seq: SequenceDecl =>
+      val name = makeTypeName(context.compositorNames(seq))
+      <source>import {name}._
+  </source> 
+    case _ => <source></source>
   }
   
   def makeSequence(seq: SequenceDecl) = {
@@ -459,12 +549,23 @@ object {name} {{
       else paramList.map(x => 
         buildXMLString(x)).mkString("Seq.concat(", "," + newline + indent(4), ")")
     
-    <source>{ buildComment(seq) }case class {name}({paramsString}) {{
-  def toXML(__namespace: String, __elementLabel: String, __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq = {{
+    <source>{ buildComment(seq) }case class {name}({paramsString})
+
+object {name} {{
+  def toXML(__obj: rt.DataRecord[Any], __namespace: String, __elementLabel: String,
+      __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq = __obj.value match {{
+    case x: {name} => toXML(x, __namespace, __elementLabel, __scope)
+    case _ => error("Expected {name}")      
+  }}
+  
+  def toXML(__obj: {name}, __namespace: String, __elementLabel: String,
+      __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq = {{
     val prefix = __scope.getPrefix(__namespace)
     var attribute: scala.xml.MetaData  = scala.xml.Null
     { childString }
   }}
+
+  {makeToXMLWriter(name)}
 }}
 
 </source>
@@ -508,19 +609,19 @@ object {name} {{
       _.toScalaCode).mkString("," + newline + indent(1))
     val argsString = argList.mkString("," + newline + indent(3))  
     val attributeString = attributes.map(x => buildAttributeString(x)).mkString(newline + indent(2))
-    <source>{ buildComment(group) }case class {name}({paramsString}) {{
-  
-  def toAttribute(attr: scala.xml.MetaData, __scope: scala.xml.NamespaceBinding) = {{
-    var attribute: scala.xml.MetaData  = attr
-    {attributeString}
-    attribute
-  }}
-}}
+    
+    <source>{ buildComment(group) }case class {name}({paramsString})
 
 object {name} {{
   def fromXML(node: scala.xml.Node): {name} = {{
     {name}({argsString})
-  }}  
+  }}
+  
+  def toAttribute(__obj: {name}, attr: scala.xml.MetaData, __scope: scala.xml.NamespaceBinding) = {{
+    var attribute: scala.xml.MetaData  = attr
+    {attributeString}
+    attribute
+  }} 
 }}
 
 </source>
@@ -534,7 +635,7 @@ object {name} {{
   }
   
   def buildAttributeString(any: AnyAttributeDecl): String =
-    "anyAttribute.foreach(x =>" + newline +
+    "__obj.anyAttribute.foreach(x =>" + newline +
     indent(3) + "if (x.namespace == null) attribute = scala.xml.Attribute(null, x.key, x.value, attribute)" + newline +
     indent(3) + "else attribute = scala.xml.Attribute(__scope.getPrefix(x.namespace), x.key, x.value, attribute))"
   
@@ -542,7 +643,7 @@ object {name} {{
     val namespaceString = if (attr.global)
       "__scope.getPrefix(" + quote(attr.namespace) + ")"
     else "null"
-    val name = makeParamName(buildParam(attr).name)
+    val name = "__obj." + makeParamName(buildParam(attr).name)
         
     if (toMinOccurs(attr) == 0)
       name + " match {" + newline +
@@ -563,95 +664,114 @@ object {name} {{
   }
   
   def buildAttributeString(group: AttributeGroupDecl): String =
-    "attribute = " + makeParamName(buildParam(group).name) + ".toAttribute(attribute, __scope)"
+    "attribute = " + buildParam(group).baseTypeName + ".toAttribute(__obj." + makeParamName(buildParam(group).name) +
+    ", attribute, __scope)"
   
-  def buildXMLString(param: Param) = param.typeSymbol match {
+  def buildXMLString(param: Param): String = param.typeSymbol match {
     case symbol: BuiltInSimpleTypeSymbol => buildXMLStringForSimpleType(param)
     case ReferenceTypeSymbol(decl: SimpleTypeDecl) => buildXMLStringForSimpleType(param)
     case ReferenceTypeSymbol(decl: ComplexTypeDecl) => buildXMLStringForComplexType(param)
     case XsAny => buildXMLStringForChoiceWrapper(param)
     case XsInterNamespace => buildXMLStringForComplexType(param)
-    case XsDataRecord => buildXMLStringForChoiceWrapper(param)
+    case r: XsDataRecord => buildXMLStringForChoiceWrapper(param)
     case _ => error("GenSource#buildXMLString: " + param.toString +
       " Invalid type " + param.typeSymbol.getClass.toString + ": " + param.typeSymbol.toString)    
   }
-  
+      
   def buildXMLStringForChoiceWrapper(param: Param) = {
     val typeName = buildTypeName(param.typeSymbol)
+    val name = "__obj." + makeParamName(param.name)
+    val baseTypeName = param.typeSymbol match {
+      case XsDataRecord(ReferenceTypeSymbol(x: ComplexTypeDecl)) =>
+        val compositor = compositorWrapper(x)
+        compositor match {
+          case group: GroupDecl =>
+            val primary = primaryCompositor(group)
+            makeTypeName(context.compositorNames(primary))
+          case _ => makeTypeName(context.compositorNames(compositor))
+        }
+      
+      case _ => "rt.DataRecord"
+    }
     
     param.cardinality match {
       case Single =>
         if (param.nillable)
-          makeParamName(param.name) + " match {" + newline +
-          indent(5) + "case Some(x) => x.toXML(" + quote(param.namespace) + ", " +
+          name + " match {" + newline +
+          indent(5) + "case Some(x) => " + baseTypeName + ".toXML(x, " + quote(param.namespace) + ", " +
             makeParamName(param.name) + ".key, __scope)" + newline +
           indent(5) + "case None => Seq(rt.Helper.nilElem(" + quote(param.namespace) + ", " + 
             quote(param.name) + ", __scope))" + newline +
           indent(4) + "}"
         else
-          makeParamName(param.name) + ".toXML(" + quote(param.namespace) + ", " +
-            makeParamName(param.name) + ".key, __scope)"
+          baseTypeName + ".toXML(" + name + ", " + quote(param.namespace) + ", " +
+            name + ".key, __scope)"
       case Optional =>
         if (param.nillable)
-          makeParamName(param.name) + " match {" + newline +
-          indent(5) + "case Some(x) => x.toXML(x.namespace, x.key, __scope)" + newline +
+          name + " match {" + newline +
+          indent(5) + "case Some(x) => " + baseTypeName + ".toXML(x, x.namespace, x.key, __scope)" + newline +
           indent(5) + "case None => Seq(rt.Helper.nilElem(" + quote(param.namespace) + ", " + 
             quote(param.name) + ", __scope))" + newline +
           indent(4) + "}"    
         else
-          makeParamName(param.name) + " match {" + newline +
-          indent(5) + "case Some(x) => x.toXML(x.namespace, x.key, __scope)" + newline +
+          name + " match {" + newline +
+          indent(5) + "case Some(x) => " + baseTypeName + ".toXML(x, x.namespace, x.key, __scope)" + newline +
           indent(5) + "case None => Nil" + newline +
           indent(4) + "}"
       case Multiple =>
         if (param.nillable)
-          makeParamName(param.name) + ".flatMap(x => x match {" + newline +
-          indent(5) + "case Some(x) => x.toXML(x.namespace, x.key, __scope)" + newline +
+          name + ".flatMap(x => x match {" + newline +
+          indent(5) + "case Some(x) => " + baseTypeName + ".toXML(x, x.namespace, x.key, __scope)" + newline +
           indent(5) + "case None => rt.Helper.nilElem(" + quote(param.namespace) + ", " + 
             quote(param.name) + ", __scope)" + newline +
           indent(4) + "} )"        
         else  
-          makeParamName(param.name) + ".flatMap(x => x.toXML(x.namespace, x.key, __scope))"
+          name + ".flatMap(x => " + baseTypeName + ".toXML(x, x.namespace, x.key, __scope))"
     }
   } 
   
-  def buildXMLStringForComplexType(param: Param) = param.cardinality match {
-    case Single =>
-      if (param.nillable)
-        makeParamName(param.name) + " match {" + newline +
-        indent(5) + "case Some(x) => x.toXML(" + quote(param.namespace) + "," + 
-          quote(param.name) + ", __scope)" + newline +
-        indent(5) + "case None => Seq(rt.Helper.nilElem(" + quote(param.namespace) + ", " + 
-          quote(param.name) + ", __scope))" + newline +
-        indent(4) + "}"
-      else
-        makeParamName(param.name) + ".toXML(" + quote(param.namespace) + "," + 
-          quote(param.name)  + ", __scope)"
-    case Optional =>
-      if (param.nillable)
-        makeParamName(param.name) + " match {" + newline +
-        indent(5) + "case Some(x) => x.toXML(" + quote(param.namespace) + "," + 
-          quote(param.name) + ", __scope)" + newline +
-        indent(5) + "case None => Seq(rt.Helper.nilElem(" + quote(param.namespace) + ", " + 
-          quote(param.name) + ", __scope))" + newline +
-        indent(4) + "}"    
-      else
-        makeParamName(param.name) + " match {" + newline +
-        indent(5) + "case Some(x) => x.toXML(" + quote(param.namespace) + ", " + 
-          quote(param.name) + ", __scope)" + newline +
-        indent(5) + "case None => Nil" + newline +
-        indent(4) + "}"
-    case Multiple =>
-      if (param.nillable)
-        makeParamName(param.name) + ".flatMap(x => x match {" + newline +
-        indent(5) + "case Some(x) => x.toXML(" + quote(param.namespace) + ", " + 
-          quote(param.name) + ", __scope)" + newline +
-        indent(5) + "case None => rt.Helper.nilElem(" + quote(param.namespace) + ", " + 
-          quote(param.name) + ", __scope)" + newline +
-        indent(4) + "} )"        
-      else  
-        makeParamName(param.name) + ".flatMap(x => x.toXML(" + quote(param.namespace) + "," + 
-          quote(param.name) + ", __scope))"    
+  def buildXMLStringForComplexType(param: Param) = {
+    val name = "__obj." + makeParamName(param.name)
+    val baseTypeName = param.baseTypeName
+    
+    param.cardinality match {
+      case Single =>
+        if (param.nillable)
+          name + " match {" + newline +
+          indent(5) + "case Some(x) => " + baseTypeName + ".toXML(x, " + quote(param.namespace) + "," + 
+            quote(param.name) + ", __scope)" + newline +
+          indent(5) + "case None => Seq(rt.Helper.nilElem(" + quote(param.namespace) + ", " + 
+            quote(param.name) + ", __scope))" + newline +
+          indent(4) + "}"
+        else
+          baseTypeName + ".toXML(" + name + ", " + quote(param.namespace) + "," + 
+            quote(param.name)  + ", __scope)"
+      case Optional =>
+        if (param.nillable)
+          name + " match {" + newline +
+          indent(5) + "case Some(x) => " + baseTypeName + ".toXML(x, " + quote(param.namespace) + "," + 
+            quote(param.name) + ", __scope)" + newline +
+          indent(5) + "case None => Seq(rt.Helper.nilElem(" + quote(param.namespace) + ", " + 
+            quote(param.name) + ", __scope))" + newline +
+          indent(4) + "}"    
+        else
+          name + " match {" + newline +
+          indent(5) + "case Some(x) => " + baseTypeName + ".toXML(x, " + quote(param.namespace) + ", " + 
+            quote(param.name) + ", __scope)" + newline +
+          indent(5) + "case None => Nil" + newline +
+          indent(4) + "}"
+      case Multiple =>
+        if (param.nillable)
+          name + ".flatMap(x => x match {" + newline +
+          indent(5) + "case Some(x) => " + baseTypeName + ".toXML(x, " + quote(param.namespace) + ", " + 
+            quote(param.name) + ", __scope)" + newline +
+          indent(5) + "case None => rt.Helper.nilElem(" + quote(param.namespace) + ", " + 
+            quote(param.name) + ", __scope)" + newline +
+          indent(4) + "} )"        
+        else  
+          name + ".flatMap(x => " + baseTypeName + ".toXML(x, " + quote(param.namespace) + "," + 
+            quote(param.name) + ", __scope))"    
+    }
   }
   
   def buildToString(selector: String, typeSymbol: XsTypeSymbol): String = typeSymbol match {
@@ -671,7 +791,7 @@ object {name} {{
   def buildXMLStringForSimpleType(param: Param) = param.cardinality match {
     case Single =>    
       if (param.nillable)
-        makeParamName(param.name) + " match {" + newline +
+        "__obj." + makeParamName(param.name) + " match {" + newline +
         indent(5) + "case Some(x) => Seq(scala.xml.Elem(prefix, " + quote(param.name) + ", " + 
           "scala.xml.Null, __scope, scala.xml.Text(" + buildToString("x", param.typeSymbol) + ")))" + newline +
         indent(5) + "case None => Seq(rt.Helper.nilElem(" + quote(param.namespace) + ", " + 
@@ -679,31 +799,31 @@ object {name} {{
         indent(4) + "}"
       else
         "scala.xml.Elem(prefix, " + quote(param.name) + ", " +
-        "scala.xml.Null, __scope, scala.xml.Text(" + buildToString(makeParamName(param.name), param.typeSymbol) + "))"
+        "scala.xml.Null, __scope, scala.xml.Text(" + buildToString("__obj." + makeParamName(param.name), param.typeSymbol) + "))"
     case Optional =>
       if (param.nillable)
-        makeParamName(param.name) + " match {" + newline +
+        "__obj." + makeParamName(param.name) + " match {" + newline +
         indent(5) + "case Some(x) => Seq(scala.xml.Elem(prefix, " + quote(param.name) + ", " + 
           "scala.xml.Null, __scope, scala.xml.Text(" + buildToString("x", param.typeSymbol) + ")))" + newline +
         indent(5) + "case None => Seq(rt.Helper.nilElem(" + quote(param.namespace) + ", " + 
           quote(param.name) + ", __scope))" + newline +
         indent(4) + "}"    
       else
-        makeParamName(param.name) + " match {" + newline +
+        "__obj." + makeParamName(param.name) + " match {" + newline +
         indent(5) + "case Some(x) => Seq(scala.xml.Elem(prefix, " + quote(param.name) + ", " + 
           "scala.xml.Null, __scope, scala.xml.Text(" + buildToString("x", param.typeSymbol) + ")))" + newline +
         indent(5) + "case None => Nil" + newline +
         indent(4) + "}"
     case Multiple =>
       if (param.nillable)
-        makeParamName(param.name) + ".map(x => x match {" + newline +
+        "__obj." + makeParamName(param.name) + ".map(x => x match {" + newline +
         indent(5) + "case Some(x) => scala.xml.Elem(prefix, " + quote(param.name) + ", " + 
           "scala.xml.Null, __scope, scala.xml.Text(" + buildToString("x", param.typeSymbol) + "))" + newline +
         indent(5) + "case None =>   rt.Helper.nilElem(" + quote(param.namespace) + ", " + 
           quote(param.name) + ", __scope)" + newline +
         indent(4) + "} )"
       else 
-        makeParamName(param.name) + ".map(x => scala.xml.Elem(prefix, " + quote(param.name) + ", " +
+        "__obj." + makeParamName(param.name) + ".map(x => scala.xml.Elem(prefix, " + quote(param.name) + ", " +
         "scala.xml.Null, __scope, scala.xml.Text(" + buildToString("x", param.typeSymbol) + ")))"      
   }
   
@@ -718,7 +838,7 @@ object {name} {{
   def buildParam(elem: ElemDecl): Param = {
     val symbol = elem.typeSymbol match {
       case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
-        if (compositorWrapper.keysIterator.contains(decl)) XsDataRecord
+        if (compositorWrapper.contains(decl)) XsDataRecord(elem.typeSymbol)
         else elem.typeSymbol
       case _ => elem.typeSymbol
     }
@@ -755,9 +875,11 @@ object {name} {{
   }
   
   /// called by makeGroup
-  def buildParam(compositor: HasParticle): Param =
-    Param(null, "arg1", XsDataRecord,
+  def buildParam(compositor: HasParticle): Param = {
+    val elem = buildCompositorRef(compositor)
+    Param(null, "arg1", XsDataRecord(elem.typeSymbol),
     toCardinality(compositor.minOccurs, compositor.maxOccurs), false, false)
+  }
   
   def buildParam(any: AnyAttributeDecl): Param =
     Param(null, "anyAttribute", XsAnyAttribute, Multiple, false, true)
@@ -944,7 +1066,7 @@ object {name} {{
   
   def buildParser(elem: ElemDecl, decl: ComplexTypeDecl,
       minOccurs: Int, maxOccurs: Int, mixed: Boolean): String =
-    if (compositorWrapper.keysIterator.contains(decl)) {
+    if (compositorWrapper.contains(decl)) {
       val compositor = compositorWrapper(decl)
       buildParser(compositor, minOccurs, maxOccurs, mixed)
     }
@@ -998,7 +1120,7 @@ object {name} {{
   def buildArg(elem: ElemDecl, decl: ComplexTypeDecl, selector: String): String = {
     val typeName = buildTypeName(elem.typeSymbol)
     
-    if (compositorWrapper.keysIterator.contains(decl)) {
+    if (compositorWrapper.contains(decl)) {
       val compositor = compositorWrapper(decl)
       
       if (elem.maxOccurs > 1) selector + ".toList"
@@ -1200,7 +1322,7 @@ object {name} {{
     
     def isAnyOrChoice(typeSymbol: XsTypeSymbol) = typeSymbol match {
       case XsAny => true
-      case ReferenceTypeSymbol(decl: ComplexTypeDecl) if compositorWrapper.keysIterator.contains(decl) =>
+      case ReferenceTypeSymbol(decl: ComplexTypeDecl) if compositorWrapper.contains(decl) =>
         true
       case _ => false
     }
@@ -1300,13 +1422,20 @@ object {name} {{
   def quote(value: String) = if (value == null) "null"
     else "\"" + value + "\""
   
+  def flattenSuperNames(decl: ComplexTypeDecl): List[String] = 
+    (decl.content.content.base match {
+      case ReferenceTypeSymbol(base: ComplexTypeDecl) => 
+        buildTypeName(base) :: flattenSuperNames(base)
+      case _ => Nil
+    }) ::: buildOptions(decl)
+  
   def buildSuperNames(decl: ComplexTypeDecl) =
     buildSuperName(decl) ::: buildOptions(decl)
   
   def buildSuperName(decl: ComplexTypeDecl) = 
     decl.content.content.base match {
       case ReferenceTypeSymbol(base: ComplexTypeDecl) => List(buildTypeName(base))
-      case _ => List()
+      case _ => Nil
     }
   
   def buildOptions(decl: ComplexTypeDecl) = {

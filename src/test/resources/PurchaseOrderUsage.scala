@@ -210,7 +210,7 @@ object PurchaseOrderUsage {
     val obj = Addressable.fromXML(subject)
     obj match {
       case usaddress: USAddress =>
-        val document = usaddress.toXML(null, "shipTo")
+        val document = USAddress.toXML(usaddress, null, "shipTo")
         println(document)
         val obj2 = Addressable.fromXML(document)
         
@@ -228,7 +228,7 @@ object PurchaseOrderUsage {
   def testChoiceRoundTrip {
     val subject = <Element1 xmlns="http://www.example.com/IPO"><Choice2>1</Choice2></Element1>
     val obj = Element1.fromXML(subject)
-    val document = obj.toXML("http://www.example.com/IPO", "Element1", subject.scope)
+    val document = Element1.toXML(obj, "http://www.example.com/IPO", "Element1", subject.scope)
     println(document)
     val obj2 = Element1.fromXML(document)
     obj2 match {
@@ -258,7 +258,7 @@ object PurchaseOrderUsage {
       case _ => error("match failed: " + obj.toString)
     }
     
-    val document = obj.toXML(null, "choice1", subject.scope)
+    val document = Choice1.toXML(obj, null, "choice1", subject.scope)
     println(document)  
   }
   
@@ -274,7 +274,7 @@ object PurchaseOrderUsage {
       </math>
     </Element1>
     val obj = Element1.fromXML(subject)
-    val document = obj.toXML(null, "Element1", subject.scope)
+    val document = Element1.toXML(obj, null, "Element1", subject.scope)
     println(document)
     val obj2 = Element1.fromXML(document)
     obj2 match {
@@ -295,7 +295,7 @@ object PurchaseOrderUsage {
       case _ => error("match failed: " + obj.toString)
     }
     
-    val document = obj.toXML(null, "foo", subject.scope)
+    val document = Element2.toXML(obj, null, "foo", subject.scope)
     println(document)
     val obj2 = Element2.fromXML(document)
     obj2 match {
@@ -315,7 +315,7 @@ object PurchaseOrderUsage {
           DataRecord(null, null, "bar"))) =>
       case _ => error("match failed: " + obj.toString)
     }
-    val document = obj.toXML(null, "foo", subject.scope)
+    val document = Element3.toXML(obj, null, "foo", subject.scope)
     println(document)
   }
   
@@ -330,7 +330,7 @@ object PurchaseOrderUsage {
       case DatedData(_, _, _) =>
       case _ => error("match failed: " + obj.toString)
     }
-    val document = obj.toXML(null, "foo", subject.scope)
+    val document = DatedData.toXML(obj, null, "foo", subject.scope)
     println(document)
   }
   
@@ -354,7 +354,7 @@ object PurchaseOrderUsage {
       case _ => error("match failed: " + obj.toString)
     }
     
-    val document = obj.toXML(null, "foo", subject.scope)
+    val document = NillableTest.toXML(obj, null, "foo", subject.scope)
     println(document)
   }
 }

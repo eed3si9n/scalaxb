@@ -23,7 +23,7 @@ object XhtmlTest extends SpecificationWithJUnit with CompilerMatcher {
     (List("import org.w3.xhtml._",
       """val document = <html xmlns="http://www.w3.org/1999/xhtml" lang="en">""" + // "
       """<head><title>foo</title></head><body></body></html>""",
-      """Html.fromXML(document).toXML(
+      """Html.toXML(Html.fromXML(document),
         "http://www.w3.org/1999/xhtml", "html", document.scope).toString""" // "
      ),
      generated) must evaluateTo("""<html lang="en" xmlns="http://www.w3.org/1999/xhtml">""" + // "

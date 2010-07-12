@@ -22,20 +22,37 @@
  
 package org.scalaxb.compiler.xsd
 
-abstract class XsTypeSymbol(val name: String) extends scala.xml.TypeSymbol {
-  override def toString(): String = {
-    name 
-  }  
+trait XsTypeSymbol extends scala.xml.TypeSymbol {
+  val name: String
+  
+  override def toString(): String = name 
 }
 
-object XsAny extends XsTypeSymbol("scala.xml.Node") {}
-object XsAnySimpleType extends XsTypeSymbol("scala.xml.Node") {}
-object XsInterNamespace extends XsTypeSymbol("XsInterNamespace") {}
-object XsDataRecord extends XsTypeSymbol("XsDataRecord") {}
-object XsAnyAttribute extends XsTypeSymbol("XsAnyAttribute") {}
-object XsMixed extends XsTypeSymbol("XsMixed") {}
+object XsAny extends XsTypeSymbol {
+  val name = "scala.xml.Node"
+}
 
-class ReferenceTypeSymbol(name: String) extends XsTypeSymbol(name) {
+object XsAnySimpleType extends XsTypeSymbol {
+  val name = "scala.xml.Node"
+}
+
+object XsInterNamespace extends XsTypeSymbol {
+  val name = "XsInterNamespace"
+}
+
+object XsAnyAttribute extends XsTypeSymbol {
+  val name = "XsAnyAttribute"
+}
+
+object XsMixed extends XsTypeSymbol {
+  val name = "XsMixed"
+}
+
+case class XsDataRecord(member: XsTypeSymbol) extends XsTypeSymbol {
+  val name = "XsDataRecord(" + member + ")"
+}
+
+class ReferenceTypeSymbol(val name: String) extends XsTypeSymbol {
   if (name == "") error("ReferenceTypeSymbol#: name cannot be blank.");
   
   var decl: TypeDecl = null
@@ -49,10 +66,10 @@ object ReferenceTypeSymbol {
   def unapply(value: ReferenceTypeSymbol): Option[TypeDecl] = Some(value.decl)
 }
 
-class BuiltInSimpleTypeSymbol(name: String) extends XsTypeSymbol(name)
+class BuiltInSimpleTypeSymbol(val name: String) extends XsTypeSymbol
 
-class AttributeGroupSymbol(val namespace: String,
-  name: String) extends XsTypeSymbol(name)
+case class AttributeGroupSymbol(namespace: String,
+  name: String) extends XsTypeSymbol
 
 abstract class DerivSym
 case class Extends(sym: XsTypeSymbol) extends DerivSym

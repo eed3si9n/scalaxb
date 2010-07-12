@@ -1,29 +1,23 @@
 package org.scalaxb.rt
 
 case class DataRecord[+A](namespace: String, key: String, value: A)
-    (implicit m : scala.reflect.Manifest[A]) {
-  type DataModel = {
-    def toXML(__namespace: String, __elementLabel: String,
-      __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq
-  }
-  
-  def toXML(__namespace: String, __elementLabel: String,
-      __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq =
-    try
-      value.asInstanceOf[DataModel].toXML(__namespace, __elementLabel, __scope)
-    catch {
-      case _ => 
-        value match {
-          case x: scala.xml.NodeSeq => x
-          case x: String if key == null => scala.xml.Text(x)
 
-          // for now the structural type does not work within pattern matching,
-          // but it might in the future.
-          // case x: DataModel => x.toXML(namespace, elementLabel, scope)
-          case x => scala.xml.Elem(__scope.getPrefix(namespace), __elementLabel,
-                scala.xml.Null, __scope, scala.xml.Text(value.toString))
-        }
-    } // catch
+trait XMLWriter {
+  def toXML(__namespace: String, __elementLabel: String,
+      __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq
+}
+
+object DataRecord {  
+  def toXML[A](__obj: DataRecord[A], __namespace: String, __elementLabel: String,
+      __scope: scala.xml.NamespaceBinding):
+      scala.xml.NodeSeq = (__obj.value) match {
+    case x: scala.xml.NodeSeq => x
+    case x: String if __obj.key == null => scala.xml.Text(x)
+    case x: Product =>
+      x.asInstanceOf[XMLWriter].toXML(__namespace, __elementLabel, __scope)
+    case x => scala.xml.Elem(__scope.getPrefix(__obj.namespace), __elementLabel,
+              scala.xml.Null, __scope, scala.xml.Text(__obj.value.toString))
+  }
 }
 
 case class ElemName(namespace: String, name: String) {

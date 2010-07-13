@@ -7,6 +7,17 @@ trait XMLWriter {
       __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq
 }
 
+trait ImplicitXMLWriter[A] { outer =>
+  def toXML(__obj: A, __namespace: String, __elementLabel: String,
+      __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq
+  
+  implicit def toXMLWriter(__obj: A): XMLWriter = new XMLWriter {
+     def toXML(__namespace: String, __elementLabel: String,
+         __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq =
+      outer.toXML(__obj, __namespace, __elementLabel, __scope)
+  }  
+}
+
 object DataRecord {  
   def toXML[A](__obj: DataRecord[A], __namespace: String, __elementLabel: String,
       __scope: scala.xml.NamespaceBinding):
@@ -38,7 +49,7 @@ trait AnyElemNameParser extends scala.util.parsing.combinator.Parsers {
     accept("any", { case x: ElemName => x })  
 }
 
-trait ElemNameParser[A] extends AnyElemNameParser {
+trait ElemNameParser[A] extends AnyElemNameParser with ImplicitXMLWriter[A] {
   def fromXML(seq: scala.xml.NodeSeq): A = seq match {
     case node: scala.xml.Node => fromXML(node)
     case _ => error("fromXML failed: seq must be scala.xml.Node")

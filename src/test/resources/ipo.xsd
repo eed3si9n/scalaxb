@@ -184,6 +184,27 @@
     <attribute name="class" type="NMTOKENS"/>
   </attributeGroup>
   
+  <attributeGroup name="i18n">
+    <annotation>
+      <documentation>
+      internationalization attributes
+      lang        language code (backwards compatible)
+      xml:lang    language code (as per XML 1.0 spec)
+      dir         direction for weak/neutral text
+      </documentation>
+    </annotation>
+    <attribute name="lang" type="string"/>
+    <attribute ref="xml:lang"/>
+    <attribute name="dir">
+      <simpleType>
+        <restriction base="token">
+          <enumeration value="ltr"/>
+          <enumeration value="rtl"/>
+        </restriction>
+      </simpleType>
+    </attribute>
+  </attributeGroup>
+  
   <attribute name="globalAttr" type="int"/>
 
   <element name="NillableTest">
@@ -197,6 +218,49 @@
         <element name="billTo" type="ipo:Address" minOccurs="0" nillable="true" />
         <element name="via" type="ipo:Address" minOccurs="0" maxOccurs="unbounded" nillable="true" />
       </sequence>
+    </complexType>
+  </element>
+  
+  <element name="script" type="string"/>
+  <element name="style" type="string"/>
+  <element name="title" type="string"/>
+  <element name="base" type="string"/>
+  
+  <group name="head.misc">
+    <sequence>
+      <choice minOccurs="0" maxOccurs="unbounded">
+        <xs:element ref="ipo:script"/>
+        <xs:element ref="ipo:style"/>
+      </choice>
+    </sequence>
+  </group>
+  
+  <element name="head">
+    <annotation>
+      <documentation>
+        content model is "head.misc" combined with a single
+        title and an optional base element in any order
+      </documentation>
+    </annotation>
+    <complexType>
+      <sequence>
+        <group ref="ipo:head.misc"/>
+        <choice>
+          <sequence>
+            <xs:element ref="ipo:title"/>
+            <group ref="ipo:head.misc"/>
+          </sequence>
+          <sequence>
+            <xs:element ref="ipo:base"/>
+            <group ref="ipo:head.misc"/>
+            <xs:element ref="ipo:title"/>
+            <group ref="ipo:head.misc"/>          
+          </sequence>
+        </choice>
+      </sequence>
+      <attributeGroup ref="ipo:i18n"/>
+      <attribute name="id" type="ID"/>
+      <attribute name="profile" type="anyURI"/>
     </complexType>
   </element>
   

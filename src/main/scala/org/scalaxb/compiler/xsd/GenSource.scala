@@ -240,7 +240,7 @@ class GenSource(schema: SchemaDecl,
   vals.mkString(newline + indent(1))}
 }}
 
-object {name} {{
+object {name} extends rt.ImplicitXMLWriter[{name}] {{
   def fromXML(seq: scala.xml.NodeSeq): {name} = seq match {{
     case node: scala.xml.Node =>     
       val typeName = (node \ "@{{http://www.w3.org/2001/XMLSchema-instance}}type").text    
@@ -276,23 +276,13 @@ object {name} {{
       else """case _ => error("Unknown type: " + __obj)"""
     }
   }}
-  
-  {makeToXMLWriter(name)}
-
 }}
 
 { if (decl.abstractValue) compositors map(makeCompositor(_, decl.mixed))
   else Nil }
 </source>    
   }
-  
-  def makeToXMLWriter(name: String) = <source>implicit def toXMLWriter(__obj: {name}): rt.XMLWriter = new rt.XMLWriter {{
-     def toXML(__namespace: String, __elementLabel: String,
-         __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq =
-      {name}.toXML(__obj, __namespace, __elementLabel, __scope)
-  }}
-</source>
-        
+          
   def makeCaseClassWithType(name: String, decl: ComplexTypeDecl): scala.xml.Node = {
     log("GenSource#makeCaseClassWithType: emitting " + name)
     
@@ -399,10 +389,8 @@ object {name} {{
   makeToXml2 }
 }}
 </source> else <source>object {name} extends {objSuperNames.mkString(" with ")} {{
-  { compositors map(makeCompositorImport(_)) }
+  { compositors map(makeCompositorImport(_)) }val targetNamespace = { quote(schema.targetNamespace) }
   
-  val targetNamespace = { quote(schema.targetNamespace) }
-    
   def parser(node: scala.xml.Node): Parser[{name}] =
     { parserList.mkString(" ~ " + newline + indent(3)) } ^^
         {{ case { parserVariableList.mkString(" ~ " + newline + indent(3)) } => {name}({argsString}) }}
@@ -435,7 +423,6 @@ object {name} {{
       { childString })
   }}
   
-  {makeToXMLWriter(name)}
 </source>
       
     return <source>
@@ -516,7 +503,7 @@ object {name} {{
 
 object {name} {{
   def toXML(__obj: rt.DataRecord[Any], __namespace: String, __elementLabel: String,
-      __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq = (__obj.value: @unchecked) match {{
+      __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq = __obj.value match {{
     { cases.distinct.mkString(newline + indent(2)) }
     case _ => rt.DataRecord.toXML(__obj, __namespace, __elementLabel, __scope)
   }}  
@@ -551,7 +538,7 @@ object {name} {{
     
     <source>{ buildComment(seq) }case class {name}({paramsString})
 
-object {name} {{
+object {name} extends rt.ImplicitXMLWriter[{name}] {{
   def toXML(__obj: rt.DataRecord[Any], __namespace: String, __elementLabel: String,
       __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq = __obj.value match {{
     case x: {name} => toXML(x, __namespace, __elementLabel, __scope)
@@ -564,8 +551,6 @@ object {name} {{
     var attribute: scala.xml.MetaData  = scala.xml.Null
     { childString }
   }}
-
-  {makeToXMLWriter(name)}
 }}
 
 </source>

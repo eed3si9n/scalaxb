@@ -286,6 +286,12 @@ object {name} extends rt.ImplicitXMLWriter[{name}] {{
   def makeCaseClassWithType(name: String, decl: ComplexTypeDecl): scala.xml.Node = {
     log("GenSource#makeCaseClassWithType: emitting " + name)
     
+    val primary = decl.content match {
+      case ComplexContentDecl(CompContRestrictionDecl(_, x, _)) => x
+      case ComplexContentDecl(CompContExtensionDecl(_, x, _)) => x
+      case _ => None
+    }
+    
     val superNames: List[String] = if (context.baseToSubs.contains(decl))
       List(buildTypeName(decl))
     else buildSuperNames(decl)
@@ -299,14 +305,21 @@ object {name} extends rt.ImplicitXMLWriter[{name}] {{
     val parserList = flatParticles map(buildParser(_, decl.mixed))
     val parserVariableList =  for (i <- 0 to flatParticles.size - 1)
       yield "p" + (i + 1)
-    val argList = (for (i <- 0 to flatParticles.size - 1)
-      yield buildArg(flatParticles(i), i) ).toList ::: (if (decl.mixed)
-        List(buildArgForMixed(flatParticles))
-      else
-        Nil) ::: (attributes map {
+    
+    val particleArgs = primary match {
+      case Some(all: AllDecl) => flatParticles map { buildArgForAll }
+      case _ => (0 to flatParticles.size - 1).toList map { i => buildArg(flatParticles(i), i) }
+    }
+    
+    val mixedArgs = if (decl.mixed) List(buildArgForMixed(flatParticles))
+      else Nil
+    
+    val argList = particleArgs ::: mixedArgs ::: (
+      attributes map {
         case any: AnyAttributeDecl => buildArgForAnyAttribute(decl)
         case x => buildArg(x) 
       })
+      
     val compositors = context.compositorParents.filter(
       x => x._2 == decl).keysIterator.toList
         
@@ -322,7 +335,11 @@ object {name} extends rt.ImplicitXMLWriter[{name}] {{
       makeParamName(paramList.head.name) + ": " + buildTypeName(paramList.head.typeSymbol) + "*"      
     else paramList.map(_.toScalaCode).mkString("," + newline + indent(1))
     
-    val simpleFromXml: Boolean = decl.content.isInstanceOf[SimpleContentDecl]
+    val simpleFromXml: Boolean = (decl.content, primary) match {
+      case (x: SimpleContentDecl, _) => true
+      case (_, Some(all: AllDecl)) => true
+      case _ => false
+    }
     
     def argsString = if (hasSequenceParam)
       argList.head + ": _*"
@@ -379,16 +396,17 @@ object {name} extends rt.ImplicitXMLWriter[{name}] {{
     val objSuperNames: List[String] = "rt.ElemNameParser[" + name + "]" ::
       groups.map(groupTypeName)
     
-    def makeObject = if (simpleFromXml || flatParticles.isEmpty) <source>object {name} {{
+    def makeObject = if (simpleFromXml || flatParticles.isEmpty)
+<source>object {name} extends rt.ImplicitXMLWriter[{name}] {{
   def fromXML(seq: scala.xml.NodeSeq): {name} = seq match {{
     case node: scala.xml.Node => {name}({argsString})
     case _ => error("fromXML failed: seq must be scala.xml.Node")
   }}
   
-  { if (!decl.name.contains('@')) makeToXml
-  makeToXml2 }
+  { if (!decl.name.contains('@')) makeToXml }{ makeToXml2 }
 }}
-</source> else <source>object {name} extends {objSuperNames.mkString(" with ")} {{
+</source> else
+<source>object {name} extends {objSuperNames.mkString(" with ")} {{
   { compositors map(makeCompositorImport(_)) }val targetNamespace = { quote(schema.targetNamespace) }
   
   def parser(node: scala.xml.Node): Parser[{name}] =
@@ -1073,16 +1091,22 @@ object {name} {{
     case group: AttributeGroupDecl => buildArg(group)
     case _ => error("GenSource#buildArg unsupported delcaration " + decl.toString)
   }
-    
-  def buildArg(elem: ElemDecl, pos: Int): String = elem.typeSymbol match {
+  
+  def buildArgForAll(elem: ElemDecl): String =
+    buildArg(elem, buildSelector(elem))
+  
+  def buildArg(elem: ElemDecl, pos: Int): String =
+    buildArg(elem, buildSelector(pos))
+  
+  def buildArg(elem: ElemDecl, selector: String): String = elem.typeSymbol match {
     case symbol: BuiltInSimpleTypeSymbol => buildArg(symbol,
-      buildSelector(pos), elem.defaultValue, elem.fixedValue,
+      selector, elem.defaultValue, elem.fixedValue,
       elem.minOccurs, elem.maxOccurs, elem.nillable)
     case ReferenceTypeSymbol(decl: SimpleTypeDecl) =>  buildArg(decl,
-      buildSelector(pos), elem.defaultValue, elem.fixedValue,
+      selector, elem.defaultValue, elem.fixedValue,
       elem.minOccurs, elem.maxOccurs, elem.nillable) 
-    case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>  buildArg(elem, decl, buildSelector(pos))
-    case XsAny => buildArgForAny(buildSelector(pos), elem.namespace, elem.name,
+    case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>  buildArg(elem, decl, selector)
+    case XsAny => buildArgForAny(selector, elem.namespace, elem.name,
       elem.defaultValue, elem.fixedValue, elem.minOccurs, elem.maxOccurs, elem.nillable)
     
     case symbol: ReferenceTypeSymbol =>
@@ -1095,9 +1119,9 @@ object {name} {{
           " Invalid type " + symbol.getClass.toString + ": " +
           symbol.toString + " with " + symbol.decl.toString)
     case _ => error("GenSource#buildArg: " + elem.toString +
-      " Invalid type " + elem.typeSymbol.getClass.toString + ": " + elem.typeSymbol.toString)
+      " Invalid type " + elem.typeSymbol.getClass.toString + ": " + elem.typeSymbol.toString)    
   }
-
+  
   def buildArg(elem: ElemDecl, decl: ComplexTypeDecl, selector: String): String = {
     val typeName = buildTypeName(elem.typeSymbol)
     
@@ -1234,6 +1258,10 @@ object {name} {{
     case _ => error("GenSource: Unsupported type " + typeSymbol.toString)    
   }
   
+  def buildSelector(elem: ElemDecl): String =
+    if (elem.namespace == schema.targetNamespace) buildSelector(elem.name)
+    else buildSelector("{" + elem.namespace + "}" + elem.name)
+    
   def buildSelector(pos: Int): String =
     "p" + (pos + 1)
   

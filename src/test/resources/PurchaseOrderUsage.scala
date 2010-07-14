@@ -27,6 +27,7 @@ object PurchaseOrderUsage {
     testMixed
     testDatedData
     testNillable
+    testAll
     testContentModel
   
     true
@@ -357,6 +358,24 @@ object PurchaseOrderUsage {
     
     val document = NillableTest.toXML(obj, null, "foo", subject.scope)
     println(document)
+  }
+  
+  def testAll {
+    val subject = <foo xmlns="http://www.example.com/IPO"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xmlns:ipo="http://www.example.com/IPO">
+      <title>bar</title>
+      <style></style>
+      <script></script>
+    </foo>
+    val obj = AllTest.fromXML(subject)
+    obj match {
+      case AllTest("", "", "bar", _) =>
+      case _ => error("match failed: " + obj.toString)
+    }
+    
+    val document = AllTest.toXML(obj, null, "foo", subject.scope)
+    println(document)    
   }
   
   def testContentModel {

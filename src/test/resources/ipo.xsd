@@ -221,6 +221,17 @@
     </complexType>
   </element>
   
+  <element name="AllTest">
+    <complexType>
+      <all>
+        <element ref="ipo:script"/>
+        <element ref="ipo:style"/>
+        <element ref="ipo:title"/>
+      </all>
+      <attribute name="id" type="ID"/>
+    </complexType>    
+  </element>
+  
   <element name="script" type="string"/>
   <element name="style" type="string"/>
   <element name="title" type="string"/>

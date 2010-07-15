@@ -1,0 +1,19 @@
+- Implements support for [`<group>`](http://scalaxb.org/group-attributegroup), `<attributeGroup>`, and `<all>`.
+- Fixed round trip of complex types containing sequences.
+- Generates `toXML` into the companion objects to simplify the case class.
+
+For example,
+
+    <xs:complexType name="Address">
+      <xs:sequence>
+        <xs:element name="name"   type="xs:string"/>
+        <xs:element name="street" type="xs:string"/>
+        <xs:element name="city"   type="xs:string"/>
+      </xs:sequence>
+    </xs:complexType>
+
+turns to
+
+    case class Address(name: String,
+      street: String,
+      city: String)

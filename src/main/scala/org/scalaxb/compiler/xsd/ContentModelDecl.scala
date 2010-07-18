@@ -30,22 +30,37 @@ trait ComplexTypeContent {
 abstract class ContentTypeDecl extends Decl
 
 case class SimpContRestrictionDecl(base: XsTypeSymbol,
+  facets: List[Facetable],
   attributes: List[AttributeLike]) extends ContentTypeDecl with ComplexTypeContent
 
 object SimpContRestrictionDecl {
   def fromXML(node: scala.xml.Node, config: ParserConfig) = {
-    val baseName = (node \ "@base").text
-    val base = TypeSymbolParser.fromString(baseName, config)
+    val base = (node \ "@base").headOption match {
+      case Some(x) => TypeSymbolParser.fromString(x.text, config)
+      case None    =>
+        (node \ "simpleType").headOption match {
+          case Some(x) => Some(x.text)
+            val decl = SimpleTypeDecl.fromXML(x, config)
+            config.typeList += decl
+            val symbol = new ReferenceTypeSymbol(decl.name)
+            symbol.decl = decl
+            symbol
+          
+          case None    => error("SimpContRestrictionDecl#fromXML: restriction must have either base attribute or simpleType.")
+        }
+    }
+    
+    val facets = Facetable.fromParent(node, config)
+    
     var attributes: List[AttributeLike] = Nil
-
     for (child <- node.child) child match {
       case <attribute>{ _* }</attribute> =>
         attributes = AttributeLike.fromXML(child, config) :: attributes
 
       case _ =>
     }
-
-    SimpContRestrictionDecl(base, attributes.reverse)
+    
+    SimpContRestrictionDecl(base, facets, attributes.reverse)
   }
 }
 
@@ -54,8 +69,20 @@ case class SimpContExtensionDecl(base: XsTypeSymbol,
 
 object SimpContExtensionDecl {
   def fromXML(node: scala.xml.Node, config: ParserConfig) = {
-    val baseName = (node \ "@base").text
-    val base = TypeSymbolParser.fromString(baseName, config)
+    val base = (node \ "@base").headOption match {
+      case Some(x) => TypeSymbolParser.fromString(x.text, config)
+      case None    =>
+        (node \ "simpleType").headOption match {
+          case Some(x) => Some(x.text)
+            val decl = SimpleTypeDecl.fromXML(x, config)
+            config.typeList += decl
+            val symbol = new ReferenceTypeSymbol(decl.name)
+            symbol.decl = decl
+            symbol
+          
+          case None    => error("SimpContExtensionDecl#fromXML: restriction must have either base attribute or simpleType.")
+        }
+    }
     var attributes: List[AttributeLike] = Nil
 
     for (child <- node.child) child match {
@@ -137,7 +164,7 @@ object CompContExtensionDecl {
   }  
 }
 
-case class SimpTypRestrictionDecl(base: XsTypeSymbol) extends ContentTypeDecl
+case class SimpTypRestrictionDecl(base: XsTypeSymbol, facets: List[Facetable]) extends ContentTypeDecl
 
 object SimpTypRestrictionDecl {  
   def fromXML(node: scala.xml.Node, config: ParserConfig) = {
@@ -156,7 +183,8 @@ object SimpTypRestrictionDecl {
         }
     }
     
-    SimpTypRestrictionDecl(base)
+    val facets = Facetable.fromParent(node, config)
+    SimpTypRestrictionDecl(base, facets)
   }
 }
 
@@ -189,4 +217,22 @@ object SimpTypUnionDecl {
   def fromXML(node: scala.xml.Node, config: ParserConfig) = {
     SimpTypUnionDecl()
   }
+}
+
+trait Facetable {
+  val value: String
+}
+
+object Facetable {
+  def fromParent(node: scala.xml.Node, config: ParserConfig): List[Facetable] = 
+    node.child.toList collect {
+      case x@(<enumeration>{ _* }</enumeration>) => EnumerationDecl.fromXML(x, config)
+    }
+}
+
+case class EnumerationDecl(value: String) extends Facetable
+
+object EnumerationDecl {
+  def fromXML(node: scala.xml.Node, config: ParserConfig) =
+    EnumerationDecl((node \ "@value").text)
 }

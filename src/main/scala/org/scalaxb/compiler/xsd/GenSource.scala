@@ -169,8 +169,8 @@ class GenSource(schema: SchemaDecl,
     makeTypeName(group.name)
   
   def baseType(decl: SimpleTypeDecl): BuiltInSimpleTypeSymbol = decl.content match {
-    case SimpTypRestrictionDecl(base: BuiltInSimpleTypeSymbol) => base
-    case SimpTypRestrictionDecl(ReferenceTypeSymbol(decl2@SimpleTypeDecl(_, _, _))) => baseType(decl2)
+    case SimpTypRestrictionDecl(base: BuiltInSimpleTypeSymbol, _) => base
+    case SimpTypRestrictionDecl(ReferenceTypeSymbol(decl2@SimpleTypeDecl(_, _, _)), _) => baseType(decl2)
     case SimpTypListDecl(itemType: BuiltInSimpleTypeSymbol) => itemType
     case SimpTypListDecl(ReferenceTypeSymbol(decl2@SimpleTypeDecl(_, _, _))) => baseType(decl2)
     case SimpTypUnionDecl() => XsString
@@ -344,7 +344,7 @@ object {name} extends rt.ImplicitXMLWriter[{name}] {{
     def argsString = if (hasSequenceParam)
       argList.head + ": _*"
     else decl.content.content match {
-      case SimpContRestrictionDecl(base: XsTypeSymbol, _) =>
+      case SimpContRestrictionDecl(base: XsTypeSymbol, _, _) =>
         (buildArg(decl.content.asInstanceOf[SimpleContentDecl], base) :: argList.drop(1)).
           mkString("," + newline + indent(3))
       case SimpContExtensionDecl(base: XsTypeSymbol, _) =>
@@ -359,7 +359,7 @@ object {name} extends rt.ImplicitXMLWriter[{name}] {{
     def childString = if (decl.mixed)
       "__obj.mixed.flatMap(x => rt.DataRecord.toXML(x, x.namespace, x.key, __scope).toSeq): _*"
     else decl.content.content match {
-      case SimpContRestrictionDecl(base: XsTypeSymbol, _) => "scala.xml.Text(__obj.value.toString)"
+      case SimpContRestrictionDecl(base: XsTypeSymbol, _, _) => "scala.xml.Text(__obj.value.toString)"
       case SimpContExtensionDecl(base: XsTypeSymbol, _) =>   "scala.xml.Text(__obj.value.toString)"
       case _ =>  
         if (childElemParams.isEmpty) "Nil: _*"
@@ -842,11 +842,7 @@ object {name} {{
         else elem.typeSymbol
       case _ => elem.typeSymbol
     }
-    val nillable = elem.nillable match {
-      case None    => false
-      case Some(x) => x
-    }
-    
+    val nillable = elem.nillable getOrElse { false }
     val retval = Param(elem.namespace, elem.name, symbol, 
       toCardinality(elem.minOccurs, elem.maxOccurs), nillable, false)
     log("GenSource#buildParam:  " + retval)
@@ -1231,18 +1227,18 @@ object {name} {{
       defaultValue: Option[String], fixedValue: Option[String],
       minOccurs: Int, maxOccurs: Int, nillable: Option[Boolean]): String = decl.content match {  
     
-    case SimpTypRestrictionDecl(_) =>
+    case x: SimpTypRestrictionDecl =>
       buildArg(baseType(decl), selector, defaultValue, fixedValue, minOccurs, maxOccurs, nillable)
-    case SimpTypListDecl(_) =>
+    case x: SimpTypListDecl =>
       buildArg(baseType(decl), selector, defaultValue, fixedValue, minOccurs, maxOccurs, nillable, true)
-    case SimpTypUnionDecl() =>
+    case x: SimpTypUnionDecl =>
       buildArg(baseType(decl), selector, defaultValue, fixedValue, minOccurs, maxOccurs, nillable)
     
     case _ => error("GenSource: Unsupported content " + decl.content.toString)    
   }
   
   def buildArg(content: SimpleContentDecl): String = content.content match {
-    case SimpContRestrictionDecl(base: XsTypeSymbol, _) => buildArg(content, base)
+    case SimpContRestrictionDecl(base: XsTypeSymbol, _, _) => buildArg(content, base)
     case SimpContExtensionDecl(base: XsTypeSymbol, _) => buildArg(content, base)
     
     case _ => error("GenSource: Unsupported content " + content.content.toString)    
@@ -1521,7 +1517,7 @@ object {name} {{
     argNumber = 0
     
     val build: ComplexTypeContent --> List[ElemDecl] = {
-      case SimpContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _) =>
+      case SimpContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
         flattenElements(base, makeTypeName(base.name))
       case SimpContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _) =>
         flattenElements(base, makeTypeName(base.name))
@@ -1595,7 +1591,7 @@ object {name} {{
     argNumber = 0
     
     val build: ComplexTypeContent --> List[ElemDecl] = {
-      case SimpContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _) =>
+      case SimpContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
         buildParticles(base, makeTypeName(base.name))
       
       case SimpContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _) =>
@@ -1641,8 +1637,8 @@ object {name} {{
     }
     
   def buildElement(decl: SimpleTypeDecl): ElemDecl = decl.content match {
-    case SimpTypRestrictionDecl(ReferenceTypeSymbol(base: SimpleTypeDecl)) => buildElement(base)
-    case SimpTypRestrictionDecl(base: BuiltInSimpleTypeSymbol) => buildElement(base)
+    case SimpTypRestrictionDecl(ReferenceTypeSymbol(base: SimpleTypeDecl), _) => buildElement(base)
+    case SimpTypRestrictionDecl(base: BuiltInSimpleTypeSymbol, _) => buildElement(base)
     case _ => error("GenSource: unsupported type: " + decl)
   }
     

@@ -47,7 +47,7 @@ Put the jar in your ~/bin directory, put the line
 
 in a file called scalaxb in your ~/bin directory and do
 
-  $ chmod u+x ~/bin/scalaxb.jar
+  $ chmod u+x ~/bin/scalaxb
   
 This allows you to launch scalaxb in any directory by typing scalaxb at the
 command prompt.

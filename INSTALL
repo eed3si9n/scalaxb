@@ -35,15 +35,16 @@ You can use sbaz to install scalaxb package under the managed directory:
 
   $ sudo sbaz install -f target/scala_2.8.0/scalaxb-x.x.x.sbp
 
-Alternatively, you can manually install the jar files. The following
-instructions are copied from simple-build-tool (sbt).
+Alternatively, you can manually install the jar files.
 
 Unix
 ----
 
-Put the jar in your ~/bin directory, put the line
+Set the environment variable $SCALA_HOME to the appropriate directory.
 
-  java -Xmx512M -jar `dirname $0`/scalaxb.jar "$@"
+Copy the jar in your ~/bin directory, then put the line
+
+  java -Xmx1G -cp "$SCALA_HOME/lib/scala-library.jar:scalaxb.jar" org.scalaxb.compiler.Main "$@"
 
 in a file called scalaxb in your ~/bin directory and do
 

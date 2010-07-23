@@ -32,7 +32,10 @@ class ContextProcessor(logger: Logger) extends ScalaNames {
 
   def packageName(decl: ComplexTypeDecl, context: XsdContext): Option[String] =
     packageName(decl.namespace, context)
-      
+  
+  def packageName(decl: SimpleTypeDecl, context: XsdContext): Option[String] =
+    packageName(decl.namespace, context)
+  
   def packageName(namespace: String, context: XsdContext): Option[String] =
     if (context.packageNames.contains(namespace)) context.packageNames(namespace)
     else if (context.packageNames.contains(null)) context.packageNames(null)
@@ -41,10 +44,13 @@ class ContextProcessor(logger: Logger) extends ScalaNames {
   def processContext(context: XsdContext,
       packageNames: collection.Map[String, Option[String]]) {
     context.packageNames ++= packageNames
-    packageNames.valuesIterator.toList.distinct.map(
-      pkg => context.typeNames(pkg) = mutable.ListMap.empty[ComplexTypeDecl, String]
-      )
-    context.typeNames(None) = mutable.ListMap.empty[ComplexTypeDecl, String]
+    
+    (None :: (packageNames.valuesIterator.toList.distinct)) map {
+      pkg => 
+        context.typeNames(pkg) = mutable.ListMap.empty[ComplexTypeDecl, String]
+        context.enumTypeNames(pkg) = mutable.ListMap.empty[SimpleTypeDecl, String]
+        context.enumValueNames(pkg) = mutable.ListMap.empty[(String, EnumerationDecl), String]
+    }
     
     val anonymousTypes = mutable.ListBuffer.empty[(SchemaDecl, ComplexTypeDecl)]
     
@@ -53,26 +59,33 @@ class ContextProcessor(logger: Logger) extends ScalaNames {
         val typeSymbol = elem.typeSymbol;
         if typeSymbol.name.contains("@");
         if typeSymbol.isInstanceOf[ReferenceTypeSymbol];
-        val ref = typeSymbol.asInstanceOf[ReferenceTypeSymbol];
-        if ref.decl.isInstanceOf[ComplexTypeDecl];
-        val decl = ref.decl.asInstanceOf[ComplexTypeDecl]) {
-      val pair = (schema, decl)
-      anonymousTypes += pair
-      val typeNames = context.typeNames(packageName(schema, context))
-      typeNames(decl) = makeProtectedTypeName(elem, context)
+        val ref = typeSymbol.asInstanceOf[ReferenceTypeSymbol]) ref.decl match {
+      case decl: ComplexTypeDecl =>          
+        val pair = (schema, decl)
+        anonymousTypes += pair
+        val typeNames = context.typeNames(packageName(schema, context))
+        typeNames(decl) = makeProtectedTypeName(elem, context)
+      case decl@SimpleTypeDecl(_, _, _, _) if containsEnumeration(decl) =>
+        val typeNames = context.enumTypeNames(packageName(schema, context))
+        typeNames(decl) = makeProtectedTypeName(elem, context)
+        makeEnumValues(decl, context)
+      case _ =>
     }
     
     val namedTypes = mutable.ListBuffer.empty[(SchemaDecl, ComplexTypeDecl)]
     
     for (schema <- context.schemas;
-        typ <- schema.typeList;
-        if typ.isInstanceOf[ComplexTypeDecl];
-        val decl = typ.asInstanceOf[ComplexTypeDecl];
-        if !decl.name.contains("@")) {    
-      val pair = (schema, decl)
-      namedTypes += pair
-      val typeNames = context.typeNames(packageName(schema, context))
-      typeNames(decl) = makeProtectedTypeName(decl, context)
+        typ <- schema.topTypes) typ match {
+      case (_, decl: ComplexTypeDecl) =>   
+        val pair = (schema, decl)
+        namedTypes += pair
+        val typeNames = context.typeNames(packageName(schema, context))
+        typeNames(decl) = makeProtectedTypeName(decl, context)
+      case (_, decl@SimpleTypeDecl(_, _, _, _)) if containsEnumeration(decl) =>
+        val typeNames = context.enumTypeNames(packageName(schema, context))
+        typeNames(decl) = makeProtectedTypeName(decl, context)
+        makeEnumValues(decl, context)
+      case _ =>      
     }
     
     context.complexTypes ++= anonymousTypes.toList.distinct :::
@@ -83,7 +96,21 @@ class ContextProcessor(logger: Logger) extends ScalaNames {
       val pair = (schema, group)
       context.groups += pair
     }
-        
+    
+    for (schema <- context.schemas;
+        attr <- schema.attrList) attr.typeSymbol match {
+          
+      case ReferenceTypeSymbol(decl: SimpleTypeDecl) =>
+        if (decl.name.contains("@") &&
+            containsEnumeration(decl)) {
+          val typeNames = context.enumTypeNames(packageName(schema, context))
+          typeNames(decl) = makeProtectedTypeName(attr, context)
+          makeEnumValues(decl, context)
+        }
+      
+      case _ =>  
+    }
+    
     def associateSubType(subType: ComplexTypeDecl, base: ComplexTypeDecl) {
       if (context.baseToSubs.contains(base))
         context.baseToSubs(base) = subType :: context.baseToSubs(base)
@@ -113,6 +140,35 @@ class ContextProcessor(logger: Logger) extends ScalaNames {
     makeCompositorNames(context)
   }
   
+  def makeEnumValues(decl: SimpleTypeDecl, context: XsdContext) {
+    val typeNames = context.enumTypeNames(packageName(decl.namespace, context))
+    val enumValues = context.enumValueNames(packageName(decl.namespace, context))
+    val name = typeNames(decl)
+    filterEnumeration(decl) map { enum =>
+      enumValues(name -> enum) = makeProtectedTypeName(decl.namespace, enum.value, "Value", context)
+    }
+  }
+  
+  def containsEnumeration(decl: SimpleTypeDecl) = decl.content match {
+    case x: SimpTypRestrictionDecl =>
+      x.facets exists { f => f match {
+          case e: EnumerationDecl => true
+          case _ => false
+        }
+      }
+    
+    case _ => false
+  }
+  
+  def filterEnumeration(decl: SimpleTypeDecl): List[EnumerationDecl] = decl.content match {
+    case x: SimpTypRestrictionDecl =>
+      x.facets collect {
+        case e: EnumerationDecl => e
+      }
+    
+    case _ => Nil
+  }
+  
   def makeGroupComplexType(group: GroupDecl) =
     ComplexTypeDecl(group.namespace, group.name, false, false,
       ComplexContentDecl.empty, Nil, None)
@@ -121,7 +177,7 @@ class ContextProcessor(logger: Logger) extends ScalaNames {
     case ChoiceDecl(_, _, _, _) :: Nil => true
     case _ => false
   }
-
+  
   def singleChoice(seq: SequenceDecl): ChoiceDecl = seq.particles match {
     case (choice@ChoiceDecl(_, _, _, _)) :: Nil => choice
     case _ => error("Does not cointain single choice.")
@@ -232,36 +288,41 @@ class ContextProcessor(logger: Logger) extends ScalaNames {
     } // makeCompositorName
   }
   
-  def makeProtectedTypeName(elem: ElemDecl, context: XsdContext): String = {
-    val typeNames = context.typeNames(packageName(elem.namespace, context))
-    var name = makeTypeName(elem.name)
+  def makeProtectedTypeName(namespace: String, initialName: String, postfix: String,
+      context: XsdContext): String = {
+    def contains(value: String) = {
+      val enumValueNames = context.enumValueNames(packageName(namespace, context))
+      val enumTypeNames = context.enumTypeNames(packageName(namespace, context))
+      val typeNames = context.typeNames(packageName(namespace, context))
+      
+      typeNames.valuesIterator.contains(value) ||
+      enumTypeNames.valuesIterator.contains(value) ||
+      enumValueNames.valuesIterator.contains(value)
+    }
     
-    if (!typeNames.valuesIterator.contains(name)) name
+    var name = makeTypeName(initialName)
+    if (!contains(name)) name
     else {
-      name = makeTypeName(elem.name)
+      name = makeTypeName(initialName) + postfix
       for (i <- 2 to 100) {
-        if (typeNames.valuesIterator.contains(name))
-          name = makeTypeName(elem.name)  + i
+        if (contains(name)) name = makeTypeName(initialName) + postfix + i
       } // for i
       name
     }    
   }
   
-  def makeProtectedTypeName(decl: ComplexTypeDecl, context: XsdContext): String = {
-    val typeNames = context.typeNames(packageName(decl.namespace, context))
-    var name = makeTypeName(decl.name)
-    
-    if (!typeNames.valuesIterator.contains(name)) name
-    else {
-      var name = makeTypeName(decl.name)  + "Type"
-      for (i <- 2 to 100) {
-        if (typeNames.valuesIterator.contains(name))
-          name = makeTypeName(decl.name)  + "Type" + i
-      }
-      name
-    }
-  }
+  def makeProtectedTypeName(elem: ElemDecl, context: XsdContext): String =
+    makeProtectedTypeName(elem.namespace, elem.name, "", context)
   
+  def makeProtectedTypeName(decl: ComplexTypeDecl, context: XsdContext): String =
+    makeProtectedTypeName(decl.namespace, decl.name, "Type", context)
+    
+  def makeProtectedTypeName(decl: SimpleTypeDecl, context: XsdContext): String =
+    makeProtectedTypeName(decl.namespace, decl.name, "Type", context)
+  
+  def makeProtectedTypeName(attr: AttributeDecl, context: XsdContext): String =
+    makeProtectedTypeName(attr.namespace, attr.name, "Type", context)
+    
   def makeTraitName(decl: ComplexTypeDecl) =
     if (decl.name.last == 'e')
       makeTypeName(decl.name.dropRight(1) + "able")
@@ -274,9 +335,16 @@ class ContextProcessor(logger: Logger) extends ScalaNames {
     case "javax.xml.namespace.QName" => name
     case _ =>
       val base = identifier(name).capitalize
-      if (isCommonlyUsedWord(base)) base + "Type"
+      if (startsWithNumber(base)) "Number" + base
+      else if (isCommonlyUsedWord(base)) base + "Type"
       else base
   }
+  
+  def startsWithNumber(name: String) =
+    """\d""".r.findPrefixMatchOf(name) match {
+      case Some(_) => true
+      case _ => false
+    }
   
   def makeParamName(name: String) =
     if (isKeyword(name)) name + "Value"

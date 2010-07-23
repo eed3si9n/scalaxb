@@ -1,7 +1,5 @@
 package org.scalaxb.rt
 
-case class DataRecord[+A](namespace: String, key: String, value: A)
-
 trait XMLWriter {
   def toXML(__namespace: String, __elementLabel: String,
       __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq
@@ -17,6 +15,8 @@ trait ImplicitXMLWriter[A] { outer =>
       outer.toXML(__obj, __namespace, __elementLabel, __scope)
   }  
 }
+
+case class DataRecord[+A](namespace: String, key: String, value: A)
 
 object DataRecord {  
   def toXML[A](__obj: DataRecord[A], __namespace: String, __elementLabel: String,
@@ -38,6 +38,10 @@ case class ElemName(namespace: String, name: String) {
   def text = node.text
   def nil = Helper.isNil(node)
   def toDataRecord = DataRecord(namespace, name, node)
+}
+
+object ElemName {
+  implicit def toNode(elemName: ElemName): scala.xml.Node = elemName.node
 }
 
 trait AnyElemNameParser extends scala.util.parsing.combinator.Parsers {

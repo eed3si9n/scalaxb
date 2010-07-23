@@ -35,6 +35,14 @@ case class XsdContext(
     mutable.ListMap[ComplexTypeDecl, String]] =
       mutable.ListMap.empty[Option[String],
       mutable.ListMap[ComplexTypeDecl, String]],
+  enumTypeNames: mutable.ListMap[Option[String],
+    mutable.ListMap[SimpleTypeDecl, String]] =
+      mutable.ListMap.empty[Option[String],
+      mutable.ListMap[SimpleTypeDecl, String]],
+  enumValueNames: mutable.ListMap[Option[String],
+      mutable.ListMap[(String, EnumerationDecl), String]] =
+      mutable.ListMap.empty[Option[String],
+      mutable.ListMap[(String, EnumerationDecl), String]],
   packageNames: mutable.ListMap[String, Option[String]] =
     mutable.ListMap.empty[String, Option[String]],
   complexTypes: mutable.ListBuffer[(SchemaDecl, ComplexTypeDecl)] =
@@ -143,6 +151,7 @@ case class SchemaDecl(targetNamespace: String,
     typeList: List[TypeDecl],
     choices: Set[ChoiceDecl],
     topAttrs: Map[String, AttributeDecl],
+    attrList: List[AttributeDecl],
     topGroups: Map[String, GroupDecl],
     topAttrGroups: Map[String, AttributeGroupDecl],
     typeToAnnotatable: Map[TypeDecl, Annotatable],
@@ -203,7 +212,7 @@ object SchemaDecl {
       
       case <simpleType>{ _* }</simpleType>  =>
         (child \ "@name").headOption foreach {  x =>
-          val decl = SimpleTypeDecl.fromXML(child, config)
+          val decl = SimpleTypeDecl.fromXML(child, (child \ "@name").text, config)
           config.typeList += decl
           config.topTypes += (decl.name -> decl) }
       
@@ -236,6 +245,7 @@ object SchemaDecl {
       config.typeList.toList,
       config.choices,
       immutable.ListMap.empty[String, AttributeDecl] ++ config.topAttrs,
+      config.attrList.toList,
       immutable.ListMap.empty[String, GroupDecl] ++ config.topGroups,
       immutable.ListMap.empty[String, AttributeGroupDecl] ++ config.topAttrGroups,
       immutable.ListMap.empty[TypeDecl, Annotatable] ++ config.typeToAnnotatable,
@@ -264,9 +274,9 @@ object SchemaDecl {
     } // for
     
     for (typ <- config.typeList) typ match {
-      case SimpleTypeDecl(_, res: SimpTypRestrictionDecl, _) =>
+      case SimpleTypeDecl(_, _, res: SimpTypRestrictionDecl, _) =>
         resolveType(res.base, config)
-      case SimpleTypeDecl(_, list: SimpTypListDecl, _) =>
+      case SimpleTypeDecl(_, _, list: SimpTypListDecl, _) =>
         resolveType(list.itemType, config) 
       case ComplexTypeDecl(_, _, _, _, SimpleContentDecl(res: SimpContRestrictionDecl), _, _) =>
         resolveType(res.base, config)
@@ -388,6 +398,7 @@ object AttributeDecl {
     val name = (node \ "@name").text
     var typeSymbol: XsTypeSymbol = XsUnknown
     val typeName = (node \ "@type").text
+    
     if (typeName != "") {
       typeSymbol = TypeSymbolParser.fromString(typeName, config)
     } else {
@@ -537,16 +548,18 @@ trait TypeDecl extends Decl with Annotatable
 
 /** simple types cannot have element children or attributes.
  */
-case class SimpleTypeDecl(name: String,
+case class SimpleTypeDecl(namespace: String,
+    name: String,
     content: ContentTypeDecl,
     annotation: Option[AnnotationDecl]) extends TypeDecl {
   override def toString(): String = name + "(" + content.toString + ")"
 }
 
 object SimpleTypeDecl {
-  def fromXML(node: scala.xml.Node, config: ParserConfig): SimpleTypeDecl = {
-    val name = buildName(node)
-    
+  def fromXML(node: scala.xml.Node, config: ParserConfig): SimpleTypeDecl =
+    fromXML(node, "simpleType@" + scala.util.Random.nextInt, config)
+  
+  def fromXML(node: scala.xml.Node, name: String, config: ParserConfig): SimpleTypeDecl = {
     var content: ContentTypeDecl = null
     for (child <- node.child) child match {
       case <restriction>{ _* }</restriction>  => content = SimpTypRestrictionDecl.fromXML(child, config) 
@@ -558,15 +571,7 @@ object SimpleTypeDecl {
     val annotation = (node \ "annotation").headOption map { x =>
       AnnotationDecl.fromXML(x, config) }
     
-    SimpleTypeDecl(name, content, annotation)
-  }
-  
-  def buildName(node: scala.xml.Node) = {
-    val name = (node \ "@name").text
-    if (name != "")
-      name
-    else
-      "simpleType@" + node.hashCode.toString
+    SimpleTypeDecl(config.targetNamespace, name, content, annotation)
   }
 }
 

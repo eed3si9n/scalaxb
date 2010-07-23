@@ -105,9 +105,12 @@ class GenSource(schema: SchemaDecl,
 
           myprintAll(makeTrait(decl).child)
         }
-        else myprintAll(makeType(decl).child)        
+        else myprintAll(makeType(decl).child)
+        
+      case decl: SimpleTypeDecl =>
+        if (containsEnumeration(decl)) myprintAll(makeEnumType(decl))   
     }
-      
+    
     for ((sch, group) <- context.groups;
         if sch == schema)
       myprintAll(makeGroup(group).child)
@@ -159,7 +162,22 @@ class GenSource(schema: SchemaDecl,
     }
   }
   
+  def buildEnumTypeName(decl: SimpleTypeDecl) = {
+    val pkg = packageName(decl, context)
+    val typeNames = context.enumTypeNames(pkg)
+    if (!typeNames.contains(decl))
+      error(pkg + ": Type name not found: " + decl.toString)
+    
+    if (pkg == packageName(schema, context)) typeNames(decl)
+    else pkg match {
+      case Some(x) => x + "." + typeNames(decl)
+      case None => typeNames(decl)
+    }
+  }
+  
   def buildTypeName(decl: SimpleTypeDecl): String = decl.content match {
+    case x@SimpTypRestrictionDecl(_, _) if containsEnumeration(decl) =>
+      buildEnumTypeName(decl)
     case x: SimpTypRestrictionDecl => buildTypeName(baseType(decl))
     case x: SimpTypListDecl => "Seq[" + buildTypeName(baseType(decl)) + "]"
     case x: SimpTypUnionDecl => buildTypeName(baseType(decl))
@@ -168,29 +186,42 @@ class GenSource(schema: SchemaDecl,
   def buildTypeName(group: AttributeGroupDecl): String =
     makeTypeName(group.name)
   
+  def buildTypeName(enumTypeName: String, enum: EnumerationDecl): String = {
+    val pkg = packageName(schema, context)
+    val typeNames = context.enumValueNames(pkg)
+    if (!typeNames.contains(enumTypeName, enum))
+      error(pkg + ": Type name not found: " + enum.toString)
+    
+    if (pkg == packageName(schema, context)) typeNames(enumTypeName, enum)
+    else pkg match {
+      case Some(x) => x + "." + typeNames(enumTypeName, enum)
+      case None => typeNames(enumTypeName, enum)
+    }    
+  }
+  
   def baseType(decl: SimpleTypeDecl): BuiltInSimpleTypeSymbol = decl.content match {
     case SimpTypRestrictionDecl(base: BuiltInSimpleTypeSymbol, _) => base
-    case SimpTypRestrictionDecl(ReferenceTypeSymbol(decl2@SimpleTypeDecl(_, _, _)), _) => baseType(decl2)
+    case SimpTypRestrictionDecl(ReferenceTypeSymbol(decl2@SimpleTypeDecl(_, _, _, _)), _) => baseType(decl2)
     case SimpTypListDecl(itemType: BuiltInSimpleTypeSymbol) => itemType
-    case SimpTypListDecl(ReferenceTypeSymbol(decl2@SimpleTypeDecl(_, _, _))) => baseType(decl2)
+    case SimpTypListDecl(ReferenceTypeSymbol(decl2@SimpleTypeDecl(_, _, _, _))) => baseType(decl2)
     case SimpTypUnionDecl() => XsString
     
     case _ => error("GenSource: Unsupported content " +  decl.content.toString)
   }
-
+  
   def particlesWithSimpleType(particles: List[Decl]) = {
     val types = mutable.ListMap.empty[ElemDecl, BuiltInSimpleTypeSymbol]
     for (particle <- particles) particle match {
       case elem@ElemDecl(_, _, symbol: BuiltInSimpleTypeSymbol, _, _, _, _, _, _) =>
         types += (elem -> symbol)
-      case elem@ElemDecl(_, _, ReferenceTypeSymbol(decl@SimpleTypeDecl(_, _, _)), _, _, _, _, _, _) =>
+      case elem@ElemDecl(_, _, ReferenceTypeSymbol(decl@SimpleTypeDecl(_, _, _, _)), _, _, _, _, _, _) =>
         types += (elem -> baseType(decl))
       case ref: ElemRef =>
         val elem = buildElement(ref)
         elem match {
           case ElemDecl(_, _, symbol: BuiltInSimpleTypeSymbol, _, _, _, _, _, _) =>
             types += (elem -> symbol)
-          case ElemDecl(_, _, ReferenceTypeSymbol(decl@SimpleTypeDecl(_, _, _)), _, _, _, _, _, _) =>
+          case ElemDecl(_, _, ReferenceTypeSymbol(decl@SimpleTypeDecl(_, _, _, _)), _, _, _, _, _, _) =>
             types += (elem -> baseType(decl))
           case _ => // do nothing
         }
@@ -627,6 +658,31 @@ object {name} {{
   }} 
 }}
 
+</source>
+  }
+  
+  def makeEnumType(decl: SimpleTypeDecl) = {
+    val name = buildTypeName(decl)
+    val enums = filterEnumeration(decl)
+    
+    def makeEnum(enum: EnumerationDecl) =
+      "case object " + buildTypeName(name, enum) + " extends " + name + 
+      " { override def toString = " + quote(enum.value) + " }" + newline
+    
+    def makeCaseEntry(enum: EnumerationDecl) =
+      indent(2) + "case " + quote(enum.value) + " => " + buildTypeName(name, enum) + newline
+    
+    <source>trait {name}
+    
+object {name} {{
+  def fromXML(seq: scala.xml.NodeSeq): {name} = fromString(seq.text)
+  
+  def fromString(value: String): {name} = value match {{
+{ enums.map(e => makeCaseEntry(e)) }
+  }}
+}}
+
+{ enums.map(e => makeEnum(e)) }
 </source>
   }
   
@@ -1067,13 +1123,13 @@ object {name} {{
     }
     else buildParserString(elem, minOccurs, maxOccurs)
   
-  def buildParserString(elem: ElemDecl, minOccurs: Int, maxOccurs: Int): String = {
-    val base = if (elem.namespace == schema.targetNamespace)
-      "rt.ElemName(targetNamespace, " + quote(elem.name) + ")"
-    else
-      "rt.ElemName(" + quote(elem.namespace) + ", " + quote(elem.name) + ")"
-    buildParserString(base, minOccurs, maxOccurs)
-  }
+  def buildParserString(elem: ElemDecl, minOccurs: Int, maxOccurs: Int): String =
+    buildParserString("rt.ElemName(" + escapeTargetNamespace(elem.namespace) + ", " + quote(elem.name) + ")",
+      minOccurs, maxOccurs)
+  
+  def escapeTargetNamespace(namespace: String) =
+    if (namespace == schema.targetNamespace) "targetNamespace"
+    else quote(namespace)
   
   def buildParserString(base: String, minOccurs: Int, maxOccurs: Int) =
     if (maxOccurs > 1) "rep(" + base + ")"
@@ -1098,9 +1154,13 @@ object {name} {{
     case symbol: BuiltInSimpleTypeSymbol => buildArg(symbol,
       selector, elem.defaultValue, elem.fixedValue,
       elem.minOccurs, elem.maxOccurs, elem.nillable)
-    case ReferenceTypeSymbol(decl: SimpleTypeDecl) =>  buildArg(decl,
-      selector, elem.defaultValue, elem.fixedValue,
-      elem.minOccurs, elem.maxOccurs, elem.nillable) 
+    case ReferenceTypeSymbol(decl: SimpleTypeDecl) =>
+      if (containsEnumeration(decl)) buildArgForComplexType(buildTypeName(decl) ,selector,
+        elem.defaultValue, elem.fixedValue,
+        elem.minOccurs, elem.maxOccurs, elem.nillable)
+      else buildArg(decl,
+        selector, elem.defaultValue, elem.fixedValue,
+        elem.minOccurs, elem.maxOccurs, elem.nillable) 
     case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>  buildArg(elem, decl, selector)
     case XsAny => buildArgForAny(selector, elem.namespace, elem.name,
       elem.defaultValue, elem.fixedValue, elem.minOccurs, elem.maxOccurs, elem.nillable)
@@ -1119,41 +1179,55 @@ object {name} {{
   }
   
   def buildArg(elem: ElemDecl, decl: ComplexTypeDecl, selector: String): String = {
-    val typeName = buildTypeName(elem.typeSymbol)
-    
     if (compositorWrapper.contains(decl)) {
       val compositor = compositorWrapper(decl)
       
       if (elem.maxOccurs > 1) selector + ".toList"
       else selector
-    } else {
-      if (elem.maxOccurs > 1)
-        elem.nillable match {
-          case Some(true) =>
-            selector + ".toList.map(x => if (x.nil) None" + newline +
-            indent(3) + "else Some(" + typeName + ".fromXML(x.node)) )" 
-          case _ =>
-            selector + ".toList.map(x => " + typeName + ".fromXML(x.node))" 
+    } else buildArgForComplexType(buildTypeName(elem.typeSymbol), selector,
+      elem.defaultValue, elem.fixedValue,
+      elem.minOccurs, elem.maxOccurs, elem.nillable)
+  }
+  
+  def buildArgForComplexType(typeName: String, selector: String,
+      defaultValue: Option[String], fixedValue: Option[String],
+      minOccurs: Int, maxOccurs: Int, nillable: Option[Boolean]) = {
+    val optionSelector = if (selector contains("@")) selector + ".headOption"
+      else selector
+    val isNillable = nillable getOrElse(false)
+    
+    if (maxOccurs > 1)
+      if (isNillable)
+        selector + ".toList.map(x => if (x.nil) None" + newline +
+          indent(3) + "else Some(" + typeName + ".fromXML(x.node)) )" 
+      else selector + ".toList.map(x => " + typeName + ".fromXML(x))" 
+    else if (minOccurs == 0)
+      if (isNillable)
+          optionSelector + " match {" + newline +
+          indent(4) + "case Some(x) => if (x.nil) None" + newline +
+          indent(4) + "  else Some(" +  typeName + ".fromXML(x.node))" + newline +
+          indent(4) + "case None    => None" + newline +
+          indent(3) + "}"
+      else optionSelector + " map { x => " + typeName + ".fromXML(x) }"
+    else
+      if (isNillable)
+        "if (" + selector + ".nil) None" + newline +
+          indent(3) + "else Some(" +  typeName + ".fromXML(" + selector + ".node))"
+      else {
+        fixedValue match {
+          case Some(x) => 
+            typeName + ".fromString(" + quote(x) + ")"
+          case None => 
+            defaultValue match {
+              case Some(y) =>
+                optionSelector + " match {" + newline +
+                indent(4) + "case Some(x) => " + typeName + ".fromXML(x)" + newline +
+                indent(4) + "case None    => " + typeName + ".fromString(" + quote(y) + ")" + newline +
+                indent(3) + "}"
+              case None => typeName + ".fromXML(" + selector + ")" 
+            }
         }
-      else if (elem.minOccurs == 0)
-        elem.nillable match {
-          case Some(true) =>
-            selector + " match {" + newline +
-            indent(4) + "case Some(x) => if (x.nil) None" + newline +
-            indent(4) + "  else Some(" +  typeName + ".fromXML(x.node))" + newline +
-            indent(4) + "case None    => None" + newline +
-            indent(3) + "}"
-          case _ =>
-            selector + " map { x => " + typeName + ".fromXML(x.node) }"
-        }
-      else
-        elem.nillable match {
-          case Some(true) =>
-            "if (" + selector + ".nil) None" + newline +
-            indent(3) + "else Some(" +  typeName + ".fromXML(" + selector + ".node))"
-          case _ => typeName + ".fromXML(" + selector + ".node)" 
-        }
-    } // if-else
+      }
   }
   
   def buildArgForAny(selector: String, namespace: String, elementLabel: String,
@@ -1228,7 +1302,10 @@ object {name} {{
       minOccurs: Int, maxOccurs: Int, nillable: Option[Boolean]): String = decl.content match {  
     
     case x: SimpTypRestrictionDecl =>
-      buildArg(baseType(decl), selector, defaultValue, fixedValue, minOccurs, maxOccurs, nillable)
+      if (containsEnumeration(decl)) buildArgForComplexType(buildTypeName(decl) ,selector,
+        defaultValue, fixedValue,
+        minOccurs, maxOccurs, nillable)
+      else buildArg(baseType(decl), selector, defaultValue, fixedValue, minOccurs, maxOccurs, nillable)
     case x: SimpTypListDecl =>
       buildArg(baseType(decl), selector, defaultValue, fixedValue, minOccurs, maxOccurs, nillable, true)
     case x: SimpTypUnionDecl =>
@@ -1309,7 +1386,7 @@ object {name} {{
     case XsAny => selector
     case symbol: BuiltInSimpleTypeSymbol =>
       buildArg(symbol, selector, None, None, 1, 1, None)
-    case ReferenceTypeSymbol(decl@SimpleTypeDecl(_, _, _)) =>
+    case ReferenceTypeSymbol(decl@SimpleTypeDecl(_, _, _, _)) =>
       buildArg(baseType(decl), selector, None, None, 1, 1, None)
     case _ =>
       buildTypeName(typeSymbol) + ".fromXML(" + selector + ")"

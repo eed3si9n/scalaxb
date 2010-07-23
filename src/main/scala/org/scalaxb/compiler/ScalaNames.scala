@@ -45,6 +45,7 @@ trait ScalaNames {
     | "Any"
     | "AnyRef"
     | "Object"
+    | "None"
      => true
     case _ => false
   }

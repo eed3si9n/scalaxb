@@ -58,9 +58,13 @@ object Driver extends Module {
       packageName: Option[String], firstOfPackage: Boolean) = {
     val out = new java.io.PrintWriter(new java.io.FileWriter(output))
     log("xsd: generating " + output + " for package " + packageName)
-    if (!context.typeNames.contains(packageName))
+    if (!context.typeNames.contains(packageName)) {
       context.typeNames += (packageName -> mutable.ListMap.
                             empty[ComplexTypeDecl, String])
+      context.enumTypeNames += (packageName -> mutable.ListMap.
+                            empty[SimpleTypeDecl, String])
+      
+    }
     
     new GenSource(xsd, context, out, packageName, firstOfPackage, this) run;
     out.flush()

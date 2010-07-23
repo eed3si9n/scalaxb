@@ -50,7 +50,7 @@ object PurchaseOrderUsage {
       case USAddress("Foo",
         "1537 Paper Street",
         "Wilmington",
-        "DE",
+        DE,
         19808) =>
       case _ => error("match failed: " + address.toString)
     }
@@ -381,7 +381,8 @@ object PurchaseOrderUsage {
   def testContentModel {
     val subject = <head xmlns="http://www.example.com/IPO"
       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-      xmlns:ipo="http://www.example.com/IPO">
+      xmlns:ipo="http://www.example.com/IPO"
+      dir="ltr">
       <script></script>
       <script></script>
       <title>bar</title>

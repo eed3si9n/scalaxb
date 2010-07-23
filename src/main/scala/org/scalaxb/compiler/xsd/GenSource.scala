@@ -672,11 +672,22 @@ object {name} {{
     def makeCaseEntry(enum: EnumerationDecl) =
       indent(2) + "case " + quote(enum.value) + " => " + buildTypeName(name, enum) + newline
     
-    <source>trait {name}
-    
+    enums match {
+      case x :: Nil =>
+<source>
+case class {name}()
+
+object {name} {{
+  def fromXML(seq: scala.xml.NodeSeq): {name} = {name}() 
+  def fromString(value: String): {name} = {name}()
+}}
+</source>    
+      case _ =>
+<source>trait {name}
+
 object {name} {{
   def fromXML(seq: scala.xml.NodeSeq): {name} = fromString(seq.text)
-  
+
   def fromString(value: String): {name} = value match {{
 { enums.map(e => makeCaseEntry(e)) }
   }}
@@ -684,6 +695,7 @@ object {name} {{
 
 { enums.map(e => makeEnum(e)) }
 </source>
+    }
   }
   
   def buildAttributeString(attr: AttributeLike): String = attr match {

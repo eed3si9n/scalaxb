@@ -23,8 +23,9 @@
 package org.scalaxb.compiler
 
 import org.github.scopt.OptionParser
-import collection.mutable.{ListBuffer, ListMap}
-import java.io.{File}
+import scala.collection.{Map, Set}
+import scala.collection.mutable.{ListBuffer, ListMap}
+import java.io.{File, BufferedReader, Reader, FileReader, InputStream}
 
 trait Logger {
   def log(msg: String) {
@@ -44,6 +45,13 @@ trait Module extends Logger {
     var packageNames: ListMap[String, Option[String]] =
       ListMap.empty[String, Option[String]]
     var outdir: File = new File(".")  
+  }
+  
+  trait Importable {
+    def targetNamespace: String
+    def imports: Seq[String]
+    def reader: Reader
+    def toSchema(context: Context): Schema
   }
   
   def start(args: Seq[String]) { 
@@ -73,7 +81,7 @@ trait Module extends Logger {
   }
   
   def processFiles(filePairs: Seq[(File, File)],
-      packageNames: collection.Map[String, Option[String]],
+      packageNames: Map[String, Option[String]],
       verbose: Option[Boolean]) = {
     verbose match {
       case None    =>
@@ -83,26 +91,11 @@ trait Module extends Logger {
     val files = filePairs.map(_._1)
     files.foreach(file => if (!file.exists)
       error("file not found: " + file.toString))
-    
-    val context = buildContext
-    val sorted = sortByDependency(files)
-    val schemas = ListMap.empty[File, Schema]
-    val outfiles = ListBuffer.empty[File]
-    val outputs = ListMap.empty[File, File] ++= filePairs.map(x => x._1 -> x._2)
-    val usedPackages = ListBuffer.empty[Option[String]]
-        
-    for (file <- sorted) 
-      schemas += (file -> parse(file, context))
-    
-    processContext(context, packageNames)
-    
-    for (file <- sorted) {
-      val schema = schemas(file)
-      val pkg = packageName(schema, context)
-      outfiles += generate(schema, context, outputs(file),
-        pkg, !usedPackages.contains(pkg))
-      usedPackages += pkg
-    }
+      
+    val outfiles = ListBuffer.empty[File] ++ processReaders( (filePairs map {
+        pair => (new BufferedReader(new FileReader(pair._1)), pair._2) }).toMap,
+      packageNames,
+      verbose)
     
     if (filePairs.size > 0) {
       val parent = filePairs(0)._2.getParentFile
@@ -114,6 +107,43 @@ trait Module extends Logger {
     outfiles.toList
   }
   
+  def processReaders(inputToOutput: Map[Reader, File],
+      packageNames: Map[String, Option[String]],
+      verbose: Option[Boolean]) = {
+    verbose match {
+      case None    =>
+      case Some(x) => config.verbose = x
+    }
+    
+    val context = buildContext
+    val importables = inputToOutput.keysIterator.toList map {
+      toImportable(_)
+    }
+    
+    val sorted = sortByDependency(importables)
+    val schemas = ListMap.empty[Importable, Schema]
+    val outfiles = ListBuffer.empty[File]
+    val usedPackages = ListBuffer.empty[Option[String]]
+    
+    sorted foreach { importable =>
+      schemas(importable) = parse(importable, context)
+    }
+    
+    processContext(context, packageNames)
+    
+    sorted foreach { importable =>
+      val schema = schemas(importable)
+      val pkg = packageName(schema, context)
+      outfiles += generate(schema, context, inputToOutput(importable.reader),
+        pkg, !usedPackages.contains(pkg))
+      usedPackages += pkg
+    }
+    
+    outfiles.toList
+  }
+  
+  def toImportable(in: Reader): Importable
+  
   def packageName(schema: Schema, context: Context): Option[String]
   
   def process(file: File, output: File, packageName: Option[String],
@@ -121,8 +151,39 @@ trait Module extends Logger {
     processFiles(List((file, output)),
       Map[String, Option[String]]((null, packageName)), verbose)
   
-  def sortByDependency(files: Seq[File]): Seq[File] =
-    files
+  def sortByDependency(files: Seq[Importable]): Seq[Importable] = {
+    val schemaFiles = ListMap.empty[String, Importable]
+
+    files foreach { importable =>
+      if (importable.targetNamespace != null)
+         schemaFiles += (importable.targetNamespace -> importable)      
+    }
+
+    val XML_URI = "http://www.w3.org/XML/1998/namespace"    
+    val unsorted = ListBuffer.empty[Importable]
+    unsorted.appendAll(files)
+    val sorted = ListBuffer.empty[Importable]
+    val upperlimit = unsorted.size * unsorted.size
+    
+    def containsAll(imports: Seq[String]) = imports.forall { namespace =>
+      (namespace == XML_URI) || sorted.contains(schemaFiles(namespace))
+    }
+
+    for (i <- 0 to upperlimit) {
+      if (unsorted.size > 0) {
+        val importable = unsorted(i % unsorted.size)
+        if ((importable.imports.size == 0) ||
+            containsAll(importable.imports)) {
+          unsorted -= importable
+          sorted += importable
+        } // if
+      } // if
+    }
+
+    if (unsorted.size > 0)
+      error("Circular import: " + unsorted.toList)
+    sorted
+  }
 
   def buildOutputFile(input: File, outdir: File) = {
     if (!input.exists)
@@ -138,10 +199,14 @@ trait Module extends Logger {
   def processContext(context: Context,
       packageNames: collection.Map[String, Option[String]]): Unit
   
-  def parse(input: File, context: Context): Schema
+  def parse(importable: Importable, context: Context): Schema
+    = importable.toSchema(context)
+    
+  def parse(in: Reader): Schema
+    = parse(toImportable(in), buildContext)
   
-  def parse(input: File): Schema
-    = parse(input, buildContext)
+  def parse(file: File): Schema
+    = parse(new BufferedReader(new FileReader(file)))
   
   def generate(schema: Schema, context: Context, output: File,
     packageName: Option[String], firstOfPackage: Boolean): File

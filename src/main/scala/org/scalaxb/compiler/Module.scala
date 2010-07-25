@@ -25,7 +25,7 @@ package org.scalaxb.compiler
 import org.github.scopt.OptionParser
 import scala.collection.{Map, Set}
 import scala.collection.mutable.{ListBuffer, ListMap}
-import java.io.{File, BufferedReader, Reader, FileReader, InputStream}
+import java.io.{File, BufferedReader, Reader, FileReader, Writer, FileWriter}
 
 trait Logger {
   def log(msg: String) {
@@ -92,10 +92,16 @@ trait Module extends Logger {
     files.foreach(file => if (!file.exists)
       error("file not found: " + file.toString))
       
-    val outfiles = ListBuffer.empty[File] ++ processReaders( (filePairs map {
-        pair => (new BufferedReader(new FileReader(pair._1)), pair._2) }).toMap,
-      packageNames,
-      verbose)
+    processReaders( (filePairs map {
+        pair => (new BufferedReader(new FileReader(pair._1)),
+          new FileWriter(pair._2)) }).toMap,
+      packageNames)
+    val outfiles = ListBuffer.empty[File] ++ (filePairs map { pair =>
+      pair._2
+    })
+    outfiles foreach { file =>
+      println("generated " + file + ".")
+    }
     
     if (filePairs.size > 0) {
       val parent = filePairs(0)._2.getParentFile
@@ -107,14 +113,8 @@ trait Module extends Logger {
     outfiles.toList
   }
   
-  def processReaders(inputToOutput: Map[Reader, File],
-      packageNames: Map[String, Option[String]],
-      verbose: Option[Boolean]) = {
-    verbose match {
-      case None    =>
-      case Some(x) => config.verbose = x
-    }
-    
+  def processReaders(inputToOutput: Map[Reader, Writer],
+      packageNames: Map[String, Option[String]]) = {    
     val context = buildContext
     val importables = inputToOutput.keysIterator.toList map {
       toImportable(_)
@@ -122,7 +122,6 @@ trait Module extends Logger {
     
     val sorted = sortByDependency(importables)
     val schemas = ListMap.empty[Importable, Schema]
-    val outfiles = ListBuffer.empty[File]
     val usedPackages = ListBuffer.empty[Option[String]]
     
     sorted foreach { importable =>
@@ -134,12 +133,10 @@ trait Module extends Logger {
     sorted foreach { importable =>
       val schema = schemas(importable)
       val pkg = packageName(schema, context)
-      outfiles += generate(schema, context, inputToOutput(importable.reader),
+      generate(schema, context, inputToOutput(importable.reader),
         pkg, !usedPackages.contains(pkg))
       usedPackages += pkg
     }
-    
-    outfiles.toList
   }
   
   def toImportable(in: Reader): Importable
@@ -208,8 +205,8 @@ trait Module extends Logger {
   def parse(file: File): Schema
     = parse(new BufferedReader(new FileReader(file)))
   
-  def generate(schema: Schema, context: Context, output: File,
-    packageName: Option[String], firstOfPackage: Boolean): File
+  def generate(schema: Schema, context: Context, output: Writer,
+    packageName: Option[String], firstOfPackage: Boolean): Writer
   
   override def log(msg: String) {
     if (config.verbose) {

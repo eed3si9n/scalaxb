@@ -23,7 +23,7 @@
 package org.scalaxb.compiler.xsd
 
 import org.scalaxb.compiler.{Module}
-import java.io.{File, BufferedReader, Reader, FileReader, InputStream}
+import java.io.{File, Reader, Writer}
 import collection.mutable
 
 object Driver extends Module {  
@@ -42,10 +42,10 @@ object Driver extends Module {
   override def packageName(schema: Schema, context: Context): Option[String] =
     processor.packageName(schema, context)
   
-  def generate(xsd: Schema, context: Context, output: File,
+  def generate(xsd: Schema, context: Context, output: Writer,
       packageName: Option[String], firstOfPackage: Boolean) = {
-    val out = new java.io.PrintWriter(new java.io.FileWriter(output))
-    log("xsd: generating " + output + " for package " + packageName)
+    val out = new java.io.PrintWriter(output)
+    log("xsd: generating package " + packageName)
     if (!context.typeNames.contains(packageName)) {
       context.typeNames += (packageName -> mutable.ListMap.
                             empty[ComplexTypeDecl, String])
@@ -57,7 +57,6 @@ object Driver extends Module {
     new GenSource(xsd, context, out, packageName, firstOfPackage, this) run;
     out.flush()
     out.close()
-    println("generated " + output)
     output
   }
   

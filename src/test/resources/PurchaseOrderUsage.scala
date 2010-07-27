@@ -370,7 +370,7 @@ object PurchaseOrderUsage {
     </foo>
     val obj = AllTest.fromXML(subject)
     obj match {
-      case AllTest("", "", "bar", _) =>
+      case AllTest("", "", "bar", _, None) =>
       case _ => error("match failed: " + obj.toString)
     }
     

@@ -227,6 +227,7 @@
         <element ref="ipo:script"/>
         <element ref="ipo:style"/>
         <element ref="ipo:title"/>
+        <element name="optionalUnsignedInt" minOccurs="0" maxOccurs="1" type="unsignedInt"/>
       </all>
       <attribute name="id" type="ID"/>
     </complexType>    

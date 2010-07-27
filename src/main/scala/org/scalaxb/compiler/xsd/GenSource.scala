@@ -1220,7 +1220,7 @@ object {name} {{
           indent(4) + "  else Some(" +  typeName + ".fromXML(x.node))" + newline +
           indent(4) + "case None    => None" + newline +
           indent(3) + "}"
-      else optionSelector + " map { x => " + typeName + ".fromXML(x) }"
+      else selector + ".headOption map { x => " + typeName + ".fromXML(x) }"
     else
       if (isNillable)
         "if (" + selector + ".nil) None" + newline +
@@ -1478,7 +1478,7 @@ object {name} {{
     }
     
     def buildMapStatement(someValue: String) =
-      optionSelector + " map { x => " + someValue + " }"
+       selector + ".headOption map { x => " + someValue + " }"
     
     if (list) {
       val splitter = ".text.split(' ').toList.map(" + pre + "_" + post + ")"

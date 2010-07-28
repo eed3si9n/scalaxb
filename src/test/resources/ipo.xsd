@@ -276,4 +276,34 @@
     </complexType>
   </element>
   
+  <complexType name="GH5B">
+    <sequence>
+      <element name="features1" type="ipo:Features"/>
+      <element name="features2" minOccurs="0" maxOccurs="1" type="ipo:Features"/>
+      <element name="features3" maxOccurs="unbounded" type="ipo:Features"/>
+      <element name="features4" nillable="true" minOccurs="0" maxOccurs="1" type="ipo:Features"/>
+      <element name="features5" nillable="true" type="ipo:Features"/>
+      
+      <element name="numbers1" type="ipo:Numbers"/>
+      <element name="numbers2" minOccurs="0" maxOccurs="1" type="ipo:Numbers"/>
+      <element name="numbers3" maxOccurs="unbounded" type="ipo:Numbers"/>
+      <element name="numbers4" nillable="true" minOccurs="0" maxOccurs="1" type="ipo:Numbers"/>
+      <element name="numbers5" nillable="true" type="ipo:Numbers"/>
+    </sequence>
+  </complexType>
+  
+  <simpleType name="Features">
+      <list itemType="ipo:PayoffFeatureType"/>
+  </simpleType>
+  
+  <simpleType name="PayoffFeatureType">
+      <restriction base="NMTOKEN">
+          <enumeration value="AUTOCALLABLE"/>
+          <enumeration value="CALLABLE"/>
+      </restriction>
+  </simpleType>
+  
+  <simpleType name="Numbers">
+      <list itemType="unsignedInt"/>
+  </simpleType>  
 </schema>

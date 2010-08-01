@@ -312,7 +312,7 @@ object {name} extends rt.ImplicitXMLWriter[{name}] {{
   }}
 }}
 
-{ if (decl.abstractValue) compositors map(makeCompositor(_, decl.mixed))
+{ if (decl.abstractValue) compositors map { makeCompositor }
   else Nil }
 </source>    
   }
@@ -481,7 +481,7 @@ object {name} extends rt.ImplicitXMLWriter[{name}] {{
 { buildComment(decl) }case class {name}({paramsString}){extendString}
 
 { makeObject }
-{ compositors map(makeCompositor(_, decl.mixed)) }
+{ compositors map { makeCompositor } }
 </source>    
   }
     
@@ -495,7 +495,7 @@ object {name} extends rt.ImplicitXMLWriter[{name}] {{
     case _ => ""
   }
   
-  def makeCompositor(compositor: HasParticle, mixed: Boolean) = {
+  def makeCompositor(compositor: HasParticle) = {
     val name = makeTypeName(context.compositorNames(compositor))
     val hasForeign = containsForeignType(compositor)
     
@@ -630,7 +630,7 @@ object {name} extends rt.ImplicitXMLWriter[{name}] {{
     {parser}
 }}
 
-{compositors map(makeCompositor(_, false))}
+{compositors map { makeCompositor } }
 </source>
   }
   
@@ -1652,27 +1652,31 @@ object {name} {{
       case CompContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
         flattenElements(base, makeTypeName(base.name))        
       case res@CompContRestrictionDecl(XsAny, _, _) =>
-        flattenElements(res.compositor, name)
+        res.compositor map { flattenElements(_, name) } getOrElse { Nil }
       case ext@CompContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
         flattenElements(base, makeTypeName(base.name)) :::
-          flattenElements(ext.compositor, name)
+          (ext.compositor map { flattenElements(_, name) } getOrElse { Nil })
       case ext@CompContExtensionDecl(XsAny, _, _) =>
-        flattenElements(ext.compositor, name)
-        
+        ext.compositor map { flattenElements(_, name) } getOrElse { Nil }
       case _ => Nil
     }
     
-    val pf = buildSimpleTypeRef orElse  build
+    val pf = buildSimpleTypeRef orElse build
     pf(decl.content.content)
   }
   
-  def flattenElements(compositor: Option[HasParticle], name: String): List[ElemDecl] =
-      compositor match {
-    case None => Nil
-    case Some(c) => flattenElements(c, name)
-  }
+  def splitLongSequence(particles: List[Particle]) =
+    if (particles.size <= MaxParticleSize) particles
+    else {
+      def doSplit(rest: List[Particle]): List[Particle] =
+        if (rest.size <= ChunkParticleSize) List(SequenceDecl(rest, 1, 1))
+        else List(SequenceDecl(rest.take(ChunkParticleSize), 1, 1)) ::: doSplit(rest.drop(ChunkParticleSize))
+      
+      doSplit(particles)
+    }
   
-  def flattenElements(compositor: HasParticle, name: String): List[ElemDecl] =
+  def flattenElements(compositor: HasParticle,
+        name: String): List[ElemDecl] =
       compositor match {
     case ref:GroupRef =>
       flattenElements(buildGroup(ref), name)
@@ -1680,8 +1684,8 @@ object {name} {{
     case group:GroupDecl =>
       List(buildCompositorRef(group))
     
-    case SequenceDecl(particles: List[_], _, _) =>
-      particles flatMap {
+    case seq: SequenceDecl =>
+      splitLongSequence(compositor.particles) flatMap {
         case ref: GroupRef            => List(buildCompositorRef(buildGroup(ref)))
         case compositor2: HasParticle => List(buildCompositorRef(compositor2))
         case elem: ElemDecl           => List(elem)

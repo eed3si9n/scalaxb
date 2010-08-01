@@ -183,6 +183,9 @@ class ContextProcessor(logger: Logger) extends ScalaNames {
     case _ => error("Does not cointain single choice.")
   }
   
+  val ChunkParticleSize = 10
+  val MaxParticleSize = 20
+  
   def makeCompositorNames(context: XsdContext) {
     var sequenceNumber = 0
     var choiceNumber = 0
@@ -228,6 +231,8 @@ class ContextProcessor(logger: Logger) extends ScalaNames {
           if (isFirstCompositor) context.compositorNames(compositor) = groupName + "Sequence"
           else context.compositorNames(compositor) = groupName + "Sequence" + (sequenceNumber + 1)
           sequenceNumber += 1
+          
+          if (particles.size > MaxParticleSize) doSplit(makeGroupComplexType(group), particles)
              
         case ChoiceDecl(particles: List[_], _, _, _) =>
           context.compositorParents(compositor) = makeGroupComplexType(group)
@@ -248,6 +253,22 @@ class ContextProcessor(logger: Logger) extends ScalaNames {
         case compositor2: HasParticle => makeGroupCompositorName(compositor2, group)
       }      
     }
+
+    def formSequence(decl: ComplexTypeDecl, rest: List[Particle]) = {
+      val typeNames = context.typeNames(packageName(decl.namespace, context))
+      val typeName = typeNames(decl)
+      
+      val retval = SequenceDecl(rest, 1, 1)
+      context.compositorNames(retval) = typeName + "Sequence" + (sequenceNumber + 1)
+      sequenceNumber += 1
+      context.compositorParents(retval) = decl
+      retval
+    }
+    
+    def doSplit(decl: ComplexTypeDecl, rest: List[Particle]): List[Particle] =
+      if (rest.size <= ChunkParticleSize) List(formSequence(decl, rest))
+      else List(formSequence(decl, rest.take(ChunkParticleSize))) ::: 
+        doSplit(decl, rest.drop(ChunkParticleSize))
     
     def makeCompositorName(compositor: HasParticle, decl: ComplexTypeDecl) {
       val typeNames = context.typeNames(packageName(decl.namespace, context))
@@ -255,14 +276,15 @@ class ContextProcessor(logger: Logger) extends ScalaNames {
       
       compositor match {
         case SequenceDecl(particles: List[_], _, _) =>
-          if (isFirstCompositor)
-            context.compositorNames(compositor) = typeName
+          if (isFirstCompositor) context.compositorNames(compositor) = typeName
           else {
             context.compositorNames(compositor) = typeName + "Sequence" + (sequenceNumber + 1)
             context.compositorParents(compositor) = decl
           }
           sequenceNumber += 1
-             
+          
+          if (particles.size > MaxParticleSize) doSplit(decl, particles)
+               
         case ChoiceDecl(particles: List[_], _, _, _) =>
           context.compositorParents(compositor) = decl
           if (choiceNumber == 0)

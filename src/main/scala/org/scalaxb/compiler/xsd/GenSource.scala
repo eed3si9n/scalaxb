@@ -239,7 +239,7 @@ class GenSource(schema: SchemaDecl,
 
     val childElements = flattenElements(decl, name)
     val list = List.concat[Decl](childElements, buildAttributes(decl))
-    val paramList = list.map(buildParam(_))
+    val paramList = list.map { buildParam }
     val argList = list map {
       case any: AnyAttributeDecl => buildArgForAnyAttribute(decl)
       case x => buildArg(x)
@@ -335,8 +335,8 @@ object {name} extends rt.ImplicitXMLWriter[{name}] {{
     val childElements = flatParticles ::: flattenMixed(decl)
     val attributes = buildAttributes(decl)    
     val list = List.concat[Decl](childElements, attributes)
-    val paramList = list.map(buildParam(_))
-    val parserList = flatParticles map(buildParser(_, decl.mixed))
+    val paramList = list.map { buildParam }
+    val parserList = flatParticles map { buildParser(_, decl.mixed, false) }
     val parserVariableList =  for (i <- 0 to flatParticles.size - 1)
       yield "p" + (i + 1)
     
@@ -575,7 +575,7 @@ object {name} {{
   def makeSequence(seq: SequenceDecl) = {
     val name = makeTypeName(context.compositorNames(seq))
     val particles = flattenElements(seq, name)
-    val paramList = particles.map(buildParam(_))
+    val paramList = particles.map { buildParam }
     val hasSequenceParam = (paramList.size == 1) &&
       (paramList.head.cardinality == Multiple) &&
       (!paramList.head.attribute)
@@ -619,7 +619,18 @@ object {name} extends rt.ImplicitXMLWriter[{name}] {{
     val name = makeTypeName(context.compositorNames(group))  
     val compositor = primaryCompositor(group)
     val param = buildParam(compositor)
-    val parser = buildParser(compositor, 1, 1, false)
+    val wrapperParam = compositor match {
+      case choice: ChoiceDecl => param
+      case _ => Param(param.namespace, param.name, XsDataRecord(param.typeSymbol),
+        param.cardinality, param.nillable, param.attribute)
+    }
+    
+    val parser = buildParser(compositor, 1, 1, false, false)
+    val wrapperParser = compositor match {
+      case choice: ChoiceDecl => parser
+      case _ => buildParser(compositor, 1, 1, false, true)
+    }
+    
     val groups = filterGroup(compositor)
     val superNames: List[String] = 
       if (groups.isEmpty) List("rt.AnyElemNameParser")
@@ -628,6 +639,9 @@ object {name} extends rt.ImplicitXMLWriter[{name}] {{
     <source>{ buildComment(group) }trait {name} extends {superNames.mkString(" with ")} {{
   def parse{name}: Parser[{param.baseTypeName}] =
     {parser}
+  
+  def parse{name}(wrap: Boolean): Parser[{wrapperParam.baseTypeName}] =
+    {wrapperParser}
 }}
 
 {compositors map { makeCompositor } }
@@ -637,7 +651,7 @@ object {name} extends rt.ImplicitXMLWriter[{name}] {{
   def makeAttributeGroup(group: AttributeGroupDecl) = {
     val name = buildTypeName(group)
     val attributes = buildAttributes(group.attributes)  
-    val paramList = attributes.map(buildParam(_))
+    val paramList = attributes.map { buildParam }
     val argList = attributes map {
         case any: AnyAttributeDecl => buildArgForAnyAttribute(group)
         case x => buildArg(x) 
@@ -909,7 +923,8 @@ object {name} {{
   def buildParam(elem: ElemDecl): Param = {
     val symbol = elem.typeSymbol match {
       case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
-        if (compositorWrapper.contains(decl)) XsDataRecord(elem.typeSymbol)
+        if (compositorWrapper.contains(decl))
+          buildCompositorSymbol(compositorWrapper(decl), elem.typeSymbol)
         else elem.typeSymbol
       case _ => elem.typeSymbol
     }
@@ -941,17 +956,32 @@ object {name} {{
     retval    
   }
   
+  def buildCompositorSymbol(compositor: HasParticle, typeSymbol: XsTypeSymbol): XsTypeSymbol =
+    compositor match {
+      case ref: GroupRef =>
+        buildCompositorSymbol(buildGroup(ref), typeSymbol)
+      case group: GroupDecl =>
+        val primary = primaryCompositor(group)
+        val compositorRef = buildCompositorRef(primary)
+        buildCompositorSymbol(primaryCompositor(group), compositorRef.typeSymbol)
+      case seq: SequenceDecl => typeSymbol
+      case _ => XsDataRecord(typeSymbol)    
+    }
+  
   /// called by makeGroup
   def buildParam(compositor: HasParticle): Param = {
     val elem = buildCompositorRef(compositor)
-    Param(null, "arg1", XsDataRecord(elem.typeSymbol),
-    toCardinality(compositor.minOccurs, compositor.maxOccurs), false, false)
+    val symbol = buildCompositorSymbol(compositor, elem.typeSymbol)
+    
+    Param(null, "arg1", symbol,
+      toCardinality(compositor.minOccurs, compositor.maxOccurs), false, false)
   }
   
   def buildParam(any: AnyAttributeDecl): Param =
     Param(null, "anyAttribute", XsAnyAttribute, Multiple, false, true)
     
-  def buildConverter(seq: SequenceDecl, mixed: Boolean): String = {
+  def buildConverter(seq: SequenceDecl, mixed: Boolean,
+      wrapInDataRecord: Boolean): String = {
     val name = makeTypeName(context.compositorNames(seq))
     val particles = buildParticles(seq)
     val parserVariableList =  for (i <- 0 to particles.size - 1)
@@ -960,7 +990,7 @@ object {name} {{
     val argList = (for (i <- 0 to particles.size - 1)
       yield buildArg(particles(i), i) ).toList
     
-    val paramList = particles.map(buildParam(_))
+    val paramList = particles.map { buildParam }
     val hasSequenceParam = (paramList.size == 1) &&
       (paramList.head.cardinality == Multiple) &&
       (!paramList.head.attribute) &&
@@ -971,7 +1001,9 @@ object {name} {{
     
     "{ case " +
     parserVariableList.mkString(" ~ " + newline + indent(3)) + 
-    " => rt.DataRecord(null, null, " + name + "(" + argsString + ")) }"
+    (if (wrapInDataRecord) " => rt.DataRecord(null, null, " + name + "(" + argsString + "))"
+    else " => " + name + "(" + argsString + ")") +
+    " }"
   }
   
   def buildConverter(seq: AllDecl): String = {
@@ -996,13 +1028,13 @@ object {name} {{
       "(x => rt.DataRecord(x.namespace, x.name, " + buildArg("x.node", typeSymbol) + "))"
   
   // called by makeCaseClassWithType
-  def buildParser(particle: Particle, mixed: Boolean): String = particle match {
+  def buildParser(particle: Particle, mixed: Boolean, wrapInDataRecord: Boolean): String = particle match {
     case elem: ElemDecl       => buildParser(elem, elem.minOccurs, elem.maxOccurs, mixed)
     case ref: ElemRef         =>
       val elem = buildElement(ref)
       buildParser(elem, elem.minOccurs, elem.maxOccurs, mixed)
     case compositor: HasParticle =>
-      buildParser(compositor, compositor.minOccurs, compositor.maxOccurs, mixed)
+      buildParser(compositor, compositor.minOccurs, compositor.maxOccurs, mixed, wrapInDataRecord)
     case any: AnyDecl =>
       buildParser(any, any.minOccurs, any.maxOccurs)
   }
@@ -1013,16 +1045,16 @@ object {name} {{
   // minOccurs and maxOccurs may come from the declaration of the compositor,
   // or from the element declaration.
   def buildParser(compositor: HasParticle,
-      minOccurs: Int, maxOccurs: Int, mixed: Boolean): String = compositor match {
+      minOccurs: Int, maxOccurs: Int, mixed: Boolean, wrapInDataRecord: Boolean): String = compositor match {
     case ref: GroupRef        =>
       val group = buildGroup(ref)
-      buildParser(group, minOccurs, maxOccurs, mixed)
+      buildParser(group, minOccurs, maxOccurs, mixed, wrapInDataRecord)
     case seq: SequenceDecl    => 
       if (containsSingleChoice(seq)) buildParser(singleChoice(seq), minOccurs, maxOccurs, mixed)
-      else buildParser(seq, minOccurs, maxOccurs, mixed)
+      else buildParser(seq, minOccurs, maxOccurs, mixed, wrapInDataRecord)
     case choice: ChoiceDecl   => buildParser(choice, minOccurs, maxOccurs, mixed)
     case all: AllDecl         => buildParser(all, minOccurs, maxOccurs, mixed)
-    case group: GroupDecl     => buildParser(group, minOccurs, maxOccurs, false)
+    case group: GroupDecl     => buildParser(group, minOccurs, maxOccurs, false, wrapInDataRecord)
   }
   
   def primaryCompositor(group: GroupDecl): HasParticle =
@@ -1035,18 +1067,21 @@ object {name} {{
     }
     else error("GenSource#primaryCompositor: group must contain one content model: " + group)
   
-  def buildParser(group: GroupDecl, minOccurs: Int, maxOccurs: Int, mixed: Boolean): String = {
+  def buildParser(group: GroupDecl, minOccurs: Int, maxOccurs: Int,
+      mixed: Boolean, wrapInDataRecord: Boolean): String = {
     val compositor = primaryCompositor(group)
-    buildParserString("parse" + groupTypeName(group), 
+    buildParserString("parse" + groupTypeName(group) +
+      (if (wrapInDataRecord) "(true)" else ""), 
       math.min(minOccurs, compositor.minOccurs),
       math.max(maxOccurs, compositor.maxOccurs) )
   }
   
   def buildParser(seq: SequenceDecl,
-      minOccurs: Int, maxOccurs: Int, mixed: Boolean): String = {
-    val parserList = seq.particles.map(x => buildParser(x, mixed))
+      minOccurs: Int, maxOccurs: Int, mixed: Boolean,
+      wrapInDataRecord: Boolean): String = {
+    val parserList = seq.particles.map { buildParser(_, mixed, false) }
     val base = parserList.mkString("(", " ~ " + newline + indent(2), ")") + " ^^ " + newline +
-    indent(3) + buildConverter(seq, mixed)
+    indent(3) + buildConverter(seq, mixed, wrapInDataRecord)
     
     val retval = buildParserString(base, minOccurs, maxOccurs)
     log("GenSource#buildParser:  " + seq + newline + retval)
@@ -1054,7 +1089,7 @@ object {name} {{
   }
   
   def buildParser(all: AllDecl, minOccurs: Int, maxOccurs: Int, mixed: Boolean): String = {
-    val parserList = all.particles.map(x => buildParser(x, mixed))
+    val parserList = all.particles.map { buildParser(_, mixed, false) }
     val base = parserList.mkString("(", " ~ " + newline + indent(2), ")") + " ^^ " + newline +
     indent(3) + buildConverter(all)
     buildParserString(base, minOccurs, maxOccurs)   
@@ -1072,9 +1107,9 @@ object {name} {{
     def buildChoiceParser(particle: Particle): String = particle match {
       case ref: GroupRef        =>
         val group = buildGroup(ref)
-        buildParser(group, math.max(group.minOccurs, 1), 1, false)
+        buildParser(group, math.max(group.minOccurs, 1), 1, false, true)
       case compositor: HasParticle =>
-        buildParser(compositor, math.max(compositor.minOccurs, 1), 1, mixed)
+        buildParser(compositor, math.max(compositor.minOccurs, 1), 1, mixed, true)
       case elem: ElemDecl       =>
         "(" + buildParser(elem, math.max(elem.minOccurs, 1), 1, mixed) + " ^^ " + newline +
         indent(3) + buildConverter(elem, math.max(elem.minOccurs, 1), 1) + ")"
@@ -1134,7 +1169,7 @@ object {name} {{
       minOccurs: Int, maxOccurs: Int, mixed: Boolean): String =
     if (compositorWrapper.contains(decl)) {
       val compositor = compositorWrapper(decl)
-      buildParser(compositor, minOccurs, maxOccurs, mixed)
+      buildParser(compositor, minOccurs, maxOccurs, mixed, false)
     }
     else buildParserString(elem, minOccurs, maxOccurs)
   

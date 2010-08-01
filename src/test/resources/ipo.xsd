@@ -306,39 +306,4 @@
   <simpleType name="Numbers">
       <list itemType="unsignedInt"/>
   </simpleType>
-  
-  <complexType name="GH1">
-    <sequence>
-      <element name="string1" type="string"/>
-      <element name="string1" type="string"/>
-      <element name="string1" type="string"/>
-      <element name="string1" type="string"/>
-      <element name="string1" type="string"/>
-      <element name="string1" type="string"/>
-      <element name="string1" type="string"/>
-      <element name="string1" type="string"/>
-      <element name="string1" type="string"/>
-      <element name="string1" type="string"/>
-      <element name="string1" type="string"/>
-      <element name="string1" type="string"/>
-      <element name="string1" type="string"/>
-      <element name="string1" type="string"/>
-      <element name="string1" type="string"/>
-      <element name="string1" type="string"/>
-      <element name="string1" type="string"/>
-      <element name="string1" type="string"/>
-      <element name="string1" type="string"/>
-      <element name="string1" type="string"/>
-      <element name="string1" type="string"/>
-      <element name="string1" type="string"/>
-      <element name="string1" type="string"/>
-      <element name="string1" type="string"/>
-      <element name="string1" type="string"/>
-      <element name="string1" type="string"/>
-      <element name="string1" type="string"/>
-      <element name="string1" type="string"/>
-      <element name="string1" type="string"/>
-      <element name="string1" type="string"/>
-    </sequence>
-  </complexType> 
 </schema>

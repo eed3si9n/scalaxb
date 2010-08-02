@@ -335,6 +335,9 @@ object {name} extends rt.ImplicitXMLWriter[{name}] {{
     val childElements = flatParticles ::: flattenMixed(decl)
     val attributes = buildAttributes(decl)    
     val list = List.concat[Decl](childElements, attributes)
+    
+    if (list.size > 22) error("A case class with > 22 parameters cannot be created.")
+    
     val paramList = list.map { buildParam }
     val parserList = flatParticles map { buildParser(_, decl.mixed, false) }
     val parserVariableList =  for (i <- 0 to flatParticles.size - 1)

@@ -25,7 +25,7 @@ package org.scalaxb.compiler
 import org.github.scopt.OptionParser
 import scala.collection.{Map, Set}
 import scala.collection.mutable.{ListBuffer, ListMap}
-import java.io.{File, BufferedReader, Reader, FileReader, Writer, FileWriter}
+import java.io.{File, BufferedReader, Reader, PrintWriter}
 
 trait Logger {
   def log(msg: String) {
@@ -38,6 +38,7 @@ trait Module extends Logger {
   type Schema
   type Context
   
+  val encoding = "UTF-8"
   private val config = new ModuleConfig()   
   
   class ModuleConfig {
@@ -89,9 +90,12 @@ trait Module extends Logger {
     files.foreach(file => if (!file.exists)
       error("file not found: " + file.toString))
       
-    processReaders( (filePairs map {
-        pair => (new BufferedReader(new FileReader(pair._1)),
-          new FileWriter(pair._2)) }).toMap,
+    processReaders( (filePairs map { pair =>
+        new BufferedReader(new java.io.InputStreamReader(
+          new java.io.FileInputStream(pair._1), encoding)) ->
+        new PrintWriter(new java.io.OutputStreamWriter(
+          new java.io.FileOutputStream(pair._2), encoding)) 
+      }).toMap,
       packageNames)
     val outfiles = ListBuffer.empty[File] ++ (filePairs map { pair =>
       pair._2
@@ -110,7 +114,7 @@ trait Module extends Logger {
     outfiles.toList
   }
   
-  def processReaders(inputToOutput: Map[Reader, Writer],
+  def processReaders(inputToOutput: Map[Reader, PrintWriter],
       packageNames: Map[Option[String], Option[String]]) = {    
     val context = buildContext
     val importables = inputToOutput.keysIterator.toList map {
@@ -130,8 +134,16 @@ trait Module extends Logger {
     sorted foreach { importable =>
       val schema = schemas(importable)
       val pkg = packageName(schema, context)
-      generate(schema, context, inputToOutput(importable.reader),
-        pkg, !usedPackages.contains(pkg))
+      
+      val out = inputToOutput(importable.reader)
+      try {
+        generate(schema, context, out, pkg, !usedPackages.contains(pkg))
+      }
+      finally {
+        out.flush()
+        out.close()
+      }
+      
       usedPackages += pkg
     }
   }
@@ -201,10 +213,12 @@ trait Module extends Logger {
     = parse(toImportable(in), buildContext)
   
   def parse(file: File): Schema
-    = parse(new BufferedReader(new FileReader(file)))
+    = parse(new BufferedReader(
+      new java.io.InputStreamReader(
+        new java.io.FileInputStream(file), encoding)))
   
-  def generate(schema: Schema, context: Context, output: Writer,
-    packageName: Option[String], firstOfPackage: Boolean): Writer
+  def generate(schema: Schema, context: Context, output: PrintWriter,
+    packageName: Option[String], firstOfPackage: Boolean): PrintWriter
   
   override def log(msg: String) {
     if (config.verbose) {

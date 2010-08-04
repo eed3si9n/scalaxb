@@ -68,7 +68,7 @@ object ReferenceTypeSymbol {
 
 class BuiltInSimpleTypeSymbol(val name: String) extends XsTypeSymbol
 
-case class AttributeGroupSymbol(namespace: String,
+case class AttributeGroupSymbol(namespace: Option[String],
   name: String) extends XsTypeSymbol
 
 abstract class DerivSym

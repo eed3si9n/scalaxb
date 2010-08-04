@@ -14,17 +14,16 @@ object XhtmlTest extends SpecificationWithJUnit with CompilerMatcher {
     
   lazy val generated = module.processFiles(
     List((xhtml1strictxsd, xhtml1strictscala)),
-    Map[String, Option[String]](
-      ("http://www.w3.org/1999/xhtml", Some("org.w3.xhtml"))
-      ),
-    None )
+    Map[Option[String], Option[String]](
+      Some("http://www.w3.org/1999/xhtml") -> Some("org.w3.xhtml")
+    ), false)
   
   "xhtml1-strict.scala file must compile so that Html can be used" in {
     (List("import org.w3.xhtml._",
       """val document = <html xmlns="http://www.w3.org/1999/xhtml" lang="en">""" + // "
       """<head><title>foo</title></head><body></body></html>""",
       """Html.toXML(Html.fromXML(document),
-        "http://www.w3.org/1999/xhtml", "html", document.scope).toString""" // "
+        Some("http://www.w3.org/1999/xhtml"), "html", document.scope).toString""" // "
      ),
      generated) must evaluateTo("""<html lang="en" xmlns="http://www.w3.org/1999/xhtml">""" + // "
      """<head><title>foo</title></head><body></body></html>""", // "

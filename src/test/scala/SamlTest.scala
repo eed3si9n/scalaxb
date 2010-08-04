@@ -26,12 +26,13 @@ object SamlTest extends SpecificationWithJUnit with CompilerMatcher {
       (xencschemaxsd, xencschemascala),
       (samlschemaassertion2xsd, samlschemaassertion2scala),
       (samlschemametadata2xsd, samlschemametadata2scala)),
-    Map[String, Option[String]]((null, Some("saml")),
-      ("http://www.w3.org/2000/09/xmldsig#", Some("org.w3.xmldsig")),
-      ("http://www.w3.org/2001/04/xmlenc#", Some("org.w3.xmlenc")),
-      ("urn:oasis:names:tc:SAML:2.0:assertion", Some("org.xml.saml2.assertion")),
-      ("urn:oasis:names:tc:SAML:2.0:metadata", Some("org.xml.saml2.metadata"))  
-        ), None )
+    Map[Option[String], Option[String]](
+      None -> Some("saml"),
+      Some("http://www.w3.org/2000/09/xmldsig#") -> Some("org.w3.xmldsig"),
+      Some("http://www.w3.org/2001/04/xmlenc#") -> Some("org.w3.xmlenc"),
+      Some("urn:oasis:names:tc:SAML:2.0:assertion") -> Some("org.xml.saml2.assertion"),
+      Some("urn:oasis:names:tc:SAML:2.0:metadata") -> Some("org.xml.saml2.metadata")  
+      ), false)
   
   "generated files must compile together with SamlTest.scala" in {
     (List("SamlUsage.allTests"),

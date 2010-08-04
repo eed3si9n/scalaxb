@@ -43,8 +43,8 @@ case class XsdContext(
       mutable.ListMap[(String, EnumerationDecl), String]] =
       mutable.ListMap.empty[Option[String],
       mutable.ListMap[(String, EnumerationDecl), String]],
-  packageNames: mutable.ListMap[String, Option[String]] =
-    mutable.ListMap.empty[String, Option[String]],
+  packageNames: mutable.ListMap[Option[String], Option[String]] =
+    mutable.ListMap.empty[Option[String], Option[String]],
   complexTypes: mutable.ListBuffer[(SchemaDecl, ComplexTypeDecl)] =
     mutable.ListBuffer.empty[(SchemaDecl, ComplexTypeDecl)],
   baseToSubs: mutable.ListMap[ComplexTypeDecl, List[ComplexTypeDecl]] =
@@ -60,7 +60,7 @@ case class XsdContext(
 
 class ParserConfig {
   var scope: scala.xml.NamespaceBinding = _
-  var targetNamespace: String = null
+  var targetNamespace: Option[String] = None
   val topElems  = mutable.ListMap.empty[String, ElemDecl]
   val elemList  = mutable.ListBuffer.empty[ElemDecl]
   val topTypes  = mutable.ListMap.empty[String, TypeDecl]
@@ -73,12 +73,13 @@ class ParserConfig {
   var schemas: List[SchemaDecl] = Nil
   val typeToAnnotatable = mutable.ListMap.empty[TypeDecl, Annotatable]
   
-  def containsType(name: String): Boolean = {
-    val (namespace, typeName) = TypeSymbolParser.splitTypeName(name, this)
-    containsType(namespace, typeName)
-  }
+  def containsType(name: String): Boolean =
+    containsType(TypeSymbolParser.splitTypeName(name, this))
   
-  def containsType(namespace: String, typeName: String): Boolean = {
+  def containsType(pair: (Option[String], String)): Boolean =
+    containsType(pair._1, pair._2)
+  
+  def containsType(namespace: Option[String], typeName: String): Boolean = {
     if (namespace == targetNamespace && topTypes.contains(typeName)) true
     else
       schemas.exists(schema => schema.targetNamespace == namespace &&
@@ -90,7 +91,7 @@ class ParserConfig {
     getType(namespace, typeName)
   }
   
-  def getType(namespace: String, typeName: String): TypeDecl =
+  def getType(namespace: Option[String], typeName: String): TypeDecl =
     if (namespace == targetNamespace && topTypes.contains(typeName)) topTypes(typeName)
     else
       (for (schema <- schemas;
@@ -109,23 +110,28 @@ object TypeSymbolParser {
   def fromString(name: String, config: ParserConfig): XsTypeSymbol = {
     val (namespace, typeName) = splitTypeName(name, config)
     namespace match {
-      case XML_SCHEMA_URI =>
+      case Some(XML_SCHEMA_URI) =>
         if (XsTypeSymbol.toTypeSymbol.isDefinedAt(typeName)) XsTypeSymbol.toTypeSymbol(typeName)
         else new ReferenceTypeSymbol(name)
       case _ => new ReferenceTypeSymbol(name)
     }
   }
 
-  def splitTypeName(name: String, config: ParserConfig) = {
-    if (name.contains('@'))
-      (config.targetNamespace, name)
+  def splitTypeName(name: String, config: ParserConfig):
+      (Option[String], String) = {
+    if (name.contains('@')) (config.targetNamespace, name)
     else if (name.contains(':')) {
       val prefix = name.dropRight(name.length - name.indexOf(':'))
       val value = name.drop(name.indexOf(':') + 1)
-
-      (config.scope.getURI(prefix), value)
+      (config.scope.getURI(prefix) match {
+        case null => None
+        case x => Some(x)
+      }, value)
     } else
-      (config.scope.getURI(null), name)
+      (config.scope.getURI(null) match {
+        case null => None
+        case x => Some(x)
+      }, name)
   }
 }
 
@@ -144,7 +150,7 @@ trait Annotatable {
   val annotation: Option[AnnotationDecl]
 }
 
-case class SchemaDecl(targetNamespace: String,
+case class SchemaDecl(targetNamespace: Option[String],
     topElems: Map[String, ElemDecl],
     elemList: List[ElemDecl],
     topTypes: Map[String, TypeDecl],
@@ -179,8 +185,7 @@ object SchemaDecl {
       error("xsd: schema element not found: " + node.toString) }
     
     config.scope = schema.scope
-    schema.attribute("targetNamespace") foreach { x =>
-      config.targetNamespace = x.text }
+    config.targetNamespace = schema.attribute("targetNamespace").headOption map { _.text }
     config.schemas = context.schemas.toList
     
     for (child <- schema.child) child match {
@@ -232,9 +237,10 @@ object SchemaDecl {
         scope = scope.parent
       }
     }
-    if (config.targetNamespace != null)
-      scopeToBuild = scala.xml.NamespaceBinding(null, config.targetNamespace, scopeToBuild)
-    
+    config.targetNamespace foreach { x =>
+      scopeToBuild = scala.xml.NamespaceBinding(null, x, scopeToBuild)
+    }
+        
     val annotation = (node \ "annotation").headOption map { x =>
       AnnotationDecl.fromXML(x, config) }
       
@@ -360,7 +366,7 @@ object OptionalUse extends AttributeUse
 object ProhibitedUse extends AttributeUse
 object RequiredUse extends AttributeUse
 
-case class AttributeRef(namespace: String,
+case class AttributeRef(namespace: Option[String],
   name: String,
   defaultValue: Option[String],
   fixedValue: Option[String],
@@ -381,7 +387,7 @@ object AttributeRef {
   }
 }
 
-case class AttributeDecl(namespace: String,
+case class AttributeDecl(namespace: Option[String],
     name: String,
     typeSymbol: XsTypeSymbol,
     defaultValue: Option[String],
@@ -432,7 +438,7 @@ object AttributeDecl {
   } 
 }
 
-case class AttributeGroupRef(namespace: String,
+case class AttributeGroupRef(namespace: Option[String],
   name: String) extends AttributeLike
 
 object AttributeGroupRef {
@@ -445,7 +451,7 @@ object AttributeGroupRef {
   }    
 }
 
-case class AttributeGroupDecl(namespace: String,
+case class AttributeGroupDecl(namespace: Option[String],
   name: String,
   attributes: List[AttributeLike],
   annotation: Option[AnnotationDecl]) extends AttributeLike with Annotatable
@@ -463,7 +469,7 @@ object AttributeGroupDecl {
   } 
 }
 
-case class ElemRef(namespace: String,
+case class ElemRef(namespace: Option[String],
   name: String,
   minOccurs: Int,
   maxOccurs: Int,
@@ -481,7 +487,7 @@ object ElemRef {
   }
 }
 
-case class ElemDecl(namespace: String,
+case class ElemDecl(namespace: Option[String],
   name: String,
   typeSymbol: XsTypeSymbol,
   defaultValue: Option[String],
@@ -548,7 +554,7 @@ trait TypeDecl extends Decl with Annotatable
 
 /** simple types cannot have element children or attributes.
  */
-case class SimpleTypeDecl(namespace: String,
+case class SimpleTypeDecl(namespace: Option[String],
     name: String,
     content: ContentTypeDecl,
     annotation: Option[AnnotationDecl]) extends TypeDecl {
@@ -577,7 +583,7 @@ object SimpleTypeDecl {
 
 /** complex types may have element children and attributes.
  */
-case class ComplexTypeDecl(namespace: String,
+case class ComplexTypeDecl(namespace: Option[String],
   name: String,
   abstractValue: Boolean,
   mixed: Boolean,
@@ -781,7 +787,7 @@ object AnyDecl {
   }
 }
 
-case class GroupRef(namespace: String,
+case class GroupRef(namespace: Option[String],
   name: String,
   particles: List[Particle],
   minOccurs: Int,
@@ -798,7 +804,7 @@ object GroupRef {
   }
 }
 
-case class GroupDecl(namespace: String,
+case class GroupDecl(namespace: Option[String],
   name: String,
   particles: List[Particle],
   minOccurs: Int,
@@ -821,19 +827,15 @@ object GroupDecl {
   }
 }
 
-case class SchemaLite(targetNamespace: String,
+case class SchemaLite(targetNamespace: Option[String],
     imports: List[ImportDecl])
 
 object SchemaLite {
   def fromXML(node: scala.xml.Node) = {
-    var targetNamespace: String = null
     val schema = (node \\ "schema").headOption getOrElse {
       error("xsd: schema element not found: " + node.toString)
     }
-    
-    schema.attribute("targetNamespace") foreach { x =>
-      targetNamespace = x.text
-    }
+    val targetNamespace = schema.attribute("targetNamespace").headOption map { _.text }
     
     var importList: List[ImportDecl] = Nil
     for (node <- schema \ "import") {

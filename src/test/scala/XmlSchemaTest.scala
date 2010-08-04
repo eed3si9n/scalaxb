@@ -14,10 +14,9 @@ object XmlSchemaTest extends SpecificationWithJUnit with CompilerMatcher {
     
   lazy val generated = module.processFiles(
     List((xmlschemaxsd, xmlschemascala)),
-    Map[String, Option[String]](
-      ("http://www.w3.org/2001/XMLSchema", Some("org.w3.xmlschema"))
-      ),
-    None )
+    Map[Option[String], Option[String]](
+      Some("http://www.w3.org/2001/XMLSchema") -> Some("org.w3.xmlschema")
+    ), false)
     
   "XMLSchema.scala file must compile so that Schema can be used" in {
     (List("import org.w3.xmlschema._",
@@ -33,7 +32,7 @@ object XmlSchemaTest extends SpecificationWithJUnit with CompilerMatcher {
         </complexType>
       </schema>""", // " 
       """Schema.fromXML(document).toXML(
-        "http://www.w3.org/2001/XMLSchema", "schema", document.scope).toString""" // "
+        Some("http://www.w3.org/2001/XMLSchema"), "schema", document.scope).toString""" // "
      ),
      generated) must evaluateTo("""<schema targetNamespace="http://www.example.com/IPO" """ +
        """xmlns:ipo="http://www.example.com/IPO" """ +

@@ -57,7 +57,7 @@ class GenSource(schema: SchemaDecl,
     else if (minOccurs == 0) Optional
     else Single
   
-  case class Param(namespace: String,
+  case class Param(namespace: Option[String],
     name: String,
     typeSymbol: XsTypeSymbol,
     cardinality: Cardinality,
@@ -81,10 +81,10 @@ class GenSource(schema: SchemaDecl,
   }
 
   lazy val xmlAttrs = Map[String, AttributeDecl](
-    ("lang" -> AttributeDecl(XML_URI, "lang", XsString, None, None, OptionalUse, None, true)),
-    ("space" -> AttributeDecl(XML_URI, "space", XsString, None, None, OptionalUse, None, true)),
-    ("base" -> AttributeDecl(XML_URI, "base", XsAnyURI, None, None, OptionalUse, None, true)),
-    ("id" -> AttributeDecl(XML_URI, "id", XsID, None, None, OptionalUse, None, true))
+    ("lang" -> AttributeDecl(Some(XML_URI), "lang", XsString, None, None, OptionalUse, None, true)),
+    ("space" -> AttributeDecl(Some(XML_URI), "space", XsString, None, None, OptionalUse, None, true)),
+    ("base" -> AttributeDecl(Some(XML_URI), "base", XsAnyURI, None, None, OptionalUse, None, true)),
+    ("id" -> AttributeDecl(Some(XML_URI), "id", XsID, None, None, OptionalUse, None, true))
   )
     
   def run {
@@ -127,7 +127,7 @@ class GenSource(schema: SchemaDecl,
     makeCaseClassWithType(typeNames(decl), decl)
   }
   
-  def types(namespace: String, name: String) =
+  def types(namespace: Option[String], name: String) =
     (for (schema <- schemas;
           if schema.targetNamespace == namespace;
           if schema.topTypes.contains(name))
@@ -277,15 +277,7 @@ class GenSource(schema: SchemaDecl,
 object {name} extends rt.ImplicitXMLWriter[{name}] {{
   def fromXML(seq: scala.xml.NodeSeq): {name} = seq match {{
     case node: scala.xml.Node =>     
-      val typeName = (node \ "@{{http://www.w3.org/2001/XMLSchema-instance}}type").text    
-      val namespace = if (typeName.contains(':'))
-        node.scope.getURI(typeName.dropRight(typeName.length - typeName.indexOf(':')))
-      else node.scope.getURI(null)
-    
-      val value = if (typeName.contains(':')) typeName.drop(typeName.indexOf(':') + 1)
-      else typeName
-    
-      (namespace, value) match {{
+      rt.Helper.instanceType(node) match {{
         {
           val cases = for (sub <- context.baseToSubs(decl))
             yield makeCaseEntry(sub)
@@ -293,13 +285,13 @@ object {name} extends rt.ImplicitXMLWriter[{name}] {{
         }
         { 
           if (!decl.abstractValue) "case _ => " + defaultType + ".fromXML(node)"
-          else """case _ => error("Unknown type: " + typeName)"""
+          else """case x => error("Unknown type: " + x)"""
         }
       }}
     case _ => error("fromXML failed: seq must be scala.xml.Node")
   }}
   
-  def toXML(__obj: {name}, __namespace: String, __elementLabel: String,
+  def toXML(__obj: {name}, __namespace: Option[String], __elementLabel: String,
       __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq = __obj match {{
     { val cases = for (sub <- context.baseToSubs(decl))
         yield makeToXmlCaseEntry(sub)
@@ -419,7 +411,7 @@ object {name} extends rt.ImplicitXMLWriter[{name}] {{
             ", " + quote(scope.uri) + ", __scope)") :: scopeString(scope.parent)
       }
     
-    def getPrefix(namespace: String, scope: scala.xml.NamespaceBinding): String =
+    def getPrefix(namespace: Option[String], scope: scala.xml.NamespaceBinding): String =
       if (scope == null || scope.uri == null) null
       else
         if (scope.prefix != null && scope.uri == namespace) scope.prefix
@@ -444,7 +436,7 @@ object {name} extends rt.ImplicitXMLWriter[{name}] {{
 }}
 </source> else
 <source>object {name} extends {objSuperNames.mkString(" with ")} {{
-  { compositors map(makeCompositorImport(_)) }val targetNamespace = { quote(schema.targetNamespace) }
+  { compositors map(makeCompositorImport(_)) }val targetNamespace: Option[String] = { quote(schema.targetNamespace) }
   
   def parser(node: scala.xml.Node): Parser[{name}] =
     { parserList.mkString(" ~ " + newline + indent(3)) } ^^
@@ -454,7 +446,7 @@ object {name} extends rt.ImplicitXMLWriter[{name}] {{
 }}
 </source>
     
-    def makeToXml = <source>def toXML(__obj: {name}, __namespace: String, __elementLabel: String): scala.xml.NodeSeq = {{
+    def makeToXml = <source>def toXML(__obj: {name}, __namespace: Option[String], __elementLabel: String): scala.xml.NodeSeq = {{
     var __scope: scala.xml.NamespaceBinding = scala.xml.TopScope
     { scopeString(schema.scope).reverse.mkString(newline + indent(2)) }
     val node = toXML(__obj, __namespace, __elementLabel, __scope)
@@ -469,8 +461,8 @@ object {name} extends rt.ImplicitXMLWriter[{name}] {{
   
   </source>
     
-    def makeToXml2 = <source>def toXML(__obj: {name}, __namespace: String, __elementLabel: String, __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq = {{
-    val prefix = __scope.getPrefix(__namespace)
+    def makeToXml2 = <source>def toXML(__obj: {name}, __namespace: Option[String], __elementLabel: String, __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq = {{
+    val prefix = __scope.getPrefix(__namespace.orNull)
     var attribute: scala.xml.MetaData  = scala.xml.Null
     { attributeString }
     scala.xml.Elem(prefix, __elementLabel,
@@ -557,7 +549,7 @@ object {name} extends rt.ImplicitXMLWriter[{name}] {{
     <source>trait  {name}
 
 object {name} {{
-  def toXML(__obj: rt.DataRecord[Any], __namespace: String, __elementLabel: String,
+  def toXML(__obj: rt.DataRecord[Any], __namespace: Option[String], __elementLabel: String,
       __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq = __obj.value match {{
     { cases.distinct.mkString(newline + indent(2)) }
     case _ => rt.DataRecord.toXML(__obj, __namespace, __elementLabel, __scope)
@@ -594,15 +586,15 @@ object {name} {{
     <source>{ buildComment(seq) }case class {name}({paramsString})
 
 object {name} extends rt.ImplicitXMLWriter[{name}] {{
-  def toXML(__obj: rt.DataRecord[Any], __namespace: String, __elementLabel: String,
+  def toXML(__obj: rt.DataRecord[Any], __namespace: Option[String], __elementLabel: String,
       __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq = __obj.value match {{
     case x: {name} => toXML(x, __namespace, __elementLabel, __scope)
     case _ => error("Expected {name}")      
   }}
   
-  def toXML(__obj: {name}, __namespace: String, __elementLabel: String,
+  def toXML(__obj: {name}, __namespace: Option[String], __elementLabel: String,
       __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq = {{
-    val prefix = __scope.getPrefix(__namespace)
+    val prefix = __scope.getPrefix(__namespace.orNull)
     var attribute: scala.xml.MetaData  = scala.xml.Null
     { childString }
   }}
@@ -726,13 +718,12 @@ object {name} {{
   }
   
   def buildAttributeString(any: AnyAttributeDecl): String =
-    "__obj.anyAttribute.foreach(x =>" + newline +
-    indent(3) + "if (x.namespace == null) attribute = scala.xml.Attribute(null, x.key, x.value, attribute)" + newline +
-    indent(3) + "else attribute = scala.xml.Attribute(__scope.getPrefix(x.namespace), x.key, x.value, attribute))"
-  
+    "__obj.anyAttribute.foreach { x =>" + newline +
+    indent(3) + "attribute = scala.xml.Attribute((x.namespace map { __scope.getPrefix(_) }).orNull, x.key, x.value, attribute) }"
+    
   def buildAttributeString(attr: AttributeDecl): String = {
     val namespaceString = if (attr.global)
-      "__scope.getPrefix(" + quote(attr.namespace) + ")"
+      "__scope.getPrefix(" + quote(attr.namespace.orNull) + ")"
     else "null"
     val name = "__obj." + makeParamName(buildParam(attr).name)
         
@@ -942,10 +933,8 @@ object {name} {{
     val cardinality = if (toMinOccurs(attr) == 0) Optional
     else Single
     val name = if (!attr.global) attr.name
-    else schema.scope.getPrefix(attr.namespace) match {
-      case null => attr.name
-      case x => x + attr.name
-    }
+    else Option[String](schema.scope.getPrefix(attr.namespace.orNull)).
+      getOrElse("") + attr.name
     
     val retval = Param(attr.namespace, name, attr.typeSymbol, cardinality, false, true)
     log("GenSource#buildParam:  " + retval)
@@ -1004,7 +993,7 @@ object {name} {{
     
     "{ case " +
     parserVariableList.mkString(" ~ " + newline + indent(3)) + 
-    (if (wrapInDataRecord) " => rt.DataRecord(null, null, " + name + "(" + argsString + "))"
+    (if (wrapInDataRecord) " => rt.DataRecord(None, null, " + name + "(" + argsString + "))"
     else " => " + name + "(" + argsString + ")") +
     " }"
   }
@@ -1180,7 +1169,7 @@ object {name} {{
     buildParserString("rt.ElemName(" + escapeTargetNamespace(elem.namespace) + ", " + quote(elem.name) + ")",
       minOccurs, maxOccurs)
   
-  def escapeTargetNamespace(namespace: String) =
+  def escapeTargetNamespace(namespace: Option[String]) =
     if (namespace == schema.targetNamespace) "targetNamespace"
     else quote(namespace)
   
@@ -1308,7 +1297,7 @@ object {name} {{
     retval
   }
   
-  def buildArgForAny(selector: String, namespace: String, elementLabel: String,
+  def buildArgForAny(selector: String, namespace: Option[String], elementLabel: String,
       defaultValue: Option[String], fixedValue: Option[String],
       minOccurs: Int, maxOccurs: Int, nillable: Option[Boolean]) = {
     
@@ -1416,13 +1405,14 @@ object {name} {{
   
   def buildSelector(elem: ElemDecl): String =
     if (elem.namespace == schema.targetNamespace) buildSelector(elem.name)
-    else buildSelector("{" + elem.namespace + "}" + elem.name)
+    else buildSelector((elem.namespace map { "{" + _ + "}" } getOrElse { "" })  + elem.name)
     
   def buildSelector(pos: Int): String =
     "p" + (pos + 1)
   
   def buildSelector(attr: AttributeDecl): String =
-    if (attr.global) buildSelector("@{" + attr.namespace + "}" + attr.name)
+    if (attr.global) buildSelector("@" +
+      (attr.namespace map { "{" + _ + "}" } getOrElse { "" }) + attr.name)
     else buildSelector("@" + attr.name)
 
   def buildSelector(nodeName: String): String = "(node \\ \"" + nodeName + "\")"
@@ -1436,7 +1426,7 @@ object {name} {{
   def buildArgForAnyAttribute(attributes: List[AttributeLike]): String = {
     def makeCaseEntry(attr: AttributeDecl) = if (attr.global)
       "case scala.xml.PrefixedAttribute(pre, key, value, _) if pre == elem.scope.getPrefix(" +
-        quote(attr.namespace) + ") &&" + newline +
+        (attr.namespace map { quote(_) } getOrElse { "null" }) + ") &&" + newline +
       indent(7) + "key == " + quote(attr.name) + " => Nil"
     else
       "case scala.xml.UnprefixedAttribute(key, value, _) if key == " + quote(attr.name) + " => Nil"
@@ -1448,9 +1438,9 @@ object {name} {{
       case x: AttributeDecl => makeCaseEntry(x)
     }.mkString(indent(6), newline + indent(6), newline) +
     indent(4) + "    case scala.xml.UnprefixedAttribute(key, value, _) =>" + newline +
-    indent(4) + "      List(rt.DataRecord(null, key, value.text))" + newline +
+    indent(4) + "      List(rt.DataRecord(None, key, value.text))" + newline +
     indent(4) + "    case scala.xml.PrefixedAttribute(pre, key, value, _) =>" + newline +
-    indent(4) + "      List(rt.DataRecord(elem.scope.getURI(pre), key, value.text))" + newline +
+    indent(4) + "      List(rt.DataRecord(Option[String](elem.scope.getURI(pre)), key, value.text))" + newline +
     indent(4) + "    case _ => Nil" + newline +
     indent(4) + "  }" + newline +
     indent(4) + "case _ => Nil" + newline +
@@ -1461,7 +1451,7 @@ object {name} {{
     "(node.child.map {" + newline +
     indent(3) + fromXmlCases(particles, 3).mkString(newline + indent(3)) + newline +
     indent(3) + "case x: scala.xml.Text =>" + newline +
-    indent(3) + "  rt.DataRecord(null, null, x.text)" + newline +
+    indent(3) + "  rt.DataRecord(None, null, x.text)" + newline +
     indent(2) + "}).toList"
   }
     
@@ -1478,8 +1468,8 @@ object {name} {{
   def fromXmlCases(particles: List[Decl], indentBase: Int) = {
     def makeCaseEntry(elem: ElemDecl) =
       "case x: scala.xml.Elem if (x.label == " + quote(elem.name) + " && " + newline + 
-        indent(indentBase + 2) + "x.scope.getURI(x.prefix) == " + quote(elem.namespace) + ") =>" + newline +
-        indent(indentBase + 1) + "rt.DataRecord(x.scope.getURI(x.prefix), x.label, " +
+        indent(indentBase + 2) + "Option[String](x.scope.getURI(x.prefix)) == " + quote(elem.namespace) + ") =>" + newline +
+        indent(indentBase + 1) + "rt.DataRecord(Option[String](x.scope.getURI(x.prefix)), x.label, " +
         buildArg("x", elem.typeSymbol) + ")"
     
     def isAnyOrChoice(typeSymbol: XsTypeSymbol) = typeSymbol match {
@@ -1493,7 +1483,7 @@ object {name} {{
         (x.isInstanceOf[ElemDecl] && (isAnyOrChoice(x.asInstanceOf[ElemDecl].typeSymbol))) ||
         (x.isInstanceOf[ElemRef] && (isAnyOrChoice(buildElement(x.asInstanceOf[ElemRef]).typeSymbol)))  ))
       List("case x: scala.xml.Elem =>" + newline +
-        indent(indentBase + 1) + "rt.DataRecord(x.scope.getURI(x.prefix), x.label, x)")
+        indent(indentBase + 1) + "rt.DataRecord(Option[String](x.scope.getURI(x.prefix)), x.label, x)")
     else Nil
     
     particles.collect {
@@ -1596,7 +1586,11 @@ object {name} {{
     typeName + ".fromXML(node)"
   }
   
-  def quote(value: String) = if (value == null) "null"
+  def quote(value: Option[String]): String = value map {
+    "Some(\"" + _ + "\")"
+  } getOrElse { "None" }
+  
+  def quote(value: String): String = if (value == null) "null"
     else "\"" + value + "\""
   
   def flattenSuperNames(decl: ComplexTypeDecl): List[String] = 
@@ -1859,7 +1853,7 @@ object {name} {{
     )
         
   def flattenMixed(decl: ComplexTypeDecl) = if (decl.mixed)
-    List(ElemDecl(INTERNAL_NAMESPACE, "mixed", XsMixed,
+    List(ElemDecl(Some(INTERNAL_NAMESPACE), "mixed", XsMixed,
       None, None, 0, Integer.MAX_VALUE, None, None))
   else Nil
     
@@ -1937,12 +1931,11 @@ object {name} {{
       that.defaultValue, that.fixedValue, 0, that.maxOccurs, that.nillable, None)
 
   def buildAnyRef(any: AnyDecl) =
-    ElemDecl(INTERNAL_NAMESPACE, "any", XsAny, None, None,
+    ElemDecl(Some(INTERNAL_NAMESPACE), "any", XsAny, None, None,
       any.minOccurs, any.maxOccurs, None, None)
 
-      def attrs(namespace: String, name: String) =
-        if (namespace == XML_URI)
-          xmlAttrs(name)
+      def attrs(namespace: Option[String], name: String) =
+        if (namespace == Some(XML_URI)) xmlAttrs(name)
         else
           (for (schema <- schemas;
                 if schema.targetNamespace == namespace;
@@ -1961,7 +1954,7 @@ object {name} {{
       ref.defaultValue, ref.fixedValue, ref.use, that.annotation, that.global)
   }
 
-  def elements(namespace: String, name: String) =
+  def elements(namespace: Option[String], name: String) =
     (for (schema <- schemas;
           if schema.targetNamespace == namespace;
           if schema.topElems.contains(name))
@@ -1986,7 +1979,7 @@ object {name} {{
   def buildElement(base: BuiltInSimpleTypeSymbol): ElemDecl = 
     ElemDecl(schema.targetNamespace, "value", base, None, None, 1, 1, None, None)
   
-  def groups(namespace: String, name: String) =
+  def groups(namespace: Option[String], name: String) =
     (for (schema <- schemas;
           if schema.targetNamespace == namespace;
           if schema.topGroups.contains(name))
@@ -2005,7 +1998,7 @@ object {name} {{
       ref.minOccurs, ref.maxOccurs, that.annotation)    
   }
 
-  def attributeGroups(namespace: String, name: String) =
+  def attributeGroups(namespace: Option[String], name: String) =
     (for (schema <- schemas;
           if schema.targetNamespace == namespace;
           if schema.topAttrGroups.contains(name))

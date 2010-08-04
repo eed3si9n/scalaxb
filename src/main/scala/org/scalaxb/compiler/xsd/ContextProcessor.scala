@@ -36,13 +36,13 @@ class ContextProcessor(logger: Logger) extends ScalaNames {
   def packageName(decl: SimpleTypeDecl, context: XsdContext): Option[String] =
     packageName(decl.namespace, context)
   
-  def packageName(namespace: String, context: XsdContext): Option[String] =
+  def packageName(namespace: Option[String], context: XsdContext): Option[String] =
     if (context.packageNames.contains(namespace)) context.packageNames(namespace)
-    else if (context.packageNames.contains(null)) context.packageNames(null)
+    else if (context.packageNames.contains(None)) context.packageNames(None)
     else None
       
   def processContext(context: XsdContext,
-      packageNames: collection.Map[String, Option[String]]) {
+      packageNames: collection.Map[Option[String], Option[String]]) {
     context.packageNames ++= packageNames
     
     (None :: (packageNames.valuesIterator.toList.distinct)) map {
@@ -310,7 +310,7 @@ class ContextProcessor(logger: Logger) extends ScalaNames {
     } // makeCompositorName
   }
   
-  def makeProtectedTypeName(namespace: String, initialName: String, postfix: String,
+  def makeProtectedTypeName(namespace: Option[String], initialName: String, postfix: String,
       context: XsdContext): String = {
     def contains(value: String) = {
       val enumValueNames = context.enumValueNames(packageName(namespace, context))

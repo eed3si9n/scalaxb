@@ -35,7 +35,7 @@ object Driver extends Module {
   override def buildContext = XsdContext()
     
   override def processContext(context: Context,
-      packageNames: collection.Map[String, Option[String]]) {
+      packageNames: collection.Map[Option[String], Option[String]]) {
     processor.processContext(context, packageNames)
   }
   
@@ -64,7 +64,7 @@ object Driver extends Module {
     val reader = in
     val elem = scala.xml.XML.load(reader)
     val schemaLite = SchemaLite.fromXML(elem)
-    val targetNamespace: String = schemaLite.targetNamespace
+    val targetNamespace = schemaLite.targetNamespace
     val imports: Seq[String] = schemaLite.imports.collect {
       case ImportDecl(Some(namespace: String), _) => namespace
     }

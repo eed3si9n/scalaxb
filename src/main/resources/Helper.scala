@@ -1,39 +1,39 @@
 package org.scalaxb.rt
 
 trait XMLWriter {
-  def toXML(__namespace: String, __elementLabel: String,
+  def toXML(__namespace: Option[String], __elementLabel: String,
       __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq
 }
 
 trait ImplicitXMLWriter[A] { outer =>
-  def toXML(__obj: A, __namespace: String, __elementLabel: String,
+  def toXML(__obj: A, __namespace: Option[String], __elementLabel: String,
       __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq
   
   implicit def toXMLWriter(__obj: A): XMLWriter = new XMLWriter {
-     def toXML(__namespace: String, __elementLabel: String,
+     def toXML(__namespace: Option[String], __elementLabel: String,
          __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq =
       outer.toXML(__obj, __namespace, __elementLabel, __scope)
   }  
 }
 
-case class DataRecord[+A](namespace: String, key: String, value: A)
+case class DataRecord[+A](namespace: Option[String], key: String, value: A)
 
 object DataRecord {  
-  def toXML[A](__obj: DataRecord[A], __namespace: String, __elementLabel: String,
+  def toXML[A](__obj: DataRecord[A], __namespace: Option[String], __elementLabel: String,
       __scope: scala.xml.NamespaceBinding):
       scala.xml.NodeSeq = (__obj.value) match {
     case x: scala.xml.NodeSeq => x
     case x: String if __obj.key == null => scala.xml.Text(x)
     // case x: Product =>
     //   if (x.isInstanceOf[XMLWriter]) x.asInstanceOf[XMLWriter].toXML(__namespace, __elementLabel, __scope)
-    //   else scala.xml.Elem(__scope.getPrefix(__obj.namespace), __elementLabel,
+    //   else scala.xml.Elem(__scope.getPrefix(__obj.namespace.orNull), __elementLabel,
     //          scala.xml.Null, __scope, scala.xml.Text(__obj.value.toString))
-    case x => scala.xml.Elem(__scope.getPrefix(__obj.namespace), __elementLabel,
+    case x => scala.xml.Elem(__scope.getPrefix(__obj.namespace.orNull), __elementLabel,
               scala.xml.Null, __scope, scala.xml.Text(__obj.value.toString))
   }
 }
 
-case class ElemName(namespace: String, name: String) {
+case class ElemName(namespace: Option[String], name: String) {
   var node: scala.xml.Node = _
   def text = node.text
   def nil = Helper.isNil(node)
@@ -47,7 +47,7 @@ object ElemName {
 trait AnyElemNameParser extends scala.util.parsing.combinator.Parsers {
   type Elem = ElemName
   
-  def targetNamespace: String
+  def targetNamespace: Option[String]
   
   def any: Parser[ElemName] = 
     accept("any", { case x: ElemName => x })  
@@ -72,7 +72,7 @@ trait ElemNameParser[A] extends AnyElemNameParser with ImplicitXMLWriter[A] {
     parseElemNames(p, in.map(toElemName(_)) )
   
   def toElemName(x: scala.xml.Elem) = {
-    val elemName = ElemName(x.scope.getURI(x.prefix), x.label)
+    val elemName = ElemName(Option[String](x.scope.getURI(x.prefix)), x.label)
     elemName.node = x
     elemName 
   }
@@ -154,14 +154,24 @@ object Helper {
     java.net.URI.create(value)
     
   def isNil(node: scala.xml.Node) =
-    (node \ "@{http://www.w3.org/2001/XMLSchema-instance}nil").headOption match {
-      case None    => false
-      case Some(x) => x.text == "true" 
+    (node \ ("@{" + XSI_URL + "}nil")).headOption map { _.text == "true" } getOrElse {
+      false
     }
-
-  def nilElem(namespace: String, elementLabel: String,
+  
+  def nilElem(namespace: Option[String], elementLabel: String,
       scope: scala.xml.NamespaceBinding) =
-    scala.xml.Elem(scope.getPrefix(namespace), elementLabel,
+    scala.xml.Elem(scope.getPrefix(namespace.orNull), elementLabel,
       scala.xml.Attribute(scope.getPrefix(XSI_URL), "nil", "true", scala.xml.Null),
       scope, Nil: _*)
+      
+  def instanceType(node: scala.xml.Node) = {
+    val typeName = (node \ ("@{" + XSI_URL + "}type")).text
+    val prefix = if (typeName.contains(':'))
+      Some(typeName.dropRight(typeName.length - typeName.indexOf(':')))
+      else None
+    val namespace = Option[String](node.scope.getURI(prefix.orNull))
+    val value = if (typeName.contains(':')) typeName.drop(typeName.indexOf(':') + 1)
+      else typeName
+    (namespace, value)
+  }
 }

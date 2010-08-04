@@ -23,7 +23,7 @@ object PurchaseOrderTest extends SpecificationWithJUnit with CompilerMatcher {
   lazy val generated = module.process(ipoxsd,
     iposcala,
     Some("ipo"),
-    None)
+    false)
   
   "ipo.scala file must compile so Address can be used" in {
     (List("import ipo._",

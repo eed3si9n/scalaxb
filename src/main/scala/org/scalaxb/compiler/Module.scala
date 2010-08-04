@@ -42,13 +42,13 @@ trait Module extends Logger {
   
   class ModuleConfig {
     var verbose = false
-    var packageNames: ListMap[String, Option[String]] =
-      ListMap.empty[String, Option[String]]
+    var packageNames: ListMap[Option[String], Option[String]] =
+      ListMap.empty[Option[String], Option[String]]
     var outdir: File = new File(".")  
   }
   
   trait Importable {
-    def targetNamespace: String
+    def targetNamespace: Option[String]
     def imports: Seq[String]
     def reader: Reader
     def toSchema(context: Context): Schema
@@ -57,15 +57,15 @@ trait Module extends Logger {
   def start(args: Seq[String]) { 
     val files = ListBuffer.empty[File]
     
-    config.packageNames(null) = None
+    config.packageNames(None) = None
     val paramParser = new OptionParser("scalaxb") {
       opt("d", "outdir", "<directory>", "generated files will go into <directory>",
         { d: String => config.outdir = new File(d) })
       opt("p", "package", "<package>", "specifies the target package",
-        { p: String => config.packageNames(null) = Some(p) })
+        { p: String => config.packageNames(None) = Some(p) })
       keyValueOpt("p", "package", "<namespaceURI>", "<package>",
         "specifies the target package for <namespaceURI>",
-        { (key: String, value: String) => { config.packageNames(key) = Some(value) } })
+        { (key: String, value: String) => { config.packageNames(Some(key)) = Some(value) } })
       opt("v", "verbose", "be extra verbose",
         { config.verbose = true })
       arglist("<schema_file>...", "input schema to be converted",
@@ -76,17 +76,14 @@ trait Module extends Logger {
       processFiles(files.map(file =>
           (file, buildOutputFile(file, config.outdir))),
           config.packageNames,
-          None
+          config.verbose
         )
   }
   
   def processFiles(filePairs: Seq[(File, File)],
-      packageNames: Map[String, Option[String]],
-      verbose: Option[Boolean]) = {
-    verbose match {
-      case None    =>
-      case Some(x) => config.verbose = x
-    }
+      packageNames: Map[Option[String], Option[String]],
+      verbose: Boolean) = {
+    config.verbose = verbose
     
     val files = filePairs.map(_._1)
     files.foreach(file => if (!file.exists)
@@ -114,7 +111,7 @@ trait Module extends Logger {
   }
   
   def processReaders(inputToOutput: Map[Reader, Writer],
-      packageNames: Map[String, Option[String]]) = {    
+      packageNames: Map[Option[String], Option[String]]) = {    
     val context = buildContext
     val importables = inputToOutput.keysIterator.toList map {
       toImportable(_)
@@ -144,16 +141,17 @@ trait Module extends Logger {
   def packageName(schema: Schema, context: Context): Option[String]
   
   def process(file: File, output: File, packageName: Option[String],
-      verbose: Option[Boolean]) =
+      verbose: Boolean) =
     processFiles(List((file, output)),
-      Map[String, Option[String]]((null, packageName)), verbose)
+      Map[Option[String], Option[String]]((None, packageName)), verbose)
   
   def sortByDependency(files: Seq[Importable]): Seq[Importable] = {
-    val schemaFiles = ListMap.empty[String, Importable]
+    val schemaFiles = ListMap.empty[Option[String], Importable]
 
     files foreach { importable =>
-      if (importable.targetNamespace != null)
-         schemaFiles += (importable.targetNamespace -> importable)      
+      importable.targetNamespace foreach { targetNamespace =>
+        schemaFiles += (importable.targetNamespace -> importable) 
+      } 
     }
 
     val XML_URI = "http://www.w3.org/XML/1998/namespace"    
@@ -163,7 +161,7 @@ trait Module extends Logger {
     val upperlimit = unsorted.size * unsorted.size
     
     def containsAll(imports: Seq[String]) = imports.forall { namespace =>
-      (namespace == XML_URI) || sorted.contains(schemaFiles(namespace))
+      (namespace == XML_URI) || sorted.contains(schemaFiles(Some(namespace)))
     }
 
     for (i <- 0 to upperlimit) {
@@ -194,7 +192,7 @@ trait Module extends Logger {
   def buildContext: Context
   
   def processContext(context: Context,
-      packageNames: collection.Map[String, Option[String]]): Unit
+      packageNames: collection.Map[Option[String], Option[String]]): Unit
   
   def parse(importable: Importable, context: Context): Schema
     = importable.toSchema(context)
@@ -219,11 +217,11 @@ trait Module extends Logger {
     val in = getClass.getResourceAsStream(source)
     val reader = new java.io.BufferedReader(new java.io.InputStreamReader(in))
     val out = new java.io.PrintWriter(new java.io.FileWriter(dest))
-    var line: String = null
-    line = reader.readLine
-    while (line != null) {
-      out.println(line)
-      line = reader.readLine
+    var line: Option[String] = None
+    line = Option[String](reader.readLine)
+    while (line != None) {
+      line foreach { out.println }
+      line = Option[String](reader.readLine)
     }
     in.close
     out.flush

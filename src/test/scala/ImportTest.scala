@@ -17,9 +17,11 @@ object ImportTest extends SpecificationWithJUnit with CompilerMatcher {
   
   lazy val generated = module.processFiles(
     List((ipoxsd, iposcala), (reportxsd, reportscala)),
-    Map[String, Option[String]]((null, Some("ipo")), ("http://www.example.com/Report", Some("report"))),
-    None 
-      )
+    Map[Option[String], Option[String]](
+      None -> Some("ipo"),
+      Some("http://www.example.com/Report") -> Some("report")
+    ), false)
+    
   "report.xsd must generate report.scala file" in {
     generated(0) must exist
     generated(1) must exist

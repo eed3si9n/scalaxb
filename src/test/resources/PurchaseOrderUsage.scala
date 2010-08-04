@@ -177,7 +177,7 @@ object PurchaseOrderUsage {
     
     val obj = Element1.fromXML(subject)
     obj match {
-      case Element1(DataRecord(Some("http://www.example.com/IPO"), "Choice2", 1)) =>
+      case Element1(DataRecord(Some("http://www.example.com/IPO"), Some("Choice2"), 1)) =>
       case _ => error("match failed: " + obj.toString)
     }
 
@@ -212,7 +212,7 @@ object PurchaseOrderUsage {
     val obj = Addressable.fromXML(subject)
     obj match {
       case usaddress: USAddress =>
-        val document = USAddress.toXML(usaddress, None, "shipTo")
+        val document = USAddress.toXML(usaddress, None, Some("shipTo"))
         println(document)
         val obj2 = Addressable.fromXML(document)
         
@@ -230,7 +230,7 @@ object PurchaseOrderUsage {
   def testChoiceRoundTrip {
     val subject = <Element1 xmlns="http://www.example.com/IPO"><Choice2>1</Choice2></Element1>
     val obj = Element1.fromXML(subject)
-    val document = Element1.toXML(obj, Some("http://www.example.com/IPO"), "Element1", subject.scope)
+    val document = Element1.toXML(obj, Some("http://www.example.com/IPO"), Some("Element1"), subject.scope)
     println(document)
     val obj2 = Element1.fromXML(document)
     obj2 match {
@@ -256,11 +256,11 @@ object PurchaseOrderUsage {
     val obj = Choice1.fromXML(subject)
     obj match {
       case Choice1(_, "en",
-        Seq(DataRecord(Some("http://www.w3.org/1999/xhtml"), "href", "4Q99.html"))) =>
+        Seq(DataRecord(Some("http://www.w3.org/1999/xhtml"), Some("href"), "4Q99.html"))) =>
       case _ => error("match failed: " + obj.toString)
     }
     
-    val document = Choice1.toXML(obj, None, "choice1", subject.scope)
+    val document = Choice1.toXML(obj, None, Some("choice1"), subject.scope)
     println(document)  
   }
   
@@ -276,11 +276,11 @@ object PurchaseOrderUsage {
       </math>
     </Element1>
     val obj = Element1.fromXML(subject)
-    val document = Element1.toXML(obj, None, "Element1", subject.scope)
+    val document = Element1.toXML(obj, None, Some("Element1"), subject.scope)
     println(document)
     val obj2 = Element1.fromXML(document)
     obj2 match {
-      case Element1(DataRecord(Some("http://www.w3.org/1998/Math/MathML"), "math", _)) =>
+      case Element1(DataRecord(Some("http://www.w3.org/1998/Math/MathML"), Some("math"), _)) =>
       case _ => error("match failed: " + document.toString)
     }    
   }
@@ -293,15 +293,15 @@ object PurchaseOrderUsage {
     </foo>
     val obj = Element2.fromXML(subject)
     obj match {
-      case Element2(Seq(DataRecord(Some("http://www.w3.org/1999/xhtml"), "href", "4Q99.html"))) =>
+      case Element2(Seq(DataRecord(Some("http://www.w3.org/1999/xhtml"), Some("href"), "4Q99.html"))) =>
       case _ => error("match failed: " + obj.toString)
     }
     
-    val document = Element2.toXML(obj, None, "foo", subject.scope)
+    val document = Element2.toXML(obj, None, Some("foo"), subject.scope)
     println(document)
     val obj2 = Element2.fromXML(document)
     obj2 match {
-      case Element2(Seq(DataRecord(Some("http://www.w3.org/1999/xhtml"), "href", "4Q99.html"))) =>
+      case Element2(Seq(DataRecord(Some("http://www.w3.org/1999/xhtml"), Some("href"), "4Q99.html"))) =>
       case _ => error("match failed: " + obj2.toString)
     }    
   }
@@ -311,13 +311,13 @@ object PurchaseOrderUsage {
         xmlns:ipo="http://www.example.com/IPO">foo<Choice2>2</Choice2>bar</foo>
     val obj = Element3.fromXML(subject)
     obj match {
-      case Element3(Seq(DataRecord(Some("http://www.example.com/IPO"), "Choice2", 2)),
-        Seq(DataRecord(None, null, "foo"),
-          DataRecord(Some("http://www.example.com/IPO"), "Choice2", _),
-          DataRecord(None, null, "bar"))) =>
+      case Element3(Seq(DataRecord(Some("http://www.example.com/IPO"), Some("Choice2"), 2)),
+        Seq(DataRecord(None, None, "foo"),
+          DataRecord(Some("http://www.example.com/IPO"), Some("Choice2"), _),
+          DataRecord(None, None, "bar"))) =>
       case _ => error("match failed: " + obj.toString)
     }
-    val document = Element3.toXML(obj, None, "foo", subject.scope)
+    val document = Element3.toXML(obj, None, Some("foo"), subject.scope)
     println(document)
   }
   
@@ -332,7 +332,7 @@ object PurchaseOrderUsage {
       case DatedData(_, _, _) =>
       case _ => error("match failed: " + obj.toString)
     }
-    val document = DatedData.toXML(obj, None, "foo", subject.scope)
+    val document = DatedData.toXML(obj, None, Some("foo"), subject.scope)
     println(document)
   }
   
@@ -356,7 +356,7 @@ object PurchaseOrderUsage {
       case _ => error("match failed: " + obj.toString)
     }
     
-    val document = NillableTest.toXML(obj, None, "foo", subject.scope)
+    val document = NillableTest.toXML(obj, None, Some("foo"), subject.scope)
     println(document)
   }
   
@@ -374,7 +374,7 @@ object PurchaseOrderUsage {
       case _ => error("match failed: " + obj.toString)
     }
     
-    val document = AllTest.toXML(obj, None, "foo", subject.scope)
+    val document = AllTest.toXML(obj, None, Some("foo"), subject.scope)
     println(document)    
   }
   
@@ -396,7 +396,7 @@ object PurchaseOrderUsage {
       case _ => error("match failed: " + obj.toString)
     }
     
-    val document = Head.toXML(obj, None, "head", subject.scope)
+    val document = Head.toXML(obj, None, Some("head"), subject.scope)
     println(document) 
   }
 }

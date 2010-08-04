@@ -291,7 +291,7 @@ object {name} extends rt.ImplicitXMLWriter[{name}] {{
     case _ => error("fromXML failed: seq must be scala.xml.Node")
   }}
   
-  def toXML(__obj: {name}, __namespace: Option[String], __elementLabel: String,
+  def toXML(__obj: {name}, __namespace: Option[String], __elementLabel: Option[String],
       __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq = __obj match {{
     { val cases = for (sub <- context.baseToSubs(decl))
         yield makeToXmlCaseEntry(sub)
@@ -446,7 +446,7 @@ object {name} extends rt.ImplicitXMLWriter[{name}] {{
 }}
 </source>
     
-    def makeToXml = <source>def toXML(__obj: {name}, __namespace: Option[String], __elementLabel: String): scala.xml.NodeSeq = {{
+    def makeToXml = <source>def toXML(__obj: {name}, __namespace: Option[String], __elementLabel: Option[String]): scala.xml.NodeSeq = {{
     var __scope: scala.xml.NamespaceBinding = scala.xml.TopScope
     { scopeString(schema.scope).reverse.mkString(newline + indent(2)) }
     val node = toXML(__obj, __namespace, __elementLabel, __scope)
@@ -461,11 +461,11 @@ object {name} extends rt.ImplicitXMLWriter[{name}] {{
   
   </source>
     
-    def makeToXml2 = <source>def toXML(__obj: {name}, __namespace: Option[String], __elementLabel: String, __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq = {{
+    def makeToXml2 = <source>def toXML(__obj: {name}, __namespace: Option[String], __elementLabel: Option[String], __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq = {{
     val prefix = __scope.getPrefix(__namespace.orNull)
     var attribute: scala.xml.MetaData  = scala.xml.Null
     { attributeString }
-    scala.xml.Elem(prefix, __elementLabel,
+    scala.xml.Elem(prefix, __elementLabel getOrElse {{ error("missing element label.") }},
       attribute, __scope,
       { childString })
   }}
@@ -549,7 +549,7 @@ object {name} extends rt.ImplicitXMLWriter[{name}] {{
     <source>trait  {name}
 
 object {name} {{
-  def toXML(__obj: rt.DataRecord[Any], __namespace: Option[String], __elementLabel: String,
+  def toXML(__obj: rt.DataRecord[Any], __namespace: Option[String], __elementLabel: Option[String],
       __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq = __obj.value match {{
     { cases.distinct.mkString(newline + indent(2)) }
     case _ => rt.DataRecord.toXML(__obj, __namespace, __elementLabel, __scope)
@@ -586,13 +586,13 @@ object {name} {{
     <source>{ buildComment(seq) }case class {name}({paramsString})
 
 object {name} extends rt.ImplicitXMLWriter[{name}] {{
-  def toXML(__obj: rt.DataRecord[Any], __namespace: Option[String], __elementLabel: String,
+  def toXML(__obj: rt.DataRecord[Any], __namespace: Option[String], __elementLabel: Option[String],
       __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq = __obj.value match {{
     case x: {name} => toXML(x, __namespace, __elementLabel, __scope)
     case _ => error("Expected {name}")      
   }}
   
-  def toXML(__obj: {name}, __namespace: Option[String], __elementLabel: String,
+  def toXML(__obj: {name}, __namespace: Option[String], __elementLabel: Option[String],
       __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq = {{
     val prefix = __scope.getPrefix(__namespace.orNull)
     var attribute: scala.xml.MetaData  = scala.xml.Null
@@ -719,7 +719,7 @@ object {name} {{
   
   def buildAttributeString(any: AnyAttributeDecl): String =
     "__obj.anyAttribute.foreach { x =>" + newline +
-    indent(3) + "attribute = scala.xml.Attribute((x.namespace map { __scope.getPrefix(_) }).orNull, x.key, x.value, attribute) }"
+    indent(3) + "attribute = scala.xml.Attribute((x.namespace map { __scope.getPrefix(_) }).orNull, x.key.orNull, x.value, attribute) }"
     
   def buildAttributeString(attr: AttributeDecl): String = {
     val namespaceString = if (attr.global)
@@ -817,39 +817,39 @@ object {name} {{
       case Single =>
         if (param.nillable)
           name + " match {" + newline +
-          indent(5) + "case Some(x) => " + baseTypeName + ".toXML(x, " + quote(param.namespace) + "," + 
-            quote(param.name) + ", __scope)" + newline +
+          indent(5) + "case Some(x) => " + baseTypeName + ".toXML(x, " + quote(param.namespace) + ", " + 
+            quote(Some(param.name)) + ", __scope)" + newline +
           indent(5) + "case None => Seq(rt.Helper.nilElem(" + quote(param.namespace) + ", " + 
             quote(param.name) + ", __scope))" + newline +
           indent(4) + "}"
         else
-          baseTypeName + ".toXML(" + name + ", " + quote(param.namespace) + "," + 
-            quote(param.name)  + ", __scope)"
+          baseTypeName + ".toXML(" + name + ", " + quote(param.namespace) + ", " + 
+            quote(Some(param.name)) + ", __scope)"
       case Optional =>
         if (param.nillable)
           name + " match {" + newline +
-          indent(5) + "case Some(x) => " + baseTypeName + ".toXML(x, " + quote(param.namespace) + "," + 
-            quote(param.name) + ", __scope)" + newline +
+          indent(5) + "case Some(x) => " + baseTypeName + ".toXML(x, " + quote(param.namespace) + ", " + 
+            quote(Some(param.name)) + ", __scope)" + newline +
           indent(5) + "case None => Seq(rt.Helper.nilElem(" + quote(param.namespace) + ", " + 
             quote(param.name) + ", __scope))" + newline +
           indent(4) + "}"    
         else
           name + " match {" + newline +
           indent(5) + "case Some(x) => " + baseTypeName + ".toXML(x, " + quote(param.namespace) + ", " + 
-            quote(param.name) + ", __scope)" + newline +
+            quote(Some(param.name)) + ", __scope)" + newline +
           indent(5) + "case None => Nil" + newline +
           indent(4) + "}"
       case Multiple =>
         if (param.nillable)
           name + ".flatMap(x => x match {" + newline +
           indent(5) + "case Some(x) => " + baseTypeName + ".toXML(x, " + quote(param.namespace) + ", " + 
-            quote(param.name) + ", __scope)" + newline +
+            quote(Some(param.name)) + ", __scope)" + newline +
           indent(5) + "case None => rt.Helper.nilElem(" + quote(param.namespace) + ", " + 
             quote(param.name) + ", __scope)" + newline +
           indent(4) + "} )"        
         else  
-          name + ".flatMap(x => " + baseTypeName + ".toXML(x, " + quote(param.namespace) + "," + 
-            quote(param.name) + ", __scope))"    
+          name + ".flatMap(x => " + baseTypeName + ".toXML(x, " + quote(param.namespace) + ", " + 
+            quote(Some(param.name)) + ", __scope))"    
     }
   }
   
@@ -1010,14 +1010,14 @@ object {name} {{
       
   def buildConverter(typeSymbol: XsTypeSymbol, minOccurs: Int, maxOccurs: Int): String =
     if (maxOccurs > 1)
-      "(p => p.toList map(x => rt.DataRecord(x.namespace, x.name, " +
+      "(p => p.toList map(x => rt.DataRecord(x.namespace, Some(x.name), " +
       buildArg("x.node", typeSymbol) + ")))"
     else if (minOccurs == 0)
       "(p => p map { x =>" + newline +
-      indent(3) + "rt.DataRecord(x.namespace, x.name, " +
+      indent(3) + "rt.DataRecord(x.namespace, Some(x.name), " +
       buildArg("x.node", typeSymbol) + ") })"
     else
-      "(x => rt.DataRecord(x.namespace, x.name, " + buildArg("x.node", typeSymbol) + "))"
+      "(x => rt.DataRecord(x.namespace, Some(x.name), " + buildArg("x.node", typeSymbol) + "))"
   
   // called by makeCaseClassWithType
   def buildParser(particle: Particle, mixed: Boolean, wrapInDataRecord: Boolean): String = particle match {
@@ -1438,9 +1438,9 @@ object {name} {{
       case x: AttributeDecl => makeCaseEntry(x)
     }.mkString(indent(6), newline + indent(6), newline) +
     indent(4) + "    case scala.xml.UnprefixedAttribute(key, value, _) =>" + newline +
-    indent(4) + "      List(rt.DataRecord(None, key, value.text))" + newline +
+    indent(4) + "      List(rt.DataRecord(None, Some(key), value.text))" + newline +
     indent(4) + "    case scala.xml.PrefixedAttribute(pre, key, value, _) =>" + newline +
-    indent(4) + "      List(rt.DataRecord(Option[String](elem.scope.getURI(pre)), key, value.text))" + newline +
+    indent(4) + "      List(rt.DataRecord(Option[String](elem.scope.getURI(pre)), Some(key), value.text))" + newline +
     indent(4) + "    case _ => Nil" + newline +
     indent(4) + "  }" + newline +
     indent(4) + "case _ => Nil" + newline +
@@ -1451,7 +1451,7 @@ object {name} {{
     "(node.child.map {" + newline +
     indent(3) + fromXmlCases(particles, 3).mkString(newline + indent(3)) + newline +
     indent(3) + "case x: scala.xml.Text =>" + newline +
-    indent(3) + "  rt.DataRecord(None, null, x.text)" + newline +
+    indent(3) + "  rt.DataRecord(None, None, x.text)" + newline +
     indent(2) + "}).toList"
   }
     
@@ -1469,7 +1469,7 @@ object {name} {{
     def makeCaseEntry(elem: ElemDecl) =
       "case x: scala.xml.Elem if (x.label == " + quote(elem.name) + " && " + newline + 
         indent(indentBase + 2) + "Option[String](x.scope.getURI(x.prefix)) == " + quote(elem.namespace) + ") =>" + newline +
-        indent(indentBase + 1) + "rt.DataRecord(Option[String](x.scope.getURI(x.prefix)), x.label, " +
+        indent(indentBase + 1) + "rt.DataRecord(Option[String](x.scope.getURI(x.prefix)), Some(x.label), " +
         buildArg("x", elem.typeSymbol) + ")"
     
     def isAnyOrChoice(typeSymbol: XsTypeSymbol) = typeSymbol match {
@@ -1483,7 +1483,7 @@ object {name} {{
         (x.isInstanceOf[ElemDecl] && (isAnyOrChoice(x.asInstanceOf[ElemDecl].typeSymbol))) ||
         (x.isInstanceOf[ElemRef] && (isAnyOrChoice(buildElement(x.asInstanceOf[ElemRef]).typeSymbol)))  ))
       List("case x: scala.xml.Elem =>" + newline +
-        indent(indentBase + 1) + "rt.DataRecord(Option[String](x.scope.getURI(x.prefix)), x.label, x)")
+        indent(indentBase + 1) + "rt.DataRecord(Option[String](x.scope.getURI(x.prefix)), Some(x.label), x)")
     else Nil
     
     particles.collect {

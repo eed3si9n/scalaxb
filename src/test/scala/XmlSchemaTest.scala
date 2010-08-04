@@ -32,7 +32,7 @@ object XmlSchemaTest extends SpecificationWithJUnit with CompilerMatcher {
         </complexType>
       </schema>""", // " 
       """Schema.fromXML(document).toXML(
-        Some("http://www.w3.org/2001/XMLSchema"), "schema", document.scope).toString""" // "
+        Some("http://www.w3.org/2001/XMLSchema"), Some("schema"), document.scope).toString""" // "
      ),
      generated) must evaluateTo("""<schema targetNamespace="http://www.example.com/IPO" """ +
        """xmlns:ipo="http://www.example.com/IPO" """ +

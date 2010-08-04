@@ -1,35 +1,37 @@
 package org.scalaxb.rt
 
 trait XMLWriter {
-  def toXML(__namespace: Option[String], __elementLabel: String,
+  def toXML(__namespace: Option[String], __elementLabel: Option[String],
       __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq
 }
 
 trait ImplicitXMLWriter[A] { outer =>
-  def toXML(__obj: A, __namespace: Option[String], __elementLabel: String,
+  def toXML(__obj: A, __namespace: Option[String], __elementLabel: Option[String],
       __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq
   
   implicit def toXMLWriter(__obj: A): XMLWriter = new XMLWriter {
-     def toXML(__namespace: Option[String], __elementLabel: String,
+     def toXML(__namespace: Option[String], __elementLabel: Option[String],
          __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq =
       outer.toXML(__obj, __namespace, __elementLabel, __scope)
   }  
 }
 
-case class DataRecord[+A](namespace: Option[String], key: String, value: A)
+case class DataRecord[+A](namespace: Option[String], key: Option[String], value: A)
 
 object DataRecord {  
-  def toXML[A](__obj: DataRecord[A], __namespace: Option[String], __elementLabel: String,
+  def toXML[A](__obj: DataRecord[A], __namespace: Option[String], __elementLabel: Option[String],
       __scope: scala.xml.NamespaceBinding):
       scala.xml.NodeSeq = (__obj.value) match {
     case x: scala.xml.NodeSeq => x
-    case x: String if __obj.key == null => scala.xml.Text(x)
+    case x: String if __obj.key.isEmpty => scala.xml.Text(x)
     // case x: Product =>
     //   if (x.isInstanceOf[XMLWriter]) x.asInstanceOf[XMLWriter].toXML(__namespace, __elementLabel, __scope)
     //   else scala.xml.Elem(__scope.getPrefix(__obj.namespace.orNull), __elementLabel,
     //          scala.xml.Null, __scope, scala.xml.Text(__obj.value.toString))
-    case x => scala.xml.Elem(__scope.getPrefix(__obj.namespace.orNull), __elementLabel,
-              scala.xml.Null, __scope, scala.xml.Text(__obj.value.toString))
+    case x => __elementLabel map { label =>
+      scala.xml.Elem(__scope.getPrefix(__obj.namespace.orNull), label,
+                scala.xml.Null, __scope, scala.xml.Text(__obj.value.toString))
+    } getOrElse { scala.xml.Text(__obj.value.toString) }
   }
 }
 
@@ -37,7 +39,7 @@ case class ElemName(namespace: Option[String], name: String) {
   var node: scala.xml.Node = _
   def text = node.text
   def nil = Helper.isNil(node)
-  def toDataRecord = DataRecord(namespace, name, node)
+  def toDataRecord = DataRecord(namespace, Some(name), node)
 }
 
 object ElemName {

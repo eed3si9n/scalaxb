@@ -3,9 +3,9 @@ import java.io.{File, InputStream, FileWriter}
 
 trait ScalaBazaarTask extends ScalaScriptTask {  
   def ouputLibPath = (outputPath ##) / "lib"
-  override val defaultJarName = name + ".jar"
-  override def jarPath = ouputLibPath / defaultJarName
   
+  val versionlessJarName = name + ".jar"
+  def versionlessJarPath = outputPath / versionlessJarName
   val bazaarPackageName = name + "-" + version + ".sbp"
   def bazaarPackagePath = outputPath / bazaarPackageName
   val bazaarAdvertName = name + "-" + version + ".advert"
@@ -15,6 +15,13 @@ trait ScalaBazaarTask extends ScalaScriptTask {
   def outputDocPath = (outputPath ##) / "doc"
   def bazaarDepends: List[String] = Nil
   def description: String
+  
+  lazy val versionlessPackage = versionLessPackageAction
+  
+  def versionLessPackageAction = packageTask(
+    packagePaths,
+    versionlessJarPath,
+    packageOptions).dependsOn(compile) dependsOn(compile) describedAs("Creates a versionless jar file.")
   
   lazy val sbaz = sbazTask(bazaarDepends, Some(description))
   
@@ -47,10 +54,10 @@ if (!depends.isEmpty)
     writeFile(descriptionPath.asFile, pack.toString)
     writeFile(bazaarAdvertPath.asFile, advert.toString)
     
-    FileUtilities.zip(List(outputBinPath, jarPath, outputDocPath, outputMetaPath),
+    FileUtilities.zip(List(outputBinPath, versionlessJarPath, outputDocPath, outputMetaPath),
       bazaarPackagePath, true, log)  
     None
-  }.dependsOn(`package`, doc, scalascript)
+  }.dependsOn(versionlessPackage, doc, scalascript)
   
   private def writeFile(file: File, content: String) =
     if (file.exists() && !file.canWrite())

@@ -10,4 +10,9 @@ class ScalaxbProject(info: ProjectInfo) extends DefaultProject(info) with poster
   override def description = "XML data binding tool for Scala."
   
   override def testCompileOptions = super.testCompileOptions ++ Seq(CompileOption("-no-specialization"))
+
+  override def managedStyle = ManagedStyle.Maven
+  val publishTo = "Scala Tools Nexus" at "http://nexus.scala-tools.org/content/repositories/snapshots/"
+  //val publishTo = "Scala Tools Nexus" at "http://nexus.scala-tools.org/content/repositories/releases/"
+  Credentials(Path.userHome / ".ivy2" / ".credentials", log)
 }

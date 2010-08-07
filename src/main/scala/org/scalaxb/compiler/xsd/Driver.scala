@@ -26,11 +26,13 @@ import org.scalaxb.compiler.{Module}
 import java.io.{File, Reader, PrintWriter}
 import collection.mutable
 
-object Driver extends Module {  
+object Driver extends Module { driver =>
   type Schema = SchemaDecl
   type Context = XsdContext
   
-  val processor = new ContextProcessor(this)
+  val processor = new ContextProcessor {
+    val logger = driver
+  }
   
   override def buildContext = XsdContext()
     

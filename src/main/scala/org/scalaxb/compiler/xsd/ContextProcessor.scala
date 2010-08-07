@@ -25,7 +25,8 @@ package org.scalaxb.compiler.xsd
 import org.scalaxb.compiler.{ScalaNames, Logger}
 import scala.collection.mutable
 
-class ContextProcessor(logger: Logger) extends ScalaNames {
+trait ContextProcessor extends ScalaNames {
+  def logger: Logger
   
   def packageName(schema: SchemaDecl, context: XsdContext): Option[String] =
     packageName(schema.targetNamespace, context)

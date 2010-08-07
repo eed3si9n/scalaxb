@@ -29,7 +29,7 @@ object DataRecord {
     //   else scala.xml.Elem(__scope.getPrefix(__obj.namespace.orNull), __elementLabel,
     //          scala.xml.Null, __scope, scala.xml.Text(__obj.value.toString))
     case x => __elementLabel map { label =>
-      scala.xml.Elem(__scope.getPrefix(__obj.namespace.orNull), label,
+      scala.xml.Elem(Helper.getPrefix(__obj.namespace, __scope).orNull, label,
                 scala.xml.Null, __scope, scala.xml.Text(__obj.value.toString))
     } getOrElse { scala.xml.Text(__obj.value.toString) }
   }
@@ -162,7 +162,7 @@ object Helper {
   
   def nilElem(namespace: Option[String], elementLabel: String,
       scope: scala.xml.NamespaceBinding) =
-    scala.xml.Elem(scope.getPrefix(namespace.orNull), elementLabel,
+    scala.xml.Elem(getPrefix(namespace, scope).orNull, elementLabel,
       scala.xml.Attribute(scope.getPrefix(XSI_URL), "nil", "true", scala.xml.Null),
       scope, Nil: _*)
       
@@ -176,4 +176,8 @@ object Helper {
       else typeName
     (namespace, value)
   }
+  
+  def getPrefix(namespace: Option[String], scope: scala.xml.NamespaceBinding) =
+    if (Option[String](scope.getURI(null)) == namespace) None
+    else Option[String](scope.getPrefix(namespace.orNull))
 }

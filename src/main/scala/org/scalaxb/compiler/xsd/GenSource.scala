@@ -411,16 +411,15 @@ object {name} extends rt.ImplicitXMLWriter[{name}] {{
             ", " + quote(scope.uri) + ", __scope)") :: scopeString(scope.parent)
       }
     
-    def getPrefix(namespace: Option[String], scope: scala.xml.NamespaceBinding): String =
-      if (scope == null || scope.uri == null) null
+    def getPrefix(namespace: Option[String], scope: scala.xml.NamespaceBinding): Option[String] =
+      if (scope == null || scope.uri == null) None
       else
-        if (scope.prefix != null && scope.uri == namespace) scope.prefix
+        if (scope.prefix != null && Some(scope.uri) == namespace) Some(scope.prefix)
         else getPrefix(namespace, scope.parent)
         
-    def typeNameString =
-      if (getPrefix(schema.targetNamespace, schema.scope)  == null) decl.name
-      else getPrefix(schema.targetNamespace, schema.scope) + ":" + decl.name
-        
+    def typeNameString = (getPrefix(schema.targetNamespace, schema.scope) map {
+      _ + ":" } getOrElse { "" }) + decl.name
+      
     val groups = filterGroup(decl)
     val objSuperNames: List[String] = "rt.ElemNameParser[" + name + "]" ::
       groups.map(groupTypeName)
@@ -462,7 +461,7 @@ object {name} extends rt.ImplicitXMLWriter[{name}] {{
   </source>
     
     def makeToXml2 = <source>def toXML(__obj: {name}, __namespace: Option[String], __elementLabel: Option[String], __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq = {{
-    val prefix = __scope.getPrefix(__namespace.orNull)
+    val prefix = rt.Helper.getPrefix(__namespace, __scope).orNull
     var attribute: scala.xml.MetaData  = scala.xml.Null
     { attributeString }
     scala.xml.Elem(prefix, __elementLabel getOrElse {{ error("missing element label.") }},
@@ -594,7 +593,7 @@ object {name} extends rt.ImplicitXMLWriter[{name}] {{
   
   def toXML(__obj: {name}, __namespace: Option[String], __elementLabel: Option[String],
       __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq = {{
-    val prefix = __scope.getPrefix(__namespace.orNull)
+    val prefix = rt.Helper.getPrefix(__namespace, __scope).orNull
     var attribute: scala.xml.MetaData  = scala.xml.Null
     { childString }
   }}
@@ -965,12 +964,12 @@ object {name} {{
     val elem = buildCompositorRef(compositor)
     val symbol = buildCompositorSymbol(compositor, elem.typeSymbol)
     
-    Param(null, "arg1", symbol,
+    Param(None, "arg1", symbol,
       toCardinality(compositor.minOccurs, compositor.maxOccurs), false, false)
   }
   
   def buildParam(any: AnyAttributeDecl): Param =
-    Param(null, "anyAttribute", XsAnyAttribute, Multiple, false, true)
+    Param(None, "anyAttribute", XsAnyAttribute, Multiple, false, true)
     
   def buildConverter(seq: SequenceDecl, mixed: Boolean,
       wrapInDataRecord: Boolean): String = {
@@ -993,7 +992,7 @@ object {name} {{
     
     "{ case " +
     parserVariableList.mkString(" ~ " + newline + indent(3)) + 
-    (if (wrapInDataRecord) " => rt.DataRecord(None, null, " + name + "(" + argsString + "))"
+    (if (wrapInDataRecord) " => rt.DataRecord(None, None, " + name + "(" + argsString + "))"
     else " => " + name + "(" + argsString + ")") +
     " }"
   }
@@ -1814,7 +1813,7 @@ object {name} {{
     }
     val symbol = new ReferenceTypeSymbol(typeName)
     val decl = ComplexTypeDecl(schema.targetNamespace, symbol.name,
-      false, false, null, Nil, None)
+      false, false, ComplexContentDecl.empty, Nil, None)
     
     compositorWrapper(decl) = compositor
     

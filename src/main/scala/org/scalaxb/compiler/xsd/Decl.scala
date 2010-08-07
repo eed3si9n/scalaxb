@@ -123,15 +123,8 @@ object TypeSymbolParser {
     else if (name.contains(':')) {
       val prefix = name.dropRight(name.length - name.indexOf(':'))
       val value = name.drop(name.indexOf(':') + 1)
-      (config.scope.getURI(prefix) match {
-        case null => None
-        case x => Some(x)
-      }, value)
-    } else
-      (config.scope.getURI(null) match {
-        case null => None
-        case x => Some(x)
-      }, name)
+      Option[String](config.scope.getURI(prefix)) -> value
+    } else (Option[String](config.scope.getURI(null)), name)
   }
 }
 

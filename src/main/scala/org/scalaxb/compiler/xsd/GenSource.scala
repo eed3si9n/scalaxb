@@ -132,7 +132,7 @@ class GenSource(val schema: SchemaDecl,
       else decl.name
       
       val name = buildTypeName(decl)
-      "case (" + quote(decl.namespace) + ", " + quote(localPart) + ") => " + name + ".fromXML(node)"
+      "case (" + quoteNamespace(decl.namespace) + ", " + quote(localPart) + ") => " + name + ".fromXML(node)"
     }
     
     def makeToXmlCaseEntry(decl: ComplexTypeDecl) = {
@@ -152,6 +152,8 @@ class GenSource(val schema: SchemaDecl,
 }}
 
 object {name} extends rt.ImplicitXMLWriter[{name}] {{
+  val targetNamespace: Option[String] = { quote(schema.targetNamespace) }
+  
   def fromXML(seq: scala.xml.NodeSeq): {name} = seq match {{
     case node: scala.xml.Node =>     
       rt.Helper.instanceType(node) match {{
@@ -303,6 +305,8 @@ object {name} extends rt.ImplicitXMLWriter[{name}] {{
     
     def makeObject = if (simpleFromXml || flatParticles.isEmpty)
 <source>object {name} extends rt.ImplicitXMLWriter[{name}] {{
+  val targetNamespace: Option[String] = { quote(schema.targetNamespace) }
+  
   def fromXML(seq: scala.xml.NodeSeq): {name} = seq match {{
     case node: scala.xml.Node => {name}({argsString})
     case _ => error("fromXML failed: seq must be scala.xml.Node")
@@ -338,10 +342,10 @@ object {name} extends rt.ImplicitXMLWriter[{name}] {{
   </source>
     
     def makeToXml2 = <source>def toXML(__obj: {name}, __namespace: Option[String], __elementLabel: Option[String], __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq = {{
-    val prefix = rt.Helper.getPrefix(__namespace, __scope).orNull
     var attribute: scala.xml.MetaData  = scala.xml.Null
     { attributeString }
-    scala.xml.Elem(prefix, __elementLabel getOrElse {{ error("missing element label.") }},
+    scala.xml.Elem(rt.Helper.getPrefix(__namespace, __scope).orNull,
+      __elementLabel getOrElse {{ error("missing element label.") }},
       attribute, __scope,
       { childString })
   }}
@@ -425,6 +429,8 @@ object {name} extends rt.ImplicitXMLWriter[{name}] {{
     <source>trait  {name}
 
 object {name} {{
+  val targetNamespace: Option[String] = { quote(schema.targetNamespace) }
+  
   def toXML(__obj: rt.DataRecord[Any], __namespace: Option[String], __elementLabel: Option[String],
       __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq = __obj.value match {{
     { cases.distinct.mkString(newline + indent(2)) }
@@ -462,6 +468,8 @@ object {name} {{
     <source>{ buildComment(seq) }case class {name}({paramsString})
 
 object {name} extends rt.ImplicitXMLWriter[{name}] {{
+  val targetNamespace: Option[String] = { quote(schema.targetNamespace) }
+  
   def toXML(__obj: rt.DataRecord[Any], __namespace: Option[String], __elementLabel: Option[String],
       __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq = __obj.value match {{
     case x: {name} => toXML(x, __namespace, __elementLabel, __scope)
@@ -470,7 +478,6 @@ object {name} extends rt.ImplicitXMLWriter[{name}] {{
   
   def toXML(__obj: {name}, __namespace: Option[String], __elementLabel: Option[String],
       __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq = {{
-    val prefix = rt.Helper.getPrefix(__namespace, __scope).orNull
     var attribute: scala.xml.MetaData  = scala.xml.Null
     { childString }
   }}
@@ -503,6 +510,8 @@ object {name} extends rt.ImplicitXMLWriter[{name}] {{
       else groups.map(groupTypeName(_))
     
     <source>{ buildComment(group) }trait {name} extends {superNames.mkString(" with ")} {{
+  private val targetNamespace: Option[String] = { quote(schema.targetNamespace) }
+  
   def parse{name}: Parser[{param.baseTypeName}] =
     {parser}
   
@@ -530,6 +539,8 @@ object {name} extends rt.ImplicitXMLWriter[{name}] {{
     <source>{ buildComment(group) }case class {name}({paramsString})
 
 object {name} {{
+  val targetNamespace: Option[String] = { quote(schema.targetNamespace) }
+  
   def fromXML(node: scala.xml.Node): {name} = {{
     {name}({argsString})
   }}

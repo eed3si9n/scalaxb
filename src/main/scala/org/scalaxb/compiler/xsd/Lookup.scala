@@ -195,6 +195,10 @@ trait Lookup extends ContextProcessor {
     case _ => error("GenSource: Unsupported content " +  decl.content.toString)
   }
   
+  def quoteNamespace(namespace: Option[String]) =
+    if (namespace == schema.targetNamespace) "targetNamespace"
+    else quote(namespace)
+    
   def quote(value: Option[String]): String = value map {
     "Some(\"" + _ + "\")"
   } getOrElse { "None" }

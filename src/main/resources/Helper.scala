@@ -49,8 +49,6 @@ object ElemName {
 trait AnyElemNameParser extends scala.util.parsing.combinator.Parsers {
   type Elem = ElemName
   
-  def targetNamespace: Option[String]
-  
   def any: Parser[ElemName] = 
     accept("any", { case x: ElemName => x })  
 }

@@ -161,13 +161,9 @@ trait Parsers extends Args with Params {
     else buildParserString(elem, minOccurs, maxOccurs)
   
   def buildParserString(elem: ElemDecl, minOccurs: Int, maxOccurs: Int): String =
-    buildParserString("rt.ElemName(" + escapeTargetNamespace(elem.namespace) + ", " + quote(elem.name) + ")",
+    buildParserString("rt.ElemName(" + quoteNamespace(elem.namespace) + ", " + quote(elem.name) + ")",
       minOccurs, maxOccurs)
-      
-  def escapeTargetNamespace(namespace: Option[String]) =
-    if (namespace == schema.targetNamespace) "targetNamespace"
-    else quote(namespace)
-
+  
   def buildParserString(base: String, minOccurs: Int, maxOccurs: Int) =
     if (maxOccurs > 1) "rep(" + base + ")"
     else if (minOccurs == 0) "opt(" + base + ")"

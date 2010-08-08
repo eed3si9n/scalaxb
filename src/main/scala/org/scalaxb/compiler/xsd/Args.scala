@@ -40,17 +40,18 @@ trait Args extends Params {
   def buildArg(elem: ElemDecl, selector: String): String = elem.typeSymbol match {
     case symbol: BuiltInSimpleTypeSymbol => buildArg(symbol,
       selector, elem.defaultValue, elem.fixedValue,
-      elem.minOccurs, elem.maxOccurs, elem.nillable)
+      toCardinality(elem.minOccurs, elem.maxOccurs), elem.nillable getOrElse(false))
     case ReferenceTypeSymbol(decl: SimpleTypeDecl) =>
       if (containsEnumeration(decl)) buildArgForComplexType(buildTypeName(decl) ,selector,
         elem.defaultValue, elem.fixedValue,
-        elem.minOccurs, elem.maxOccurs, elem.nillable, false)
+        toCardinality(elem.minOccurs, elem.maxOccurs), elem.nillable getOrElse(false), false)
       else buildArg(decl,
         selector, elem.defaultValue, elem.fixedValue,
-        elem.minOccurs, elem.maxOccurs, elem.nillable) 
+        toCardinality(elem.minOccurs, elem.maxOccurs), elem.nillable getOrElse(false)) 
     case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>  buildArg(elem, decl, selector)
     case XsAny => buildArgForAny(selector, elem.namespace, elem.name,
-      elem.defaultValue, elem.fixedValue, elem.minOccurs, elem.maxOccurs, elem.nillable)
+      elem.defaultValue, elem.fixedValue,
+      toCardinality(elem.minOccurs, elem.maxOccurs), elem.nillable getOrElse(false))
     
     case symbol: ReferenceTypeSymbol =>
       if (symbol.decl == null)
@@ -65,7 +66,7 @@ trait Args extends Params {
       " Invalid type " + elem.typeSymbol.getClass.toString + ": " + elem.typeSymbol.toString)    
   }
   
-  def buildArg(elem: ElemDecl, decl: ComplexTypeDecl, selector: String): String = {
+  def buildArg(elem: ElemDecl, decl: ComplexTypeDecl, selector: String): String =
     if (compositorWrapper.contains(decl)) {
       val compositor = compositorWrapper(decl)
       
@@ -73,56 +74,52 @@ trait Args extends Params {
       else selector
     } else buildArgForComplexType(buildTypeName(elem.typeSymbol), selector,
       elem.defaultValue, elem.fixedValue,
-      elem.minOccurs, elem.maxOccurs, elem.nillable, false)
-  }
+      toCardinality(elem.minOccurs, elem.maxOccurs), elem.nillable getOrElse(false), false)
   
   def buildArgForComplexType(typeName: String, selector: String,
       defaultValue: Option[String], fixedValue: Option[String],
-      minOccurs: Int, maxOccurs: Int, nillable: Option[Boolean],
+      cardinality: Cardinality, nillable: Boolean,
       list: Boolean): String = {    
     val optionSelector = if (selector contains("@")) selector + ".headOption"
       else selector
-    val isNillable = nillable getOrElse(false)
+    val splitter = ".text.split(' ').toList.map { x => " + typeName + ".fromString(x) }" 
     
-    val retval: String = if (list) {
-      val splitter = ".text.split(' ').toList.map { x => " + typeName + ".fromString(x) }" 
-      
-      if (maxOccurs > 1)
-        if (isNillable)
-          selector + ".toList.map(x => if (x.nil) None" + newline +
-           indent(3) + "else Some(x" + splitter + ") )" 
-        else selector + ".toList.map(x => x" + splitter + ")"      
-      else if (minOccurs == 0)
-        if (isNillable) 
-          optionSelector + " match {" + newline +
-          indent(4) + "case Some(x) => if (x.nil) None" + newline +
-          indent(4) + "  else Some(x" + splitter + ")" + newline +
-          indent(4) + "case None    => None" + newline +
-          indent(3) + "}"
-        else selector + ".headOption map { x => x" + splitter + " }"
-      else
-        if (isNillable)
-          "if (" + selector + ".nil) None" + newline +
-            indent(3) + "else Some(" + selector + splitter + ")"
-        else selector + splitter
-    } else if (maxOccurs > 1)
-      if (isNillable)
+    val retval = (list, cardinality, nillable) match {
+      case (true, Multiple, true) =>
         selector + ".toList.map(x => if (x.nil) None" + newline +
-          indent(3) + "else Some(" + typeName + ".fromXML(x.node)) )" 
-      else selector + ".toList.map(x => " + typeName + ".fromXML(x))" 
-    else if (minOccurs == 0)
-      if (isNillable)
-          optionSelector + " match {" + newline +
+          indent(3) + "else Some(x" + splitter + ") )"
+      case (true, Multiple, false) =>
+        selector + ".toList.map(x => x" + splitter + ")"
+      case (true, Optional, true) =>
+        optionSelector + " match {" + newline +
+        indent(4) + "case Some(x) => if (x.nil) None" + newline +
+        indent(4) + "  else Some(x" + splitter + ")" + newline +
+        indent(4) + "case None    => None" + newline +
+        indent(3) + "}"
+      case (true, Optional, false) =>
+        selector + ".headOption map { x => x" + splitter + " }"
+      case (true, Single, true) =>
+        "if (" + selector + ".nil) None" + newline +
+          indent(3) + "else Some(" + selector + splitter + ")"
+      case (true, Single, false) =>
+        selector + splitter
+      case (false, Multiple, true) =>
+        selector + ".toList.map(x => if (x.nil) None" + newline +
+          indent(3) + "else Some(" + typeName + ".fromXML(x.node)) )"        
+      case (false, Multiple, false) =>
+        selector + ".toList.map(x => " + typeName + ".fromXML(x))"
+      case (false, Optional, true) =>
+        optionSelector + " match {" + newline +
           indent(4) + "case Some(x) => if (x.nil) None" + newline +
           indent(4) + "  else Some(" +  typeName + ".fromXML(x.node))" + newline +
           indent(4) + "case None    => None" + newline +
           indent(3) + "}"
-      else selector + ".headOption map { x => " + typeName + ".fromXML(x) }"
-    else
-      if (isNillable)
+      case (false, Optional, false) =>
+        selector + ".headOption map { x => " + typeName + ".fromXML(x) }"
+      case (false, Single, true) =>
         "if (" + selector + ".nil) None" + newline +
           indent(3) + "else Some(" +  typeName + ".fromXML(" + selector + ".node))"
-      else {
+      case (false, Single, false) =>
         fixedValue match {
           case Some(x) => 
             typeName + ".fromString(" + quote(x) + ")"
@@ -135,8 +132,8 @@ trait Args extends Params {
                 indent(3) + "}"
               case None => typeName + ".fromXML(" + selector + ")" 
             }
-        }
-      }
+        }      
+    }
     
     log("GenSource#buildArgForComplexType: " + typeName + ": " + retval)
     retval
@@ -144,58 +141,55 @@ trait Args extends Params {
   
   def buildArgForAny(selector: String, namespace: Option[String], elementLabel: String,
       defaultValue: Option[String], fixedValue: Option[String],
-      minOccurs: Int, maxOccurs: Int, nillable: Option[Boolean]) = {
+      cardinality: Cardinality, nillable: Boolean) = {
     
-    def buildMatchStatement(noneValue: String, someValue: String) = nillable match {
-      case Some(true) =>        
-        selector + " match {" + newline +
+    def buildMatchStatement(noneValue: String, someValue: String) =
+      if (nillable) selector + " match {" + newline +
           indent(4) + "case Some(x) => if (x.nil) " + noneValue + newline +
           indent(4) + "  else " + someValue + newline +
           indent(4) + "case None    => " + noneValue + newline +
           indent(3) + "}"
-      case _ =>
-        selector + " match {" + newline +
+      else selector + " match {" + newline +
         indent(4) + "case Some(x) => " + someValue + newline +
         indent(4) + "case None    => " + noneValue + newline +
         indent(3) + "}"    
+    
+    val retval = (cardinality, nillable, defaultValue, fixedValue) match {
+      case (Multiple, true, _, _) =>
+        selector + ".toList.map { x => if (x.nil) None" + newline +
+          indent(3) + "else Some(x.toDataRecord) }"
+      case (Multiple, false, _, _) =>
+        selector + ".toList.map { _.toDataRecord }"
+      case (Optional, _, _, _) =>
+        buildMatchStatement("None", "Some(x.toDataRecord)")
+      case (Single, _, _, Some(x)) =>
+        "rt.DataRecord(" + newline +
+          indent(4) + quote(namespace) + ", " + quote(elementLabel) + ", " + newline +
+          indent(4) + "scala.xml.Elem(node.scope.getPrefix(" + quote(schema.targetNamespace) + "), "  + newline +
+          indent(4) + quote(elementLabel) + ", scala.xml.Null, node.scope, " +  newline +
+          indent(4) + "scala.xml.Text(" + quote(fixedValue.get) + ")))"
+      case (Single, _, Some(x), _) =>
+        buildMatchStatement("rt.DataRecord(" + newline +
+          indent(4) + quote(namespace) + ", " + quote(elementLabel) + ", " + newline +
+          indent(4) + "scala.xml.Elem(node.scope.getPrefix(" + quote(schema.targetNamespace) + "), " + newline +
+          indent(4) + quote(elementLabel) + ", scala.xml.Null, node.scope, " +  newline +
+          indent(4) + "scala.xml.Text(" + quote(defaultValue.get) + ")))",
+          "x.toDataRecord")        
+      case (Single, false, _, _) =>
+        selector + ".toDataRecord"
     }
-        
-    if (maxOccurs > 1) {
-      nillable match {
-        case Some(true) =>
-          selector + ".toList.map(x => if (x.nil) None" + newline +
-          indent(3) + "else Some(x.toDataRecord) )" 
-        case _ =>
-          selector + ".toList.map(_.toDataRecord)" 
-      }
-    } else if (minOccurs == 0) {
-      buildMatchStatement("None",
-        "Some(x.toDataRecord)")
-    } else if (defaultValue.isDefined) {
-      buildMatchStatement("rt.DataRecord(" + newline +
-        indent(4) + quote(namespace) + ", " + quote(elementLabel) + ", " + newline +
-        indent(4) + "scala.xml.Elem(node.scope.getPrefix(" + quote(schema.targetNamespace) + "), " + newline +
-        indent(4) + quote(elementLabel) + ", scala.xml.Null, node.scope, " +  newline +
-        indent(4) + "scala.xml.Text(" + quote(defaultValue.get) + ")))",
-        "x.toDataRecord")
-    } else if (fixedValue.isDefined) {
-      "rt.DataRecord(" + newline +
-        indent(4) + quote(namespace) + ", " + quote(elementLabel) + ", " + newline +
-        indent(4) + "scala.xml.Elem(node.scope.getPrefix(" + quote(schema.targetNamespace) + "), "  + newline +
-        indent(4) + quote(elementLabel) + ", scala.xml.Null, node.scope, " +  newline +
-        indent(4) + "scala.xml.Text(" + quote(fixedValue.get) + ")))"
-    }
-    else selector + ".toDataRecord"
+    
+    retval
   }
     
   def buildArg(attr: AttributeDecl): String = attr.typeSymbol match {
     case symbol: BuiltInSimpleTypeSymbol =>
       buildArg(symbol, buildSelector(attr), attr.defaultValue, attr.fixedValue,
-        toMinOccurs(attr), 1, None)
+        toCardinality(toMinOccurs(attr), 1), false)
         
     case ReferenceTypeSymbol(decl: SimpleTypeDecl) =>
       buildArg(decl, buildSelector(attr), attr.defaultValue, attr.fixedValue,
-        toMinOccurs(attr), 1, None)
+        toCardinality(toMinOccurs(attr), 1), false)
         
     case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
       error("GenSource: Attribute with complex type " + decl.toString)
@@ -205,22 +199,22 @@ trait Args extends Params {
 
   def buildArg(decl: SimpleTypeDecl, selector: String,
       defaultValue: Option[String], fixedValue: Option[String],
-      minOccurs: Int, maxOccurs: Int, nillable: Option[Boolean]): String = decl.content match {  
+      cardinality: Cardinality, nillable: Boolean): String = decl.content match {  
     
     case x: SimpTypRestrictionDecl =>
       if (containsEnumeration(decl)) buildArgForComplexType(buildTypeName(decl) ,selector,
         defaultValue, fixedValue,
-        minOccurs, maxOccurs, nillable, false)
-      else buildArg(baseType(decl), selector, defaultValue, fixedValue, minOccurs, maxOccurs, nillable)
+        cardinality, nillable, false)
+      else buildArg(baseType(decl), selector, defaultValue, fixedValue, cardinality, nillable)
     case SimpTypListDecl(ReferenceTypeSymbol(itemType: SimpleTypeDecl)) 
           if containsEnumeration(itemType) =>
       buildArgForComplexType(buildTypeName(itemType) ,selector,
         defaultValue, fixedValue,
-        minOccurs, maxOccurs, nillable, true)
+        cardinality, nillable, true)
     case x: SimpTypListDecl =>
-      buildArg(baseType(decl), selector, defaultValue, fixedValue, minOccurs, maxOccurs, nillable, true)
+      buildArg(baseType(decl), selector, defaultValue, fixedValue, cardinality, nillable, true)
     case x: SimpTypUnionDecl =>
-      buildArg(baseType(decl), selector, defaultValue, fixedValue, minOccurs, maxOccurs, nillable)
+      buildArg(baseType(decl), selector, defaultValue, fixedValue, cardinality, nillable)
     
     case _ => error("GenSource: Unsupported content " + decl.content.toString)    
   }
@@ -233,11 +227,11 @@ trait Args extends Params {
   }
   
   def buildArg(content: SimpleContentDecl, typeSymbol: XsTypeSymbol): String = typeSymbol match {
-    case base: BuiltInSimpleTypeSymbol => buildArg(base, "node", None, None, 1, 1, None)
+    case base: BuiltInSimpleTypeSymbol => buildArg(base, "node", None, None, Single, false)
     case ReferenceTypeSymbol(ComplexTypeDecl(_, _, _, _, content: SimpleContentDecl, _, _)) =>
       buildArg(content)
     case ReferenceTypeSymbol(decl: SimpleTypeDecl) =>
-      buildArg(decl, "node", None, None, 1, 1, None)
+      buildArg(decl, "node", None, None, Single, false)
         
     case _ => error("GenSource: Unsupported type " + typeSymbol.toString)    
   }
@@ -297,9 +291,9 @@ trait Args extends Params {
   def buildArg(selector: String, typeSymbol: XsTypeSymbol): String = typeSymbol match {
     case XsAny => selector
     case symbol: BuiltInSimpleTypeSymbol =>
-      buildArg(symbol, selector, None, None, 1, 1, None)
+      buildArg(symbol, selector, None, None, Single, false)
     case ReferenceTypeSymbol(decl@SimpleTypeDecl(_, _, _, _)) =>
-      buildArg(baseType(decl), selector, None, None, 1, 1, None)
+      buildArg(baseType(decl), selector, None, None, Single, false)
     case _ =>
       buildTypeName(typeSymbol) + ".fromXML(" + selector + ")"
   }
@@ -336,11 +330,9 @@ trait Args extends Params {
   
   def buildArg(typeSymbol: BuiltInSimpleTypeSymbol, selector: String,
       defaultValue: Option[String], fixedValue: Option[String],
-      minOccurs: Int, maxOccurs: Int, nillable: Option[Boolean],
+      cardinality: Cardinality, nillable: Boolean,
       list: Boolean = false): String = {
-    
-    val isNillable = nillable getOrElse(false)
-    
+        
     val (pre, post) = typeSymbol.name match {
       case "String"     => ("", "")
       case "javax.xml.datatype.Duration" => ("rt.Helper.toDuration(", ")")
@@ -366,59 +358,58 @@ trait Args extends Params {
     val optionSelector = if (selector contains("@")) selector + ".headOption"
       else selector
     
-    def buildMatchStatement(noneValue: String, someValue: String) = nillable match {
-      case Some(true) =>
-        optionSelector + " match {" + newline +
+    def buildMatchStatement(noneValue: String, someValue: String) =
+      if (nillable) optionSelector + " match {" + newline +
           indent(4) + "case Some(x) => if (x.nil) " + noneValue + newline +
           indent(4) + "  else " + someValue + newline +
           indent(4) + "case None    => " + noneValue + newline +
           indent(3) + "}" 
-      case _ =>
-        optionSelector + " match {" + newline +
+      else optionSelector + " match {" + newline +
           indent(4) + "case Some(x) => " + someValue + newline +
           indent(4) + "case None    => " + noneValue + newline +
-          indent(3) + "}"      
-    }
+          indent(3) + "}"
     
     def buildMapStatement(someValue: String) =
        selector + ".headOption map { x => " + someValue + " }"
     
-    if (list) {
-      // avoid _
-      val splitter = ".text.split(' ').toList.map { x => " + pre + "x" + post + " }" 
-      
-      if (maxOccurs > 1)
-        if (isNillable)
-          selector + ".toList.map(x => if (x.nil) None" + newline +
-           indent(3) + "else Some(x" + splitter + ") )" 
-        else selector + ".toList.map(x => x" + splitter + ")"      
-      else if (minOccurs == 0)
-        if (isNillable) buildMatchStatement("None", "Some(x" + splitter + ")")
-        else buildMapStatement("x" + splitter)
-      else 
-        if (isNillable)
-          "if (" + selector + ".nil) None" + newline +
-            indent(3) + "else Some(" + selector + splitter + ")"
-        else selector + splitter
-    } else if (maxOccurs > 1) {
-      // avoid _
-      if (selector.contains("split("))
-        selector + ".toList.map { x => " + pre + "x" + post + " }"
-      else
-        if (isNillable) selector + ".toList.map(x => if (x.nil) None" + newline +
-            indent(3) + "else Some(" + pre + "x.text" + post + ") )"
-        else selector + ".toList.map(x => " + pre + "x.text" + post + ")"
-    } else if (minOccurs == 0) {
-      if (isNillable) buildMatchStatement("None", "Some(" + pre + "x.text" + post + ")")
-      else buildMapStatement(pre + "x.text" + post)
-    } else if (defaultValue.isDefined) {
-      buildMatchStatement(pre + quote(defaultValue.get) + post, pre + "x.text" + post)
-    } else if (fixedValue.isDefined) {
-      pre + quote(fixedValue.get) + post
-    } else 
-      if (isNillable) "if (" + selector + ".nil) None" + newline +
-        indent(3) + "else Some(" + pre + selector + ".text" + post + ")"
-      else pre + selector + ".text" + post
+    val splitter = ".text.split(' ').toList.map { x => " + pre + "x" + post + " }" 
+    val retval = (list, cardinality, nillable, defaultValue, fixedValue) match {
+      case (true, Multiple, true, _, _) =>
+        selector + ".toList.map(x => if (x.nil) None" + newline +
+          indent(3) + "else Some(x" + splitter + ") )"
+      case (true, Multiple, false, _, _) =>
+        selector + ".toList.map(x => x" + splitter + ")" 
+      case (true, Optional, true, _, _) =>
+        buildMatchStatement("None", "Some(x" + splitter + ")")
+      case (true, Optional, false, _, _) =>
+        buildMapStatement("x" + splitter)
+      case (true, Single, true, _, _) =>
+        "if (" + selector + ".nil) None" + newline +
+          indent(3) + "else Some(" + selector + splitter + ")"
+      case (true, Single, false, _, _) =>  
+        selector + splitter
+      case (false, Multiple, true, _, _) =>
+        selector + ".toList.map(x => if (x.nil) None" + newline +
+          indent(3) + "else Some(" + pre + "x.text" + post + ") )"
+      case (false, Multiple, false, _, _) =>
+        if (selector.contains("split(")) selector + ".toList.map { x => " + pre + "x" + post + " }"
+        else selector + ".toList.map { x => " + pre + "x.text" + post + " }"
+      case (false, Optional, true, _, _) =>
+        buildMatchStatement("None", "Some(" + pre + "x.text" + post + ")")
+      case (false, Optional, false, _, _) =>
+        buildMapStatement(pre + "x.text" + post)
+      case (false, Single, _, _, Some(x)) =>
+        pre + quote(x) + post
+      case (false, Single, _, Some(x), _) =>
+        buildMatchStatement(pre + quote(x) + post, pre + "x.text" + post)
+      case (false, Single, true, _, _) =>
+        "if (" + selector + ".nil) None" + newline +
+          indent(3) + "else Some(" + pre + selector + ".text" + post + ")"
+      case (false, Single, false, _, _) =>
+        pre + selector + ".text" + post
+    }
+    
+    retval
   }
   
   def buildArg(group: AttributeGroupDecl): String = {

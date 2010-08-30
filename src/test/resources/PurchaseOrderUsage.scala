@@ -29,7 +29,8 @@ object PurchaseOrderUsage {
     testNillable
     testAll
     testContentModel
-  
+    testSubstitutionGroup
+    
     true
   }
   
@@ -398,5 +399,25 @@ object PurchaseOrderUsage {
     
     val document = Head.toXML(obj, None, Some("head"), subject.scope)
     println(document) 
+  }
+  
+  def testSubstitutionGroup {
+    val subject = <billTo xmlns="http://www.example.com/IPO"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xmlns:ipo="http://www.example.com/IPO"
+      dir="ltr">
+      <gh6sub1>foo</gh6sub1>
+      <gh6head2>bar</gh6head2>
+      <city>baz</city>
+    </billTo>
+    val obj = GH6Usage.fromXML(subject)
+    obj match {
+      case GH6Usage(DataRecord(Some("http://www.example.com/IPO"),
+        Some("gh6sub1"), "foo"), "bar", "baz") =>
+      case _ => error("match failed: " + obj.toString)
+    }
+    
+    val document = GH6Usage.toXML(obj, None, Some("billTo"), subject.scope)
+    println(document)
   }
 }

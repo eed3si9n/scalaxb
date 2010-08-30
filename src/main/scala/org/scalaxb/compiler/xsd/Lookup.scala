@@ -55,11 +55,12 @@ trait Lookup extends ContextProcessor {
       that.fixedValue, ref.minOccurs, ref.maxOccurs, ref.nillable match {
         case None => that.nillable
         case _    => ref.nillable
-      }, that.annotation)
+      },
+      that.substitutionGroup, that.annotation)
   }
 
   def buildElement(base: BuiltInSimpleTypeSymbol): ElemDecl = 
-    ElemDecl(schema.targetNamespace, "value", base, None, None, 1, 1, None, None)
+    ElemDecl(schema.targetNamespace, "value", base, None, None, 1, 1, None, None, None)
 
   def groups(namespace: Option[String], name: String) =
     (for (schema <- schemas;
@@ -195,6 +196,11 @@ trait Lookup extends ContextProcessor {
     case _ => error("GenSource: Unsupported content " +  decl.content.toString)
   }
   
+  def isSubstitionGroup(elem: ElemDecl) =
+    elem.namespace map { x =>
+      context.substituteGroups.contains((elem.namespace, elem.name))
+    } getOrElse { false }
+    
   def quoteNamespace(namespace: Option[String]) =
     if (namespace == schema.targetNamespace) "targetNamespace"
     else quote(namespace)
@@ -207,7 +213,5 @@ trait Lookup extends ContextProcessor {
     else "\"" + value + "\""
   
   def indent(indent: Int) = "  " * indent
-  
-  def log(msg: String) = logger.log(msg)
 }
  

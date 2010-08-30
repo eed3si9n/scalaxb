@@ -37,7 +37,9 @@ trait Args extends Params {
   def buildArg(elem: ElemDecl, pos: Int): String =
     buildArg(elem, buildSelector(pos))
   
-  def buildArg(elem: ElemDecl, selector: String): String = elem.typeSymbol match {
+  def buildArg(elem: ElemDecl, selector: String): String =
+  if ((isSubstitionGroup(elem))) selector
+  else elem.typeSymbol match {
     case symbol: BuiltInSimpleTypeSymbol => buildArg(symbol,
       selector, elem.defaultValue, elem.fixedValue,
       toCardinality(elem.minOccurs, elem.maxOccurs), elem.nillable getOrElse(false))
@@ -72,7 +74,8 @@ trait Args extends Params {
       
       if (elem.maxOccurs > 1) selector + ".toList"
       else selector
-    } else buildArgForComplexType(buildTypeName(elem.typeSymbol), selector,
+    }
+    else buildArgForComplexType(buildTypeName(elem.typeSymbol), selector,
       elem.defaultValue, elem.fixedValue,
       toCardinality(elem.minOccurs, elem.maxOccurs), elem.nillable getOrElse(false), false)
   

@@ -306,4 +306,20 @@
   <simpleType name="Numbers">
       <list itemType="unsignedInt"/>
   </simpleType>
+  
+  <!-- sub group -->
+  <complexType name="GH6Usage">
+    <sequence>
+      <element ref="ipo:gh6head"/>
+      <element name="gh6head2" type="string" />
+      <element name="city"   type="string"/>
+    </sequence>
+  </complexType>
+  
+  <element name="gh6head" type="string" abstract="true"/>
+  <element name="gh6sub1" type="string" substitutionGroup="ipo:gh6head" />
+  <element name="gh6sub2" type="string" substitutionGroup="ipo:gh6head" />
+  <element name="gh6head2" type="string" abstract="true"/>
+  <element name="gh6sub3" type="string" substitutionGroup="ipo:gh6head2" />
+  <element name="gh6sub4" type="string" substitutionGroup="ipo:gh6head2" />
 </schema>

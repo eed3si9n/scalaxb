@@ -71,7 +71,7 @@ trait Parsers extends Args with Params {
     indent(3) + buildConverter(seq, mixed, wrapInDataRecord)
     
     val retval = buildParserString(base, minOccurs, maxOccurs)
-    log("GenSource#buildParser:  " + seq + newline + retval)
+    log("Parsers#buildParser:  " + seq + newline + retval)
     retval
   }
   
@@ -133,22 +133,45 @@ trait Parsers extends Args with Params {
     buildParserString(base, minOccurs, maxOccurs)
   }
   
+  def buildSubstitionGroupParser(elem: ElemDecl,
+      minOccurs: Int, maxOccurs: Int, mixed: Boolean): String = {
+    log("Parsers#buildSubstitionGroupParser")    
+    
+    val particles = schema.topElems.valuesIterator.toList filter { x =>
+      x.substitutionGroup map { sub => 
+        elements(sub._1, sub._2) == elem
+      } getOrElse { false }
+    }
+    val parserList = particles map { particle =>
+      "(" + buildParser(particle, math.max(particle.minOccurs, 1), 1, mixed) + " ^^ " + newline +
+      indent(3) + buildConverter(particle, math.max(elem.minOccurs, 1), 1) + ")"      
+    }
+    val choiceOperator = "|"
+    val base = if (parserList.size > 0)
+      parserList.mkString(" " + choiceOperator + " " + newline + indent(2))
+    else ""
+    
+    buildParserString(base, minOccurs, maxOccurs)
+  }
+  
   def buildParser(elem: ElemDecl,
-      minOccurs: Int, maxOccurs: Int, mixed: Boolean): String = elem.typeSymbol match {
+      minOccurs: Int, maxOccurs: Int, mixed: Boolean): String =
+  if ((isSubstitionGroup(elem))) buildSubstitionGroupParser(elem, minOccurs, maxOccurs, mixed)
+  else elem.typeSymbol match {
     case symbol: BuiltInSimpleTypeSymbol => buildParserString(elem, minOccurs, maxOccurs)
     case ReferenceTypeSymbol(decl: SimpleTypeDecl) =>  buildParserString(elem, minOccurs, maxOccurs)
     case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>  buildParser(elem, decl, minOccurs, maxOccurs, mixed)
     case XsAny => buildParserString("any", minOccurs, maxOccurs)
     case symbol: ReferenceTypeSymbol =>
       if (symbol.decl == null)
-        error("GenSource#buildParser: " + elem.toString +
+        error("Parsers#buildParser: " + elem.toString +
           " Invalid type " + symbol.getClass.toString + ": " +
           symbol.toString + " with null decl")
       else    
-        error("GenSource#buildParser: " + elem.toString +
+        error("Parsers#buildParser: " + elem.toString +
           " Invalid type " + symbol.getClass.toString + ": " +
           symbol.toString + " with " + symbol.decl.toString)
-    case _ => error("GenSource#buildParser: " + elem.toString +
+    case _ => error("Parsers#buildParser: " + elem.toString +
       " Invalid type " + elem.typeSymbol.getClass.toString + ": " + elem.typeSymbol.toString)
   }
   
@@ -161,7 +184,9 @@ trait Parsers extends Args with Params {
     else buildParserString(elem, minOccurs, maxOccurs)
   
   def buildParserString(elem: ElemDecl, minOccurs: Int, maxOccurs: Int): String =
-    buildParserString("rt.ElemName(" + quoteNamespace(elem.namespace) + ", " + quote(elem.name) + ")",
+    buildParserString("rt.ElemName(" +
+      quoteNamespace(elem.namespace orElse schema.targetNamespace) + ", " +
+      quote(elem.name) + ")",
       minOccurs, maxOccurs)
   
   def buildParserString(base: String, minOccurs: Int, maxOccurs: Int) =
@@ -237,6 +262,6 @@ trait Parsers extends Args with Params {
     
   def buildAnyRef(any: AnyDecl) =
     ElemDecl(Some(INTERNAL_NAMESPACE), "any", XsAny, None, None,
-      any.minOccurs, any.maxOccurs, None, None)
+      any.minOccurs, any.maxOccurs, None, None, None)
 
 }

@@ -54,7 +54,9 @@ case class XsdContext(
   compositorNames: mutable.ListMap[HasParticle, String] =
     mutable.ListMap.empty[HasParticle, String],
   groups: mutable.ListBuffer[(SchemaDecl, GroupDecl)] =
-    mutable.ListBuffer.empty[(SchemaDecl, GroupDecl)] 
+    mutable.ListBuffer.empty[(SchemaDecl, GroupDecl)],
+  substituteGroups: mutable.ListBuffer[(Option[String], String)] =
+    mutable.ListBuffer.empty[(Option[String], String)]
     ) {
 }
 
@@ -184,7 +186,7 @@ object SchemaDecl {
     for (child <- schema.child) child match {
       case <element>{ _* }</element>  =>
         (child \ "@name").headOption foreach {  x =>
-          val elem = ElemDecl.fromXML(child, config)
+          val elem = ElemDecl.fromXML(child, config.targetNamespace, config)
           config.topElems += (elem.name -> elem) }
       
       case <attribute>{ _* }</attribute>  =>
@@ -488,10 +490,11 @@ case class ElemDecl(namespace: Option[String],
   minOccurs: Int,
   maxOccurs: Int,
   nillable: Option[Boolean],
+  substitutionGroup: Option[(Option[String], String)],
   annotation: Option[AnnotationDecl]) extends Decl with Particle with Annotatable
 
 object ElemDecl {
-  def fromXML(node: scala.xml.Node, config: ParserConfig) = {
+  def fromXML(node: scala.xml.Node, namespace: Option[String], config: ParserConfig) = {
     val name = (node \ "@name").text
     var typeSymbol: XsTypeSymbol = XsAny
     val typeName = (node \ "@type").text
@@ -523,12 +526,14 @@ object ElemDecl {
     val minOccurs = CompositorDecl.buildOccurrence((node \ "@minOccurs").text)
     val maxOccurs = CompositorDecl.buildOccurrence((node \ "@maxOccurs").text)
     val nillable = (node \ "@nillable").headOption map { _.text == "true" }
+    val substitutionGroup = (node \ "@substitutionGroup").headOption map { x =>
+      TypeSymbolParser.splitTypeName(x.text, config) }
     val annotation = (node \ "annotation").headOption map { x =>
       AnnotationDecl.fromXML(x, config) }
     
-    val elem = ElemDecl(config.targetNamespace, 
+    val elem = ElemDecl(namespace, 
       name, typeSymbol, defaultValue, fixedValue, minOccurs, maxOccurs, nillable,
-      annotation)
+      substitutionGroup, annotation)
     config.elemList += elem
     if (typeName == "") typeSymbol match {
       case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
@@ -696,7 +701,7 @@ object CompositorDecl {
     }) map(node =>
       node match {
         case <element>{ _* }</element>   =>
-          if ((node \ "@name").headOption.isDefined) ElemDecl.fromXML(node, config)
+          if ((node \ "@name").headOption.isDefined) ElemDecl.fromXML(node, None, config)
           else if ((node \ "@ref").headOption.isDefined) ElemRef.fromXML(node, config)
           else error("xsd: Unspported content type " + node.toString) 
         case <choice>{ _* }</choice>     => ChoiceDecl.fromXML(node, config)

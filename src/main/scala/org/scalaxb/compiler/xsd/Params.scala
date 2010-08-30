@@ -70,7 +70,8 @@ trait Params extends Lookup {
   }
   
   def buildParam(elem: ElemDecl): Param = {
-    val symbol = elem.typeSymbol match {
+    val typeSymbol = if (isSubstitionGroup(elem)) buildSubstitionGroupSymbol(elem.typeSymbol)
+    else elem.typeSymbol match {
       case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
         if (compositorWrapper.contains(decl))
           buildCompositorSymbol(compositorWrapper(decl), elem.typeSymbol)
@@ -78,7 +79,7 @@ trait Params extends Lookup {
       case _ => elem.typeSymbol
     }
     val nillable = elem.nillable getOrElse { false }
-    val retval = Param(elem.namespace, elem.name, symbol, 
+    val retval = Param(elem.namespace, elem.name, typeSymbol, 
       toCardinality(elem.minOccurs, elem.maxOccurs), nillable, false)
     log("GenSource#buildParam:  " + retval)
     retval
@@ -102,6 +103,9 @@ trait Params extends Lookup {
     log("GenSource#buildParam:  " + retval)
     retval    
   }
+  
+  def buildSubstitionGroupSymbol(typeSymbol: XsTypeSymbol): XsTypeSymbol =
+    XsDataRecord(typeSymbol)
   
   def buildCompositorSymbol(compositor: HasParticle, typeSymbol: XsTypeSymbol): XsTypeSymbol =
     compositor match {
@@ -185,8 +189,7 @@ trait Params extends Lookup {
         case choice: ChoiceDecl => (compositor.maxOccurs :: compositor.particles.map(_.maxOccurs)).max
         case _ => compositor.maxOccurs
       },
-      None,
-      None)
+      None, None, None)
   }
   
   def containsForeignType(compositor: HasParticle) =

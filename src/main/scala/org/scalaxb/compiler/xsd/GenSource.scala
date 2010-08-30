@@ -73,7 +73,7 @@ class GenSource(val schema: SchemaDecl,
   }
       
   def makeSuperType(decl: ComplexTypeDecl): scala.xml.Node =
-    makeCaseClassWithType(makeProtectedTypeName(decl, context), decl)
+    makeCaseClassWithType(makeProtectedTypeName(schema.targetNamespace, decl, context), decl)
       
   def makeType(decl: ComplexTypeDecl): scala.xml.Node = {
     val typeNames = context.typeNames(packageName(decl.namespace, context))
@@ -92,16 +92,16 @@ class GenSource(val schema: SchemaDecl,
   def particlesWithSimpleType(particles: List[Decl]) = {
     val types = mutable.ListMap.empty[ElemDecl, BuiltInSimpleTypeSymbol]
     for (particle <- particles) particle match {
-      case elem@ElemDecl(_, _, symbol: BuiltInSimpleTypeSymbol, _, _, _, _, _, _) =>
+      case elem@ElemDecl(_, _, symbol: BuiltInSimpleTypeSymbol, _, _, _, _, _, _, _) =>
         types += (elem -> symbol)
-      case elem@ElemDecl(_, _, ReferenceTypeSymbol(decl@SimpleTypeDecl(_, _, _, _)), _, _, _, _, _, _) =>
+      case elem@ElemDecl(_, _, ReferenceTypeSymbol(decl@SimpleTypeDecl(_, _, _, _)), _, _, _, _, _, _, _) =>
         types += (elem -> baseType(decl))
       case ref: ElemRef =>
         val elem = buildElement(ref)
         elem match {
-          case ElemDecl(_, _, symbol: BuiltInSimpleTypeSymbol, _, _, _, _, _, _) =>
+          case ElemDecl(_, _, symbol: BuiltInSimpleTypeSymbol, _, _, _, _, _, _, _) =>
             types += (elem -> symbol)
-          case ElemDecl(_, _, ReferenceTypeSymbol(decl@SimpleTypeDecl(_, _, _, _)), _, _, _, _, _, _) =>
+          case ElemDecl(_, _, ReferenceTypeSymbol(decl@SimpleTypeDecl(_, _, _, _)), _, _, _, _, _, _, _) =>
             types += (elem -> baseType(decl))
           case _ => // do nothing
         }
@@ -121,7 +121,7 @@ class GenSource(val schema: SchemaDecl,
       case any: AnyAttributeDecl => buildArgForAnyAttribute(decl)
       case x => buildArg(x)
     }
-    val defaultType = makeProtectedTypeName(decl, context)
+    val defaultType = makeProtectedTypeName(schema.targetNamespace, decl, context)
     val superNames = buildSuperNames(decl)
     
     val extendString = if (superNames.isEmpty) ""
@@ -613,7 +613,7 @@ object {name} {{
     
     for (choice <- choices;
         particle <- choice.particles) particle match {
-      case ElemDecl(_, _, symbol: ReferenceTypeSymbol, _, _, _, _, _, _) =>
+      case ElemDecl(_, _, symbol: ReferenceTypeSymbol, _, _, _, _, _, _, _) =>
         if (!interNamespaceCompositorTypes.contains(symbol) &&
             symbol.decl == decl)
           set += makeTypeName(context.compositorNames(choice))
@@ -786,7 +786,7 @@ object {name} {{
           
   def flattenMixed(decl: ComplexTypeDecl) = if (decl.mixed)
     List(ElemDecl(Some(INTERNAL_NAMESPACE), "mixed", XsMixed,
-      None, None, 0, Integer.MAX_VALUE, None, None))
+      None, None, 0, Integer.MAX_VALUE, None, None, None))
   else Nil
     
   def buildAttributes(decl: ComplexTypeDecl): List[AttributeLike] =
@@ -840,7 +840,7 @@ object {name} {{
     
   def toOptional(that: ElemDecl) =
     ElemDecl(that.namespace, that.name, that.typeSymbol,
-      that.defaultValue, that.fixedValue, 0, that.maxOccurs, that.nillable, None)
+      that.defaultValue, that.fixedValue, 0, that.maxOccurs, that.nillable, that.substitutionGroup, None)
   
   def myprintAll(nodes: Seq[Node]) {
     for (node <- nodes)

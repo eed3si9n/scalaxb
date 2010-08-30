@@ -27,6 +27,7 @@ import scala.collection.mutable
 
 trait ContextProcessor extends ScalaNames {
   def logger: Logger
+  def log(msg: String) = logger.log(msg)
   
   def packageName(schema: SchemaDecl, context: XsdContext): Option[String] =
     packageName(schema.targetNamespace, context)
@@ -65,10 +66,10 @@ trait ContextProcessor extends ScalaNames {
         val pair = (schema, decl)
         anonymousTypes += pair
         val typeNames = context.typeNames(packageName(schema, context))
-        typeNames(decl) = makeProtectedTypeName(elem, context)
+        typeNames(decl) = makeProtectedTypeName(schema.targetNamespace, elem, context)
       case decl@SimpleTypeDecl(_, _, _, _) if containsEnumeration(decl) =>
         val typeNames = context.enumTypeNames(packageName(schema, context))
-        typeNames(decl) = makeProtectedTypeName(elem, context)
+        typeNames(decl) = makeProtectedTypeName(schema.targetNamespace, elem, context)
         makeEnumValues(decl, context)
       case _ =>
     }
@@ -81,10 +82,10 @@ trait ContextProcessor extends ScalaNames {
         val pair = (schema, decl)
         namedTypes += pair
         val typeNames = context.typeNames(packageName(schema, context))
-        typeNames(decl) = makeProtectedTypeName(decl, context)
+        typeNames(decl) = makeProtectedTypeName(schema.targetNamespace, decl, context)
       case (_, decl@SimpleTypeDecl(_, _, _, _)) if containsEnumeration(decl) =>
         val typeNames = context.enumTypeNames(packageName(schema, context))
-        typeNames(decl) = makeProtectedTypeName(decl, context)
+        typeNames(decl) = makeProtectedTypeName(schema.targetNamespace, decl, context)
         makeEnumValues(decl, context)
       case _ =>      
     }
@@ -96,6 +97,17 @@ trait ContextProcessor extends ScalaNames {
         group <- schema.topGroups.valuesIterator.toList) {
       val pair = (schema, group)
       context.groups += pair
+      log("ContextProcessor#processContext: added group " + group.name) 
+    }
+    
+    for (schema <- context.schemas;
+        elem <- schema.topElems.valuesIterator.toList) {
+      elem.substitutionGroup foreach { sub =>
+        if (!context.substituteGroups.contains(sub)) {
+          context.substituteGroups += sub
+          log("ContextProcessor#processContext: added sub group " + sub) 
+        }
+      }
     }
     
     for (schema <- context.schemas;
@@ -105,7 +117,7 @@ trait ContextProcessor extends ScalaNames {
         if (decl.name.contains("@") &&
             containsEnumeration(decl)) {
           val typeNames = context.enumTypeNames(packageName(schema, context))
-          typeNames(decl) = makeProtectedTypeName(attr, context)
+          typeNames(decl) = makeProtectedTypeName(schema.targetNamespace, attr, context)
           makeEnumValues(decl, context)
         }
       
@@ -334,17 +346,17 @@ trait ContextProcessor extends ScalaNames {
     }    
   }
   
-  def makeProtectedTypeName(elem: ElemDecl, context: XsdContext): String =
-    makeProtectedTypeName(elem.namespace, elem.name, "", context)
+  def makeProtectedTypeName(namespace: Option[String], elem: ElemDecl, context: XsdContext): String =
+    makeProtectedTypeName(elem.namespace orElse namespace, elem.name, "", context)
   
-  def makeProtectedTypeName(decl: ComplexTypeDecl, context: XsdContext): String =
-    makeProtectedTypeName(decl.namespace, decl.name, "Type", context)
+  def makeProtectedTypeName(namespace: Option[String], decl: ComplexTypeDecl, context: XsdContext): String =
+    makeProtectedTypeName(decl.namespace orElse namespace, decl.name, "Type", context)
     
-  def makeProtectedTypeName(decl: SimpleTypeDecl, context: XsdContext): String =
-    makeProtectedTypeName(decl.namespace, decl.name, "Type", context)
+  def makeProtectedTypeName(namespace: Option[String], decl: SimpleTypeDecl, context: XsdContext): String =
+    makeProtectedTypeName(decl.namespace orElse namespace, decl.name, "Type", context)
   
-  def makeProtectedTypeName(attr: AttributeDecl, context: XsdContext): String =
-    makeProtectedTypeName(attr.namespace, attr.name, "Type", context)
+  def makeProtectedTypeName(namespace: Option[String], attr: AttributeDecl, context: XsdContext): String =
+    makeProtectedTypeName(attr.namespace orElse namespace, attr.name, "Type", context)
     
   def makeTraitName(decl: ComplexTypeDecl) =
     if (decl.name.last == 'e')

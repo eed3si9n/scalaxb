@@ -231,7 +231,7 @@ trait Args extends Params {
   
   def buildArg(content: SimpleContentDecl, typeSymbol: XsTypeSymbol): String = typeSymbol match {
     case base: BuiltInSimpleTypeSymbol => buildArg(base, "node", None, None, Single, false)
-    case ReferenceTypeSymbol(ComplexTypeDecl(_, _, _, _, content: SimpleContentDecl, _, _)) =>
+    case ReferenceTypeSymbol(ComplexTypeDecl(_, _, _, _, _, content: SimpleContentDecl, _, _)) =>
       buildArg(content)
     case ReferenceTypeSymbol(decl: SimpleTypeDecl) =>
       buildArg(decl, "node", None, None, Single, false)
@@ -295,7 +295,7 @@ trait Args extends Params {
     case XsAny => selector
     case symbol: BuiltInSimpleTypeSymbol =>
       buildArg(symbol, selector, None, None, Single, false)
-    case ReferenceTypeSymbol(decl@SimpleTypeDecl(_, _, _, _)) =>
+    case ReferenceTypeSymbol(decl@SimpleTypeDecl(_, _, _, _, _)) =>
       buildArg(baseType(decl), selector, None, None, Single, false)
     case _ =>
       buildTypeName(typeSymbol) + ".fromXML(" + selector + ")"

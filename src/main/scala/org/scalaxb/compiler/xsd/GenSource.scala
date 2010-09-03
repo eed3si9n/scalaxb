@@ -94,14 +94,14 @@ class GenSource(val schema: SchemaDecl,
     for (particle <- particles) particle match {
       case elem@ElemDecl(_, _, symbol: BuiltInSimpleTypeSymbol, _, _, _, _, _, _, _) =>
         types += (elem -> symbol)
-      case elem@ElemDecl(_, _, ReferenceTypeSymbol(decl@SimpleTypeDecl(_, _, _, _)), _, _, _, _, _, _, _) =>
+      case elem@ElemDecl(_, _, ReferenceTypeSymbol(decl@SimpleTypeDecl(_, _, _, _, _)), _, _, _, _, _, _, _) =>
         types += (elem -> baseType(decl))
       case ref: ElemRef =>
         val elem = buildElement(ref)
         elem match {
           case ElemDecl(_, _, symbol: BuiltInSimpleTypeSymbol, _, _, _, _, _, _, _) =>
             types += (elem -> symbol)
-          case ElemDecl(_, _, ReferenceTypeSymbol(decl@SimpleTypeDecl(_, _, _, _)), _, _, _, _, _, _, _) =>
+          case ElemDecl(_, _, ReferenceTypeSymbol(decl@SimpleTypeDecl(_, _, _, _, _)), _, _, _, _, _, _, _) =>
             types += (elem -> baseType(decl))
           case _ => // do nothing
         }
@@ -128,11 +128,8 @@ class GenSource(val schema: SchemaDecl,
     else " extends " + superNames.mkString(" with ")
     
     def makeCaseEntry(decl: ComplexTypeDecl) = {
-      val localPart = if (decl.name.startsWith("complexType@")) decl.name.drop("complexType@".size)
-      else decl.name
-      
       val name = buildTypeName(decl)
-      "case (" + quoteNamespace(decl.namespace) + ", " + quote(localPart) + ") => " + name + ".fromXML(node)"
+      "case (" + quoteNamespace(decl.namespace) + ", " + quote(decl.family) + ") => " + name + ".fromXML(node)"
     }
     
     def makeToXmlCaseEntry(decl: ComplexTypeDecl) = {
@@ -312,7 +309,7 @@ object {name} extends rt.ImplicitXMLWriter[{name}] {{
     case _ => error("fromXML failed: seq must be scala.xml.Node")
   }}
   
-  { if (!decl.name.contains('@')) makeToXml }{ makeToXml2 }
+  { if (decl.isNamed) makeToXml }{ makeToXml2 }
 }}
 </source> else
 <source>object {name} extends {objSuperNames.mkString(" with ")} {{
@@ -322,7 +319,7 @@ object {name} extends rt.ImplicitXMLWriter[{name}] {{
     { parserList.mkString(" ~ " + newline + indent(3)) } ^^
         {{ case { parserVariableList.mkString(" ~ " + newline + indent(3)) } => {name}({argsString}) }}
         
-  { if (!decl.name.contains('@')) makeToXml }{ makeToXml2 }
+  { if (decl.isNamed) makeToXml }{ makeToXml2 }
 }}
 </source>
     
@@ -675,17 +672,17 @@ object {name} {{
     
     val build: ComplexTypeContent --> List[ElemDecl] = {
       case SimpContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
-        flattenElements(base, makeTypeName(base.name))
+        flattenElements(base, base.name)
       case SimpContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _) =>
-        flattenElements(base, makeTypeName(base.name))
+        flattenElements(base, base.name)
       
       // complex content means 1. has child elements 2. has attributes
       case CompContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
-        flattenElements(base, makeTypeName(base.name))        
+        flattenElements(base, base.name)        
       case res@CompContRestrictionDecl(XsAny, _, _) =>
         res.compositor map { flattenElements(_, name) } getOrElse { Nil }
       case ext@CompContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
-        flattenElements(base, makeTypeName(base.name)) :::
+        flattenElements(base, base.name) :::
           (ext.compositor map { flattenElements(_, name) } getOrElse { Nil })
       case ext@CompContExtensionDecl(XsAny, _, _) =>
         ext.compositor map { flattenElements(_, name) } getOrElse { Nil }

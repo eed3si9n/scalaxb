@@ -206,13 +206,13 @@ object SchemaDecl {
       
       case <complexType>{ _* }</complexType>  =>
         (child \ "@name").headOption foreach {  x =>
-          val decl = ComplexTypeDecl.fromXML(child, (child \ "@name").text, config)
+          val decl = ComplexTypeDecl.fromXML(child, x.text, x.text, config)
           config.typeList += decl
           config.topTypes += (decl.name -> decl) }
       
       case <simpleType>{ _* }</simpleType>  =>
         (child \ "@name").headOption foreach {  x =>
-          val decl = SimpleTypeDecl.fromXML(child, (child \ "@name").text, config)
+          val decl = SimpleTypeDecl.fromXML(child, x.text, x.text, config)
           config.typeList += decl
           config.topTypes += (decl.name -> decl) }
       
@@ -275,17 +275,17 @@ object SchemaDecl {
     } // for
     
     for (typ <- config.typeList) typ match {
-      case SimpleTypeDecl(_, _, res: SimpTypRestrictionDecl, _) =>
+      case SimpleTypeDecl(_, _, _, res: SimpTypRestrictionDecl, _) =>
         resolveType(res.base, config)
-      case SimpleTypeDecl(_, _, list: SimpTypListDecl, _) =>
+      case SimpleTypeDecl(_, _, _, list: SimpTypListDecl, _) =>
         resolveType(list.itemType, config) 
-      case ComplexTypeDecl(_, _, _, _, SimpleContentDecl(res: SimpContRestrictionDecl), _, _) =>
+      case ComplexTypeDecl(_, _, _, _, _, SimpleContentDecl(res: SimpContRestrictionDecl), _, _) =>
         resolveType(res.base, config)
-      case ComplexTypeDecl(_, _, _, _, SimpleContentDecl(ext: SimpContExtensionDecl), _, _) =>
+      case ComplexTypeDecl(_, _, _, _, _, SimpleContentDecl(ext: SimpContExtensionDecl), _, _) =>
         resolveType(ext.base, config)      
-      case ComplexTypeDecl(_, _, _, _, ComplexContentDecl(res: CompContRestrictionDecl), _, _) =>
+      case ComplexTypeDecl(_, _, _, _, _, ComplexContentDecl(res: CompContRestrictionDecl), _, _) =>
         resolveType(res.base, config)
-      case ComplexTypeDecl(_, _, _, _, ComplexContentDecl(ext: CompContExtensionDecl), _, _) =>
+      case ComplexTypeDecl(_, _, _, _, _, ComplexContentDecl(ext: CompContExtensionDecl), _, _) =>
         resolveType(ext.base, config)
         
       case _ =>
@@ -405,7 +405,7 @@ object AttributeDecl {
     } else {
       for (child <- node.child) child match {
         case <simpleType>{ _* }</simpleType> =>
-          val decl = SimpleTypeDecl.fromXML(child, config)
+          val decl = SimpleTypeDecl.fromXML(child, name, config)
           config.typeList += decl
           val symbol = new ReferenceTypeSymbol(decl.name)
           symbol.decl = decl
@@ -504,14 +504,14 @@ object ElemDecl {
     } else {
       for (child <- node.child) child match {
         case <complexType>{ _* }</complexType> =>
-          val decl = ComplexTypeDecl.fromXML(child, "complexType@" + name, config)
+          val decl = ComplexTypeDecl.fromXML(child, "complexType@" + name, name, config)
           config.typeList += decl
           val symbol = new ReferenceTypeSymbol(decl.name)
           symbol.decl = decl
           typeSymbol = symbol
           
         case <simpleType>{ _* }</simpleType> =>
-          val decl = SimpleTypeDecl.fromXML(child, config)
+          val decl = SimpleTypeDecl.fromXML(child, name, config)
           config.typeList += decl
           val symbol = new ReferenceTypeSymbol(decl.name)
           symbol.decl = decl
@@ -554,20 +554,22 @@ trait TypeDecl extends Decl with Annotatable
  */
 case class SimpleTypeDecl(namespace: Option[String],
     name: String,
+    family: String, // same as name if it's named, or the inner most named node like element.
     content: ContentTypeDecl,
     annotation: Option[AnnotationDecl]) extends TypeDecl {
   override def toString(): String = name + "(" + content.toString + ")"
+  def isNamed = (name == family)
 }
 
 object SimpleTypeDecl {
-  def fromXML(node: scala.xml.Node, config: ParserConfig): SimpleTypeDecl =
-    fromXML(node, "simpleType@" + scala.util.Random.nextInt, config)
+  def fromXML(node: scala.xml.Node, family: String, config: ParserConfig): SimpleTypeDecl =
+    fromXML(node, "simpleType@" + family + ":" + scala.util.Random.nextInt, family, config)
   
-  def fromXML(node: scala.xml.Node, name: String, config: ParserConfig): SimpleTypeDecl = {
+  def fromXML(node: scala.xml.Node, name: String, family: String, config: ParserConfig): SimpleTypeDecl = {
     var content: ContentTypeDecl = null
     for (child <- node.child) child match {
-      case <restriction>{ _* }</restriction>  => content = SimpTypRestrictionDecl.fromXML(child, config) 
-      case <list>{ _* }</list>                => content = SimpTypListDecl.fromXML(child, config)
+      case <restriction>{ _* }</restriction>  => content = SimpTypRestrictionDecl.fromXML(child, family, config) 
+      case <list>{ _* }</list>                => content = SimpTypListDecl.fromXML(child, family, config)
       case <union>{ _* }</union>              => content = SimpTypUnionDecl.fromXML(child, config)
       case _ =>     
     }
@@ -575,22 +577,25 @@ object SimpleTypeDecl {
     val annotation = (node \ "annotation").headOption map { x =>
       AnnotationDecl.fromXML(x, config) }
     
-    SimpleTypeDecl(config.targetNamespace, name, content, annotation)
+    SimpleTypeDecl(config.targetNamespace, name, family, content, annotation)
   }
 }
 
 /** complex types may have element children and attributes.
  */
 case class ComplexTypeDecl(namespace: Option[String],
-  name: String,
-  abstractValue: Boolean,
-  mixed: Boolean,
-  content: HasComplexTypeContent,
-  attributes: List[AttributeLike],
-  annotation: Option[AnnotationDecl]) extends TypeDecl
+    name: String,
+    family: String, // same as name if it's named, or the inner most named node like element.
+    abstractValue: Boolean,
+    mixed: Boolean,
+    content: HasComplexTypeContent,
+    attributes: List[AttributeLike],
+    annotation: Option[AnnotationDecl]) extends TypeDecl {
+  def isNamed = (name == family)    
+}
 
 object ComplexTypeDecl {  
-  def fromXML(node: scala.xml.Node, name: String, config: ParserConfig) = {
+  def fromXML(node: scala.xml.Node, name: String, family: String, config: ParserConfig) = {
     val abstractValue = (node \ "@abstract").headOption match {
       case Some(x) => x.text.toBoolean
       case None    => false
@@ -618,7 +623,7 @@ object ComplexTypeDecl {
         content = ComplexContentDecl.fromCompositor(
           CompositorDecl.fromXML(child, config), attributes)
       case <simpleContent>{ _* }</simpleContent> =>
-        content = SimpleContentDecl.fromXML(child, config)
+        content = SimpleContentDecl.fromXML(child, family, config)
       case <complexContent>{ _* }</complexContent> =>
         content = ComplexContentDecl.fromXML(child, config)
       case _ =>
@@ -628,7 +633,7 @@ object ComplexTypeDecl {
       AnnotationDecl.fromXML(x, config) }
     
     // val contentModel = ContentModel.fromSchema(firstChild(node))
-    ComplexTypeDecl(config.targetNamespace, name, abstractValue, mixed, 
+    ComplexTypeDecl(config.targetNamespace, name, family, abstractValue, mixed, 
       content, attributes.reverse, annotation)
   }
 }
@@ -646,14 +651,14 @@ trait HasContent {
 case class SimpleContentDecl(content: ComplexTypeContent) extends Decl with HasComplexTypeContent
 
 object SimpleContentDecl {
-  def fromXML(node: scala.xml.Node, config: ParserConfig) = {
+  def fromXML(node: scala.xml.Node, family: String, config: ParserConfig) = {
     var content: ComplexTypeContent = null
     
     for (child <- node.child) child match {
       case <restriction>{ _* }</restriction> =>
-        content = SimpContRestrictionDecl.fromXML(child, config)
+        content = SimpContRestrictionDecl.fromXML(child, family, config)
       case <extension>{ _* }</extension> =>
-        content = SimpContExtensionDecl.fromXML(child, config)
+        content = SimpContExtensionDecl.fromXML(child, family, config)
       case _ =>
     }
        

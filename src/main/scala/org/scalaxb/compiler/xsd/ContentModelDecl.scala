@@ -34,13 +34,13 @@ case class SimpContRestrictionDecl(base: XsTypeSymbol,
   attributes: List[AttributeLike]) extends ContentTypeDecl with ComplexTypeContent
 
 object SimpContRestrictionDecl {
-  def fromXML(node: scala.xml.Node, config: ParserConfig) = {
+  def fromXML(node: scala.xml.Node, family: String, config: ParserConfig) = {
     val base = (node \ "@base").headOption match {
       case Some(x) => TypeSymbolParser.fromString(x.text, config)
       case None    =>
         (node \ "simpleType").headOption match {
           case Some(x) => Some(x.text)
-            val decl = SimpleTypeDecl.fromXML(x, config)
+            val decl = SimpleTypeDecl.fromXML(x, family, config)
             config.typeList += decl
             val symbol = new ReferenceTypeSymbol(decl.name)
             symbol.decl = decl
@@ -68,13 +68,13 @@ case class SimpContExtensionDecl(base: XsTypeSymbol,
   attributes: List[AttributeLike]) extends ContentTypeDecl with ComplexTypeContent
 
 object SimpContExtensionDecl {
-  def fromXML(node: scala.xml.Node, config: ParserConfig) = {
+  def fromXML(node: scala.xml.Node, family: String, config: ParserConfig) = {
     val base = (node \ "@base").headOption match {
       case Some(x) => TypeSymbolParser.fromString(x.text, config)
       case None    =>
         (node \ "simpleType").headOption match {
           case Some(x) => Some(x.text)
-            val decl = SimpleTypeDecl.fromXML(x, config)
+            val decl = SimpleTypeDecl.fromXML(x, family, config)
             config.typeList += decl
             val symbol = new ReferenceTypeSymbol(decl.name)
             symbol.decl = decl
@@ -167,13 +167,13 @@ object CompContExtensionDecl {
 case class SimpTypRestrictionDecl(base: XsTypeSymbol, facets: List[Facetable]) extends ContentTypeDecl
 
 object SimpTypRestrictionDecl {  
-  def fromXML(node: scala.xml.Node, config: ParserConfig) = {
+  def fromXML(node: scala.xml.Node, family: String, config: ParserConfig) = {
     val base = (node \ "@base").headOption match {
       case Some(x) => TypeSymbolParser.fromString(x.text, config)
       case None    =>
         (node \ "simpleType").headOption match {
           case Some(x) => Some(x.text)
-            val decl = SimpleTypeDecl.fromXML(x, config)
+            val decl = SimpleTypeDecl.fromXML(x, family, config)
             config.typeList += decl
             val symbol = new ReferenceTypeSymbol(decl.name)
             symbol.decl = decl
@@ -191,13 +191,13 @@ object SimpTypRestrictionDecl {
 case class SimpTypListDecl(itemType: XsTypeSymbol) extends ContentTypeDecl
 
 object SimpTypListDecl {
-  def fromXML(node: scala.xml.Node, config: ParserConfig) = {
+  def fromXML(node: scala.xml.Node, family: String, config: ParserConfig) = {
     val itemType = (node \ "@itemType").headOption match {
       case Some(x) => TypeSymbolParser.fromString(x.text, config)
       case None    =>
         (node \ "simpleType").headOption match {
           case Some(x) => Some(x.text)
-            val decl = SimpleTypeDecl.fromXML(x, config)
+            val decl = SimpleTypeDecl.fromXML(x, family, config)
             config.typeList += decl
             val symbol = new ReferenceTypeSymbol(decl.name)
             symbol.decl = decl

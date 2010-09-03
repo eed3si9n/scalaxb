@@ -188,9 +188,9 @@ trait Lookup extends ContextProcessor {
   
   def baseType(decl: SimpleTypeDecl): BuiltInSimpleTypeSymbol = decl.content match {
     case SimpTypRestrictionDecl(base: BuiltInSimpleTypeSymbol, _) => base
-    case SimpTypRestrictionDecl(ReferenceTypeSymbol(decl2@SimpleTypeDecl(_, _, _, _)), _) => baseType(decl2)
+    case SimpTypRestrictionDecl(ReferenceTypeSymbol(decl2@SimpleTypeDecl(_, _, _, _, _)), _) => baseType(decl2)
     case SimpTypListDecl(itemType: BuiltInSimpleTypeSymbol) => itemType
-    case SimpTypListDecl(ReferenceTypeSymbol(decl2@SimpleTypeDecl(_, _, _, _))) => baseType(decl2)
+    case SimpTypListDecl(ReferenceTypeSymbol(decl2@SimpleTypeDecl(_, _, _, _, _))) => baseType(decl2)
     case SimpTypUnionDecl() => XsString
     
     case _ => error("GenSource: Unsupported content " +  decl.content.toString)

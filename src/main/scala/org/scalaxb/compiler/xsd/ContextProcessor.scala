@@ -67,7 +67,7 @@ trait ContextProcessor extends ScalaNames {
         anonymousTypes += pair
         val typeNames = context.typeNames(packageName(schema, context))
         typeNames(decl) = makeProtectedTypeName(schema.targetNamespace, elem, context)
-      case decl@SimpleTypeDecl(_, _, _, _) if containsEnumeration(decl) =>
+      case decl@SimpleTypeDecl(_, _, _, _, _) if containsEnumeration(decl) =>
         val typeNames = context.enumTypeNames(packageName(schema, context))
         typeNames(decl) = makeProtectedTypeName(schema.targetNamespace, elem, context)
         makeEnumValues(decl, context)
@@ -83,7 +83,7 @@ trait ContextProcessor extends ScalaNames {
         namedTypes += pair
         val typeNames = context.typeNames(packageName(schema, context))
         typeNames(decl) = makeProtectedTypeName(schema.targetNamespace, decl, context)
-      case (_, decl@SimpleTypeDecl(_, _, _, _)) if containsEnumeration(decl) =>
+      case (_, decl@SimpleTypeDecl(_, _, _, _, _)) if containsEnumeration(decl) =>
         val typeNames = context.enumTypeNames(packageName(schema, context))
         typeNames(decl) = makeProtectedTypeName(schema.targetNamespace, decl, context)
         makeEnumValues(decl, context)
@@ -114,7 +114,7 @@ trait ContextProcessor extends ScalaNames {
         attr <- schema.attrList) attr.typeSymbol match {
           
       case ReferenceTypeSymbol(decl: SimpleTypeDecl) =>
-        if (decl.name.contains("@") &&
+        if (!decl.isNamed &&
             containsEnumeration(decl)) {
           val typeNames = context.enumTypeNames(packageName(schema, context))
           typeNames(decl) = makeProtectedTypeName(schema.targetNamespace, attr, context)
@@ -183,7 +183,7 @@ trait ContextProcessor extends ScalaNames {
   }
   
   def makeGroupComplexType(group: GroupDecl) =
-    ComplexTypeDecl(group.namespace, group.name, false, false,
+    ComplexTypeDecl(group.namespace, group.name, group.name, false, false,
       ComplexContentDecl.empty, Nil, None)
 
   def containsSingleChoice(seq: SequenceDecl) = seq.particles match {

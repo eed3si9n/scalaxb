@@ -16,7 +16,7 @@ object XhtmlTest extends SpecificationWithJUnit with CompilerMatcher {
     List((xhtml1strictxsd, xhtml1strictscala)),
     Map[Option[String], Option[String]](
       Some("http://www.w3.org/1999/xhtml") -> Some("org.w3.xhtml")
-    ), false)
+    ))
   
   "xhtml1-strict.scala file must compile so that Html can be used" in {
     (List("import org.w3.xhtml._",

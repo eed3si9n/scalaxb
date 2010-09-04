@@ -14,8 +14,7 @@ object NullNamespaceTest extends SpecificationWithJUnit with CompilerMatcher {
     
   lazy val generated = module.processFiles(
     List((nullnamespacexsd, nullnamespacescala)),
-    Map[Option[String], Option[String]](),
-    false)
+    Map[Option[String], Option[String]]())
     
   "nullnamespace.xsd must generate nullnamespace.scala file" in {
     generated(0) must exist

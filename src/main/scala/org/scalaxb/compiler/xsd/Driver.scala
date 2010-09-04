@@ -37,15 +37,17 @@ object Driver extends Module { driver =>
   override def buildContext = XsdContext()
     
   override def processContext(context: Context,
-      packageNames: collection.Map[Option[String], Option[String]]) {
-    processor.processContext(context, packageNames)
+      packageNames: collection.Map[Option[String], Option[String]],
+      wrapped: List[String]) {
+    processor.processContext(context, packageNames, wrapped)
   }
   
   override def packageName(schema: Schema, context: Context): Option[String] =
     processor.packageName(schema, context)
   
   def generate(xsd: Schema, context: Context, output: PrintWriter,
-      packageName: Option[String], firstOfPackage: Boolean) = {
+      packageName: Option[String], firstOfPackage: Boolean,
+      wrappedComplexTypes: List[String]) = {
     log("xsd: generating package " + packageName)
     if (!context.typeNames.contains(packageName)) {
       context.typeNames += (packageName -> mutable.ListMap.
@@ -55,7 +57,8 @@ object Driver extends Module { driver =>
       
     }
     
-    new GenSource(xsd, context, output, packageName, firstOfPackage, this) run;
+    new GenSource(xsd, context, output, packageName, firstOfPackage,
+      wrappedComplexTypes, this) run;
     output
   }
   

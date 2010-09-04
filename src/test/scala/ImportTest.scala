@@ -20,7 +20,7 @@ object ImportTest extends SpecificationWithJUnit with CompilerMatcher {
     Map[Option[String], Option[String]](
       None -> Some("ipo"),
       Some("http://www.example.com/Report") -> Some("report")
-    ), false)
+    ))
     
   "report.xsd must generate report.scala file" in {
     generated(0) must exist

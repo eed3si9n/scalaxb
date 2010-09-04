@@ -16,7 +16,7 @@ object XmlSchemaTest extends SpecificationWithJUnit with CompilerMatcher {
     List((xmlschemaxsd, xmlschemascala)),
     Map[Option[String], Option[String]](
       Some("http://www.w3.org/2001/XMLSchema") -> Some("org.w3.xmlschema")
-    ), false)
+    ))
     
   "XMLSchema.scala file must compile so that Schema can be used" in {
     (List("import org.w3.xmlschema._",

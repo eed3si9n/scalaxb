@@ -32,7 +32,7 @@ object SamlTest extends SpecificationWithJUnit with CompilerMatcher {
       Some("http://www.w3.org/2001/04/xmlenc#") -> Some("org.w3.xmlenc"),
       Some("urn:oasis:names:tc:SAML:2.0:assertion") -> Some("org.xml.saml2.assertion"),
       Some("urn:oasis:names:tc:SAML:2.0:metadata") -> Some("org.xml.saml2.metadata")  
-      ), false)
+      ))
   
   "generated files must compile together with SamlTest.scala" in {
     (List("SamlUsage.allTests"),

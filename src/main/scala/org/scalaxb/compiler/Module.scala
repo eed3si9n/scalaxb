@@ -43,9 +43,10 @@ trait Module extends Logger {
   
   class ModuleConfig {
     var verbose = false
-    var packageNames: ListMap[Option[String], Option[String]] =
+    val packageNames: ListMap[Option[String], Option[String]] =
       ListMap.empty[Option[String], Option[String]]
-    var outdir: File = new File(".")  
+    val wrappedComplexTypes: ListBuffer[String] = ListBuffer.empty[String]
+    var outdir: File = new File(".")
   }
   
   trait Importable {
@@ -67,23 +68,28 @@ trait Module extends Logger {
       keyValueOpt("p", "package", "<namespaceURI>", "<package>",
         "specifies the target package for <namespaceURI>",
         { (key: String, value: String) => { config.packageNames(Some(key)) = Some(value) } })
+      opt(None, "wrap-contents", "<complexType>",
+        "wraps inner contents into a seperate case class",
+        { w: String => config.wrappedComplexTypes append w })
       opt("v", "verbose", "be extra verbose",
         { config.verbose = true })
       arglist("<schema_file>...", "input schema to be converted",
-        { x: String => files += new File(x) })
+        { x: String => files append (new File(x)) })
     }
     
     if (paramParser.parse(args))
       processFiles(files.map(file =>
           (file, buildOutputFile(file, config.outdir))),
           config.packageNames,
+          config.wrappedComplexTypes.toList,
           config.verbose
         )
   }
   
   def processFiles(filePairs: Seq[(File, File)],
       packageNames: Map[Option[String], Option[String]],
-      verbose: Boolean) = {
+      wrappedComplexTypes: List[String] = Nil,
+      verbose: Boolean = false) = {
     config.verbose = verbose
     
     val files = filePairs.map(_._1)
@@ -96,7 +102,7 @@ trait Module extends Logger {
         new PrintWriter(new java.io.OutputStreamWriter(
           new java.io.FileOutputStream(pair._2), encoding)) 
       }).toMap,
-      packageNames)
+      packageNames, wrappedComplexTypes)
     val outfiles = ListBuffer.empty[File] ++ (filePairs map { pair =>
       pair._2
     })
@@ -115,7 +121,8 @@ trait Module extends Logger {
   }
   
   def processReaders(inputToOutput: Map[Reader, PrintWriter],
-      packageNames: Map[Option[String], Option[String]]) = {    
+      packageNames: Map[Option[String], Option[String]],
+      wrappedComplexTypes: List[String]) = {    
     val context = buildContext
     val importables = inputToOutput.keysIterator.toList map {
       toImportable(_)
@@ -129,7 +136,7 @@ trait Module extends Logger {
       schemas(importable) = parse(importable, context)
     }
     
-    processContext(context, packageNames)
+    processContext(context, packageNames, wrappedComplexTypes)
     
     sorted foreach { importable =>
       val schema = schemas(importable)
@@ -137,7 +144,8 @@ trait Module extends Logger {
       
       val out = inputToOutput(importable.reader)
       try {
-        generate(schema, context, out, pkg, !usedPackages.contains(pkg))
+        generate(schema, context, out, pkg, !usedPackages.contains(pkg),
+          wrappedComplexTypes)
       }
       finally {
         out.flush()
@@ -153,9 +161,10 @@ trait Module extends Logger {
   def packageName(schema: Schema, context: Context): Option[String]
   
   def process(file: File, output: File, packageName: Option[String],
-      verbose: Boolean) =
+      verbose: Boolean = false) =
     processFiles(List((file, output)),
-      Map[Option[String], Option[String]]((None, packageName)), verbose)
+      Map[Option[String], Option[String]]((None, packageName)),
+      Nil, verbose)
   
   def sortByDependency(files: Seq[Importable]): Seq[Importable] = {
     val schemaFiles = ListMap.empty[Option[String], Importable]
@@ -204,7 +213,8 @@ trait Module extends Logger {
   def buildContext: Context
   
   def processContext(context: Context,
-      packageNames: collection.Map[Option[String], Option[String]]): Unit
+      packageNames: collection.Map[Option[String], Option[String]],
+      wrapped: List[String]): Unit
   
   def parse(importable: Importable, context: Context): Schema
     = importable.toSchema(context)
@@ -218,7 +228,8 @@ trait Module extends Logger {
         new java.io.FileInputStream(file), encoding)))
   
   def generate(schema: Schema, context: Context, output: PrintWriter,
-    packageName: Option[String], firstOfPackage: Boolean): PrintWriter
+    packageName: Option[String], firstOfPackage: Boolean,
+    wrappedComplexTypes: List[String]): PrintWriter
   
   override def log(msg: String) {
     if (config.verbose) {

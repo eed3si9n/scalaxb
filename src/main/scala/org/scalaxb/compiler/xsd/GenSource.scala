@@ -33,6 +33,7 @@ class GenSource(val schema: SchemaDecl,
     out: PrintWriter,
     packageName: Option[String],
     firstOfPackage: Boolean,
+    wrappedComplexTypes: List[String],
     val logger: Logger) extends Parsers with XMLOutput {  
   type -->[A, B] = PartialFunction[A, B]
   
@@ -114,7 +115,7 @@ class GenSource(val schema: SchemaDecl,
     val name = buildTypeName(decl)
     log("GenSource.makeTrait: emitting " + name)
 
-    val childElements = flattenElements(decl, name)
+    val childElements = flattenElements(decl)
     val list = List.concat[Decl](childElements, buildAttributes(decl))
     val paramList = list.map { buildParam }
     val argList = list map {
@@ -198,7 +199,7 @@ object {name} extends rt.ImplicitXMLWriter[{name}] {{
       List(buildTypeName(decl))
     else buildSuperNames(decl)
     
-    val flatParticles = flattenElements(decl, name)
+    val flatParticles = flattenElements(decl)
     // val particles = buildParticles(decl, name)
     val childElements = flatParticles ::: flattenMixed(decl)
     val attributes = buildAttributes(decl)    
@@ -448,7 +449,7 @@ object {name} {{
   
   def makeSequence(seq: SequenceDecl) = {
     val name = makeTypeName(context.compositorNames(seq))
-    val particles = flattenElements(seq, name)
+    val particles = flattenElements(schema.targetNamespace, name, seq)
     val paramList = particles.map { buildParam }
     val hasSequenceParam = (paramList.size == 1) &&
       (paramList.head.cardinality == Multiple) &&
@@ -667,25 +668,25 @@ object {name} {{
       }).distinct
   }
   
-  def flattenElements(decl: ComplexTypeDecl, name: String): List[ElemDecl] = {
+  def flattenElements(decl: ComplexTypeDecl): List[ElemDecl] = {
     argNumber = 0
     
     val build: ComplexTypeContent --> List[ElemDecl] = {
       case SimpContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
-        flattenElements(base, base.name)
+        flattenElements(base)
       case SimpContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _) =>
-        flattenElements(base, base.name)
+        flattenElements(base)
       
       // complex content means 1. has child elements 2. has attributes
       case CompContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
-        flattenElements(base, base.name)        
+        flattenElements(base)        
       case res@CompContRestrictionDecl(XsAny, _, _) =>
-        res.compositor map { flattenElements(_, name) } getOrElse { Nil }
+        res.compositor map { flattenElements(decl.namespace, decl.family, _) } getOrElse { Nil }
       case ext@CompContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
-        flattenElements(base, base.name) :::
-          (ext.compositor map { flattenElements(_, name) } getOrElse { Nil })
+        flattenElements(base) :::
+          (ext.compositor map { flattenElements(decl.namespace, decl.family, _) } getOrElse { Nil })
       case ext@CompContExtensionDecl(XsAny, _, _) =>
-        ext.compositor map { flattenElements(_, name) } getOrElse { Nil }
+        ext.compositor map { flattenElements(decl.namespace, decl.family, _) } getOrElse { Nil }
       case _ => Nil
     }
     
@@ -693,8 +694,10 @@ object {name} {{
     pf(decl.content.content)
   }
   
-  def splitLongSequence(particles: List[Particle]) =
-    if (particles.size <= MaxParticleSize) particles
+  def splitLongSequence(namespace: Option[String], family: String,
+      particles: List[Particle]) =
+    if (particles.size <= MaxParticleSize &&
+      !isWrapped(namespace, family, wrappedComplexTypes)) particles
     else {
       def doSplit(rest: List[Particle]): List[Particle] =
         if (rest.size <= ChunkParticleSize) List(SequenceDecl(rest, 1, 1))
@@ -702,18 +705,18 @@ object {name} {{
       
       doSplit(particles)
     }
-  
-  def flattenElements(compositor: HasParticle,
-        name: String): List[ElemDecl] =
+    
+  def flattenElements(namespace: Option[String], family: String,
+        compositor: HasParticle): List[ElemDecl] =
       compositor match {
     case ref:GroupRef =>
-      flattenElements(buildGroup(ref), name)
+      flattenElements(namespace, family, buildGroup(ref))
       
     case group:GroupDecl =>
       List(buildCompositorRef(group))
     
     case seq: SequenceDecl =>
-      splitLongSequence(compositor.particles) flatMap {
+      splitLongSequence(namespace, family, compositor.particles) flatMap {
         case ref: GroupRef            => List(buildCompositorRef(buildGroup(ref)))
         case compositor2: HasParticle => List(buildCompositorRef(compositor2))
         case elem: ElemDecl           => List(elem)

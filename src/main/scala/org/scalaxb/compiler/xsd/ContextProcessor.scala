@@ -44,7 +44,8 @@ trait ContextProcessor extends ScalaNames {
     else None
       
   def processContext(context: XsdContext,
-      packageNames: collection.Map[Option[String], Option[String]]) {
+      packageNames: collection.Map[Option[String], Option[String]],
+      wrapped: List[String]) {
     context.packageNames ++= packageNames
     
     (None :: (packageNames.valuesIterator.toList.distinct)) map {
@@ -150,7 +151,7 @@ trait ContextProcessor extends ScalaNames {
       typeNames(base) = makeTraitName(base)
     }
     
-    makeCompositorNames(context)
+    makeCompositorNames(context, wrapped)
   }
   
   def makeEnumValues(decl: SimpleTypeDecl, context: XsdContext) {
@@ -199,7 +200,12 @@ trait ContextProcessor extends ScalaNames {
   val ChunkParticleSize = 10
   val MaxParticleSize = 20
   
-  def makeCompositorNames(context: XsdContext) {
+  def isWrapped(namespace: Option[String], family: String, wrapped: List[String]) =
+    (namespace map { ns =>
+      wrapped.contains("{" + ns + "}" + family) } getOrElse { false }) ||
+    wrapped.contains(family)
+    
+  def makeCompositorNames(context: XsdContext, wrapped: List[String]) {
     var sequenceNumber = 0
     var choiceNumber = 0
     var allNumber = 0
@@ -210,9 +216,9 @@ trait ContextProcessor extends ScalaNames {
       allNumber = 0
       decl.content.content match {
         case CompContRestrictionDecl(_, Some(compositor: HasParticle), _) =>
-          makeCompositorName(compositor, decl)
+          makeCompositorName(compositor, decl, wrapped)
         case CompContExtensionDecl(_, Some(compositor: HasParticle), _) =>
-          makeCompositorName(compositor, decl)
+          makeCompositorName(compositor, decl, wrapped)
         case _ =>
       }
     }
@@ -245,7 +251,8 @@ trait ContextProcessor extends ScalaNames {
           else context.compositorNames(compositor) = groupName + "Sequence" + (sequenceNumber + 1)
           sequenceNumber += 1
           
-          if (particles.size > MaxParticleSize) doSplit(makeGroupComplexType(group), particles)
+          if (particles.size > MaxParticleSize ||
+            isWrapped(group.namespace, group.name, wrapped)) doSplit(makeGroupComplexType(group), particles)
              
         case ChoiceDecl(particles: List[_], _, _, _) =>
           context.compositorParents(compositor) = makeGroupComplexType(group)
@@ -277,13 +284,14 @@ trait ContextProcessor extends ScalaNames {
       context.compositorParents(retval) = decl
       retval
     }
-    
+        
     def doSplit(decl: ComplexTypeDecl, rest: List[Particle]): List[Particle] =
       if (rest.size <= ChunkParticleSize) List(formSequence(decl, rest))
       else List(formSequence(decl, rest.take(ChunkParticleSize))) ::: 
         doSplit(decl, rest.drop(ChunkParticleSize))
     
-    def makeCompositorName(compositor: HasParticle, decl: ComplexTypeDecl) {
+    def makeCompositorName(compositor: HasParticle, decl: ComplexTypeDecl,
+        wrapped: List[String]) {
       val typeNames = context.typeNames(packageName(decl.namespace, context))
       val typeName = typeNames(decl)
       
@@ -296,7 +304,8 @@ trait ContextProcessor extends ScalaNames {
           }
           sequenceNumber += 1
           
-          if (particles.size > MaxParticleSize) doSplit(decl, particles)
+          if (particles.size > MaxParticleSize ||
+            isWrapped(decl.namespace, decl.family, wrapped)) doSplit(decl, particles)
                
         case ChoiceDecl(particles: List[_], _, _, _) =>
           context.compositorParents(compositor) = decl
@@ -318,7 +327,7 @@ trait ContextProcessor extends ScalaNames {
       }
       
       compositor.particles collect {
-        case compositor2: HasParticle => makeCompositorName(compositor2, decl)
+        case compositor2: HasParticle => makeCompositorName(compositor2, decl, wrapped)
       }
     } // makeCompositorName
   }

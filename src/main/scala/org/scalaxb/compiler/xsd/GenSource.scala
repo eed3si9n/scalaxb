@@ -211,6 +211,8 @@ object {name} extends rt.ImplicitXMLWriter[{name}] {{
     val parserList = flatParticles map { buildParser(_, decl.mixed, false) }
     val parserVariableList =  for (i <- 0 to flatParticles.size - 1)
       yield "p" + (i + 1)
+    val accessors = generateAccessors(paramList, splitSequences(decl))
+    log("GenSource#makeCaseClassWithType: generateAccessors" + accessors)
     
     val particleArgs = primary match {
       case Some(all: AllDecl) => flatParticles map { buildArgForAll }
@@ -351,7 +353,10 @@ object {name} extends rt.ImplicitXMLWriter[{name}] {{
 </source>
       
     return <source>
-{ buildComment(decl) }case class {name}({paramsString}){extendString}
+{ buildComment(decl) }case class {name}({paramsString}){extendString}{ if (accessors.size == 0) ""
+else " {" + newline +
+  indent(1) + accessors.mkString(newline + indent(1)) + newline +
+  "}" + newline }
 
 { makeObject }
 { compositors map { makeCompositor } }
@@ -695,16 +700,15 @@ object {name} {{
   }
   
   def splitLongSequence(namespace: Option[String], family: String,
-      particles: List[Particle]) =
+      particles: List[Particle]): List[Particle] =
     if (particles.size <= MaxParticleSize &&
       !isWrapped(namespace, family, wrappedComplexTypes)) particles
-    else {
-      def doSplit(rest: List[Particle]): List[Particle] =
-        if (rest.size <= ChunkParticleSize) List(SequenceDecl(rest, 1, 1))
-        else List(SequenceDecl(rest.take(ChunkParticleSize), 1, 1)) ::: doSplit(rest.drop(ChunkParticleSize))
+    else splitLongSequence(particles)
       
-      doSplit(particles)
-    }
+  def splitLongSequence(rest: List[Particle]): List[SequenceDecl] =
+    if (rest.size <= ChunkParticleSize) List(SequenceDecl(rest, 1, 1))
+    else List(SequenceDecl(rest.take(ChunkParticleSize), 1, 1)) :::
+      splitLongSequence(rest.drop(ChunkParticleSize))
     
   def flattenElements(namespace: Option[String], family: String,
         compositor: HasParticle): List[ElemDecl] =
@@ -747,6 +751,52 @@ object {name} {{
       val symbol = content.base.asInstanceOf[ReferenceTypeSymbol].decl.asInstanceOf[SimpleTypeDecl]
       List(buildElement(symbol))    
   } 
+  
+  def splitSequences(decl: ComplexTypeDecl): List[SequenceDecl] = decl.content.content match {
+    case SimpContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
+      splitSequences(base)
+    case SimpContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _) =>
+      splitSequences(base)
+    
+    // complex content means 1. has child elements 2. has attributes
+    case CompContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
+      splitSequences(base)        
+    case res@CompContRestrictionDecl(XsAny, _, _) =>
+      res.compositor map { splitSequences(decl.namespace, decl.family, _) } getOrElse { Nil }
+    case ext@CompContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
+      splitSequences(base) :::
+        (ext.compositor map { splitSequences(decl.namespace, decl.family, _) } getOrElse { Nil })
+    case ext@CompContExtensionDecl(XsAny, _, _) =>
+      ext.compositor map { splitSequences(decl.namespace, decl.family, _) } getOrElse { Nil }
+    case _ => Nil    
+  }
+  
+  def splitSequences(namespace: Option[String], family: String,
+        compositor: HasParticle): List[SequenceDecl] = compositor match {
+    case seq: SequenceDecl if seq.particles.size > MaxParticleSize ||
+      isWrapped(namespace, family, wrappedComplexTypes) => splitLongSequence(seq.particles)
+    case _ => Nil
+  }
+  
+  def generateAccessors(params: List[Param], splits: List[SequenceDecl]) = params flatMap {
+    case param@Param(_, _, ReferenceTypeSymbol(decl@ComplexTypeDecl(_, _, _, _, _, _, _, _)), _, _, _) if
+        compositorWrapper.contains(decl) &&
+        splits.contains(compositorWrapper(decl)) =>  
+      val wrapperName = makeParamName(param.name)
+      val particles = compositorWrapper(decl).particles flatMap {
+        case ref: GroupRef            => List(buildCompositorRef(buildGroup(ref)))
+        case compositor2: HasParticle => List(buildCompositorRef(compositor2))
+        case elem: ElemDecl           => List(elem)
+        case ref: ElemRef             => List(buildElement(ref))
+        case any: AnyDecl             => List(buildAnyRef(any))
+      }
+            
+      val paramList = particles map { buildParam }
+      paramList map { p =>
+        "def " + makeParamName(p.name) + " = " + wrapperName + "." +  makeParamName(p.name)
+      }
+    case _ => Nil
+  }
   
   def buildParticles(decl: ComplexTypeDecl, name: String): List[ElemDecl] = {
     argNumber = 0

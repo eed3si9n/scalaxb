@@ -5,11 +5,11 @@ trait ScalaBazaarTask extends ScalaScriptTask {
   def ouputLibPath = (outputPath ##) / "lib"
   
   val versionlessJarName = name + ".jar"
-  def versionlessJarPath = outputPath / versionlessJarName
+  def versionlessJarPath = ouputLibPath / versionlessJarName
   val bazaarPackageName = name + "-" + version + ".sbp"
-  def bazaarPackagePath = outputPath / bazaarPackageName
+  def bazaarPackagePath = (outputPath ##) / bazaarPackageName
   val bazaarAdvertName = name + "-" + version + ".advert"
-  def bazaarAdvertPath = outputPath / bazaarAdvertName  
+  def bazaarAdvertPath = (outputPath ##) / bazaarAdvertName  
   def outputMetaPath = (outputPath ##) / "meta"
   def descriptionPath = outputMetaPath / "description"
   def outputDocPath = (outputPath ##) / "doc"
@@ -54,7 +54,7 @@ if (!depends.isEmpty)
     writeFile(descriptionPath.asFile, pack.toString)
     writeFile(bazaarAdvertPath.asFile, advert.toString)
     
-    FileUtilities.zip(List(outputBinPath, versionlessJarPath, outputDocPath, outputMetaPath),
+    FileUtilities.zip(List(outputBinPath, ouputLibPath, outputDocPath, outputMetaPath),
       bazaarPackagePath, true, log)  
     None
   }.dependsOn(versionlessPackage, doc, scalascript)

@@ -10,6 +10,7 @@ The following downloads and installs the latest shared build of scalaxb
 to the sbaz managed directory:
 
   $ sudo sbaz install scalaxb
+  $ sudo sbaz upgrade
 
 Build from source
 =================

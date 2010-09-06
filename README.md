@@ -37,6 +37,8 @@ Usage
             specifies the target package
       -p:<namespaceURI>=<package> | --package:<namespaceURI>=<package>
             specifies the target package for <namespaceURI>
+      --wrap-contents <complexType>
+            wraps inner contents into a seperate case class
       -v | --verbose
             be extra verbose
       <schema_file>

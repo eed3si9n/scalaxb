@@ -15,7 +15,7 @@ object BigTest extends SpecificationWithJUnit with CompilerMatcher {
   lazy val generated = module.processFiles(
     List((bigxsd, bigscala)),
     Map[Option[String], Option[String]](None -> Some("big")),
-    List("bar1"))
+    List("barOne"))
     
   "big.scala file must compile so that Foo can be used" in {
     (List("big.Foo.toXML(big.Foo.fromXML(<foo>" +

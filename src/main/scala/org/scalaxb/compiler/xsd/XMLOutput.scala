@@ -39,7 +39,8 @@ trait XMLOutput extends Params {
     val typeName = buildTypeName(param.typeSymbol)
     val name = "__obj." + makeParamName(param.name)
     val baseTypeName = param.typeSymbol match {
-      case XsDataRecord(ReferenceTypeSymbol(x: ComplexTypeDecl)) =>
+      case XsDataRecord(ReferenceTypeSymbol(x: ComplexTypeDecl)) if
+         compositorWrapper.contains(x)  =>
         val compositor = compositorWrapper(x)
         compositor match {
           case group: GroupDecl =>

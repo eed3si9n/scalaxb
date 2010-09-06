@@ -37,51 +37,54 @@
     </xs:complexType>
   </xs:element>
  
-  <xs:complexType name="bar1">
+  <xs:complexType name="barOne">
     <xs:sequence>
-      <xs:element name="string1" type="xs:string"/>
-      <xs:element name="string2" type="xs:string"/>
-      <xs:element name="string3" type="xs:string"/>
-      <xs:element name="string4" type="xs:string"/>
-      <xs:element name="string5" type="xs:string"/>
-      <xs:element name="string6" type="xs:string"/>
-      <xs:element name="string7" type="xs:string"/>
-      <xs:element name="string8" type="xs:string"/>
-      <xs:element name="string9" type="xs:string"/>
+      <xs:element name="int1" type="xs:int"/>
+      <xs:element name="int2" type="xs:int"/>
+      <xs:element name="int3" type="xs:int"/>
+      <xs:element name="int4" type="xs:int"/>
+      <xs:element name="int5" type="xs:int"/>
+      <xs:element name="int6" type="xs:int"/>
+      <xs:element name="int7" type="xs:int"/>
+      <xs:element name="int8" type="xs:int"/>
+      <xs:element name="int9" type="xs:int"/>
+      <xs:element name="int10" type="xs:int"/>
     </xs:sequence>
   </xs:complexType>
  
-  <xs:complexType name="bar2">
+  <xs:complexType name="barTwo">
     <xs:complexContent>
- 		  <xs:extension base="bar1">
+ 		  <xs:extension base="barOne">
          <xs:sequence>
-          <xs:element name="string10" type="xs:string"/>
-          <xs:element name="string11" type="xs:string"/>
-          <xs:element name="string12" type="xs:string"/>
-          <xs:element name="string13" type="xs:string"/>
-          <xs:element name="string14" type="xs:string"/>
-          <xs:element name="string15" type="xs:string"/>
-          <xs:element name="string16" type="xs:string"/>
-          <xs:element name="string17" type="xs:string"/>
-          <xs:element name="string18" type="xs:string"/>
+          <xs:element name="int11" type="xs:int"/>
+          <xs:element name="int12" type="xs:int"/>
+          <xs:element name="int13" type="xs:int"/>
+          <xs:element name="int14" type="xs:int"/>
+          <xs:element name="int15" type="xs:int"/>
+          <xs:element name="int16" type="xs:int"/>
+          <xs:element name="int17" type="xs:int"/>
+          <xs:element name="int18" type="xs:int"/>
+          <xs:element name="int19" type="xs:int"/>
+          <xs:element name="int20" type="xs:int"/>
         </xs:sequence>
       </xs:extension>
     </xs:complexContent>
   </xs:complexType>
 
- <xs:complexType name="bar3">
+ <xs:complexType name="barThree">
    <xs:complexContent>
-		 <xs:extension base="bar2">
+		 <xs:extension base="barTwo">
        <xs:sequence>
-         <xs:element name="string19" type="xs:string"/>
-         <xs:element name="string20" type="xs:string"/>
-         <xs:element name="string21" type="xs:string"/>
-         <xs:element name="string22" type="xs:string"/>
-         <xs:element name="string23" type="xs:string"/>
-         <xs:element name="string24" type="xs:string"/>
-         <xs:element name="string25" type="xs:string"/>
-         <xs:element name="string26" type="xs:string"/>
-         <xs:element name="string27" type="xs:string"/>
+         <xs:element name="int21" type="xs:int"/>
+         <xs:element name="int22" type="xs:int"/>
+         <xs:element name="int23" type="xs:int"/>
+         <xs:element name="int24" type="xs:int"/>
+         <xs:element name="int25" type="xs:int"/>
+         <xs:element name="int26" type="xs:int"/>
+         <xs:element name="int27" type="xs:int"/>
+         <xs:element name="int28" type="xs:int"/>
+         <xs:element name="int29" type="xs:int"/>
+         <xs:element name="int30" type="xs:int"/>
        </xs:sequence>
      </xs:extension>
    </xs:complexContent>

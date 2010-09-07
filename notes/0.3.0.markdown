@@ -1,0 +1,3 @@
+- Implements support for [`<enumeration>`](http://scalaxb.org/enumeration).
+- Implements support for [substitution groups](http://scalaxb.org/substitution-group).
+- Works around [22-parameter limitation](http://scalaxb.org/tuple22) by splitting up long sequences into chunks.

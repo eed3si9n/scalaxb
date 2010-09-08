@@ -322,4 +322,11 @@
   <element name="gh6head2" type="string" abstract="true"/>
   <element name="gh6sub3" type="string" substitutionGroup="ipo:gh6head2" />
   <element name="gh6sub4" type="string" substitutionGroup="ipo:gh6head2" />
+  
+  <complexType name="GH8">
+    <sequence>
+      <element name="implicit" type="string" />
+      <element name="match"   type="string"/>
+    </sequence>
+  </complexType>  
 </schema>

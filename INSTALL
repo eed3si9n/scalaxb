@@ -10,6 +10,9 @@ The following downloads and installs the latest shared build of scalaxb
 to the sbaz managed directory:
 
   $ sudo sbaz install scalaxb
+  
+Here's how to upgrade it if you've installed it before:
+
   $ sudo sbaz upgrade
 
 Build from source
@@ -60,7 +63,7 @@ Windows
 Create a batch file scalaxb.bat:
 
   set SCRIPT_DIR=%~dp0
-  java -Xmx512M -jar "%SCRIPT_DIR%scalaxb.jar" %*
+  java -Xmx512M -jar "$SCALA_HOME\lib\scala-library.jar;%SCRIPT_DIR%scalaxb.jar" %*
 
 and put the jar in the same directory as the batch file. Put scalaxb.bat on your
 path so that you can launch scalaxb in any directory by typing scalaxb at the

@@ -37,7 +37,10 @@ trait ContextProcessor extends ScalaNames {
   
   def packageName(decl: SimpleTypeDecl, context: XsdContext): Option[String] =
     packageName(decl.namespace, context)
-  
+
+  def packageName(group: AttributeGroupDecl, context: XsdContext): Option[String] =
+    packageName(group.namespace, context)
+      
   def packageName(namespace: Option[String], context: XsdContext): Option[String] =
     if (context.packageNames.contains(namespace)) context.packageNames(namespace)
     else if (context.packageNames.contains(None)) context.packageNames(None)
@@ -50,8 +53,7 @@ trait ContextProcessor extends ScalaNames {
     
     (None :: (packageNames.valuesIterator.toList.distinct)) map {
       pkg => 
-        context.typeNames(pkg) = mutable.ListMap.empty[ComplexTypeDecl, String]
-        context.enumTypeNames(pkg) = mutable.ListMap.empty[SimpleTypeDecl, String]
+        context.typeNames(pkg) = mutable.ListMap.empty[Decl, String]
         context.enumValueNames(pkg) = mutable.ListMap.empty[(String, EnumerationDecl), String]
     }
     
@@ -69,7 +71,7 @@ trait ContextProcessor extends ScalaNames {
         val typeNames = context.typeNames(packageName(schema, context))
         typeNames(decl) = makeProtectedTypeName(schema.targetNamespace, elem, context)
       case decl@SimpleTypeDecl(_, _, _, _, _) if containsEnumeration(decl) =>
-        val typeNames = context.enumTypeNames(packageName(schema, context))
+        val typeNames = context.typeNames(packageName(schema, context))
         typeNames(decl) = makeProtectedTypeName(schema.targetNamespace, elem, context)
         makeEnumValues(decl, context)
       case _ =>
@@ -85,7 +87,7 @@ trait ContextProcessor extends ScalaNames {
         val typeNames = context.typeNames(packageName(schema, context))
         typeNames(decl) = makeProtectedTypeName(schema.targetNamespace, decl, context)
       case (_, decl@SimpleTypeDecl(_, _, _, _, _)) if containsEnumeration(decl) =>
-        val typeNames = context.enumTypeNames(packageName(schema, context))
+        val typeNames = context.typeNames(packageName(schema, context))
         typeNames(decl) = makeProtectedTypeName(schema.targetNamespace, decl, context)
         makeEnumValues(decl, context)
       case _ =>      
@@ -117,12 +119,18 @@ trait ContextProcessor extends ScalaNames {
       case ReferenceTypeSymbol(decl: SimpleTypeDecl) =>
         if (!decl.isNamed &&
             containsEnumeration(decl)) {
-          val typeNames = context.enumTypeNames(packageName(schema, context))
+          val typeNames = context.typeNames(packageName(schema, context))
           typeNames(decl) = makeProtectedTypeName(schema.targetNamespace, attr, context)
           makeEnumValues(decl, context)
         }
       
       case _ =>  
+    }
+    
+    for (schema <- context.schemas;
+        group <- schema.topAttrGroups.valuesIterator.toList) {
+      val typeNames = context.typeNames(packageName(schema, context))
+      typeNames(group) = makeProtectedTypeName(schema.targetNamespace, group, context)      
     }
     
     def associateSubType(subType: ComplexTypeDecl, base: ComplexTypeDecl) {
@@ -155,7 +163,7 @@ trait ContextProcessor extends ScalaNames {
   }
   
   def makeEnumValues(decl: SimpleTypeDecl, context: XsdContext) {
-    val typeNames = context.enumTypeNames(packageName(decl.namespace, context))
+    val typeNames = context.typeNames(packageName(decl.namespace, context))
     val enumValues = context.enumValueNames(packageName(decl.namespace, context))
     val name = typeNames(decl)
     filterEnumeration(decl) map { enum =>
@@ -336,11 +344,9 @@ trait ContextProcessor extends ScalaNames {
       context: XsdContext): String = {
     def contains(value: String) = {
       val enumValueNames = context.enumValueNames(packageName(namespace, context))
-      val enumTypeNames = context.enumTypeNames(packageName(namespace, context))
       val typeNames = context.typeNames(packageName(namespace, context))
       
       typeNames.valuesIterator.contains(value) ||
-      enumTypeNames.valuesIterator.contains(value) ||
       enumValueNames.valuesIterator.contains(value)
     }
     
@@ -366,7 +372,10 @@ trait ContextProcessor extends ScalaNames {
   
   def makeProtectedTypeName(namespace: Option[String], attr: AttributeDecl, context: XsdContext): String =
     makeProtectedTypeName(attr.namespace orElse namespace, attr.name, "Type", context)
-    
+
+  def makeProtectedTypeName(namespace: Option[String], group: AttributeGroupDecl, context: XsdContext): String =
+    makeProtectedTypeName(group.namespace orElse namespace, group.name, "Type", context)
+      
   def makeTraitName(decl: ComplexTypeDecl) =
     if (decl.name.last == 'e')
       makeTypeName(decl.name.dropRight(1) + "able")

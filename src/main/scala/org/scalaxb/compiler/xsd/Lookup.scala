@@ -146,9 +146,11 @@ trait Lookup extends ContextProcessor {
     }
   }
   
-  def buildEnumTypeName(decl: SimpleTypeDecl) = {
-    val pkg = packageName(decl, context)
-    val typeNames = context.enumTypeNames(pkg)
+  def buildEnumTypeName(decl: SimpleTypeDecl): String =
+    buildTypeName(packageName(decl, context), decl)
+  
+  def buildTypeName(pkg: Option[String], decl: Decl): String = {
+    val typeNames = context.typeNames(pkg)
     if (!typeNames.contains(decl))
       error(pkg + ": Type name not found: " + decl.toString)
     
@@ -156,7 +158,7 @@ trait Lookup extends ContextProcessor {
     else pkg match {
       case Some(x) => x + "." + typeNames(decl)
       case None => typeNames(decl)
-    }
+    }    
   }
   
   def buildTypeName(decl: SimpleTypeDecl): String = decl.content match {
@@ -171,7 +173,7 @@ trait Lookup extends ContextProcessor {
   }
   
   def buildTypeName(group: AttributeGroupDecl): String =
-    makeTypeName(group.name)
+    buildTypeName(packageName(group, context), group)
   
   def buildTypeName(enumTypeName: String, enum: EnumerationDecl): String = {
     val pkg = packageName(schema, context)

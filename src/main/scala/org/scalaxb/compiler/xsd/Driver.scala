@@ -49,14 +49,7 @@ object Driver extends Module { driver =>
       packageName: Option[String], firstOfPackage: Boolean,
       wrappedComplexTypes: List[String]) = {
     log("xsd: generating package " + packageName)
-    if (!context.typeNames.contains(packageName)) {
-      context.typeNames += (packageName -> mutable.ListMap.
-                            empty[ComplexTypeDecl, String])
-      context.enumTypeNames += (packageName -> mutable.ListMap.
-                            empty[SimpleTypeDecl, String])
-      
-    }
-    
+    // if (!context.typeNames.contains(packageName)) processor.addPackage(context. packageName)
     new GenSource(xsd, context, output, packageName, firstOfPackage,
       wrappedComplexTypes, this) run;
     output

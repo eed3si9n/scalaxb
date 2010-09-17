@@ -328,5 +328,24 @@
       <element name="implicit" type="string" />
       <element name="match"   type="string"/>
     </sequence>
-  </complexType>  
+  </complexType>
+  
+  <element name="gh6head2" type="string" abstract="true"/>
+  
+  <element name="gh9">
+    <complexType>
+      <sequence>
+        <element name="name"   type="string"/>
+      </sequence>
+    </complexType>
+  </element>
+  
+  <attributeGroup name="gh9">
+    <annotation>
+      <documentation>
+      the same name as the above element.
+      </documentation>
+    </annotation>
+    <attribute name="id" type="ID"/>
+  </attributeGroup>
 </schema>

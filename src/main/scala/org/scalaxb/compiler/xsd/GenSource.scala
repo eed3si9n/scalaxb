@@ -115,7 +115,8 @@ class GenSource(val schema: SchemaDecl,
     val name = buildTypeName(decl)
     log("GenSource.makeTrait: emitting " + name)
 
-    val childElements = flattenElements(decl)
+    val childElements = if (decl.mixed) Nil
+      else flattenElements(decl)
     val list = List.concat[Decl](childElements, buildAttributes(decl))
     val paramList = list.map { buildParam }
     val argList = list map {
@@ -201,7 +202,8 @@ object {name} extends rt.ImplicitXMLWriter[{name}] {{
     
     val flatParticles = flattenElements(decl)
     // val particles = buildParticles(decl, name)
-    val childElements = flatParticles ::: flattenMixed(decl)
+    val childElements = if (decl.mixed) flattenMixed(decl)
+      else flatParticles 
     val attributes = buildAttributes(decl)    
     val list = List.concat[Decl](childElements, attributes)
     

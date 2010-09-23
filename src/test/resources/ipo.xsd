@@ -164,7 +164,7 @@
       </choice>
     </complexType>
   </element>
-
+  
   <complexType name="DatedData">
     <sequence>
       <element name="date"   type="dateTime"/>
@@ -306,6 +306,16 @@
   <simpleType name="Numbers">
       <list itemType="unsignedInt"/>
   </simpleType>
+  
+  <element name="mixedTest">
+    <complexType mixed="true">
+      <sequence>
+        <element name="name"   type="string"/>
+        <element name="street" type="string"/>
+        <element name="city"   type="string"/>
+      </sequence>
+    </complexType>
+  </element>
   
   <!-- sub group -->
   <complexType name="GH6Usage">

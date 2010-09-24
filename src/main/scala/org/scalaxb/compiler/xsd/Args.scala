@@ -283,14 +283,24 @@ trait Args extends Params {
     indent(3) + "}" 
   }
   
-  def buildArgForMixed(particles: List[Decl]): String = {
-    "(node.child.map {" + newline +
-    indent(3) + fromXmlCases(particles, 3).mkString(newline + indent(3)) + newline +
-    indent(3) + "case x: scala.xml.Text =>" + newline +
-    indent(3) + "  rt.DataRecord(None, None, x.text)" + newline +
-    indent(2) + "}).toList"
+  // def buildArgForMixed(particles: List[Decl]): String = {
+  //   "(node.child.map {" + newline +
+  //   indent(3) + fromXmlCases(particles, 3).mkString(newline + indent(3)) + newline +
+  //   indent(3) + "case x: scala.xml.Text =>" + newline +
+  //   indent(3) + "  rt.DataRecord(None, None, x.text)" + newline +
+  //   indent(2) + "}).toList"
+  // }
+  
+  def buildArgForMixed(particle: Particle, pos: Int): String =
+    buildArgForMixed(particle, buildSelector(pos))
+  
+  def buildArgForMixed(particle: Particle, selector: String): String = {
+    "Seq(" + selector + ")"
   }
-    
+  
+  def buildArgForOptTextRecord(pos: Int): String =
+    buildSelector(pos) + " map { Seq(_) } getOrElse { Nil }"
+  
   def buildArg(selector: String, typeSymbol: XsTypeSymbol): String = typeSymbol match {
     case XsAny => selector
     case symbol: BuiltInSimpleTypeSymbol =>

@@ -155,7 +155,7 @@
     </complexType>
   </element>
   
-  <element name="Element3">
+  <!-- <element name="Element3">
     <complexType mixed="true">
       <choice maxOccurs="unbounded">
         <element ref="ipo:Choice1"/>
@@ -163,7 +163,7 @@
         <any namespace="##other" processContents="lax" />
       </choice>
     </complexType>
-  </element>
+  </element> -->
   
   <complexType name="DatedData">
     <sequence>

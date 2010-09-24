@@ -25,16 +25,18 @@ import scala.collection.mutable
 
 trait Parsers extends Args with Params {
   // called by makeCaseClassWithType
-  def buildParser(particle: Particle, mixed: Boolean, wrapInDataRecord: Boolean): String = particle match {
-    case elem: ElemDecl       => buildParser(elem, elem.minOccurs, elem.maxOccurs, mixed)
-    case ref: ElemRef         =>
-      val elem = buildElement(ref)
-      buildParser(elem, elem.minOccurs, elem.maxOccurs, mixed)
-    case compositor: HasParticle =>
-      buildParser(compositor, compositor.minOccurs, compositor.maxOccurs, mixed, wrapInDataRecord)
-    case any: AnyDecl =>
-      buildParser(any, any.minOccurs, any.maxOccurs)
-  }
+  def buildParser(particle: Particle, mixed: Boolean, wrapInDataRecord: Boolean): String =
+    if (mixed) buildChoiceParser(particle, mixed)
+    else particle match {
+      case elem: ElemDecl       => buildParser(elem, elem.minOccurs, elem.maxOccurs, mixed)
+      case ref: ElemRef         =>
+        val elem = buildElement(ref)
+        buildParser(elem, elem.minOccurs, elem.maxOccurs, mixed)
+      case compositor: HasParticle =>
+        buildParser(compositor, compositor.minOccurs, compositor.maxOccurs, mixed, wrapInDataRecord)
+      case any: AnyDecl =>
+        buildParser(any, any.minOccurs, any.maxOccurs)
+    }
 
   def buildParser(any: AnyDecl, minOccurs: Int, maxOccurs: Int): String =
     buildParserString("any", minOccurs, maxOccurs)
@@ -66,7 +68,7 @@ trait Parsers extends Args with Params {
   def buildParser(seq: SequenceDecl,
       minOccurs: Int, maxOccurs: Int, mixed: Boolean,
       wrapInDataRecord: Boolean): String = {
-    val parserList = seq.particles.map { buildParser(_, mixed, false) }
+    val parserList = seq.particles.map { buildParser(_, mixed, mixed) }
     val base = parserList.mkString("(", " ~ " + newline + indent(2), ")") + " ^^ " + newline +
     indent(3) + buildConverter(seq, mixed, wrapInDataRecord)
     
@@ -90,27 +92,9 @@ trait Parsers extends Args with Params {
   // this may violate the schema, but it is a compromise as long as plurals are
   // treated as Seq[DataRecord].
   def buildParser(choice: ChoiceDecl,
-      minOccurs: Int, maxOccurs: Int, mixed: Boolean): String = {
-    def buildChoiceParser(particle: Particle): String = particle match {
-      case ref: GroupRef        =>
-        val group = buildGroup(ref)
-        buildParser(group, math.max(group.minOccurs, 1), 1, false, true)
-      case compositor: HasParticle =>
-        buildParser(compositor, math.max(compositor.minOccurs, 1), 1, mixed, true)
-      case elem: ElemDecl       =>
-        "(" + buildParser(elem, math.max(elem.minOccurs, 1), 1, mixed) + " ^^ " + newline +
-        indent(3) + buildConverter(elem, math.max(elem.minOccurs, 1), 1) + ")"
-      case any: AnyDecl         =>
-        "(" + buildParser(any, math.max(any.minOccurs, 1), 1) + " ^^ " + newline +
-        indent(3) + buildConverter(XsAny, math.max(any.minOccurs, 1), 1) + ")"
-      case ref: ElemRef         =>
-        val elem = buildElement(ref)
-        "(" + buildParser(elem, math.max(elem.minOccurs, 1), 1, mixed) + " ^^ " + newline +
-        indent(3) + buildConverter(elem, math.max(elem.minOccurs, 1), 1) + ")"
-    }
-    
+      minOccurs: Int, maxOccurs: Int, mixed: Boolean): String = {    
     val parserList = choice.particles filterNot(
-      _.isInstanceOf[AnyDecl]) map(buildChoiceParser(_))
+      _.isInstanceOf[AnyDecl]) map(buildChoiceParser(_, mixed))
     val choiceOperator = if (choice.particles exists(_ match {
       case elem: ElemDecl => false
       case ref: ElemRef => false
@@ -123,7 +107,7 @@ trait Parsers extends Args with Params {
     else ""
     
     val anyList = choice.particles filter(
-      _.isInstanceOf[AnyDecl]) map(buildChoiceParser(_))
+      _.isInstanceOf[AnyDecl]) map(buildChoiceParser(_, mixed))
     val base = if (anyList.size > 0)
       if (nonany == "") anyList(0)
       else "(" + nonany + ") | " + newline +
@@ -131,6 +115,24 @@ trait Parsers extends Args with Params {
     else nonany
     
     buildParserString(base, minOccurs, maxOccurs)
+  }
+  
+  def buildChoiceParser(particle: Particle, mixed: Boolean): String = particle match {
+    case ref: GroupRef        =>
+      val group = buildGroup(ref)
+      buildParser(group, math.max(group.minOccurs, 1), 1, false, true)
+    case compositor: HasParticle =>
+      buildParser(compositor, math.max(compositor.minOccurs, 1), 1, mixed, true)
+    case elem: ElemDecl       =>
+      "(" + buildParser(elem, math.max(elem.minOccurs, 1), 1, mixed) + " ^^ " + newline +
+      indent(3) + buildConverter(elem, math.max(elem.minOccurs, 1), 1) + ")"
+    case any: AnyDecl         =>
+      "(" + buildParser(any, math.max(any.minOccurs, 1), 1) + " ^^ " + newline +
+      indent(3) + buildConverter(XsAny, math.max(any.minOccurs, 1), 1) + ")"
+    case ref: ElemRef         =>
+      val elem = buildElement(ref)
+      "(" + buildParser(elem, math.max(elem.minOccurs, 1), 1, mixed) + " ^^ " + newline +
+      indent(3) + buildConverter(elem, math.max(elem.minOccurs, 1), 1) + ")"
   }
   
   def buildSubstitionGroupParser(elem: ElemDecl,
@@ -179,7 +181,7 @@ trait Parsers extends Args with Params {
       minOccurs: Int, maxOccurs: Int, mixed: Boolean): String =
     if (compositorWrapper.contains(decl)) {
       val compositor = compositorWrapper(decl)
-      buildParser(compositor, minOccurs, maxOccurs, mixed, false)
+      buildParser(compositor, minOccurs, maxOccurs, mixed, mixed)
     }
     else buildParserString(elem, minOccurs, maxOccurs)
   
@@ -223,7 +225,7 @@ trait Parsers extends Args with Params {
   def buildConverter(seq: AllDecl): String = {
     "{ case p => foo()}"
   }
-
+  
   def buildConverter(elem: ElemDecl): String =
     buildConverter(elem, elem.minOccurs, elem.maxOccurs)
 
@@ -263,5 +265,6 @@ trait Parsers extends Args with Params {
   def buildAnyRef(any: AnyDecl) =
     ElemDecl(Some(INTERNAL_NAMESPACE), "any", XsAny, None, None,
       any.minOccurs, any.maxOccurs, None, None, None)
-
+  
+  def buildTextParser = "optTextRecord"
 }

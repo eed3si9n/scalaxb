@@ -313,11 +313,11 @@ object PurchaseOrderUsage {
     val obj = MixedTest.fromXML(subject)
     obj match {
       case MixedTest(Seq(
-          DataRecord(Some("http://www.example.com/IPO"), None, "foo"),
+          DataRecord(None, None, "foo"),
           DataRecord(Some("http://www.example.com/IPO"), Some("name"), "name"),
           DataRecord(Some("http://www.example.com/IPO"), Some("street"), ""),
           DataRecord(Some("http://www.example.com/IPO"), Some("city"), "New York"),
-          DataRecord(Some("http://www.example.com/IPO"), None, "bar"),
+          DataRecord(None, None, "bar")
         )) =>
       case _ => error("match failed: " + obj.toString)
     }

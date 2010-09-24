@@ -210,26 +210,32 @@ object {name} extends rt.ImplicitXMLWriter[{name}] {{
     if (list.size > 22) error("A case class with > 22 parameters cannot be created.")
     
     val paramList = list.map { buildParam }
-    val parserList = flatParticles map { buildParser(_, decl.mixed, false) }
-    val parserVariableList =  for (i <- 0 to flatParticles.size - 1)
-      yield "p" + (i + 1)
+    val unmixedParserList = flatParticles map { buildParser(_, decl.mixed, decl.mixed) }
+    val parserList = if (decl.mixed) buildTextParser :: (unmixedParserList flatMap { List(_, buildTextParser) })
+      else unmixedParserList
+    val parserVariableList = ( 0 to parserList.size - 1) map { buildSelector }
     val accessors = generateAccessors(paramList, splitSequences(decl))
     log("GenSource#makeCaseClassWithType: generateAccessors" + accessors)
     
-    val particleArgs = primary match {
-      case Some(all: AllDecl) => flatParticles map { buildArgForAll }
-      case _ => (0 to flatParticles.size - 1).toList map { i => buildArg(flatParticles(i), i) }
+    val particleArgs = if (decl.mixed) (0 to parserList.size - 1).toList map { i =>
+        if (i % 2 == 1) buildArgForMixed(flatParticles((i - 1) / 2), i)
+        else buildArgForOptTextRecord(i) }
+      else primary match {
+        case Some(all: AllDecl) => flatParticles map { buildArgForAll }
+        case _ => (0 to flatParticles.size - 1).toList map { i => buildArg(flatParticles(i), i) }
+      }
+    
+    // val mixedArgs = if (decl.mixed) List(buildArgForMixed(flatParticles))
+    //  else Nil
+    val mixedArgs = Nil
+    
+    var attributeArgs = attributes map {
+      case any: AnyAttributeDecl => buildArgForAnyAttribute(decl)
+      case x => buildArg(x) 
     }
     
-    val mixedArgs = if (decl.mixed) List(buildArgForMixed(flatParticles))
-      else Nil
+    // val argList = particleArgs ::: mixedArgs ::: attributeArgs
     
-    val argList = particleArgs ::: mixedArgs ::: (
-      attributes map {
-        case any: AnyAttributeDecl => buildArgForAnyAttribute(decl)
-        case x => buildArg(x) 
-      })
-      
     val compositors = context.compositorParents.filter(
       x => x._2 == decl).keysIterator.toList
         
@@ -251,17 +257,20 @@ object {name} extends rt.ImplicitXMLWriter[{name}] {{
       case _ => false
     }
     
-    def argsString = if (hasSequenceParam)
-      argList.head + ": _*"
+    def argsString = if (decl.mixed)
+      "Seq.concat(" + particleArgs.mkString("," + newline + indent(3)) + ")" +
+        attributeArgs.mkString("," + newline + indent(3))
+    else if (hasSequenceParam)
+      particleArgs.head + ": _*"
     else decl.content.content match {
       case SimpContRestrictionDecl(base: XsTypeSymbol, _, _) =>
-        (buildArg(decl.content.asInstanceOf[SimpleContentDecl], base) :: argList.drop(1)).
+        (buildArg(decl.content.asInstanceOf[SimpleContentDecl], base) :: attributeArgs).
           mkString("," + newline + indent(3))
       case SimpContExtensionDecl(base: XsTypeSymbol, _) =>
-        (buildArg(decl.content.asInstanceOf[SimpleContentDecl], base) :: argList.drop(1)).
+        (buildArg(decl.content.asInstanceOf[SimpleContentDecl], base) :: attributeArgs).
           mkString("," + newline + indent(3))
       case _ =>
-        argList.mkString("," + newline + indent(3))
+        (particleArgs ::: attributeArgs).mkString("," + newline + indent(3))
     }
     
     val childElemParams = paramList.filter(!_.attribute)
@@ -319,6 +328,7 @@ object {name} extends rt.ImplicitXMLWriter[{name}] {{
 </source> else
 <source>object {name} extends {objSuperNames.mkString(" with ")} {{
   { compositors map(makeCompositorImport(_)) }val targetNamespace: Option[String] = { quote(schema.targetNamespace) }
+  def isMixed: Boolean = { if (decl.mixed) "true" else "false" }
   
   def parser(node: scala.xml.Node): Parser[{name}] =
     { parserList.mkString(" ~ " + newline + indent(3)) } ^^

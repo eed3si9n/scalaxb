@@ -51,6 +51,11 @@ trait AnyElemNameParser extends scala.util.parsing.combinator.Parsers {
   
   def any: Parser[ElemName] = 
     accept("any", { case x: ElemName => x })  
+  
+  def optTextRecord = opt(text ^^ (x => DataRecord(None, None, x.node.text)))
+  
+  def text: Parser[ElemName] =
+    accept("text", { case x: ElemName if x.name == "" => x })
 }
 
 trait ElemNameParser[A] extends AnyElemNameParser with ImplicitXMLWriter[A] {
@@ -60,25 +65,32 @@ trait ElemNameParser[A] extends AnyElemNameParser with ImplicitXMLWriter[A] {
   }
   
   def fromXML(node: scala.xml.Node): A =
-    parse(parser(node), node.child.collect { case elem: scala.xml.Elem => elem }) match {
+    parse(parser(node), node.child) match {
       case x: Success[_] => x.get
       case x: Failure => error("fromXML failed: " + x.msg)
       case x: Error => error("fromXML errored: " + x.msg)
     }
   
   def parser(node: scala.xml.Node): Parser[A]
+  def isMixed: Boolean
   
-  def parse[A](p: Parser[A], in: Seq[scala.xml.Elem]): ParseResult[A] = 
-    parseElemNames(p, in.map(toElemName(_)) )
+  def parse[A](p: Parser[A], in: Seq[scala.xml.Node]): ParseResult[A] = 
+    p(new ElemNameSeqReader(elementNames(in)))
   
-  def toElemName(x: scala.xml.Elem) = {
-    val elemName = ElemName(Option[String](x.scope.getURI(x.prefix)), x.label)
-    elemName.node = x
-    elemName 
+  def elementNames(in: Seq[scala.xml.Node]): Seq[ElemName] =
+    if (isMixed) in map { toElemName }
+    else in collect { case x: scala.xml.Elem => toElemName(x) }
+    
+  def toElemName(in: scala.xml.Node) = in match {
+    case x: scala.xml.Elem =>    
+      val elemName = ElemName(Option[String](x.scope.getURI(x.prefix)), x.label)
+      elemName.node = x
+      elemName
+    case _ =>
+      val elemName = ElemName(None, "")
+      elemName.node = in
+      elemName      
   }
-  
-  def parseElemNames[A](p: Parser[A], in: Seq[ElemName]): ParseResult[A] = 
-    p(new ElemNameSeqReader(in))
 }
 
 class ElemNameSeqReader(seq: Seq[ElemName],

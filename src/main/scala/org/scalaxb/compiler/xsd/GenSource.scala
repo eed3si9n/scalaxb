@@ -259,7 +259,8 @@ object {name} extends rt.ImplicitXMLWriter[{name}] {{
     
     def argsString = if (decl.mixed)
       "Seq.concat(" + particleArgs.mkString("," + newline + indent(3)) + ")" +
-        attributeArgs.mkString("," + newline + indent(3))
+        (if (attributeArgs.isEmpty) ""
+        else "," + newline + indent(3) + attributeArgs.mkString("," + newline + indent(3)))
     else if (hasSequenceParam)
       particleArgs.head + ": _*"
     else decl.content.content match {

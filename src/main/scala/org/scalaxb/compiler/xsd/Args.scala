@@ -295,11 +295,16 @@ trait Args extends Params {
     buildArgForMixed(particle, buildSelector(pos))
   
   def buildArgForMixed(particle: Particle, selector: String): String = {
-    "Seq(" + selector + ")"
+    val cardinality = toCardinality(particle.minOccurs, particle.maxOccurs)
+    cardinality match {
+      case Multiple => selector
+      case Optional => selector + ".toList"
+      case Single => "Seq(" + selector + ")"
+    }
   }
   
   def buildArgForOptTextRecord(pos: Int): String =
-    buildSelector(pos) + " map { Seq(_) } getOrElse { Nil }"
+    buildSelector(pos) + ".toList"
   
   def buildArg(selector: String, typeSymbol: XsTypeSymbol): String = typeSymbol match {
     case XsAny => selector

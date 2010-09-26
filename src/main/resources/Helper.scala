@@ -50,7 +50,7 @@ trait AnyElemNameParser extends scala.util.parsing.combinator.Parsers {
   type Elem = ElemName
   
   def any: Parser[ElemName] = 
-    accept("any", { case x: ElemName => x })  
+    accept("any", { case x: ElemName if x.name != "" => x })  
   
   def optTextRecord = opt(text ^^ (x => DataRecord(None, None, x.node.text)))
   

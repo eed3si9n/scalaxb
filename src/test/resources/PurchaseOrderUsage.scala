@@ -307,24 +307,6 @@ object PurchaseOrderUsage {
     }    
   }
   
-  def testMixed {
-    val subject = <foo xmlns="http://www.example.com/IPO"
-        xmlns:ipo="http://www.example.com/IPO">foo<name>Jane</name><name>Doe</name><city>New York</city>bar</foo>
-    val obj = MixedTest.fromXML(subject)
-    obj match {
-      case MixedTest(Seq(
-          DataRecord(None, None, "foo"),
-          DataRecord(Some("http://www.example.com/IPO"), Some("name"), "Jane"),
-          DataRecord(Some("http://www.example.com/IPO"), Some("name"), "Doe"),
-          DataRecord(Some("http://www.example.com/IPO"), Some("city"), "New York"),
-          DataRecord(None, None, "bar")
-        ), None) =>
-      case _ => error("match failed: " + obj.toString)
-    }
-    val document = MixedTest.toXML(obj, None, Some("foo"), subject.scope)
-    println(document)
-  }
-  
   def testDatedData {
     val subject = <foo xmlns="http://www.example.com/IPO"
         xmlns:ipo="http://www.example.com/IPO" id="foo">

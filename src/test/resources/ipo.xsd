@@ -306,18 +306,7 @@
   <simpleType name="Numbers">
       <list itemType="unsignedInt"/>
   </simpleType>
-  
-  <element name="mixedTest">
-    <complexType mixed="true">
-      <sequence>
-        <element name="name"   maxOccurs="unbounded" type="string"/>
-        <element name="street" minOccurs="0" maxOccurs="1" type="string"/>
-        <element name="city"   type="string"/>
-      </sequence>
-      <attribute name="id" type="ID"/>
-    </complexType>
-  </element>
-  
+    
   <!-- sub group -->
   <complexType name="GH6Usage">
     <sequence>

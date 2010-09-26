@@ -297,7 +297,17 @@ trait Args extends Params {
   def buildArgForMixed(particle: Particle, selector: String): String = {
     val cardinality = toCardinality(particle.minOccurs, particle.maxOccurs)
     cardinality match {
-      case Multiple => selector
+      case Multiple =>
+        particle match {
+          case elem: ElemDecl =>
+            elem.typeSymbol match {
+              case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
+                if (compositorWrapper.contains(decl)) selector + ".flatten"
+                else selector
+              case _ => selector 
+            }
+          case _ => selector
+        }
       case Optional => selector + ".toList"
       case Single => "Seq(" + selector + ")"
     }

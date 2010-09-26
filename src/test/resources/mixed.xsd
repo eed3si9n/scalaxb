@@ -1,0 +1,27 @@
+<xs:schema targetNamespace="http://www.example.com/mixed"
+  xmlns:xs="http://www.w3.org/2001/XMLSchema"
+  xmlns="http://www.example.com/mixed">
+  <xs:element name="mixedTest">
+    <xs:complexType mixed="true">
+      <xs:sequence>
+        <xs:element name="name"   maxOccurs="unbounded" type="xs:string"/>
+        <xs:element name="street" minOccurs="0" maxOccurs="1" type="xs:string"/>
+        <xs:element name="city"   type="xs:string"/>
+        <xs:element name="billTo" type="Address"/>
+        <xs:sequence minOccurs="0" maxOccurs="unbounded">
+          <xs:element name="itemname" type="xs:string"/>
+          <xs:element name="itemcode" type="xs:string"/>
+        </xs:sequence>
+      </xs:sequence>
+      <xs:attribute name="id" type="xs:ID"/>
+    </xs:complexType>
+  </xs:element>
+  
+  <xs:complexType name="Address">
+    <xs:sequence>
+      <xs:element name="name"   type="xs:string"/>
+      <xs:element name="street" type="xs:string"/>
+      <xs:element name="city"   type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+</xs:schema>

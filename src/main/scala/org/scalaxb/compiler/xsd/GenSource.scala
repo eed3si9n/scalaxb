@@ -514,10 +514,10 @@ object {name} extends rt.ImplicitXMLWriter[{name}] {{
         param.cardinality, param.nillable, param.attribute)
     }
     
-    val parser = buildParser(compositor, 1, 1, false, false)
+    val parser = buildCompositorParser(compositor, 1, 1, false, false)
     val wrapperParser = compositor match {
       case choice: ChoiceDecl => parser
-      case _ => buildParser(compositor, 1, 1, false, true)
+      case _ => buildCompositorParser(compositor, 1, 1, false, true)
     }
     
     val groups = filterGroup(compositor)

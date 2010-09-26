@@ -11,6 +11,13 @@
         <xs:sequence minOccurs="0" maxOccurs="unbounded">
           <xs:element name="itemname" type="xs:string"/>
           <xs:element name="itemcode" type="xs:string"/>
+          <xs:choice>
+            <xs:element name="option1" type="xs:string"/>
+            <xs:sequence minOccurs="0" maxOccurs="unbounded">
+              <xs:element name="option2" type="xs:string"/>
+              <xs:element name="option3" type="xs:string"/>
+            </xs:sequence>
+          </xs:choice>
         </xs:sequence>
       </xs:sequence>
       <xs:attribute name="id" type="xs:ID"/>

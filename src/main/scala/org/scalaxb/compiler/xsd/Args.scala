@@ -296,7 +296,8 @@ trait Args extends Params {
   
   def buildArgForMixed(particle: Particle, selector: String): String = {
     val cardinality = toCardinality(particle.minOccurs, particle.maxOccurs)
-    cardinality match {
+    
+    val retval = cardinality match {
       case Multiple =>
         particle match {
           case elem: ElemDecl =>
@@ -311,6 +312,9 @@ trait Args extends Params {
       case Optional => selector + ".toList"
       case Single => "Seq(" + selector + ")"
     }
+    
+    log("Args#buildArgForMixed: " + cardinality + ": " + particle + ": " + retval)
+    retval
   }
   
   def buildArgForOptTextRecord(pos: Int): String =

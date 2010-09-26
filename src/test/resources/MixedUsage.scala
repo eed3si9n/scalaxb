@@ -24,7 +24,8 @@ object MixedUsage {
             <city>Wilmington</city>
             <state>DE</state>
             <zip>19808</zip>
-          </billTo></foo>
+          </billTo>
+          <itemname/><itemcode/><option1/></foo>
     val obj = MixedTest.fromXML(subject)
     obj match {
       case MixedTest(Seq(
@@ -33,7 +34,11 @@ object MixedUsage {
           DataRecord(Some("http://www.example.com/mixed"), Some("name"), "Doe"),
           DataRecord(Some("http://www.example.com/mixed"), Some("city"), "New York"),
           DataRecord(None, None, _),
-          DataRecord(Some("http://www.example.com/mixed"), Some("billTo"), _)
+          DataRecord(Some("http://www.example.com/mixed"), Some("billTo"), _),
+          DataRecord(None, None, _),
+          DataRecord(Some("http://www.example.com/mixed"), Some("itemname"), ""),
+          DataRecord(Some("http://www.example.com/mixed"), Some("itemcode"), ""),
+          DataRecord(Some("http://www.example.com/mixed"), Some("option1"), "")
         ), None) =>
       case _ => error("match failed: " + obj.toString)
     }

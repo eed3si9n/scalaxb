@@ -48,14 +48,18 @@ trait Parsers extends Args with Params {
       buildCompositorParser(compositor, minOccurs, maxOccurs, mixed, wrapInDataRecord)
     
     case any: AnyDecl =>
-      buildAnyParser(any, minOccurs, maxOccurs, wrapInDataRecord)
+      buildAnyParser(any, minOccurs, maxOccurs, mixed, wrapInDataRecord)
   }
   
-  def buildAnyParser(any: AnyDecl, minOccurs: Int, maxOccurs: Int, wrapInDataRecord: Boolean): String = {
-    val p = buildParserString("any", minOccurs, maxOccurs)
-    if (wrapInDataRecord) "(" + p + " ^^ " + newline +
-      indent(3) + buildConverter(XsAny, minOccurs, maxOccurs) + ")"
-    else p
+  def buildAnyParser(any: AnyDecl,
+      minOccurs: Int, maxOccurs: Int, mixed: Boolean, wrapInDataRecord: Boolean): String = {
+    val base = if (mixed) "((any ^^ " + buildConverter(XsAny, 1, 1) + ") ~ " + newline +
+      indent(3) + buildTextParser + ") ^^ " + newline +
+      indent(3) + "{ case p1 ~ p2 => Seq.concat(Seq(p1), p2.toList) }"
+    else if (wrapInDataRecord) "(any ^^ " + buildConverter(XsAny, 1, 1) + ")"
+    else "any" 
+    
+    buildParserString(base, minOccurs, maxOccurs)
   }
   
   // minOccurs and maxOccurs may come from the declaration of the compositor,

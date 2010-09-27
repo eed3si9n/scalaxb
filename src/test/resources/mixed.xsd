@@ -17,6 +17,7 @@
               <xs:element name="option2" type="xs:string"/>
               <xs:element name="option3" type="xs:string"/>
             </xs:sequence>
+            <xs:any namespace="##other" processContents="lax"/>
           </xs:choice>
         </xs:sequence>
         <xs:group ref="inline" minOccurs="0" maxOccurs="unbounded"/>

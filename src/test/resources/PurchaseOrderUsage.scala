@@ -24,7 +24,6 @@ object PurchaseOrderUsage {
     testAny
     testAnyChoice
     testAnyAttribute
-    testMixed
     testDatedData
     testNillable
     testAll

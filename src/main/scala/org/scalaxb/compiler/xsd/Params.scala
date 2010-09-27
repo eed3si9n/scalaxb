@@ -152,7 +152,40 @@ trait Params extends Lookup {
   def groupTypeName(group: GroupDecl) =
     makeTypeName(context.compositorNames(groups(group.namespace, group.name)))
 
-  def buildCompositorRef(compositor: HasParticle) = {    
+  def buildCompositorRef(compositor: HasParticle): ElemDecl = {
+    val minOccurs = compositor match {
+      case ref: GroupRef =>
+        val group = buildGroup(ref)
+        val primary = primaryCompositor(group)
+        List(ref.minOccurs, group.minOccurs, primary.minOccurs).min
+      case group: GroupDecl =>
+        val primary = primaryCompositor(group)
+        math.min(group.minOccurs, primary.minOccurs)
+      case choice: ChoiceDecl => (compositor.minOccurs :: compositor.particles.map(_.minOccurs)).min
+      case _ => compositor.minOccurs
+    }
+    
+    val maxOccurs = compositor match {
+      case ref: GroupRef =>
+        val group = buildGroup(ref)
+        val primary = primaryCompositor(group)
+        List(ref.maxOccurs, group.maxOccurs, primary.maxOccurs).max  
+      case group: GroupDecl =>
+        val primary = primaryCompositor(group)
+        math.max(group.maxOccurs, primary.maxOccurs)
+      case choice: ChoiceDecl => (compositor.maxOccurs :: compositor.particles.map(_.maxOccurs)).max
+      case _ => compositor.maxOccurs
+    }
+    
+    buildCompositorRef(
+      compositor match {
+        case ref: GroupRef => buildGroup(ref)
+        case _ => compositor
+      },
+      minOccurs, maxOccurs)
+  }
+
+  def buildCompositorRef(compositor: HasParticle, minOccurs: Int, maxOccurs: Int): ElemDecl = {    
     argNumber += 1
     val name = "arg" + argNumber 
 
@@ -173,22 +206,7 @@ trait Params extends Lookup {
     val typeNames = context.typeNames(packageName(decl.namespace, context))
     typeNames(decl) = typeName
 
-    ElemDecl(schema.targetNamespace, name, symbol, None, None,
-      compositor match {
-        case group: GroupDecl =>
-          val primary = primaryCompositor(group)
-          math.min(group.minOccurs, primary.minOccurs)
-        case choice: ChoiceDecl => (compositor.minOccurs :: compositor.particles.map(_.minOccurs)).min
-        case _ => compositor.minOccurs
-      },
-      compositor match {
-        case group: GroupDecl =>
-          val primary = primaryCompositor(group)
-          math.max(group.maxOccurs, primary.maxOccurs)
-
-        case choice: ChoiceDecl => (compositor.maxOccurs :: compositor.particles.map(_.maxOccurs)).max
-        case _ => compositor.maxOccurs
-      },
+    ElemDecl(schema.targetNamespace, name, symbol, None, None, minOccurs, maxOccurs,
       None, None, None)
   }
   

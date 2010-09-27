@@ -19,6 +19,7 @@
             </xs:sequence>
           </xs:choice>
         </xs:sequence>
+        <xs:group ref="inline" minOccurs="0" maxOccurs="unbounded"/>
       </xs:sequence>
       <xs:attribute name="id" type="xs:ID"/>
     </xs:complexType>
@@ -31,4 +32,18 @@
       <xs:element name="city"   type="xs:string"/>
     </xs:sequence>
   </xs:complexType>
+  
+  <xs:group name="inline">
+    <xs:choice>
+      <xs:element name="a" type="xs:string"/>
+      <xs:group ref="inline.forms"/>
+    </xs:choice>
+  </xs:group>
+  
+  <xs:group name="inline.forms">
+    <xs:choice>
+      <xs:element name="b" type="xs:string"/>
+      <xs:element name="c" type="xs:string"/>
+    </xs:choice>
+  </xs:group>
 </xs:schema>

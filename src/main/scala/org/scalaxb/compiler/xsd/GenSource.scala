@@ -251,7 +251,8 @@ object {name} extends rt.ImplicitXMLWriter[{name}] {{
       makeParamName(paramList.head.name) + ": " + buildTypeName(paramList.head.typeSymbol) + "*"      
     else paramList.map(_.toScalaCode).mkString("," + newline + indent(1))
     
-    val simpleFromXml: Boolean = (decl.content, primary) match {
+    val simpleFromXml: Boolean = if (flatParticles.isEmpty && !decl.mixed) true
+    else (decl.content, primary) match {
       case (x: SimpleContentDecl, _) => true
       case (_, Some(all: AllDecl)) => true
       case _ => false
@@ -315,7 +316,7 @@ object {name} extends rt.ImplicitXMLWriter[{name}] {{
     val objSuperNames: List[String] = "rt.ElemNameParser[" + name + "]" ::
       groups.map(groupTypeName)
     
-    def makeObject = if (simpleFromXml || flatParticles.isEmpty)
+    def makeObject = if (simpleFromXml)
 <source>object {name} extends rt.ImplicitXMLWriter[{name}] {{
   val targetNamespace: Option[String] = { quote(schema.targetNamespace) }
   
@@ -332,7 +333,7 @@ object {name} extends rt.ImplicitXMLWriter[{name}] {{
   def isMixed: Boolean = { if (decl.mixed) "true" else "false" }
   
   def parser(node: scala.xml.Node): Parser[{name}] =
-    { parserList.mkString(" ~ " + newline + indent(3)) } ^^
+    { parserList.mkString(" ~ ") } ^^
         {{ case { parserVariableList.mkString(" ~ " + newline + indent(3)) } => {name}({argsString}) }}
         
   { if (decl.isNamed) makeToXml }{ makeToXml2 }
@@ -519,6 +520,7 @@ object {name} extends rt.ImplicitXMLWriter[{name}] {{
       case choice: ChoiceDecl => parser
       case _ => buildCompositorParser(compositor, 1, 1, false, true)
     }
+    val mixedparser = buildCompositorParser(compositor, 1, 1, true, true)
     
     val groups = filterGroup(compositor)
     val superNames: List[String] = 
@@ -533,6 +535,9 @@ object {name} extends rt.ImplicitXMLWriter[{name}] {{
   
   def parse{name}(wrap: Boolean): Parser[{wrapperParam.baseTypeName}] =
     {wrapperParser}
+    
+  def parsemixed{name}: Parser[Seq[{wrapperParam.baseTypeName}]] =
+    {mixedparser}
 }}
 
 {compositors map { makeCompositor } }
@@ -727,14 +732,14 @@ object {name} {{
         compositor: HasParticle): List[ElemDecl] =
       compositor match {
     case ref:GroupRef =>
-      flattenElements(namespace, family, buildGroup(ref))
+      List(buildCompositorRef(ref))
       
     case group:GroupDecl =>
       List(buildCompositorRef(group))
     
     case seq: SequenceDecl =>
       splitLongSequence(namespace, family, compositor.particles) flatMap {
-        case ref: GroupRef            => List(buildCompositorRef(buildGroup(ref)))
+        case ref: GroupRef            => List(buildCompositorRef(ref))
         case compositor2: HasParticle => List(buildCompositorRef(compositor2))
         case elem: ElemDecl           => List(elem)
         case ref: ElemRef             => List(buildElement(ref))
@@ -743,7 +748,7 @@ object {name} {{
       
     case AllDecl(particles: List[_], _, _) =>
       particles flatMap {
-        case ref: GroupRef            => List(buildCompositorRef(buildGroup(ref)))
+        case ref: GroupRef            => List(buildCompositorRef(ref))
         case compositor2: HasParticle => List(buildCompositorRef(compositor2))
         case elem: ElemDecl           => List(toOptional(elem))
         case ref: ElemRef             => List(buildElement(ref))    
@@ -797,7 +802,7 @@ object {name} {{
         splits.contains(compositorWrapper(decl)) =>  
       val wrapperName = makeParamName(param.name)
       val particles = compositorWrapper(decl).particles flatMap {
-        case ref: GroupRef            => List(buildCompositorRef(buildGroup(ref)))
+        case ref: GroupRef            => List(buildCompositorRef(ref))
         case compositor2: HasParticle => List(buildCompositorRef(compositor2))
         case elem: ElemDecl           => List(elem)
         case ref: ElemRef             => List(buildElement(ref))

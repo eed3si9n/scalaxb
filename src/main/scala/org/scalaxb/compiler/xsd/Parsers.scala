@@ -27,8 +27,9 @@ trait Parsers extends Args with Params {
   // called by makeCaseClassWithType and buildSeqParser
   def buildParser(particle: Particle, mixed: Boolean, wrapInDataRecord: Boolean): String = particle match {
     case choice: ChoiceDecl =>
-      buildParser(particle, (choice.particles map { _.minOccurs }).min,
-        (choice.particles map { _.maxOccurs }).max,
+      buildParser(particle,
+        (choice.minOccurs :: (choice.particles map { _.minOccurs })).min,
+        (choice.maxOccurs :: (choice.particles map { _.maxOccurs })).max,
         mixed, wrapInDataRecord)
     case _ => buildParser(particle, particle.minOccurs, particle.maxOccurs, mixed, wrapInDataRecord)
   }
@@ -69,14 +70,15 @@ trait Parsers extends Args with Params {
       else buildSeqParser(seq, minOccurs, maxOccurs, mixed, wrapInDataRecord)
     case choice: ChoiceDecl   => buildChoiceParser(choice, minOccurs, maxOccurs, mixed)
     case all: AllDecl         => buildParser(all, minOccurs, maxOccurs, mixed)
-    case group: GroupDecl     => buildParser(group, minOccurs, maxOccurs, false, wrapInDataRecord)
+    case group: GroupDecl     => buildParser(group, minOccurs, maxOccurs, mixed, wrapInDataRecord)
   }
     
   def buildParser(group: GroupDecl, minOccurs: Int, maxOccurs: Int,
       mixed: Boolean, wrapInDataRecord: Boolean): String = {
     val compositor = primaryCompositor(group)
-    buildParserString("parse" + groupTypeName(group) +
-      (if (wrapInDataRecord) "(true)" else ""), 
+    val base = if (mixed) "parsemixed" + groupTypeName(group)
+      else "parse" + groupTypeName(group) + (if (wrapInDataRecord) "(true)" else "")
+    buildParserString(base, 
       math.min(minOccurs, compositor.minOccurs),
       math.max(maxOccurs, compositor.maxOccurs) )
   }
@@ -113,7 +115,7 @@ trait Parsers extends Args with Params {
         else argList.mkString("," + newline + indent(3))
 
       "{ case " +
-      parserVariableList.mkString(" ~ " + newline + indent(3)) + 
+      parserVariableList.mkString(" ~ ") + 
       (if (mixed) " => Seq.concat(" + argsString + ")"
       else if (wrapInDataRecord) " => rt.DataRecord(None, None, " + name + "(" + argsString + "))"
       else " => " + name + "(" + argsString + ")") +
@@ -148,7 +150,8 @@ trait Parsers extends Args with Params {
   // treated as Seq[DataRecord].
   def buildChoiceParser(choice: ChoiceDecl,
       minOccurs: Int, maxOccurs: Int, mixed: Boolean): String = {    
-    val containsStructure = choice.particles exists(_ match {
+    val containsStructure = if (mixed) true
+    else choice.particles exists(_ match {
       case elem: ElemDecl => false
       case ref: ElemRef => false
       case _ => true
@@ -266,9 +269,7 @@ trait Parsers extends Args with Params {
 
   def buildParticles(compositor: HasParticle): List[ElemDecl] =
     compositor.particles map {
-      case ref: GroupRef            =>
-        val group = buildGroup(ref)
-        buildCompositorRef(primaryCompositor(group))        
+      case ref: GroupRef            => buildCompositorRef(ref)        
       case seq: SequenceDecl        =>
         if (containsSingleChoice(seq)) buildCompositorRef(singleChoice(seq))
         else buildCompositorRef(seq)

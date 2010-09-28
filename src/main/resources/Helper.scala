@@ -1,37 +1,33 @@
 package org.scalaxb.rt
 
+import scala.xml.{NodeSeq, NamespaceBinding}
+
 trait XMLWriter {
   def toXML(__namespace: Option[String], __elementLabel: Option[String],
-      __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq
+      __scope: NamespaceBinding): NodeSeq
 }
 
 trait ImplicitXMLWriter[A] { outer =>
   def toXML(__obj: A, __namespace: Option[String], __elementLabel: Option[String],
-      __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq
+      __scope: NamespaceBinding): scala.xml.NodeSeq
   
-  implicit def toXMLWriter(__obj: A): XMLWriter = new XMLWriter {
+  implicit def toXMLWriter(__x: A): XMLWriter = new XMLWriter {
      def toXML(__namespace: Option[String], __elementLabel: Option[String],
-         __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq =
-      outer.toXML(__obj, __namespace, __elementLabel, __scope)
-  }  
+         __scope: NamespaceBinding): scala.xml.NodeSeq =
+      outer.toXML(__x, __namespace, __elementLabel, __scope)
+  }
 }
 
-case class DataRecord[+A](namespace: Option[String], key: Option[String], value: A)
+case class DataRecord[+A](namespace: Option[String], key: Option[String], value: A, writer: Option[XMLWriter])
 
-object DataRecord {  
+object DataRecord {
   def toXML[A](__obj: DataRecord[A], __namespace: Option[String], __elementLabel: Option[String],
-      __scope: scala.xml.NamespaceBinding):
-      scala.xml.NodeSeq = (__obj.value) match {
-    case x: scala.xml.NodeSeq => x
-    case x: String if __obj.key.isEmpty => scala.xml.Text(x)
-    // case x: Product =>
-    //   if (x.isInstanceOf[XMLWriter]) x.asInstanceOf[XMLWriter].toXML(__namespace, __elementLabel, __scope)
-    //   else scala.xml.Elem(__scope.getPrefix(__obj.namespace.orNull), __elementLabel,
-    //          scala.xml.Null, __scope, scala.xml.Text(__obj.value.toString))
-    case x => __elementLabel map { label =>
-      scala.xml.Elem(Helper.getPrefix(__obj.namespace, __scope).orNull, label,
-                scala.xml.Null, __scope, scala.xml.Text(__obj.value.toString))
-    } getOrElse { scala.xml.Text(__obj.value.toString) }
+      __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq = __obj.writer match {
+    case Some(w) => w.toXML(__namespace, __elementLabel, __scope)
+    case _ => __obj.value match {
+      case seq: NodeSeq => seq
+      case x => Helper.anyToXML(x, __namespace, __elementLabel, __scope)
+    }    
   }
 }
 
@@ -39,7 +35,7 @@ case class ElemName(namespace: Option[String], name: String) {
   var node: scala.xml.Node = _
   def text = node.text
   def nil = Helper.isNil(node)
-  def toDataRecord = DataRecord(namespace, Some(name), node)
+  def toDataRecord = DataRecord(namespace, Some(name), node, None)
 }
 
 object ElemName {
@@ -52,7 +48,7 @@ trait AnyElemNameParser extends scala.util.parsing.combinator.Parsers {
   def any: Parser[ElemName] = 
     accept("any", { case x: ElemName if x.name != "" => x })  
   
-  def optTextRecord = opt(text ^^ (x => DataRecord(None, None, x.node.text)))
+  def optTextRecord = opt(text ^^ (x => DataRecord(None, None, x.node.text, None)))
   
   def text: Parser[ElemName] =
     accept("text", { case x: ElemName if x.name == "" => x })
@@ -190,4 +186,23 @@ object Helper {
   def getPrefix(namespace: Option[String], scope: scala.xml.NamespaceBinding) =
     if (Option[String](scope.getURI(null)) == namespace) None
     else Option[String](scope.getPrefix(namespace.orNull))
+    
+  def anyToXML(__obj: Any, __namespace: Option[String], __elementLabel: Option[String],
+       __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq = {
+    __elementLabel map { label =>
+      scala.xml.Elem(getPrefix(__namespace, __scope).orNull, label,
+        scala.xml.Null, __scope, scala.xml.Text(__obj.toString))
+    } getOrElse { scala.xml.Text(__obj.toString) }
+  }
+  
+  def toXMLWriter(__obj: NodeSeq) = new XMLWriter {
+    def toXML(__namespace: Option[String], __elementLabel: Option[String],
+      __scope: NamespaceBinding): NodeSeq = __obj
+  }
+
+  def toXMLWriter(__obj: Any) = new XMLWriter {
+    def toXML(__namespace: Option[String], __elementLabel: Option[String],
+        __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq =
+      Helper.anyToXML(__obj, __namespace, __elementLabel, __scope)
+  }
 }

@@ -29,16 +29,16 @@ object MixedUsage {
     val obj = MixedTest.fromXML(subject)
     obj match {
       case MixedTest(Seq(
-          DataRecord(None, None, "foo"),
-          DataRecord(Some("http://www.example.com/mixed"), Some("name"), "Jane"),
-          DataRecord(Some("http://www.example.com/mixed"), Some("name"), "Doe"),
-          DataRecord(Some("http://www.example.com/mixed"), Some("city"), "New York"),
-          DataRecord(None, None, _),
-          DataRecord(Some("http://www.example.com/mixed"), Some("billTo"), _),
-          DataRecord(None, None, _),
-          DataRecord(Some("http://www.example.com/mixed"), Some("itemname"), ""),
-          DataRecord(Some("http://www.example.com/mixed"), Some("itemcode"), ""),
-          DataRecord(Some("http://www.example.com/mixed"), Some("option1"), "")
+          DataRecord(None, None, "foo", _),
+          DataRecord(Some("http://www.example.com/mixed"), Some("name"), "Jane", _),
+          DataRecord(Some("http://www.example.com/mixed"), Some("name"), "Doe", _),
+          DataRecord(Some("http://www.example.com/mixed"), Some("city"), "New York", _),
+          DataRecord(None, None, _, _),
+          DataRecord(Some("http://www.example.com/mixed"), Some("billTo"), _, _),
+          DataRecord(None, None, _, _),
+          DataRecord(Some("http://www.example.com/mixed"), Some("itemname"), "", _),
+          DataRecord(Some("http://www.example.com/mixed"), Some("itemcode"), "", _),
+          DataRecord(Some("http://www.example.com/mixed"), Some("option1"), "", _)
         ), None) =>
       case _ => error("match failed: " + obj.toString)
     }

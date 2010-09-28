@@ -121,7 +121,8 @@ trait Parsers extends Args with Params {
       "{ case " +
       parserVariableList.mkString(" ~ ") + 
       (if (mixed) " => Seq.concat(" + argsString + ")"
-      else if (wrapInDataRecord) " => rt.DataRecord(None, None, " + name + "(" + argsString + "))"
+      else if (wrapInDataRecord) " => rt.DataRecord(None, None, " + name + "(" + argsString + "), " +
+        "Some(" + name + ".toXMLWriter(" + name + "(" + argsString + "))))"
       else " => " + name + "(" + argsString + ")") +
       " }"
     }
@@ -258,14 +259,15 @@ trait Parsers extends Args with Params {
   def buildConverter(typeSymbol: XsTypeSymbol, minOccurs: Int, maxOccurs: Int): String =
     if (maxOccurs > 1)
       "(p => p.toList map(x => rt.DataRecord(x.namespace, Some(x.name), " +
-      buildArg("x.node", typeSymbol) + ")))"
+      buildArg("x.node", typeSymbol) + ", " + buildWriter("x.node", typeSymbol) + ")))"
     else if (minOccurs == 0)
       "(p => p map { x =>" + newline +
       indent(3) + "rt.DataRecord(x.namespace, Some(x.name), " +
-      buildArg("x.node", typeSymbol) + ") })"
+      buildArg("x.node", typeSymbol) + ", " + buildWriter("x.node", typeSymbol) + ") })"
     else
-      "(x => rt.DataRecord(x.namespace, Some(x.name), " + buildArg("x.node", typeSymbol) + "))"
-
+      "(x => rt.DataRecord(x.namespace, Some(x.name), " + buildArg("x.node", typeSymbol) +
+      ", " + buildWriter("x.node", typeSymbol) + "))"
+  
   def buildParticles(com: Option[HasParticle], name: String): List[ElemDecl] = com match {
     case Some(c) => buildParticles(c)
     case None => Nil

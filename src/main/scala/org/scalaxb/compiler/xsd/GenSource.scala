@@ -356,6 +356,8 @@ object {name} extends rt.ImplicitXMLWriter[{name}] {{
   </source>
     
     def makeToXml2 = <source>def toXML(__obj: {name}, __namespace: Option[String], __elementLabel: Option[String], __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq = {{
+    import org.scalaxb.rt.DataRecord._
+    
     var attribute: scala.xml.MetaData  = scala.xml.Null
     { attributeString }
     scala.xml.Elem(rt.Helper.getPrefix(__namespace, __scope).orNull,
@@ -449,10 +451,13 @@ object {name} {{
   val targetNamespace: Option[String] = { quote(schema.targetNamespace) }
   
   def toXML(__obj: rt.DataRecord[Any], __namespace: Option[String], __elementLabel: Option[String],
-      __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq = __obj.value match {{
-    { cases.distinct.mkString(newline + indent(2)) }
-    case _ => rt.DataRecord.toXML(__obj, __namespace, __elementLabel, __scope)
-  }}  
+      __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq = {{
+    import org.scalaxb.rt.DataRecord._
+    __obj.value match {{
+      { cases.distinct.mkString(newline + indent(2)) }
+      case _ => rt.DataRecord.toXML(__obj, __namespace, __elementLabel, __scope)
+    }}
+  }}
 }}
 
 </source>
@@ -495,6 +500,8 @@ object {name} extends rt.ImplicitXMLWriter[{name}] {{
   
   def toXML(__obj: {name}, __namespace: Option[String], __elementLabel: Option[String],
       __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq = {{
+    import org.scalaxb.rt.DataRecord._
+    
     var attribute: scala.xml.MetaData  = scala.xml.Null
     { childString }
   }}

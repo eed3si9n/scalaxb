@@ -157,6 +157,11 @@ trait Args extends Params {
         indent(4) + "case None    => " + noneValue + newline +
         indent(3) + "}"    
     
+    def hardcoded(value: String) =
+      "scala.xml.Elem(node.scope.getPrefix(" + quote(schema.targetNamespace) + "), "  + newline +
+      indent(4) + quote(elementLabel) + ", scala.xml.Null, node.scope, " +  newline +
+      indent(4) + "scala.xml.Text(" + quote(value) + "))"
+    
     val retval = (cardinality, nillable, defaultValue, fixedValue) match {
       case (Multiple, true, _, _) =>
         selector + ".toList.map { x => if (x.nil) None" + newline +
@@ -168,15 +173,13 @@ trait Args extends Params {
       case (Single, _, _, Some(x)) =>
         "rt.DataRecord(" + newline +
           indent(4) + quote(namespace) + ", " + quote(elementLabel) + ", " + newline +
-          indent(4) + "scala.xml.Elem(node.scope.getPrefix(" + quote(schema.targetNamespace) + "), "  + newline +
-          indent(4) + quote(elementLabel) + ", scala.xml.Null, node.scope, " +  newline +
-          indent(4) + "scala.xml.Text(" + quote(fixedValue.get) + ")))"
+          indent(4) + hardcoded(x) + "," + newline +
+          indent(4) + "None)"
       case (Single, _, Some(x), _) =>
         buildMatchStatement("rt.DataRecord(" + newline +
           indent(4) + quote(namespace) + ", " + quote(elementLabel) + ", " + newline +
-          indent(4) + "scala.xml.Elem(node.scope.getPrefix(" + quote(schema.targetNamespace) + "), " + newline +
-          indent(4) + quote(elementLabel) + ", scala.xml.Null, node.scope, " +  newline +
-          indent(4) + "scala.xml.Text(" + quote(defaultValue.get) + ")))",
+          indent(4) + hardcoded(x) + "," + newline +
+          indent(4) + "None)",
           "x.toDataRecord")        
       case (Single, false, _, _) =>
         selector + ".toDataRecord"
@@ -274,9 +277,9 @@ trait Args extends Params {
       case x: AttributeDecl => makeCaseEntry(x)
     }.mkString(indent(6), newline + indent(6), newline) +
     indent(4) + "    case scala.xml.UnprefixedAttribute(key, value, _) =>" + newline +
-    indent(4) + "      List(rt.DataRecord(None, Some(key), value.text))" + newline +
+    indent(4) + "      List(rt.DataRecord(None, Some(key), value.text, None))" + newline +
     indent(4) + "    case scala.xml.PrefixedAttribute(pre, key, value, _) =>" + newline +
-    indent(4) + "      List(rt.DataRecord(Option[String](elem.scope.getURI(pre)), Some(key), value.text))" + newline +
+    indent(4) + "      List(rt.DataRecord(Option[String](elem.scope.getURI(pre)), Some(key), value.text, None))" + newline +
     indent(4) + "    case _ => Nil" + newline +
     indent(4) + "  }" + newline +
     indent(4) + "case _ => Nil" + newline +
@@ -338,13 +341,15 @@ trait Args extends Params {
       buildTypeName(typeSymbol) + ".fromXML(" + selector + ")"
   }
   
-    
+  def buildWriter(selector: String, typeSymbol: XsTypeSymbol): String =
+    "None"
+  
   def fromXmlCases(particles: List[Decl], indentBase: Int) = {
     def makeCaseEntry(elem: ElemDecl) =
       "case x: scala.xml.Elem if (x.label == " + quote(elem.name) + " && " + newline + 
         indent(indentBase + 2) + "Option[String](x.scope.getURI(x.prefix)) == " + quote(elem.namespace) + ") =>" + newline +
         indent(indentBase + 1) + "rt.DataRecord(Option[String](x.scope.getURI(x.prefix)), Some(x.label), " +
-        buildArg("x", elem.typeSymbol) + ")"
+        buildArg("x", elem.typeSymbol) + ", " + buildWriter("x", elem.typeSymbol) + ")"
     
     def isAnyOrChoice(typeSymbol: XsTypeSymbol) = typeSymbol match {
       case XsAny => true
@@ -357,7 +362,7 @@ trait Args extends Params {
         (x.isInstanceOf[ElemDecl] && (isAnyOrChoice(x.asInstanceOf[ElemDecl].typeSymbol))) ||
         (x.isInstanceOf[ElemRef] && (isAnyOrChoice(buildElement(x.asInstanceOf[ElemRef]).typeSymbol)))  ))
       List("case x: scala.xml.Elem =>" + newline +
-        indent(indentBase + 1) + "rt.DataRecord(Option[String](x.scope.getURI(x.prefix)), Some(x.label), x)")
+        indent(indentBase + 1) + "rt.DataRecord(Option[String](x.scope.getURI(x.prefix)), Some(x.label), x, None)")
     else Nil
     
     particles.collect {

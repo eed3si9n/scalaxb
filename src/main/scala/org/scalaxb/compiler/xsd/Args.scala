@@ -285,15 +285,7 @@ trait Args extends Params {
     indent(4) + "case _ => Nil" + newline +
     indent(3) + "}" 
   }
-  
-  // def buildArgForMixed(particles: List[Decl]): String = {
-  //   "(node.child.map {" + newline +
-  //   indent(3) + fromXmlCases(particles, 3).mkString(newline + indent(3)) + newline +
-  //   indent(3) + "case x: scala.xml.Text =>" + newline +
-  //   indent(3) + "  rt.DataRecord(None, None, x.text)" + newline +
-  //   indent(2) + "}).toList"
-  // }
-  
+    
   def buildArgForMixed(particle: Particle, pos: Int): String =
     buildArgForMixed(particle, buildSelector(pos))
   

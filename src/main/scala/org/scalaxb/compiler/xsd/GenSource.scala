@@ -225,16 +225,10 @@ object {name} extends rt.ImplicitXMLWriter[{name}] {{
         case _ => (0 to flatParticles.size - 1).toList map { i => buildArg(flatParticles(i), i) }
       }
     
-    // val mixedArgs = if (decl.mixed) List(buildArgForMixed(flatParticles))
-    //  else Nil
-    val mixedArgs = Nil
-    
     var attributeArgs = attributes map {
       case any: AnyAttributeDecl => buildArgForAnyAttribute(decl)
       case x => buildArg(x) 
     }
-    
-    // val argList = particleArgs ::: mixedArgs ::: attributeArgs
     
     val compositors = context.compositorParents.filter(
       x => x._2 == decl).keysIterator.toList

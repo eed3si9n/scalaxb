@@ -341,8 +341,13 @@ trait Args extends Params {
       buildTypeName(typeSymbol) + ".fromXML(" + selector + ")"
   }
   
-  def buildWriter(selector: String, typeSymbol: XsTypeSymbol): String =
-    "None"
+  def buildWriter(selector: String, typeSymbol: XsTypeSymbol): String = typeSymbol match {
+    case XsAny => "None"
+    case symbol: BuiltInSimpleTypeSymbol => "None"
+    case ReferenceTypeSymbol(decl@SimpleTypeDecl(_, _, _, _, _)) => "None"
+    case _ => "Some(" + buildTypeName(typeSymbol) + ".toXMLWriter(" + 
+      buildTypeName(typeSymbol) + ".fromXML(" + selector + ")))"
+  }
   
   def fromXmlCases(particles: List[Decl], indentBase: Int) = {
     def makeCaseEntry(elem: ElemDecl) =

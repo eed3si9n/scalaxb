@@ -14,8 +14,7 @@ object MixedContentTest extends SpecificationWithJUnit with CompilerMatcher {
   
   lazy val generated = module.process(mixedxsd,
     mixedscala,
-    Some("mixed"),
-    true)
+    Some("mixed"))
   val mixedUsagescala = new File(tmp, "MixedUsage.scala")
   copyFileFromResource("MixedUsage.scala", mixedUsagescala)
     
@@ -23,6 +22,5 @@ object MixedContentTest extends SpecificationWithJUnit with CompilerMatcher {
     (List("MixedUsage.allTests"),
       mixedUsagescala :: generated) must evaluateTo(true,
       outdir = "./tmp")
-    // (mixedUsagescala :: generated) must compile(outdir = "./tmp")
   }
 }

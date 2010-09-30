@@ -171,15 +171,13 @@ trait Args extends Params {
       case (Optional, _, _, _) =>
         buildMatchStatement("None", "Some(x.toDataRecord)")
       case (Single, _, _, Some(x)) =>
-        "rt.DataRecord(" + newline +
+        "dataRecord(" + newline +
           indent(4) + quote(namespace) + ", " + quote(elementLabel) + ", " + newline +
-          indent(4) + hardcoded(x) + "," + newline +
-          indent(4) + "None)"
+          indent(4) + hardcoded(x) + ")"
       case (Single, _, Some(x), _) =>
-        buildMatchStatement("rt.DataRecord(" + newline +
+        buildMatchStatement("dataRecord(" + newline +
           indent(4) + quote(namespace) + ", " + quote(elementLabel) + ", " + newline +
-          indent(4) + hardcoded(x) + "," + newline +
-          indent(4) + "None)",
+          indent(4) + hardcoded(x) + ")",
           "x.toDataRecord")        
       case (Single, false, _, _) =>
         selector + ".toDataRecord"
@@ -277,9 +275,9 @@ trait Args extends Params {
       case x: AttributeDecl => makeCaseEntry(x)
     }.mkString(indent(6), newline + indent(6), newline) +
     indent(4) + "    case scala.xml.UnprefixedAttribute(key, value, _) =>" + newline +
-    indent(4) + "      List(rt.DataRecord(None, Some(key), value.text, None))" + newline +
+    indent(4) + "      List(dataRecord(None, Some(key), value.text))" + newline +
     indent(4) + "    case scala.xml.PrefixedAttribute(pre, key, value, _) =>" + newline +
-    indent(4) + "      List(rt.DataRecord(Option[String](elem.scope.getURI(pre)), Some(key), value.text, None))" + newline +
+    indent(4) + "      List(dataRecord(Option[String](elem.scope.getURI(pre)), Some(key), value.text))" + newline +
     indent(4) + "    case _ => Nil" + newline +
     indent(4) + "  }" + newline +
     indent(4) + "case _ => Nil" + newline +
@@ -345,8 +343,8 @@ trait Args extends Params {
     def makeCaseEntry(elem: ElemDecl) =
       "case x: scala.xml.Elem if (x.label == " + quote(elem.name) + " && " + newline + 
         indent(indentBase + 2) + "Option[String](x.scope.getURI(x.prefix)) == " + quote(elem.namespace) + ") =>" + newline +
-        indent(indentBase + 1) + "rt.DataRecord(Option[String](x.scope.getURI(x.prefix)), Some(x.label), " +
-        buildArg("x", elem.typeSymbol) + ", " + buildWriter("x", elem.typeSymbol) + ")"
+        indent(indentBase + 1) + "dataRecord(Option[String](x.scope.getURI(x.prefix)), Some(x.label), " +
+        buildArg("x", elem.typeSymbol) + ")"
     
     def isAnyOrChoice(typeSymbol: XsTypeSymbol) = typeSymbol match {
       case XsAny => true
@@ -359,7 +357,7 @@ trait Args extends Params {
         (x.isInstanceOf[ElemDecl] && (isAnyOrChoice(x.asInstanceOf[ElemDecl].typeSymbol))) ||
         (x.isInstanceOf[ElemRef] && (isAnyOrChoice(buildElement(x.asInstanceOf[ElemRef]).typeSymbol)))  ))
       List("case x: scala.xml.Elem =>" + newline +
-        indent(indentBase + 1) + "rt.DataRecord(Option[String](x.scope.getURI(x.prefix)), Some(x.label), x, None)")
+        indent(indentBase + 1) + "dataRecord(Option[String](x.scope.getURI(x.prefix)), Some(x.label), x)")
     else Nil
     
     particles.collect {

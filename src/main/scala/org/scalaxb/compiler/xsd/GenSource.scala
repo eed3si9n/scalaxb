@@ -150,7 +150,8 @@ class GenSource(val schema: SchemaDecl,
   vals.mkString(newline + indent(1))}
 }}
 
-object {name} extends rt.ImplicitXMLWriter[{name}] {{
+object {name} extends rt.XMLWriter[{name}] {{
+  import rt.DataRecord._
   val targetNamespace: Option[String] = { quote(schema.targetNamespace) }
   
   def fromXML(seq: scala.xml.NodeSeq): {name} = seq match {{
@@ -311,7 +312,8 @@ object {name} extends rt.ImplicitXMLWriter[{name}] {{
       groups.map(groupTypeName)
     
     def makeObject = if (simpleFromXml)
-<source>object {name} extends rt.ImplicitXMLWriter[{name}] {{
+<source>object {name} extends rt.XMLWriter[{name}] {{
+  import rt.DataRecord._
   val targetNamespace: Option[String] = { quote(schema.targetNamespace) }
   
   def fromXML(seq: scala.xml.NodeSeq): {name} = seq match {{
@@ -323,6 +325,7 @@ object {name} extends rt.ImplicitXMLWriter[{name}] {{
 }}
 </source> else
 <source>object {name} extends {objSuperNames.mkString(" with ")} {{
+  import rt.DataRecord._
   { compositors map(makeCompositorImport(_)) }val targetNamespace: Option[String] = { quote(schema.targetNamespace) }
   def isMixed: Boolean = { if (decl.mixed) "true" else "false" }
   
@@ -350,8 +353,6 @@ object {name} extends rt.ImplicitXMLWriter[{name}] {{
   </source>
     
     def makeToXml2 = <source>def toXML(__obj: {name}, __namespace: Option[String], __elementLabel: Option[String], __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq = {{
-    import org.scalaxb.rt.DataRecord._
-    
     var attribute: scala.xml.MetaData  = scala.xml.Null
     { attributeString }
     scala.xml.Elem(rt.Helper.getPrefix(__namespace, __scope).orNull,
@@ -442,11 +443,11 @@ else " {" + newline +
     <source>trait  {name}
 
 object {name} {{
+  import rt.DataRecord._
   val targetNamespace: Option[String] = { quote(schema.targetNamespace) }
   
   def toXML(__obj: rt.DataRecord[Any], __namespace: Option[String], __elementLabel: Option[String],
       __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq = {{
-    import org.scalaxb.rt.DataRecord._
     __obj.value match {{
       { cases.distinct.mkString(newline + indent(2)) }
       case _ => rt.DataRecord.toXML(__obj, __namespace, __elementLabel, __scope)
@@ -483,7 +484,8 @@ object {name} {{
     
     <source>{ buildComment(seq) }case class {name}({paramsString})
 
-object {name} extends rt.ImplicitXMLWriter[{name}] {{
+object {name} extends rt.XMLWriter[{name}] {{
+  import rt.DataRecord._
   val targetNamespace: Option[String] = { quote(schema.targetNamespace) }
   
   def toXML(__obj: rt.DataRecord[Any], __namespace: Option[String], __elementLabel: Option[String],
@@ -493,9 +495,7 @@ object {name} extends rt.ImplicitXMLWriter[{name}] {{
   }}
   
   def toXML(__obj: {name}, __namespace: Option[String], __elementLabel: Option[String],
-      __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq = {{
-    import org.scalaxb.rt.DataRecord._
-    
+      __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq = {{    
     var attribute: scala.xml.MetaData  = scala.xml.Null
     { childString }
   }}
@@ -529,6 +529,7 @@ object {name} extends rt.ImplicitXMLWriter[{name}] {{
       else groups.map(groupTypeName(_))
     
     <source>{ buildComment(group) }trait {name} extends {superNames.mkString(" with ")} {{
+  import rt.DataRecord._
   private val targetNamespace: Option[String] = { quote(schema.targetNamespace) }
   
   def parse{name}: Parser[{param.baseTypeName}] =

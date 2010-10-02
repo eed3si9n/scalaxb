@@ -34,7 +34,7 @@ object SamlTest extends SpecificationWithJUnit with CompilerMatcher {
       Some("urn:oasis:names:tc:SAML:2.0:metadata") -> Some("org.xml.saml2.metadata")  
       ))
   
-  "generated files must compile together with SamlTest.scala" in {
+  "generated files must compile together with SamlUsage.scala" in {
     (List("SamlUsage.allTests"),
      samlUsagescala :: generated) must evaluateTo(true,
        outdir = "./tmp")

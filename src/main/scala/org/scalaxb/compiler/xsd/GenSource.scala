@@ -151,7 +151,6 @@ class GenSource(val schema: SchemaDecl,
 }}
 
 object {name} extends rt.XMLWriter[{name}] {{
-  import rt.DataRecord._
   val targetNamespace: Option[String] = { quote(schema.targetNamespace) }
   
   def fromXML(seq: scala.xml.NodeSeq): {name} = seq match {{
@@ -313,7 +312,6 @@ object {name} extends rt.XMLWriter[{name}] {{
     
     def makeObject = if (simpleFromXml)
 <source>object {name} extends rt.XMLWriter[{name}] {{
-  import rt.DataRecord._
   val targetNamespace: Option[String] = { quote(schema.targetNamespace) }
   
   def fromXML(seq: scala.xml.NodeSeq): {name} = seq match {{
@@ -325,7 +323,6 @@ object {name} extends rt.XMLWriter[{name}] {{
 }}
 </source> else
 <source>object {name} extends {objSuperNames.mkString(" with ")} {{
-  import rt.DataRecord._
   { compositors map(makeCompositorImport(_)) }val targetNamespace: Option[String] = { quote(schema.targetNamespace) }
   def isMixed: Boolean = { if (decl.mixed) "true" else "false" }
   
@@ -443,7 +440,6 @@ else " {" + newline +
     <source>trait  {name}
 
 object {name} {{
-  import rt.DataRecord._
   val targetNamespace: Option[String] = { quote(schema.targetNamespace) }
   
   def toXML(__obj: rt.DataRecord[Any], __namespace: Option[String], __elementLabel: Option[String],
@@ -485,7 +481,6 @@ object {name} {{
     <source>{ buildComment(seq) }case class {name}({paramsString})
 
 object {name} extends rt.XMLWriter[{name}] {{
-  import rt.DataRecord._
   val targetNamespace: Option[String] = { quote(schema.targetNamespace) }
   
   def toXML(__obj: rt.DataRecord[Any], __namespace: Option[String], __elementLabel: Option[String],
@@ -529,7 +524,6 @@ object {name} extends rt.XMLWriter[{name}] {{
       else groups.map(groupTypeName(_))
     
     <source>{ buildComment(group) }trait {name} extends {superNames.mkString(" with ")} {{
-  import rt.DataRecord._
   private val targetNamespace: Option[String] = { quote(schema.targetNamespace) }
   
   def parse{name}: Parser[{param.baseTypeName}] =

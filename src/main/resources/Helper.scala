@@ -133,7 +133,11 @@ object XMLWriter {
   } 
 }
 
-case class DataRecord[+A](namespace: Option[String], key: Option[String], value: A, writer: XMLWriter[_]) {
+trait DataRecord[+A] {
+  val namespace: Option[String]
+  val key: Option[String]
+  val value: A
+  
   override def toString: String = {
     "DataRecord(" +
     ((namespace, key, value) match {
@@ -145,22 +149,33 @@ case class DataRecord[+A](namespace: Option[String], key: Option[String], value:
 }
 
 object DataRecord {
-  def dataRecord[A:XMLWriter](namespace: Option[String], key: Option[String], value: A): DataRecord[A] =
-    DataRecord(namespace, key, value, implicitly[XMLWriter[A]])
+  private case class DataWriter[+A](
+    namespace: Option[String],
+    key: Option[String],
+    value: A,
+    writer: XMLWriter[_]) extends DataRecord[A]
   
-  def dataRecord[A:XMLWriter](value: A): DataRecord[A] =
-    dataRecord(None, None, value)
+  def apply[A:XMLWriter](namespace: Option[String], key: Option[String], value: A): DataRecord[A] =
+    DataWriter(namespace, key, value, implicitly[XMLWriter[A]])
+  
+  def apply[A:XMLWriter](value: A): DataRecord[A] =
+    apply(None, None, value)
+  
+  def unapply[A](record: DataRecord[A]): Option[(Option[String], Option[String], A)] =
+    Some(record.namespace, record.key, record.value)
   
   def toXML[A](__obj: DataRecord[A], __namespace: Option[String], __elementLabel: Option[String],
-      __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq =
-    __obj.writer.asInstanceOf[XMLWriter[A]].toXML(__obj.value, __namespace, __elementLabel, __scope)
+      __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq = __obj match {
+    case w: DataWriter[_] => w.writer.asInstanceOf[XMLWriter[A]].toXML(__obj.value, __namespace, __elementLabel, __scope)
+    case _ => error("unknown DataRecord.")
+  }
 }
 
 case class ElemName(namespace: Option[String], name: String) {
   var node: scala.xml.Node = _
   def text = node.text
   def nil = Helper.isNil(node)
-  def toDataRecord = DataRecord.dataRecord(namespace, Some(name), node)
+  def toDataRecord = DataRecord(namespace, Some(name), node)
 }
 
 object ElemName {
@@ -173,7 +188,7 @@ trait AnyElemNameParser extends scala.util.parsing.combinator.Parsers {
   def any: Parser[ElemName] = 
     accept("any", { case x: ElemName if x.name != "" => x })  
   
-  def optTextRecord = opt(text ^^ (x => DataRecord.dataRecord(x.node.text)))
+  def optTextRecord = opt(text ^^ (x => DataRecord(x.node.text)))
   
   def text: Parser[ElemName] =
     accept("text", { case x: ElemName if x.name == "" => x })

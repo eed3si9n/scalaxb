@@ -121,7 +121,7 @@ trait Parsers extends Args with Params {
       "{ case " +
       parserVariableList.mkString(" ~ ") + 
       (if (mixed) " => Seq.concat(" + argsString + ")"
-      else if (wrapInDataRecord) " => dataRecord(" + name + "(" + argsString + "))"
+      else if (wrapInDataRecord) " => rt.DataRecord(" + name + "(" + argsString + "))"
       else " => " + name + "(" + argsString + ")") +
       " }"
     }
@@ -257,14 +257,13 @@ trait Parsers extends Args with Params {
   
   def buildConverter(typeSymbol: XsTypeSymbol, minOccurs: Int, maxOccurs: Int): String =
     if (maxOccurs > 1)
-      "(p => p.toList map(x => dataRecord(x.namespace, Some(x.name), " +
+      "(p => p.toList map(x => rt.DataRecord(x.namespace, Some(x.name), " +
       buildArg("x.node", typeSymbol) + ")))"
     else if (minOccurs == 0)
       "(p => p map { x =>" + newline +
-      indent(3) + "dataRecord(x.namespace, Some(x.name), " +
+      indent(3) + "rt.DataRecord(x.namespace, Some(x.name), " +
       buildArg("x.node", typeSymbol) + ") })"
-    else
-      "(x => dataRecord(x.namespace, Some(x.name), " + buildArg("x.node", typeSymbol) + "))"
+    else "(x => rt.DataRecord(x.namespace, Some(x.name), " + buildArg("x.node", typeSymbol) + "))"
   
   def buildParticles(com: Option[HasParticle], name: String): List[ElemDecl] = com match {
     case Some(c) => buildParticles(c)

@@ -34,12 +34,12 @@ object SamlUsage {
     
     val obj = AttributeType.fromXML(subject)
     obj match {
-      case AttributeType(Seq(Some(x@DataRecord(_, _, _, _)),
-          Some(y@DataRecord(_, _, _, _)) ),
+      case AttributeType(Seq(Some(x@DataRecord(_, _, _)),
+          Some(y@DataRecord(_, _, _)) ),
         "urn:oid:1.3.6.1.4.1.5923.1.1.1.1",
         Some(_),
         Some("eduPersonAffiliation"),
-        Seq(z@DataRecord(_, _, _, _))) => 
+        Seq(z@DataRecord(_, _, _))) => 
       case _ => error("match failed: " + obj.toString)
     }
     

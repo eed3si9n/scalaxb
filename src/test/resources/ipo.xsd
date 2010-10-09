@@ -155,16 +155,6 @@
     </complexType>
   </element>
   
-  <!-- <element name="Element3">
-    <complexType mixed="true">
-      <choice maxOccurs="unbounded">
-        <element ref="ipo:Choice1"/>
-        <element ref="ipo:Choice2"/>
-        <any namespace="##other" processContents="lax" />
-      </choice>
-    </complexType>
-  </element> -->
-  
   <complexType name="DatedData">
     <sequence>
       <element name="date"   type="dateTime"/>

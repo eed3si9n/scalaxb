@@ -123,6 +123,11 @@ trait Lookup extends ContextProcessor {
   def buildTypeName(typeSymbol: XsTypeSymbol): String = typeSymbol match {
     case XsInterNamespace => "rt.DataRecord[Any]"
     case XsAny          => "rt.DataRecord[Any]"
+    case XsDataRecord(ReferenceTypeSymbol(decl: ComplexTypeDecl)) if compositorWrapper.contains(decl) =>
+      compositorWrapper(decl) match {
+        case choice: ChoiceDecl => buildChoiceTypeName(decl, choice)
+        case _ => "rt.DataRecord[Any]"
+      }
     case r: XsDataRecord => "rt.DataRecord[Any]"
     case XsMixed        => "rt.DataRecord[Any]"
     case XsAnyAttribute => "rt.DataRecord[String]"
@@ -130,6 +135,28 @@ trait Lookup extends ContextProcessor {
     case ReferenceTypeSymbol(decl: SimpleTypeDecl) => buildTypeName(decl)
     case ReferenceTypeSymbol(decl: ComplexTypeDecl) => buildTypeName(decl)
     case symbol:AttributeGroupSymbol => buildTypeName(attributeGroups(symbol.namespace, symbol.name))
+  }
+  
+  def buildChoiceTypeName(decl: ComplexTypeDecl, choice: ChoiceDecl): String = {
+    def particleType(particle: Particle) = particle match {
+      case elem: ElemDecl => Some(elem.typeSymbol)
+      case ref: ElemRef => Some(buildElement(ref).typeSymbol)
+      case _ => None
+    }
+    
+    def sameType: Option[XsTypeSymbol] =
+      if (choice.particles.size < 1) None
+      else {
+        val firstType = particleType(choice.particles(0))
+        if (firstType.isEmpty) None
+        else if (choice.particles forall { particleType(_) == firstType }) firstType
+        else None
+      } // if-else
+    
+    sameType match {
+      case Some(x) => "rt.DataRecord[" + buildTypeName(x) + "]"
+      case None => "rt.DataRecord[Any]"
+    }
   }
   
   def buildTypeName(decl: ComplexTypeDecl, localOnly: Boolean = false): String = {

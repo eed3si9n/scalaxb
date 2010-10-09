@@ -122,7 +122,7 @@ trait Lookup extends ContextProcessor {
   
   def buildTypeName(typeSymbol: XsTypeSymbol): String = typeSymbol match {
     case XsInterNamespace => "rt.DataRecord[Any]"
-    case XsAny          => "rt.DataRecord[scala.xml.Node]"
+    case XsAny          => "rt.DataRecord[Any]"
     case r: XsDataRecord => "rt.DataRecord[Any]"
     case XsMixed        => "rt.DataRecord[Any]"
     case XsAnyAttribute => "rt.DataRecord[String]"

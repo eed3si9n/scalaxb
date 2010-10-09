@@ -1,6 +1,7 @@
 package org.scalaxb.rt
 
 import scala.xml.{Node, NodeSeq, NamespaceBinding, Elem}
+import javax.xml.datatype.{XMLGregorianCalendar}
 
 trait XMLWriter[A] {
   implicit val ev = this
@@ -27,109 +28,223 @@ object XMLWriter {
   implicit object __StringXMLWriter extends XMLWriter[String] {
     def toXML(__obj: String, __namespace: Option[String], __elementLabel: Option[String],
         __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq =
-      Helper.stringToXML(__obj, __namespace, __elementLabel, __scope)
+      Helper.stringToXML(__obj, None, __namespace, __elementLabel, __scope)
+  }
+  
+  object XSStringXMLWriter extends XMLWriter[String] {
+    def toXML(__obj: String, __namespace: Option[String], __elementLabel: Option[String],
+        __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq =
+      Helper.stringToXML(__obj, Some("string"), __namespace, __elementLabel, __scope)
+  }
+  
+  def stringXMLWriter(xstype: String) = new XMLWriter[String] {
+    def toXML(__obj: String, __namespace: Option[String], __elementLabel: Option[String],
+        __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq =
+      Helper.stringToXML(__obj, Some(xstype), __namespace, __elementLabel, __scope)
   }
 
   implicit object __IntXMLWriter extends XMLWriter[Int] {
     def toXML(__obj: Int, __namespace: Option[String], __elementLabel: Option[String],
         __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq =
-      Helper.stringToXML(__obj.toString, __namespace, __elementLabel, __scope)
+      Helper.stringToXML(__obj.toString, None, __namespace, __elementLabel, __scope)
+  }
+  
+  object XSIntXMLWriter extends XMLWriter[Int] {
+    def toXML(__obj: Int, __namespace: Option[String], __elementLabel: Option[String],
+        __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq =
+      Helper.stringToXML(__obj.toString, Some("int"), __namespace, __elementLabel, __scope)
   }
   
   implicit object __ByteXMLWriter extends XMLWriter[Byte] {
     def toXML(__obj: Byte, __namespace: Option[String], __elementLabel: Option[String],
         __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq =
-      Helper.stringToXML(__obj.toString, __namespace, __elementLabel, __scope)
+      Helper.stringToXML(__obj.toString, None, __namespace, __elementLabel, __scope)
+  }
+  
+  object XSByteXMLWriter extends XMLWriter[Byte] {
+    def toXML(__obj: Byte, __namespace: Option[String], __elementLabel: Option[String],
+        __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq =
+      Helper.stringToXML(__obj.toString, Some("byte"), __namespace, __elementLabel, __scope)
   }
   
   implicit object __ShortXMLWriter extends XMLWriter[Short] {
     def toXML(__obj: Short, __namespace: Option[String], __elementLabel: Option[String],
         __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq =
-      Helper.stringToXML(__obj.toString, __namespace, __elementLabel, __scope)
+      Helper.stringToXML(__obj.toString, None, __namespace, __elementLabel, __scope)
+  }
+  
+  object XSShortXMLWriter extends XMLWriter[Short] {
+    def toXML(__obj: Short, __namespace: Option[String], __elementLabel: Option[String],
+        __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq =
+      Helper.stringToXML(__obj.toString, Some("short"), __namespace, __elementLabel, __scope)
   }
   
   implicit object __LongXMLWriter extends XMLWriter[Long] {
     def toXML(__obj: Long, __namespace: Option[String], __elementLabel: Option[String],
         __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq =
-      Helper.stringToXML(__obj.toString, __namespace, __elementLabel, __scope)
+      Helper.stringToXML(__obj.toString, None, __namespace, __elementLabel, __scope)
+  }
+  
+  def longXMLWriter(xstype: String) = new XMLWriter[Long] {
+    def toXML(__obj: Long, __namespace: Option[String], __elementLabel: Option[String],
+        __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq =
+      Helper.stringToXML(__obj.toString, Some(xstype), __namespace, __elementLabel, __scope)
   }
   
   implicit object __BigDecimalXMLWriter extends XMLWriter[BigDecimal] {
     def toXML(__obj: BigDecimal, __namespace: Option[String], __elementLabel: Option[String],
         __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq =
-      Helper.stringToXML(__obj.toString, __namespace, __elementLabel, __scope)
+      Helper.stringToXML(__obj.toString, None, __namespace, __elementLabel, __scope)
+  }
+  
+  object XSDecimalXMLWriter extends XMLWriter[BigDecimal] {
+    def toXML(__obj: BigDecimal, __namespace: Option[String], __elementLabel: Option[String],
+        __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq =
+      Helper.stringToXML(__obj.toString, Some("decimal"), __namespace, __elementLabel, __scope)
   }
   
   implicit object __BigIntXMLWriter extends XMLWriter[BigInt] {
     def toXML(__obj: BigInt, __namespace: Option[String], __elementLabel: Option[String],
         __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq =
-      Helper.stringToXML(__obj.toString, __namespace, __elementLabel, __scope)
+      Helper.stringToXML(__obj.toString, None, __namespace, __elementLabel, __scope)
+  }
+  
+  def bigIntXMLWriter(xstype: String) = new XMLWriter[BigInt] {
+    def toXML(__obj: BigInt, __namespace: Option[String], __elementLabel: Option[String],
+        __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq =
+      Helper.stringToXML(__obj.toString, Some(xstype), __namespace, __elementLabel, __scope)
+  }
+  
+  def intXMLWriter(xstype: String) = new XMLWriter[Int] {
+    def toXML(__obj: Int, __namespace: Option[String], __elementLabel: Option[String],
+        __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq =
+      Helper.stringToXML(__obj.toString, Some(xstype), __namespace, __elementLabel, __scope)
   }
   
   implicit object __FloatXMLWriter extends XMLWriter[Float] {
     def toXML(__obj: Float, __namespace: Option[String], __elementLabel: Option[String],
         __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq =
-      Helper.stringToXML(__obj.toString, __namespace, __elementLabel, __scope)
+      Helper.stringToXML(__obj.toString, None, __namespace, __elementLabel, __scope)
+  }
+  
+  object XSFloatXMLWriter extends XMLWriter[Float] {
+    def toXML(__obj: Float, __namespace: Option[String], __elementLabel: Option[String],
+        __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq =
+      Helper.stringToXML(__obj.toString, Some("float"), __namespace, __elementLabel, __scope)
   }
   
   implicit object __DoubleXMLWriter extends XMLWriter[Double] {
     def toXML(__obj: Double, __namespace: Option[String], __elementLabel: Option[String],
         __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq =
-      Helper.stringToXML(__obj.toString, __namespace, __elementLabel, __scope)
+      Helper.stringToXML(__obj.toString, None, __namespace, __elementLabel, __scope)
+  }
+  
+  object XSDoubleXMLWriter extends XMLWriter[Double] {
+    def toXML(__obj: Double, __namespace: Option[String], __elementLabel: Option[String],
+        __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq =
+      Helper.stringToXML(__obj.toString, Some("double"), __namespace, __elementLabel, __scope)
   }
   
   implicit object __BooleanXMLWriter extends XMLWriter[Boolean] {
     def toXML(__obj: Boolean, __namespace: Option[String], __elementLabel: Option[String],
         __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq =
-      Helper.stringToXML(__obj.toString, __namespace, __elementLabel, __scope)
+      Helper.stringToXML(__obj.toString, None, __namespace, __elementLabel, __scope)
+  }
+  
+  object XSBooleanXMLWriter extends XMLWriter[Boolean] {
+    def toXML(__obj: Boolean, __namespace: Option[String], __elementLabel: Option[String],
+        __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq =
+      Helper.stringToXML(__obj.toString, Some("boolean"), __namespace, __elementLabel, __scope)
   }
   
   implicit object __DurationXMLWriter extends XMLWriter[javax.xml.datatype.Duration] {
     def toXML(__obj: javax.xml.datatype.Duration, __namespace: Option[String], __elementLabel: Option[String],
         __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq =
-      Helper.stringToXML(__obj.toString, __namespace, __elementLabel, __scope)
+      Helper.stringToXML(__obj.toString, None, __namespace, __elementLabel, __scope)
   }
   
+  object XSDurationXMLWriter extends XMLWriter[javax.xml.datatype.Duration] {
+    def toXML(__obj: javax.xml.datatype.Duration, __namespace: Option[String], __elementLabel: Option[String],
+        __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq =
+      Helper.stringToXML(__obj.toString, Some("duration"), __namespace, __elementLabel, __scope)
+  }
+
+  implicit object __CalendarXMLWriter extends XMLWriter[XMLGregorianCalendar] {
+    def toXML(__obj: XMLGregorianCalendar, __namespace: Option[String], __elementLabel: Option[String],
+        __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq =
+      Helper.stringToXML(__obj.toXMLFormat, None, __namespace, __elementLabel, __scope)
+  }
+  
+  def calendarXMLWriter(xstype: String) = new XMLWriter[XMLGregorianCalendar] {
+    def toXML(__obj: XMLGregorianCalendar, __namespace: Option[String], __elementLabel: Option[String],
+        __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq =
+      Helper.stringToXML(__obj.toXMLFormat, Some(xstype), __namespace, __elementLabel, __scope)
+  }
+    
   implicit object __GregorianCalendarXMLWriter extends XMLWriter[java.util.GregorianCalendar] {
     def toXML(__obj: java.util.GregorianCalendar, __namespace: Option[String], __elementLabel: Option[String],
         __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq =
-      Helper.stringToXML(Helper.toString(__obj), __namespace, __elementLabel, __scope)
+      Helper.stringToXML(Helper.toCalendar(__obj).toXMLFormat, None, __namespace, __elementLabel, __scope)
   }
   
   // implicit object __HexBinaryXMLWriter extends XMLWriter[HexBinary] {
   //   def toXML(__obj: HexBinary, __namespace: Option[String], __elementLabel: Option[String],
   //       __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq =
-  //     Helper.stringToXML(__obj.toString, __namespace, __elementLabel, __scope)
+  //     Helper.stringToXML(__obj.toString, "hexBinary", __namespace, __elementLabel, __scope)
   // }
   
   implicit object __QNameXMLWriter extends XMLWriter[javax.xml.namespace.QName] {
     def toXML(__obj: javax.xml.namespace.QName, __namespace: Option[String], __elementLabel: Option[String],
         __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq =
-      Helper.stringToXML(__obj.toString, __namespace, __elementLabel, __scope)
+      Helper.stringToXML(__obj.toString, None, __namespace, __elementLabel, __scope)
+  }
+  
+  def qnameXMLWriter(xstype: String) = new XMLWriter[javax.xml.namespace.QName] {
+    def toXML(__obj: javax.xml.namespace.QName, __namespace: Option[String], __elementLabel: Option[String],
+        __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq =
+      Helper.stringToXML(__obj.toString, Some(xstype), __namespace, __elementLabel, __scope)
   }
   
   implicit object __StringArrayXMLWriter extends XMLWriter[Array[String]] {
     def toXML(__obj: Array[String], __namespace: Option[String], __elementLabel: Option[String],
         __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq =
-      Helper.stringToXML(__obj.mkString(" "), __namespace, __elementLabel, __scope)
+      Helper.stringToXML(__obj.mkString(" "), None, __namespace, __elementLabel, __scope)
+  }
+  
+  def stringArrayXMLWriter(xstype: String) = new XMLWriter[Array[String]] {
+    def toXML(__obj: Array[String], __namespace: Option[String], __elementLabel: Option[String],
+        __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq =
+      Helper.stringToXML(__obj.mkString(" "), Some(xstype), __namespace, __elementLabel, __scope)
   }
   
   implicit object __ByteArrayXMLWriter extends XMLWriter[Array[Byte]] {
     def toXML(__obj: Array[Byte], __namespace: Option[String], __elementLabel: Option[String],
         __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq =
-      Helper.stringToXML(Helper.toString(__obj), __namespace, __elementLabel, __scope)
+      Helper.stringToXML(Helper.toString(__obj), None, __namespace, __elementLabel, __scope)
+  }
+  
+  def byteArrayXMLWriter(xstype: String) = new XMLWriter[Array[Byte]] {
+    def toXML(__obj: Array[Byte], __namespace: Option[String], __elementLabel: Option[String],
+        __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq =
+      Helper.stringToXML(Helper.toString(__obj), Some(xstype), __namespace, __elementLabel, __scope)
   }
   
   implicit object __URIXMLWriter extends XMLWriter[java.net.URI] {
     def toXML(__obj: java.net.URI, __namespace: Option[String], __elementLabel: Option[String],
         __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq =
-      Helper.stringToXML(__obj.toString, __namespace, __elementLabel, __scope)
+      Helper.stringToXML(__obj.toString, None, __namespace, __elementLabel, __scope)
   }
   
+  object XSAnyURIXMLWriter extends XMLWriter[java.net.URI] {
+    def toXML(__obj: java.net.URI, __namespace: Option[String], __elementLabel: Option[String],
+        __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq =
+      Helper.stringToXML(__obj.toString, Some("anyURI"), __namespace, __elementLabel, __scope)
+  }
+    
   implicit object AnyXMLWriter extends XMLWriter[Any] {
     def toXML(__obj: Any, __namespace: Option[String], __elementLabel: Option[String],
         __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq =
-      Helper.stringToXML(__obj.toString, __namespace, __elementLabel, __scope)
+      Helper.stringToXML(__obj.toString, None, __namespace, __elementLabel, __scope)
   } 
 }
 
@@ -154,12 +269,67 @@ object DataRecord {
     key: Option[String],
     value: A,
     writer: XMLWriter[_]) extends DataRecord[A]
-  
+  import Helper._
+  import XMLWriter.__NodeSeqXMLWriter
+    
   def apply[A:XMLWriter](namespace: Option[String], key: Option[String], value: A): DataRecord[A] =
     DataWriter(namespace, key, value, implicitly[XMLWriter[A]])
   
   def apply[A:XMLWriter](value: A): DataRecord[A] =
     apply(None, None, value)
+  
+  def apply(elemName: ElemName): DataRecord[Any] =
+    if (elemName.name == "") apply(elemName.text)
+    else instanceType(elemName.node) match {
+      case (Some(XML_SCHEMA_URI), xstype)   =>
+        xstype match {
+          case "int"      => DataWriter(elemName.namespace, Some(elemName.name), elemName.text.toInt, XMLWriter.XSIntXMLWriter)
+          case "byte"     => DataWriter(elemName.namespace, Some(elemName.name), elemName.text.toByte, XMLWriter.XSByteXMLWriter)
+          case "short"    => DataWriter(elemName.namespace, Some(elemName.name), elemName.text.toShort, XMLWriter.XSShortXMLWriter)
+          case "long"     => DataWriter(elemName.namespace, Some(elemName.name), elemName.text.toLong, XMLWriter.longXMLWriter(xstype))
+          case "float"    => DataWriter(elemName.namespace, Some(elemName.name), elemName.text.toFloat, XMLWriter.XSFloatXMLWriter)
+          case "double"   => DataWriter(elemName.namespace, Some(elemName.name), elemName.text.toDouble, XMLWriter.XSDoubleXMLWriter)
+          case "integer"  => DataWriter(elemName.namespace, Some(elemName.name), elemName.text.toInt, XMLWriter.intXMLWriter(xstype))
+          case "nonPositiveInteger" => DataWriter(elemName.namespace, Some(elemName.name), elemName.text.toInt, XMLWriter.intXMLWriter(xstype))
+          case "negativeInteger"    => DataWriter(elemName.namespace, Some(elemName.name), elemName.text.toInt, XMLWriter.intXMLWriter(xstype))
+          case "nonNegativeInteger" => DataWriter(elemName.namespace, Some(elemName.name), elemName.text.toInt, XMLWriter.intXMLWriter(xstype))
+          case "positiveInteger"    => DataWriter(elemName.namespace, Some(elemName.name), elemName.text.toInt, XMLWriter.intXMLWriter(xstype))
+          case "unsignedLong"    => DataWriter(elemName.namespace, Some(elemName.name), BigInt(elemName.text), XMLWriter.bigIntXMLWriter(xstype))
+          case "unsignedInt"     => DataWriter(elemName.namespace, Some(elemName.name), elemName.text.toLong, XMLWriter.longXMLWriter(xstype))
+          case "unsignedShort"   => DataWriter(elemName.namespace, Some(elemName.name), elemName.text.toInt, XMLWriter.intXMLWriter(xstype))
+          case "unsignedByte"    => DataWriter(elemName.namespace, Some(elemName.name), elemName.text.toInt, XMLWriter.intXMLWriter(xstype))
+          case "decimal"  => DataWriter(elemName.namespace, Some(elemName.name), BigDecimal(elemName.text), XMLWriter.XSDecimalXMLWriter)
+          case "boolean"  => DataWriter(elemName.namespace, Some(elemName.name), elemName.text.toBoolean, XMLWriter.XSBooleanXMLWriter)
+          case "string"   => DataWriter(elemName.namespace, Some(elemName.name), elemName.text, XMLWriter.XSStringXMLWriter)
+          case "normalizedString" => DataWriter(elemName.namespace, Some(elemName.name), elemName.text, XMLWriter.stringXMLWriter(xstype))
+          case "token"    => DataWriter(elemName.namespace, Some(elemName.name), elemName.text, XMLWriter.stringXMLWriter(xstype))
+          case "language" => DataWriter(elemName.namespace, Some(elemName.name), elemName.text, XMLWriter.stringXMLWriter(xstype))
+          case "Name"     => DataWriter(elemName.namespace, Some(elemName.name), elemName.text, XMLWriter.stringXMLWriter(xstype))
+          case "NCName"   => DataWriter(elemName.namespace, Some(elemName.name), elemName.text, XMLWriter.stringXMLWriter(xstype))
+          case "NMTOKEN"  => DataWriter(elemName.namespace, Some(elemName.name), elemName.text, XMLWriter.stringXMLWriter(xstype))
+          case "NMTOKENS" => DataWriter(elemName.namespace, Some(elemName.name), elemName.text.split(' '), XMLWriter.stringArrayXMLWriter(xstype))
+          case "ID"       => DataWriter(elemName.namespace, Some(elemName.name), elemName.text, XMLWriter.stringXMLWriter(xstype))
+          case "IDREF"    => DataWriter(elemName.namespace, Some(elemName.name), elemName.text, XMLWriter.stringXMLWriter(xstype))
+          case "IDREFS"   => DataWriter(elemName.namespace, Some(elemName.name), elemName.text.split(' '), XMLWriter.stringArrayXMLWriter(xstype))
+          case "ENTITY"   => DataWriter(elemName.namespace, Some(elemName.name), elemName.text, XMLWriter.stringXMLWriter(xstype))
+          case "ENTITIES" => DataWriter(elemName.namespace, Some(elemName.name), elemName.text.split(' '), XMLWriter.stringArrayXMLWriter(xstype))
+          case "base64Binary" => DataWriter(elemName.namespace, Some(elemName.name), toByteArray(elemName.text), XMLWriter.byteArrayXMLWriter(xstype))
+          case "anyURI"   => DataWriter(elemName.namespace, Some(elemName.name), new java.net.URI(elemName.text), XMLWriter.XSAnyURIXMLWriter)
+          case "QName"    => DataWriter(elemName.namespace, Some(elemName.name), javax.xml.namespace.QName.valueOf(elemName.text), XMLWriter.qnameXMLWriter(xstype))
+          case "NOTATION" => DataWriter(elemName.namespace, Some(elemName.name), javax.xml.namespace.QName.valueOf(elemName.text), XMLWriter.qnameXMLWriter(xstype))
+          case "duration" => DataWriter(elemName.namespace, Some(elemName.name), Helper.toDuration(elemName.text), XMLWriter.XSDurationXMLWriter)
+          case "dateTime" => DataWriter(elemName.namespace, Some(elemName.name), XMLCalendar(elemName.text), XMLWriter.calendarXMLWriter(xstype))
+          case "time"     => DataWriter(elemName.namespace, Some(elemName.name), XMLCalendar(elemName.text), XMLWriter.calendarXMLWriter(xstype))
+          case "gYearMonth" => DataWriter(elemName.namespace, Some(elemName.name), XMLCalendar(elemName.text), XMLWriter.calendarXMLWriter(xstype))
+          case "gYear"    => DataWriter(elemName.namespace, Some(elemName.name), XMLCalendar(elemName.text), XMLWriter.calendarXMLWriter(xstype))
+          case "gMonthDay"  => DataWriter(elemName.namespace, Some(elemName.name), XMLCalendar(elemName.text), XMLWriter.calendarXMLWriter(xstype))
+          case "gDay"     => DataWriter(elemName.namespace, Some(elemName.name), XMLCalendar(elemName.text), XMLWriter.calendarXMLWriter(xstype))
+          case "gMonth"   => DataWriter(elemName.namespace, Some(elemName.name), XMLCalendar(elemName.text), XMLWriter.calendarXMLWriter(xstype))
+          
+          case _          => DataWriter(elemName.namespace, Some(elemName.name), elemName.node, __NodeSeqXMLWriter)
+        }      
+      case _ => DataWriter(elemName.namespace, Some(elemName.name), elemName.node, __NodeSeqXMLWriter)
+    }
   
   def unapply[A](record: DataRecord[A]): Option[(Option[String], Option[String], A)] =
     Some(record.namespace, record.key, record.value)
@@ -175,7 +345,6 @@ case class ElemName(namespace: Option[String], name: String) {
   var node: scala.xml.Node = _
   def text = node.text
   def nil = Helper.isNil(node)
-  def toDataRecord = DataRecord(namespace, Some(name), node)
 }
 
 object ElemName {
@@ -183,6 +352,8 @@ object ElemName {
 }
 
 trait AnyElemNameParser extends scala.util.parsing.combinator.Parsers {
+  import XMLWriter._
+  
   type Elem = ElemName
   
   def any: Parser[ElemName] = 
@@ -264,40 +435,50 @@ class ElemNameSeqPosition(val source: Seq[ElemName], val offset: Int) extends
 //   val Array[Byte]
 // }
 
-class Calendar extends java.util.GregorianCalendar {
-  override def toString: String = Helper.toString(this)
-}
-
-object Calendar {
-  def apply(value: String): Calendar = Helper.toCalendar(value)
-  def unapply(value: Calendar): Option[String] = Some(Helper.toString(value))
+object XMLCalendar {
+  def apply(value: String): XMLGregorianCalendar = Helper.toCalendar(value)
+  def unapply(value: XMLGregorianCalendar): Option[String] = Some(value.toXMLFormat)
 }
 
 object Helper {
+  val XML_SCHEMA_URI = "http://www.w3.org/2001/XMLSchema"
   val XSI_URL = "http://www.w3.org/2001/XMLSchema-instance"
   val XSI_PREFIX = "xsi"
-  lazy val typeFactory = javax.xml.datatype.DatatypeFactory.newInstance()
 
-  def toCalendar(value: String) = {
-    val gregorian = typeFactory.newXMLGregorianCalendar(value).toGregorianCalendar
-    val cal = new Calendar()
-
-    for (i <- 0 to java.util.Calendar.FIELD_COUNT - 1)
-      if (gregorian.isSet(i))
-        cal.set(i, gregorian.get(i))
-    cal
+  def toCalendar(value: String): XMLGregorianCalendar = {
+    import javax.xml.datatype._
+    val typeFactory = javax.xml.datatype.DatatypeFactory.newInstance()
+    typeFactory.newXMLGregorianCalendar(value)
   }
   
-  def toString(value: java.util.GregorianCalendar) = {
-    val xmlGregorian = typeFactory.newXMLGregorianCalendar(value)
-    xmlGregorian.toString
+  def toCalendar(value: java.util.GregorianCalendar): XMLGregorianCalendar = {
+    import javax.xml.datatype._
+    import java.util.{GregorianCalendar, Calendar => JCalendar}
+    
+    val typeFactory = javax.xml.datatype.DatatypeFactory.newInstance()
+    val xmlGregorian = typeFactory.newXMLGregorianCalendar()
+    if (value.getTimeZone != null) {
+      xmlGregorian.setTimezone(value.getTimeZone.getRawOffset / 60000)
+    }
+        
+    if (value.isSet(JCalendar.YEAR)) xmlGregorian.setYear(if (value.get(JCalendar.ERA) == GregorianCalendar.AD) value.get(JCalendar.YEAR) else -value.get(JCalendar.YEAR))
+    if (value.isSet(JCalendar.MONTH)) xmlGregorian.setMonth(value.get(JCalendar.MONTH) - JCalendar.JANUARY + DatatypeConstants.JANUARY)
+    if (value.isSet(JCalendar.DAY_OF_MONTH)) xmlGregorian.setDay(value.get(JCalendar.DAY_OF_MONTH))
+    if (value.isSet(JCalendar.HOUR_OF_DAY)) xmlGregorian.setHour(value.get(JCalendar.HOUR_OF_DAY))
+    if (value.isSet(JCalendar.MINUTE)) xmlGregorian.setMinute(value.get(JCalendar.MINUTE))
+    if (value.isSet(JCalendar.SECOND)) xmlGregorian.setSecond(value.get(JCalendar.SECOND))
+    if (value.isSet(JCalendar.MILLISECOND) && value.get(JCalendar.MILLISECOND) > 0) xmlGregorian.setFractionalSecond(new java.math.BigDecimal(value.get(JCalendar.MILLISECOND)))
+    
+    xmlGregorian
   }
   
   def toString(value: Array[Byte]) =
     (new sun.misc.BASE64Encoder()).encodeBuffer(value)
   
-  def toDuration(value: String) =
+  def toDuration(value: String) = {
+    val typeFactory = javax.xml.datatype.DatatypeFactory.newInstance()
     typeFactory.newDuration(value)
+  }
   
   def toByteArray(value: String) =
     (new sun.misc.BASE64Decoder()).decodeBuffer(value)
@@ -330,12 +511,27 @@ object Helper {
   def getPrefix(namespace: Option[String], scope: scala.xml.NamespaceBinding) =
     if (Option[String](scope.getURI(null)) == namespace) None
     else Option[String](scope.getPrefix(namespace.orNull))
+  
     
-  def stringToXML(__obj: String, __namespace: Option[String], __elementLabel: Option[String],
+  def toXML(__obj: String, __xstype: Option[String], __namespace: Option[String], __elementLabel: Option[String],
        __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq = {
     __elementLabel map { label =>
       scala.xml.Elem(getPrefix(__namespace, __scope).orNull, label,
-        scala.xml.Null, __scope, scala.xml.Text(__obj.toString))
+        __xstype map { x => 
+          new scala.xml.PrefixedAttribute(__scope.getPrefix(XSI_URL), "type", x, scala.xml.Null)
+        } getOrElse { scala.xml.Null },
+        __scope, scala.xml.Text(__obj.toString))
+    } getOrElse { scala.xml.Text(__obj) }
+  }
+  
+  def stringToXML(__obj: String, __xstype: Option[String], __namespace: Option[String], __elementLabel: Option[String],
+       __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq = {
+    __elementLabel map { label =>
+      scala.xml.Elem(getPrefix(__namespace, __scope).orNull, label,
+        __xstype map { x => 
+          new scala.xml.PrefixedAttribute(__scope.getPrefix(XSI_URL), "type", x, scala.xml.Null)
+        } getOrElse { scala.xml.Null },
+        __scope, scala.xml.Text(__obj.toString))
     } getOrElse { scala.xml.Text(__obj) }
   }
 }

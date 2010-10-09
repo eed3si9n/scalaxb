@@ -165,11 +165,11 @@ trait Args extends Params {
     val retval = (cardinality, nillable, defaultValue, fixedValue) match {
       case (Multiple, true, _, _) =>
         selector + ".toList.map { x => if (x.nil) None" + newline +
-          indent(3) + "else Some(x.toDataRecord) }"
+          indent(3) + "else Some(rt.DataRecord(x)) }"
       case (Multiple, false, _, _) =>
-        selector + ".toList.map { _.toDataRecord }"
+        selector + ".toList.map { x => rt.DataRecord(x) }"
       case (Optional, _, _, _) =>
-        buildMatchStatement("None", "Some(x.toDataRecord)")
+        buildMatchStatement("None", "Some(rt.DataRecord(x))")
       case (Single, _, _, Some(x)) =>
         "rt.DataRecord(" + newline +
           indent(4) + quote(namespace) + ", " + quote(elementLabel) + ", " + newline +
@@ -178,9 +178,9 @@ trait Args extends Params {
         buildMatchStatement("rt.DataRecord(" + newline +
           indent(4) + quote(namespace) + ", " + quote(elementLabel) + ", " + newline +
           indent(4) + hardcoded(x) + ")",
-          "x.toDataRecord")        
+          "rt.DataRecord(x)")        
       case (Single, false, _, _) =>
-        selector + ".toDataRecord"
+        "rt.DataRecord(" + selector + ")"
     }
     
     retval
@@ -376,7 +376,7 @@ trait Args extends Params {
     val (pre, post) = typeSymbol.name match {
       case "String"     => ("", "")
       case "javax.xml.datatype.Duration" => ("rt.Helper.toDuration(", ")")
-      case "java.util.GregorianCalendar" => ("rt.Helper.toCalendar(", ")")
+      case "javax.xml.datatype.XMLGregorianCalendar" => ("rt.XMLCalendar(", ")")
       case "Boolean"    => ("", ".toBoolean")
       case "Int"        => ("", ".toInt")
       case "Long"       => ("", ".toLong")

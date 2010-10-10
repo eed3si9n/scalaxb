@@ -379,7 +379,7 @@ trait ElemNameParser[A] extends AnyElemNameParser with XMLWriter[A] {
     }
   
   def parser(node: scala.xml.Node): Parser[A]
-  def isMixed: Boolean
+  def isMixed: Boolean = false
   
   def parse[A](p: Parser[A], in: Seq[scala.xml.Node]): ParseResult[A] = 
     p(new ElemNameSeqReader(elementNames(in)))

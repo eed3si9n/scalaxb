@@ -92,21 +92,18 @@ class GenSource(val schema: SchemaDecl,
   
   def particlesWithSimpleType(particles: List[Decl]) = {
     val types = mutable.ListMap.empty[ElemDecl, BuiltInSimpleTypeSymbol]
-    for (particle <- particles) particle match {
-      case elem@ElemDecl(_, _, symbol: BuiltInSimpleTypeSymbol, _, _, _, _, _, _, _) =>
-        types += (elem -> symbol)
-      case elem@ElemDecl(_, _, ReferenceTypeSymbol(decl@SimpleTypeDecl(_, _, _, _, _)), _, _, _, _, _, _, _) =>
-        types += (elem -> baseType(decl))
-      case ref: ElemRef =>
-        val elem = buildElement(ref)
-        elem match {
-          case ElemDecl(_, _, symbol: BuiltInSimpleTypeSymbol, _, _, _, _, _, _, _) =>
-            types += (elem -> symbol)
-          case ElemDecl(_, _, ReferenceTypeSymbol(decl@SimpleTypeDecl(_, _, _, _, _)), _, _, _, _, _, _, _) =>
-            types += (elem -> baseType(decl))
-          case _ => // do nothing
-        }
-      case _ => // do nothing
+    
+    def addIfMatch(elem: ElemDecl) {
+      elem.typeSymbol match {
+        case symbol: BuiltInSimpleTypeSymbol => types += (elem -> symbol)
+        case ReferenceTypeSymbol(decl: SimpleTypeDecl) => types += (elem -> baseType(decl))
+        case _ =>
+      }
+    }
+    
+    particles collect {
+      case elem: ElemDecl => addIfMatch(elem)
+      case ref: ElemRef   => addIfMatch(buildElement(ref))
     }
     types
   }
@@ -323,8 +320,9 @@ object {name} extends rt.XMLWriter[{name}] {{
 }}
 </source> else
 <source>object {name} extends {objSuperNames.mkString(" with ")} {{
-  { compositors map(makeCompositorImport(_)) }val targetNamespace: Option[String] = { quote(schema.targetNamespace) }
-  def isMixed: Boolean = { if (decl.mixed) "true" else "false" }
+  val targetNamespace: Option[String] = { quote(schema.targetNamespace) }{ 
+    if (decl.mixed) newline + "override def isMixed: Boolean = true"
+    else ""}
   
   def parser(node: scala.xml.Node): Parser[{name}] =
     { parserList.mkString(" ~ ") } ^^

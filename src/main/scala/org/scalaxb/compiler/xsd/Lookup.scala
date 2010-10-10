@@ -137,27 +137,48 @@ trait Lookup extends ContextProcessor {
     case symbol:AttributeGroupSymbol => buildTypeName(attributeGroups(symbol.namespace, symbol.name))
   }
   
-  def buildChoiceTypeName(decl: ComplexTypeDecl, choice: ChoiceDecl): String = {
-    def particleType(particle: Particle) = particle match {
-      case elem: ElemDecl => Some(elem.typeSymbol)
-      case ref: ElemRef => Some(buildElement(ref).typeSymbol)
-      case _ => None
-    }
-    
-    def sameType: Option[XsTypeSymbol] =
-      if (choice.particles.size < 1) None
-      else {
-        val firstType = particleType(choice.particles(0))
+  def buildChoiceTypeName(decl: ComplexTypeDecl, choice: ChoiceDecl): String = 
+    if (choice.particles.size < 1) "rt.DataRecord[Any]"
+    else {
+      val firstParticle = choice.particles(0)
+      
+      def particleType(particle: Particle) = particle match {
+        case elem: ElemDecl => Some(elem.typeSymbol)
+        case ref: ElemRef => Some(buildElement(ref).typeSymbol)
+        case _ => None
+      }
+      
+      def sameType: Option[XsTypeSymbol] = {
+        val firstType = particleType(firstParticle)
         if (firstType.isEmpty) None
         else if (choice.particles forall { particleType(_) == firstType }) firstType
         else None
-      } // if-else
-    
-    sameType match {
-      case Some(x) => "rt.DataRecord[" + buildTypeName(x) + "]"
-      case None => "rt.DataRecord[Any]"
+      }
+      
+      def isOptionDescendant(particle: Particle): Boolean = particle match {
+        case elem: ElemDecl =>
+          elem.typeSymbol match {
+            case ReferenceTypeSymbol(decl: ComplexTypeDecl) => true
+            case _ => false
+          }
+        case ref: ElemRef =>
+          buildElement(ref).typeSymbol match {
+            case ReferenceTypeSymbol(decl: ComplexTypeDecl) => true
+            case _ => false
+          }
+        case c: ChoiceDecl => c.particles forall { isOptionDescendant }
+        case seq: SequenceDecl => true
+        case _ => false
+      }
+      
+      sameType match {
+        case Some(x) => "rt.DataRecord[" + buildTypeName(x) + "]"
+        case None =>
+          if (!containsForeignType(choice) &&
+              (choice.particles forall { isOptionDescendant }) ) "rt.DataRecord[" + buildTypeName(decl) + "]"
+          else "rt.DataRecord[Any]"
+      }
     }
-  }
   
   def buildTypeName(decl: ComplexTypeDecl, localOnly: Boolean = false): String = {
     val pkg = packageName(decl, context)
@@ -224,6 +245,14 @@ trait Lookup extends ContextProcessor {
     
     case _ => error("GenSource: Unsupported content " +  decl.content.toString)
   }
+  
+  def containsForeignType(compositor: HasParticle) =
+    compositor.particles.exists(_ match {
+        case ref: ElemRef => ref.namespace != schema.targetNamespace
+        case ref: GroupRef => ref.namespace != schema.targetNamespace
+        case _ => false
+      }
+    )
   
   def isSubstitionGroup(elem: ElemDecl) =
     elem.namespace map { x =>

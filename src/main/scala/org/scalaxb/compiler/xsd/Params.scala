@@ -59,8 +59,6 @@ trait Params extends Lookup {
       makeParamName(name) + ": " + typeName
   }
   
-  val interNamespaceCompositorTypes = mutable.ListBuffer.empty[XsTypeSymbol]
-  
   def buildParam(decl: Decl): Param = decl match {
     case elem: ElemDecl => buildParam(elem)
     case attr: AttributeDecl => buildParam(attr)
@@ -199,9 +197,6 @@ trait Params extends Lookup {
 
     compositorWrapper(decl) = compositor
 
-    if (containsForeignType(compositor))
-      interNamespaceCompositorTypes += symbol
-
     symbol.decl = decl
     val typeNames = context.typeNames(packageName(decl.namespace, context))
     typeNames(decl) = typeName
@@ -209,11 +204,4 @@ trait Params extends Lookup {
     ElemDecl(schema.targetNamespace, name, symbol, None, None, minOccurs, maxOccurs,
       None, None, None)
   }
-  
-  def containsForeignType(compositor: HasParticle) =
-    compositor.particles.exists(_ match {
-        case ref: ElemRef => ref.namespace != schema.targetNamespace
-        case _ => false
-      }
-    )
 }

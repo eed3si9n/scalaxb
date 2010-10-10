@@ -437,7 +437,11 @@ else " {" + newline +
         buildDataRecordXMLString(makeTypeName(context.compositorNames(x)))
     }) ::: (pruned map (x => buildElemXMLString(buildTypeName(x))))
     
-    <source>trait  {name}
+    val superNames: List[String] = buildOptions(choice)
+    val superString = if (superNames.isEmpty) ""
+      else " extends " + superNames.mkString(" with ")
+      
+    <source>trait {name}{superString}
 
 object {name} {{
   val targetNamespace: Option[String] = { quote(schema.targetNamespace) }
@@ -477,8 +481,11 @@ object {name} {{
         buildXMLString(paramList(0))
       else paramList.map(x => 
         buildXMLString(x)).mkString("Seq.concat(", "," + newline + indent(4), ")")
+    val superNames: List[String] = buildOptions(seq)
+    val superString = if (superNames.isEmpty) ""
+      else " extends " + superNames.mkString(" with ")
     
-    <source>{ buildComment(seq) }case class {name}({paramsString})
+    <source>{ buildComment(seq) }case class {name}({paramsString}){superString}
 
 object {name} extends rt.XMLWriter[{name}] {{
   val targetNamespace: Option[String] = { quote(schema.targetNamespace) }
@@ -510,6 +517,8 @@ object {name} extends rt.XMLWriter[{name}] {{
       case _ => Param(param.namespace, param.name, XsDataRecord(param.typeSymbol),
         param.cardinality, param.nillable, param.attribute)
     }
+    val mixedParam = Param(param.namespace, param.name, XsDataRecord(XsAny),
+      param.cardinality, param.nillable, param.attribute)
     
     val parser = buildCompositorParser(compositor, 1, 1, false, false)
     val wrapperParser = compositor match {
@@ -532,7 +541,7 @@ object {name} extends rt.XMLWriter[{name}] {{
   def parse{name}(wrap: Boolean): Parser[{wrapperParam.baseTypeName}] =
     {wrapperParser}
     
-  def parsemixed{name}: Parser[Seq[{wrapperParam.baseTypeName}]] =
+  def parsemixed{name}: Parser[Seq[{mixedParam.baseTypeName}]] =
     {mixedparser}
 }}
 
@@ -625,33 +634,49 @@ object {name} {{
       case _ => Nil
     }
   
-  def buildOptions(decl: ComplexTypeDecl) = {
+  def buildOptions(decl: ComplexTypeDecl): List[String] = {
     val set = mutable.Set.empty[String]
+    def addIfMatch(typeSymbol: XsTypeSymbol, choice: ChoiceDecl) = {
+      typeSymbol match {
+        case symbol: ReferenceTypeSymbol =>
+          if (symbol.decl == decl && !containsForeignType(choice))
+            set += makeTypeName(context.compositorNames(choice))
+        case _ => 
+      }
+    }
     
     for (choice <- choices;
         particle <- choice.particles) particle match {
-      case ElemDecl(_, _, symbol: ReferenceTypeSymbol, _, _, _, _, _, _, _) =>
-        if (!interNamespaceCompositorTypes.contains(symbol) &&
-            symbol.decl == decl)
-          set += makeTypeName(context.compositorNames(choice))
-      
-      case ref: ElemRef =>
-        val elem = buildElement(ref)
-        elem.typeSymbol match {
-          case symbol: ReferenceTypeSymbol =>
-            if (!interNamespaceCompositorTypes.contains(symbol) &&
-                symbol.decl == decl)
-              set += makeTypeName(context.compositorNames(choice))
-          case _ => 
-        }
-
-      case any: AnyDecl => // do nothing
+      case elem: ElemDecl => addIfMatch(elem.typeSymbol, choice)
+      case ref: ElemRef   => addIfMatch(buildElement(ref).typeSymbol, choice)      
       case _ => // do nothing
     }
         
     set.toList
   }
   
+  def buildOptions(comositor: HasParticle): List[String] = {
+    val set = mutable.Set.empty[String]
+    
+    def addIfMatch(comp: HasParticle, choice: ChoiceDecl) {
+      if (comp == comositor && !containsForeignType(choice))
+        set += makeTypeName(context.compositorNames(choice))     
+    }
+    
+    def addIfContains(choice: ChoiceDecl) {
+      choice.particles foreach { _ match {
+          case ch: ChoiceDecl =>
+            addIfMatch(ch, choice)
+            addIfContains(ch)
+          case comp: HasParticle => addIfMatch(comp, choice)
+          case _ =>
+        }
+      }
+    }
+    
+    choices foreach { addIfContains }        
+    set.toList    
+  }
   
   def filterGroup(decl: ComplexTypeDecl): List[GroupDecl] = decl.content.content match {
     // complex content means 1. has child elements 2. has attributes

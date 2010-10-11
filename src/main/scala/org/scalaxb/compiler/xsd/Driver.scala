@@ -30,16 +30,24 @@ object Driver extends Module { driver =>
   type Schema = SchemaDecl
   type Context = XsdContext
   
-  val processor = new ContextProcessor {
-    val logger = driver
-  }
-  
   override def buildContext = XsdContext()
     
   override def processContext(context: Context,
       packageNames: collection.Map[Option[String], Option[String]],
+      cp: Option[String], pp: Option[String],
       wrapped: List[String]) {
+    val processor = new ContextProcessor {
+      val logger = driver
+      val classPrefix = cp
+      val paramPrefix = pp      
+    }
     processor.processContext(context, packageNames, wrapped)
+  }
+  
+  val processor = new ContextProcessor {
+    val logger = driver
+    val classPrefix = None
+    val paramPrefix = None
   }
   
   override def packageName(schema: Schema, context: Context): Option[String] =
@@ -47,11 +55,11 @@ object Driver extends Module { driver =>
   
   def generate(xsd: Schema, context: Context, output: PrintWriter,
       packageName: Option[String], firstOfPackage: Boolean,
+      classPrefix: Option[String], paramPrefix: Option[String],
       wrappedComplexTypes: List[String]) = {
     log("xsd: generating package " + packageName)
-    // if (!context.typeNames.contains(packageName)) processor.addPackage(context. packageName)
     new GenSource(xsd, context, output, packageName, firstOfPackage,
-      wrappedComplexTypes, this) run;
+      classPrefix, paramPrefix, wrappedComplexTypes, this) run;
     output
   }
   

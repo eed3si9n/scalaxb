@@ -72,7 +72,7 @@ object PurchaseOrderUsage {
         1,
         usPrice,
         None,
-        Some(Calendar("2010-02-06T00:00:00.000Z")),
+        Some(XMLCalendar("2010-02-06Z")),
         "639-OS") =>
           if (usPrice != BigDecimal(4.00))
             error("values don't match: " + item.toString)
@@ -137,18 +137,18 @@ object PurchaseOrderUsage {
         billTo: USAddress,
         None,
         Items(_),
-        Some(Calendar("1999-12-01T00:00:00.000Z"))) =>
+        Some(XMLCalendar("1999-12-01Z"))) =>
       case _ => error("match failed: " + purchaseOrder.toString)
     }    
     println(purchaseOrder.toString)  
   }
   
   def testTimeOlson {
-    val subject = <time xmlns="http://www.example.com/IPO">00:00:00.000Z</time>
+    val subject = <time xmlns="http://www.example.com/IPO">00:00:00</time>
     
     val timeOlson = TimeOlson.fromXML(subject)
     timeOlson match {
-      case TimeOlson(Calendar("1970-01-01T00:00:00.000Z"),
+      case TimeOlson(XMLCalendar("00:00:00"),
         "") =>
       case _ => error("match failed: " + timeOlson.toString)
     }
@@ -375,9 +375,10 @@ object PurchaseOrderUsage {
     </head>
     val obj = Head.fromXML(subject)
     obj match {
-      case Head(Seq(DataRecord(_, _, _), DataRecord(_, _, _)),
-        DataRecord(_, _, HeadSequence2("bar", _)),
-        _, _, _) =>
+      case Head(Seq(DataRecord(Some("http://www.example.com/IPO"), Some("script"), ""),
+        DataRecord(Some("http://www.example.com/IPO"), Some("script"), "")),
+        DataRecord(None, None, HeadSequence1("bar", Seq(DataRecord(Some("http://www.example.com/IPO"), Some("script"), "")) )),
+        I18n(Some(Ltr), None, None), None, None) =>
       case _ => error("match failed: " + obj.toString)
     }
     

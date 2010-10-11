@@ -24,6 +24,7 @@ package org.scalaxb.compiler.xsd
 import scala.collection.mutable
 
 trait Params extends Lookup {  
+  val ANY_ATTR_PARAM = "anyAttribute"
   var argNumber = 0
   
   abstract class Cardinality
@@ -127,7 +128,7 @@ trait Params extends Lookup {
   }
   
   def buildParam(any: AnyAttributeDecl): Param =
-    Param(None, "anyAttribute", XsAnyAttribute, Multiple, false, true)
+    Param(None, ANY_ATTR_PARAM, XsAnyAttribute, Multiple, false, true)
 
   def toMinOccurs(attr: AttributeDecl) = 
     if (attr.use == RequiredUse ||

@@ -196,7 +196,7 @@ trait XMLOutput extends Params {
   }
   
   def buildAttributeString(any: AnyAttributeDecl): String =
-    "__obj.anyAttribute.foreach { x =>" + newline +
+    "__obj." + makeParamName(ANY_ATTR_PARAM) + ".foreach { x =>" + newline +
     indent(3) + "attribute = scala.xml.Attribute((x.namespace map { __scope.getPrefix(_) }).orNull, x.key.orNull, x.value, attribute) }"
     
   def buildAttributeString(attr: AttributeDecl): String = {

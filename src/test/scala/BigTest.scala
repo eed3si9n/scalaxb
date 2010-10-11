@@ -15,10 +15,10 @@ object BigTest extends SpecificationWithJUnit with CompilerMatcher {
   lazy val generated = module.processFiles(
     List((bigxsd, bigscala)),
     Map[Option[String], Option[String]](None -> Some("big")),
-    List("barOne"))
+    Some("X"), Some("m_"), List("barOne"))
     
   "big.scala file must compile so that Foo can be used" in {
-    (List("big.Foo.toXML(big.Foo.fromXML(<foo>" +
+    (List("big.XFoo.toXML(big.XFoo.fromXML(<foo>" +
     "<string1></string1><string2></string2><string3></string3><string4></string4><string5></string5>" +
     "<string6></string6><string7></string7><string8></string8><string9></string9><string10></string10>" + 
     "<string11></string11><string12></string12><string13></string13><string14></string14><string15></string15>" + 

@@ -33,6 +33,8 @@ class GenSource(val schema: SchemaDecl,
     out: PrintWriter,
     packageName: Option[String],
     firstOfPackage: Boolean,
+    val classPrefix: Option[String],
+    val paramPrefix: Option[String],
     wrappedComplexTypes: List[String],
     val logger: Logger) extends Parsers with XMLOutput {  
   type -->[A, B] = PartialFunction[A, B]
@@ -40,6 +42,7 @@ class GenSource(val schema: SchemaDecl,
   val topElems = schema.topElems
   val elemList = schema.elemList
   val choices = schema.choices
+  val MIXED_PARAM = "mixed"
   
   def run {
     import scala.collection.mutable
@@ -268,8 +271,8 @@ object {name} extends rt.XMLWriter[{name}] {{
     
     val childElemParams = paramList.filter(!_.attribute)
     
-    def childString = if (decl.mixed)
-      "__obj.mixed.flatMap(x => rt.DataRecord.toXML(x, x.namespace, x.key, __scope).toSeq): _*"
+    def childString = if (decl.mixed) "__obj." + makeParamName(MIXED_PARAM) + 
+      ".flatMap(x => rt.DataRecord.toXML(x, x.namespace, x.key, __scope).toSeq): _*"
     else decl.content.content match {
       case SimpContRestrictionDecl(base: XsTypeSymbol, _, _) => "scala.xml.Text(__obj.value.toString)"
       case SimpContExtensionDecl(base: XsTypeSymbol, _) =>   "scala.xml.Text(__obj.value.toString)"
@@ -872,7 +875,7 @@ object {name} {{
   }
           
   def flattenMixed(decl: ComplexTypeDecl) = if (decl.mixed)
-    List(ElemDecl(Some(INTERNAL_NAMESPACE), "mixed", XsMixed,
+    List(ElemDecl(Some(INTERNAL_NAMESPACE), MIXED_PARAM, XsMixed,
       None, None, 0, Integer.MAX_VALUE, None, None, None))
   else Nil
     

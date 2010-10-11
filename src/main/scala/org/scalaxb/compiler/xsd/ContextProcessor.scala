@@ -28,6 +28,8 @@ import scala.collection.mutable
 trait ContextProcessor extends ScalaNames {
   def logger: Logger
   def log(msg: String) = logger.log(msg)
+  def classPrefix: Option[String]
+  def paramPrefix: Option[String]
   
   def packageName(schema: SchemaDecl, context: XsdContext): Option[String] =
     packageName(schema.targetNamespace, context)
@@ -217,11 +219,14 @@ trait ContextProcessor extends ScalaNames {
     var sequenceNumber = 0
     var choiceNumber = 0
     var allNumber = 0
+    var isFirstCompositorSequence = false
     
     for ((schema, decl) <- context.complexTypes) { 
       sequenceNumber = 0
       choiceNumber = 0
       allNumber = 0
+      isFirstCompositorSequence = false
+      
       decl.content.content match {
         case CompContRestrictionDecl(_, Some(compositor: HasParticle), _) =>
           makeCompositorName(compositor, decl, wrapped)
@@ -235,6 +240,7 @@ trait ContextProcessor extends ScalaNames {
       sequenceNumber = 0
       choiceNumber = 0
       allNumber = 0
+      isFirstCompositorSequence = false
       
       context.compositorNames(group) = group.name + "Group"
       if (group.particles.size == 1) group.particles(0) match {
@@ -256,7 +262,7 @@ trait ContextProcessor extends ScalaNames {
             context.compositorParents(compositor) = makeGroupComplexType(group)
           
           if (isFirstCompositor) context.compositorNames(compositor) = groupName + "Sequence"
-          else context.compositorNames(compositor) = groupName + "Sequence" + (sequenceNumber + 1)
+          else context.compositorNames(compositor) = groupName + "Sequence" + apparentSequenceNumber
           sequenceNumber += 1
           
           if (particles.size > MaxParticleSize ||
@@ -282,12 +288,9 @@ trait ContextProcessor extends ScalaNames {
       }      
     }
 
-    def formSequence(decl: ComplexTypeDecl, rest: List[Particle]) = {
-      val typeNames = context.typeNames(packageName(decl.namespace, context))
-      val typeName = typeNames(decl)
-      
+    def formSequence(decl: ComplexTypeDecl, rest: List[Particle]) = {      
       val retval = SequenceDecl(rest, 1, 1)
-      context.compositorNames(retval) = typeName + "Sequence" + (sequenceNumber + 1)
+      context.compositorNames(retval) = familyName(decl) + "Sequence" + apparentSequenceNumber
       sequenceNumber += 1
       context.compositorParents(retval) = decl
       retval
@@ -298,16 +301,26 @@ trait ContextProcessor extends ScalaNames {
       else List(formSequence(decl, rest.take(ChunkParticleSize))) ::: 
         doSplit(decl, rest.drop(ChunkParticleSize))
     
-    def makeCompositorName(compositor: HasParticle, decl: ComplexTypeDecl,
-        wrapped: List[String]) {
+    def apparentSequenceNumber = if (isFirstCompositorSequence) sequenceNumber else sequenceNumber + 1
+    
+    def familyName(decl: ComplexTypeDecl): String = {
       val typeNames = context.typeNames(packageName(decl.namespace, context))
-      val typeName = typeNames(decl)
-      
+      classPrefix match {
+        case Some(p) => typeNames(decl).drop(p.length)
+        case None => typeNames(decl)
+      }      
+    }
+    
+    def makeCompositorName(compositor: HasParticle, decl: ComplexTypeDecl,
+        wrapped: List[String]) {      
       compositor match {
         case SequenceDecl(particles: List[_], _, _) =>
-          if (isFirstCompositor) context.compositorNames(compositor) = typeName
+          if (isFirstCompositor) {
+            isFirstCompositorSequence = true
+            context.compositorNames(compositor) = familyName(decl)
+          } 
           else {
-            context.compositorNames(compositor) = typeName + "Sequence" + (sequenceNumber + 1)
+            context.compositorNames(compositor) = familyName(decl) + "Sequence" + apparentSequenceNumber
             context.compositorParents(compositor) = decl
           }
           sequenceNumber += 1
@@ -317,18 +330,14 @@ trait ContextProcessor extends ScalaNames {
                
         case ChoiceDecl(particles: List[_], _, _, _) =>
           context.compositorParents(compositor) = decl
-          if (choiceNumber == 0)
-            context.compositorNames(compositor) = typeName + "Option"
-          else
-            context.compositorNames(compositor) = typeName + "Option" + (choiceNumber + 1)
+          if (choiceNumber == 0) context.compositorNames(compositor) = familyName(decl) + "Option"
+          else context.compositorNames(compositor) = familyName(decl) + "Option" + (choiceNumber + 1)
           choiceNumber += 1
           
         case AllDecl(particles: List[_], _, _) =>
           context.compositorParents(compositor) = decl
-          if (allNumber == 0)
-            context.compositorNames(compositor) = typeName + "All"
-          else
-            context.compositorNames(compositor) = typeName + "All" + (allNumber + 1)
+          if (allNumber == 0) context.compositorNames(compositor) = familyName(decl) + "All"
+          else context.compositorNames(compositor) = familyName(decl) + "All" + (allNumber + 1)
           allNumber += 1
           
         case _ =>
@@ -382,12 +391,12 @@ trait ContextProcessor extends ScalaNames {
     else makeTypeName(decl.name + "able")
   
   def makeTypeName(name: String) = name match {
-    case "javax.xml.datatype.Duration" => name
-    case "java.util.GregorianCalendar" => name
-    case "java.net.URI" => name
-    case "javax.xml.namespace.QName" => name
+    case s if (s.startsWith("java.") || s.startsWith("javax.")) => s
     case _ =>
-      val base = identifier(name).capitalize
+      val base = classPrefix map { p =>
+        if (p.endsWith("_"))  p.capitalize + name
+        else p.capitalize + name.capitalize
+      } getOrElse { identifier(name).capitalize }
       if (startsWithNumber(base)) "Number" + base
       else if (isCommonlyUsedWord(base)) base + "Type"
       else base
@@ -399,9 +408,16 @@ trait ContextProcessor extends ScalaNames {
       case _ => false
     }
   
-  def makeParamName(name: String) =
-    if (isKeyword(name)) name + "Value"
-    else identifier(name)
+  def makeParamName(name: String) = {
+    val base = paramPrefix map { p =>
+      if (p.endsWith("_"))  p + name
+      else p + name.capitalize
+    } getOrElse { name }
+    
+    if (isKeyword(base)) identifier(base + "Value")
+    else if (startsWithNumber(base)) identifier("number" + base)
+    else identifier(base)
+  }
   
   def identifier(value: String) =
     """\W""".r.replaceAllIn(value, "")

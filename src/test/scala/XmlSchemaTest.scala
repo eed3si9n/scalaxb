@@ -16,7 +16,8 @@ object XmlSchemaTest extends SpecificationWithJUnit with CompilerMatcher {
     List((xmlschemaxsd, xmlschemascala)),
     Map[Option[String], Option[String]](
       Some("http://www.w3.org/2001/XMLSchema") -> Some("org.w3.xmlschema")
-    ))
+    ),
+    Some("X"), Some("m"))
     
   "XMLSchema.scala file must compile so that Schema can be used" in {
     (List("import org.w3.xmlschema._",
@@ -31,7 +32,7 @@ object XmlSchemaTest extends SpecificationWithJUnit with CompilerMatcher {
           </sequence>
         </complexType>
       </schema>""", // " 
-      """Schema.toXML(Schema.fromXML(document),
+      """XSchema.toXML(XSchema.fromXML(document),
         Some("http://www.w3.org/2001/XMLSchema"), Some("schema"), document.scope).toString""" // "
      ),
      generated) must evaluateTo("""<schema targetNamespace="http://www.example.com/IPO" """ +

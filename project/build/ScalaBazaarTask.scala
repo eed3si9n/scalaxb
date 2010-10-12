@@ -1,7 +1,7 @@
 import sbt._
 import java.io.{File, InputStream, FileWriter}
 
-trait ScalaBazaarTask extends ScalaScriptTask {  
+trait ScalaBazaarTask extends ScalaScriptTask with ProguardProject {  
   def ouputLibPath = (outputPath ##) / "lib"
   
   val versionlessJarName = name + ".jar"
@@ -15,14 +15,7 @@ trait ScalaBazaarTask extends ScalaScriptTask {
   def outputDocPath = (outputPath ##) / "doc"
   def bazaarDepends: List[String] = Nil
   def description: String
-  
-  lazy val versionlessPackage = versionLessPackageAction
-  
-  def versionLessPackageAction = packageTask(
-    packagePaths,
-    versionlessJarPath,
-    packageOptions).dependsOn(compile) dependsOn(compile) describedAs("Creates a versionless jar file.")
-  
+    
   lazy val sbaz = sbazTask(bazaarDepends, Some(description))
   
   def sbazTask(depends: List[String], description: Option[String]) = task {
@@ -57,7 +50,19 @@ if (!depends.isEmpty)
     FileUtilities.zip(List(outputBinPath, ouputLibPath, outputDocPath, outputMetaPath),
       bazaarPackagePath, true, log)  
     None
-  }.dependsOn(versionlessPackage, doc, scalascript)
+  }.dependsOn(proguard, doc, scalascript)
+  
+  lazy val versionlessPackage = versionLessPackageAction
+  
+  def versionLessPackageAction = packageTask(
+    packagePaths,
+    versionlessJarPath,
+    packageOptions).dependsOn(compile) dependsOn(compile) describedAs("Creates a versionless jar file.")
+  
+  override def proguardInJars = super.proguardInJars +++ scalaLibraryPath
+  override def proguardOptions = "-dontoptimize" :: "-dontobfuscate" :: proguardKeepAllScala :: proguardKeepMain("*") :: Nil
+  override def minJarName = versionlessJarName
+  override def minJarPath = versionlessJarPath
   
   private def writeFile(file: File, content: String) =
     if (file.exists() && !file.canWrite())

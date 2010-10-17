@@ -100,6 +100,7 @@ object AnyUsage {
     val subject = <foo xmlns="http://www.example.com/any"
         xmlns:xs="http://www.w3.org/2001/XMLSchema"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <hexBinary xsi:type="xs:hexBinary">0F</hexBinary>
           <base64Binary xsi:type="xs:base64Binary">bQ==</base64Binary>
           <anyURI xsi:type="xs:anyURI">http://www.example.com/</anyURI>
           <QName xsi:type="xs:QName">{{http://www.example.com/}}foo</QName>
@@ -117,6 +118,7 @@ object AnyUsage {
     val obj = Element1.fromXML(subject)
     obj match {
       case Element1(
+          DataRecord(Some("http://www.example.com/any"), Some("hexBinary"), HexBinary(15)),
           DataRecord(Some("http://www.example.com/any"), Some("base64Binary"), Array('m')),
           DataRecord(Some("http://www.example.com/any"), Some("anyURI"), ExampleCom),
           DataRecord(Some("http://www.example.com/any"), Some("QName"), ExampleQName),

@@ -391,7 +391,7 @@ trait Args extends Params {
         => ("javax.xml.namespace.QName.valueOf(", ")")
       case "Array[String]" => ("", ".split(' ')")
       case "Array[Byte]" => ("rt.Helper.toByteArray(", ")")
-      // case "HexBinary"  => 
+      case "rt.HexBinary"  => ("rt.Helper.toHexBinary(", ")") 
       case _        => error("GenSource#buildArg: Unsupported type " + typeSymbol.toString) 
     }
     

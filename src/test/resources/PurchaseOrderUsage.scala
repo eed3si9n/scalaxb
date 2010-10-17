@@ -310,11 +310,15 @@ object PurchaseOrderUsage {
     val subject = <foo xmlns="http://www.example.com/IPO"
         xmlns:ipo="http://www.example.com/IPO" id="foo">
       <date>2010-02-06Z</date>
-      <data>QUJDREVGRw==</data>
+      <hexBinary>0F</hexBinary>
+      <base64Binary>QUJDREVGRw==</base64Binary>
     </foo>
     val obj = DatedData.fromXML(subject)
     obj match {
-      case DatedData(_, _, _) =>
+      case DatedData(XMLCalendar("2010-02-06Z"),
+        HexBinary(15),
+        Array('A', 'B', 'C', 'D', 'E', 'F', 'G'),
+        Coreattrs(None, Some("foo"))) =>
       case _ => error("match failed: " + obj.toString)
     }
     val document = DatedData.toXML(obj, None, Some("foo"), subject.scope)

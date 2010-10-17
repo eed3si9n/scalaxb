@@ -186,13 +186,7 @@ object XMLWriter {
         __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq =
       Helper.stringToXML(Helper.toCalendar(__obj).toXMLFormat, None, __namespace, __elementLabel, __scope)
   }
-  
-  // implicit object __HexBinaryXMLWriter extends XMLWriter[HexBinary] {
-  //   def toXML(__obj: HexBinary, __namespace: Option[String], __elementLabel: Option[String],
-  //       __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq =
-  //     Helper.stringToXML(__obj.toString, "hexBinary", __namespace, __elementLabel, __scope)
-  // }
-  
+    
   implicit object __QNameXMLWriter extends XMLWriter[javax.xml.namespace.QName] {
     def toXML(__obj: javax.xml.namespace.QName, __namespace: Option[String], __elementLabel: Option[String],
         __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq =
@@ -229,10 +223,22 @@ object XMLWriter {
       Helper.stringToXML(Helper.toString(__obj), Some(xstype), __namespace, __elementLabel, __scope)
   }
   
+  implicit object __HexBinaryXMLWriter extends XMLWriter[HexBinary] {
+    def toXML(__obj: HexBinary, __namespace: Option[String], __elementLabel: Option[String],
+        __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq =
+      Helper.stringToXML(Helper.toString(__obj), None, __namespace, __elementLabel, __scope)
+  }
+  
+  object XSHexBinaryXMLWriter extends XMLWriter[HexBinary] {
+    def toXML(__obj: HexBinary, __namespace: Option[String], __elementLabel: Option[String],
+        __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq =
+      Helper.stringToXML(Helper.toString(__obj), None, __namespace, __elementLabel, __scope)
+  }
+  
   implicit object __URIXMLWriter extends XMLWriter[java.net.URI] {
     def toXML(__obj: java.net.URI, __namespace: Option[String], __elementLabel: Option[String],
         __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq =
-      Helper.stringToXML(__obj.toString, None, __namespace, __elementLabel, __scope)
+      Helper.stringToXML(__obj.toString, Some("hexBinary"), __namespace, __elementLabel, __scope)
   }
   
   object XSAnyURIXMLWriter extends XMLWriter[java.net.URI] {
@@ -313,6 +319,7 @@ object DataRecord {
           case "IDREFS"   => DataWriter(elemName.namespace, Some(elemName.name), elemName.text.split(' '), XMLWriter.stringArrayXMLWriter(xstype))
           case "ENTITY"   => DataWriter(elemName.namespace, Some(elemName.name), elemName.text, XMLWriter.stringXMLWriter(xstype))
           case "ENTITIES" => DataWriter(elemName.namespace, Some(elemName.name), elemName.text.split(' '), XMLWriter.stringArrayXMLWriter(xstype))
+          case "hexBinary"    => DataWriter(elemName.namespace, Some(elemName.name), toHexBinary(elemName.text), XMLWriter.XSHexBinaryXMLWriter)
           case "base64Binary" => DataWriter(elemName.namespace, Some(elemName.name), toByteArray(elemName.text), XMLWriter.byteArrayXMLWriter(xstype))
           case "anyURI"   => DataWriter(elemName.namespace, Some(elemName.name), new java.net.URI(elemName.text), XMLWriter.XSAnyURIXMLWriter)
           case "QName"    => DataWriter(elemName.namespace, Some(elemName.name), javax.xml.namespace.QName.valueOf(elemName.text), XMLWriter.qnameXMLWriter(xstype))
@@ -431,9 +438,24 @@ class ElemNameSeqPosition(val source: Seq[ElemName], val offset: Int) extends
   override def column = offset + 1
 }
 
-// class HexBinary {
-//   val Array[Byte]
-// }
+class HexBinary(_length: Int) extends scala.collection.IndexedSeq[Byte] {
+  private var array = new Array[Byte](_length)
+  
+  def length = array.length
+  def apply(idx: Int): Byte = array(idx)
+  override def toString: String = Helper.toString(this)
+}
+
+object HexBinary {
+  def apply(xs: Byte*) = {
+    val value = new HexBinary(xs.length)
+    var i = 0
+    for (x <- xs.iterator) { value.array(i) = x; i += 1 }
+    value
+  }
+  
+  def unapplySeq[Byte](x: HexBinary) = Some(x.toIndexedSeq)
+}
 
 object XMLCalendar {
   def apply(value: String): XMLGregorianCalendar = Helper.toCalendar(value)
@@ -472,8 +494,11 @@ object Helper {
     xmlGregorian
   }
   
-  def toString(value: Array[Byte]) =
-    (new sun.misc.BASE64Encoder()).encodeBuffer(value)
+  def toString(value: Array[Byte]): String =
+    (new sun.misc.BASE64Encoder()).encodeBuffer(value).stripLineEnd
+  
+  def toString(value: HexBinary): String =
+    (value map { x => ("0" + Integer.toHexString(x.toInt)).takeRight(2) }).mkString.toUpperCase
   
   def toDuration(value: String) = {
     val typeFactory = javax.xml.datatype.DatatypeFactory.newInstance()
@@ -482,7 +507,15 @@ object Helper {
   
   def toByteArray(value: String) =
     (new sun.misc.BASE64Decoder()).decodeBuffer(value)
-    
+  
+  def toHexBinary(value: String) = {
+    val array = new Array[Byte](value.length / 2)
+    for (i <- 0 to array.length - 1) {
+      array(i) = Integer.parseInt(value.drop(i * 2).take(2), 16).toByte
+    }
+    HexBinary(array: _*)
+  }
+  
   def toURI(value: String) =
     java.net.URI.create(value)
     

@@ -157,8 +157,9 @@
   
   <complexType name="DatedData">
     <sequence>
-      <element name="date"   type="dateTime"/>
-      <element name="data"   type="base64Binary"/>
+      <element name="date"         type="dateTime"/>
+      <element name="hexBinary"    type="hexBinary"/>
+      <element name="base64Binary" type="base64Binary"/>
     </sequence>
     <attributeGroup ref="ipo:coreattrs"/>
   </complexType>

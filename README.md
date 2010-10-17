@@ -7,7 +7,7 @@ Schema (xsd) as the input file.
 Status
 ------
 
-This is still at pre-ALPHA state, and many things don't work.
+This is still at ALPHA state, and many things don't work.
 I'd really appreciate if you could run it against your favorite xsd
 file and let me know the result.
 
@@ -41,6 +41,10 @@ Usage
             specifies the target package
       -p:<namespaceURI>=<package> | --package:<namespaceURI>=<package>
             specifies the target package for <namespaceURI>
+      --class-prefix <prefix>
+            prefixes generated class names
+      --param-prefix <prefix>
+            prefixes generated parameter names
       --wrap-contents <complexType>
             wraps inner contents into a seperate case class
       -v | --verbose

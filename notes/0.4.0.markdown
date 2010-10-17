@@ -1,0 +1,9 @@
+- [Improves code generation for mixed contents][1] by using parser combinators.
+- [Improves data binding for <any>][2] when the values are XML Schema built-in simple type.
+- [Improves code generation for <choice>][3] when all options can be narrowed down to a single type or a trait.
+- [Includes scala-library into jar][4] to avoid deployment issues.
+
+  [1]: http://scalaxb.org/mixed-content-revisited
+  [2]: http://scalaxb.org/any-revisited
+  [3]: http://scalaxb.org/narrower-choice
+  [4]: http://scalaxb.org/proguard

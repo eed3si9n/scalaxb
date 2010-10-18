@@ -1,23 +1,15 @@
-import org.specs._
 import java.io.{File}
-import org.scalaxb.compiler.xsd.{SchemaDecl}
+import org.scalaxb.compiler.{Config}
 
-object XmlSchemaTest extends SpecificationWithJUnit with CompilerMatcher {
-  val module = org.scalaxb.compiler.xsd.Driver
-  val xmlschemaxsd = new File("src/test/resources/xmlschema.xsd")
-  val tmp = new File("tmp")
-  if (tmp.exists)
-    deleteAll(tmp)
-  tmp.mkdir
-
-  val xmlschemascala = new File(tmp, "XMLSchema.scala")
-    
-  lazy val generated = module.processFiles(
-    List((xmlschemaxsd, xmlschemascala)),
-    Map[Option[String], Option[String]](
-      Some("http://www.w3.org/2001/XMLSchema") -> Some("org.w3.xmlschema")
-    ),
-    Some("X"), Some("m"))
+object XmlSchemaTest extends TestBase {
+  val inFile  = new File("src/test/resources/xmlschema.xsd")
+  val outFile = new File(tmp, "XMLSchema.scala")
+  
+  lazy val generated = module.process(inFile, outFile,
+    Config(packageNames = Map(Some("http://www.w3.org/2001/XMLSchema") -> Some("org.w3.xmlschema")),
+      classPrefix = Some("X"),
+      paramPrefix = Some("m")
+    ))
     
   "XMLSchema.scala file must compile so that Schema can be used" in {
     (List("import org.w3.xmlschema._",

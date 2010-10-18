@@ -22,7 +22,7 @@
 
 package org.scalaxb.compiler.xsd
 
-import org.scalaxb.compiler.{Logger}
+import org.scalaxb.compiler.{Logger, Config}
 import scala.collection.mutable
 import scala.collection.{Map}
 import scala.xml._
@@ -32,10 +32,7 @@ class GenSource(val schema: SchemaDecl,
     val context: XsdContext,
     out: PrintWriter,
     packageName: Option[String],
-    firstOfPackage: Boolean,
-    val classPrefix: Option[String],
-    val paramPrefix: Option[String],
-    wrappedComplexTypes: List[String],
+    val config: Config,
     val logger: Logger) extends Parsers with XMLOutput {  
   type -->[A, B] = PartialFunction[A, B]
   
@@ -48,32 +45,32 @@ class GenSource(val schema: SchemaDecl,
     import scala.collection.mutable
     log("xsd: GenSource.run")
     
-    myprintAll(makeSchemaComment.child)
+    printNodes(makeSchemaComment.child)
     
     if (packageName.isDefined)
-      myprintAll(makePackageName.child)
+      printNodes(makePackageName.child)
     
-    myprintAll(makeImports.child)
+    printNodes(makeImports.child)
     
     schema.typeList.collect {
       case decl: ComplexTypeDecl =>      
         if (context.baseToSubs.keysIterator.contains(decl)) {
-          if (!decl.abstractValue)  myprintAll(makeSuperType(decl).child)
+          if (!decl.abstractValue)  printNodes(makeSuperType(decl).child)
 
-          myprintAll(makeTrait(decl).child)
+          printNodes(makeTrait(decl).child)
         }
-        else myprintAll(makeType(decl).child)
+        else printNodes(makeType(decl).child)
         
       case decl: SimpleTypeDecl =>
-        if (containsEnumeration(decl)) myprintAll(makeEnumType(decl))   
+        if (containsEnumeration(decl)) printNodes(makeEnumType(decl))   
     }
     
     for ((sch, group) <- context.groups;
         if sch == schema)
-      myprintAll(makeGroup(group).child)
+      printNodes(makeGroup(group).child)
     
     for (group <- schema.topAttrGroups.valuesIterator)
-      myprintAll(makeAttributeGroup(group).child)
+      printNodes(makeAttributeGroup(group).child)
   }
       
   def makeSuperType(decl: ComplexTypeDecl): scala.xml.Node =
@@ -742,7 +739,7 @@ object {name} {{
   def splitLongSequence(namespace: Option[String], family: String,
       particles: List[Particle]): List[Particle] =
     if (particles.size <= MaxParticleSize &&
-      !isWrapped(namespace, family, wrappedComplexTypes)) particles
+      !isWrapped(namespace, family)) particles
     else splitLongSequence(particles)
       
   def splitLongSequence(rest: List[Particle]): List[SequenceDecl] =
@@ -814,7 +811,7 @@ object {name} {{
   def splitSequences(namespace: Option[String], family: String,
         compositor: HasParticle): List[SequenceDecl] = compositor match {
     case seq: SequenceDecl if seq.particles.size > MaxParticleSize ||
-      isWrapped(namespace, family, wrappedComplexTypes) => splitLongSequence(seq.particles)
+      isWrapped(namespace, family) => splitLongSequence(seq.particles)
     case _ => Nil
   }
   
@@ -932,20 +929,19 @@ object {name} {{
     ElemDecl(that.namespace, that.name, that.typeSymbol,
       that.defaultValue, that.fixedValue, 0, that.maxOccurs, that.nillable, that.substitutionGroup, None)
   
-  def myprintAll(nodes: Seq[Node]) {
-    for (node <- nodes)
-      myprint(node)
-  }
-  
-  def myprint(n: Node): Unit = n match {
-    case Text(s)          => out.print(s)
-    case EntityRef("lt")  => out.print('<')
-    case EntityRef("gt")  => out.print('>')
-    case EntityRef("amp") => out.print('&')
-    case atom: Atom[_]    => out.print(atom.text)
-    case elem: Elem       => myprintAll(elem.child)
-    case _                => log("error in xsd:run: encountered "
-      + n.getClass() + " " + n.toString)
+  def printNodes(nodes: Seq[Node]) {
+    def printNode(n: Node): Unit = n match {
+      case Text(s)          => out.print(s)
+      case EntityRef("lt")  => out.print('<')
+      case EntityRef("gt")  => out.print('>')
+      case EntityRef("amp") => out.print('&')
+      case atom: Atom[_]    => out.print(atom.text)
+      case elem: Elem       => printNodes(elem.child)
+      case _                => log("error in xsd:run: encountered "
+        + n.getClass() + " " + n.toString)
+    }
+    
+    for (node <- nodes) { printNode(node) }
   }
   
   def makeSchemaComment = 

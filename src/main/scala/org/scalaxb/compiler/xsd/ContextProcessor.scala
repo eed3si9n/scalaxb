@@ -22,38 +22,18 @@
 
 package org.scalaxb.compiler.xsd
 
-import org.scalaxb.compiler.{ScalaNames, Logger}
+import org.scalaxb.compiler.{ScalaNames, Logger, Config}
 import scala.collection.mutable
 
-trait ContextProcessor extends ScalaNames {
+trait ContextProcessor extends ScalaNames with PackageName {
   def logger: Logger
   def log(msg: String) = logger.log(msg)
-  def classPrefix: Option[String]
-  def paramPrefix: Option[String]
+  def config: Config
   
-  def packageName(schema: SchemaDecl, context: XsdContext): Option[String] =
-    packageName(schema.targetNamespace, context)
-
-  def packageName(decl: ComplexTypeDecl, context: XsdContext): Option[String] =
-    packageName(decl.namespace, context)
-  
-  def packageName(decl: SimpleTypeDecl, context: XsdContext): Option[String] =
-    packageName(decl.namespace, context)
-
-  def packageName(group: AttributeGroupDecl, context: XsdContext): Option[String] =
-    packageName(group.namespace, context)
-      
-  def packageName(namespace: Option[String], context: XsdContext): Option[String] =
-    if (context.packageNames.contains(namespace)) context.packageNames(namespace)
-    else if (context.packageNames.contains(None)) context.packageNames(None)
-    else None
-      
-  def processContext(context: XsdContext,
-      packageNames: collection.Map[Option[String], Option[String]],
-      wrapped: List[String]) {
-    context.packageNames ++= packageNames
+  def processContext(context: XsdContext) {
+    context.packageNames ++= config.packageNames
     
-    (None :: (packageNames.valuesIterator.toList.distinct)) map {
+    (None :: (config.packageNames.valuesIterator.toList.distinct)) map {
       pkg => 
         context.typeNames(pkg) = mutable.ListMap.empty[Decl, String]
         context.enumValueNames(pkg) = mutable.ListMap.empty[(String, EnumerationDecl), String]
@@ -161,7 +141,7 @@ trait ContextProcessor extends ScalaNames {
       typeNames(base) = makeTraitName(base)
     }
     
-    makeCompositorNames(context, wrapped)
+    makeCompositorNames(context)
   }
   
   def makeEnumValues(decl: SimpleTypeDecl, context: XsdContext) {
@@ -210,12 +190,12 @@ trait ContextProcessor extends ScalaNames {
   val ChunkParticleSize = 10
   val MaxParticleSize = 20
   
-  def isWrapped(namespace: Option[String], family: String, wrapped: List[String]) =
+  def isWrapped(namespace: Option[String], family: String) =
     (namespace map { ns =>
-      wrapped.contains("{" + ns + "}" + family) } getOrElse { false }) ||
-    wrapped.contains(family)
+      config.wrappedComplexTypes.contains("{" + ns + "}" + family) } getOrElse { false }) ||
+    config.wrappedComplexTypes.contains(family)
     
-  def makeCompositorNames(context: XsdContext, wrapped: List[String]) {
+  def makeCompositorNames(context: XsdContext) {
     var sequenceNumber = 0
     var choiceNumber = 0
     var allNumber = 0
@@ -229,9 +209,9 @@ trait ContextProcessor extends ScalaNames {
       
       decl.content.content match {
         case CompContRestrictionDecl(_, Some(compositor: HasParticle), _) =>
-          makeCompositorName(compositor, decl, wrapped)
+          makeCompositorName(compositor, decl)
         case CompContExtensionDecl(_, Some(compositor: HasParticle), _) =>
-          makeCompositorName(compositor, decl, wrapped)
+          makeCompositorName(compositor, decl)
         case _ =>
       }
     }
@@ -266,7 +246,7 @@ trait ContextProcessor extends ScalaNames {
           sequenceNumber += 1
           
           if (particles.size > MaxParticleSize ||
-            isWrapped(group.namespace, group.name, wrapped)) doSplit(makeGroupComplexType(group), particles)
+            isWrapped(group.namespace, group.name)) doSplit(makeGroupComplexType(group), particles)
              
         case ChoiceDecl(particles: List[_], _, _, _) =>
           context.compositorParents(compositor) = makeGroupComplexType(group)
@@ -305,14 +285,13 @@ trait ContextProcessor extends ScalaNames {
     
     def familyName(decl: ComplexTypeDecl): String = {
       val typeNames = context.typeNames(packageName(decl.namespace, context))
-      classPrefix match {
+      config.classPrefix match {
         case Some(p) => typeNames(decl).drop(p.length)
         case None => typeNames(decl)
       }      
     }
     
-    def makeCompositorName(compositor: HasParticle, decl: ComplexTypeDecl,
-        wrapped: List[String]) {      
+    def makeCompositorName(compositor: HasParticle, decl: ComplexTypeDecl) {      
       compositor match {
         case SequenceDecl(particles: List[_], _, _) =>
           if (isFirstCompositor) {
@@ -326,7 +305,7 @@ trait ContextProcessor extends ScalaNames {
           sequenceNumber += 1
           
           if (particles.size > MaxParticleSize ||
-            isWrapped(decl.namespace, decl.family, wrapped)) doSplit(decl, particles)
+            isWrapped(decl.namespace, decl.family)) doSplit(decl, particles)
                
         case ChoiceDecl(particles: List[_], _, _, _) =>
           context.compositorParents(compositor) = decl
@@ -344,7 +323,7 @@ trait ContextProcessor extends ScalaNames {
       }
       
       compositor.particles collect {
-        case compositor2: HasParticle => makeCompositorName(compositor2, decl, wrapped)
+        case compositor2: HasParticle => makeCompositorName(compositor2, decl)
       }
     } // makeCompositorName
   }
@@ -393,7 +372,7 @@ trait ContextProcessor extends ScalaNames {
   def makeTypeName(name: String) = name match {
     case s if (s.startsWith("java.") || s.startsWith("javax.")) => s
     case _ =>
-      val base = classPrefix map { p =>
+      val base = config.classPrefix map { p =>
         if (p.endsWith("_"))  p.capitalize + name
         else p.capitalize + name.capitalize
       } getOrElse { identifier(name).capitalize }
@@ -409,7 +388,7 @@ trait ContextProcessor extends ScalaNames {
     }
   
   def makeParamName(name: String) = {
-    val base = paramPrefix map { p =>
+    val base = config.paramPrefix map { p =>
       if (p.endsWith("_"))  p + name
       else p + name.capitalize
     } getOrElse { name }

@@ -1,21 +1,15 @@
-import org.specs._
 import java.io.{File}
-import org.scalaxb.compiler.xsd.{SchemaDecl}
+import org.scalaxb.compiler.{Config}
 
-object BigTest extends SpecificationWithJUnit with CompilerMatcher {
-  val module = org.scalaxb.compiler.xsd.Driver
-  val bigxsd    = new File("src/test/resources/big.xsd")
-  val tmp = new File("tmp")
-  if (tmp.exists)
-    deleteAll(tmp)
-  tmp.mkdir
-
-  val bigscala = new File(tmp, "big.scala")
-    
-  lazy val generated = module.processFiles(
-    List((bigxsd, bigscala)),
-    Map[Option[String], Option[String]](None -> Some("big")),
-    Some("X"), Some("m_"), List("barOne"))
+object BigTest extends TestBase {
+  val inFile  = new File("src/test/resources/big.xsd")
+  val outFile = new File(tmp, "big.scala")
+  
+  lazy val generated = module.process(inFile, outFile,
+    Config(packageNames = Map(None -> Some("big") ),
+      classPrefix = Some("X"),
+      paramPrefix = Some("m_"),
+      wrappedComplexTypes = List("barOne")) )
     
   "big.scala file must compile so that Foo can be used" in {
     (List("big.XFoo.toXML(big.XFoo.fromXML(<foo>" +

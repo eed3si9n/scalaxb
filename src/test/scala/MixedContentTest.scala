@@ -1,26 +1,16 @@
-import org.specs._
 import java.io.{File}
-import org.scalaxb.compiler.xsd.{SchemaDecl}
 
-object MixedContentTest extends SpecificationWithJUnit with CompilerMatcher {
-  val module = org.scalaxb.compiler.xsd.Driver
-  val mixedxsd    = new File("src/test/resources/mixed.xsd")
-  val tmp = new File("tmp")
-  if (tmp.exists)
-    deleteAll(tmp)
-  tmp.mkdir
-
-  val mixedscala = new File(tmp, "mixed.scala")
+object MixedContentTest extends TestBase {
+  val inFile    = new File("src/test/resources/mixed.xsd")
+  val outFile   = new File(tmp, "mixed.scala")
+  val usageFile = new File(tmp, "MixedUsage.scala")
   
-  lazy val generated = module.process(mixedxsd,
-    mixedscala,
-    Some("mixed"))
-  val mixedUsagescala = new File(tmp, "MixedUsage.scala")
-  copyFileFromResource("MixedUsage.scala", mixedUsagescala)
+  lazy val generated = module.process(inFile, outFile, "mixed")
+  copyFileFromResource("MixedUsage.scala", usageFile)
     
   "mixed.scala file must compile together with MixedUsage.scala" in {
     (List("MixedUsage.allTests"),
-      mixedUsagescala :: generated) must evaluateTo(true,
+      usageFile :: generated) must evaluateTo(true,
       outdir = "./tmp")
   }
 }

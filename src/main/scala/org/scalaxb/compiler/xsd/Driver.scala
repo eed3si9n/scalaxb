@@ -22,44 +22,47 @@
  
 package org.scalaxb.compiler.xsd
 
-import org.scalaxb.compiler.{Module}
+import org.scalaxb.compiler.{Module, Config}
 import java.io.{File, Reader, PrintWriter}
 import collection.mutable
 
-object Driver extends Module { driver =>
+trait PackageName {
+  def packageName(schema: SchemaDecl, context: XsdContext): Option[String] =
+    packageName(schema.targetNamespace, context)
+
+  def packageName(decl: ComplexTypeDecl, context: XsdContext): Option[String] =
+    packageName(decl.namespace, context)
+  
+  def packageName(decl: SimpleTypeDecl, context: XsdContext): Option[String] =
+    packageName(decl.namespace, context)
+
+  def packageName(group: AttributeGroupDecl, context: XsdContext): Option[String] =
+    packageName(group.namespace, context)
+      
+  def packageName(namespace: Option[String], context: XsdContext): Option[String] =
+    if (context.packageNames.contains(namespace)) context.packageNames(namespace)
+    else if (context.packageNames.contains(None)) context.packageNames(None)
+    else None
+}
+
+class Driver extends Module with PackageName { driver =>
   type Schema = SchemaDecl
   type Context = XsdContext
   
   override def buildContext = XsdContext()
     
-  override def processContext(context: Context,
-      packageNames: collection.Map[Option[String], Option[String]],
-      cp: Option[String], pp: Option[String],
-      wrapped: List[String]) {
+  override def processContext(context: Context, cnfg: Config) {
     val processor = new ContextProcessor {
       val logger = driver
-      val classPrefix = cp
-      val paramPrefix = pp      
+      val config = cnfg    
     }
-    processor.processContext(context, packageNames, wrapped)
+    processor.processContext(context)
   }
-  
-  val processor = new ContextProcessor {
-    val logger = driver
-    val classPrefix = None
-    val paramPrefix = None
-  }
-  
-  override def packageName(schema: Schema, context: Context): Option[String] =
-    processor.packageName(schema, context)
   
   def generate(xsd: Schema, context: Context, output: PrintWriter,
-      packageName: Option[String], firstOfPackage: Boolean,
-      classPrefix: Option[String], paramPrefix: Option[String],
-      wrappedComplexTypes: List[String]) = {
+      packageName: Option[String], config: Config) = {
     log("xsd: generating package " + packageName)
-    new GenSource(xsd, context, output, packageName, firstOfPackage,
-      classPrefix, paramPrefix, wrappedComplexTypes, this) run;
+    new GenSource(xsd, context, output, packageName, config, this) run;
     output
   }
   

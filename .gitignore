@@ -1,5 +1,6 @@
 .DS_Store
 doc
+tags
 tests/tmp
 target/
 lib_managed/

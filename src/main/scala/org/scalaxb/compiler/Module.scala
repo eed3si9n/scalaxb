@@ -25,6 +25,7 @@ package org.scalaxb.compiler
 import scala.collection.{Map, Set}
 import scala.collection.mutable.{ListBuffer, ListMap}
 import java.io.{File, BufferedReader, Reader, PrintWriter}
+import scala.xml.{Node}
 
 case class Config(packageNames: Map[Option[String], Option[String]] = Map(None -> None),
   classPrefix: Option[String] = None,
@@ -102,7 +103,8 @@ trait Module extends Logger {
       
       val out = inputToOutput(importable.reader)
       try {
-        generate(schema, context, out, pkg, config)
+        val nodes = generate(schema, context, pkg, config)
+        printNodes(nodes, out)
       }
       finally {
         out.flush()
@@ -165,8 +167,25 @@ trait Module extends Logger {
       new java.io.InputStreamReader(
         new java.io.FileInputStream(file), encoding)))
   
-  def generate(schema: Schema, context: Context, output: PrintWriter,
-    packageName: Option[String], config: Config): PrintWriter
+  def generate(schema: Schema, context: Context,
+    packageName: Option[String], config: Config): Seq[Node]
+  
+  def printNodes(nodes: Seq[Node], out: PrintWriter) {
+    import scala.xml._
+    
+    def printNode(n: Node): Unit = n match {
+      case Text(s)          => out.print(s)
+      case EntityRef("lt")  => out.print('<')
+      case EntityRef("gt")  => out.print('>')
+      case EntityRef("amp") => out.print('&')
+      case atom: Atom[_]    => out.print(atom.text)
+      case elem: Elem       => printNodes(elem.child, out)
+      case _                => log("error in Module: encountered "
+        + n.getClass() + " " + n.toString)
+    }
+
+    for (node <- nodes) { printNode(node) }
+  }
   
   override def log(msg: String) {
     if (verbose) {

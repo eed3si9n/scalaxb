@@ -59,11 +59,14 @@ class Driver extends Module with PackageName { driver =>
     processor.processContext(context)
   }
   
-  def generate(xsd: Schema, context: Context, output: PrintWriter,
-      packageName: Option[String], config: Config) = {
+  override def generate(xsd: Schema, context: Context, packageName: Option[String],
+      cnfg: Config) = {
     log("xsd: generating package " + packageName)
-    new GenSource(xsd, context, output, packageName, config, this) run;
-    output
+    val generator = new GenSource(xsd, context, packageName) {
+      val logger = driver
+      val config = cnfg
+    }
+    generator.run
   }
   
   override def toImportable(in: Reader): Importable = new Importable {

@@ -26,48 +26,24 @@ import org.scalaxb.compiler.{Module, Config}
 import java.io.{File, Reader, PrintWriter}
 import collection.mutable
 
-trait PackageName {
-  def packageName(schema: SchemaDecl, context: XsdContext): Option[String] =
-    packageName(schema.targetNamespace, context)
-
-  def packageName(decl: ComplexTypeDecl, context: XsdContext): Option[String] =
-    packageName(decl.namespace, context)
-  
-  def packageName(decl: SimpleTypeDecl, context: XsdContext): Option[String] =
-    packageName(decl.namespace, context)
-
-  def packageName(group: AttributeGroupDecl, context: XsdContext): Option[String] =
-    packageName(group.namespace, context)
-      
-  def packageName(namespace: Option[String], context: XsdContext): Option[String] =
-    if (context.packageNames.contains(namespace)) context.packageNames(namespace)
-    else if (context.packageNames.contains(None)) context.packageNames(None)
-    else None
-}
-
-class Driver extends Module with PackageName { driver =>
+class Driver extends Module { driver =>
   type Schema = SchemaDecl
   type Context = XsdContext
   
   override def buildContext = XsdContext()
     
-  override def processContext(context: Context, cnfg: Config) {
-    val processor = new ContextProcessor {
+  override def processContext(context: Context, cnfg: Config) =
+    (new ContextProcessor {
       val logger = driver
       val config = cnfg    
-    }
-    processor.processContext(context)
-  }
+    }).processContext(context)
   
-  override def generate(xsd: Schema, context: Context, packageName: Option[String],
-      cnfg: Config) = {
-    log("xsd: generating package " + packageName)
-    val generator = new GenSource(xsd, context, packageName) {
+  override def generate(xsd: Schema, dependents: Seq[Schema],
+      context: Context, cnfg: Config) =
+    (new GenSource(xsd, dependents, context) {
       val logger = driver
       val config = cnfg
-    }
-    generator.run
-  }
+    }).run
   
   override def toImportable(in: Reader): Importable = new Importable {
     val reader = in

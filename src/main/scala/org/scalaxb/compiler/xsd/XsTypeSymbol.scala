@@ -58,12 +58,20 @@ class ReferenceTypeSymbol(val name: String) extends XsTypeSymbol {
   var decl: TypeDecl = null
   override def toString(): String = {
     if (decl == null) "ReferenceTypeSymbol(" + name + ",null)"
-    else "ReferenceTypeSymbol(" + name + "," + decl.toString + ")"
+    else "ReferenceTypeSymbol(" + name + ")"
   }
 }
 
 object ReferenceTypeSymbol {
   def unapply(value: ReferenceTypeSymbol): Option[TypeDecl] = Some(value.decl)
+}
+
+case class XsXMLFormat(member: Decl) extends XsTypeSymbol {
+  val name = "XsXMLFormat(" + (member match {
+    case decl: ComplexTypeDecl => decl.name
+    case group: AttributeGroupDecl => group.name
+    case _ => "_"
+  }) + ")"
 }
 
 class BuiltInSimpleTypeSymbol(val name: String) extends XsTypeSymbol

@@ -153,7 +153,7 @@ case class SchemaDecl(targetNamespace: Option[String],
     topAttrGroups: Map[String, AttributeGroupDecl],
     typeToAnnotatable: Map[TypeDecl, Annotatable],
     annotation: Option[AnnotationDecl],
-    scope: scala.xml.NamespaceBinding) extends Annotatable {
+    scope: scala.xml.NamespaceBinding) extends Decl with Annotatable {
   
   val newline = System.getProperty("line.separator")
   

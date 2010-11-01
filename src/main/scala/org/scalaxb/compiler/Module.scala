@@ -39,6 +39,7 @@ trait Module extends Logger {
   def verbose: Boolean = false
   
   val encoding = "UTF-8"
+  val newline = System.getProperty("line.separator")
   
   trait Importable {
     def targetNamespace: Option[String]
@@ -65,9 +66,7 @@ trait Module extends Logger {
         new PrintWriter(new java.io.OutputStreamWriter(
           new java.io.FileOutputStream(pair._2), encoding)) 
       }).toMap, config)
-    val outfiles = ListBuffer.empty[File] ++ (filePairs map { pair =>
-      pair._2
-    })
+    val outfiles = ListBuffer.empty[File] ++ (filePairs map { _._2 })
     outfiles foreach { file =>
       println("generated " + file + ".")
     }
@@ -84,26 +83,19 @@ trait Module extends Logger {
   
   def processReaders(inputToOutput: Map[Reader, PrintWriter], config: Config) = {    
     val context = buildContext
-    val importables = inputToOutput.keysIterator.toList map {
-      toImportable(_)
-    }
-    
+    val importables = inputToOutput.keysIterator.toList map { toImportable(_) }
     val sorted = sortByDependency(importables)
-    val schemas = ListMap.empty[Importable, Schema]
-    
-    sorted foreach { importable =>
-      schemas(importable) = parse(importable, context)
-    }
-    
+    val schemas = Map[Importable, Schema](sorted map { file =>
+      (file, parse(file, context)) }: _*)
     processContext(context, config)
     
     sorted foreach { importable =>
       val schema = schemas(importable)
-      val pkg = packageName(schema, context)
+      val dependents = importable.imports flatMap { i => dependentImportables(sorted, Some(i)).map(schemas(_)) }
       
       val out = inputToOutput(importable.reader)
       try {
-        val nodes = generate(schema, context, pkg, config)
+        val nodes = generate(schema, dependents, context, config)
         printNodes(nodes, out)
       }
       finally {
@@ -113,42 +105,34 @@ trait Module extends Logger {
     }
   }
   
+  def generate(schema: Schema, dependents: Seq[Schema],
+    context: Context, config: Config): Seq[Node]
+    
   def toImportable(in: Reader): Importable
   
-  def packageName(schema: Schema, context: Context): Option[String]
+  def dependentImportables(files: Seq[Importable], namespace: Option[String]) = namespace match {
+    case Some(x) => files filter { _.targetNamespace == namespace }
+    case _ => Nil
+  }
   
-  def sortByDependency(files: Seq[Importable]): Seq[Importable] = {
-    val schemaFiles = ListMap.empty[Option[String], Importable]
-
-    files foreach { importable =>
-      importable.targetNamespace foreach { targetNamespace =>
-        schemaFiles += (importable.targetNamespace -> importable) 
-      } 
-    }
-
+  def sortByDependency(files: Seq[Importable]): Seq[Importable] = {        
     val XML_URI = "http://www.w3.org/XML/1998/namespace"    
     val unsorted = ListBuffer.empty[Importable]
     unsorted.appendAll(files)
     val sorted = ListBuffer.empty[Importable]
     val upperlimit = unsorted.size * unsorted.size
-    
-    def containsAll(imports: Seq[String]) = imports.forall { namespace =>
-      (namespace == XML_URI) || sorted.contains(schemaFiles(Some(namespace)))
-    }
-
-    for (i <- 0 to upperlimit) {
-      if (unsorted.size > 0) {
-        val importable = unsorted(i % unsorted.size)
-        if ((importable.imports.size == 0) ||
-            containsAll(importable.imports)) {
-          unsorted -= importable
-          sorted += importable
-        } // if
+        
+    for (i <- 0 to upperlimit if unsorted.size > 0) {
+      val importable = unsorted(i % unsorted.size)
+      if (importable.imports forall { namespace =>
+          (namespace == XML_URI) ||
+          dependentImportables(files, Some(namespace)).forall(sorted.contains) }) {
+        unsorted -= importable
+        sorted += importable
       } // if
     }
-
-    if (unsorted.size > 0)
-      error("Circular import: " + unsorted.toList)
+    
+    if (unsorted.size > 0) error("Circular import: " + unsorted.toList)
     sorted
   }
   
@@ -166,24 +150,26 @@ trait Module extends Logger {
     = parse(new BufferedReader(
       new java.io.InputStreamReader(
         new java.io.FileInputStream(file), encoding)))
-  
-  def generate(schema: Schema, context: Context,
-    packageName: Option[String], config: Config): Seq[Node]
-  
+    
   def printNodes(nodes: Seq[Node], out: PrintWriter) {
     import scala.xml._
-    
+        
     def printNode(n: Node): Unit = n match {
       case Text(s)          => out.print(s)
       case EntityRef("lt")  => out.print('<')
       case EntityRef("gt")  => out.print('>')
       case EntityRef("amp") => out.print('&')
       case atom: Atom[_]    => out.print(atom.text)
-      case elem: Elem       => printNodes(elem.child, out)
+      case elem: Elem       =>
+        printNodes(elem.child, out)
+        if (elem.text != "") {
+          if (elem.text.contains(newline)) out.println("")
+          out.println("")
+        }
       case _                => log("error in Module: encountered "
         + n.getClass() + " " + n.toString)
     }
-
+    
     for (node <- nodes) { printNode(node) }
   }
   

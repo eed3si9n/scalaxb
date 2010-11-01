@@ -2,8 +2,9 @@
  * @author  e.e d3si9n
  */
 
-import any._
 import org.scalaxb.rt._
+import Scalaxb._
+import any._
 
 object AnyUsage {
   def main(args: Array[String]) = {
@@ -17,6 +18,8 @@ object AnyUsage {
   }
   
   def testAny {
+    import any.DefaultXMLProtocol._
+    
     val subject = <foo xmlns="http://www.example.com/any"
         xmlns:xs="http://www.w3.org/2001/XMLSchema"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
@@ -51,7 +54,7 @@ object AnyUsage {
           <ENTITY xsi:type="xs:ENTITY">foo</ENTITY>
           <ENTITIES xsi:type="xs:ENTITIES">foo</ENTITIES>
         </foo>
-    val obj = Element1.fromXML(subject)
+    val obj = fromXML[Element1](subject)
     obj match {
       case Element1(
           DataRecord(Some("http://www.example.com/any"), Some("int"), 1),
@@ -87,11 +90,13 @@ object AnyUsage {
         ) =>
       case _ => error("match failed: " + obj.toString)
     }
-    val document = Element1.toXML(obj, None, Some("foo"), subject.scope)
+    val document = toXML[Element1](obj, None, Some("foo"), subject.scope)
     println(document)
   }
   
   def testAny2 {
+    import any.DefaultXMLProtocol._
+    
     val ExampleCom = new java.net.URI("http://www.example.com/")
     val ExampleQName = javax.xml.namespace.QName.valueOf("{http://www.example.com/}foo")
     lazy val typeFactory = javax.xml.datatype.DatatypeFactory.newInstance()
@@ -115,7 +120,7 @@ object AnyUsage {
           <gMonth xsi:type="xs:gMonth">--10</gMonth>
         </foo>
     
-    val obj = Element1.fromXML(subject)
+    val obj = fromXML[Element1](subject)
     obj match {
       case Element1(
           DataRecord(Some("http://www.example.com/any"), Some("hexBinary"), HexBinary(15)),
@@ -134,7 +139,7 @@ object AnyUsage {
         ) =>
       case _ => error("match failed: " + obj.toString)
     }
-    val document = Element1.toXML(obj, None, Some("foo"), subject.scope)
+    val document = toXML[Element1](obj, None, Some("foo"), subject.scope)
     println(document)
   }
 }

@@ -2,8 +2,10 @@
  * @author  e.e d3si9n
  */
 
-import mixed._
 import org.scalaxb.rt._
+import Scalaxb._
+import mixed._
+import DefaultXMLProtocol._
 
 object MixedUsage {
   def main(args: Array[String]) = {
@@ -26,7 +28,7 @@ object MixedUsage {
             <zip>19808</zip>
           </billTo>
           <itemname/><itemcode/><option1/></foo>
-    val obj = MixedTest.fromXML(subject)
+    val obj = fromXML[MixedTest](subject)
     obj match {
       case MixedTest(Seq(
           DataRecord(None, None, "foo"),
@@ -42,7 +44,7 @@ object MixedUsage {
         ), None) =>
       case _ => error("match failed: " + obj.toString)
     }
-    val document = MixedTest.toXML(obj, None, Some("foo"), subject.scope)
+    val document = toXML[MixedTest](obj, None, Some("foo"), subject.scope)
     println(document)
   }
 }

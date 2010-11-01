@@ -2,11 +2,13 @@
  * @author  e.e d3si9n
  */
 
+import org.scalaxb.rt._
+import Scalaxb._
 import org.w3.xmldsig._
 import org.w3.xmlenc._
 import org.xml.saml2.assertion._
 import org.xml.saml2.metadata._
-import org.scalaxb.rt._
+import org.xml.saml2.assertion.DefaultXMLProtocol._
 
 object SamlUsage {
   def main(args: Array[String]) = {
@@ -32,7 +34,7 @@ object SamlUsage {
       <saml:AttributeValue xsi:type="xs:string">staff</saml:AttributeValue>
     </saml:Attribute>
     
-    val obj = AttributeType.fromXML(subject)
+    val obj = fromXML[AttributeType](subject)
     obj match {
       case AttributeType(Seq(Some(x@DataRecord(_, _, _)),
           Some(y@DataRecord(_, _, _)) ),

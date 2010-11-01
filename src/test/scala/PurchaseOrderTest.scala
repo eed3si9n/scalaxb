@@ -1,4 +1,5 @@
 import java.io.{File}
+import org.scalaxb.compiler.{Verbose}
 
 object PurchaseOrderTest extends TestBase {
   val inFile    = new File("src/test/resources/ipo.xsd")
@@ -12,6 +13,7 @@ object PurchaseOrderTest extends TestBase {
      }
   }
   
+  // override val module = new org.scalaxb.compiler.xsd.Driver with Verbose
   lazy val generated = module.process(inFile, outFile, "ipo")
   
   "ipo.scala file must compile so Address can be used" in {

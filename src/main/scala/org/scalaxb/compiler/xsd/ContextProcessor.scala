@@ -25,6 +25,25 @@ package org.scalaxb.compiler.xsd
 import org.scalaxb.compiler.{ScalaNames, Logger, Config}
 import scala.collection.mutable
 
+trait PackageName {
+  def packageName(schema: SchemaDecl, context: XsdContext): Option[String] =
+    packageName(schema.targetNamespace, context)
+
+  def packageName(decl: ComplexTypeDecl, context: XsdContext): Option[String] =
+    packageName(decl.namespace, context)
+  
+  def packageName(decl: SimpleTypeDecl, context: XsdContext): Option[String] =
+    packageName(decl.namespace, context)
+
+  def packageName(group: AttributeGroupDecl, context: XsdContext): Option[String] =
+    packageName(group.namespace, context)
+      
+  def packageName(namespace: Option[String], context: XsdContext): Option[String] =
+    if (context.packageNames.contains(namespace)) context.packageNames(namespace)
+    else if (context.packageNames.contains(None)) context.packageNames(None)
+    else None
+}
+
 trait ContextProcessor extends ScalaNames with PackageName {
   def logger: Logger
   def log(msg: String) = logger.log(msg)
@@ -40,6 +59,11 @@ trait ContextProcessor extends ScalaNames with PackageName {
     }
     
     val anonymousTypes = mutable.ListBuffer.empty[(SchemaDecl, ComplexTypeDecl)]
+    
+    for (schema <- context.schemas) {
+      val typeNames = context.typeNames(packageName(schema, context))
+      typeNames(schema) = makeProtectedTypeName(schema, context)
+    }
     
     for (schema <- context.schemas;
         elem <- schema.elemList;
@@ -348,6 +372,9 @@ trait ContextProcessor extends ScalaNames with PackageName {
       name
     }    
   }
+  
+  def makeProtectedTypeName(schema: SchemaDecl, context: XsdContext): String =
+    makeProtectedTypeName(schema.targetNamespace, "DefaultXMLProtocol", "", context)
   
   def makeProtectedTypeName(namespace: Option[String], elem: ElemDecl, context: XsdContext): String =
     makeProtectedTypeName(elem.namespace orElse namespace, elem.name, "", context)

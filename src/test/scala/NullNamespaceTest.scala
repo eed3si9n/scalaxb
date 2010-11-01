@@ -9,7 +9,9 @@ object NullNamespaceTest extends TestBase {
     Config(packageNames = Map[Option[String], Option[String]]()) )
   
   "nullnamespace.scala file must compile so that Foo can be used" in {
-    (List("Foo.fromXML(<foo><bar>a</bar><baz>b</baz></foo>).toString"),
+    (List("import org.scalaxb.rt.Scalaxb._",
+      "import DefaultXMLProtocol._",
+      "fromXML[Foo](<foo><bar>a</bar><baz>b</baz></foo>).toString"),
      generated) must evaluateTo("Foo(a,b)", outdir = "./tmp")
   }
 }

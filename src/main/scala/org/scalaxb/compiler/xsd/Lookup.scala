@@ -121,7 +121,6 @@ trait Lookup extends ContextProcessor {
     attributeGroups(ref.namespace, ref.name)
   
   def buildTypeName(typeSymbol: XsTypeSymbol): String = typeSymbol match {
-    case XsInterNamespace => "rt.DataRecord[Any]"
     case XsAny          => "rt.DataRecord[Any]"
     case XsDataRecord(ReferenceTypeSymbol(decl: ComplexTypeDecl)) if compositorWrapper.contains(decl) =>
       compositorWrapper(decl) match {
@@ -134,7 +133,9 @@ trait Lookup extends ContextProcessor {
     case symbol: BuiltInSimpleTypeSymbol => symbol.name
     case ReferenceTypeSymbol(decl: SimpleTypeDecl) => buildTypeName(decl)
     case ReferenceTypeSymbol(decl: ComplexTypeDecl) => buildTypeName(decl)
-    case symbol:AttributeGroupSymbol => buildTypeName(attributeGroups(symbol.namespace, symbol.name))
+    case symbol: AttributeGroupSymbol => buildTypeName(attributeGroups(symbol.namespace, symbol.name))
+    case XsXMLFormat(decl: ComplexTypeDecl) => "rt.XMLFormat[" + buildTypeName(decl) + "]"
+    case XsXMLFormat(group: AttributeGroupDecl) => "rt.XMLFormat[" + buildTypeName(group) + "]"
   }
   
   def buildChoiceTypeName(decl: ComplexTypeDecl, choice: ChoiceDecl): String = 
@@ -179,6 +180,9 @@ trait Lookup extends ContextProcessor {
           else "rt.DataRecord[Any]"
       }
     }
+  
+  def xmlFormatTypeName(decl: ComplexTypeDecl): String =
+    "rt.XMLFormat[" + buildTypeName(decl) + "]"
   
   def buildTypeName(decl: ComplexTypeDecl, localOnly: Boolean = false): String = {
     val pkg = packageName(decl, context)
@@ -253,7 +257,7 @@ trait Lookup extends ContextProcessor {
         case _ => false
       }
     )
-  
+    
   def isSubstitionGroup(elem: ElemDecl) =
     elem.namespace map { x =>
       context.substituteGroups.contains((elem.namespace, elem.name))

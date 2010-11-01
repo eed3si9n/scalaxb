@@ -4,6 +4,8 @@
 
 import ipo._
 import org.scalaxb.rt._
+import Scalaxb._
+import ipo.DefaultXMLProtocol._
 
 object PurchaseOrderUsage {
   def main(args: Array[String]) = {
@@ -45,7 +47,7 @@ object PurchaseOrderUsage {
       <zip>19808</zip>
     </shipTo>
     
-    val address = Addressable.fromXML(subject)
+    val address = fromXML[Addressable](subject)
     address match {
       case USAddress("Foo",
         "1537 Paper Street",
@@ -66,7 +68,7 @@ object PurchaseOrderUsage {
       <shipDate>2010-02-06Z</shipDate>
     </item>
     
-    val item = Item.fromXML(subject)
+    val item = fromXML[Item](subject)
     item match {
       case Item("Olive Soap",
         1,
@@ -91,8 +93,8 @@ object PurchaseOrderUsage {
         <shipDate>2010-02-06Z</shipDate>
       </item>
     </items>
-        
-    val items = Items.fromXML(subject)
+    
+    val items = fromXML[Items](subject)
     items match {
       case Items(_) =>
       case _ => error("match failed: " + items.toString)
@@ -130,7 +132,7 @@ object PurchaseOrderUsage {
       </items>
     </purchaseOrder>
     
-    val purchaseOrder = PurchaseOrderType.fromXML(subject)
+    val purchaseOrder = fromXML[PurchaseOrderType](subject)
     purchaseOrder match {
       case PurchaseOrderType(
         shipTo: UKAddress,
@@ -146,7 +148,7 @@ object PurchaseOrderUsage {
   def testTimeOlson {
     val subject = <time xmlns="http://www.example.com/IPO">00:00:00</time>
     
-    val timeOlson = TimeOlson.fromXML(subject)
+    val timeOlson = fromXML[TimeOlson](subject)
     timeOlson match {
       case TimeOlson(XMLCalendar("00:00:00"),
         "") =>
@@ -159,7 +161,7 @@ object PurchaseOrderUsage {
   def testIntWithAttr {
     val subject = <some foo="test" xmlns="http://www.example.com/IPO">1</some>
     
-    val intWithAttr = IntWithAttr.fromXML(subject)
+    val intWithAttr = fromXML[IntWithAttr](subject)
     intWithAttr match {
       case IntWithAttr(1, "test") =>
       case _ => error("match failed: " + intWithAttr.toString)
@@ -175,7 +177,7 @@ object PurchaseOrderUsage {
       <Choice2>1</Choice2>
     </Element1>
     
-    val obj = Element1.fromXML(subject)
+    val obj = fromXML[Element1](subject)
     obj match {
       case Element1(DataRecord(Some("http://www.example.com/IPO"), Some("Choice2"), 1)) =>
       case _ => error("match failed: " + obj.toString)
@@ -186,7 +188,7 @@ object PurchaseOrderUsage {
 
   def testLangAttr {
     val subject = <Choice1 xml:lang="en" xmlns="http://www.example.com/IPO"></Choice1>
-    val obj = Choice1.fromXML(subject)
+    val obj = fromXML[Choice1](subject)
     obj match {
       case Choice1(_, "en", _) =>
       case _ => error("match failed: " + obj.toString)
@@ -209,12 +211,12 @@ object PurchaseOrderUsage {
       <zip>19808</zip>
     </shipTo>
     
-    val obj = Addressable.fromXML(subject)
+    val obj = fromXML[Addressable](subject)
     obj match {
       case usaddress: USAddress =>
-        val document = USAddress.toXML(usaddress, None, Some("shipTo"))
+        val document = toXML[Addressable](usaddress, None, Some("shipTo"), subject.scope)
         println(document)
-        val obj2 = Addressable.fromXML(document)
+        val obj2 = fromXML[Addressable](document)
         
         obj2 match {
           case `usaddress` =>
@@ -229,10 +231,10 @@ object PurchaseOrderUsage {
   
   def testChoiceRoundTrip {
     val subject = <Element1 xmlns="http://www.example.com/IPO"><Choice2>1</Choice2></Element1>
-    val obj = Element1.fromXML(subject)
-    val document = Element1.toXML(obj, Some("http://www.example.com/IPO"), Some("Element1"), subject.scope)
+    val obj = fromXML[Element1](subject)
+    val document = toXML(obj, Some("http://www.example.com/IPO"), Some("Element1"), subject.scope)
     println(document)
-    val obj2 = Element1.fromXML(document)
+    val obj2 = fromXML[Element1](document)
     obj2 match {
       case `obj` =>
       case _ => error("match failed: " + obj2.toString)
@@ -253,14 +255,14 @@ object PurchaseOrderUsage {
         </apply>
       </math>
     </choice1>
-    val obj = Choice1.fromXML(subject)
+    val obj = fromXML[Choice1](subject)
     obj match {
       case Choice1(_, "en",
         Seq(DataRecord(Some("http://www.w3.org/1999/xhtml"), Some("href"), "4Q99.html"))) =>
       case _ => error("match failed: " + obj.toString)
     }
     
-    val document = Choice1.toXML(obj, None, Some("choice1"), subject.scope)
+    val document = toXML(obj, None, Some("choice1"), subject.scope)
     println(document)  
   }
   
@@ -275,10 +277,10 @@ object PurchaseOrderUsage {
         </apply>
       </math>
     </Element1>
-    val obj = Element1.fromXML(subject)
-    val document = Element1.toXML(obj, None, Some("Element1"), subject.scope)
+    val obj = fromXML[Element1](subject)
+    val document = toXML(obj, None, Some("Element1"), subject.scope)
     println(document)
-    val obj2 = Element1.fromXML(document)
+    val obj2 = fromXML[Element1](document)
     obj2 match {
       case Element1(DataRecord(Some("http://www.w3.org/1998/Math/MathML"), Some("math"), _)) =>
       case _ => error("match failed: " + document.toString)
@@ -291,19 +293,19 @@ object PurchaseOrderUsage {
         xmlns:h="http://www.w3.org/1999/xhtml"
         h:href="4Q99.html">
     </foo>
-    val obj = Element2.fromXML(subject)
+    val obj = fromXML[Element2](subject)
     obj match {
       case Element2(Seq(DataRecord(Some("http://www.w3.org/1999/xhtml"), Some("href"), "4Q99.html"))) =>
       case _ => error("match failed: " + obj.toString)
     }
     
-    val document = Element2.toXML(obj, None, Some("foo"), subject.scope)
+    val document = toXML(obj, None, Some("foo"), subject.scope)
     println(document)
-    val obj2 = Element2.fromXML(document)
+    val obj2 = fromXML[Element2](document)
     obj2 match {
       case Element2(Seq(DataRecord(Some("http://www.w3.org/1999/xhtml"), Some("href"), "4Q99.html"))) =>
       case _ => error("match failed: " + obj2.toString)
-    }    
+    }
   }
   
   def testDatedData {
@@ -313,7 +315,7 @@ object PurchaseOrderUsage {
       <hexBinary>0F</hexBinary>
       <base64Binary>QUJDREVGRw==</base64Binary>
     </foo>
-    val obj = DatedData.fromXML(subject)
+    val obj = fromXML[DatedData](subject)
     obj match {
       case DatedData(XMLCalendar("2010-02-06Z"),
         HexBinary(15),
@@ -321,7 +323,7 @@ object PurchaseOrderUsage {
         Coreattrs(None, Some("foo"))) =>
       case _ => error("match failed: " + obj.toString)
     }
-    val document = DatedData.toXML(obj, None, Some("foo"), subject.scope)
+    val document = toXML(obj, None, Some("foo"), subject.scope)
     println(document)
   }
   
@@ -338,14 +340,14 @@ object PurchaseOrderUsage {
       <via xsi:nil="true" />
       <via xsi:nil="true" />
     </foo>
-    val obj = NillableTest.fromXML(subject)
+    val obj = fromXML[NillableTest](subject)
     obj match {
       case NillableTest(None, None, Seq(None, None),
         None, None, Seq(None, None)) =>
       case _ => error("match failed: " + obj.toString)
     }
     
-    val document = NillableTest.toXML(obj, None, Some("foo"), subject.scope)
+    val document = toXML(obj, None, Some("foo"), subject.scope)
     println(document)
   }
   
@@ -357,13 +359,13 @@ object PurchaseOrderUsage {
       <style></style>
       <script></script>
     </foo>
-    val obj = AllTest.fromXML(subject)
+    val obj = fromXML[AllTest](subject)
     obj match {
       case AllTest("", "", "bar", _, None) =>
       case _ => error("match failed: " + obj.toString)
     }
     
-    val document = AllTest.toXML(obj, None, Some("foo"), subject.scope)
+    val document = toXML(obj, None, Some("foo"), subject.scope)
     println(document)    
   }
   
@@ -377,7 +379,7 @@ object PurchaseOrderUsage {
       <title>bar</title>
       <script></script>
     </head>
-    val obj = Head.fromXML(subject)
+    val obj = fromXML[Head](subject)
     obj match {
       case Head(Seq(DataRecord(Some("http://www.example.com/IPO"), Some("script"), ""),
         DataRecord(Some("http://www.example.com/IPO"), Some("script"), "")),
@@ -386,7 +388,7 @@ object PurchaseOrderUsage {
       case _ => error("match failed: " + obj.toString)
     }
     
-    val document = Head.toXML(obj, None, Some("head"), subject.scope)
+    val document = toXML(obj, None, Some("head"), subject.scope)
     println(document) 
   }
   
@@ -399,14 +401,14 @@ object PurchaseOrderUsage {
       <gh6head2>bar</gh6head2>
       <city>baz</city>
     </billTo>
-    val obj = GH6Usage.fromXML(subject)
+    val obj = fromXML[GH6Usage](subject)
     obj match {
       case GH6Usage(DataRecord(Some("http://www.example.com/IPO"),
         Some("gh6sub1"), "foo"), "bar", "baz") =>
       case _ => error("match failed: " + obj.toString)
     }
     
-    val document = GH6Usage.toXML(obj, None, Some("billTo"), subject.scope)
+    val document = toXML(obj, None, Some("billTo"), subject.scope)
     println(document)
   }
 }

@@ -12,7 +12,9 @@ object BigTest extends TestBase {
       wrappedComplexTypes = List("barOne")) )
     
   "big.scala file must compile so that Foo can be used" in {
-    (List("big.XFoo.toXML(big.XFoo.fromXML(<foo>" +
+    (List("import org.scalaxb.rt.Scalaxb._",
+      "import big.XDefaultXMLProtocol._",
+      "toXML[big.XFoo](fromXML[big.XFoo](<foo>" +
     "<string1></string1><string2></string2><string3></string3><string4></string4><string5></string5>" +
     "<string6></string6><string7></string7><string8></string8><string9></string9><string10></string10>" + 
     "<string11></string11><string12></string12><string13></string13><string14></string14><string15></string15>" + 

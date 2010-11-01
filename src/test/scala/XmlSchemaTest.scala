@@ -12,7 +12,10 @@ object XmlSchemaTest extends TestBase {
     ))
     
   "XMLSchema.scala file must compile so that Schema can be used" in {
-    (List("import org.w3.xmlschema._",
+    (List("import org.scalaxb.rt._",
+      "import Scalaxb._",
+      "import org.w3.xmlschema._",
+      "import XDefaultXMLProtocol._",
       """val document = <schema targetNamespace="http://www.example.com/IPO"
               xmlns="http://www.w3.org/2001/XMLSchema"
               xmlns:ipo="http://www.example.com/IPO">
@@ -24,7 +27,7 @@ object XmlSchemaTest extends TestBase {
           </sequence>
         </complexType>
       </schema>""", // " 
-      """XSchema.toXML(XSchema.fromXML(document),
+      """toXML[XSchema](fromXML[XSchema](document),
         Some("http://www.w3.org/2001/XMLSchema"), Some("schema"), document.scope).toString""" // "
      ),
      generated) must evaluateTo("""<schema targetNamespace="http://www.example.com/IPO" """ +

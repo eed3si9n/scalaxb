@@ -6,10 +6,13 @@ object XhtmlTest extends TestBase {
   lazy val generated = module.process(inFile, outFile, "org.w3.xhtml")
   
   "xhtml1-strict.scala file must compile so that Html can be used" in {
-    (List("import org.w3.xhtml._",
+    (List("import org.scalaxb.rt._",
+      "import Scalaxb._",
+      "import org.w3.xhtml._",
+      "import DefaultXMLProtocol._",
       """val document = <html xmlns="http://www.w3.org/1999/xhtml" lang="en">""" + // "
       """<head><title>foo</title></head><body></body></html>""",
-      """Html.toXML(Html.fromXML(document),
+      """toXML[Html](fromXML[Html](document),
         Some("http://www.w3.org/1999/xhtml"), Some("html"), document.scope).toString""" // "
      ),
      generated) must evaluateTo("""<html lang="en" xmlns="http://www.w3.org/1999/xhtml">""" + // "

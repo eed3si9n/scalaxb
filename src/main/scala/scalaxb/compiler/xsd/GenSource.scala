@@ -20,9 +20,9 @@
  * THE SOFTWARE.
  */
 
-package org.scalaxb.compiler.xsd
+package scalaxb.compiler.xsd
 
-import org.scalaxb.compiler.{Logger, Config}
+import scalaxb.compiler.{Logger, Config}
 import scala.collection.mutable
 import scala.collection.{Map}
 import scala.xml._
@@ -55,7 +55,6 @@ abstract class GenSource(val schema: SchemaDecl,
     
     nodes += makeSchemaComment
     nodes += makePackageName(packageName(schema, context))
-    nodes += makeImports
     
     schema.typeList map {
       case decl: ComplexTypeDecl =>
@@ -88,8 +87,8 @@ abstract class GenSource(val schema: SchemaDecl,
     }
     
     <source>object {name} {{
-  import rt.Scalaxb._
-  import rt.CanWriteXML._
+  import scalaxb.Scalaxb._
+  import scalaxb.XMLFormat._
   { if (imports.isEmpty) ""
     else imports.mkString(newline + indent(1)) + newline }
   val targetNamespace: Option[String] = { quote(schema.targetNamespace) }
@@ -163,13 +162,13 @@ abstract class GenSource(val schema: SchemaDecl,
 }}</source>
     
     val compDepth = 1
-    val implicitValueCode = <source>  implicit lazy val {formatterName}: rt.XMLFormat[{name}] = __{formatterName}</source>
-    val companionCode = <source>  val __{formatterName} = new rt.XMLFormat[{name}] {{
+    val implicitValueCode = <source>  implicit lazy val {formatterName}: scalaxb.XMLFormat[{name}] = __{formatterName}</source>
+    val companionCode = <source>  val __{formatterName} = new scalaxb.XMLFormat[{name}] {{
     { if (imports.isEmpty) ""
         else imports.mkString(newline + indent(2)) + newline + indent(2) 
     }def readsXMLEither(seq: scala.xml.NodeSeq): Either[String, {name}] = seq match {{
       case node: scala.xml.Node =>     
-        rt.Helper.instanceType(node) match {{
+        scalaxb.Helper.instanceType(node) match {{
           { val cases = for (sub <- context.baseToSubs(decl))
               yield makeCaseEntry(sub)
             cases.mkString(newline + indent(4 + compDepth))        
@@ -297,7 +296,7 @@ abstract class GenSource(val schema: SchemaDecl,
       {childString}</source>
     
     def childString = if (decl.mixed) "__obj." + makeParamName(MIXED_PARAM) + 
-      ".flatMap(x => rt.DataRecord.toXML(x, x.namespace, x.key, __scope, false).toSeq)"
+      ".flatMap(x => scalaxb.DataRecord.toXML(x, x.namespace, x.key, __scope, false).toSeq)"
     else decl.content.content match {
       case SimpContRestrictionDecl(base: XsTypeSymbol, _, _) => "Seq(scala.xml.Text(__obj.value.toString))"
       case SimpContExtensionDecl(base: XsTypeSymbol, _) =>   "Seq(scala.xml.Text(__obj.value.toString))"
@@ -309,15 +308,15 @@ abstract class GenSource(val schema: SchemaDecl,
     }
     
     val groups = filterGroup(decl)
-    val companionSuperNames: List[String] = "rt.ElemNameParser[" + name + "]" :: groups.map(groupTypeName(_) + "Format")
+    val companionSuperNames: List[String] = "scalaxb.ElemNameParser[" + name + "]" :: groups.map(groupTypeName(_) + "Format")
     
     val caseClassCode = <source>{ buildComment(decl) }case class {name}({paramsString}){extendString}{ if (accessors.size == 0) ""
       else " {" + newline +
         indent(1) + accessors.mkString(newline + indent(1)) + newline +
         "}" + newline }</source>
     
-    val implicitValueCode = <source>  implicit lazy val {formatterName}: rt.XMLFormat[{name}] = __{formatterName}</source>
-    def companionCode = if (simpleFromXml) <source>  val __{formatterName} = new rt.XMLFormat[{name}] with rt.CanWriteChildNodes[{name}] {{
+    val implicitValueCode = <source>  implicit lazy val {formatterName}: scalaxb.XMLFormat[{name}] = __{formatterName}</source>
+    def companionCode = if (simpleFromXml) <source>  val __{formatterName} = new scalaxb.XMLFormat[{name}] with scalaxb.CanWriteChildNodes[{name}] {{
     def readsXMLEither(seq: scala.xml.NodeSeq): Either[String, {name}] = seq match {{
       case node: scala.xml.Node => Right({name}({argsString}))
       case _ => Left("readsXMLEither failed: seq must be scala.xml.Node")
@@ -401,10 +400,10 @@ abstract class GenSource(val schema: SchemaDecl,
     val superString = if (superNames.isEmpty) ""
       else " extends " + superNames.mkString(" with ")
     
-    val implicitValueCode = <source>  implicit lazy val {formatterName}: rt.XMLFormat[{name}] = __{formatterName}</source>
+    val implicitValueCode = <source>  implicit lazy val {formatterName}: scalaxb.XMLFormat[{name}] = __{formatterName}</source>
     
     Snippet(<source>{ buildComment(seq) }case class {name}({paramsString}){superString}</source>,
-     <source>  val __{formatterName} = new rt.XMLFormat[{name}] {{
+     <source>  val __{formatterName} = new scalaxb.XMLFormat[{name}] {{
     def readsXMLEither(seq: scala.xml.NodeSeq): Either[String, {name}] = Left("don't call me.")
     
 {makeWritesXML}
@@ -437,7 +436,7 @@ abstract class GenSource(val schema: SchemaDecl,
     
     val groups = filterGroup(compositor)
     val superNames: List[String] = 
-      if (groups.isEmpty) List("rt.AnyElemNameParser")
+      if (groups.isEmpty) List("scalaxb.AnyElemNameParser")
       else groups.map(groupTypeName(_) + "Format")
     
     val companionCode = <source>{ buildComment(group) }  trait {formatterName} extends {superNames.mkString(" with ")} {{  
@@ -848,6 +847,4 @@ object {name} {{
   
   def makePackageName(pkg: Option[String]) = pkg map { x => 
     <source>package {x}</source> } getOrElse { <source></source> }
-  
-  def makeImports = <source>import org.scalaxb.rt</source>
 }

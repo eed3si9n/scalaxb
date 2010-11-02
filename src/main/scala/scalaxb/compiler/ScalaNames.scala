@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
  
-package org.scalaxb.compiler
+package scalaxb.compiler
 
 trait ScalaNames {
   def isCommonlyUsedWord(s: String) = s match {

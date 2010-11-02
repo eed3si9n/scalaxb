@@ -6,7 +6,7 @@ object XhtmlTest extends TestBase {
   lazy val generated = module.process(inFile, outFile, "org.w3.xhtml")
   
   "xhtml1-strict.scala file must compile so that Html can be used" in {
-    (List("import org.scalaxb.rt._",
+    (List("import scalaxb._",
       "import Scalaxb._",
       "import org.w3.xhtml._",
       "import DefaultXMLProtocol._",

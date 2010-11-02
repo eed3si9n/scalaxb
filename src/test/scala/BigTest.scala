@@ -1,5 +1,5 @@
 import java.io.{File}
-import org.scalaxb.compiler.{Config}
+import scalaxb.compiler.{Config}
 
 object BigTest extends TestBase {
   val inFile  = new File("src/test/resources/big.xsd")
@@ -12,7 +12,7 @@ object BigTest extends TestBase {
       wrappedComplexTypes = List("barOne")) )
     
   "big.scala file must compile so that Foo can be used" in {
-    (List("import org.scalaxb.rt.Scalaxb._",
+    (List("import scalaxb.Scalaxb._",
       "import big.XDefaultXMLProtocol._",
       "toXML[big.XFoo](fromXML[big.XFoo](<foo>" +
     "<string1></string1><string2></string2><string3></string3><string4></string4><string5></string5>" +

@@ -1,5 +1,5 @@
 import java.io.{File}
-import org.scalaxb.compiler.{Verbose}
+import scalaxb.compiler.{Verbose}
 
 object PurchaseOrderTest extends TestBase {
   val inFile    = new File("src/test/resources/ipo.xsd")
@@ -9,11 +9,11 @@ object PurchaseOrderTest extends TestBase {
   
   "ipo.xsd is parsable" in {
      module.parse(inFile) must be like {
-       case schema: org.scalaxb.compiler.xsd.SchemaDecl => true
+       case schema: scalaxb.compiler.xsd.SchemaDecl => true
      }
   }
   
-  // override val module = new org.scalaxb.compiler.xsd.Driver with Verbose
+  // override val module = new scalaxb.compiler.xsd.Driver with Verbose
   lazy val generated = module.process(inFile, outFile, "ipo")
   
   "ipo.scala file must compile so Address can be used" in {

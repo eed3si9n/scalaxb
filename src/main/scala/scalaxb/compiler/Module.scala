@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
  
-package org.scalaxb.compiler
+package scalaxb.compiler
 
 import scala.collection.{Map, Set}
 import scala.collection.mutable.{ListBuffer, ListMap}

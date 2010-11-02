@@ -1,5 +1,5 @@
 import java.io.{File}
-import org.scalaxb.compiler.{Config}
+import scalaxb.compiler.{Config}
 
 object XmlSchemaTest extends TestBase {
   val inFile  = new File("src/test/resources/xmlschema.xsd")
@@ -12,7 +12,7 @@ object XmlSchemaTest extends TestBase {
     ))
     
   "XMLSchema.scala file must compile so that Schema can be used" in {
-    (List("import org.scalaxb.rt._",
+    (List("import scalaxb._",
       "import Scalaxb._",
       "import org.w3.xmlschema._",
       "import XDefaultXMLProtocol._",

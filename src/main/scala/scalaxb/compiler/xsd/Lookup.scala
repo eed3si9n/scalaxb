@@ -20,9 +20,9 @@
  * THE SOFTWARE.
  */
 
-package org.scalaxb.compiler.xsd
+package scalaxb.compiler.xsd
 
-import org.scalaxb.compiler.{Logger}
+import scalaxb.compiler.{Logger}
 import scala.collection.mutable
 
 trait Lookup extends ContextProcessor {
@@ -121,25 +121,25 @@ trait Lookup extends ContextProcessor {
     attributeGroups(ref.namespace, ref.name)
   
   def buildTypeName(typeSymbol: XsTypeSymbol): String = typeSymbol match {
-    case XsAny          => "rt.DataRecord[Any]"
+    case XsAny          => "scalaxb.DataRecord[Any]"
     case XsDataRecord(ReferenceTypeSymbol(decl: ComplexTypeDecl)) if compositorWrapper.contains(decl) =>
       compositorWrapper(decl) match {
         case choice: ChoiceDecl => buildChoiceTypeName(decl, choice)
-        case _ => "rt.DataRecord[Any]"
+        case _ => "scalaxb.DataRecord[Any]"
       }
-    case r: XsDataRecord => "rt.DataRecord[Any]"
-    case XsMixed        => "rt.DataRecord[Any]"
-    case XsAnyAttribute => "rt.DataRecord[String]"
+    case r: XsDataRecord => "scalaxb.DataRecord[Any]"
+    case XsMixed        => "scalaxb.DataRecord[Any]"
+    case XsAnyAttribute => "scalaxb.DataRecord[String]"
     case symbol: BuiltInSimpleTypeSymbol => symbol.name
     case ReferenceTypeSymbol(decl: SimpleTypeDecl) => buildTypeName(decl)
     case ReferenceTypeSymbol(decl: ComplexTypeDecl) => buildTypeName(decl)
     case symbol: AttributeGroupSymbol => buildTypeName(attributeGroups(symbol.namespace, symbol.name))
-    case XsXMLFormat(decl: ComplexTypeDecl) => "rt.XMLFormat[" + buildTypeName(decl) + "]"
-    case XsXMLFormat(group: AttributeGroupDecl) => "rt.XMLFormat[" + buildTypeName(group) + "]"
+    case XsXMLFormat(decl: ComplexTypeDecl) => "scalaxb.XMLFormat[" + buildTypeName(decl) + "]"
+    case XsXMLFormat(group: AttributeGroupDecl) => "scalaxb.XMLFormat[" + buildTypeName(group) + "]"
   }
   
   def buildChoiceTypeName(decl: ComplexTypeDecl, choice: ChoiceDecl): String = 
-    if (choice.particles.size < 1) "rt.DataRecord[Any]"
+    if (choice.particles.size < 1) "scalaxb.DataRecord[Any]"
     else {
       val firstParticle = choice.particles(0)
       
@@ -173,16 +173,16 @@ trait Lookup extends ContextProcessor {
       }
       
       sameType match {
-        case Some(x) => "rt.DataRecord[" + buildTypeName(x) + "]"
+        case Some(x) => "scalaxb.DataRecord[" + buildTypeName(x) + "]"
         case None =>
           if (!containsForeignType(choice) &&
-              (choice.particles forall { isOptionDescendant }) ) "rt.DataRecord[" + buildTypeName(decl) + "]"
-          else "rt.DataRecord[Any]"
+              (choice.particles forall { isOptionDescendant }) ) "scalaxb.DataRecord[" + buildTypeName(decl) + "]"
+          else "scalaxb.DataRecord[Any]"
       }
     }
   
   def xmlFormatTypeName(decl: ComplexTypeDecl): String =
-    "rt.XMLFormat[" + buildTypeName(decl) + "]"
+    "scalaxb.XMLFormat[" + buildTypeName(decl) + "]"
   
   def buildTypeName(decl: ComplexTypeDecl, localOnly: Boolean = false): String = {
     val pkg = packageName(decl, context)

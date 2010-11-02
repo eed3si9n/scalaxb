@@ -2,10 +2,10 @@
  * @author  e.e d3si9n
  */
 
-import ipo._
-import org.scalaxb.rt._
+import scalaxb._
 import Scalaxb._
-import ipo.DefaultXMLProtocol._
+import ipo._
+import DefaultXMLProtocol._
 
 object PurchaseOrderUsage {
   def main(args: Array[String]) = {

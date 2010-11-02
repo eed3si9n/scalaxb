@@ -1,4 +1,4 @@
-package org.scalaxb.rt
+package scalaxb
 
 import scala.xml.{Node, NodeSeq, NamespaceBinding, Elem}
 import javax.xml.datatype.{XMLGregorianCalendar}
@@ -26,7 +26,7 @@ trait CanWriteXML[A] {
       __scope: NamespaceBinding, __typeAttribute: Boolean): NodeSeq
 }
 
-object CanWriteXML {
+object XMLFormat {
   implicit object __NodeXMLWriter extends CanWriteXML[Node] {
     def writesXML(__obj: Node, __namespace: Option[String], __elementLabel: Option[String],
       __scope: NamespaceBinding, __typeAttribute: Boolean): NodeSeq = __obj
@@ -293,8 +293,7 @@ object DataRecord {
     value: A,
     writer: CanWriteXML[_]) extends DataRecord[A]
   import Helper._
-  import CanWriteXML.__NodeSeqXMLWriter
-    
+      
   def apply[A:CanWriteXML](namespace: Option[String], key: Option[String], value: A): DataRecord[A] =
     DataWriter(namespace, key, value, implicitly[CanWriteXML[A]])
   
@@ -302,57 +301,57 @@ object DataRecord {
     apply(None, None, value)
   
   def apply(elemName: ElemName): DataRecord[Any] =
-    if (elemName.name == "") apply(elemName.text)
+    if (elemName.name == "") DataWriter(None, None, elemName.text, XMLFormat.__StringArrayXMLWriter)
     else instanceType(elemName.node) match {
       case (Some(XML_SCHEMA_URI), xstype)   =>
         xstype match {
-          case "int"      => DataWriter(elemName.namespace, Some(elemName.name), elemName.text.toInt, CanWriteXML.XSIntXMLWriter)
-          case "byte"     => DataWriter(elemName.namespace, Some(elemName.name), elemName.text.toByte, CanWriteXML.XSByteXMLWriter)
-          case "short"    => DataWriter(elemName.namespace, Some(elemName.name), elemName.text.toShort, CanWriteXML.XSShortXMLWriter)
-          case "long"     => DataWriter(elemName.namespace, Some(elemName.name), elemName.text.toLong, CanWriteXML.longXMLWriter(xstype))
-          case "float"    => DataWriter(elemName.namespace, Some(elemName.name), elemName.text.toFloat, CanWriteXML.XSFloatXMLWriter)
-          case "double"   => DataWriter(elemName.namespace, Some(elemName.name), elemName.text.toDouble, CanWriteXML.XSDoubleXMLWriter)
-          case "integer"  => DataWriter(elemName.namespace, Some(elemName.name), elemName.text.toInt, CanWriteXML.intXMLWriter(xstype))
-          case "nonPositiveInteger" => DataWriter(elemName.namespace, Some(elemName.name), elemName.text.toInt, CanWriteXML.intXMLWriter(xstype))
-          case "negativeInteger"    => DataWriter(elemName.namespace, Some(elemName.name), elemName.text.toInt, CanWriteXML.intXMLWriter(xstype))
-          case "nonNegativeInteger" => DataWriter(elemName.namespace, Some(elemName.name), elemName.text.toInt, CanWriteXML.intXMLWriter(xstype))
-          case "positiveInteger"    => DataWriter(elemName.namespace, Some(elemName.name), elemName.text.toInt, CanWriteXML.intXMLWriter(xstype))
-          case "unsignedLong"    => DataWriter(elemName.namespace, Some(elemName.name), BigInt(elemName.text), CanWriteXML.bigIntXMLWriter(xstype))
-          case "unsignedInt"     => DataWriter(elemName.namespace, Some(elemName.name), elemName.text.toLong, CanWriteXML.longXMLWriter(xstype))
-          case "unsignedShort"   => DataWriter(elemName.namespace, Some(elemName.name), elemName.text.toInt, CanWriteXML.intXMLWriter(xstype))
-          case "unsignedByte"    => DataWriter(elemName.namespace, Some(elemName.name), elemName.text.toInt, CanWriteXML.intXMLWriter(xstype))
-          case "decimal"  => DataWriter(elemName.namespace, Some(elemName.name), BigDecimal(elemName.text), CanWriteXML.XSDecimalXMLWriter)
-          case "boolean"  => DataWriter(elemName.namespace, Some(elemName.name), elemName.text.toBoolean, CanWriteXML.XSBooleanXMLWriter)
-          case "string"   => DataWriter(elemName.namespace, Some(elemName.name), elemName.text, CanWriteXML.XSStringXMLWriter)
-          case "normalizedString" => DataWriter(elemName.namespace, Some(elemName.name), elemName.text, CanWriteXML.stringXMLWriter(xstype))
-          case "token"    => DataWriter(elemName.namespace, Some(elemName.name), elemName.text, CanWriteXML.stringXMLWriter(xstype))
-          case "language" => DataWriter(elemName.namespace, Some(elemName.name), elemName.text, CanWriteXML.stringXMLWriter(xstype))
-          case "Name"     => DataWriter(elemName.namespace, Some(elemName.name), elemName.text, CanWriteXML.stringXMLWriter(xstype))
-          case "NCName"   => DataWriter(elemName.namespace, Some(elemName.name), elemName.text, CanWriteXML.stringXMLWriter(xstype))
-          case "NMTOKEN"  => DataWriter(elemName.namespace, Some(elemName.name), elemName.text, CanWriteXML.stringXMLWriter(xstype))
-          case "NMTOKENS" => DataWriter(elemName.namespace, Some(elemName.name), elemName.text.split(' '), CanWriteXML.stringArrayXMLWriter(xstype))
-          case "ID"       => DataWriter(elemName.namespace, Some(elemName.name), elemName.text, CanWriteXML.stringXMLWriter(xstype))
-          case "IDREF"    => DataWriter(elemName.namespace, Some(elemName.name), elemName.text, CanWriteXML.stringXMLWriter(xstype))
-          case "IDREFS"   => DataWriter(elemName.namespace, Some(elemName.name), elemName.text.split(' '), CanWriteXML.stringArrayXMLWriter(xstype))
-          case "ENTITY"   => DataWriter(elemName.namespace, Some(elemName.name), elemName.text, CanWriteXML.stringXMLWriter(xstype))
-          case "ENTITIES" => DataWriter(elemName.namespace, Some(elemName.name), elemName.text.split(' '), CanWriteXML.stringArrayXMLWriter(xstype))
-          case "hexBinary"    => DataWriter(elemName.namespace, Some(elemName.name), toHexBinary(elemName.text), CanWriteXML.XSHexBinaryXMLWriter)
-          case "base64Binary" => DataWriter(elemName.namespace, Some(elemName.name), toByteArray(elemName.text), CanWriteXML.byteArrayXMLWriter(xstype))
-          case "anyURI"   => DataWriter(elemName.namespace, Some(elemName.name), new java.net.URI(elemName.text), CanWriteXML.XSAnyURIXMLWriter)
-          case "QName"    => DataWriter(elemName.namespace, Some(elemName.name), javax.xml.namespace.QName.valueOf(elemName.text), CanWriteXML.qnameXMLWriter(xstype))
-          case "NOTATION" => DataWriter(elemName.namespace, Some(elemName.name), javax.xml.namespace.QName.valueOf(elemName.text), CanWriteXML.qnameXMLWriter(xstype))
-          case "duration" => DataWriter(elemName.namespace, Some(elemName.name), Helper.toDuration(elemName.text), CanWriteXML.XSDurationXMLWriter)
-          case "dateTime" => DataWriter(elemName.namespace, Some(elemName.name), XMLCalendar(elemName.text), CanWriteXML.calendarXMLWriter(xstype))
-          case "time"     => DataWriter(elemName.namespace, Some(elemName.name), XMLCalendar(elemName.text), CanWriteXML.calendarXMLWriter(xstype))
-          case "gYearMonth" => DataWriter(elemName.namespace, Some(elemName.name), XMLCalendar(elemName.text), CanWriteXML.calendarXMLWriter(xstype))
-          case "gYear"    => DataWriter(elemName.namespace, Some(elemName.name), XMLCalendar(elemName.text), CanWriteXML.calendarXMLWriter(xstype))
-          case "gMonthDay"  => DataWriter(elemName.namespace, Some(elemName.name), XMLCalendar(elemName.text), CanWriteXML.calendarXMLWriter(xstype))
-          case "gDay"     => DataWriter(elemName.namespace, Some(elemName.name), XMLCalendar(elemName.text), CanWriteXML.calendarXMLWriter(xstype))
-          case "gMonth"   => DataWriter(elemName.namespace, Some(elemName.name), XMLCalendar(elemName.text), CanWriteXML.calendarXMLWriter(xstype))
+          case "int"      => DataWriter(elemName.namespace, Some(elemName.name), elemName.text.toInt, XMLFormat.XSIntXMLWriter)
+          case "byte"     => DataWriter(elemName.namespace, Some(elemName.name), elemName.text.toByte, XMLFormat.XSByteXMLWriter)
+          case "short"    => DataWriter(elemName.namespace, Some(elemName.name), elemName.text.toShort, XMLFormat.XSShortXMLWriter)
+          case "long"     => DataWriter(elemName.namespace, Some(elemName.name), elemName.text.toLong, XMLFormat.longXMLWriter(xstype))
+          case "float"    => DataWriter(elemName.namespace, Some(elemName.name), elemName.text.toFloat, XMLFormat.XSFloatXMLWriter)
+          case "double"   => DataWriter(elemName.namespace, Some(elemName.name), elemName.text.toDouble, XMLFormat.XSDoubleXMLWriter)
+          case "integer"  => DataWriter(elemName.namespace, Some(elemName.name), elemName.text.toInt, XMLFormat.intXMLWriter(xstype))
+          case "nonPositiveInteger" => DataWriter(elemName.namespace, Some(elemName.name), elemName.text.toInt, XMLFormat.intXMLWriter(xstype))
+          case "negativeInteger"    => DataWriter(elemName.namespace, Some(elemName.name), elemName.text.toInt, XMLFormat.intXMLWriter(xstype))
+          case "nonNegativeInteger" => DataWriter(elemName.namespace, Some(elemName.name), elemName.text.toInt, XMLFormat.intXMLWriter(xstype))
+          case "positiveInteger"    => DataWriter(elemName.namespace, Some(elemName.name), elemName.text.toInt, XMLFormat.intXMLWriter(xstype))
+          case "unsignedLong"    => DataWriter(elemName.namespace, Some(elemName.name), BigInt(elemName.text), XMLFormat.bigIntXMLWriter(xstype))
+          case "unsignedInt"     => DataWriter(elemName.namespace, Some(elemName.name), elemName.text.toLong, XMLFormat.longXMLWriter(xstype))
+          case "unsignedShort"   => DataWriter(elemName.namespace, Some(elemName.name), elemName.text.toInt, XMLFormat.intXMLWriter(xstype))
+          case "unsignedByte"    => DataWriter(elemName.namespace, Some(elemName.name), elemName.text.toInt, XMLFormat.intXMLWriter(xstype))
+          case "decimal"  => DataWriter(elemName.namespace, Some(elemName.name), BigDecimal(elemName.text), XMLFormat.XSDecimalXMLWriter)
+          case "boolean"  => DataWriter(elemName.namespace, Some(elemName.name), elemName.text.toBoolean, XMLFormat.XSBooleanXMLWriter)
+          case "string"   => DataWriter(elemName.namespace, Some(elemName.name), elemName.text, XMLFormat.XSStringXMLWriter)
+          case "normalizedString" => DataWriter(elemName.namespace, Some(elemName.name), elemName.text, XMLFormat.stringXMLWriter(xstype))
+          case "token"    => DataWriter(elemName.namespace, Some(elemName.name), elemName.text, XMLFormat.stringXMLWriter(xstype))
+          case "language" => DataWriter(elemName.namespace, Some(elemName.name), elemName.text, XMLFormat.stringXMLWriter(xstype))
+          case "Name"     => DataWriter(elemName.namespace, Some(elemName.name), elemName.text, XMLFormat.stringXMLWriter(xstype))
+          case "NCName"   => DataWriter(elemName.namespace, Some(elemName.name), elemName.text, XMLFormat.stringXMLWriter(xstype))
+          case "NMTOKEN"  => DataWriter(elemName.namespace, Some(elemName.name), elemName.text, XMLFormat.stringXMLWriter(xstype))
+          case "NMTOKENS" => DataWriter(elemName.namespace, Some(elemName.name), elemName.text.split(' '), XMLFormat.stringArrayXMLWriter(xstype))
+          case "ID"       => DataWriter(elemName.namespace, Some(elemName.name), elemName.text, XMLFormat.stringXMLWriter(xstype))
+          case "IDREF"    => DataWriter(elemName.namespace, Some(elemName.name), elemName.text, XMLFormat.stringXMLWriter(xstype))
+          case "IDREFS"   => DataWriter(elemName.namespace, Some(elemName.name), elemName.text.split(' '), XMLFormat.stringArrayXMLWriter(xstype))
+          case "ENTITY"   => DataWriter(elemName.namespace, Some(elemName.name), elemName.text, XMLFormat.stringXMLWriter(xstype))
+          case "ENTITIES" => DataWriter(elemName.namespace, Some(elemName.name), elemName.text.split(' '), XMLFormat.stringArrayXMLWriter(xstype))
+          case "hexBinary"    => DataWriter(elemName.namespace, Some(elemName.name), toHexBinary(elemName.text), XMLFormat.XSHexBinaryXMLWriter)
+          case "base64Binary" => DataWriter(elemName.namespace, Some(elemName.name), toByteArray(elemName.text), XMLFormat.byteArrayXMLWriter(xstype))
+          case "anyURI"   => DataWriter(elemName.namespace, Some(elemName.name), new java.net.URI(elemName.text), XMLFormat.XSAnyURIXMLWriter)
+          case "QName"    => DataWriter(elemName.namespace, Some(elemName.name), javax.xml.namespace.QName.valueOf(elemName.text), XMLFormat.qnameXMLWriter(xstype))
+          case "NOTATION" => DataWriter(elemName.namespace, Some(elemName.name), javax.xml.namespace.QName.valueOf(elemName.text), XMLFormat.qnameXMLWriter(xstype))
+          case "duration" => DataWriter(elemName.namespace, Some(elemName.name), Helper.toDuration(elemName.text), XMLFormat.XSDurationXMLWriter)
+          case "dateTime" => DataWriter(elemName.namespace, Some(elemName.name), XMLCalendar(elemName.text), XMLFormat.calendarXMLWriter(xstype))
+          case "time"     => DataWriter(elemName.namespace, Some(elemName.name), XMLCalendar(elemName.text), XMLFormat.calendarXMLWriter(xstype))
+          case "gYearMonth" => DataWriter(elemName.namespace, Some(elemName.name), XMLCalendar(elemName.text), XMLFormat.calendarXMLWriter(xstype))
+          case "gYear"    => DataWriter(elemName.namespace, Some(elemName.name), XMLCalendar(elemName.text), XMLFormat.calendarXMLWriter(xstype))
+          case "gMonthDay"  => DataWriter(elemName.namespace, Some(elemName.name), XMLCalendar(elemName.text), XMLFormat.calendarXMLWriter(xstype))
+          case "gDay"     => DataWriter(elemName.namespace, Some(elemName.name), XMLCalendar(elemName.text), XMLFormat.calendarXMLWriter(xstype))
+          case "gMonth"   => DataWriter(elemName.namespace, Some(elemName.name), XMLCalendar(elemName.text), XMLFormat.calendarXMLWriter(xstype))
           
-          case _          => DataWriter(elemName.namespace, Some(elemName.name), elemName.node, __NodeSeqXMLWriter)
+          case _          => DataWriter(elemName.namespace, Some(elemName.name), elemName.node, XMLFormat.__NodeSeqXMLWriter)
         }      
-      case _ => DataWriter(elemName.namespace, Some(elemName.name), elemName.node, __NodeSeqXMLWriter)
+      case _ => DataWriter(elemName.namespace, Some(elemName.name), elemName.node, XMLFormat.__NodeSeqXMLWriter)
     }
   
   def unapply[A](record: DataRecord[A]): Option[(Option[String], Option[String], A)] =
@@ -376,7 +375,7 @@ object ElemName {
 }
 
 trait AnyElemNameParser extends scala.util.parsing.combinator.Parsers {
-  import CanWriteXML._
+  import XMLFormat._
   
   type Elem = ElemName
   

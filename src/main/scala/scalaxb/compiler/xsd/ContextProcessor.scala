@@ -20,9 +20,9 @@
  * THE SOFTWARE.
  */
 
-package org.scalaxb.compiler.xsd
+package scalaxb.compiler.xsd
 
-import org.scalaxb.compiler.{ScalaNames, Logger, Config}
+import scalaxb.compiler.{ScalaNames, Logger, Config}
 import scala.collection.mutable
 
 trait PackageName {

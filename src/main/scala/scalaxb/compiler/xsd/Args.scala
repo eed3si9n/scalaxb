@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
  
-package org.scalaxb.compiler.xsd
+package scalaxb.compiler.xsd
  
 trait Args extends Params {
   // called by buildConverter
@@ -205,22 +205,22 @@ trait Args extends Params {
     
     val retval = (cardinality, nillable, defaultValue, fixedValue) match {
       case (Multiple, true, _, _) =>
-        selector + ".toList.map { x => if (x.nil) None else Some(rt.DataRecord(x)) }"
+        selector + ".toList.map { x => if (x.nil) None else Some(scalaxb.DataRecord(x)) }"
       case (Multiple, false, _, _) =>
-        selector + ".toList.map { x => rt.DataRecord(x) }"
+        selector + ".toList.map { x => scalaxb.DataRecord(x) }"
       case (Optional, _, _, _) =>
-        buildMatchStatement("None", "Some(rt.DataRecord(x))")
+        buildMatchStatement("None", "Some(scalaxb.DataRecord(x))")
       case (Single, _, _, Some(x)) =>
-        "rt.DataRecord(" + newline +
+        "scalaxb.DataRecord(" + newline +
           indent(5) + quote(namespace) + ", " + quote(elementLabel) + ", " + newline +
           indent(5) + hardcoded(x) + ")"
       case (Single, _, Some(x), _) =>
-        buildMatchStatement("rt.DataRecord(" + newline +
+        buildMatchStatement("scalaxb.DataRecord(" + newline +
           indent(5) + quote(namespace) + ", " + quote(elementLabel) + ", " + newline +
           indent(5) + hardcoded(x) + ")",
-          "rt.DataRecord(x)")        
+          "scalaxb.DataRecord(x)")        
       case (Single, false, _, _) =>
-        "rt.DataRecord(" + selector + ")"
+        "scalaxb.DataRecord(" + selector + ")"
     }
     
     retval
@@ -315,9 +315,9 @@ trait Args extends Params {
       case x: AttributeDecl => makeCaseEntry(x)
     }.mkString(indent(7), newline + indent(7), newline) +
     indent(5) + "    case scala.xml.UnprefixedAttribute(key, value, _) =>" + newline +
-    indent(5) + "      List(rt.DataRecord(None, Some(key), value.text))" + newline +
+    indent(5) + "      List(scalaxb.DataRecord(None, Some(key), value.text))" + newline +
     indent(5) + "    case scala.xml.PrefixedAttribute(pre, key, value, _) =>" + newline +
-    indent(5) + "      List(rt.DataRecord(Option[String](elem.scope.getURI(pre)), Some(key), value.text))" + newline +
+    indent(5) + "      List(scalaxb.DataRecord(Option[String](elem.scope.getURI(pre)), Some(key), value.text))" + newline +
     indent(5) + "    case _ => Nil" + newline +
     indent(5) + "  }" + newline +
     indent(5) + "case _ => Nil" + newline +
@@ -368,8 +368,8 @@ trait Args extends Params {
         
     val (pre, post) = typeSymbol.name match {
       case "String"     => ("", "")
-      case "javax.xml.datatype.Duration" => ("rt.Helper.toDuration(", ")")
-      case "javax.xml.datatype.XMLGregorianCalendar" => ("rt.XMLCalendar(", ")")
+      case "javax.xml.datatype.Duration" => ("scalaxb.Helper.toDuration(", ")")
+      case "javax.xml.datatype.XMLGregorianCalendar" => ("scalaxb.XMLCalendar(", ")")
       case "Boolean"    => ("", ".toBoolean")
       case "Int"        => ("", ".toInt")
       case "Long"       => ("", ".toLong")
@@ -379,12 +379,12 @@ trait Args extends Params {
       case "Byte"       => ("", ".toByte")
       case "BigInt"     => ("BigInt(", ")")
       case "BigDecimal" => ("BigDecimal(", ")")
-      case "java.net.URI" => ("rt.Helper.toURI(", ")")
+      case "java.net.URI" => ("scalaxb.Helper.toURI(", ")")
       case "javax.xml.namespace.QName"
         => ("javax.xml.namespace.QName.valueOf(", ")")
       case "Array[String]" => ("", ".split(' ')")
-      case "Array[Byte]" => ("rt.Helper.toByteArray(", ")")
-      case "rt.HexBinary"  => ("rt.Helper.toHexBinary(", ")") 
+      case "Array[Byte]" => ("scalaxb.Helper.toByteArray(", ")")
+      case "scalaxb.HexBinary"  => ("scalaxb.Helper.toHexBinary(", ")") 
       case _        => error("GenSource#buildArg: Unsupported type " + typeSymbol.toString) 
     }
     

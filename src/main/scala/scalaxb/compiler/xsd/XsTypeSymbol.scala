@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
  
-package org.scalaxb.compiler.xsd
+package scalaxb.compiler.xsd
 
 trait XsTypeSymbol extends scala.xml.TypeSymbol {
   val name: String
@@ -95,7 +95,7 @@ object XsGMonth           extends BuiltInSimpleTypeSymbol("javax.xml.datatype.XM
 object XsBoolean          extends BuiltInSimpleTypeSymbol("Boolean") {}
 object XsFloat            extends BuiltInSimpleTypeSymbol("Float") {}
 object XsBase64Binary     extends BuiltInSimpleTypeSymbol("Array[Byte]") {}
-object XsHexBinary        extends BuiltInSimpleTypeSymbol("rt.HexBinary") {}
+object XsHexBinary        extends BuiltInSimpleTypeSymbol("scalaxb.HexBinary") {}
 object XsDouble           extends BuiltInSimpleTypeSymbol("Double") {}
 object XsAnyURI           extends BuiltInSimpleTypeSymbol("java.net.URI") {}
 object XsQName            extends BuiltInSimpleTypeSymbol("javax.xml.namespace.QName") {}

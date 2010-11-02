@@ -2,7 +2,7 @@
  * @author  e.e d3si9n
  */
 
-import org.scalaxb.rt._
+import scalaxb._
 import Scalaxb._
 import any._
 

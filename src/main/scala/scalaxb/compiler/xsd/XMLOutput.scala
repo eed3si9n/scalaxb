@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-package org.scalaxb.compiler.xsd
+package scalaxb.compiler.xsd
 import scala.collection.mutable
 
 trait XMLOutput extends Args {
@@ -37,21 +37,21 @@ trait XMLOutput extends Args {
   def buildXMLStringForChoiceWrapper(param: Param) = {
     val typeName = buildTypeName(param.typeSymbol)
     val name = "__obj." + makeParamName(param.name)
-    val baseTypeName = "rt.DataRecord"
+    val baseTypeName = "scalaxb.DataRecord"
     val ns = quoteNamespace(param.namespace)
     
     val retval = (param.cardinality, param.nillable) match {
       case (Multiple, true) =>
         name + ".flatMap(x => x match {" + newline +
           indent(5) + "case Some(x) => " + baseTypeName + ".toXML(x, x.namespace, x.key, __scope, false)" + newline +
-          indent(5) + "case None    => rt.Helper.nilElem(" + ns + ", " + quote(param.name) + ", __scope)" + newline +
+          indent(5) + "case None    => scalaxb.Helper.nilElem(" + ns + ", " + quote(param.name) + ", __scope)" + newline +
           indent(4) + "} )"        
       case (Multiple, false) =>    
         name + ".flatMap { x => " + baseTypeName + ".toXML(x, x.namespace, x.key, __scope, false) }"
       case (Optional, true) =>
         name + " match {" + newline +
           indent(5) + "case Some(x) => " + baseTypeName + ".toXML(x, x.namespace, x.key, __scope, false)" + newline +
-          indent(5) + "case None    => Seq(rt.Helper.nilElem(" + ns + ", " + quote(param.name) + ", __scope))" + newline +
+          indent(5) + "case None    => Seq(scalaxb.Helper.nilElem(" + ns + ", " + quote(param.name) + ", __scope))" + newline +
           indent(4) + "}"    
       case (Optional, false) =>
         name + " match {" + newline +
@@ -62,7 +62,7 @@ trait XMLOutput extends Args {
         name + " match {" + newline +
           indent(5) + "case Some(x) => " + baseTypeName + ".toXML(x, " + ns + ", " +
             makeParamName(param.name) + ".key, __scope, false)" + newline +
-          indent(5) + "case None    => Seq(rt.Helper.nilElem(" + ns + ", " + 
+          indent(5) + "case None    => Seq(scalaxb.Helper.nilElem(" + ns + ", " + 
             quote(param.name) + ", __scope))" + newline +
           indent(4) + "}"
       case (Single, false) =>
@@ -82,7 +82,7 @@ trait XMLOutput extends Args {
         name + ".flatMap(x => x match {" + newline +
           indent(5) + "case Some(x) => " +
             buildToXML(baseTypeName, "x, " + ns + ", " + quote(Some(param.name)) + ", __scope") + newline +
-          indent(5) + "case None    => rt.Helper.nilElem(" + ns + ", " + 
+          indent(5) + "case None    => scalaxb.Helper.nilElem(" + ns + ", " + 
             quote(param.name) + ", __scope)" + newline +
           indent(4) + "} )"        
       case (Multiple, false) =>
@@ -92,7 +92,7 @@ trait XMLOutput extends Args {
         name + " match {" + newline +
           indent(5) + "case Some(x) => " +
             buildToXML(baseTypeName, "x, " + ns + ", " + quote(Some(param.name)) + ", __scope") + newline +
-          indent(5) + "case None    => Seq(rt.Helper.nilElem(" + ns + ", " + quote(param.name) + ", __scope))" + newline +
+          indent(5) + "case None    => Seq(scalaxb.Helper.nilElem(" + ns + ", " + quote(param.name) + ", __scope))" + newline +
           indent(4) + "}"
       case (Optional, false) =>
         name + " match {" + newline +
@@ -104,7 +104,7 @@ trait XMLOutput extends Args {
         name + " match {" + newline +
           indent(5) + "case Some(x) => " + 
             buildToXML(baseTypeName, "x, " + ns + ", " + quote(Some(param.name)) + ", __scope") + newline +
-          indent(5) + "case None    => Seq(rt.Helper.nilElem(" + ns + ", " + 
+          indent(5) + "case None    => Seq(scalaxb.Helper.nilElem(" + ns + ", " + 
             quote(param.name) + ", __scope))" + newline +
           indent(4) + "}"
       case (Single, false) =>
@@ -117,7 +117,7 @@ trait XMLOutput extends Args {
   def buildToString(selector: String, typeSymbol: XsTypeSymbol): String = typeSymbol match {
     case symbol: BuiltInSimpleTypeSymbol if (buildTypeName(symbol) == "java.util.GregorianCalendar") ||
       (buildTypeName(symbol) == "Array[Byte]")  =>
-      "rt.Helper.toString(" + selector + ")"
+      "scalaxb.Helper.toString(" + selector + ")"
     case symbol: BuiltInSimpleTypeSymbol => selector + ".toString"
     case ReferenceTypeSymbol(decl: SimpleTypeDecl) => buildToString(selector, decl)
     case _ => selector + ".toString"
@@ -130,13 +130,13 @@ trait XMLOutput extends Args {
   
   def buildXMLStringForSimpleType(param: Param) = {
     val ns = quoteNamespace(param.namespace)
-    val prefix = "rt.Helper.getPrefix(" + ns + ", __scope).orNull"
+    val prefix = "scalaxb.Helper.getPrefix(" + ns + ", __scope).orNull"
     val retval = (param.cardinality, param.nillable) match {
       case (Multiple, true) =>
         "__obj." + makeParamName(param.name) + " collect {" + newline +
           indent(5) + "case Some(x) => scala.xml.Elem(" + prefix + ", " + quote(param.name) + ", " + 
             "scala.xml.Null, __scope, scala.xml.Text(" + buildToString("x", param.typeSymbol) + "))" + newline +
-          indent(5) + "case None    => rt.Helper.nilElem(" + ns + ", " + 
+          indent(5) + "case None    => scalaxb.Helper.nilElem(" + ns + ", " + 
             quote(param.name) + ", __scope)" + newline +
           indent(4) + "}"
       case (Multiple, false) => 
@@ -146,7 +146,7 @@ trait XMLOutput extends Args {
         "__obj." + makeParamName(param.name) + " match {" + newline +
           indent(5) + "case Some(x) => Seq(scala.xml.Elem(" + prefix + ", " + quote(param.name) + ", " + 
             "scala.xml.Null, __scope, scala.xml.Text(" + buildToString("x", param.typeSymbol) + ")))" + newline +
-          indent(5) + "case None    => Seq(rt.Helper.nilElem(" + ns + ", " + 
+          indent(5) + "case None    => Seq(scalaxb.Helper.nilElem(" + ns + ", " + 
             quote(param.name) + ", __scope))" + newline +
           indent(4) + "}"    
       case (Optional, false) =>
@@ -159,7 +159,7 @@ trait XMLOutput extends Args {
         "__obj." + makeParamName(param.name) + " match {" + newline +
           indent(5) + "case Some(x) => Seq(scala.xml.Elem(" + prefix + ", " + quote(param.name) + ", " + 
             "scala.xml.Null, __scope, scala.xml.Text(" + buildToString("x", param.typeSymbol) + ")))" + newline +
-          indent(5) + "case None    => Seq(rt.Helper.nilElem(" + ns + ", " + 
+          indent(5) + "case None    => Seq(scalaxb.Helper.nilElem(" + ns + ", " + 
             quote(param.name) + ", __scope))" + newline +
           indent(4) + "}"
       case (Single, false) =>

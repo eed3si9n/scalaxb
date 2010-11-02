@@ -48,7 +48,7 @@ Set the environment variable $SCALA_HOME to the appropriate directory.
 
 Copy the jar in your ~/bin directory, then put the line
 
-  java -Xmx1G -cp "$SCALA_HOME/lib/scala-library.jar:scalaxb.jar" org.scalaxb.compiler.Main "$@"
+  java -Xmx1G -cp "$SCALA_HOME/lib/scala-library.jar:scalaxb.jar" scalaxb.compiler.Main "$@"
 
 in a file called scalaxb in your ~/bin directory and do
 

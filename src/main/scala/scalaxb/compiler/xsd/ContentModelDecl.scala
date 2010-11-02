@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-package org.scalaxb.compiler.xsd
+package scalaxb.compiler.xsd
 
 trait ComplexTypeContent {
   val base: XsTypeSymbol

@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-package org.scalaxb.compiler.xsd
+package scalaxb.compiler.xsd
 import scala.collection.mutable
 import scala.collection.immutable
 
@@ -121,7 +121,7 @@ trait Parsers extends Args with Params {
       "{ case " +
       parserVariableList.mkString(" ~ ") + 
       (if (mixed) " => Seq.concat(" + argsString + ")"
-      else if (wrapInDataRecord) " => rt.DataRecord(" + name + "(" + argsString + "))"
+      else if (wrapInDataRecord) " => scalaxb.DataRecord(" + name + "(" + argsString + "))"
       else " => " + name + "(" + argsString + ")") +
       " }"
     }
@@ -242,7 +242,7 @@ trait Parsers extends Args with Params {
   }
     
   def buildParserString(elem: ElemDecl, minOccurs: Int, maxOccurs: Int): String =
-    buildParserString("rt.ElemName(" +
+    buildParserString("scalaxb.ElemName(" +
       quoteNamespace(elem.namespace orElse schema.targetNamespace) + ", " +
       quote(elem.name) + ")",
       minOccurs, maxOccurs)
@@ -254,13 +254,13 @@ trait Parsers extends Args with Params {
   
   def buildConverter(typeSymbol: XsTypeSymbol, minOccurs: Int, maxOccurs: Int): String =
     if (maxOccurs > 1)
-      "(p => p.toList map(x => rt.DataRecord(x.namespace, Some(x.name), " +
+      "(p => p.toList map(x => scalaxb.DataRecord(x.namespace, Some(x.name), " +
       buildArg("x.node", typeSymbol) + ")))"
     else if (minOccurs == 0)
       "(p => p map { x =>" + newline +
-      indent(3) + "rt.DataRecord(x.namespace, Some(x.name), " +
+      indent(3) + "scalaxb.DataRecord(x.namespace, Some(x.name), " +
       buildArg("x.node", typeSymbol) + ") })"
-    else "(x => rt.DataRecord(x.namespace, Some(x.name), " +
+    else "(x => scalaxb.DataRecord(x.namespace, Some(x.name), " +
       buildArg("x.node", typeSymbol) + "))"
   
   def buildParticles(com: Option[HasParticle], name: String): List[ElemDecl] = com match {

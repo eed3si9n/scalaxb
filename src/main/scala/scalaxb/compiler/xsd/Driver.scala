@@ -20,9 +20,9 @@
  * THE SOFTWARE.
  */
  
-package org.scalaxb.compiler.xsd
+package scalaxb.compiler.xsd
 
-import org.scalaxb.compiler.{Module, Config}
+import scalaxb.compiler.{Module, Config}
 import java.io.{File, Reader, PrintWriter}
 import collection.mutable
 

@@ -1,5 +1,5 @@
 import java.io.{File}
-import org.scalaxb.compiler.{Config}
+import scalaxb.compiler.{Config}
 
 object ImportTest extends TestBase {
   val ipoxsd    = new File("src/test/resources/ipo.xsd")

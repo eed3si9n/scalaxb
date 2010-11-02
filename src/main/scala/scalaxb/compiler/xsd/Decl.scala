@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-package org.scalaxb.compiler.xsd
+package scalaxb.compiler.xsd
 
 import scala.collection.{Map, Set}
 import scala.collection.mutable

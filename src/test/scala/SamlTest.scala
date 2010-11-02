@@ -1,5 +1,5 @@
 import java.io.{File}
-import org.scalaxb.compiler.{Config}
+import scalaxb.compiler.{Config}
 
 object SamlTest extends TestBase {
   val xmldsigcoreschemaxsd = new File("src/test/resources/xmldsig-core-schema.xsd")

@@ -2,6 +2,26 @@
 <xs:schema targetNamespace="http://www.example.com/general"
     xmlns:xs="http://www.w3.org/2001/XMLSchema"
     xmlns:gen="http://www.example.com/general">
+  
+  <xs:complexType name="SingularSimpleTypeTest">
+    <xs:sequence>
+      <xs:element name="number1" type="xs:unsignedInt"/>
+      <xs:element name="number2" minOccurs="0" maxOccurs="1" type="xs:unsignedInt"/>
+      <xs:element name="number3" maxOccurs="unbounded" type="xs:unsignedInt"/>
+      <xs:element name="number4" nillable="true" minOccurs="0" maxOccurs="1" type="xs:unsignedInt"/>
+      <xs:element name="number5" nillable="true" type="xs:unsignedInt"/>
+      
+      <xs:element name="milk1" type="gen:MilkType"/>
+      <xs:element name="milk2" minOccurs="0" maxOccurs="1" type="gen:MilkType"/>
+      <xs:element name="milk3" maxOccurs="unbounded" type="gen:MilkType"/>
+      <xs:element name="milk4" nillable="true" minOccurs="0" maxOccurs="1" type="gen:MilkType"/>
+      <xs:element name="milk5" nillable="true" type="gen:MilkType"/>
+    </xs:sequence>
+    
+    <xs:attribute name="attr1" type="xs:unsignedInt"/>
+    <xs:attribute name="attr2" type="gen:MilkType"/>   
+  </xs:complexType>
+  
   <xs:complexType name="ListTest">
     <xs:sequence>
       <xs:element name="numbers1" type="gen:ListOfBuiltInType"/>

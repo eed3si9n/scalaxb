@@ -131,40 +131,22 @@ trait XMLOutput extends Args {
   def buildXMLStringForSimpleType(param: Param) = {
     val ns = quoteNamespace(param.namespace)
     val prefix = "scalaxb.Helper.getPrefix(" + ns + ", __scope).orNull"
-    val retval = (param.cardinality, param.nillable, param.typeSymbol) match {
-      case (Multiple, true, _) =>
-        "__obj." + makeParamName(param.name) + " collect {" + newline +
-          indent(5) + "case Some(x) => scala.xml.Elem(" + prefix + ", " + quote(param.name) + ", " + 
-            "scala.xml.Null, __scope, scala.xml.Text(" + buildToString("x", param.typeSymbol) + "))" + newline +
-          indent(5) + "case None    => scalaxb.Helper.nilElem(" + ns + ", " + 
-            quote(param.name) + ", __scope)" + newline +
+    val objParam = "__obj." + makeParamName(param.name)
+    val nilElemCode = "scalaxb.Helper.nilElem(" + ns + ", " + quote(param.name) + ", __scope)"
+    val xToXMLCode = buildToXML(param.baseTypeName, "x, " + ns + ", Some(" + quote(param.name) + "), __scope, false")
+    
+    val retval = (param.cardinality, param.nillable) match {
+      case (Multiple, true) =>
+        objParam + " flatMap {" + newline +
+          indent(5) + "case Some(x) => " + xToXMLCode + newline +
+          indent(5) + "case None    => " + nilElemCode + newline +
           indent(4) + "}"
-      case (Multiple, false, _) => 
-        "__obj." + makeParamName(param.name) + " map { x => scala.xml.Elem(" + prefix + ", " + quote(param.name) + ", " +
-          "scala.xml.Null, __scope, scala.xml.Text(" + buildToString("x", param.typeSymbol) + ")) }"
-      case (Optional, true, _) =>
-        "__obj." + makeParamName(param.name) + " match {" + newline +
-          indent(5) + "case Some(x) => Seq(scala.xml.Elem(" + prefix + ", " + quote(param.name) + ", " + 
-            "scala.xml.Null, __scope, scala.xml.Text(" + buildToString("x", param.typeSymbol) + ")))" + newline +
-          indent(5) + "case None    => Seq(scalaxb.Helper.nilElem(" + ns + ", " + 
-            quote(param.name) + ", __scope))" + newline +
-          indent(4) + "}"    
-      case (Optional, false, _) =>
-        "__obj." + makeParamName(param.name) + " match {" + newline +
-          indent(5) + "case Some(x) => Seq(scala.xml.Elem(" + prefix + ", " + quote(param.name) + ", " + 
-            "scala.xml.Null, __scope, scala.xml.Text(" + buildToString("x", param.typeSymbol) + ")))" + newline +
-          indent(5) + "case None    => Nil" + newline +
-          indent(4) + "}"
-      case (Single, true, _) =>    
-        "__obj." + makeParamName(param.name) + " match {" + newline +
-          indent(5) + "case Some(x) => Seq(scala.xml.Elem(" + prefix + ", " + quote(param.name) + ", " + 
-            "scala.xml.Null, __scope, scala.xml.Text(" + buildToString("x", param.typeSymbol) + ")))" + newline +
-          indent(5) + "case None    => Seq(scalaxb.Helper.nilElem(" + ns + ", " + 
-            quote(param.name) + ", __scope))" + newline +
-          indent(4) + "}"
-      case (Single, false, _) =>
-        buildToXML(param.baseTypeName, "__obj." + makeParamName(param.name) + ", " +
-          ns + ", Some(" + quote(param.name) + "), __scope, false")
+      case (Multiple, false) => objParam + " flatMap { x => " + xToXMLCode + " }"
+      case (Optional, true)  => objParam + " map { x => " + xToXMLCode + " } getOrElse { " + nilElemCode + " }" 
+      case (Optional, false) => objParam + " map { x => " + xToXMLCode + " } getOrElse { Nil }"
+      case (Single, true)    => objParam + " map { x => " + xToXMLCode + " } getOrElse { " + nilElemCode + " }"
+      case (Single, false) =>
+        buildToXML(param.baseTypeName, objParam + ", " + ns + ", Some(" + quote(param.name) + "), __scope, false")
       }
     
     retval

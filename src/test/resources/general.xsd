@@ -1,0 +1,38 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<xs:schema targetNamespace="http://www.example.com/general"
+    xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:gen="http://www.example.com/general">
+  <xs:complexType name="ListTest">
+    <xs:sequence>
+      <xs:element name="numbers1" type="gen:ListOfBuiltInType"/>
+      <xs:element name="numbers2" minOccurs="0" maxOccurs="1" type="gen:ListOfBuiltInType"/>
+      <xs:element name="numbers3" maxOccurs="unbounded" type="gen:ListOfBuiltInType"/>
+      <xs:element name="numbers4" nillable="true" minOccurs="0" maxOccurs="1" type="gen:ListOfBuiltInType"/>
+      <xs:element name="numbers5" nillable="true" type="gen:ListOfBuiltInType"/>
+      
+      <xs:element name="milk1" type="gen:ListOfMilk"/>
+      <xs:element name="milk2" minOccurs="0" maxOccurs="1" type="gen:ListOfMilk"/>
+      <xs:element name="milk3" maxOccurs="unbounded" type="gen:ListOfMilk"/>
+      <xs:element name="milk4" nillable="true" minOccurs="0" maxOccurs="1" type="gen:ListOfMilk"/>
+      <xs:element name="milk5" nillable="true" type="gen:ListOfMilk"/>
+    </xs:sequence>
+    
+    <xs:attribute name="attr1" type="gen:ListOfBuiltInType"/>
+    <xs:attribute name="attr2" type="gen:ListOfMilk"/>
+  </xs:complexType>
+  
+  <xs:simpleType name="ListOfMilk">
+    <xs:list itemType="gen:MilkType"/>
+  </xs:simpleType>
+  
+  <xs:simpleType name="MilkType">
+    <xs:restriction base="xs:NMTOKEN">
+      <xs:enumeration value="WHOLE"/>
+      <xs:enumeration value="SKIM"/>
+    </xs:restriction>
+  </xs:simpleType>
+  
+  <xs:simpleType name="ListOfBuiltInType">
+    <xs:list itemType="xs:unsignedInt"/>
+  </xs:simpleType>
+</xs:schema>

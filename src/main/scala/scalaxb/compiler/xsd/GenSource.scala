@@ -65,7 +65,7 @@ abstract class GenSource(val schema: SchemaDecl,
         else splitSnippet(makeType(decl))
         
       case decl: SimpleTypeDecl =>
-        if (containsEnumeration(decl)) nodes += makeEnumType(decl)
+        if (containsEnumeration(decl)) splitSnippet(makeEnumType(decl))
     }
     
     for ((sch, group) <- context.groups if sch == this.schema)
@@ -487,6 +487,7 @@ abstract class GenSource(val schema: SchemaDecl,
   
   def makeEnumType(decl: SimpleTypeDecl) = {
     val name = buildTypeName(decl)
+    val formatterName = name + "Format"
     val enums = filterEnumeration(decl)
     
     def makeEnum(enum: EnumerationDecl) =
@@ -498,7 +499,7 @@ abstract class GenSource(val schema: SchemaDecl,
     
     val enumString = enums.map(makeEnum).mkString(newline)
     
-    enums match {
+    val traitCode = enums match {
       case Nil =>
 <source>case class {name}()
 
@@ -516,6 +517,20 @@ object {name} {{
 
 { enumString }</source>
     }  // match
+    
+    val implicitValueCode = <source>  implicit lazy val {formatterName}: scalaxb.XMLFormat[{name}] = __{formatterName}</source>
+    
+    Snippet(traitCode,
+      <source>  val __{formatterName} = new scalaxb.XMLFormat[{name}] {{
+    def readsXMLEither(seq: scala.xml.NodeSeq): Either[String, {name}] = Right({name}.fromString(seq.text))
+    
+    def writesXML(__obj: {name}, __namespace: Option[String], __elementLabel: Option[String],
+        __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
+      scala.xml.Elem(scalaxb.Helper.getPrefix(__namespace, __scope).orNull, 
+        __elementLabel getOrElse {{ error("missing element label.") }},
+        scala.xml.Null, __scope, scala.xml.Text(__obj.toString))
+  }}</source>,
+      implicitValueCode)
   }
         
   def flattenSuperNames(decl: ComplexTypeDecl): List[String] = 

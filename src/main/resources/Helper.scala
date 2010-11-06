@@ -6,7 +6,7 @@ import javax.xml.datatype.{XMLGregorianCalendar}
 object Scalaxb {
   def fromXML[A](seq: NodeSeq)(implicit format: XMLFormat[A]): A = format.readsXML(seq)
   def toXML[A](__obj: A, __namespace: Option[String], __elementLabel: Option[String],
-      __scope: NamespaceBinding, __typeAttribute: Boolean = false)(implicit format: XMLFormat[A]): NodeSeq =
+      __scope: NamespaceBinding, __typeAttribute: Boolean = false)(implicit format: CanWriteXML[A]): NodeSeq =
     format.writesXML(__obj, __namespace, __elementLabel, __scope, __typeAttribute)
 }
 
@@ -263,7 +263,14 @@ object XMLFormat {
         __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
       Helper.stringToXML(__obj.toString, Some("anyURI"), __namespace, __elementLabel, __scope)
   }
-    
+  
+  implicit def seqXMLWriter[A: CanWriteXML]: CanWriteXML[Seq[A]] = new CanWriteXML[Seq[A]] {
+    def writesXML(__obj: Seq[A], __namespace: Option[String], __elementLabel: Option[String],
+        __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
+      Helper.stringToXML((__obj map { x => Scalaxb.toXML(x, __namespace, __elementLabel, __scope, __typeAttribute).text }).mkString(" "),
+        None, __namespace, __elementLabel, __scope)       
+  }
+  
   implicit object AnyXMLWriter extends CanWriteXML[Any] {
     def writesXML(__obj: Any, __namespace: Option[String], __elementLabel: Option[String],
         __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
@@ -329,12 +336,12 @@ object DataRecord {
           case "Name"     => DataWriter(elemName.namespace, Some(elemName.name), elemName.text, XMLFormat.stringXMLWriter(xstype))
           case "NCName"   => DataWriter(elemName.namespace, Some(elemName.name), elemName.text, XMLFormat.stringXMLWriter(xstype))
           case "NMTOKEN"  => DataWriter(elemName.namespace, Some(elemName.name), elemName.text, XMLFormat.stringXMLWriter(xstype))
-          case "NMTOKENS" => DataWriter(elemName.namespace, Some(elemName.name), elemName.text.split(' '), XMLFormat.stringArrayXMLWriter(xstype))
+          case "NMTOKENS" => DataWriter(elemName.namespace, Some(elemName.name), elemName.splitBySpace, XMLFormat.stringArrayXMLWriter(xstype))
           case "ID"       => DataWriter(elemName.namespace, Some(elemName.name), elemName.text, XMLFormat.stringXMLWriter(xstype))
           case "IDREF"    => DataWriter(elemName.namespace, Some(elemName.name), elemName.text, XMLFormat.stringXMLWriter(xstype))
-          case "IDREFS"   => DataWriter(elemName.namespace, Some(elemName.name), elemName.text.split(' '), XMLFormat.stringArrayXMLWriter(xstype))
+          case "IDREFS"   => DataWriter(elemName.namespace, Some(elemName.name), elemName.splitBySpace, XMLFormat.stringArrayXMLWriter(xstype))
           case "ENTITY"   => DataWriter(elemName.namespace, Some(elemName.name), elemName.text, XMLFormat.stringXMLWriter(xstype))
-          case "ENTITIES" => DataWriter(elemName.namespace, Some(elemName.name), elemName.text.split(' '), XMLFormat.stringArrayXMLWriter(xstype))
+          case "ENTITIES" => DataWriter(elemName.namespace, Some(elemName.name), elemName.splitBySpace, XMLFormat.stringArrayXMLWriter(xstype))
           case "hexBinary"    => DataWriter(elemName.namespace, Some(elemName.name), toHexBinary(elemName.text), XMLFormat.XSHexBinaryXMLWriter)
           case "base64Binary" => DataWriter(elemName.namespace, Some(elemName.name), toByteArray(elemName.text), XMLFormat.byteArrayXMLWriter(xstype))
           case "anyURI"   => DataWriter(elemName.namespace, Some(elemName.name), new java.net.URI(elemName.text), XMLFormat.XSAnyURIXMLWriter)
@@ -368,6 +375,7 @@ case class ElemName(namespace: Option[String], name: String) {
   var node: scala.xml.Node = _
   def text = node.text
   def nil = Helper.isNil(node)
+  def splitBySpace = Helper.splitBySpace(text)
 }
 
 object ElemName {
@@ -561,6 +569,8 @@ object Helper {
       scala.xml.Attribute(scope.getPrefix(XSI_URL), "nil", "true", scala.xml.Null),
       scope, Nil: _*)
       
+  def splitBySpace(text: String) = text.split(' ').filter("" !=)
+  
   def instanceType(node: scala.xml.Node) = {
     val typeName = (node \ ("@{" + XSI_URL + "}type")).text
     val prefix = if (typeName.contains(':'))

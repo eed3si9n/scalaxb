@@ -401,7 +401,7 @@ trait Args extends Params {
     def buildSplitter(r: String) = "scalaxb.Helper.splitBySpace(" + r  + ".text).map(x => " + pre + "x" + post + ")" 
     val retval = (list, cardinality, nillable, defaultValue, fixedValue) match {
       case (true, Multiple, true, _, _) =>
-        selector + ".toSeq.map { x => if (x.nil) None else Some(" + buildSplitter("x") + ") }"
+        selector + ".toSeq.map { x => if (x.nil) None else Some(" + buildSplitter("x") + ".toSeq) }"
       case (true, Multiple, false, _, _) =>
         selector + ".toSeq.map { x => " + buildSplitter("x") + ".toSeq }" 
       case (true, Optional, true, _, _) =>

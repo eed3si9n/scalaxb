@@ -27,11 +27,34 @@ trait XMLOutput extends Args {
   def buildXMLString(param: Param): String = param.typeSymbol match {
     case symbol: BuiltInSimpleTypeSymbol => buildXMLStringForSimpleType(param)
     case ReferenceTypeSymbol(decl: SimpleTypeDecl) => buildXMLStringForSimpleType(param)
-    case ReferenceTypeSymbol(decl: ComplexTypeDecl) => buildXMLStringForComplexType(param, decl)
+    case ReferenceTypeSymbol(decl: ComplexTypeDecl) => buildXMLStringForSimpleType(param)
     case XsAny => buildXMLStringForChoiceWrapper(param)
     case r: XsDataRecord => buildXMLStringForChoiceWrapper(param)
     case _ => error("GenSource#buildXMLString: " + param.toString +
       " Invalid type " + param.typeSymbol.getClass.toString + ": " + param.typeSymbol.toString)    
+  }
+  
+  def buildXMLStringForSimpleType(param: Param) = {
+    val ns = quoteNamespace(param.namespace)
+    val name = "__obj." + makeParamName(param.name)
+    val nilElemCode = "scalaxb.Helper.nilElem(" + ns + ", " + quote(param.name) + ", __scope)"
+    val xToXMLCode = buildToXML(param.baseTypeName, "x, " + ns + ", Some(" + quote(param.name) + "), __scope, false")
+    
+    val retval = (param.cardinality, param.nillable) match {
+      case (Multiple, true) =>
+        name + " flatMap {" + newline +
+          indent(5) + "case Some(x) => " + xToXMLCode + newline +
+          indent(5) + "case None    => " + nilElemCode + newline +
+          indent(4) + "}"
+      case (Multiple, false) => name + " flatMap { x => " + xToXMLCode + " }"
+      case (Optional, true)  => name + " map { x => " + xToXMLCode + " } getOrElse { " + nilElemCode + " }" 
+      case (Optional, false) => name + " map { x => " + xToXMLCode + " } getOrElse { Nil }"
+      case (Single, true)    => name + " map { x => " + xToXMLCode + " } getOrElse { " + nilElemCode + " }"
+      case (Single, false) =>
+        buildToXML(param.baseTypeName, name + ", " + ns + ", " + quote(Some(param.name)) + ", __scope, false")
+      }
+    
+    retval
   }
       
   def buildXMLStringForChoiceWrapper(param: Param) = {
@@ -71,87 +94,7 @@ trait XMLOutput extends Args {
     
     retval
   } 
-  
-  def buildXMLStringForComplexType(param: Param, decl: ComplexTypeDecl) = {
-    val name = "__obj." + makeParamName(param.name)
-    val baseTypeName = param.baseTypeName
-    val ns = quoteNamespace(param.namespace)
     
-    val retval = (param.cardinality, param.nillable)  match {
-      case (Multiple, true) =>
-        name + ".flatMap(x => x match {" + newline +
-          indent(5) + "case Some(x) => " +
-            buildToXML(baseTypeName, "x, " + ns + ", " + quote(Some(param.name)) + ", __scope") + newline +
-          indent(5) + "case None    => scalaxb.Helper.nilElem(" + ns + ", " + 
-            quote(param.name) + ", __scope)" + newline +
-          indent(4) + "} )"        
-      case (Multiple, false) =>
-        name + ".flatMap(x => " +
-          buildToXML(baseTypeName, "x, " + ns + ", " + quote(Some(param.name)) + ", __scope") + ")"
-      case (Optional, true) =>
-        name + " match {" + newline +
-          indent(5) + "case Some(x) => " +
-            buildToXML(baseTypeName, "x, " + ns + ", " + quote(Some(param.name)) + ", __scope") + newline +
-          indent(5) + "case None    => Seq(scalaxb.Helper.nilElem(" + ns + ", " + quote(param.name) + ", __scope))" + newline +
-          indent(4) + "}"
-      case (Optional, false) =>
-        name + " match {" + newline +
-          indent(5) + "case Some(x) => " + 
-            buildToXML(baseTypeName, "x, " + ns + ", " + quote(Some(param.name)) + ", __scope") + newline +
-          indent(5) + "case None    => Nil" + newline +
-          indent(4) + "}"  
-      case (Single, true) =>
-        name + " match {" + newline +
-          indent(5) + "case Some(x) => " + 
-            buildToXML(baseTypeName, "x, " + ns + ", " + quote(Some(param.name)) + ", __scope") + newline +
-          indent(5) + "case None    => Seq(scalaxb.Helper.nilElem(" + ns + ", " + 
-            quote(param.name) + ", __scope))" + newline +
-          indent(4) + "}"
-      case (Single, false) =>
-        buildToXML(baseTypeName, name + ", " + ns + ", " + quote(Some(param.name)) + ", __scope")
-    }
-    
-    retval
-  }
-  
-  def buildToString(selector: String, typeSymbol: XsTypeSymbol): String = typeSymbol match {
-    case symbol: BuiltInSimpleTypeSymbol if (buildTypeName(symbol) == "java.util.GregorianCalendar") ||
-      (buildTypeName(symbol) == "Array[Byte]")  =>
-      "scalaxb.Helper.toString(" + selector + ")"
-    case symbol: BuiltInSimpleTypeSymbol => selector + ".toString"
-    case ReferenceTypeSymbol(decl: SimpleTypeDecl) => buildToString(selector, decl)
-    case _ => selector + ".toString"
-  }
-  
-  def buildToString(selector: String, decl: SimpleTypeDecl): String = decl.content match {
-    case x: SimpTypListDecl => selector + ".map(x => " + buildToString("x", baseType(decl)) + ").mkString(\" \")" 
-    case _ => buildToString(selector, baseType(decl))
-  }
-  
-  def buildXMLStringForSimpleType(param: Param) = {
-    val ns = quoteNamespace(param.namespace)
-    val prefix = "scalaxb.Helper.getPrefix(" + ns + ", __scope).orNull"
-    val objParam = "__obj." + makeParamName(param.name)
-    val nilElemCode = "scalaxb.Helper.nilElem(" + ns + ", " + quote(param.name) + ", __scope)"
-    val xToXMLCode = buildToXML(param.baseTypeName, "x, " + ns + ", Some(" + quote(param.name) + "), __scope, false")
-    
-    val retval = (param.cardinality, param.nillable) match {
-      case (Multiple, true) =>
-        objParam + " flatMap {" + newline +
-          indent(5) + "case Some(x) => " + xToXMLCode + newline +
-          indent(5) + "case None    => " + nilElemCode + newline +
-          indent(4) + "}"
-      case (Multiple, false) => objParam + " flatMap { x => " + xToXMLCode + " }"
-      case (Optional, true)  => objParam + " map { x => " + xToXMLCode + " } getOrElse { " + nilElemCode + " }" 
-      case (Optional, false) => objParam + " map { x => " + xToXMLCode + " } getOrElse { Nil }"
-      case (Single, true)    => objParam + " map { x => " + xToXMLCode + " } getOrElse { " + nilElemCode + " }"
-      case (Single, false) =>
-        buildToXML(param.baseTypeName, objParam + ", " + ns + ", Some(" + quote(param.name) + "), __scope, false")
-      }
-    
-    retval
-  }
-
   def buildAttributeString(attr: AttributeLike): String = attr match {
     case ref: AttributeRef => buildAttributeString(buildAttribute(ref))
     case x: AttributeDecl  => buildAttributeString(x)
@@ -185,4 +128,17 @@ trait XMLOutput extends Args {
   def buildAttributeString(group: AttributeGroupDecl): String =
     "attr = " + buildParam(group).baseTypeName + "Format" + ".toAttribute(__obj." + makeParamName(buildParam(group).name) +
     ", attr, __scope)"
+    
+  def buildToString(selector: String, typeSymbol: XsTypeSymbol): String = typeSymbol match {
+    case symbol: BuiltInSimpleTypeSymbol if (buildTypeName(symbol) == "java.util.GregorianCalendar") ||
+      (buildTypeName(symbol) == "Array[Byte]")  =>
+      "scalaxb.Helper.toString(" + selector + ")"
+    case symbol: BuiltInSimpleTypeSymbol => selector + ".toString"
+    case ReferenceTypeSymbol(decl: SimpleTypeDecl) =>       
+      decl.content match {
+        case x: SimpTypListDecl => selector + ".map(x => " + buildToString("x", baseType(decl)) + ").mkString(\" \")" 
+        case _ => buildToString(selector, baseType(decl))
+      }
+    case _ => selector + ".toString"
+  }
 }

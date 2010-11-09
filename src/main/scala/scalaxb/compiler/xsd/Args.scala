@@ -83,8 +83,11 @@ trait Args extends Params {
     if (compositorWrapper.contains(decl)) {
       val compositor = compositorWrapper(decl)
       
-      if (elem.maxOccurs > 1) selector + ".toList"
-      else selector
+      (toCardinality(elem.minOccurs, elem.maxOccurs), elem.nillable getOrElse {false}) match {
+        case (Multiple, _)    => selector + ".toSeq"
+        case (Optional, true) => selector + " getOrElse { None }"
+        case _ => selector
+      }
     }
     else buildComplexTypeArg(decl, selector,
       elem.defaultValue, elem.fixedValue,

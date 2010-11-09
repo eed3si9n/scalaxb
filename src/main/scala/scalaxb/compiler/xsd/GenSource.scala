@@ -427,12 +427,12 @@ abstract class GenSource(val schema: SchemaDecl,
     val mixedParam = Param(param.namespace, param.name, XsDataRecord(XsAny),
       param.cardinality, param.nillable, param.attribute)
     
-    val parser = buildCompositorParser(compositor, 1, 1, false, false)
+    val parser = buildCompositorParser(compositor, SingleUnnillable, false, false)
     val wrapperParser = compositor match {
       case choice: ChoiceDecl => parser
-      case _ => buildCompositorParser(compositor, 1, 1, false, true)
+      case _ => buildCompositorParser(compositor, SingleUnnillable, false, true)
     }
-    val mixedparser = buildCompositorParser(compositor, 1, 1, true, true)
+    val mixedparser = buildCompositorParser(compositor, SingleUnnillable, true, true)
     
     val groups = filterGroup(compositor)
     val superNames: List[String] = 

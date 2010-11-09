@@ -27,15 +27,22 @@ trait Params extends Lookup {
   val ANY_ATTR_PARAM = "anyAttribute"
   var argNumber = 0
   
+  case class Occurrence(minOccurs: Int, maxOccurs: Int, nillable: Boolean)
+  
+  val SingleUnnillable = Occurrence(1, 1, false)
+  
   abstract class Cardinality
   case object Optional extends Cardinality
   case object Single extends Cardinality
   case object Multiple extends Cardinality
   
-  def toCardinality(minOccurs: Int, maxOccurs: Int) =
+  def toCardinality(minOccurs: Int, maxOccurs: Int): Cardinality =
     if (maxOccurs > 1) Multiple
     else if (minOccurs == 0) Optional
     else Single
+    
+  def toCardinality(occurrence: Occurrence): Cardinality =
+    toCardinality(occurrence.minOccurs, occurrence.maxOccurs)
   
   case class Param(namespace: Option[String],
     name: String,
@@ -150,41 +157,44 @@ trait Params extends Lookup {
   // while particle GroupDecl may differ in cardinality.
   def groupTypeName(group: GroupDecl) =
     makeTypeName(context.compositorNames(groups(group.namespace, group.name)))
-
-  def buildCompositorRef(compositor: HasParticle): ElemDecl = {
-    val minOccurs = compositor match {
-      case ref: GroupRef =>
-        val group = buildGroup(ref)
-        val primary = primaryCompositor(group)
-        List(ref.minOccurs, group.minOccurs, primary.minOccurs).min
-      case group: GroupDecl =>
-        val primary = primaryCompositor(group)
-        math.min(group.minOccurs, primary.minOccurs)
-      case choice: ChoiceDecl => (compositor.minOccurs :: compositor.particles.map(_.minOccurs)).min
-      case _ => compositor.minOccurs
-    }
-    
-    val maxOccurs = compositor match {
-      case ref: GroupRef =>
-        val group = buildGroup(ref)
-        val primary = primaryCompositor(group)
-        List(ref.maxOccurs, group.maxOccurs, primary.maxOccurs).max  
-      case group: GroupDecl =>
-        val primary = primaryCompositor(group)
-        math.max(group.maxOccurs, primary.maxOccurs)
-      case choice: ChoiceDecl => (compositor.maxOccurs :: compositor.particles.map(_.maxOccurs)).max
-      case _ => compositor.maxOccurs
-    }
-    
+  
+  def buildOccurrence(particle: Particle): Occurrence = particle match {
+    case compositor: HasParticle => buildOccurrence(compositor)
+    case elem: ElemDecl => Occurrence(elem.minOccurs, elem.maxOccurs, elem.nillable getOrElse {false})
+    case ref: ElemRef   => Occurrence(ref.minOccurs, ref.maxOccurs,
+      (ref.nillable getOrElse {false}) || (buildElement(ref).nillable getOrElse {false}))
+    case any: AnyDecl   => Occurrence(any.minOccurs, any.maxOccurs, false)
+  }
+  
+  def buildOccurrence(compos: HasParticle): Occurrence = compos match {
+    case ref: GroupRef =>
+      val o = buildOccurrence(buildGroup(ref))
+      Occurrence(math.min(ref.minOccurs, o.minOccurs), math.max(ref.maxOccurs, o.maxOccurs), o.nillable)
+    case group: GroupDecl =>
+      val o = buildOccurrence(primaryCompositor(group))
+      Occurrence(math.min(group.minOccurs, o.minOccurs), math.max(group.maxOccurs, o.maxOccurs), o.nillable)
+    case choice: ChoiceDecl =>
+      val minOccurs = (choice.minOccurs :: choice.particles.map(_.minOccurs)).min
+      val maxOccurs = (choice.maxOccurs :: choice.particles.map(_.maxOccurs)).max
+      val nillable = choice.particles exists {
+        case elem: ElemDecl => elem.nillable getOrElse {false}
+        case ref: ElemRef =>
+          if (ref.nillable getOrElse {false}) true
+          else buildElement(ref).nillable getOrElse {false}
+        case _ => false
+      }
+      Occurrence(minOccurs, maxOccurs, nillable)
+    case _ => Occurrence(compos.minOccurs, compos.maxOccurs, false)
+  }
+  
+  def buildCompositorRef(compositor: HasParticle): ElemDecl =
     buildCompositorRef(
       compositor match {
         case ref: GroupRef => buildGroup(ref)
         case _ => compositor
-      },
-      minOccurs, maxOccurs)
-  }
+      }, buildOccurrence(compositor))
 
-  def buildCompositorRef(compositor: HasParticle, minOccurs: Int, maxOccurs: Int): ElemDecl = {    
+  def buildCompositorRef(compositor: HasParticle, occurrence: Occurrence): ElemDecl = {    
     argNumber += 1
     val name = "arg" + argNumber 
 
@@ -201,8 +211,8 @@ trait Params extends Lookup {
     symbol.decl = decl
     val typeNames = context.typeNames(packageName(decl.namespace, context))
     typeNames(decl) = typeName
-
-    ElemDecl(schema.targetNamespace, name, symbol, None, None, minOccurs, maxOccurs,
-      None, None, None)
+    
+    ElemDecl(schema.targetNamespace, name, symbol, None, None,
+      occurrence.minOccurs, occurrence.maxOccurs, Some(occurrence.nillable), None, None)
   }
 }

@@ -23,22 +23,20 @@
 package scalaxb.compiler.xsd
 import scala.collection.mutable
 
-trait XMLOutput extends Args {
-  def buildXMLString(param: Param): String = param.typeSymbol match {
-    case symbol: BuiltInSimpleTypeSymbol => buildXMLStringForSimpleType(param)
-    case ReferenceTypeSymbol(decl: SimpleTypeDecl) => buildXMLStringForSimpleType(param)
-    case ReferenceTypeSymbol(decl: ComplexTypeDecl) => buildXMLStringForSimpleType(param)
-    case XsAny => buildXMLStringForChoiceWrapper(param)
-    case r: XsDataRecord => buildXMLStringForChoiceWrapper(param)
-    case _ => error("GenSource#buildXMLString: " + param.toString +
-      " Invalid type " + param.typeSymbol.getClass.toString + ": " + param.typeSymbol.toString)    
-  }
-  
-  def buildXMLStringForSimpleType(param: Param) = {
+trait XMLOutput extends Args {  
+  def buildXMLString(param: Param): String = {
     val ns = quoteNamespace(param.namespace)
     val name = "__obj." + makeParamName(param.name)
-    val nilElemCode = "scalaxb.Helper.nilElem(" + ns + ", " + quote(param.name) + ", __scope)"
-    val xToXMLCode = buildToXML(param.baseTypeName, "x, " + ns + ", Some(" + quote(param.name) + "), __scope, false")
+    val nilElemCode = "scalaxb.Helper.nilElem(" + ns + ", " + 
+      (param.typeSymbol match {
+        // case XsDataRecord(member) => "x.key.get"
+        case _ => quote(param.name)      
+      }) + ", __scope)"
+    val xToXMLCode = buildToXML(param.baseTypeName, "x, " + ns + ", " + 
+      (param.typeSymbol match {
+        case XsDataRecord(member) => "x.key"
+        case _ => quote(Some(param.name))
+      }) + ", __scope, false")
     
     val retval = (param.cardinality, param.nillable) match {
       case (Multiple, true) =>
@@ -51,50 +49,16 @@ trait XMLOutput extends Args {
       case (Optional, false) => name + " map { x => " + xToXMLCode + " } getOrElse { Nil }"
       case (Single, true)    => name + " map { x => " + xToXMLCode + " } getOrElse { " + nilElemCode + " }"
       case (Single, false) =>
-        buildToXML(param.baseTypeName, name + ", " + ns + ", " + quote(Some(param.name)) + ", __scope, false")
+        val elemLabel = param.typeSymbol match {
+          case XsDataRecord(member) => name + ".key"
+          case _ => quote(Some(param.name))
+        }
+        buildToXML(param.baseTypeName, name + ", " + ns + ", " + elemLabel + ", __scope, false")
       }
     
     retval
   }
-      
-  def buildXMLStringForChoiceWrapper(param: Param) = {
-    val typeName = buildTypeName(param.typeSymbol)
-    val name = "__obj." + makeParamName(param.name)
-    val baseTypeName = "scalaxb.DataRecord"
-    val ns = quoteNamespace(param.namespace)
-    
-    val retval = (param.cardinality, param.nillable) match {
-      case (Multiple, true) =>
-        name + ".flatMap(x => x match {" + newline +
-          indent(5) + "case Some(x) => " + baseTypeName + ".toXML(x, x.namespace, x.key, __scope, false)" + newline +
-          indent(5) + "case None    => scalaxb.Helper.nilElem(" + ns + ", " + quote(param.name) + ", __scope)" + newline +
-          indent(4) + "} )"        
-      case (Multiple, false) =>    
-        name + ".flatMap { x => " + baseTypeName + ".toXML(x, x.namespace, x.key, __scope, false) }"
-      case (Optional, true) =>
-        name + " match {" + newline +
-          indent(5) + "case Some(x) => " + baseTypeName + ".toXML(x, x.namespace, x.key, __scope, false)" + newline +
-          indent(5) + "case None    => Seq(scalaxb.Helper.nilElem(" + ns + ", " + quote(param.name) + ", __scope))" + newline +
-          indent(4) + "}"    
-      case (Optional, false) =>
-        name + " match {" + newline +
-          indent(5) + "case Some(x) => " + baseTypeName + ".toXML(x, x.namespace, x.key, __scope, false)" + newline +
-          indent(5) + "case None    => Nil" + newline +
-          indent(4) + "}"
-      case (Single, true) =>
-        name + " match {" + newline +
-          indent(5) + "case Some(x) => " + baseTypeName + ".toXML(x, " + ns + ", " +
-            makeParamName(param.name) + ".key, __scope, false)" + newline +
-          indent(5) + "case None    => Seq(scalaxb.Helper.nilElem(" + ns + ", " + 
-            quote(param.name) + ", __scope))" + newline +
-          indent(4) + "}"
-      case (Single, false) =>
-        baseTypeName + ".toXML(" + name + ", " + ns + ", " + name + ".key, __scope, false)"
-    }
-    
-    retval
-  } 
-    
+  
   def buildAttributeString(attr: AttributeLike): String = attr match {
     case ref: AttributeRef => buildAttributeString(buildAttribute(ref))
     case x: AttributeDecl  => buildAttributeString(x)

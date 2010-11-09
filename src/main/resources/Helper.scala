@@ -271,6 +271,12 @@ object XMLFormat {
         None, __namespace, __elementLabel, __scope)       
   }
   
+  implicit def dataRecordXMLWriter[A]: CanWriteXML[DataRecord[A]] = new CanWriteXML[DataRecord[A]] {
+    def writesXML(__obj: DataRecord[A], __namespace: Option[String], __elementLabel: Option[String],
+        __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
+      DataRecord.toXML(__obj, __namespace, __elementLabel, __scope, __typeAttribute)   
+  }
+  
   implicit object AnyXMLWriter extends CanWriteXML[Any] {
     def writesXML(__obj: Any, __namespace: Option[String], __elementLabel: Option[String],
         __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =

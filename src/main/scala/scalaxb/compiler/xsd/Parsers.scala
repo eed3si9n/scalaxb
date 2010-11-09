@@ -26,73 +26,55 @@ import scala.collection.immutable
 
 trait Parsers extends Args with Params {
   // called by makeCaseClassWithType and buildSeqParser
-  def buildParser(particle: Particle, mixed: Boolean, wrapInDataRecord: Boolean): String = particle match {
-    case choice: ChoiceDecl =>
-      buildParser(particle,
-        (choice.minOccurs :: (choice.particles map { _.minOccurs })).min,
-        (choice.maxOccurs :: (choice.particles map { _.maxOccurs })).max,
-        mixed, wrapInDataRecord)
-    case _ => buildParser(particle, particle.minOccurs, particle.maxOccurs, mixed, wrapInDataRecord)
-  }
-  
-  def buildParser(particle: Particle, minOccurs: Int, maxOccurs: Int,
+  def buildParser(particle: Particle, mixed: Boolean, wrapInDataRecord: Boolean): String =
+    buildParser(particle, buildOccurrence(particle), mixed, wrapInDataRecord)
+    
+  def buildParser(particle: Particle, occurrence: Occurrence,
       mixed: Boolean, wrapInDataRecord: Boolean): String = particle match {
-    case elem: ElemDecl       => buildElemParser(elem, minOccurs, maxOccurs, mixed, wrapInDataRecord)
+    case elem: ElemDecl       =>
+      buildElemParser(elem, occurrence, mixed, wrapInDataRecord)
     case ref: ElemRef         =>
-      val elem = buildElement(ref)
-      buildElemParser(elem, minOccurs, maxOccurs, mixed, wrapInDataRecord)
-    
+      buildElemParser(buildElement(ref), occurrence, mixed, wrapInDataRecord)
     case ref: GroupRef        =>
-      val group = buildGroup(ref)
-      buildGroupParser(group, minOccurs, maxOccurs, mixed, wrapInDataRecord)   
+      buildGroupParser(buildGroup(ref), occurrence, mixed, wrapInDataRecord)   
     case compositor: HasParticle =>
-      buildCompositorParser(compositor, minOccurs, maxOccurs, mixed, wrapInDataRecord)
-    
+      buildCompositorParser(compositor, occurrence, mixed, wrapInDataRecord)
     case any: AnyDecl =>
-      buildAnyParser(any, minOccurs, maxOccurs, mixed, wrapInDataRecord)
+      buildAnyParser(any, occurrence, mixed, wrapInDataRecord)
   }
   
-  def buildAnyParser(any: AnyDecl,
-      minOccurs: Int, maxOccurs: Int, mixed: Boolean, wrapInDataRecord: Boolean): String = {
-    val base = if (mixed) "((any ^^ " + buildConverter(XsAny, 1, 1) + ") ~ " + newline +
-      indent(3) + buildTextParser + ") ^^ " + newline +
-      indent(3) + "{ case p1 ~ p2 => Seq.concat(Seq(p1), p2.toList) }"
-    else if (wrapInDataRecord) "(any ^^ " + buildConverter(XsAny, 1, 1) + ")"
-    else "any" 
-    
-    buildParserString(base, minOccurs, maxOccurs)
-  }
+  def buildAnyParser(any: AnyDecl, occurrence: Occurrence, mixed: Boolean, wrapInDataRecord: Boolean): String =
+    buildParserString(if (mixed) "((any ^^ " + buildConverter(XsAny, SingleUnnillable) + ") ~ " + newline +
+        indent(3) + buildTextParser + ") ^^ " + newline +
+        indent(3) + "{ case p1 ~ p2 => Seq.concat(Seq(p1), p2.toList) }"
+      else if (wrapInDataRecord) "(any ^^ " + buildConverter(XsAny, SingleUnnillable) + ")"
+      else "any",
+      occurrence)
   
   // minOccurs and maxOccurs may come from the declaration of the compositor,
   // or from the element declaration.
-  def buildCompositorParser(compositor: HasParticle,
-      minOccurs: Int, maxOccurs: Int, mixed: Boolean, wrapInDataRecord: Boolean): String = compositor match {
-    case ref: GroupRef        =>
-      val group = buildGroup(ref)
-      buildGroupParser(group, minOccurs, maxOccurs, mixed, wrapInDataRecord)
+  def buildCompositorParser(compositor: HasParticle, occurrence: Occurrence, 
+      mixed: Boolean, wrapInDataRecord: Boolean): String = compositor match {
+    case ref: GroupRef        => buildGroupParser(buildGroup(ref), occurrence, mixed, wrapInDataRecord)
     case seq: SequenceDecl    => 
-      if (containsSingleChoice(seq)) buildChoiceParser(singleChoice(seq), minOccurs, maxOccurs, mixed)
-      else buildSeqParser(seq, minOccurs, maxOccurs, mixed, wrapInDataRecord)
-    case choice: ChoiceDecl   => buildChoiceParser(choice, minOccurs, maxOccurs, mixed)
-    case all: AllDecl         => buildAllParser(all, minOccurs, maxOccurs, mixed)
-    case group: GroupDecl     => buildGroupParser(group, minOccurs, maxOccurs, mixed, wrapInDataRecord)
-  }
-    
-  def buildGroupParser(group: GroupDecl, minOccurs: Int, maxOccurs: Int,
-      mixed: Boolean, wrapInDataRecord: Boolean): String = {
-    val compositor = primaryCompositor(group)
-    val base = if (mixed) "parsemixed" + groupTypeName(group)
-      else "parse" + groupTypeName(group) + (if (wrapInDataRecord) "(true)" else "")
-    buildParserString(base, 
-      math.min(minOccurs, compositor.minOccurs),
-      math.max(maxOccurs, compositor.maxOccurs) )
+      if (containsSingleChoice(seq)) buildChoiceParser(singleChoice(seq), occurrence, mixed)
+      else buildSeqParser(seq, occurrence, mixed, wrapInDataRecord)
+    case choice: ChoiceDecl   => buildChoiceParser(choice, occurrence, mixed)
+    case all: AllDecl         => buildAllParser(all, occurrence, mixed)
+    case group: GroupDecl     => buildGroupParser(group, occurrence, mixed, wrapInDataRecord)
   }
   
+  def buildGroupParser(group: GroupDecl, occurrence: Occurrence,
+      mixed: Boolean, wrapInDataRecord: Boolean): String =
+    buildParserString(if (mixed) "parsemixed" + groupTypeName(group)
+      else "parse" + groupTypeName(group) + (if (wrapInDataRecord) "(true)" else ""),
+      occurrence)
+    
   // for unmixed wrapped in data record, this should generate Seq(DataRecord(None, None, Foo("1", "2")))
   // for mixed, this should generate
   // Seq(DataRecord(Some("ipo") Some("a"), "1"), DataRecord(None, None, "foo"), DataRecord(Some("ipo") Some("b"), "2"))
   def buildSeqParser(seq: SequenceDecl,
-      minOccurs: Int, maxOccurs: Int, mixed: Boolean, wrapInDataRecord: Boolean): String = {
+      occurrence: Occurrence, mixed: Boolean, wrapInDataRecord: Boolean): String = {
     val parserList = if (mixed) (0 to seq.particles.size * 2 - 1).toList map { i =>
         if (i % 2 == 0) buildParser(seq.particles(i / 2), mixed, mixed)
         else buildTextParser
@@ -128,12 +110,12 @@ trait Parsers extends Args with Params {
     
     val base = parserList.mkString("(", " ~ " + newline + indent(3), ")") + " ^^ " + newline +
       indent(4) + buildSeqConverter(seq, mixed, wrapInDataRecord)
-    val retval = buildParserString(base, minOccurs, maxOccurs)
+    val retval = buildParserString(base, occurrence)
     log("Parsers#buildSeqParser:  " + seq + newline + retval)
     retval
   }
   
-  def buildAllParser(all: AllDecl, minOccurs: Int, maxOccurs: Int, mixed: Boolean): String = {
+  def buildAllParser(all: AllDecl, occurrence: Occurrence, mixed: Boolean): String = {
     val parserList = all.particles.map { buildParser(_, mixed, false) }
     
     def buildAllConverter(seq: AllDecl): String = {
@@ -142,7 +124,7 @@ trait Parsers extends Args with Params {
     
     val base = parserList.mkString("(", " ~ " + newline + indent(3), ")") + " ^^ " + newline +
       indent(3) + buildAllConverter(all)
-    buildParserString(base, minOccurs, maxOccurs)   
+    buildParserString(base, occurrence)   
   }
   
   // one or more particles may be emptiable within the choices.
@@ -152,22 +134,23 @@ trait Parsers extends Args with Params {
   // choice repeatable in case any one particle is repeatable.
   // this may violate the schema, but it is a compromise as long as plurals are
   // treated as Seq[DataRecord].
-  def buildChoiceParser(choice: ChoiceDecl, minOccurs: Int, maxOccurs: Int, mixed: Boolean): String = {    
+  def buildChoiceParser(choice: ChoiceDecl, occurrence: Occurrence, mixed: Boolean): String = {    
     val containsStructure = if (mixed) true
-    else choice.particles exists(_ match {
-      case elem: ElemDecl => false
-      case ref: ElemRef => false
-      case _ => true
-      })  
+      else choice.particles exists(_ match {
+        case elem: ElemDecl => false
+        case ref: ElemRef => false
+        case _ => true
+        })
+    val singleOccurrence = occurrence.copy(minOccurs = 1, maxOccurs = 1) 
     val parserList = choice.particles filterNot(
         _.isInstanceOf[AnyDecl]) map {
       case elem: ElemDecl =>
-        if (mixed && containsStructure) buildParser(SequenceDecl(List(elem), 1, 1), 1, 1, mixed, true)
-        else buildParser(elem, 1, 1, mixed, true)
+        if (mixed && containsStructure) buildParser(SequenceDecl(List(elem), 1, 1), singleOccurrence, mixed, true)
+        else buildParser(elem, singleOccurrence, mixed, true)
       case ref: ElemRef =>
-        if (mixed && containsStructure) buildParser(SequenceDecl(List(ref), 1, 1), 1, 1, mixed, true)
-        else buildParser(ref, 1, 1, mixed, true)
-      case particle => buildParser(particle, 1, 1, mixed, true)
+        if (mixed && containsStructure) buildParser(SequenceDecl(List(ref), 1, 1), singleOccurrence, mixed, true)
+        else buildParser(ref, singleOccurrence, mixed, true)
+      case particle => buildParser(particle, singleOccurrence, mixed, true)
     }
     val choiceOperator = if (containsStructure) "|||" else "|"
     
@@ -177,20 +160,19 @@ trait Parsers extends Args with Params {
     
     val anyList = choice.particles filter(
       _.isInstanceOf[AnyDecl]) map { particle =>
-      buildParser(particle, 1, 1, mixed, true) }
+      buildParser(particle, singleOccurrence, mixed, true) }
     val base = if (anyList.size > 0)
       if (nonany == "") anyList(0)
       else "(" + nonany + ") | " + newline +
         indent(3) + anyList(0)
     else nonany
     
-    val retval = buildParserString(base, minOccurs, maxOccurs)
+    val retval = buildParserString(base, occurrence)
     log("Parsers#buildChoiceParser:  " + choice + newline + retval)
     retval
   }
     
-  def buildSubstitionGroupParser(elem: ElemDecl,
-      minOccurs: Int, maxOccurs: Int, mixed: Boolean): String = {
+  def buildSubstitionGroupParser(elem: ElemDecl, occurrence: Occurrence, mixed: Boolean): String = {
     log("Parsers#buildSubstitionGroupParser")    
     
     val particles = schema.topElems.valuesIterator.toList filter { x =>
@@ -199,34 +181,33 @@ trait Parsers extends Args with Params {
       } getOrElse { false }
     }
     val parserList = particles map { particle =>
-      buildParser(particle, math.max(particle.minOccurs, 1), 1, mixed, true)    
+      buildParser(particle, Occurrence(math.max(particle.minOccurs, 1), 1, occurrence.nillable), mixed, true)    
     }
     val choiceOperator = "|"
     val base = if (parserList.size > 0)
       parserList.mkString(" " + choiceOperator + " " + newline + indent(3))
     else ""
     
-    buildParserString(base, minOccurs, maxOccurs)
+    buildParserString(base, occurrence)
   }
   
-  def buildElemParser(elem: ElemDecl,
-      minOccurs: Int, maxOccurs: Int, mixed: Boolean, wrapInDataRecord: Boolean): String = {
+  def buildElemParser(elem: ElemDecl, occurrence: Occurrence, mixed: Boolean, wrapInDataRecord: Boolean): String = {
     def addConverter(p: String): String = if (wrapInDataRecord) "(" + p + " ^^ " + newline +
-        indent(3) + buildConverter(elem.typeSymbol, minOccurs, maxOccurs) + ")"
+        indent(3) + buildConverter(elem.typeSymbol, occurrence) + ")"
       else p
-          
-    if ((isSubstitionGroup(elem))) addConverter(buildSubstitionGroupParser(elem, minOccurs, maxOccurs, mixed))
+    
+    if ((isSubstitionGroup(elem))) addConverter(buildSubstitionGroupParser(elem, occurrence, mixed))
     else elem.typeSymbol match {
-      case symbol: BuiltInSimpleTypeSymbol => addConverter(buildParserString(elem, minOccurs, maxOccurs))
-      case ReferenceTypeSymbol(decl: SimpleTypeDecl) =>  addConverter(buildParserString(elem, minOccurs, maxOccurs))
+      case symbol: BuiltInSimpleTypeSymbol => addConverter(buildParserString(elem, occurrence))
+      case ReferenceTypeSymbol(decl: SimpleTypeDecl) =>  addConverter(buildParserString(elem, occurrence))
       case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
         if (compositorWrapper.contains(decl)) {
           val compositor = compositorWrapper(decl)
-          buildCompositorParser(compositor, minOccurs, maxOccurs, mixed, wrapInDataRecord)
+          buildCompositorParser(compositor, occurrence, mixed, wrapInDataRecord)
         }
-        else addConverter(buildParserString(elem, minOccurs, maxOccurs))
+        else addConverter(buildParserString(elem, occurrence))
             
-      case XsAny => addConverter(buildParserString("any", minOccurs, maxOccurs))
+      case XsAny => addConverter(buildParserString("any", occurrence))
       case symbol: ReferenceTypeSymbol =>
         if (symbol.decl == null)
           error("Parsers#buildParser: " + elem.toString +
@@ -241,28 +222,41 @@ trait Parsers extends Args with Params {
     }
   }
     
-  def buildParserString(elem: ElemDecl, minOccurs: Int, maxOccurs: Int): String =
+  def buildParserString(elem: ElemDecl, occurrence: Occurrence): String =
     buildParserString("scalaxb.ElemName(" +
       quoteNamespace(elem.namespace orElse schema.targetNamespace) + ", " +
       quote(elem.name) + ")",
-      minOccurs, maxOccurs)
+      occurrence)
   
-  def buildParserString(base: String, minOccurs: Int, maxOccurs: Int) =
-    if (maxOccurs > 1) "rep(" + base + ")"
-    else if (minOccurs == 0) "opt(" + base + ")"
+  def buildParserString(base: String, occurrence: Occurrence) =
+    if (occurrence.maxOccurs > 1) "rep(" + base + ")"
+    else if (occurrence.minOccurs == 0) "opt(" + base + ")"
     else "(" + base + ")"
   
-  def buildConverter(typeSymbol: XsTypeSymbol, minOccurs: Int, maxOccurs: Int): String =
-    if (maxOccurs > 1)
-      "(p => p.toList map(x => scalaxb.DataRecord(x.namespace, Some(x.name), " +
-      buildArg("x.node", typeSymbol) + ")))"
-    else if (minOccurs == 0)
-      "(p => p map { x =>" + newline +
-      indent(3) + "scalaxb.DataRecord(x.namespace, Some(x.name), " +
-      buildArg("x.node", typeSymbol) + ") })"
-    else "(x => scalaxb.DataRecord(x.namespace, Some(x.name), " +
-      buildArg("x.node", typeSymbol) + "))"
-  
+  def buildConverter(typeSymbol: XsTypeSymbol, occurrence: Occurrence): String =
+    (toCardinality(occurrence), occurrence.nillable) match {
+      case (Multiple, true) =>
+        "(p => p.toSeq map { x => if (x.nil) None else Some(scalaxb.DataRecord(x.namespace, Some(x.name), " +
+        buildArg("x.node", typeSymbol) + ")) })"        
+      case (Multiple, false) => 
+        "(p => p.toSeq map { x => scalaxb.DataRecord(x.namespace, Some(x.name), " +
+        buildArg("x.node", typeSymbol) + ") })" 
+      case (Optional, true) =>
+        "(p => p match {" + newline +
+        indent(4) + "case Some(x) => if (x.nil) None else Some(" + buildArg("x.node", typeSymbol) + ")" + newline +
+        indent(4) + "case None    => None" + newline +
+        indent(3) + "})"
+      case (Optional, false) =>
+        "(p => p map { x => scalaxb.DataRecord(x.namespace, Some(x.name), " +
+        buildArg("x.node", typeSymbol) + ") })"      
+      case (Single, true) =>
+        "(x => if (x.nil) None else Some(scalaxb.DataRecord(x.namespace, Some(x.name), " + 
+        buildArg("x.node", typeSymbol) + ")))"
+      case (Single, false) =>
+        "(x => scalaxb.DataRecord(x.namespace, Some(x.name), " + 
+        buildArg("x.node", typeSymbol) + "))"
+    } 
+    
   def buildParticles(com: Option[HasParticle], name: String): List[ElemDecl] = com match {
     case Some(c) => buildParticles(c)
     case None => Nil

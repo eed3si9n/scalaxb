@@ -8,6 +8,8 @@ import general._
 import DefaultXMLProtocol._
 
 object GeneralUsage {
+  val NS = Some("http://www.example.com/general")
+  
   def main(args: Array[String]) = {
     allTests
   }
@@ -16,6 +18,7 @@ object GeneralUsage {
     testSingularSimpleType
     testList
     testSingularComplexType
+    testChoiceComplexType
     true
   }
     
@@ -85,6 +88,32 @@ object GeneralUsage {
       case _ => error("match failed: " + obj.toString)
     }
     val document = toXML[SingularComplexTypeTest](obj, None, Some("foo"), subject.scope)
+    println(document)
+  }
+  
+  def testChoiceComplexType {
+    val subject = <foo xmlns="http://www.example.com/general"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+      <person1><firstName>John</firstName><lastName>Doe</lastName></person1>
+      <person2 xsi:nil="true"/>
+      <person3><firstName>John</firstName><lastName>Doe</lastName></person3>
+      <person5><firstName>John</firstName><lastName>Doe</lastName></person5>
+        <person5><firstName>John</firstName><lastName>Doe</lastName></person5>
+      <person6 xsi:nil="true"/>
+    </foo>
+    val obj = fromXML[ChoiceComplexTypeTest](subject)
+    obj match {
+      case ChoiceComplexTypeTest(
+        DataRecord(NS, Some("person1"), Person("John", "Doe")),
+        None,
+        Some(DataRecord(NS, Some("person3"), Person("John", "Doe") )),
+        None,
+        Seq(DataRecord(NS, Some("person5"), Person("John", "Doe")),
+          DataRecord(NS, Some("person5"), Person("John", "Doe"))),
+        Seq(None) ) =>
+      case _ => error("match failed: " + obj.toString)
+    }
+    val document = toXML[ChoiceComplexTypeTest](obj, None, Some("foo"), subject.scope)
     println(document)
   }
 }

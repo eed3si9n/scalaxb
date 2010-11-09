@@ -277,11 +277,23 @@ object XMLFormat {
       DataRecord.toXML(__obj, __namespace, __elementLabel, __scope, __typeAttribute)   
   }
   
-  implicit object AnyXMLWriter extends CanWriteXML[Any] {
-    def writesXML(__obj: Any, __namespace: Option[String], __elementLabel: Option[String],
+  implicit object __NoneXMLWriter extends CanWriteXML[Option[Nothing]] {
+    def writesXML(__obj: Option[Nothing], __namespace: Option[String], __elementLabel: Option[String],
         __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
-      Helper.stringToXML(__obj.toString, None, __namespace, __elementLabel, __scope)
+      Helper.nilElem(__namespace, __elementLabel.get, __scope)    
+  }
+  
+  implicit def someXMLWriter[A: CanWriteXML]: CanWriteXML[Some[A]] = new CanWriteXML[Some[A]] {
+    def writesXML(__obj: Some[A], __namespace: Option[String], __elementLabel: Option[String],
+        __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
+      Scalaxb.toXML[A](__obj.get, __namespace, __elementLabel, __scope, __typeAttribute)
   } 
+  
+  // implicit object AnyXMLWriter extends CanWriteXML[Any] {
+  //   def writesXML(__obj: Any, __namespace: Option[String], __elementLabel: Option[String],
+  //       __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
+  //     Helper.stringToXML(__obj.toString, None, __namespace, __elementLabel, __scope)
+  // } 
 }
 
 trait DataRecord[+A] {
@@ -306,7 +318,10 @@ object DataRecord {
     value: A,
     writer: CanWriteXML[_]) extends DataRecord[A]
   import Helper._
-      
+  
+  def apply(namespace: Option[String], key: Option[String], value: Option[Nothing]): DataRecord[Option[Nothing]] =
+    DataWriter(namespace, key, value, XMLFormat.__NoneXMLWriter)
+  
   def apply[A:CanWriteXML](namespace: Option[String], key: Option[String], value: A): DataRecord[A] =
     DataWriter(namespace, key, value, implicitly[CanWriteXML[A]])
   

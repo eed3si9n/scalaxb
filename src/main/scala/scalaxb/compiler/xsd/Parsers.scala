@@ -203,7 +203,8 @@ trait Parsers extends Args with Params {
       case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
         if (compositorWrapper.contains(decl)) {
           val compositor = compositorWrapper(decl)
-          buildCompositorParser(compositor, occurrence, mixed, wrapInDataRecord)
+          val o = buildOccurrence(compositor)
+          buildCompositorParser(compositor, occurrence.copy(nillable = o.nillable), mixed, wrapInDataRecord)
         }
         else addConverter(buildParserString(elem, occurrence))
             
@@ -233,30 +234,22 @@ trait Parsers extends Args with Params {
     else if (occurrence.minOccurs == 0) "opt(" + base + ")"
     else "(" + base + ")"
   
-  def buildConverter(typeSymbol: XsTypeSymbol, occurrence: Occurrence): String =
-    (toCardinality(occurrence), occurrence.nillable) match {
-      case (Multiple, true) =>
-        "(p => p.toSeq map { x => if (x.nil) None else Some(scalaxb.DataRecord(x.namespace, Some(x.name), " +
-        buildArg("x.node", typeSymbol) + ")) })"        
-      case (Multiple, false) => 
-        "(p => p.toSeq map { x => scalaxb.DataRecord(x.namespace, Some(x.name), " +
-        buildArg("x.node", typeSymbol) + ") })" 
-      case (Optional, true) =>
-        "(p => p match {" + newline +
-        indent(4) + "case Some(x) => if (x.nil) None else Some(" + buildArg("x.node", typeSymbol) + ")" + newline +
-        indent(4) + "case None    => None" + newline +
-        indent(3) + "})"
-      case (Optional, false) =>
-        "(p => p map { x => scalaxb.DataRecord(x.namespace, Some(x.name), " +
-        buildArg("x.node", typeSymbol) + ") })"      
-      case (Single, true) =>
-        "(x => if (x.nil) None else Some(scalaxb.DataRecord(x.namespace, Some(x.name), " + 
-        buildArg("x.node", typeSymbol) + ")))"
-      case (Single, false) =>
-        "(x => scalaxb.DataRecord(x.namespace, Some(x.name), " + 
-        buildArg("x.node", typeSymbol) + "))"
-    } 
+  def buildConverter(typeSymbol: XsTypeSymbol, occurrence: Occurrence): String = {
+    val arg = buildArg("x.node", typeSymbol)
+    val nilRecord = "scalaxb.DataRecord(x.namespace, Some(x.name), None)"
+    val someRecord = "scalaxb.DataRecord(x.namespace, Some(x.name), Some(" + arg + "))"
+    val record = "scalaxb.DataRecord(x.namespace, Some(x.name), " + arg + ")"
     
+    (toCardinality(occurrence), occurrence.nillable) match {
+      case (Multiple, true)   => "(p => p.toSeq map { x => if (x.nil) " + nilRecord + " else " + someRecord + " })"        
+      case (Multiple, false)  => "(p => p.toSeq map { x => " + record + " })" 
+      case (Optional, true)   => "(p => p map { x => if (x.nil) " + nilRecord + " else " + someRecord + " })"
+      case (Optional, false)  => "(p => p map { x => " + record + " })"      
+      case (Single, true)     => "(x => if (x.nil) " + nilRecord + " else " + someRecord + ")"
+      case (Single, false)    => "(x => " + record + ")"
+    }    
+  }
+  
   def buildParticles(com: Option[HasParticle], name: String): List[ElemDecl] = com match {
     case Some(c) => buildParticles(c)
     case None => Nil

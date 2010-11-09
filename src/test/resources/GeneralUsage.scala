@@ -105,12 +105,12 @@ object GeneralUsage {
     obj match {
       case ChoiceComplexTypeTest(
         DataRecord(NS, Some("person1"), Person("John", "Doe")),
-        None,
+        DataRecord(NS, Some("person2"), None),
         Some(DataRecord(NS, Some("person3"), Person("John", "Doe") )),
         None,
         Seq(DataRecord(NS, Some("person5"), Person("John", "Doe")),
           DataRecord(NS, Some("person5"), Person("John", "Doe"))),
-        Seq(None) ) =>
+        Seq(DataRecord(NS, Some("person6"), None)) ) =>
       case _ => error("match failed: " + obj.toString)
     }
     val document = toXML[ChoiceComplexTypeTest](obj, None, Some("foo"), subject.scope)

@@ -138,48 +138,7 @@ trait Lookup extends ContextProcessor {
     case XsXMLFormat(group: AttributeGroupDecl) => "scalaxb.XMLFormat[" + buildTypeName(group) + "]"
   }
   
-  def buildChoiceTypeName(decl: ComplexTypeDecl, choice: ChoiceDecl): String = 
-    if (choice.particles.size < 1) "scalaxb.DataRecord[Any]"
-    else {
-      val firstParticle = choice.particles(0)
-      
-      def particleType(particle: Particle) = particle match {
-        case elem: ElemDecl => Some(elem.typeSymbol)
-        case ref: ElemRef => Some(buildElement(ref).typeSymbol)
-        case _ => None
-      }
-      
-      def sameType: Option[XsTypeSymbol] = {
-        val firstType = particleType(firstParticle)
-        if (firstType.isEmpty) None
-        else if (choice.particles forall { particleType(_) == firstType }) firstType
-        else None
-      }
-      
-      def isOptionDescendant(particle: Particle): Boolean = particle match {
-        case elem: ElemDecl =>
-          elem.typeSymbol match {
-            case ReferenceTypeSymbol(decl: ComplexTypeDecl) => true
-            case _ => false
-          }
-        case ref: ElemRef =>
-          buildElement(ref).typeSymbol match {
-            case ReferenceTypeSymbol(decl: ComplexTypeDecl) => true
-            case _ => false
-          }
-        case c: ChoiceDecl => c.particles forall { isOptionDescendant }
-        case seq: SequenceDecl => true
-        case _ => false
-      }
-      
-      sameType match {
-        case Some(x) => "scalaxb.DataRecord[" + buildTypeName(x) + "]"
-        case None =>
-          if (!containsForeignType(choice) &&
-              (choice.particles forall { isOptionDescendant }) ) "scalaxb.DataRecord[" + buildTypeName(decl) + "]"
-          else "scalaxb.DataRecord[Any]"
-      }
-    }
+  def buildChoiceTypeName(decl: ComplexTypeDecl, choice: ChoiceDecl): String
   
   def xmlFormatTypeName(decl: ComplexTypeDecl): String =
     "scalaxb.XMLFormat[" + buildTypeName(decl) + "]"

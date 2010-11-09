@@ -77,13 +77,13 @@ trait Params extends Lookup {
   
   def buildParam(elem: ElemDecl): Param = {
     val typeSymbol = if (isSubstitionGroup(elem)) buildSubstitionGroupSymbol(elem.typeSymbol)
-    else elem.typeSymbol match {
-      case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
-        if (compositorWrapper.contains(decl))
-          buildCompositorSymbol(compositorWrapper(decl), elem.typeSymbol)
-        else elem.typeSymbol
-      case _ => elem.typeSymbol
-    }
+      else elem.typeSymbol match {
+        case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
+          if (compositorWrapper.contains(decl))
+            buildCompositorSymbol(compositorWrapper(decl), elem.typeSymbol)
+          else elem.typeSymbol
+        case _ => elem.typeSymbol
+      }
     val nillable = elem.nillable getOrElse { false }
     val retval = Param(elem.namespace, elem.name, typeSymbol, 
       toCardinality(elem.minOccurs, elem.maxOccurs), nillable, false)
@@ -192,7 +192,12 @@ trait Params extends Lookup {
       compositor match {
         case ref: GroupRef => buildGroup(ref)
         case _ => compositor
-      }, buildOccurrence(compositor))
+      },
+      compositor match {
+        // overriding nillable because nillable options are handled elsewhere.
+        case choice: ChoiceDecl => buildOccurrence(compositor).copy(nillable = false)
+        case _ => buildOccurrence(compositor)
+      })
 
   def buildCompositorRef(compositor: HasParticle, occurrence: Occurrence): ElemDecl = {    
     argNumber += 1
@@ -215,4 +220,49 @@ trait Params extends Lookup {
     ElemDecl(schema.targetNamespace, name, symbol, None, None,
       occurrence.minOccurs, occurrence.maxOccurs, Some(occurrence.nillable), None, None)
   }
+  
+  def buildChoiceTypeName(decl: ComplexTypeDecl, choice: ChoiceDecl): String = 
+    if (choice.particles.size < 1) "scalaxb.DataRecord[Any]"
+    else {
+      val firstParticle = choice.particles(0)
+      
+      def particleType(particle: Particle) = particle match {
+        case elem: ElemDecl => Some(elem.typeSymbol)
+        case ref: ElemRef => Some(buildElement(ref).typeSymbol)
+        case _ => None
+      }
+      
+      def sameType: Option[XsTypeSymbol] = {
+        val firstType = particleType(firstParticle)
+        if (firstType.isEmpty) None
+        else if (choice.particles forall { particleType(_) == firstType }) firstType
+        else None
+      }
+      
+      def isOptionDescendant(particle: Particle): Boolean = particle match {
+        case elem: ElemDecl =>
+          elem.typeSymbol match {
+            case ReferenceTypeSymbol(decl: ComplexTypeDecl) => true
+            case _ => false
+          }
+        case ref: ElemRef =>
+          buildElement(ref).typeSymbol match {
+            case ReferenceTypeSymbol(decl: ComplexTypeDecl) => true
+            case _ => false
+          }
+        case c: ChoiceDecl => c.particles forall { isOptionDescendant }
+        case seq: SequenceDecl => true
+        case _ => false
+      }
+      
+      val member = sameType match {
+        case Some(x) => buildTypeName(x)
+        case None =>
+          if (!containsForeignType(choice) &&
+              (choice.particles forall { isOptionDescendant }) ) buildTypeName(decl)
+          else "Any"
+      }
+      if (buildOccurrence(choice).nillable) "scalaxb.DataRecord[Option[" + member + "]]"
+      else "scalaxb.DataRecord[" + member + "]"
+    }
 }

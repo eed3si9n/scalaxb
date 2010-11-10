@@ -107,14 +107,11 @@ trait Args extends Params {
         
     val retval = (cardinality, nillable) match {
       case (Multiple, true) =>
-        selector + ".toList.map(x => if (x.nil) None else Some(" + buildFromXML(typeName, "x.node") + ") )"        
+        selector + ".toSeq map { x => if (x.nil) None else Some(" + buildFromXML(typeName, "x.node") + ") }"        
       case (Multiple, false) =>
-        selector + ".toList.map(x => " + buildFromXML(typeName, "x.node") + ")"
+        selector + ".toSeq map { x => " + buildFromXML(typeName, "x.node") + " }"
       case (Optional, true) =>
-        selector + " match {" + newline +
-          indent(4) + "  case Some(x) => if (x.nil) None else Some(" +  buildFromXML(typeName, "x.node") + ")" + newline +
-          indent(4) + "  case None    => None" + newline +
-          indent(4) + "}"
+        selector + ".headOption map { x => if (x.nil) None else Some(" + buildFromXML(typeName, "x.node") + ") }"
       case (Optional, false) =>
         selector + ".headOption map { x => " + buildFromXML(typeName, "x.node") + " }"
       case (Single, true) =>
@@ -143,25 +140,15 @@ trait Args extends Params {
     val retval = (list, cardinality, nillable) match {
       case (true, Multiple, true)     => selector + ".toSeq map { x => if (x.nil) None else Some(" + buildSplitter("x") + ") }"
       case (true, Multiple, false)    => selector + ".toSeq map { x => " + buildSplitter("x") + " }"
-      case (true, Optional, true)     =>
-        optionSelector + " match {" + newline +
-        indent(4) + "  case Some(x) => if (x.nil) None else Some(" + buildSplitter("x") + ")" + newline +
-        indent(4) + "  case None    => None" + newline +
-        indent(4) + "}"
+      case (true, Optional, true)     => selector + ".headOption map { x => if (x.nil) None else Some(" + buildSplitter("x") + ") }"
       case (true, Optional, false)    => selector + ".headOption map { x => " + buildSplitter("x") + " }"
       case (true, Single, true)       => "if (" + selector + ".nil) None else Some(" + buildSplitter(selector) + ")"
       case (true, Single, false)      => buildSplitter(selector)
       case (false, Multiple, true)    => selector + ".toSeq map { x => if (x.nil) None else Some(" + buildFromString(typeName, "x.text") + ") }"        
       case (false, Multiple, false)   => selector + ".toSeq map { x => " + buildFromString(typeName, "x.text") + " }"
-      case (false, Optional, true)    =>
-        optionSelector + " match {" + newline +
-          indent(4) + "  case Some(x) => if (x.nil) None else Some(" +  buildFromString(typeName, "x.text") + ")" + newline +
-          indent(4) + "  case None    => None" + newline +
-          indent(4) + "}"
-      case (false, Optional, false) =>
-        selector + ".headOption map { x => " + buildFromString(typeName, "x.text") + " }"
-      case (false, Single, true) =>
-        "if (" + selector + ".nil) None else Some(" +  buildFromString(typeName, selector + ".text") + ")"
+      case (false, Optional, true)    => selector + ".headOption map { x => if (x.nil) None else Some(" + buildFromString(typeName, "x.text") + ") }"
+      case (false, Optional, false)   => selector + ".headOption map { x => " + buildFromString(typeName, "x.text") + " }"
+      case (false, Single, true)      => "if (" + selector + ".nil) None else Some(" +  buildFromString(typeName, selector + ".text") + ")"
       case (false, Single, false) =>
         fixedValue match {
           case Some(x) => buildFromString(typeName, quote(x))            
@@ -176,7 +163,7 @@ trait Args extends Params {
             }
         }      
     }
-
+    
     log("GenSource#buildEnumArg: " + typeName + ": " + retval)
     retval
   }
@@ -398,36 +385,33 @@ trait Args extends Params {
           indent(4) + "  case None    => " + noneValue + newline +
           indent(4) + "}"
     
-    def buildMapStatement(someValue: String) =
-       selector + ".headOption map { x => " + someValue + " }"
-    
     def buildSplitter(r: String) = "scalaxb.Helper.splitBySpace(" + r  + ".text).map(x => " + pre + "x" + post + ")" 
     val retval = (list, cardinality, nillable, defaultValue, fixedValue) match {
       case (true, Multiple, true, _, _) =>
-        selector + ".toSeq.map { x => if (x.nil) None else Some(" + buildSplitter("x") + ".toSeq) }"
+        selector + ".toSeq map { x => if (x.nil) None else Some(" + buildSplitter("x") + ".toSeq) }"
       case (true, Multiple, false, _, _) =>
-        selector + ".toSeq.map { x => " + buildSplitter("x") + ".toSeq }" 
+        selector + ".toSeq map { x => " + buildSplitter("x") + ".toSeq }" 
       case (true, Optional, true, _, _) =>
-        buildMatchStatement("None", "Some(" + buildSplitter("x") + ".toSeq)")
+        selector + ".headOption map { x => if (x.nil) None else Some(" + buildSplitter("x") + ".toSeq) }"
       case (true, Optional, false, _, _) =>
-        buildMapStatement(buildSplitter("x") + ".toSeq")
+        selector + ".headOption map { x => " + buildSplitter("x") + ".toSeq }"
       case (true, Single, true, _, _) =>
         "if (" + selector + ".nil) None else Some(" + buildSplitter(selector) + ".toSeq)"
       case (true, Single, false, _, _) =>  
         buildSplitter(selector)
       case (false, Multiple, true, _, _) =>
-        selector + ".toList.map(x => if (x.nil) None else Some(" + pre + "x.text" + post + ") )"
+        selector + ".toSeq map { x => if (x.nil) None else Some(" + pre + "x.text" + post + ") }"
       case (false, Multiple, false, _, _) =>
-        if (selector.contains("split(")) selector + ".toList.map { x => " + pre + "x" + post + " }"
-        else selector + ".toList.map { x => " + pre + "x.text" + post + " }"
+        if (selector.contains("split(")) selector + ".toSeq map { x => " + pre + "x" + post + " }"
+        else selector + ".toSeq map { x => " + pre + "x.text" + post + " }"
       case (false, Optional, true, _, _) =>
-        buildMatchStatement("None", "Some(" + pre + "x.text" + post + ")")
+        selector + ".headOption map { x => if (x.nil) None else Some(" + pre + "x.text" + post + ") }"
       case (false, Optional, false, _, _) =>
-        buildMapStatement(pre + "x.text" + post)
+        selector + ".headOption map { x => " + pre + "x.text" + post + " }"
       case (false, Single, _, _, Some(x)) =>
         pre + quote(x) + post
       case (false, Single, _, Some(x), _) =>
-        buildMatchStatement(pre + quote(x) + post, pre + "x.text" + post)
+        selector + ".headOption map { x => " + pre + "x.text" + post + " } getOrElse { " + pre + quote(x) + post + " }"
       case (false, Single, true, _, _) =>
         "if (" + selector + ".nil) None else Some(" + pre + selector + ".text" + post + ")"
       case (false, Single, false, _, _) =>

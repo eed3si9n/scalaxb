@@ -247,7 +247,7 @@ trait Parsers extends Args with Params {
       case (Optional, false)  => "(p => p map { x => " + record + " })"      
       case (Single, true)     => "(x => if (x.nil) " + nilRecord + " else " + someRecord + ")"
       case (Single, false)    => "(x => " + record + ")"
-    }    
+    }
   }
   
   def buildParticles(com: Option[HasParticle], name: String): List[ElemDecl] = com match {

@@ -45,7 +45,8 @@ trait XMLOutput extends Args {
           indent(5) + "case None    => " + nilElemCode + newline +
           indent(4) + "}"
       case (Multiple, false) => name + " flatMap { x => " + xToXMLCode + " }"
-      case (Optional, true)  => name + " map { x => " + xToXMLCode + " } getOrElse { " + nilElemCode + " }" 
+      case (Optional, true)  => name + " map { _ map { x => " + xToXMLCode + " } getOrElse { " + 
+          nilElemCode + " } } getOrElse { Nil }" 
       case (Optional, false) => name + " map { x => " + xToXMLCode + " } getOrElse { Nil }"
       case (Single, true)    => name + " map { x => " + xToXMLCode + " } getOrElse { " + nilElemCode + " }"
       case (Single, false) =>

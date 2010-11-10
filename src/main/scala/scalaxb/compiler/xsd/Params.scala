@@ -57,7 +57,9 @@ trait Params extends Lookup {
       case Single   =>
         if (nillable) "Option[" + baseTypeName + "]"
         else baseTypeName
-      case Optional => "Option[" + baseTypeName + "]"
+      case Optional =>
+        if (nillable) "Option[Option[" + baseTypeName + "]]"
+        else "Option[" + baseTypeName + "]"
       case Multiple => 
         if (nillable) "Seq[Option[" + baseTypeName + "]]"
         else "Seq[" + baseTypeName + "]"

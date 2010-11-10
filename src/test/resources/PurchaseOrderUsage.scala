@@ -342,8 +342,8 @@ object PurchaseOrderUsage {
     </foo>
     val obj = fromXML[NillableTest](subject)
     obj match {
-      case NillableTest(None, None, Seq(None, None),
-        None, None, Seq(None, None)) =>
+      case NillableTest(None, Some(None), Seq(None, None),
+        None, Some(None), Seq(None, None)) =>
       case _ => error("match failed: " + obj.toString)
     }
     

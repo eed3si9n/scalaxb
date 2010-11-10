@@ -277,7 +277,7 @@ object XMLFormat {
       DataRecord.toXML(__obj, __namespace, __elementLabel, __scope, __typeAttribute)   
   }
     
-  implicit object __NoneXMLWriter extends CanWriteXML[None.type] {
+  implicit object NoneXMLWriter extends CanWriteXML[None.type] {
     def writesXML(__obj: None.type, __namespace: Option[String], __elementLabel: Option[String],
         __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
       Helper.nilElem(__namespace, __elementLabel.get, __scope)    
@@ -320,7 +320,7 @@ object DataRecord {
   import Helper._
   
   def apply(namespace: Option[String], key: Option[String], value: None.type): DataRecord[Option[Nothing]] =
-    DataWriter(namespace, key, value, XMLFormat.__NoneXMLWriter)
+    DataWriter(namespace, key, value, XMLFormat.NoneXMLWriter)
   
   def apply[A:CanWriteXML](namespace: Option[String], key: Option[String], value: A): DataRecord[A] =
     DataWriter(namespace, key, value, implicitly[CanWriteXML[A]])

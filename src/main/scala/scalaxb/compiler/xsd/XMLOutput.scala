@@ -27,11 +27,9 @@ trait XMLOutput extends Args {
   def buildXMLString(param: Param): String = {
     val ns = quoteNamespace(param.namespace)
     val name = "__obj." + makeParamName(param.name)
-    val nilElemCode = "scalaxb.Helper.nilElem(" + ns + ", " + 
-      (param.typeSymbol match {
-        // case XsDataRecord(member) => "x.key.get"
-        case _ => quote(param.name)      
-      }) + ", __scope)"
+    // val nilElemCode = "scalaxb.Helper.nilElem(" + ns + ", " + quote(param.name) + ", __scope)"
+    val nilElemCode = buildToXML("None.type", "None, " + ns + ", " + quote(Some(param.name)) + ", __scope, false") +
+      "(NoneXMLWriter)"
     val xToXMLCode = buildToXML(param.baseTypeName, "x, " + ns + ", " + 
       (param.typeSymbol match {
         case XsDataRecord(member) => "x.key"

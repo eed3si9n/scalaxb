@@ -35,14 +35,17 @@ object GeneralUsage {
       <milk5>WHOLE</milk5><milk5>SKIM</milk5>
     </foo>
     val obj = fromXML[SingularSimpleTypeTest](subject)
-    obj match {
-      case SingularSimpleTypeTest(1, None, None, Some(1), Seq(2, 1), Seq(), 
-        WHOLE, None, None, None, Seq(WHOLE, SKIM), Seq(),
-        None, None) =>
-      case _ => error("match failed: " + obj.toString)
-    }
+    
+    def check(obj: Any) = obj match {
+        case SingularSimpleTypeTest(1, None, None, Some(1), Seq(2, 1), Seq(), 
+          WHOLE, None, None, None, Seq(WHOLE, SKIM), Seq(),
+          None, None) =>
+        case _ => error("match failed: " + obj.toString)
+      }
+    check(obj)
     val document = toXML[SingularSimpleTypeTest](obj, None, Some("foo"), subject.scope)
-    println(document)    
+    check(fromXML[SingularSimpleTypeTest](document))
+    println(document)
   }
   
   def testList {
@@ -60,13 +63,16 @@ object GeneralUsage {
       <milk6 xsi:nil="true"/>
     </foo>
     val obj = fromXML[ListTest](subject)
-    obj match {
-      case ListTest(Seq(1, 2, 3), None, None, Some(Seq(1)), Seq(Seq(), Seq(1)), Seq(None), 
-        Seq(WHOLE), None, None, None, Seq(Seq(), Seq(SKIM)), Seq(None), 
-        None, None) =>
-      case _ => error("match failed: " + obj.toString)
-    }
+    
+    def check(obj: Any) = obj match {
+        case ListTest(Seq(1, 2, 3), None, None, Some(Seq(1)), Seq(Seq(), Seq(1)), Seq(None), 
+          Seq(WHOLE), None, None, None, Seq(Seq(), Seq(SKIM)), Seq(None), 
+          None, None) =>
+        case _ => error("match failed: " + obj.toString)
+      }
+    check(obj)
     val document = toXML[ListTest](obj, None, Some("foo"), subject.scope)
+    check(fromXML[ListTest](document))
     println(document)
   }
   
@@ -81,13 +87,17 @@ object GeneralUsage {
       <person6 xsi:nil="true"/>
     </foo>
     val obj = fromXML[SingularComplexTypeTest](subject)
-    obj match {
-      case SingularComplexTypeTest(Person("John", "Doe"), None, Some(Person("John", "Doe")), None,
-        Seq(Person("John", "Doe"), Person("John", "Doe")),
-        Seq(None)) =>
-      case _ => error("match failed: " + obj.toString)
-    }
+    
+    def check(obj: Any) = obj match {
+        case SingularComplexTypeTest(Person("John", "Doe"), None, Some(Person("John", "Doe")), None,
+          Seq(Person("John", "Doe"), Person("John", "Doe")),
+          Seq(None)) =>
+        case _ => error("match failed: " + obj.toString)
+      }
+    
+    check(obj)
     val document = toXML[SingularComplexTypeTest](obj, None, Some("foo"), subject.scope)
+    check(fromXML[SingularComplexTypeTest](document))
     println(document)
   }
   
@@ -102,18 +112,22 @@ object GeneralUsage {
       <person6 xsi:nil="true"/>
     </foo>
     val obj = fromXML[ChoiceComplexTypeTest](subject)
-    obj match {
-      case ChoiceComplexTypeTest(
-        DataRecord(NS, Some("person1"), Person("John", "Doe")),
-        DataRecord(NS, Some("person2"), None),
-        Some(DataRecord(NS, Some("person3"), Person("John", "Doe") )),
-        None,
-        Seq(DataRecord(NS, Some("person5"), Person("John", "Doe")),
-          DataRecord(NS, Some("person5"), Person("John", "Doe"))),
-        Seq(DataRecord(NS, Some("person6"), None)) ) =>
-      case _ => error("match failed: " + obj.toString)
-    }
+    
+    def check(obj: Any) = obj match {
+        case ChoiceComplexTypeTest(
+          DataRecord(NS, Some("person1"), Person("John", "Doe")),
+          DataRecord(NS, Some("person2"), None),
+          Some(DataRecord(NS, Some("person3"), Person("John", "Doe") )),
+          None,
+          Seq(DataRecord(NS, Some("person5"), Person("John", "Doe")),
+            DataRecord(NS, Some("person5"), Person("John", "Doe"))),
+          Seq(DataRecord(NS, Some("person6"), None)) ) =>
+        case _ => error("match failed: " + obj.toString)
+      }
+    
+    check(obj)
     val document = toXML[ChoiceComplexTypeTest](obj, None, Some("foo"), subject.scope)
+    check(fromXML[ChoiceComplexTypeTest](document))
     println(document)
   }
 }

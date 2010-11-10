@@ -154,7 +154,7 @@ object XsTypeSymbol {
     case "normalizedString" => XsNormalizedString
     case "token"          => XsToken
     case "language"       => XsLanguage
-    case "name"           => XsName
+    case "Name"           => XsName
     case "NMTOKEN"        => XsNMTOKEN
     case "NMTOKENS"       => XsNMTOKENS
     case "NCName"         => XsNCName

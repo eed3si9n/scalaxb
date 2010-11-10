@@ -371,20 +371,7 @@ trait Args extends Params {
       case "scalaxb.HexBinary"  => ("scalaxb.Helper.toHexBinary(", ")") 
       case _        => error("GenSource#buildArg: Unsupported type " + typeSymbol.toString) 
     }
-    
-    val optionSelector = if (selector contains("@")) selector + ".headOption"
-      else selector
-    
-    def buildMatchStatement(noneValue: String, someValue: String) =
-      if (nillable) optionSelector + " match {" + newline +
-          indent(4) + "  case Some(x) => if (x.nil) " + noneValue + " else " + someValue + newline +
-          indent(4) + "  case None    => " + noneValue + newline +
-          indent(4) + "}" 
-      else optionSelector + " match {" + newline +
-          indent(4) + "  case Some(x) => " + someValue + newline +
-          indent(4) + "  case None    => " + noneValue + newline +
-          indent(4) + "}"
-    
+          
     def buildSplitter(r: String) = "scalaxb.Helper.splitBySpace(" + r  + ".text).map(x => " + pre + "x" + post + ")" 
     val retval = (list, cardinality, nillable, defaultValue, fixedValue) match {
       case (true, Multiple, true, _, _) =>
@@ -415,7 +402,7 @@ trait Args extends Params {
       case (false, Single, true, _, _) =>
         "if (" + selector + ".nil) None else Some(" + pre + selector + ".text" + post + ")"
       case (false, Single, false, _, _) =>
-        pre + selector + ".text" + post
+        buildFromXML(buildTypeName(typeSymbol), selector + ".node")
     }
     
     retval

@@ -15,13 +15,69 @@ object GeneralUsage {
   }
 
   def allTests = {
+    testSingularBuiltInType
     testSingularSimpleType
     testList
     testSingularComplexType
     testChoiceComplexType
     true
   }
+  
+  def testSingularBuiltInType {
+    val subject = <foo xmlns="http://www.example.com/general"
+        xmlns:xs="http://www.w3.org/2001/XMLSchema"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+      <int>1</int>
+      <byte>1</byte>
+      <short>1</short>
+      <long>1</long>
+      <float>1.0</float>
+      <double>1.0</double>
+      <integer>1</integer>
+      <nonPositiveInteger>-1</nonPositiveInteger>
+      <negativeInteger>-1</negativeInteger>
+      <nonNegativeInteger>1</nonNegativeInteger>
+      <positiveInteger>1</positiveInteger>
+      <unsignedLong>1</unsignedLong>
+      <unsignedInt>1</unsignedInt>
+      <unsignedShort>1</unsignedShort>
+      <unsignedByte>1</unsignedByte>
+      <decimal>1</decimal>
+      <boolean>false</boolean>
+      <string>foo</string>
+      <normalizedString>foo</normalizedString>
+      <token>foo</token>
+      <language>en-US</language>
+      <Name>foo</Name>
+      <NCName>foo</NCName>
+      <NMTOKEN>foo</NMTOKEN>
+      <NMTOKENS>foo</NMTOKENS>
+      <ID>foo</ID>
+      <IDREF>foo</IDREF>
+      <IDREFS>foo</IDREFS>
+      <ENTITY>foo</ENTITY>
+      <ENTITIES>foo</ENTITIES>
+    </foo>
     
+    val obj = fromXML[SingularBuiltInTypeTest](subject)
+    
+    val BI = BigInt(1)
+    val BD = BigDecimal(1)
+    def check(obj: Any) = obj match {
+        case SingularBuiltInTypeTest(
+          SingularBuiltInTypeTestSequence1(1, 1, 1, 1, 1.0F, 1.0, 1, -1, -1, 1),
+          SingularBuiltInTypeTestSequence2(1, BI, 1, 1, 1, BD, false, "foo", "foo", "foo"),
+          SingularBuiltInTypeTestSequence3("en-US", "foo", "foo", "foo",  Array("foo"),
+            "foo", "foo", Array("foo"), "foo", Array("foo"))
+          ) =>
+        case _ => error("match failed: " + obj.toString)
+      }
+    check(obj)
+    val document = toXML[SingularBuiltInTypeTest](obj, None, Some("foo"), subject.scope)
+    check(fromXML[SingularBuiltInTypeTest](document))
+    println(document)
+  }
+      
   def testSingularSimpleType {
     val subject = <foo xmlns="http://www.example.com/general"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">

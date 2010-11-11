@@ -23,17 +23,47 @@
 package scalaxb.compiler.xsd
  
 trait Args extends Params {
+  def buildFromXML(typeName: String): String = "fromXML[" + typeName + "]"
+  def buildFromXML(typeName: String, selector: String): String =
+    buildFromXML(typeName) + "(" + selector + ")"
+  
+  def buildToXML(typeName: String, args: String): String =
+    "toXML[" + typeName + "](" + args + ")" 
+        
+  def buildFromString(typeName: String, selector: String): String =
+    typeName + ".fromString(" + selector + ")"
+  
   // called by buildConverter
   def buildArg(selector: String, typeSymbol: XsTypeSymbol): String = typeSymbol match {
-    case XsAny => selector
-    case symbol: BuiltInSimpleTypeSymbol =>
-      buildArg(symbol, selector, None, None, Single, false)
-    case ReferenceTypeSymbol(decl: SimpleTypeDecl) =>
-      buildArg(baseType(decl), selector, None, None, Single, false)
-    case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
-      buildFromXML(buildTypeName(typeSymbol), selector)
+    case XsAny                                      => selector
+    case symbol: BuiltInSimpleTypeSymbol            => buildArg(buildTypeName(symbol), selector, Single)
+    case ReferenceTypeSymbol(decl: SimpleTypeDecl)  => buildArg(buildTypeName(baseType(decl)), selector, Single)
+    case ReferenceTypeSymbol(decl: ComplexTypeDecl) => buildFromXML(buildTypeName(typeSymbol), selector)
   }
+  
+  def buildArg(typeName: String, selector: String, cardinality: Cardinality,
+      nillable: Boolean = false, defaultValue: Option[String] = None, fixedValue: Option[String] = None): String = {    
+    def fromSelector = buildFromXML(typeName, selector)
+    def fromU = buildFromXML(typeName, "_")
+    def fromValue(x: String) = buildFromXML(typeName, "scala.xml.Text(" + quote(x) + ")")
     
+    val retval = (cardinality, nillable) match {
+      case (Multiple, true)  => selector + ".toSeq map { _.nilOption map { " + fromU + " }}"
+      case (Multiple, false) => selector + ".toSeq map { " + fromU + " }"
+      case (Optional, true)  => selector + ".headOption map { _.nilOption map { " + fromU + " }}"
+      case (Optional, false) => selector + ".headOption map { " + fromU + " }"
+      case (Single, _) =>
+        (nillable, defaultValue, fixedValue) match { 
+          case ( _, _, Some(x)) => fromValue(x)
+          case (_, Some(x), _)  => selector + ".headOption map { " + fromU + " } getOrElse { " + fromValue(x) + " }"
+          case (true, _, _)     => selector + ".nilOption map { " + fromU + " }"
+          case (false, _, _)    => fromSelector
+        }
+    }
+    
+    retval
+  }
+   
   def buildArg(decl: Decl): String = decl match {
     case elem: ElemDecl        => buildArg(elem, 0)
     case attr: AttributeDecl   => buildArg(attr)
@@ -51,17 +81,23 @@ trait Args extends Params {
   def buildArg(elem: ElemDecl, selector: String): String =
     if ((isSubstitionGroup(elem))) selector
     else elem.typeSymbol match {
-      case symbol: BuiltInSimpleTypeSymbol => buildArg(symbol,
-        selector, elem.defaultValue, elem.fixedValue,
-        toCardinality(elem.minOccurs, elem.maxOccurs), elem.nillable getOrElse(false))
+      case symbol: BuiltInSimpleTypeSymbol => buildArg(buildTypeName(symbol), selector, 
+        toCardinality(elem.minOccurs, elem.maxOccurs), elem.nillable getOrElse(false), elem.defaultValue, elem.fixedValue)
       case ReferenceTypeSymbol(decl: SimpleTypeDecl) =>
-        if (containsEnumeration(decl)) buildEnumArg(decl, selector,
-          elem.defaultValue, elem.fixedValue,
-          toCardinality(elem.minOccurs, elem.maxOccurs), elem.nillable getOrElse(false), false)
+        if (containsEnumeration(decl)) buildArg(buildTypeName(decl), selector, 
+          toCardinality(elem.minOccurs, elem.maxOccurs), elem.nillable getOrElse(false), elem.defaultValue, elem.fixedValue)
         else buildArg(decl,
           selector, elem.defaultValue, elem.fixedValue,
           toCardinality(elem.minOccurs, elem.maxOccurs), elem.nillable getOrElse(false)) 
-      case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>  buildArg(elem, decl, selector)
+      case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
+        if (compositorWrapper.contains(decl))
+          (toCardinality(elem.minOccurs, elem.maxOccurs), elem.nillable getOrElse {false}) match {
+            case (Multiple, _)    => selector + ".toSeq"
+            case (Optional, true) => selector + " getOrElse { None }"
+            case _ => selector
+          }
+        else buildArg(buildTypeName(decl), selector,
+          toCardinality(elem.minOccurs, elem.maxOccurs), elem.nillable getOrElse(false), elem.defaultValue, elem.fixedValue)
       case XsAny => buildArgForAny(selector, elem.namespace, elem.name,
         elem.defaultValue, elem.fixedValue,
         toCardinality(elem.minOccurs, elem.maxOccurs), elem.nillable getOrElse(false))
@@ -78,96 +114,7 @@ trait Args extends Params {
       case _ => error("GenSource#buildArg: " + elem.toString +
         " Invalid type " + elem.typeSymbol.getClass.toString + ": " + elem.typeSymbol.toString)    
     }
-  
-  def buildArg(elem: ElemDecl, decl: ComplexTypeDecl, selector: String): String =
-    if (compositorWrapper.contains(decl)) {
-      val compositor = compositorWrapper(decl)
-      
-      (toCardinality(elem.minOccurs, elem.maxOccurs), elem.nillable getOrElse {false}) match {
-        case (Multiple, _)    => selector + ".toSeq"
-        case (Optional, true) => selector + " getOrElse { None }"
-        case _ => selector
-      }
-    }
-    else buildComplexTypeArg(decl, selector,
-      elem.defaultValue, elem.fixedValue,
-      toCardinality(elem.minOccurs, elem.maxOccurs), elem.nillable getOrElse(false))
-  
-  def buildFromXML(typeName: String, selector: String): String =
-    "fromXML[" + typeName + "](" + selector + ")"
-  
-  def buildToXML(typeName: String, args: String): String =
-    "toXML[" + typeName + "](" + args + ")" 
-  
-  /// builds argument for non-compositor complex types.
-  def buildComplexTypeArg(decl: ComplexTypeDecl, selector: String,
-      defaultValue: Option[String], fixedValue: Option[String],
-      cardinality: Cardinality, nillable: Boolean): String = {
-    val typeName = buildTypeName(decl)
         
-    val retval = (cardinality, nillable) match {
-      case (Multiple, true) =>
-        selector + ".toSeq map { x => if (x.nil) None else Some(" + buildFromXML(typeName, "x.node") + ") }"        
-      case (Multiple, false) =>
-        selector + ".toSeq map { x => " + buildFromXML(typeName, "x.node") + " }"
-      case (Optional, true) =>
-        selector + ".headOption map { x => if (x.nil) None else Some(" + buildFromXML(typeName, "x.node") + ") }"
-      case (Optional, false) =>
-        selector + ".headOption map { x => " + buildFromXML(typeName, "x.node") + " }"
-      case (Single, true) =>
-        "if (" + selector + ".nil) None else Some(" +  buildFromXML(typeName, selector + ".node") + ")"
-      case (Single, false) =>
-        buildFromXML(typeName, selector + ".node")      
-    }
-
-    log("GenSource#buildComplexTypeArg: " + typeName + ": " + retval)
-    retval
-  }
-      
-  def buildFromString(typeName: String, selector: String): String =
-    typeName + ".fromString(" + selector + ")"
-    
-  def buildEnumArg(decl: SimpleTypeDecl, selector: String,
-      defaultValue: Option[String], fixedValue: Option[String],
-      cardinality: Cardinality, nillable: Boolean,
-      list: Boolean): String = {    
-    val typeName = buildTypeName(decl)
-    val optionSelector = if (selector contains("@")) selector + ".headOption"
-      else selector
-    def buildSplitter(r: String) = "scalaxb.Helper.splitBySpace(" + r + ".text).toSeq.map(x => " +
-      buildFromString(typeName, "x") + ")" 
-    
-    val retval = (list, cardinality, nillable) match {
-      case (true, Multiple, true)     => selector + ".toSeq map { x => if (x.nil) None else Some(" + buildSplitter("x") + ") }"
-      case (true, Multiple, false)    => selector + ".toSeq map { x => " + buildSplitter("x") + " }"
-      case (true, Optional, true)     => selector + ".headOption map { x => if (x.nil) None else Some(" + buildSplitter("x") + ") }"
-      case (true, Optional, false)    => selector + ".headOption map { x => " + buildSplitter("x") + " }"
-      case (true, Single, true)       => "if (" + selector + ".nil) None else Some(" + buildSplitter(selector) + ")"
-      case (true, Single, false)      => buildSplitter(selector)
-      case (false, Multiple, true)    => selector + ".toSeq map { x => if (x.nil) None else Some(" + buildFromString(typeName, "x.text") + ") }"        
-      case (false, Multiple, false)   => selector + ".toSeq map { x => " + buildFromString(typeName, "x.text") + " }"
-      case (false, Optional, true)    => selector + ".headOption map { x => if (x.nil) None else Some(" + buildFromString(typeName, "x.text") + ") }"
-      case (false, Optional, false)   => selector + ".headOption map { x => " + buildFromString(typeName, "x.text") + " }"
-      case (false, Single, true)      => "if (" + selector + ".nil) None else Some(" +  buildFromString(typeName, selector + ".text") + ")"
-      case (false, Single, false) =>
-        fixedValue match {
-          case Some(x) => buildFromString(typeName, quote(x))            
-          case None => 
-            defaultValue match {
-              case Some(y) =>
-                optionSelector + " match {" + newline +
-                indent(4) + "  case Some(x) => " + buildFromString(typeName, "x.text") + newline +
-                indent(4) + "  case None    => " + buildFromString(typeName, quote(y)) + newline +
-                indent(4) + "}"
-              case None => buildFromString(typeName, selector + ".text")
-            }
-        }      
-    }
-    
-    log("GenSource#buildEnumArg: " + typeName + ": " + retval)
-    retval
-  }
-    
   def buildArgForAny(selector: String, namespace: Option[String], elementLabel: String,
       defaultValue: Option[String], fixedValue: Option[String],
       cardinality: Cardinality, nillable: Boolean) = {
@@ -211,57 +158,48 @@ trait Args extends Params {
   }
     
   def buildArg(attr: AttributeDecl): String = attr.typeSymbol match {
-    case symbol: BuiltInSimpleTypeSymbol =>
-      buildArg(symbol, buildSelector(attr), attr.defaultValue, attr.fixedValue,
-        toCardinality(toMinOccurs(attr), 1), false)
-        
+    case symbol: BuiltInSimpleTypeSymbol => buildArg(buildTypeName(symbol), buildSelector(attr), 
+      toCardinality(toMinOccurs(attr), 1), false, attr.defaultValue, attr.fixedValue) 
     case ReferenceTypeSymbol(decl: SimpleTypeDecl) =>
       buildArg(decl, buildSelector(attr), attr.defaultValue, attr.fixedValue,
         toCardinality(toMinOccurs(attr), 1), false)
-        
-    case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
-      error("GenSource: Attribute with complex type " + decl.toString)
-
-    case _ => error("GenSource: unsupported type: " + attr.typeSymbol)
+    
+    case ReferenceTypeSymbol(decl: ComplexTypeDecl) => error("Args: Attribute with complex type " + decl.toString)
+    case _ => error("Args: unsupported type: " + attr.typeSymbol)
   }
-
+  
   def buildArg(decl: SimpleTypeDecl, selector: String,
       defaultValue: Option[String], fixedValue: Option[String],
-      cardinality: Cardinality, nillable: Boolean): String = decl.content match {  
+      cardinality: Cardinality, nillable: Boolean): String = {
+    val typeName =  decl.content match {
+      case x: SimpTypRestrictionDecl =>
+        if (containsEnumeration(decl)) buildTypeName(decl)
+        else buildTypeName(baseType(decl))
+      case SimpTypListDecl(ReferenceTypeSymbol(itemType: SimpleTypeDecl)) if containsEnumeration(itemType) =>
+        "Seq[" + buildTypeName(itemType) + "]"
+      case x: SimpTypListDecl   => "Seq[" + buildTypeName(baseType(decl)) + "]"
+      case x: SimpTypUnionDecl  => buildTypeName(baseType(decl))
+      case _ => error("Args: Unsupported content " + decl.content.toString)    
+    }
     
-    case x: SimpTypRestrictionDecl =>
-      if (containsEnumeration(decl)) buildEnumArg(decl, selector,
-        defaultValue, fixedValue,
-        cardinality, nillable, false)
-      else buildArg(baseType(decl), selector, defaultValue, fixedValue, cardinality, nillable)
-    case SimpTypListDecl(ReferenceTypeSymbol(itemType: SimpleTypeDecl)) 
-          if containsEnumeration(itemType) =>
-      buildEnumArg(itemType, selector,
-        defaultValue, fixedValue,
-        cardinality, nillable, true)
-    case x: SimpTypListDecl =>
-      buildArg(baseType(decl), selector, defaultValue, fixedValue, cardinality, nillable, true)
-    case x: SimpTypUnionDecl =>
-      buildArg(baseType(decl), selector, defaultValue, fixedValue, cardinality, nillable)
-    
-    case _ => error("GenSource: Unsupported content " + decl.content.toString)    
+    buildArg(typeName, selector, cardinality, nillable, defaultValue, fixedValue)
   }
   
   def buildArg(content: SimpleContentDecl): String = content.content match {
     case SimpContRestrictionDecl(base: XsTypeSymbol, _, _) => buildArg(content, base)
     case SimpContExtensionDecl(base: XsTypeSymbol, _) => buildArg(content, base)
     
-    case _ => error("GenSource: Unsupported content " + content.content.toString)    
+    case _ => error("Args: Unsupported content " + content.content.toString)    
   }
   
   def buildArg(content: SimpleContentDecl, typeSymbol: XsTypeSymbol): String = typeSymbol match {
-    case base: BuiltInSimpleTypeSymbol => buildArg(base, "node", None, None, Single, false)
+    case base: BuiltInSimpleTypeSymbol => buildArg(buildTypeName(base), "node", Single)
     case ReferenceTypeSymbol(ComplexTypeDecl(_, _, _, _, _, content: SimpleContentDecl, _, _)) =>
       buildArg(content)
     case ReferenceTypeSymbol(decl: SimpleTypeDecl) =>
       buildArg(decl, "node", None, None, Single, false)
         
-    case _ => error("GenSource: Unsupported type " + typeSymbol.toString)    
+    case _ => error("Args: Unsupported type " + typeSymbol.toString)    
   }
   
   def buildSelector(elem: ElemDecl): String =
@@ -345,67 +283,6 @@ trait Args extends Params {
   def buildArgForOptTextRecord(pos: Int): String =
     buildSelector(pos) + ".toList"
     
-  def buildArg(typeSymbol: BuiltInSimpleTypeSymbol, selector: String,
-      defaultValue: Option[String], fixedValue: Option[String],
-      cardinality: Cardinality, nillable: Boolean,
-      list: Boolean = false): String = {
-        
-    val (pre, post) = typeSymbol.name match {
-      case "String"     => ("", "")
-      case "javax.xml.datatype.Duration" => ("scalaxb.Helper.toDuration(", ")")
-      case "javax.xml.datatype.XMLGregorianCalendar" => ("scalaxb.XMLCalendar(", ")")
-      case "Boolean"    => ("", ".toBoolean")
-      case "Int"        => ("", ".toInt")
-      case "Long"       => ("", ".toLong")
-      case "Short"      => ("", ".toShort")
-      case "Float"      => ("", ".toFloat")
-      case "Double"     => ("", ".toDouble")
-      case "Byte"       => ("", ".toByte")
-      case "BigInt"     => ("BigInt(", ")")
-      case "BigDecimal" => ("BigDecimal(", ")")
-      case "java.net.URI" => ("scalaxb.Helper.toURI(", ")")
-      case "javax.xml.namespace.QName"
-        => ("javax.xml.namespace.QName.valueOf(", ")")
-      case "Array[String]" => ("scalaxb.Helper.splitBySpace(", ")")
-      case "Array[Byte]" => ("scalaxb.Helper.toByteArray(", ")")
-      case "scalaxb.HexBinary"  => ("scalaxb.Helper.toHexBinary(", ")") 
-      case _        => error("GenSource#buildArg: Unsupported type " + typeSymbol.toString) 
-    }
-    
-    def fromSelector = buildFromXML(buildTypeName(typeSymbol), selector)
-    def fromX = buildFromXML(buildTypeName(typeSymbol), "x")
-    def fromValue(x: String) = buildFromXML(buildTypeName(typeSymbol), "scala.xml.Text(" + quote(x) + ")")
-    def buildSplitter(r: String) = "scalaxb.Helper.splitBySpace(" + r  + ".text).map(x => " + pre + "x" + post + ")" 
-    
-    val retval = (list, cardinality, nillable) match {
-      case (true, Multiple, true) =>
-        selector + ".toSeq map { x => if (x.nil) None else Some(" + buildSplitter("x") + ".toSeq) }"
-      case (true, Multiple, false) =>
-        selector + ".toSeq map { x => " + buildSplitter("x") + ".toSeq }" 
-      case (true, Optional, true) =>
-        selector + ".headOption map { x => if (x.nil) None else Some(" + buildSplitter("x") + ".toSeq) }"
-      case (true, Optional, false) =>
-        selector + ".headOption map { x => " + buildSplitter("x") + ".toSeq }"
-      case (true, Single, true) =>
-        "if (" + selector + ".nil) None else Some(" + buildSplitter(selector) + ".toSeq)"
-      case (true, Single, false) =>  
-        buildSplitter(selector)
-      case (false, Multiple, true)  => selector + ".toSeq map { _.nilOption map { x => " + fromX + " }}"
-      case (false, Multiple, false) => selector + ".toSeq map { x => " + fromX + " }"
-      case (false, Optional, true)  => selector + ".headOption map { _.nilOption map { x => " + fromX + " }}"
-      case (false, Optional, false) => selector + ".headOption map { x => " + fromX + " }"
-      case (false, Single, _) =>
-        (nillable, defaultValue, fixedValue) match { 
-          case ( _, _, Some(x)) => fromValue(x)
-          case (_, Some(x), _)  => selector + ".headOption map { x => " + fromX + " } getOrElse { " + fromValue(x) + " }"
-          case (true, _, _)     => selector + ".nilOption map { x => " + fromX + " }"
-          case (false, _, _)    => fromSelector
-        }
-    }
-    
-    retval
-  }
-  
   def buildAttributeGroupArg(group: AttributeGroupDecl): String = {
     val formatterName = buildTypeName(group) + "Format"
     formatterName + ".readsXMLEither(node).right.get"

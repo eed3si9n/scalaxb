@@ -452,17 +452,17 @@ case class ElemName(namespace: Option[String], name: String) {
   var node: scala.xml.Node = _
   def text = node.text
   def nil = Helper.isNil(node)
+  def nilOption: Option[ElemName] = if (nil) None else Some(this)
   def splitBySpace = Helper.splitBySpace(text)
-}
-
-object ElemName {
-  implicit def toNodeSeq(elemName: ElemName): scala.xml.NodeSeq = elemName.node
 }
 
 trait AnyElemNameParser extends scala.util.parsing.combinator.Parsers {
   import XMLFormat._
   
   type Elem = ElemName
+  
+  // we need this so treat ElemName as NodeSeq for fromXML etc.
+  implicit def toNodeSeq(elem: Elem): scala.xml.NodeSeq = elem.node
   
   def any: Parser[ElemName] = 
     accept("any", { case x: ElemName if x.name != "" => x })  

@@ -371,38 +371,36 @@ trait Args extends Params {
       case "scalaxb.HexBinary"  => ("scalaxb.Helper.toHexBinary(", ")") 
       case _        => error("GenSource#buildArg: Unsupported type " + typeSymbol.toString) 
     }
-          
+    
+    def fromSelector = buildFromXML(buildTypeName(typeSymbol), selector)
+    def fromX = buildFromXML(buildTypeName(typeSymbol), "x")
+    def fromValue(x: String) = buildFromXML(buildTypeName(typeSymbol), "scala.xml.Text(" + quote(x) + ")")
     def buildSplitter(r: String) = "scalaxb.Helper.splitBySpace(" + r  + ".text).map(x => " + pre + "x" + post + ")" 
-    val retval = (list, cardinality, nillable, defaultValue, fixedValue) match {
-      case (true, Multiple, true, _, _) =>
+    
+    val retval = (list, cardinality, nillable) match {
+      case (true, Multiple, true) =>
         selector + ".toSeq map { x => if (x.nil) None else Some(" + buildSplitter("x") + ".toSeq) }"
-      case (true, Multiple, false, _, _) =>
+      case (true, Multiple, false) =>
         selector + ".toSeq map { x => " + buildSplitter("x") + ".toSeq }" 
-      case (true, Optional, true, _, _) =>
+      case (true, Optional, true) =>
         selector + ".headOption map { x => if (x.nil) None else Some(" + buildSplitter("x") + ".toSeq) }"
-      case (true, Optional, false, _, _) =>
+      case (true, Optional, false) =>
         selector + ".headOption map { x => " + buildSplitter("x") + ".toSeq }"
-      case (true, Single, true, _, _) =>
+      case (true, Single, true) =>
         "if (" + selector + ".nil) None else Some(" + buildSplitter(selector) + ".toSeq)"
-      case (true, Single, false, _, _) =>  
+      case (true, Single, false) =>  
         buildSplitter(selector)
-      case (false, Multiple, true, _, _) =>
-        selector + ".toSeq map { x => if (x.nil) None else Some(" + pre + "x.text" + post + ") }"
-      case (false, Multiple, false, _, _) =>
-        if (selector.contains("split(")) selector + ".toSeq map { x => " + pre + "x" + post + " }"
-        else selector + ".toSeq map { x => " + pre + "x.text" + post + " }"
-      case (false, Optional, true, _, _) =>
-        selector + ".headOption map { x => if (x.nil) None else Some(" + pre + "x.text" + post + ") }"
-      case (false, Optional, false, _, _) =>
-        selector + ".headOption map { x => " + pre + "x.text" + post + " }"
-      case (false, Single, _, _, Some(x)) =>
-        pre + quote(x) + post
-      case (false, Single, _, Some(x), _) =>
-        selector + ".headOption map { x => " + pre + "x.text" + post + " } getOrElse { " + pre + quote(x) + post + " }"
-      case (false, Single, true, _, _) =>
-        "if (" + selector + ".nil) None else Some(" + pre + selector + ".text" + post + ")"
-      case (false, Single, false, _, _) =>
-        buildFromXML(buildTypeName(typeSymbol), selector + ".node")
+      case (false, Multiple, true)  => selector + ".toSeq map { _.nilOption map { x => " + fromX + " }}"
+      case (false, Multiple, false) => selector + ".toSeq map { x => " + fromX + " }"
+      case (false, Optional, true)  => selector + ".headOption map { _.nilOption map { x => " + fromX + " }}"
+      case (false, Optional, false) => selector + ".headOption map { x => " + fromX + " }"
+      case (false, Single, _) =>
+        (nillable, defaultValue, fixedValue) match { 
+          case ( _, _, Some(x)) => fromValue(x)
+          case (_, Some(x), _)  => selector + ".headOption map { x => " + fromX + " } getOrElse { " + fromValue(x) + " }"
+          case (true, _, _)     => selector + ".nilOption map { x => " + fromX + " }"
+          case (false, _, _)    => fromSelector
+        }
     }
     
     retval
@@ -410,7 +408,7 @@ trait Args extends Params {
   
   def buildAttributeGroupArg(group: AttributeGroupDecl): String = {
     val formatterName = buildTypeName(group) + "Format"
-    formatterName + ".fromXML(node)"
+    formatterName + ".readsXMLEither(node).right.get"
   }
   
   def flattenAttributes(decl: ComplexTypeDecl): List[AttributeLike] =

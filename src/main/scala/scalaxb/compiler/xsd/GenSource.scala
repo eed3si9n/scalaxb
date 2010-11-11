@@ -473,9 +473,8 @@ abstract class GenSource(val schema: SchemaDecl,
     
     Snippet(<source>{ buildComment(group) }case class {name}({paramsString})</source>,
      <source>  object {formatterName} {{
-    def fromXML(node: scala.xml.Node): {name} = {{
-      {name}({argsString})
-    }}
+    def readsXMLEither(node: scala.xml.Node): Either[String, {name}] =
+      Right({name}({argsString}))
   
     def toAttribute(__obj: {name}, __attr: scala.xml.MetaData, __scope: scala.xml.NamespaceBinding) = {{
       var attr: scala.xml.MetaData  = __attr

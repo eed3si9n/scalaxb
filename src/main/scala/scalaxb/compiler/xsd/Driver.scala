@@ -25,6 +25,9 @@ package scalaxb.compiler.xsd
 import scalaxb.compiler.{Module, Config}
 import java.io.{File, Reader, PrintWriter}
 import collection.mutable
+import scala.xml.{Elem}
+import scala.xml.factory.{XMLLoader}
+import javax.xml.parsers.SAXParser
 
 class Driver extends Module { driver =>
   type Schema = SchemaDecl
@@ -47,7 +50,7 @@ class Driver extends Module { driver =>
   
   override def toImportable(in: Reader): Importable = new Importable {
     val reader = in
-    val elem = scala.xml.XML.load(reader)
+    val elem = CustomXML.load(reader)
     val schemaLite = SchemaLite.fromXML(elem)
     val targetNamespace = schemaLite.targetNamespace
     val imports: Seq[String] = schemaLite.imports.collect {
@@ -59,6 +62,17 @@ class Driver extends Module { driver =>
       context.schemas += schema
       log("SchemaParser.parse: " + schema.toString())
       schema
+    }
+  }
+  
+  object CustomXML extends XMLLoader[Elem] {
+    override def parser: SAXParser = {
+      val factory = javax.xml.parsers.SAXParserFactory.newInstance()
+      factory.setFeature("http://xml.org/sax/features/validation", false)
+      factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", false)
+      factory.setFeature("http://apache.org/xml/features/nonvalidating/load-dtd-grammar", false)
+      factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false)
+      factory.newSAXParser()
     }
   }
 }

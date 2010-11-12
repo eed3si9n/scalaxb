@@ -296,7 +296,7 @@ abstract class GenSource(val schema: SchemaDecl,
       {childString}</source>
     
     def childString = if (decl.mixed) "__obj." + makeParamName(MIXED_PARAM) + 
-      ".flatMap(x => scalaxb.DataRecord.toXML(x, x.namespace, x.key, __scope, false).toSeq)"
+      ".toSeq flatMap { x => toXML[scalaxb.DataRecord[Any]](x, x.namespace, x.key, __scope, false) }"
     else decl.content.content match {
       case SimpContRestrictionDecl(base: XsTypeSymbol, _, _) => "Seq(scala.xml.Text(__obj.value.toString))"
       case SimpContExtensionDecl(base: XsTypeSymbol, _) =>   "Seq(scala.xml.Text(__obj.value.toString))"

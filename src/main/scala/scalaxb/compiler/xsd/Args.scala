@@ -98,8 +98,10 @@ trait Args extends Params {
           }
         else buildArg(buildTypeName(decl), selector,
           toCardinality(elem.minOccurs, elem.maxOccurs), elem.nillable getOrElse(false), elem.defaultValue, elem.fixedValue)
-      case XsAny => buildArg(buildTypeName(XsAny), selector,
-        toCardinality(elem.minOccurs, elem.maxOccurs), elem.nillable getOrElse(false), elem.defaultValue, elem.fixedValue)
+      case XsAny => buildArg(
+          if (elem.nillable getOrElse(false)) buildTypeName(XsNillableAny)
+          else buildTypeName(XsAny), selector,
+        toCardinality(elem.minOccurs, elem.maxOccurs), false, elem.defaultValue, elem.fixedValue)
       
       case symbol: ReferenceTypeSymbol =>
         if (symbol.decl == null) error("GenSource#buildArg: " + elem.toString + " Invalid type " + symbol.getClass.toString + ": " +
@@ -195,6 +197,7 @@ trait Args extends Params {
       case ref: GroupRef => true
       case elem: ElemDecl =>
         elem.typeSymbol match {
+          case XsAny => true
           case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
             if (compositorWrapper.contains(decl)) true
             else false
@@ -209,7 +212,7 @@ trait Args extends Params {
         if (isCompositor) selector + ".flatten"
         else selector
       case Optional =>
-        if (isCompositor) selector + " getOrElse { Nil}"
+        if (isCompositor) selector + " getOrElse {Nil}"
         else selector + ".toList"
       case Single =>
         if (isCompositor) selector

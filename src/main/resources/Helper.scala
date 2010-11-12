@@ -231,6 +231,14 @@ object XMLFormat {
       Scalaxb.toXML[A](__obj.get, __namespace, __elementLabel, __scope, __typeAttribute)
   }
   
+  implicit def optionXMLWriter[A: CanWriteXML]: CanWriteXML[Option[A]] = new CanWriteXML[Option[A]] {
+    def writesXML(__obj: Option[A], __namespace: Option[String], __elementLabel: Option[String],
+        __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq = __obj match {
+      case Some(x) => Scalaxb.toXML[A](x, __namespace, __elementLabel, __scope, __typeAttribute)
+      case None    => Helper.nilElem(__namespace, __elementLabel.get, __scope)   
+    }
+  }
+  
   implicit object dataRecordAnyXMLFormat extends XMLFormat[DataRecord[Any]] {
     def readsXMLEither(seq: scala.xml.NodeSeq): Either[String, DataRecord[Any]] = try {
       Right(DataRecord.fromAny(seq))

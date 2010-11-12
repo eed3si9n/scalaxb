@@ -29,11 +29,15 @@ trait XsTypeSymbol extends scala.xml.TypeSymbol {
 }
 
 object XsAny extends XsTypeSymbol {
-  val name = "scala.xml.Node"
+  val name = "XsAny"
+}
+
+object XsNillableAny extends XsTypeSymbol {
+  val name = "XsNillableAny"
 }
 
 object XsAnySimpleType extends XsTypeSymbol {
-  val name = "scala.xml.Node"
+  val name = "XsAnySimpleType"
 }
 
 object XsInterNamespace extends XsTypeSymbol {

@@ -138,6 +138,17 @@
     </xs:sequence>
   </xs:complexType>
   
+  <xs:complexType name="AnyTypeTest">
+    <xs:sequence>
+      <xs:element name="any1" type="xs:anyType"/>
+      <xs:element name="any2" nillable="true" type="xs:anyType"/>
+      <xs:element name="any3" minOccurs="0" type="xs:anyType"/>
+      <xs:element name="any4" minOccurs="0" nillable="true" type="xs:anyType"/>
+      <xs:element name="any5" maxOccurs="unbounded" type="xs:anyType"/>
+      <xs:element name="any6" maxOccurs="unbounded" nillable="true" type="xs:anyType"/>      
+    </xs:sequence>
+  </xs:complexType>
+  
   <xs:complexType name="Person">
     <xs:sequence>
       <xs:element name="firstName" type="xs:string"/>

@@ -98,65 +98,17 @@ trait Args extends Params {
           }
         else buildArg(buildTypeName(decl), selector,
           toCardinality(elem.minOccurs, elem.maxOccurs), elem.nillable getOrElse(false), elem.defaultValue, elem.fixedValue)
-      case XsAny => buildArgForAny(selector, elem.namespace, elem.name,
-        elem.defaultValue, elem.fixedValue,
-        toCardinality(elem.minOccurs, elem.maxOccurs), elem.nillable getOrElse(false))
-    
+      case XsAny => buildArg(buildTypeName(XsAny), selector,
+        toCardinality(elem.minOccurs, elem.maxOccurs), elem.nillable getOrElse(false), elem.defaultValue, elem.fixedValue)
+      
       case symbol: ReferenceTypeSymbol =>
-        if (symbol.decl == null)
-          error("GenSource#buildArg: " + elem.toString +
-            " Invalid type " + symbol.getClass.toString + ": " +
+        if (symbol.decl == null) error("GenSource#buildArg: " + elem.toString + " Invalid type " + symbol.getClass.toString + ": " +
             symbol.toString + " with null decl")
-        else    
-          error("GenSource#buildArg: " + elem.toString +
-            " Invalid type " + symbol.getClass.toString + ": " +
+        else error("GenSource#buildArg: " + elem.toString + " Invalid type " + symbol.getClass.toString + ": " +
             symbol.toString + " with " + symbol.decl.toString)
-      case _ => error("GenSource#buildArg: " + elem.toString +
-        " Invalid type " + elem.typeSymbol.getClass.toString + ": " + elem.typeSymbol.toString)    
+      case _ => error("GenSource#buildArg: " + elem.toString + " Invalid type " + elem.typeSymbol.getClass.toString + ": " + elem.typeSymbol.toString)    
     }
-        
-  def buildArgForAny(selector: String, namespace: Option[String], elementLabel: String,
-      defaultValue: Option[String], fixedValue: Option[String],
-      cardinality: Cardinality, nillable: Boolean) = {
-    
-    def buildMatchStatement(noneValue: String, someValue: String) =
-      if (nillable) selector + " match {" + newline +
-          indent(4) + "  case Some(x) => if (x.nil) " + noneValue + " else " + someValue + newline +
-          indent(4) + "  case None    => " + noneValue + newline +
-          indent(4) + "}"
-      else selector + " match {" + newline +
-        indent(4) + "  case Some(x) => " + someValue + newline +
-        indent(4) + "  case None    => " + noneValue + newline +
-        indent(4) + "}"    
-    
-    def hardcoded(value: String) =
-      "scala.xml.Elem(node.scope.getPrefix(" + quote(schema.targetNamespace) + "), "  + newline +
-      indent(5) + quote(elementLabel) + ", scala.xml.Null, node.scope, " +  newline +
-      indent(5) + "scala.xml.Text(" + quote(value) + "))"
-    
-    val retval = (cardinality, nillable, defaultValue, fixedValue) match {
-      case (Multiple, true, _, _) =>
-        selector + ".toList.map { x => if (x.nil) None else Some(scalaxb.DataRecord(x)) }"
-      case (Multiple, false, _, _) =>
-        selector + ".toList.map { x => scalaxb.DataRecord(x) }"
-      case (Optional, _, _, _) =>
-        buildMatchStatement("None", "Some(scalaxb.DataRecord(x))")
-      case (Single, _, _, Some(x)) =>
-        "scalaxb.DataRecord(" + newline +
-          indent(5) + quote(namespace) + ", " + quote(elementLabel) + ", " + newline +
-          indent(5) + hardcoded(x) + ")"
-      case (Single, _, Some(x), _) =>
-        buildMatchStatement("scalaxb.DataRecord(" + newline +
-          indent(5) + quote(namespace) + ", " + quote(elementLabel) + ", " + newline +
-          indent(5) + hardcoded(x) + ")",
-          "scalaxb.DataRecord(x)")        
-      case (Single, false, _, _) =>
-        "scalaxb.DataRecord(" + selector + ")"
-    }
-    
-    retval
-  }
-    
+      
   def buildArg(attr: AttributeDecl): String = attr.typeSymbol match {
     case symbol: BuiltInSimpleTypeSymbol => buildArg(buildTypeName(symbol), buildSelector(attr), 
       toCardinality(toMinOccurs(attr), 1), false, attr.defaultValue, attr.fixedValue) 

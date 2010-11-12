@@ -43,13 +43,17 @@ trait Parsers extends Args with Params {
       buildAnyParser(any, occurrence, mixed, wrapInDataRecord)
   }
   
-  def buildAnyParser(any: AnyDecl, occurrence: Occurrence, mixed: Boolean, wrapInDataRecord: Boolean): String =
-    buildParserString(if (mixed) "((any ^^ " + buildConverter(XsAny, Occurrence(1, 1, occurrence.nillable)) + ") ~ " + newline +
+  def buildAnyParser(any: AnyDecl, occurrence: Occurrence, mixed: Boolean, wrapInDataRecord: Boolean): String = {
+    val converter = if (occurrence.nillable) buildFromXML("scalaxb.DataRecord[Option[Any]]", "_")
+      else buildFromXML(buildTypeName(XsAny), "_")
+    
+    buildParserString(if (mixed) "((any ^^ (" + converter + ")) ~ " + newline +
         indent(3) + buildTextParser + ") ^^ " + newline +
         indent(3) + "{ case p1 ~ p2 => Seq.concat(Seq(p1), p2.toList) }"
-      else if (wrapInDataRecord) "(any ^^ " + buildConverter(XsAny, Occurrence(1, 1, occurrence.nillable)) + ")"
+      else if (wrapInDataRecord) "(any ^^ (" + converter + "))"
       else "any",
       occurrence)
+  }
   
   // minOccurs and maxOccurs may come from the declaration of the compositor,
   // or from the element declaration.

@@ -135,10 +135,6 @@
       </xs:choice>
       <xs:element name="person5" maxOccurs="unbounded" type="gen:Person"/>
       <xs:any namespace="##other" processContents="lax" maxOccurs="unbounded"/>
-      <xs:choice>
-        <xs:element name="person6" maxOccurs="unbounded" nillable="true" type="gen:Person"/>
-        <xs:any namespace="##other" processContents="lax" maxOccurs="unbounded"/>
-      </xs:choice>
     </xs:sequence>
   </xs:complexType>
   

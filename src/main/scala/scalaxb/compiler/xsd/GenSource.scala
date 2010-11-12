@@ -300,7 +300,7 @@ abstract class GenSource(val schema: SchemaDecl,
     else decl.content.content match {
       case SimpContRestrictionDecl(base: XsTypeSymbol, _, _) => "Seq(scala.xml.Text(__obj.value.toString))"
       case SimpContExtensionDecl(base: XsTypeSymbol, _) =>   "Seq(scala.xml.Text(__obj.value.toString))"
-      case _ =>  
+      case _ =>
         if (childElemParams.isEmpty) "Nil"
         else if (childElemParams.size == 1) "(" + buildXMLString(childElemParams(0)) + ")"
         else childElemParams.map(x => 

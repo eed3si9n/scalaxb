@@ -188,40 +188,59 @@ object GeneralUsage {
     println(document)
   }
   
+  /*
+  <xs:complexType name="AnyTest">
+    <xs:sequence>
+      <xs:element name="person1" type="gen:Person"/>
+      <xs:any namespace="##other" processContents="lax"/>
+      <xs:choice>
+        <xs:element name="person2" nillable="true" type="gen:Person"/>
+        <xs:any namespace="##other" processContents="lax"/>
+      </xs:choice>
+      <xs:element name="person3" minOccurs="0" type="gen:Person"/>
+      <xs:any namespace="##other" processContents="lax" minOccurs="0"/>
+      <xs:choice>
+        <xs:element name="person4" minOccurs="0" nillable="true" type="gen:Person"/>
+        <xs:any namespace="##other" processContents="lax" minOccurs="0"/>
+      </xs:choice>
+      <xs:element name="person5" maxOccurs="unbounded" type="gen:Person"/>
+      <xs:any namespace="##other" processContents="lax" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+  */
   def testAny {
     val subject = <foo xmlns="http://www.example.com/general"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xmlns:xs="http://www.w3.org/2001/XMLSchema">
       <person1><firstName>John</firstName><lastName>Doe</lastName></person1>
-      <foo xsi="xs:int">1</foo>
+      <foo xsi:type="xs:int">1</foo>
       <person2 xsi:nil="true"/>
       <person3><firstName>John</firstName><lastName>Doe</lastName></person3>
+      <foo xsi:type="xs:int">1</foo>
+      <foo xsi:type="xs:int">1</foo>
       <person5><firstName>John</firstName><lastName>Doe</lastName></person5>
         <person5><firstName>John</firstName><lastName>Doe</lastName></person5>
-      <foo xsi="xs:int">1</foo><foo xsi="xs:int">1</foo>
-      <person6 xsi:nil="true"/>
+      <foo xsi:type="xs:int">1</foo><foo xsi:type="xs:int">1</foo>
     </foo>
     val obj = fromXML[AnyTest](subject)
     
     def check(obj: Any) = obj match {
         case AnyTest(
           Person("John", "Doe"),
-          DataRecord(NS, Some("foo"), 1),
+          DataRecord(NS, Some("foo"), 1), // Single
           DataRecord(NS, Some("person2"), None),
-          Some(DataRecord(NS, Some("person3"), Person("John", "Doe") )),
-          None,
-          None,
-          Seq(DataRecord(NS, Some("person5"), Person("John", "Doe")),
-            DataRecord(NS, Some("person5"), Person("John", "Doe"))),
-          Seq(DataRecord(NS, Some("foo"), 1),
-            DataRecord(NS, Some("foo"), 1)),
-          Seq(DataRecord(NS, Some("person6"), None))
+          Some(Person("John", "Doe")),
+          Some(DataRecord(NS, Some("foo"), 1)), // optional
+          Some(DataRecord(NS, Some("foo"), Some(1))), // nillable optional
+          Seq(Person("John", "Doe"), Person("John", "Doe")),
+          Seq(DataRecord(NS, Some("foo"), 1), // multiple
+            DataRecord(NS, Some("foo"), 1))
            ) =>
         case _ => error("match failed: " + obj.toString)
       }
-    // check(obj)
+    check(obj)
     val document = toXML[AnyTest](obj, None, Some("foo"), subject.scope)
-    // check(fromXML[AnyTest](document))
+    check(fromXML[AnyTest](document))
     println(document)
   }
 }

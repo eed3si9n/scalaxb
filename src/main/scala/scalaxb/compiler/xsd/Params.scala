@@ -26,6 +26,7 @@ import scala.collection.mutable
 trait Params extends Lookup {  
   val ANY_ATTR_PARAM = "anyAttribute"
   var argNumber = 0
+  var anyNumber = 0
   
   case class Occurrence(minOccurs: Int, maxOccurs: Int, nillable: Boolean)
   
@@ -187,6 +188,13 @@ trait Params extends Lookup {
       }
       Occurrence(minOccurs, maxOccurs, nillable)
     case _ => Occurrence(compos.minOccurs, compos.maxOccurs, false)
+  }
+  
+  def buildAnyRef(any: AnyDecl) = {
+    anyNumber += 1
+    val name = if (anyNumber <= 1) "any"
+      else "any" + anyNumber
+    ElemDecl(Some(INTERNAL_NAMESPACE), name, XsAny, None, None, any.minOccurs, any.maxOccurs, None, None, None)
   }
   
   def buildCompositorRef(compositor: HasParticle): ElemDecl =

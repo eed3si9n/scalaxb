@@ -173,11 +173,9 @@ trait Lookup extends ContextProcessor {
   }
   
   def buildTypeName(decl: SimpleTypeDecl): String = decl.content match {
-    case x@SimpTypRestrictionDecl(_, _) if containsEnumeration(decl) =>
-      buildEnumTypeName(decl)
-    case x: SimpTypRestrictionDecl => buildTypeName(baseType(decl))
-    case SimpTypListDecl(ReferenceTypeSymbol(itemType: SimpleTypeDecl)) 
-        if containsEnumeration(itemType) =>
+    case x@SimpTypRestrictionDecl(_, _) if containsEnumeration(decl)  => buildEnumTypeName(decl)
+    case x: SimpTypRestrictionDecl                                    => buildTypeName(baseType(decl))
+    case SimpTypListDecl(ReferenceTypeSymbol(itemType: SimpleTypeDecl)) if containsEnumeration(itemType) =>
       "Seq[" + buildEnumTypeName(itemType) + "]"
     case x: SimpTypListDecl => "Seq[" + buildTypeName(baseType(decl)) + "]"
     case x: SimpTypUnionDecl => buildTypeName(baseType(decl))

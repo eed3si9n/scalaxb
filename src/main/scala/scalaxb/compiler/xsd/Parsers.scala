@@ -44,10 +44,10 @@ trait Parsers extends Args with Params {
   }
   
   def buildAnyParser(any: AnyDecl, occurrence: Occurrence, mixed: Boolean, wrapInDataRecord: Boolean): String =
-    buildParserString(if (mixed) "((any ^^ " + buildConverter(XsAny, SingleUnnillable) + ") ~ " + newline +
+    buildParserString(if (mixed) "((any ^^ " + buildConverter(XsAny, Occurrence(1, 1, occurrence.nillable)) + ") ~ " + newline +
         indent(3) + buildTextParser + ") ^^ " + newline +
         indent(3) + "{ case p1 ~ p2 => Seq.concat(Seq(p1), p2.toList) }"
-      else if (wrapInDataRecord) "(any ^^ " + buildConverter(XsAny, SingleUnnillable) + ")"
+      else if (wrapInDataRecord) "(any ^^ " + buildConverter(XsAny, Occurrence(1, 1, occurrence.nillable)) + ")"
       else "any",
       occurrence)
   
@@ -266,10 +266,6 @@ trait Parsers extends Args with Params {
       case ref: ElemRef             => buildElement(ref)
       case any: AnyDecl             => buildAnyRef(any)
     }
-    
-  def buildAnyRef(any: AnyDecl) =
-    ElemDecl(Some(INTERNAL_NAMESPACE), "any", XsAny, None, None,
-      any.minOccurs, any.maxOccurs, None, None, None)
   
   def buildTextParser = "optTextRecord"
   

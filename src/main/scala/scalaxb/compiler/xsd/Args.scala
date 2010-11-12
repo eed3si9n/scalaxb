@@ -170,20 +170,8 @@ trait Args extends Params {
   
   def buildArg(decl: SimpleTypeDecl, selector: String,
       defaultValue: Option[String], fixedValue: Option[String],
-      cardinality: Cardinality, nillable: Boolean): String = {
-    val typeName =  decl.content match {
-      case x: SimpTypRestrictionDecl =>
-        if (containsEnumeration(decl)) buildTypeName(decl)
-        else buildTypeName(baseType(decl))
-      case SimpTypListDecl(ReferenceTypeSymbol(itemType: SimpleTypeDecl)) if containsEnumeration(itemType) =>
-        "Seq[" + buildTypeName(itemType) + "]"
-      case x: SimpTypListDecl   => "Seq[" + buildTypeName(baseType(decl)) + "]"
-      case x: SimpTypUnionDecl  => buildTypeName(baseType(decl))
-      case _ => error("Args: Unsupported content " + decl.content.toString)    
-    }
-    
-    buildArg(typeName, selector, cardinality, nillable, defaultValue, fixedValue)
-  }
+      cardinality: Cardinality, nillable: Boolean): String =  
+    buildArg(buildTypeName(decl), selector, cardinality, nillable, defaultValue, fixedValue)
   
   def buildArg(content: SimpleContentDecl): String = content.content match {
     case SimpContRestrictionDecl(base: XsTypeSymbol, _, _) => buildArg(content, base)

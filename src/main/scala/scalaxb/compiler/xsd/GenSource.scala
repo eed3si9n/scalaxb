@@ -135,7 +135,7 @@ abstract class GenSource(val schema: SchemaDecl,
       else " extends " + superNames.mkString(" with ")
     
     def makeCaseEntry(decl: ComplexTypeDecl) =
-      "case (" + quoteNamespace(decl.namespace) + ", " + quote(decl.family) + ") => " + 
+      "case (" + quoteNamespace(decl.namespace) + ", " + quote(Some(decl.family)) + ") => " + 
         "Right(" + buildFromXML(buildTypeName(decl), "node") + ")"
     
     def makeToXmlCaseEntry(decl: ComplexTypeDecl) =
@@ -629,6 +629,7 @@ object {name} {{
   
   def flattenElements(decl: ComplexTypeDecl): List[ElemDecl] = {
     argNumber = 0
+    anyNumber = 0
     
     val build: ComplexTypeContent =>? List[ElemDecl] = {
       case SimpContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
@@ -754,6 +755,7 @@ object {name} {{
   
   def buildParticles(decl: ComplexTypeDecl, name: String): List[ElemDecl] = {
     argNumber = 0
+    anyNumber = 0
     
     val build: ComplexTypeContent =>? List[ElemDecl] = {
       case SimpContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>

@@ -20,6 +20,7 @@ object GeneralUsage {
     testList
     testSingularComplexType
     testChoiceComplexType
+    testAny
     true
   }
   
@@ -184,6 +185,43 @@ object GeneralUsage {
     check(obj)
     val document = toXML[ChoiceComplexTypeTest](obj, None, Some("foo"), subject.scope)
     check(fromXML[ChoiceComplexTypeTest](document))
+    println(document)
+  }
+  
+  def testAny {
+    val subject = <foo xmlns="http://www.example.com/general"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:xs="http://www.w3.org/2001/XMLSchema">
+      <person1><firstName>John</firstName><lastName>Doe</lastName></person1>
+      <foo xsi="xs:int">1</foo>
+      <person2 xsi:nil="true"/>
+      <person3><firstName>John</firstName><lastName>Doe</lastName></person3>
+      <person5><firstName>John</firstName><lastName>Doe</lastName></person5>
+        <person5><firstName>John</firstName><lastName>Doe</lastName></person5>
+      <foo xsi="xs:int">1</foo><foo xsi="xs:int">1</foo>
+      <person6 xsi:nil="true"/>
+    </foo>
+    val obj = fromXML[AnyTest](subject)
+    
+    def check(obj: Any) = obj match {
+        case AnyTest(
+          Person("John", "Doe"),
+          DataRecord(NS, Some("foo"), 1),
+          DataRecord(NS, Some("person2"), None),
+          Some(DataRecord(NS, Some("person3"), Person("John", "Doe") )),
+          None,
+          None,
+          Seq(DataRecord(NS, Some("person5"), Person("John", "Doe")),
+            DataRecord(NS, Some("person5"), Person("John", "Doe"))),
+          Seq(DataRecord(NS, Some("foo"), 1),
+            DataRecord(NS, Some("foo"), 1)),
+          Seq(DataRecord(NS, Some("person6"), None))
+           ) =>
+        case _ => error("match failed: " + obj.toString)
+      }
+    // check(obj)
+    val document = toXML[AnyTest](obj, None, Some("foo"), subject.scope)
+    // check(fromXML[AnyTest](document))
     println(document)
   }
 }

@@ -119,6 +119,29 @@
     <xs:attribute name="attr2" type="gen:ListOfMilk"/>
   </xs:complexType>
   
+  <xs:complexType name="AnyTest">
+    <xs:sequence>
+      <xs:element name="person1" type="gen:Person"/>
+      <xs:any namespace="##other" processContents="lax"/>
+      <xs:choice>
+        <xs:element name="person2" nillable="true" type="gen:Person"/>
+        <xs:any namespace="##other" processContents="lax"/>
+      </xs:choice>
+      <xs:element name="person3" minOccurs="0" type="gen:Person"/>
+      <xs:any namespace="##other" processContents="lax" minOccurs="0"/>
+      <xs:choice>
+        <xs:element name="person4" minOccurs="0" nillable="true" type="gen:Person"/>
+        <xs:any namespace="##other" processContents="lax" minOccurs="0"/>
+      </xs:choice>
+      <xs:element name="person5" maxOccurs="unbounded" type="gen:Person"/>
+      <xs:any namespace="##other" processContents="lax" maxOccurs="unbounded"/>
+      <xs:choice>
+        <xs:element name="person6" maxOccurs="unbounded" nillable="true" type="gen:Person"/>
+        <xs:any namespace="##other" processContents="lax" maxOccurs="unbounded"/>
+      </xs:choice>
+    </xs:sequence>
+  </xs:complexType>
+  
   <xs:complexType name="Person">
     <xs:sequence>
       <xs:element name="firstName" type="xs:string"/>

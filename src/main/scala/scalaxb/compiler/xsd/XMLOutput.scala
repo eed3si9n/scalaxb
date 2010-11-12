@@ -27,14 +27,25 @@ trait XMLOutput extends Args {
   def buildXMLString(param: Param): String = {
     val ns = quoteNamespace(param.namespace)
     val name = "__obj." + makeParamName(param.name)
-    // val nilElemCode = "scalaxb.Helper.nilElem(" + ns + ", " + quote(param.name) + ", __scope)"
+    
+    // there shouldn't be nillable DataRecord, since it would be stored as DataRecord(ns, key, None).
     val nilElemCode = buildToXML("None.type", "None, " + ns + ", " + quote(Some(param.name)) + ", __scope, false") +
       "(NoneXMLWriter)"
-    val xToXMLCode = buildToXML(param.baseTypeName, "x, " + ns + ", " + 
+    val xToXMLCode = buildToXML(param.baseTypeName, "x, " + 
       (param.typeSymbol match {
+        case XsAny                => "x.namespace"
+        case XsDataRecord(member) => "x.namespace"
+        case _ => ns
+      }) + ", " + 
+      (param.typeSymbol match {
+        case XsAny                => "x.key"
         case XsDataRecord(member) => "x.key"
         case _ => quote(Some(param.name))
-      }) + ", __scope, false")
+      }) + ", __scope, " +
+      (param.typeSymbol match {
+        case XsAny => "true"
+        case _     => "false"
+      }))
     
     val retval = (param.cardinality, param.nillable) match {
       case (Multiple, true) =>
@@ -49,10 +60,15 @@ trait XMLOutput extends Args {
       case (Single, true)    => name + " map { x => " + xToXMLCode + " } getOrElse { " + nilElemCode + " }"
       case (Single, false) =>
         val elemLabel = param.typeSymbol match {
+          case XsAny                => name + ".key"
           case XsDataRecord(member) => name + ".key"
           case _ => quote(Some(param.name))
         }
-        buildToXML(param.baseTypeName, name + ", " + ns + ", " + elemLabel + ", __scope, false")
+        buildToXML(param.baseTypeName, name + ", " + ns + ", " + elemLabel + ", __scope, " +
+          (param.typeSymbol match {
+            case XsAny => "true"
+            case _     => "false"
+          }))
       }
     
     retval

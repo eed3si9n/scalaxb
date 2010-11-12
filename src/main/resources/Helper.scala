@@ -1,6 +1,6 @@
 package scalaxb
 
-import scala.xml.{Node, NodeSeq, NamespaceBinding, Elem}
+import scala.xml.{Node, NodeSeq, NamespaceBinding, Elem, PrefixedAttribute}
 import javax.xml.datatype.{XMLGregorianCalendar}
 
 object Scalaxb {
@@ -461,7 +461,20 @@ object DataRecord {
   
   def toXML[A](__obj: DataRecord[A], __namespace: Option[String], __elementLabel: Option[String],
       __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq = __obj match {
-    case w: DataWriter[_] => w.writer.asInstanceOf[CanWriteXML[A]].writesXML(__obj.value, __namespace, __elementLabel, __scope, __typeAttribute)
+    case w: DataWriter[_] =>
+      __obj.value match {
+        case seq: NodeSeq =>
+          w.writer.asInstanceOf[CanWriteXML[A]].writesXML(__obj.value, __namespace, __elementLabel, __scope, __typeAttribute)
+        case _ =>
+          w.writer.asInstanceOf[CanWriteXML[A]].writesXML(__obj.value, __namespace, __elementLabel, __scope, false) match {
+            case elem: Elem if (w.xstypeNamespace.isDefined && w.xstypeName.isDefined &&
+                __scope.getPrefix(w.xstypeNamespace.get) != null &&
+                __scope.getPrefix(XSI_URL) != null) =>
+              elem % new PrefixedAttribute(__scope.getPrefix(XSI_URL), "type",
+                __scope.getPrefix(w.xstypeNamespace.get) + ":" + w.xstypeName.get, scala.xml.Null)
+            case x => x
+          }
+      }
     case _ => error("unknown DataRecord.")
   }
 }

@@ -222,7 +222,8 @@ abstract class GenSource(val schema: SchemaDecl,
     val attributes = buildAttributes(decl)    
     val list = List.concat[Decl](childElements, attributes)
     
-    if (list.size > 22) error("A case class with > 22 parameters cannot be created.")
+    if (list.size > 22) error("A case class with > 22 parameters cannot be created: " +
+      name + ": " + decl)
     
     val paramList = list.map { buildParam }
     // val dependents = ((flatParticles flatMap { buildDependentType } collect {

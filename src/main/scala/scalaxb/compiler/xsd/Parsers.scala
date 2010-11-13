@@ -144,10 +144,10 @@ trait Parsers extends Args with Params {
     val parserList = choice.particles filterNot(
         _.isInstanceOf[AnyDecl]) map {
       case elem: ElemDecl =>
-        if (mixed && containsStructure) buildParser(SequenceDecl(List(elem), 1, 1), singleOccurrence, mixed, true)
+        if (mixed && containsStructure) buildParser(SequenceDecl(List(elem), 1, 1, 0), singleOccurrence, mixed, true)
         else buildParser(elem, singleOccurrence, mixed, true)
       case ref: ElemRef =>
-        if (mixed && containsStructure) buildParser(SequenceDecl(List(ref), 1, 1), singleOccurrence, mixed, true)
+        if (mixed && containsStructure) buildParser(SequenceDecl(List(ref), 1, 1, 0), singleOccurrence, mixed, true)
         else buildParser(ref, singleOccurrence, mixed, true)
       case particle => buildParser(particle, singleOccurrence, mixed, true)
     }

@@ -213,4 +213,30 @@
   <xs:simpleType name="ListOfBuiltInType">
     <xs:list itemType="xs:unsignedInt"/>
   </xs:simpleType>
+  
+  <xs:complexType name="DupeSequenceTest">
+    <xs:sequence>
+      <xs:element name="street" type="xs:string"/>
+			<xs:element name="other" minOccurs="0">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:any namespace="##any" processContents="lax" maxOccurs="unbounded"/>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+    </xs:sequence>
+  </xs:complexType>
+  
+  <xs:complexType name="DupeSequenceTest2">
+    <xs:sequence>
+      <xs:element name="street" type="xs:string"/>
+			<xs:element name="other" minOccurs="0">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:any namespace="##any" processContents="lax" maxOccurs="unbounded"/>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+    </xs:sequence>
+  </xs:complexType>
 </xs:schema>

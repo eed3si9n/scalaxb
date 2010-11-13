@@ -667,11 +667,7 @@ object {name} {{
   // sometimes we don't have ComplexTypeDecl because it's a group.
   def splitLongSequence(namespace: Option[String], family: String, particles: List[Particle]): List[Particle] =
     if (particles.size <= MaxParticleSize && !isWrapped(namespace, family)) particles
-    else splitLong[SequenceDecl](particles) { SequenceDecl(_, 1, 1) }
-    
-  // def splitLongAll(namespace: Option[String], family: String, particles: List[Particle]): List[Particle] =
-  //   if (particles.size <= MaxParticleSize && !isWrapped(namespace, family)) particles
-  //   else splitLong[AllDecl](particles) { AllDecl(_, 1, 1)}
+    else splitLong[SequenceDecl](particles) { SequenceDecl(_, 1, 1, 0) }
   
   // used to generte accessor
   def splitSequences(decl: ComplexTypeDecl): List[SequenceDecl] = decl.content.content match {
@@ -693,7 +689,7 @@ object {name} {{
   def splitSequences(namespace: Option[String], family: String,
         compositor: HasParticle): List[SequenceDecl] = compositor match {
     case seq: SequenceDecl if seq.particles.size > MaxParticleSize || isWrapped(namespace, family) =>
-       splitLong[SequenceDecl](seq.particles) { xs => SequenceDecl(xs, 1, 1) }
+       splitLong[SequenceDecl](seq.particles) { xs => SequenceDecl(xs, 1, 1, 0) }
     case _ => Nil
   }
      

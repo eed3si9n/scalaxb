@@ -144,7 +144,11 @@ trait Args extends Params {
   def buildArg(content: SimpleContentDecl, typeSymbol: XsTypeSymbol): String = typeSymbol match {
     case base: BuiltInSimpleTypeSymbol => buildArg(buildTypeName(base), "node", Single)
     case ReferenceTypeSymbol(ComplexTypeDecl(_, _, _, _, _, content: SimpleContentDecl, _, _)) =>
-      buildArg(content)
+      content.content match {	 	
+        case SimpContRestrictionDecl(base: XsTypeSymbol, _, _) => buildArg(content, base)
+        case SimpContExtensionDecl(base: XsTypeSymbol, _) => buildArg(content, base)
+       	case _ => error("Args: Unsupported content " + content.content.toString)     	
+      }
     case ReferenceTypeSymbol(decl: SimpleTypeDecl) =>
       buildArg(decl, "node", None, None, Single, false, false)
         

@@ -221,6 +221,7 @@ trait Parsers extends Args with Params {
         }
         else addConverter(buildParserString(elem, occurrence))      
       case XsAny => buildAnyParser(occurrence, mixed, wrapInDataRecord)
+      case XsLongAll => ""
       
       case symbol: ReferenceTypeSymbol =>
         if (symbol.decl == null)

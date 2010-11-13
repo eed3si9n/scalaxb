@@ -238,8 +238,8 @@ object XMLFormat {
       case None    => Helper.nilElem(__namespace, __elementLabel.get, __scope)   
     }
   }
-  
-  implicit object dataRecordAnyXMLFormat extends XMLFormat[DataRecord[Any]] {
+    
+  implicit object __DataRecordAnyXMLFormat extends XMLFormat[DataRecord[Any]] {
     def readsXMLEither(seq: scala.xml.NodeSeq): Either[String, DataRecord[Any]] = try {
       Right(DataRecord.fromAny(seq))
     } catch { case e: Exception => Left(e.toString) }    
@@ -249,7 +249,7 @@ object XMLFormat {
       DataRecord.toXML(__obj, __namespace, __elementLabel, __scope, __typeAttribute)   
   }
   
-  implicit object dataRecordOptionAnyXMLFormat extends XMLFormat[DataRecord[Option[Any]]] {
+  implicit object __DataRecordOptionAnyXMLFormat extends XMLFormat[DataRecord[Option[Any]]] {
     def readsXMLEither(seq: scala.xml.NodeSeq): Either[String, DataRecord[Option[Any]]] = try {
       Right(DataRecord.fromNillableAny(seq))
     } catch { case e: Exception => Left(e.toString) }    
@@ -257,6 +257,14 @@ object XMLFormat {
     def writesXML(__obj: DataRecord[Option[Any]], __namespace: Option[String], __elementLabel: Option[String],
         __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
       DataRecord.toXML(__obj, __namespace, __elementLabel, __scope, __typeAttribute)   
+  }
+  
+  implicit object __DataRecordMapWriter extends CanWriteXML[Map[String, scalaxb.DataRecord[Any]]] {
+    def writesXML(__obj: Map[String, scalaxb.DataRecord[Any]], __namespace: Option[String], __elementLabel: Option[String],
+        __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
+      __obj.valuesIterator.toList flatMap { x =>
+        Scalaxb.toXML[DataRecord[Any]](x, x.namespace, x.key, __scope, __typeAttribute)        
+      }
   }
 }
 
@@ -292,6 +300,14 @@ object DataRecord {
   // this is for choice option: DataRecord(x.namespace, Some(x.name), fromXML[Address](x))
   def apply[A:CanWriteXML](namespace: Option[String], key: Option[String], value: A): DataRecord[A] =
     DataWriter(namespace, key, None, None, value, implicitly[CanWriteXML[A]])
+  
+  def apply[A:CanWriteXML](node: Node, value: A): DataRecord[A] = node match {
+    case elem: Elem => 
+      val ns = Option[String](elem.scope.getURI(elem.prefix))
+      val key = Some(elem.label)
+      DataRecord(ns, key, value)
+    case _ => DataRecord(value)
+  }
   
   def apply[A:CanWriteXML](value: A): DataRecord[A] =
     apply(None, None, value)

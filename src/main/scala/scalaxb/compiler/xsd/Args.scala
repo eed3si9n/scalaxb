@@ -42,12 +42,15 @@ trait Args extends Params {
   }
   
   def buildArg(typeName: String, selector: String, cardinality: Cardinality,
-      nillable: Boolean = false, defaultValue: Option[String] = None, fixedValue: Option[String] = None): String = {    
+      nillable: Boolean = false, defaultValue: Option[String] = None, fixedValue: Option[String] = None,
+      wrapForLongAll: Boolean = false): String = {    
     def fromSelector = buildFromXML(typeName, selector)
     def fromU = buildFromXML(typeName, "_")
     def fromValue(x: String) = buildFromXML(typeName, "scala.xml.Text(" + quote(x) + ")")
     
-    val retval = (cardinality, nillable) match {
+    val retval = if (wrapForLongAll)
+      selector + ".headOption map { x => scalaxb.DataRecord(x, " + buildFromXML(typeName, "x") + ") }"
+    else (cardinality, nillable) match {
       case (Multiple, true)  => selector + ".toSeq map { _.nilOption map { " + fromU + " }}"
       case (Multiple, false) => selector + ".toSeq map { " + fromU + " }"
       case (Optional, true)  => selector + ".headOption map { _.nilOption map { " + fromU + " }}"
@@ -72,23 +75,33 @@ trait Args extends Params {
     case _ => error("GenSource#buildArg unsupported delcaration " + decl.toString)
   }
   
-  def buildArgForAll(elem: ElemDecl): String =
-    buildArg(elem, buildSelector(elem))
+  def toOptional(that: ElemDecl) = that.copy(minOccurs = 0, annotation = None)
+
+  // called by makeCaseClassWithType. By spec, <all> contains only elements.
+  def buildArgForAll(particle: Particle, longAll: Boolean): String = {
+    val o = particle match {
+      case elem: ElemDecl => toOptional(elem)
+      case ref: ElemRef   => toOptional(buildElement(ref))
+      case _ => error("buildArgForAll unsupported type: " + particle)
+    }
+    val arg = buildArg(o, buildSelector(o), longAll)
+    if (longAll) arg + " map { " + quote(buildNodeName(o)) + " -> _ }"
+    else arg
+  }
   
   def buildArg(elem: ElemDecl, pos: Int): String =
-    buildArg(elem, buildSelector(pos))
+    buildArg(elem, buildSelector(pos), false)
   
-  def buildArg(elem: ElemDecl, selector: String): String =
+  def buildArg(elem: ElemDecl, selector: String, wrapForLongAll: Boolean): String =
     if ((isSubstitionGroup(elem))) selector
     else elem.typeSymbol match {
       case symbol: BuiltInSimpleTypeSymbol => buildArg(buildTypeName(symbol), selector, 
-        toCardinality(elem.minOccurs, elem.maxOccurs), elem.nillable getOrElse(false), elem.defaultValue, elem.fixedValue)
+        toCardinality(elem.minOccurs, elem.maxOccurs), elem.nillable getOrElse(false), elem.defaultValue, elem.fixedValue, wrapForLongAll)
       case ReferenceTypeSymbol(decl: SimpleTypeDecl) =>
         if (containsEnumeration(decl)) buildArg(buildTypeName(decl), selector, 
-          toCardinality(elem.minOccurs, elem.maxOccurs), elem.nillable getOrElse(false), elem.defaultValue, elem.fixedValue)
-        else buildArg(decl,
-          selector, elem.defaultValue, elem.fixedValue,
-          toCardinality(elem.minOccurs, elem.maxOccurs), elem.nillable getOrElse(false)) 
+          toCardinality(elem.minOccurs, elem.maxOccurs), elem.nillable getOrElse(false), elem.defaultValue, elem.fixedValue, wrapForLongAll)
+        else buildArg(decl, selector, elem.defaultValue, elem.fixedValue,
+          toCardinality(elem.minOccurs, elem.maxOccurs), elem.nillable getOrElse(false), wrapForLongAll) 
       case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
         if (compositorWrapper.contains(decl))
           (toCardinality(elem.minOccurs, elem.maxOccurs), elem.nillable getOrElse {false}) match {
@@ -97,11 +110,11 @@ trait Args extends Params {
             case _ => selector
           }
         else buildArg(buildTypeName(decl), selector,
-          toCardinality(elem.minOccurs, elem.maxOccurs), elem.nillable getOrElse(false), elem.defaultValue, elem.fixedValue)
+          toCardinality(elem.minOccurs, elem.maxOccurs), elem.nillable getOrElse(false), elem.defaultValue, elem.fixedValue, wrapForLongAll)
       case XsAny => buildArg(
           if (elem.nillable getOrElse(false)) buildTypeName(XsNillableAny)
           else buildTypeName(XsAny), selector,
-        toCardinality(elem.minOccurs, elem.maxOccurs), false, elem.defaultValue, elem.fixedValue)
+        toCardinality(elem.minOccurs, elem.maxOccurs), false, elem.defaultValue, elem.fixedValue, wrapForLongAll)
       
       case symbol: ReferenceTypeSymbol =>
         if (symbol.decl == null) error("GenSource#buildArg: " + elem.toString + " Invalid type " + symbol.getClass.toString + ": " +
@@ -116,7 +129,7 @@ trait Args extends Params {
       toCardinality(toMinOccurs(attr), 1), false, attr.defaultValue, attr.fixedValue) 
     case ReferenceTypeSymbol(decl: SimpleTypeDecl) =>
       buildArg(decl, buildSelector(attr), attr.defaultValue, attr.fixedValue,
-        toCardinality(toMinOccurs(attr), 1), false)
+        toCardinality(toMinOccurs(attr), 1), false, false)
     
     case ReferenceTypeSymbol(decl: ComplexTypeDecl) => error("Args: Attribute with complex type " + decl.toString)
     case _ => error("Args: unsupported type: " + attr.typeSymbol)
@@ -124,30 +137,26 @@ trait Args extends Params {
   
   def buildArg(decl: SimpleTypeDecl, selector: String,
       defaultValue: Option[String], fixedValue: Option[String],
-      cardinality: Cardinality, nillable: Boolean): String =  
-    buildArg(buildTypeName(decl), selector, cardinality, nillable, defaultValue, fixedValue)
-  
-  def buildArg(content: SimpleContentDecl): String = content.content match {
-    case SimpContRestrictionDecl(base: XsTypeSymbol, _, _) => buildArg(content, base)
-    case SimpContExtensionDecl(base: XsTypeSymbol, _) => buildArg(content, base)
+      cardinality: Cardinality, nillable: Boolean, wrapForLongAll: Boolean): String =  
+    buildArg(buildTypeName(decl), selector, cardinality, nillable, defaultValue, fixedValue, wrapForLongAll)
     
-    case _ => error("Args: Unsupported content " + content.content.toString)    
-  }
-  
+  // called by makeCaseClassWithType
   def buildArg(content: SimpleContentDecl, typeSymbol: XsTypeSymbol): String = typeSymbol match {
     case base: BuiltInSimpleTypeSymbol => buildArg(buildTypeName(base), "node", Single)
     case ReferenceTypeSymbol(ComplexTypeDecl(_, _, _, _, _, content: SimpleContentDecl, _, _)) =>
       buildArg(content)
     case ReferenceTypeSymbol(decl: SimpleTypeDecl) =>
-      buildArg(decl, "node", None, None, Single, false)
+      buildArg(decl, "node", None, None, Single, false, false)
         
     case _ => error("Args: Unsupported type " + typeSymbol.toString)    
   }
   
-  def buildSelector(elem: ElemDecl): String =
-    if (elem.namespace == schema.targetNamespace) buildSelector(elem.name)
-    else buildSelector((elem.namespace map { "{" + _ + "}" } getOrElse { "" })  + elem.name)
-    
+  def buildNodeName(elem: ElemDecl): String =
+    if (elem.namespace == schema.targetNamespace) elem.name
+    else (elem.namespace map { "{" + _ + "}" } getOrElse { "" }) + elem.name
+  
+  def buildSelector(elem: ElemDecl): String = buildSelector(buildNodeName(elem))
+  
   def buildSelector(pos: Int): String =
     "p" + (pos + 1)
   

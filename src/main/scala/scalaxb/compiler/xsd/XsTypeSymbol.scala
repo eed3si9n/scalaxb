@@ -36,6 +36,10 @@ object XsNillableAny extends XsTypeSymbol {
   val name = "XsNillableAny"
 }
 
+object XsLongAll extends XsTypeSymbol {
+  val name = "XsLongAll"
+}
+
 object XsAnySimpleType extends XsTypeSymbol {
   val name = "XsAnySimpleType"
 }

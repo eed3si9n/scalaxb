@@ -192,6 +192,9 @@ trait Params extends Lookup {
     case _ => Occurrence(compos.minOccurs, compos.maxOccurs, false)
   }
   
+  def buildLongAllRef(all: AllDecl) =
+    ElemDecl(Some(INTERNAL_NAMESPACE), "all", XsLongAll, None, None, 1, 1, None, None, None)
+  
   def buildAnyRef(any: AnyDecl) = {
     anyNumber += 1
     val name = if (anyNumber <= 1) "any"

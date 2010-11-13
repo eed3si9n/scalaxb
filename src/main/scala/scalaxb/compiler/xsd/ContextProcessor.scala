@@ -140,10 +140,8 @@ trait ContextProcessor extends ScalaNames with PackageName {
     }
     
     def associateSubType(subType: ComplexTypeDecl, base: ComplexTypeDecl) {
-      if (context.baseToSubs.contains(base))
-        context.baseToSubs(base) = subType :: context.baseToSubs(base)
-      else
-        context.baseToSubs(base) = subType :: Nil
+      if (context.baseToSubs.contains(base)) context.baseToSubs(base) = subType :: context.baseToSubs(base)
+      else context.baseToSubs(base) = subType :: Nil
     }
     
     for ((schema, typ) <- context.complexTypes)  typ.content.content match {
@@ -214,10 +212,15 @@ trait ContextProcessor extends ScalaNames with PackageName {
   val ChunkParticleSize = 10
   val MaxParticleSize = 20
   
-  def isWrapped(namespace: Option[String], family: String) =
+  def isWrapped(decl: ComplexTypeDecl): Boolean = isWrapped(decl.namespace, decl.family)
+  def isWrapped(namespace: Option[String], family: String): Boolean =
     (namespace map { ns =>
       config.wrappedComplexTypes.contains("{" + ns + "}" + family) } getOrElse { false }) ||
     config.wrappedComplexTypes.contains(family)
+  
+  def splitLong[A <: HasParticle](rest: List[Particle])(f: (List[Particle]) => A): List[A] =
+    if (rest.size <= ChunkParticleSize) List(f(rest))
+    else List(f(rest.take(ChunkParticleSize))) ::: splitLong[A](rest.drop(ChunkParticleSize))(f)
     
   def makeCompositorNames(context: XsdContext) {
     var sequenceNumber = 0
@@ -269,9 +272,8 @@ trait ContextProcessor extends ScalaNames with PackageName {
           else context.compositorNames(compositor) = groupName + "Sequence" + apparentSequenceNumber
           sequenceNumber += 1
           
-          if (particles.size > MaxParticleSize ||
-            isWrapped(group.namespace, group.name)) doSplit(makeGroupComplexType(group), particles)
-             
+          if (particles.size > MaxParticleSize || isWrapped(group.namespace, group.name))
+            splitLong[SequenceDecl](particles) { formSequence(makeGroupComplexType(group), _) }
         case ChoiceDecl(particles: List[_], _, _, _) =>
           context.compositorParents(compositor) = makeGroupComplexType(group)
           if (isFirstCompositor) context.compositorNames(compositor) = groupName + "Option"
@@ -283,7 +285,6 @@ trait ContextProcessor extends ScalaNames with PackageName {
           if (isFirstCompositor) context.compositorNames(compositor) = groupName + "All"
           else context.compositorNames(compositor) = groupName + "All" + (allNumber + 1)
           allNumber += 1
-        
         case _ =>
       }
       
@@ -291,7 +292,7 @@ trait ContextProcessor extends ScalaNames with PackageName {
         case compositor2: HasParticle => makeGroupCompositorName(compositor2, group)
       }      
     }
-
+    
     def formSequence(decl: ComplexTypeDecl, rest: List[Particle]) = {      
       val retval = SequenceDecl(rest, 1, 1)
       context.compositorNames(retval) = familyName(decl) + "Sequence" + apparentSequenceNumber
@@ -299,11 +300,6 @@ trait ContextProcessor extends ScalaNames with PackageName {
       context.compositorParents(retval) = decl
       retval
     }
-        
-    def doSplit(decl: ComplexTypeDecl, rest: List[Particle]): List[Particle] =
-      if (rest.size <= ChunkParticleSize) List(formSequence(decl, rest))
-      else List(formSequence(decl, rest.take(ChunkParticleSize))) ::: 
-        doSplit(decl, rest.drop(ChunkParticleSize))
     
     def apparentSequenceNumber = if (isFirstCompositorSequence) sequenceNumber else sequenceNumber + 1
     
@@ -328,9 +324,8 @@ trait ContextProcessor extends ScalaNames with PackageName {
           }
           sequenceNumber += 1
           
-          if (particles.size > MaxParticleSize ||
-            isWrapped(decl.namespace, decl.family)) doSplit(decl, particles)
-               
+          if (particles.size > MaxParticleSize || isWrapped(decl.namespace, decl.family))
+            splitLong[SequenceDecl](particles) { formSequence(decl, _) }
         case ChoiceDecl(particles: List[_], _, _, _) =>
           context.compositorParents(compositor) = decl
           if (choiceNumber == 0) context.compositorNames(compositor) = familyName(decl) + "Option"
@@ -342,7 +337,6 @@ trait ContextProcessor extends ScalaNames with PackageName {
           if (allNumber == 0) context.compositorNames(compositor) = familyName(decl) + "All"
           else context.compositorNames(compositor) = familyName(decl) + "All" + (allNumber + 1)
           allNumber += 1
-          
         case _ =>
       }
       

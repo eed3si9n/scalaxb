@@ -361,7 +361,7 @@ object PurchaseOrderUsage {
     </foo>
     val obj = fromXML[AllTest](subject)
     obj match {
-      case AllTest("", "", "bar", _, None) =>
+      case AllTest(Some(""), Some(""), Some("bar"), _, None) =>
       case _ => error("match failed: " + obj.toString)
     }
     

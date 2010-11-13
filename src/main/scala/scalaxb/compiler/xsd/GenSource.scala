@@ -210,7 +210,7 @@ abstract class GenSource(val schema: SchemaDecl,
       case ComplexContentDecl(CompContExtensionDecl(_, x, _)) => x
       case _ => None
     }
-    
+        
     val superNames: List[String] = if (context.baseToSubs.contains(decl))
       List(buildTypeName(decl))
     else buildSuperNames(decl)
@@ -239,11 +239,15 @@ abstract class GenSource(val schema: SchemaDecl,
     val accessors = generateAccessors(paramList, splitSequences(decl))
     log("GenSource#makeCaseClassWithType: generateAccessors " + accessors)
     
+    val longAll: Boolean = primary match {
+        case Some(all: AllDecl) if isLongAll(all, decl.namespace, decl.family) => true
+        case _ => false
+      }
     val particleArgs = if (decl.mixed) (0 to parserList.size - 1).toList map { i =>
         if (i % 2 == 1) buildArgForMixed(flatParticles((i - 1) / 2), i)
         else buildArgForOptTextRecord(i) }
       else primary match {
-        case Some(all: AllDecl) => flatParticles map { p => buildArgForAll(p) }
+        case Some(all: AllDecl) => all.particles map { buildArgForAll(_, longAll) }
         case _ => (0 to flatParticles.size - 1).toList map { i => buildArg(flatParticles(i), i) }
       }
     
@@ -268,25 +272,26 @@ abstract class GenSource(val schema: SchemaDecl,
     else paramList.map(_.toScalaCode).mkString("," + newline + indent(1))
     
     val simpleFromXml: Boolean = if (flatParticles.isEmpty && !decl.mixed) true
-    else (decl.content, primary) match {
-      case (x: SimpleContentDecl, _) => true
-      case (_, Some(all: AllDecl)) => true
-      case _ => false
-    }
-    
+      else (decl.content, primary) match {
+        case (x: SimpleContentDecl, _) => true
+        case (_, Some(all: AllDecl)) => true
+        case _ => false
+      }
+        
     def argsString = if (decl.mixed)
       "Seq.concat(" + particleArgs.mkString("," + newline + indent(4)) + ")" +
         (if (attributeArgs.isEmpty) ""
         else "," + newline + indent(4) + attributeArgs.mkString("," + newline + indent(4)))
-    else if (hasSequenceParam)
-      particleArgs.head + ": _*"
+    else if (longAll) "scala.collection.immutable.ListMap(List(" + newline + 
+        indent(4) + particleArgs.mkString("," + newline + indent(4)) + ").flatten[(String, scalaxb.DataRecord[Any])]: _*)" +
+        (if (attributeArgs.isEmpty) ""
+        else "," + newline + indent(4) + attributeArgs.mkString("," + newline + indent(4)))
+    else if (hasSequenceParam) particleArgs.head + ": _*"
     else decl.content.content match {
       case SimpContRestrictionDecl(base: XsTypeSymbol, _, _) =>
-        (buildArg(decl.content.asInstanceOf[SimpleContentDecl], base) :: attributeArgs).
-          mkString("," + newline + indent(4))
+        (buildArg(decl.content.asInstanceOf[SimpleContentDecl], base) :: attributeArgs).mkString("," + newline + indent(4))
       case SimpContExtensionDecl(base: XsTypeSymbol, _) =>
-        (buildArg(decl.content.asInstanceOf[SimpleContentDecl], base) :: attributeArgs).
-          mkString("," + newline + indent(4))
+        (buildArg(decl.content.asInstanceOf[SimpleContentDecl], base) :: attributeArgs).mkString("," + newline + indent(4))
       case _ =>
         (particleArgs ::: attributeArgs).mkString("," + newline + indent(4))
     }
@@ -655,46 +660,72 @@ object {name} {{
     pf(decl.content.content)
   }
   
-  def splitLongSequence(namespace: Option[String], family: String,
-      particles: List[Particle]): List[Particle] =
-    if (particles.size <= MaxParticleSize &&
-      !isWrapped(namespace, family)) particles
-    else splitLongSequence(particles)
-      
-  def splitLongSequence(rest: List[Particle]): List[SequenceDecl] =
-    if (rest.size <= ChunkParticleSize) List(SequenceDecl(rest, 1, 1))
-    else List(SequenceDecl(rest.take(ChunkParticleSize), 1, 1)) :::
-      splitLongSequence(rest.drop(ChunkParticleSize))
+  // sometimes we don't have ComplexTypeDecl because it's a group.
+  def splitLongSequence(namespace: Option[String], family: String, particles: List[Particle]): List[Particle] =
+    if (particles.size <= MaxParticleSize && !isWrapped(namespace, family)) particles
+    else splitLong[SequenceDecl](particles) { SequenceDecl(_, 1, 1) }
     
-  def flattenElements(namespace: Option[String], family: String,
-        compositor: HasParticle): List[ElemDecl] =
-      compositor match {
-    case ref:GroupRef =>
-      List(buildCompositorRef(ref))
-      
-    case group:GroupDecl =>
-      List(buildCompositorRef(group))
-    
-    case seq: SequenceDecl =>
-      splitLongSequence(namespace, family, compositor.particles) flatMap {
-        case ref: GroupRef            => List(buildCompositorRef(ref))
-        case compositor2: HasParticle => List(buildCompositorRef(compositor2))
-        case elem: ElemDecl           => List(elem)
-        case ref: ElemRef             => List(buildElement(ref))
-        case any: AnyDecl             => List(buildAnyRef(any))
-      }
-      
-    case AllDecl(particles: List[_], _, _) =>
-      particles flatMap {
-        case ref: GroupRef            => List(buildCompositorRef(ref))
-        case compositor2: HasParticle => List(buildCompositorRef(compositor2))
-        case elem: ElemDecl           => List(toOptional(elem))
-        case ref: ElemRef             => List(buildElement(ref))    
-      }
-          
-    case choice: ChoiceDecl =>
-      List(buildCompositorRef(choice))
+  // def splitLongAll(namespace: Option[String], family: String, particles: List[Particle]): List[Particle] =
+  //   if (particles.size <= MaxParticleSize && !isWrapped(namespace, family)) particles
+  //   else splitLong[AllDecl](particles) { AllDecl(_, 1, 1)}
+  
+  // used to generte accessor
+  def splitSequences(decl: ComplexTypeDecl): List[SequenceDecl] = decl.content.content match {
+    case SimpContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) => splitSequences(base)
+    case SimpContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _) => splitSequences(base)
+
+    // complex content means 1. has child elements 2. has attributes
+    case CompContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) => splitSequences(base)        
+    case res@CompContRestrictionDecl(XsAny, _, _) =>
+      res.compositor map { splitSequences(decl.namespace, decl.family, _) } getOrElse { Nil }
+    case ext@CompContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
+      splitSequences(base) :::
+        (ext.compositor map { splitSequences(decl.namespace, decl.family, _) } getOrElse { Nil })
+    case ext@CompContExtensionDecl(XsAny, _, _) =>
+      ext.compositor map { splitSequences(decl.namespace, decl.family, _) } getOrElse { Nil }
+    case _ => Nil
   }
+  
+  def splitSequences(namespace: Option[String], family: String,
+        compositor: HasParticle): List[SequenceDecl] = compositor match {
+    case seq: SequenceDecl if seq.particles.size > MaxParticleSize || isWrapped(namespace, family) =>
+       splitLong[SequenceDecl](seq.particles) { xs => SequenceDecl(xs, 1, 1) }
+    case _ => Nil
+  }
+     
+  def flattenElements(namespace: Option[String], family: String,
+      compositor: HasParticle): List[ElemDecl] = {    
+    compositor match {
+      case ref:GroupRef =>
+        List(buildCompositorRef(ref))
+
+      case group:GroupDecl =>
+        List(buildCompositorRef(group))
+
+      case seq: SequenceDecl =>
+        splitLongSequence(namespace, family, compositor.particles) flatMap {
+          case ref: GroupRef            => List(buildCompositorRef(ref))
+          case compositor2: HasParticle => List(buildCompositorRef(compositor2))
+          case elem: ElemDecl           => List(elem)
+          case ref: ElemRef             => List(buildElement(ref))
+          case any: AnyDecl             => List(buildAnyRef(any))
+        }
+
+      case all: AllDecl =>
+        if (isLongAll(all, namespace, family)) List(buildLongAllRef(all))
+        else compositor.particles flatMap {
+           // by spec, <all> contains only elems.
+          case elem: ElemDecl           => List(toOptional(elem))
+          case ref: ElemRef             => List(toOptional(buildElement(ref)))  
+        }
+
+      case choice: ChoiceDecl =>
+        List(buildCompositorRef(choice))
+    }          
+  }
+  
+  def isLongAll(all: AllDecl, namespace: Option[String], family: String): Boolean =
+    (all.particles.size > MaxParticleSize || isWrapped(namespace, family))
   
   val buildSimpleTypeRef: ComplexTypeContent =>? List[ElemDecl] = {
     case content: ComplexTypeContent
@@ -707,33 +738,7 @@ object {name} {{
       val symbol = content.base.asInstanceOf[ReferenceTypeSymbol].decl.asInstanceOf[SimpleTypeDecl]
       List(buildElement(symbol))    
   } 
-  
-  def splitSequences(decl: ComplexTypeDecl): List[SequenceDecl] = decl.content.content match {
-    case SimpContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
-      splitSequences(base)
-    case SimpContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _) =>
-      splitSequences(base)
     
-    // complex content means 1. has child elements 2. has attributes
-    case CompContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
-      splitSequences(base)        
-    case res@CompContRestrictionDecl(XsAny, _, _) =>
-      res.compositor map { splitSequences(decl.namespace, decl.family, _) } getOrElse { Nil }
-    case ext@CompContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
-      splitSequences(base) :::
-        (ext.compositor map { splitSequences(decl.namespace, decl.family, _) } getOrElse { Nil })
-    case ext@CompContExtensionDecl(XsAny, _, _) =>
-      ext.compositor map { splitSequences(decl.namespace, decl.family, _) } getOrElse { Nil }
-    case _ => Nil    
-  }
-  
-  def splitSequences(namespace: Option[String], family: String,
-        compositor: HasParticle): List[SequenceDecl] = compositor match {
-    case seq: SequenceDecl if seq.particles.size > MaxParticleSize ||
-      isWrapped(namespace, family) => splitLongSequence(seq.particles)
-    case _ => Nil
-  }
-  
   def generateAccessors(params: List[Param], splits: List[SequenceDecl]) = params flatMap {
     case param@Param(_, _, ReferenceTypeSymbol(decl@ComplexTypeDecl(_, _, _, _, _, _, _, _)), _, _, _) if
         compositorWrapper.contains(decl) &&
@@ -844,10 +849,6 @@ object {name} {{
         (x.name == y.name && x.namespace == y.namespace)
       case _ => false
     }
-    
-  def toOptional(that: ElemDecl) =
-    ElemDecl(that.namespace, that.name, that.typeSymbol,
-      that.defaultValue, that.fixedValue, 0, that.maxOccurs, that.nillable, that.substitutionGroup, None)
     
   def makeSchemaComment = 
     <source>// Generated by &lt;a href="http://scalaxb.org/"&gt;scalaxb&lt;/a&gt;.{makeAnnotation(schema.annotation)}</source>

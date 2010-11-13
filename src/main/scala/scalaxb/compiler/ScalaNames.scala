@@ -24,7 +24,8 @@ package scalaxb.compiler
 
 trait ScalaNames {
   def isCommonlyUsedWord(s: String) = s match {
-    case "Any"
+    case "All" 
+    | "Any"
     | "AnyRef"
     | "Array"
     | "ArrayBuffer"

@@ -21,6 +21,7 @@ object GeneralUsage {
     testSingularComplexType
     testChoiceComplexType
     testAny
+    testLongAll
     true
   }
   
@@ -241,6 +242,28 @@ object GeneralUsage {
     check(obj)
     val document = toXML[AnyTest](obj, None, Some("foo"), subject.scope)
     check(fromXML[AnyTest](document))
+    println(document)
+  }
+  
+  def testLongAll {
+    val subject = <foo xmlns="http://www.example.com/general"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:xs="http://www.w3.org/2001/XMLSchema">
+      <string3></string3><string4></string4><string5></string5>
+      <string6></string6><string7></string7><string8></string8><string9></string9><string10></string10>
+      <string11></string11><string12></string12><string13></string13><string14></string14><string15></string15>
+      <address1><street>1 Plaza</street><city>New York</city><state>NY</state></address1>
+      <string16></string16><string17></string17><string18></string18><string19></string19><string20></string20>
+      <string21></string21><string22></string22><string23></string23><string24></string24><string25></string25> 
+      <string26></string26><string27></string27><string28></string28><string29></string29><string30></string30>
+    </foo>
+    val obj = fromXML[LongAllTest](subject)
+    obj.address1.street match {
+      case "1 Plaza" =>
+      case _ => error("match failed: " + obj.toString)
+    }
+    
+    val document = toXML[LongAllTest](obj, None, Some("foo"), subject.scope)
     println(document)
   }
 }

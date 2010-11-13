@@ -273,6 +273,8 @@ trait DataRecord[+A] {
   val key: Option[String]
   val value: A
   
+  def as[B] = value.asInstanceOf[B]
+  
   override def toString: String = {
     "DataRecord(" +
     ((namespace, key, value) match {

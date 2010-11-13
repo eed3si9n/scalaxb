@@ -236,8 +236,6 @@ abstract class GenSource(val schema: SchemaDecl,
     val parserList = if (decl.mixed) buildTextParser :: (unmixedParserList flatMap { List(_, buildTextParser) })
       else unmixedParserList
     val parserVariableList = ( 0 to parserList.size - 1) map { buildSelector }
-    val accessors = generateAccessors(paramList, splitSequences(decl))
-    log("GenSource#makeCaseClassWithType: generateAccessors " + accessors)
     
     val longAll: Boolean = primary match {
         case Some(all: AllDecl) if isLongAll(all, decl.namespace, decl.family) => true
@@ -251,6 +249,12 @@ abstract class GenSource(val schema: SchemaDecl,
         case _ => (0 to flatParticles.size - 1).toList map { i => buildArg(flatParticles(i), i) }
       }
     
+    val accessors = primary match {
+      case Some(all: AllDecl) if longAll => generateAccessors(all)
+      case _ => generateAccessors(paramList, splitSequences(decl))
+    }
+    log("GenSource#makeCaseClassWithType: generateAccessors " + accessors)
+      
     var attributeArgs = attributes map {
       case any: AnyAttributeDecl => buildArgForAnyAttribute(decl)
       case x => buildArg(x) 
@@ -260,7 +264,7 @@ abstract class GenSource(val schema: SchemaDecl,
       x => x._2 == decl).keysIterator.toList
         
     val extendString = if (superNames.isEmpty) ""
-    else " extends " + superNames.mkString(" with ")
+      else " extends " + superNames.mkString(" with ")
     
     val hasSequenceParam = (paramList.size == 1) &&
       (paramList.head.cardinality == Multiple) &&
@@ -738,7 +742,23 @@ object {name} {{
       val symbol = content.base.asInstanceOf[ReferenceTypeSymbol].decl.asInstanceOf[SimpleTypeDecl]
       List(buildElement(symbol))    
   } 
+  
+  def generateAccessors(all: AllDecl): List[String] = {
+    val wrapperName = makeParamName("all")
     
+    // by spec, there are only elements under <all>
+    all.particles collect {
+      case elem: ElemDecl => elem
+      case ref: ElemRef   => buildElement(ref)
+    } map { elem => toCardinality(elem.minOccurs, elem.maxOccurs) match {
+        case Optional => "def " + makeParamName(elem.name) + " = " + 
+          wrapperName + ".get(" +  quote(buildNodeName(elem)) + ") map { _.as[" + buildTypeName(elem.typeSymbol) + "] }"
+        case _        => "def " + makeParamName(elem.name) + " = " + 
+          wrapperName + "(" +  quote(buildNodeName(elem)) + ").as[" + buildTypeName(elem.typeSymbol) + "]"
+      }
+    }
+  }
+  
   def generateAccessors(params: List[Param], splits: List[SequenceDecl]) = params flatMap {
     case param@Param(_, _, ReferenceTypeSymbol(decl@ComplexTypeDecl(_, _, _, _, _, _, _, _)), _, _, _) if
         compositorWrapper.contains(decl) &&

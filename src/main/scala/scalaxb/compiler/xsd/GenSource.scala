@@ -819,10 +819,10 @@ object {name} {{
     
   def buildAttributes(decl: ComplexTypeDecl): List[AttributeLike] =
     mergeAttributes(decl.content.content match {
-      case CompContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, attr) => 
-        buildAttributes(base)
-      case CompContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, attr) =>
-        buildAttributes(base)
+      case SimpContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) => buildAttributes(base)
+      case SimpContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _) => buildAttributes(base)
+      case CompContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) => buildAttributes(base)
+      case CompContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) => buildAttributes(base)
       case _ => Nil
     }, buildAttributes(decl.content.content.attributes))
 

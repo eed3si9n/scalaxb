@@ -44,7 +44,7 @@ object MixedUsage {
         ), None) =>
       case _ => error("match failed: " + obj.toString)
     }
-    val document = toXML[MixedTest](obj, None, Some("foo"), subject.scope)
+    val document = toXML[MixedTest](obj, "foo", defaultScope)
     println(document)
   }
 }

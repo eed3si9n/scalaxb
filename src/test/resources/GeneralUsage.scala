@@ -75,7 +75,7 @@ object GeneralUsage {
         case _ => error("match failed: " + obj.toString)
       }
     check(obj)
-    val document = toXML[SingularBuiltInTypeTest](obj, None, Some("foo"), subject.scope)
+    val document = toXML[SingularBuiltInTypeTest](obj, "foo", defaultScope)
     check(fromXML[SingularBuiltInTypeTest](document))
     println(document)
   }
@@ -101,7 +101,7 @@ object GeneralUsage {
         case _ => error("match failed: " + obj.toString)
       }
     check(obj)
-    val document = toXML[SingularSimpleTypeTest](obj, None, Some("foo"), subject.scope)
+    val document = toXML[SingularSimpleTypeTest](obj, "foo", defaultScope)
     check(fromXML[SingularSimpleTypeTest](document))
     println(document)
   }
@@ -129,7 +129,7 @@ object GeneralUsage {
         case _ => error("match failed: " + obj.toString)
       }
     check(obj)
-    val document = toXML[ListTest](obj, None, Some("foo"), subject.scope)
+    val document = toXML[ListTest](obj, "foo", defaultScope)
     check(fromXML[ListTest](document))
     println(document)
   }
@@ -154,7 +154,7 @@ object GeneralUsage {
       }
     
     check(obj)
-    val document = toXML[SingularComplexTypeTest](obj, None, Some("foo"), subject.scope)
+    val document = toXML[SingularComplexTypeTest](obj, "foo", defaultScope)
     check(fromXML[SingularComplexTypeTest](document))
     println(document)
   }
@@ -184,7 +184,7 @@ object GeneralUsage {
       }
     
     check(obj)
-    val document = toXML[ChoiceComplexTypeTest](obj, None, Some("foo"), subject.scope)
+    val document = toXML[ChoiceComplexTypeTest](obj, "foo", defaultScope)
     check(fromXML[ChoiceComplexTypeTest](document))
     println(document)
   }
@@ -240,7 +240,7 @@ object GeneralUsage {
         case _ => error("match failed: " + obj.toString)
       }
     check(obj)
-    val document = toXML[AnyTest](obj, None, Some("foo"), subject.scope)
+    val document = toXML[AnyTest](obj, "foo", defaultScope)
     check(fromXML[AnyTest](document))
     println(document)
   }
@@ -263,7 +263,7 @@ object GeneralUsage {
       case _ => error("match failed: " + obj.toString)
     }
     
-    val document = toXML[LongAllTest](obj, None, Some("foo"), subject.scope)
+    val document = toXML[LongAllTest](obj, "foo", defaultScope)
     println(document)
   }
 }

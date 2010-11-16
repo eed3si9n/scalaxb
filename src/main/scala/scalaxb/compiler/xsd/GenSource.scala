@@ -86,12 +86,21 @@ abstract class GenSource(val schema: SchemaDecl,
       "import " + pkg.map(_ + ".").getOrElse("") + name + "._"
     }
     
+    def makeScopes(scope: scala.xml.NamespaceBinding): List[(Option[String], String)] =
+      if (scope == null || scope.uri == null) Nil
+      else if (scope.prefix == null) (None, scope.uri) :: makeScopes(scope.parent)
+      else (Some(scope.prefix), scope.uri) :: makeScopes(scope.parent)
+    val scopes = makeScopes(schema.scope)
+    
     <source>object {name} {{
   import scalaxb.Scalaxb._
   import scalaxb.XMLFormat._
   { if (imports.isEmpty) ""
     else imports.mkString(newline + indent(1)) + newline }
   val targetNamespace: Option[String] = { quote(schema.targetNamespace) }
+  val defaultScope = toScope({ if (scopes.isEmpty) "Nil: _*"
+    else scopes.map(x => quote(x._1) + " -> " + quote(x._2)).mkString("," + newline + indent(2)) })
+  
 {implicitValues}
 
 {companions}

@@ -8,6 +8,11 @@ object Scalaxb {
   def toXML[A](__obj: A, __namespace: Option[String], __elementLabel: Option[String],
       __scope: NamespaceBinding, __typeAttribute: Boolean = false)(implicit format: CanWriteXML[A]): NodeSeq =
     format.writesXML(__obj, __namespace, __elementLabel, __scope, __typeAttribute)
+  def toXML[A](__obj: A, __elementLabel: String, __scope: NamespaceBinding)(implicit format: CanWriteXML[A]): NodeSeq =
+    toXML(__obj, None, Some(__elementLabel), __scope, false)
+  def toScope(pairs: (Option[String], String)*): NamespaceBinding =
+    pairs.reverse.foldLeft[NamespaceBinding](scala.xml.TopScope) { (scope, pair) =>
+      scala.xml.NamespaceBinding(pair._1.getOrElse{null}, pair._2, scope) }
 }
 
 trait XMLFormat[A] extends CanWriteXML[A] with CanReadXML[A]

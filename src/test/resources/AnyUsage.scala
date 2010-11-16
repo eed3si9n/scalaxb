@@ -90,7 +90,7 @@ object AnyUsage {
         ) =>
       case _ => error("match failed: " + obj.toString)
     }
-    val document = toXML[Element1](obj, None, Some("foo"), subject.scope)
+    val document = toXML[Element1](obj, "foo", defaultScope)
     println(document)
   }
   
@@ -139,7 +139,7 @@ object AnyUsage {
         ) =>
       case _ => error("match failed: " + obj.toString)
     }
-    val document = toXML[Element1](obj, None, Some("foo"), subject.scope)
+    val document = toXML[Element1](obj, "foo", defaultScope)
     println(document)
   }
 }

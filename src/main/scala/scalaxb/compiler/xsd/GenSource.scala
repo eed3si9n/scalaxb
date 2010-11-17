@@ -102,9 +102,10 @@ import Scalaxb._
 val obj = fromXML[Foo](node)
 val document = toXML[Foo](obj, "foo", defaultScope)
 **/
-object {name} {{
+object {name} extends {name}
+trait {name} extends scalaxb.XMLStandardTypes {{
   import scalaxb.Scalaxb._
-  import scalaxb.XMLFormat._
+  
   { if (imports.isEmpty) ""
     else imports.mkString(newline + indent(1)) + newline }
   val targetNamespace: Option[String] = { quote(schema.targetNamespace) }
@@ -182,7 +183,7 @@ object {name} {{
     
     val compDepth = 1
     val implicitValueCode = <source>  implicit lazy val {formatterName}: scalaxb.XMLFormat[{name}] = __{formatterName}</source>
-    val companionCode = <source>  val __{formatterName} = new scalaxb.XMLFormat[{name}] {{
+    val companionCode = <source>  lazy val __{formatterName} = new scalaxb.XMLFormat[{name}] {{
     { if (imports.isEmpty) ""
         else imports.mkString(newline + indent(2)) + newline + indent(2) 
     }def reads(seq: scala.xml.NodeSeq): Either[String, {name}] = seq match {{
@@ -345,7 +346,7 @@ object {name} {{
         "}" + newline }</source>
     
     val implicitValueCode = <source>  implicit lazy val {formatterName}: scalaxb.XMLFormat[{name}] = __{formatterName}</source>
-    def companionCode = if (simpleFromXml) <source>  val __{formatterName} = new scalaxb.XMLFormat[{name}] with scalaxb.CanWriteChildNodes[{name}] {{
+    def companionCode = if (simpleFromXml) <source>  lazy val __{formatterName} = new scalaxb.XMLFormat[{name}] with scalaxb.CanWriteChildNodes[{name}] {{
     def reads(seq: scala.xml.NodeSeq): Either[String, {name}] = seq match {{
       case node: scala.xml.Node => Right({name}({argsString}))
       case _ => Left("reads failed: seq must be scala.xml.Node")
@@ -353,7 +354,7 @@ object {name} {{
     
 {makeWritesAttribute}{makeWritesChildNodes}
   }}</source>
-    else <source>  val __{formatterName} = new {companionSuperNames.mkString(" with ")} {{
+    else <source>  lazy val __{formatterName} = new {companionSuperNames.mkString(" with ")} {{
     { if (decl.isNamed) "override def typeName: Option[String] = Some(" + quote(decl.name) + ")" + newline + newline + indent(2)  
       else ""
     }{ if (decl.mixed) "override def isMixed: Boolean = true" + newline + newline + indent(2)
@@ -432,7 +433,7 @@ object {name} {{
     val implicitValueCode = <source>  implicit lazy val {formatterName}: scalaxb.XMLFormat[{name}] = __{formatterName}</source>
     
     Snippet(<source>{ buildComment(seq) }case class {name}({paramsString}){superString}</source>,
-     <source>  val __{formatterName} = new scalaxb.XMLFormat[{name}] {{
+     <source>  lazy val __{formatterName} = new scalaxb.XMLFormat[{name}] {{
     def reads(seq: scala.xml.NodeSeq): Either[String, {name}] = Left("don't call me.")
     
 {makeWritesXML}
@@ -549,7 +550,7 @@ object {name} {{
     val implicitValueCode = <source>  implicit lazy val {formatterName}: scalaxb.XMLFormat[{name}] = __{formatterName}</source>
     
     Snippet(traitCode,
-      <source>  val __{formatterName} = new scalaxb.XMLFormat[{name}] {{
+      <source>  lazy val __{formatterName} = new scalaxb.XMLFormat[{name}] {{
     def reads(seq: scala.xml.NodeSeq): Either[String, {name}] = Right({name}.fromString(seq.text))
     
     def writes(__obj: {name}, __namespace: Option[String], __elementLabel: Option[String],

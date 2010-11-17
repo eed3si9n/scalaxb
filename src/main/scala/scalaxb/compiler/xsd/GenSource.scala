@@ -175,7 +175,7 @@ abstract class GenSource(val schema: SchemaDecl,
     val companionCode = <source>  val __{formatterName} = new scalaxb.XMLFormat[{name}] {{
     { if (imports.isEmpty) ""
         else imports.mkString(newline + indent(2)) + newline + indent(2) 
-    }def readsXMLEither(seq: scala.xml.NodeSeq): Either[String, {name}] = seq match {{
+    }def reads(seq: scala.xml.NodeSeq): Either[String, {name}] = seq match {{
       case node: scala.xml.Node =>     
         scalaxb.Helper.instanceType(node) match {{
           { val cases = for (sub <- context.baseToSubs(decl))
@@ -185,10 +185,10 @@ abstract class GenSource(val schema: SchemaDecl,
           { if (!decl.abstractValue) "case _ => Right(" + buildFromXML(defaultType, "node") + ")"
             else """case x => Left("Unknown type: " + x)""" }
         }}
-      case _ => Left("readsXMLEither failed: seq must be scala.xml.Node")  
+      case _ => Left("reads failed: seq must be scala.xml.Node")  
     }}
     
-    def writesXML(__obj: {name}, __namespace: Option[String], __elementLabel: Option[String],
+    def writes(__obj: {name}, __namespace: Option[String], __elementLabel: Option[String],
         __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq = __obj match {{
       { val cases = for (sub <- context.baseToSubs(decl))
           yield makeToXmlCaseEntry(sub)
@@ -336,9 +336,9 @@ abstract class GenSource(val schema: SchemaDecl,
     
     val implicitValueCode = <source>  implicit lazy val {formatterName}: scalaxb.XMLFormat[{name}] = __{formatterName}</source>
     def companionCode = if (simpleFromXml) <source>  val __{formatterName} = new scalaxb.XMLFormat[{name}] with scalaxb.CanWriteChildNodes[{name}] {{
-    def readsXMLEither(seq: scala.xml.NodeSeq): Either[String, {name}] = seq match {{
+    def reads(seq: scala.xml.NodeSeq): Either[String, {name}] = seq match {{
       case node: scala.xml.Node => Right({name}({argsString}))
-      case _ => Left("readsXMLEither failed: seq must be scala.xml.Node")
+      case _ => Left("reads failed: seq must be scala.xml.Node")
     }}
     
 {makeWritesAttribute}{makeWritesChildNodes}
@@ -408,7 +408,7 @@ abstract class GenSource(val schema: SchemaDecl,
     val paramsString = if (hasSequenceParam)
         makeParamName(paramList.head.name) + ": " + buildTypeName(paramList.head.typeSymbol) + "*"      
       else paramList.map(_.toScalaCode).mkString("," + newline + indent(1))    
-    def makeWritesXML = <source>    def writesXML(__obj: {name}, __namespace: Option[String], __elementLabel: Option[String], 
+    def makeWritesXML = <source>    def writes(__obj: {name}, __namespace: Option[String], __elementLabel: Option[String], 
         __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
       {childString}</source>
     def childString = if (paramList.isEmpty) "Nil"
@@ -423,7 +423,7 @@ abstract class GenSource(val schema: SchemaDecl,
     
     Snippet(<source>{ buildComment(seq) }case class {name}({paramsString}){superString}</source>,
      <source>  val __{formatterName} = new scalaxb.XMLFormat[{name}] {{
-    def readsXMLEither(seq: scala.xml.NodeSeq): Either[String, {name}] = Left("don't call me.")
+    def reads(seq: scala.xml.NodeSeq): Either[String, {name}] = Left("don't call me.")
     
 {makeWritesXML}
   }}</source>,
@@ -492,7 +492,7 @@ abstract class GenSource(val schema: SchemaDecl,
     
     Snippet(<source>{ buildComment(group) }case class {name}({paramsString})</source>,
      <source>  object {formatterName} {{
-    def readsXMLEither(node: scala.xml.Node): Either[String, {name}] =
+    def reads(node: scala.xml.Node): Either[String, {name}] =
       Right({name}({argsString}))
   
     def toAttribute(__obj: {name}, __attr: scala.xml.MetaData, __scope: scala.xml.NamespaceBinding) = {{
@@ -540,9 +540,9 @@ object {name} {{
     
     Snippet(traitCode,
       <source>  val __{formatterName} = new scalaxb.XMLFormat[{name}] {{
-    def readsXMLEither(seq: scala.xml.NodeSeq): Either[String, {name}] = Right({name}.fromString(seq.text))
+    def reads(seq: scala.xml.NodeSeq): Either[String, {name}] = Right({name}.fromString(seq.text))
     
-    def writesXML(__obj: {name}, __namespace: Option[String], __elementLabel: Option[String],
+    def writes(__obj: {name}, __namespace: Option[String], __elementLabel: Option[String],
         __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
       scala.xml.Elem(scalaxb.Helper.getPrefix(__namespace, __scope).orNull, 
         __elementLabel getOrElse {{ error("missing element label.") }},

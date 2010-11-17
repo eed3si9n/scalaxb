@@ -241,7 +241,7 @@ trait Args extends Params {
     
   def buildAttributeGroupArg(group: AttributeGroupDecl): String = {
     val formatterName = buildTypeName(group) + "Format"
-    formatterName + ".readsXMLEither(node).right.get"
+    formatterName + ".reads(node).right.get"
   }
   
   def flattenAttributes(decl: ComplexTypeDecl): List[AttributeLike] =

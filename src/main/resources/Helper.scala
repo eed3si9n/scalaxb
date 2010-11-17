@@ -9,11 +9,11 @@ object Scalaxb {
     case Left(a) => error(a)
   }
   
-  def toXML[A](__obj: A, __namespace: Option[String], __elementLabel: Option[String],
-      __scope: NamespaceBinding, __typeAttribute: Boolean = false)(implicit format: CanWriteXML[A]): NodeSeq =
-    format.writesXML(__obj, __namespace, __elementLabel, __scope, __typeAttribute)
-  def toXML[A](__obj: A, __elementLabel: String, __scope: NamespaceBinding)(implicit format: CanWriteXML[A]): NodeSeq =
-    toXML(__obj, None, Some(__elementLabel), __scope, false)
+  def toXML[A](obj: A, namespace: Option[String], elementLabel: Option[String],
+      scope: NamespaceBinding, typeAttribute: Boolean = false)(implicit format: CanWriteXML[A]): NodeSeq =
+    format.writesXML(obj, namespace, elementLabel, scope, typeAttribute)
+  def toXML[A](obj: A, elementLabel: String, scope: NamespaceBinding)(implicit format: CanWriteXML[A]): NodeSeq =
+    toXML(obj, None, Some(elementLabel), scope, false)
   def toScope(pairs: (Option[String], String)*): NamespaceBinding =
     pairs.reverse.foldLeft[NamespaceBinding](scala.xml.TopScope) { (scope, pair) =>
       scala.xml.NamespaceBinding(pair._1.getOrElse{null}, pair._2, scope) }
@@ -26,137 +26,137 @@ trait CanReadXML[A] {
 }
 
 trait CanWriteXML[A] {
-  def writesXML(__obj: A, __namespace: Option[String], __elementLabel: Option[String],
-      __scope: NamespaceBinding, __typeAttribute: Boolean): NodeSeq
+  def writesXML(obj: A, namespace: Option[String], elementLabel: Option[String],
+      scope: NamespaceBinding, typeAttribute: Boolean): NodeSeq
 }
 
 object XMLFormat {
   implicit object __NodeXMLWriter extends CanWriteXML[Node] {
-    def writesXML(__obj: Node, __namespace: Option[String], __elementLabel: Option[String],
-      __scope: NamespaceBinding, __typeAttribute: Boolean): NodeSeq = __obj
+    def writesXML(obj: Node, namespace: Option[String], elementLabel: Option[String],
+      scope: NamespaceBinding, typeAttribute: Boolean): NodeSeq = obj
   }
 
   implicit object __NodeSeqXMLWriter extends CanWriteXML[NodeSeq] {
-    def writesXML(__obj: NodeSeq, __namespace: Option[String], __elementLabel: Option[String],
-      __scope: NamespaceBinding, __typeAttribute: Boolean): NodeSeq = __obj
+    def writesXML(obj: NodeSeq, namespace: Option[String], elementLabel: Option[String],
+      scope: NamespaceBinding, typeAttribute: Boolean): NodeSeq = obj
   }
   
   implicit object __ElemXMLWriter extends CanWriteXML[Elem] {
-    def writesXML(__obj: Elem, __namespace: Option[String], __elementLabel: Option[String],
-      __scope: NamespaceBinding, __typeAttribute: Boolean): NodeSeq = __obj
+    def writesXML(obj: Elem, namespace: Option[String], elementLabel: Option[String],
+      scope: NamespaceBinding, typeAttribute: Boolean): NodeSeq = obj
   }  
 
   implicit object __StringXMLFormat extends XMLFormat[String] {
     def readsXMLEither(seq: scala.xml.NodeSeq): Either[String, String] = Right(seq.text)
     
-    def writesXML(__obj: String, __namespace: Option[String], __elementLabel: Option[String],
-        __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
-      Helper.stringToXML(__obj, None, __namespace, __elementLabel, __scope)
+    def writesXML(obj: String, namespace: Option[String], elementLabel: Option[String],
+        scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
+      Helper.stringToXML(obj, namespace, elementLabel, scope)
   }
   
   implicit object __IntXMLFormat extends XMLFormat[Int] {
     def readsXMLEither(seq: scala.xml.NodeSeq): Either[String, Int] = try { Right(seq.text.toInt) }
       catch { case e: Exception => Left(e.toString) }
     
-    def writesXML(__obj: Int, __namespace: Option[String], __elementLabel: Option[String],
-        __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
-      Helper.stringToXML(__obj.toString, None, __namespace, __elementLabel, __scope)
+    def writesXML(obj: Int, namespace: Option[String], elementLabel: Option[String],
+        scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
+      Helper.stringToXML(obj.toString, namespace, elementLabel, scope)
   }
   
   implicit object __ByteXMLFormat extends XMLFormat[Byte] {
     def readsXMLEither(seq: scala.xml.NodeSeq): Either[String, Byte] = try { Right(seq.text.toByte) }
       catch { case e: Exception => Left(e.toString) }
     
-    def writesXML(__obj: Byte, __namespace: Option[String], __elementLabel: Option[String],
-        __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
-      Helper.stringToXML(__obj.toString, None, __namespace, __elementLabel, __scope)
+    def writesXML(obj: Byte, namespace: Option[String], elementLabel: Option[String],
+        scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
+      Helper.stringToXML(obj.toString, namespace, elementLabel, scope)
   }
     
   implicit object __ShortXMLFormat extends XMLFormat[Short] {
     def readsXMLEither(seq: scala.xml.NodeSeq): Either[String, Short] = try { Right(seq.text.toShort) }
       catch { case e: Exception => Left(e.toString) }
       
-    def writesXML(__obj: Short, __namespace: Option[String], __elementLabel: Option[String],
-        __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
-      Helper.stringToXML(__obj.toString, None, __namespace, __elementLabel, __scope)
+    def writesXML(obj: Short, namespace: Option[String], elementLabel: Option[String],
+        scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
+      Helper.stringToXML(obj.toString, namespace, elementLabel, scope)
   }
   
   implicit object __LongXMLFormat extends XMLFormat[Long] {
     def readsXMLEither(seq: scala.xml.NodeSeq): Either[String, Long] = try { Right(seq.text.toLong) }
       catch { case e: Exception => Left(e.toString) }
     
-    def writesXML(__obj: Long, __namespace: Option[String], __elementLabel: Option[String],
-        __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
-      Helper.stringToXML(__obj.toString, None, __namespace, __elementLabel, __scope)
+    def writesXML(obj: Long, namespace: Option[String], elementLabel: Option[String],
+        scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
+      Helper.stringToXML(obj.toString, namespace, elementLabel, scope)
   }
   
   implicit object __BigDecimalXMLFormat extends XMLFormat[BigDecimal] {
     def readsXMLEither(seq: scala.xml.NodeSeq): Either[String, BigDecimal] = try { Right(BigDecimal(seq.text)) }
       catch { case e: Exception => Left(e.toString) }
       
-    def writesXML(__obj: BigDecimal, __namespace: Option[String], __elementLabel: Option[String],
-        __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
-      Helper.stringToXML(__obj.toString, None, __namespace, __elementLabel, __scope)
+    def writesXML(obj: BigDecimal, namespace: Option[String], elementLabel: Option[String],
+        scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
+      Helper.stringToXML(obj.toString, namespace, elementLabel, scope)
   }
   
   implicit object __BigIntXMLFormat extends XMLFormat[BigInt] {
     def readsXMLEither(seq: scala.xml.NodeSeq): Either[String, BigInt] = try { Right(BigInt(seq.text)) }
       catch { case e: Exception => Left(e.toString) }
       
-    def writesXML(__obj: BigInt, __namespace: Option[String], __elementLabel: Option[String],
-        __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
-      Helper.stringToXML(__obj.toString, None, __namespace, __elementLabel, __scope)
+    def writesXML(obj: BigInt, namespace: Option[String], elementLabel: Option[String],
+        scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
+      Helper.stringToXML(obj.toString, namespace, elementLabel, scope)
   }
   
   implicit object __FloatXMLFormat extends XMLFormat[Float] {
     def readsXMLEither(seq: scala.xml.NodeSeq): Either[String, Float] = try { Right(seq.text.toFloat) }
       catch { case e: Exception => Left(e.toString) }
       
-    def writesXML(__obj: Float, __namespace: Option[String], __elementLabel: Option[String],
-        __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
-      Helper.stringToXML(__obj.toString, None, __namespace, __elementLabel, __scope)
+    def writesXML(obj: Float, namespace: Option[String], elementLabel: Option[String],
+        scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
+      Helper.stringToXML(obj.toString, namespace, elementLabel, scope)
   }
   
   implicit object __DoubleXMLFormat extends XMLFormat[Double] {
     def readsXMLEither(seq: scala.xml.NodeSeq): Either[String, Double] = try { Right(seq.text.toDouble) }
       catch { case e: Exception => Left(e.toString) }
       
-    def writesXML(__obj: Double, __namespace: Option[String], __elementLabel: Option[String],
-        __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
-      Helper.stringToXML(__obj.toString, None, __namespace, __elementLabel, __scope)
+    def writesXML(obj: Double, namespace: Option[String], elementLabel: Option[String],
+        scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
+      Helper.stringToXML(obj.toString, namespace, elementLabel, scope)
   }
   
   implicit object __BooleanXMLFormat extends XMLFormat[Boolean] {
     def readsXMLEither(seq: scala.xml.NodeSeq): Either[String, Boolean] = try { Right(seq.text.toBoolean) }
       catch { case e: Exception => Left(e.toString) }
       
-    def writesXML(__obj: Boolean, __namespace: Option[String], __elementLabel: Option[String],
-        __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
-      Helper.stringToXML(__obj.toString, None, __namespace, __elementLabel, __scope)
+    def writesXML(obj: Boolean, namespace: Option[String], elementLabel: Option[String],
+        scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
+      Helper.stringToXML(obj.toString, namespace, elementLabel, scope)
   }
   
   implicit object __DurationXMLFormat extends XMLFormat[javax.xml.datatype.Duration] {
     def readsXMLEither(seq: scala.xml.NodeSeq): Either[String, javax.xml.datatype.Duration] = try { Right(Helper.toDuration(seq.text)) }
       catch { case e: Exception => Left(e.toString) }
       
-    def writesXML(__obj: javax.xml.datatype.Duration, __namespace: Option[String], __elementLabel: Option[String],
-        __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
-      Helper.stringToXML(__obj.toString, None, __namespace, __elementLabel, __scope)
+    def writesXML(obj: javax.xml.datatype.Duration, namespace: Option[String], elementLabel: Option[String],
+        scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
+      Helper.stringToXML(obj.toString, namespace, elementLabel, scope)
   }
   
   implicit object __CalendarXMLFormat extends XMLFormat[XMLGregorianCalendar] {
     def readsXMLEither(seq: scala.xml.NodeSeq): Either[String, XMLGregorianCalendar] = try { Right(XMLCalendar(seq.text)) }
       catch { case e: Exception => Left(e.toString) }
       
-    def writesXML(__obj: XMLGregorianCalendar, __namespace: Option[String], __elementLabel: Option[String],
-        __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
-      Helper.stringToXML(__obj.toXMLFormat, None, __namespace, __elementLabel, __scope)
+    def writesXML(obj: XMLGregorianCalendar, namespace: Option[String], elementLabel: Option[String],
+        scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
+      Helper.stringToXML(obj.toXMLFormat, namespace, elementLabel, scope)
   }
   
   implicit object __GregorianCalendarXMLWriter extends CanWriteXML[java.util.GregorianCalendar] {
-    def writesXML(__obj: java.util.GregorianCalendar, __namespace: Option[String], __elementLabel: Option[String],
-        __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
-      Helper.stringToXML(Helper.toCalendar(__obj).toXMLFormat, None, __namespace, __elementLabel, __scope)
+    def writesXML(obj: java.util.GregorianCalendar, namespace: Option[String], elementLabel: Option[String],
+        scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
+      Helper.stringToXML(Helper.toCalendar(obj).toXMLFormat, namespace, elementLabel, scope)
   }
     
   implicit object __QNameXMLFormat extends XMLFormat[javax.xml.namespace.QName] {
@@ -164,45 +164,45 @@ object XMLFormat {
       Right(javax.xml.namespace.QName.valueOf(seq.text))
     } catch { case e: Exception => Left(e.toString) }
       
-    def writesXML(__obj: javax.xml.namespace.QName, __namespace: Option[String], __elementLabel: Option[String],
-        __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
-      Helper.stringToXML(__obj.toString, None, __namespace, __elementLabel, __scope)
+    def writesXML(obj: javax.xml.namespace.QName, namespace: Option[String], elementLabel: Option[String],
+        scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
+      Helper.stringToXML(obj.toString, namespace, elementLabel, scope)
   }
   
   implicit object __StringArrayXMLFormat extends XMLFormat[Array[String]] {
     def readsXMLEither(seq: scala.xml.NodeSeq): Either[String, Array[String]] = try { Right(Helper.splitBySpace(seq.text)) }
       catch { case e: Exception => Left(e.toString) }
       
-    def writesXML(__obj: Array[String], __namespace: Option[String], __elementLabel: Option[String],
-        __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
-      Helper.stringToXML(__obj.mkString(" "), None, __namespace, __elementLabel, __scope)
+    def writesXML(obj: Array[String], namespace: Option[String], elementLabel: Option[String],
+        scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
+      Helper.stringToXML(obj.mkString(" "), namespace, elementLabel, scope)
   }
   
   implicit object __ByteArrayXMLFormat extends XMLFormat[Array[Byte]] {
     def readsXMLEither(seq: scala.xml.NodeSeq): Either[String, Array[Byte]] = try { Right(Helper.toByteArray(seq.text)) }
       catch { case e: Exception => Left(e.toString) }
       
-    def writesXML(__obj: Array[Byte], __namespace: Option[String], __elementLabel: Option[String],
-        __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
-      Helper.stringToXML(Helper.toString(__obj), None, __namespace, __elementLabel, __scope)
+    def writesXML(obj: Array[Byte], namespace: Option[String], elementLabel: Option[String],
+        scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
+      Helper.stringToXML(Helper.toString(obj), namespace, elementLabel, scope)
   }
   
   implicit object __HexBinaryXMLFormat extends XMLFormat[HexBinary] {
     def readsXMLEither(seq: scala.xml.NodeSeq): Either[String, HexBinary] = try { Right(Helper.toHexBinary(seq.text)) }
       catch { case e: Exception => Left(e.toString) }
     
-    def writesXML(__obj: HexBinary, __namespace: Option[String], __elementLabel: Option[String],
-        __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
-      Helper.stringToXML(Helper.toString(__obj), None, __namespace, __elementLabel, __scope)
+    def writesXML(obj: HexBinary, namespace: Option[String], elementLabel: Option[String],
+        scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
+      Helper.stringToXML(Helper.toString(obj), namespace, elementLabel, scope)
   }
   
   implicit object __URIXMLFormat extends XMLFormat[java.net.URI] {
     def readsXMLEither(seq: scala.xml.NodeSeq): Either[String, java.net.URI] = try { Right(Helper.toURI(seq.text)) }
       catch { case e: Exception => Left(e.toString) }
       
-    def writesXML(__obj: java.net.URI, __namespace: Option[String], __elementLabel: Option[String],
-        __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
-      Helper.stringToXML(__obj.toString, Some("hexBinary"), __namespace, __elementLabel, __scope)
+    def writesXML(obj: java.net.URI, namespace: Option[String], elementLabel: Option[String],
+        scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
+      Helper.stringToXML(obj.toString, namespace, elementLabel, scope)
   }
   
   implicit def seqXMLFormat[A: XMLFormat]: XMLFormat[Seq[A]] = new XMLFormat[Seq[A]] {
@@ -211,46 +211,46 @@ object XMLFormat {
       Right(xs map { x => Scalaxb.fromXML[A](scala.xml.Text(x)) })
     } catch { case e: Exception => Left(e.toString) }
     
-    def writesXML(__obj: Seq[A], __namespace: Option[String], __elementLabel: Option[String],
-        __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
-      Helper.stringToXML((__obj map { x => Scalaxb.toXML(x, __namespace, __elementLabel, __scope, __typeAttribute).text }).mkString(" "),
-        None, __namespace, __elementLabel, __scope)       
+    def writesXML(obj: Seq[A], namespace: Option[String], elementLabel: Option[String],
+        scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
+      Helper.stringToXML((obj map { x => Scalaxb.toXML(x, namespace, elementLabel, scope, typeAttribute).text }).mkString(" "),
+        namespace, elementLabel, scope)       
   }
   
   implicit def dataRecordXMLWriter[A]: CanWriteXML[DataRecord[A]] = new CanWriteXML[DataRecord[A]] {      
-    def writesXML(__obj: DataRecord[A], __namespace: Option[String], __elementLabel: Option[String],
-        __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
-      DataRecord.toXML(__obj, __namespace, __elementLabel, __scope, __typeAttribute)   
+    def writesXML(obj: DataRecord[A], namespace: Option[String], elementLabel: Option[String],
+        scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
+      DataRecord.toXML(obj, namespace, elementLabel, scope, typeAttribute)   
   }
   
   implicit object NoneXMLWriter extends CanWriteXML[None.type] {  
-    def writesXML(__obj: None.type, __namespace: Option[String], __elementLabel: Option[String],
-        __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
-      Helper.nilElem(__namespace, __elementLabel.get, __scope)    
+    def writesXML(obj: None.type, namespace: Option[String], elementLabel: Option[String],
+        scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
+      Helper.nilElem(namespace, elementLabel.get, scope)    
   }
   
   implicit def someXMLWriter[A: CanWriteXML]: CanWriteXML[Some[A]] = new CanWriteXML[Some[A]] {
-    def writesXML(__obj: Some[A], __namespace: Option[String], __elementLabel: Option[String],
-        __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
-      Scalaxb.toXML[A](__obj.get, __namespace, __elementLabel, __scope, __typeAttribute)
+    def writesXML(obj: Some[A], namespace: Option[String], elementLabel: Option[String],
+        scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
+      Scalaxb.toXML[A](obj.get, namespace, elementLabel, scope, typeAttribute)
   }
   
   implicit def optionXMLWriter[A: CanWriteXML]: CanWriteXML[Option[A]] = new CanWriteXML[Option[A]] {
-    def writesXML(__obj: Option[A], __namespace: Option[String], __elementLabel: Option[String],
-        __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq = __obj match {
-      case Some(x) => Scalaxb.toXML[A](x, __namespace, __elementLabel, __scope, __typeAttribute)
-      case None    => Helper.nilElem(__namespace, __elementLabel.get, __scope)   
+    def writesXML(obj: Option[A], namespace: Option[String], elementLabel: Option[String],
+        scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq = obj match {
+      case Some(x) => Scalaxb.toXML[A](x, namespace, elementLabel, scope, typeAttribute)
+      case None    => Helper.nilElem(namespace, elementLabel.get, scope)   
     }
   }
-    
+  
   implicit object __DataRecordAnyXMLFormat extends XMLFormat[DataRecord[Any]] {
     def readsXMLEither(seq: scala.xml.NodeSeq): Either[String, DataRecord[Any]] = try {
       Right(DataRecord.fromAny(seq))
     } catch { case e: Exception => Left(e.toString) }    
     
-    def writesXML(__obj: DataRecord[Any], __namespace: Option[String], __elementLabel: Option[String],
-        __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
-      DataRecord.toXML(__obj, __namespace, __elementLabel, __scope, __typeAttribute)   
+    def writesXML(obj: DataRecord[Any], namespace: Option[String], elementLabel: Option[String],
+        scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
+      DataRecord.toXML(obj, namespace, elementLabel, scope, typeAttribute)   
   }
   
   implicit object __DataRecordOptionAnyXMLFormat extends XMLFormat[DataRecord[Option[Any]]] {
@@ -258,16 +258,16 @@ object XMLFormat {
       Right(DataRecord.fromNillableAny(seq))
     } catch { case e: Exception => Left(e.toString) }    
     
-    def writesXML(__obj: DataRecord[Option[Any]], __namespace: Option[String], __elementLabel: Option[String],
-        __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
-      DataRecord.toXML(__obj, __namespace, __elementLabel, __scope, __typeAttribute)   
+    def writesXML(obj: DataRecord[Option[Any]], namespace: Option[String], elementLabel: Option[String],
+        scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
+      DataRecord.toXML(obj, namespace, elementLabel, scope, typeAttribute)   
   }
   
   implicit object __DataRecordMapWriter extends CanWriteXML[Map[String, scalaxb.DataRecord[Any]]] {
-    def writesXML(__obj: Map[String, scalaxb.DataRecord[Any]], __namespace: Option[String], __elementLabel: Option[String],
-        __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
-      __obj.valuesIterator.toList flatMap { x =>
-        Scalaxb.toXML[DataRecord[Any]](x, x.namespace, x.key, __scope, __typeAttribute)        
+    def writesXML(obj: Map[String, scalaxb.DataRecord[Any]], namespace: Option[String], elementLabel: Option[String],
+        scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
+      obj.valuesIterator.toList flatMap { x =>
+        Scalaxb.toXML[DataRecord[Any]](x, x.namespace, x.key, scope, typeAttribute)        
       }
   }
 }
@@ -473,19 +473,19 @@ object DataRecord {
   def unapply[A](record: DataRecord[A]): Option[(Option[String], Option[String], A)] =
     Some(record.namespace, record.key, record.value)
   
-  def toXML[A](__obj: DataRecord[A], __namespace: Option[String], __elementLabel: Option[String],
-      __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq = __obj match {
+  def toXML[A](obj: DataRecord[A], namespace: Option[String], elementLabel: Option[String],
+      scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq = obj match {
     case w: DataWriter[_] =>
-      __obj.value match {
+      obj.value match {
         case seq: NodeSeq =>
-          w.writer.asInstanceOf[CanWriteXML[A]].writesXML(__obj.value, __namespace, __elementLabel, __scope, __typeAttribute)
+          w.writer.asInstanceOf[CanWriteXML[A]].writesXML(obj.value, namespace, elementLabel, scope, typeAttribute)
         case _ =>
-          w.writer.asInstanceOf[CanWriteXML[A]].writesXML(__obj.value, __namespace, __elementLabel, __scope, false) match {
+          w.writer.asInstanceOf[CanWriteXML[A]].writesXML(obj.value, namespace, elementLabel, scope, false) match {
             case elem: Elem if (w.xstypeNamespace.isDefined && w.xstypeName.isDefined &&
-                __scope.getPrefix(w.xstypeNamespace.get) != null &&
-                __scope.getPrefix(XSI_URL) != null) =>
-              elem % new PrefixedAttribute(__scope.getPrefix(XSI_URL), "type",
-                __scope.getPrefix(w.xstypeNamespace.get) + ":" + w.xstypeName.get, scala.xml.Null)
+                scope.getPrefix(w.xstypeNamespace.get) != null &&
+                scope.getPrefix(XSI_URL) != null) =>
+              elem % new PrefixedAttribute(scope.getPrefix(XSI_URL), "type",
+                scope.getPrefix(w.xstypeNamespace.get) + ":" + w.xstypeName.get, scala.xml.Null)
             case x => x
           }
       }
@@ -520,19 +520,19 @@ trait AnyElemNameParser extends scala.util.parsing.combinator.Parsers {
 
 trait CanWriteChildNodes[A] extends CanWriteXML[A] {
   def typeName: Option[String] = None
-  def writesAttribute(__obj: A, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = scala.xml.Null
-  def writesChildNodes(__obj: A, __scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node]
+  def writesAttribute(obj: A, scope: scala.xml.NamespaceBinding): scala.xml.MetaData = scala.xml.Null
+  def writesChildNodes(obj: A, scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node]
   
-  def writesXML(__obj: A, __namespace: Option[String], __elementLabel: Option[String], 
-      __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
-    scala.xml.Elem(Helper.getPrefix(__namespace, __scope).orNull,
-      __elementLabel getOrElse { error("missing element label.") },
-      if (__typeAttribute && typeName.isDefined &&
-          __scope.getPrefix(Helper.XSI_URL) != null) scala.xml.Attribute(__scope.getPrefix(Helper.XSI_URL), "type", typeName.get,
-        writesAttribute(__obj, __scope))
-      else writesAttribute(__obj, __scope),
-      __scope,
-      writesChildNodes(__obj, __scope): _*)  
+  def writesXML(obj: A, namespace: Option[String], elementLabel: Option[String], 
+      scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
+    scala.xml.Elem(Helper.getPrefix(namespace, scope).orNull,
+      elementLabel getOrElse { error("missing element label.") },
+      if (typeAttribute && typeName.isDefined &&
+          scope.getPrefix(Helper.XSI_URL) != null) scala.xml.Attribute(scope.getPrefix(Helper.XSI_URL), "type", typeName.get,
+        writesAttribute(obj, scope))
+      else writesAttribute(obj, scope),
+      scope,
+      writesChildNodes(obj, scope): _*)  
 }
 
 trait ElemNameParser[A] extends AnyElemNameParser with XMLFormat[A] with CanWriteChildNodes[A] {
@@ -706,27 +706,13 @@ object Helper {
   def getPrefix(namespace: Option[String], scope: scala.xml.NamespaceBinding) =
     if (Option[String](scope.getURI(null)) == namespace) None
     else Option[String](scope.getPrefix(namespace.orNull))
-  
     
-  def writesXML(__obj: String, __xstype: Option[String], __namespace: Option[String], __elementLabel: Option[String],
-       __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq = {
-    __elementLabel map { label =>
-      scala.xml.Elem(getPrefix(__namespace, __scope).orNull, label,
-        __xstype map { x => 
-          new scala.xml.PrefixedAttribute(__scope.getPrefix(XSI_URL), "type", x, scala.xml.Null)
-        } getOrElse { scala.xml.Null },
-        __scope, scala.xml.Text(__obj.toString))
-    } getOrElse { scala.xml.Text(__obj) }
-  }
-  
-  def stringToXML(__obj: String, __xstype: Option[String], __namespace: Option[String], __elementLabel: Option[String],
-       __scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq = {
-    __elementLabel map { label =>
-      scala.xml.Elem(getPrefix(__namespace, __scope).orNull, label,
-        __xstype map { x => 
-          new scala.xml.PrefixedAttribute(__scope.getPrefix(XSI_URL), "type", x, scala.xml.Null)
-        } getOrElse { scala.xml.Null },
-        __scope, scala.xml.Text(__obj.toString))
-    } getOrElse { scala.xml.Text(__obj) }
+  def stringToXML(obj: String, namespace: Option[String], elementLabel: Option[String],
+       scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq = {
+    elementLabel map { label =>
+      scala.xml.Elem(getPrefix(namespace, scope).orNull, label,
+        scala.xml.Null,
+        scope, scala.xml.Text(obj.toString))
+    } getOrElse { scala.xml.Text(obj) }
   }
 }

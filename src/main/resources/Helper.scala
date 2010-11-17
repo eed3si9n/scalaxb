@@ -4,7 +4,11 @@ import scala.xml.{Node, NodeSeq, NamespaceBinding, Elem, PrefixedAttribute}
 import javax.xml.datatype.{XMLGregorianCalendar}
 
 object Scalaxb {
-  def fromXML[A](seq: NodeSeq)(implicit format: XMLFormat[A]): A = format.readsXML(seq)
+  def fromXML[A](seq: NodeSeq)(implicit format: XMLFormat[A]): A = format.readsXMLEither(seq) match {
+    case Right(a) => a
+    case Left(a) => error(a)
+  }
+  
   def toXML[A](__obj: A, __namespace: Option[String], __elementLabel: Option[String],
       __scope: NamespaceBinding, __typeAttribute: Boolean = false)(implicit format: CanWriteXML[A]): NodeSeq =
     format.writesXML(__obj, __namespace, __elementLabel, __scope, __typeAttribute)
@@ -19,11 +23,6 @@ trait XMLFormat[A] extends CanWriteXML[A] with CanReadXML[A]
 
 trait CanReadXML[A] {
   def readsXMLEither(seq: scala.xml.NodeSeq): Either[String, A]
-  
-  def readsXML(seq: scala.xml.NodeSeq): A = readsXMLEither(seq) match {
-    case Right(a) => a
-    case Left(a) => error(a)
-  }
 }
 
 trait CanWriteXML[A] {

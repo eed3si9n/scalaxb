@@ -91,8 +91,18 @@ abstract class GenSource(val schema: SchemaDecl,
       else if (scope.prefix == null) (None, scope.uri) :: makeScopes(scope.parent)
       else (Some(scope.prefix), scope.uri) :: makeScopes(scope.parent)
     val scopes = makeScopes(schema.scope)
+    val packageImportString = packageName(schema, context) map { pkg =>
+      "import " + pkg + "._" + newline } getOrElse {""}
     
-    <source>object {name} {{
+    <source>/** usage:
+import scalaxb._
+import Scalaxb._
+{packageImportString}import {name}._
+
+val obj = fromXML[Foo](node)
+val document = toXML[Foo](obj, "foo", defaultScope)
+**/
+object {name} {{
   import scalaxb.Scalaxb._
   import scalaxb.XMLFormat._
   { if (imports.isEmpty) ""

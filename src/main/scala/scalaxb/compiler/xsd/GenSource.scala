@@ -102,7 +102,7 @@ import Scalaxb._
 val obj = fromXML[Foo](node)
 val document = toXML[Foo](obj, "foo", defaultScope)
 **/
-object {name} extends {name}
+object {name} extends {name} with scalaxb.DefaultXMLStandardTypes
 trait {name} extends scalaxb.XMLStandardTypes {{
   import scalaxb.Scalaxb._
   
@@ -182,8 +182,8 @@ trait {name} extends scalaxb.XMLStandardTypes {{
 }}</source>
     
     val compDepth = 1
-    val implicitValueCode = <source>  implicit lazy val {formatterName}: scalaxb.XMLFormat[{name}] = __{formatterName}</source>
-    val companionCode = <source>  lazy val __{formatterName} = new scalaxb.XMLFormat[{name}] {{
+    val implicitValueCode = <source>  implicit lazy val {formatterName}: scalaxb.XMLFormat[{name}] = build{formatterName}</source>
+    val companionCode = <source>  def build{formatterName} = new scalaxb.XMLFormat[{name}] {{
     { if (imports.isEmpty) ""
         else imports.mkString(newline + indent(2)) + newline + indent(2) 
     }def reads(seq: scala.xml.NodeSeq): Either[String, {name}] = seq match {{
@@ -345,8 +345,8 @@ trait {name} extends scalaxb.XMLStandardTypes {{
         indent(1) + accessors.mkString(newline + indent(1)) + newline +
         "}" + newline }</source>
     
-    val implicitValueCode = <source>  implicit lazy val {formatterName}: scalaxb.XMLFormat[{name}] = __{formatterName}</source>
-    def companionCode = if (simpleFromXml) <source>  lazy val __{formatterName} = new scalaxb.XMLFormat[{name}] with scalaxb.CanWriteChildNodes[{name}] {{
+    val implicitValueCode = <source>  implicit lazy val {formatterName}: scalaxb.XMLFormat[{name}] = build{formatterName}</source>
+    def companionCode = if (simpleFromXml) <source>  def build{formatterName} = new scalaxb.XMLFormat[{name}] with scalaxb.CanWriteChildNodes[{name}] {{
     def reads(seq: scala.xml.NodeSeq): Either[String, {name}] = seq match {{
       case node: scala.xml.Node => Right({name}({argsString}))
       case _ => Left("reads failed: seq must be scala.xml.Node")
@@ -354,7 +354,7 @@ trait {name} extends scalaxb.XMLStandardTypes {{
     
 {makeWritesAttribute}{makeWritesChildNodes}
   }}</source>
-    else <source>  lazy val __{formatterName} = new {companionSuperNames.mkString(" with ")} {{
+    else <source>  def build{formatterName} = new {companionSuperNames.mkString(" with ")} {{
     { if (decl.isNamed) "override def typeName: Option[String] = Some(" + quote(decl.name) + ")" + newline + newline + indent(2)  
       else ""
     }{ if (decl.mixed) "override def isMixed: Boolean = true" + newline + newline + indent(2)
@@ -430,10 +430,10 @@ trait {name} extends scalaxb.XMLStandardTypes {{
     val superString = if (superNames.isEmpty) ""
       else " extends " + superNames.mkString(" with ")
     
-    val implicitValueCode = <source>  implicit lazy val {formatterName}: scalaxb.XMLFormat[{name}] = __{formatterName}</source>
+    val implicitValueCode = <source>  implicit lazy val {formatterName}: scalaxb.XMLFormat[{name}] = build{formatterName}</source>
     
     Snippet(<source>{ buildComment(seq) }case class {name}({paramsString}){superString}</source>,
-     <source>  lazy val __{formatterName} = new scalaxb.XMLFormat[{name}] {{
+     <source>  def build{formatterName} = new scalaxb.XMLFormat[{name}] {{
     def reads(seq: scala.xml.NodeSeq): Either[String, {name}] = Left("don't call me.")
     
 {makeWritesXML}
@@ -547,10 +547,10 @@ object {name} {{
 { enumString }</source>
     }  // match
     
-    val implicitValueCode = <source>  implicit lazy val {formatterName}: scalaxb.XMLFormat[{name}] = __{formatterName}</source>
+    val implicitValueCode = <source>  implicit lazy val {formatterName}: scalaxb.XMLFormat[{name}] = build{formatterName}</source>
     
     Snippet(traitCode,
-      <source>  lazy val __{formatterName} = new scalaxb.XMLFormat[{name}] {{
+      <source>  def build{formatterName} = new scalaxb.XMLFormat[{name}] {{
     def reads(seq: scala.xml.NodeSeq): Either[String, {name}] = Right({name}.fromString(seq.text))
     
     def writes(__obj: {name}, __namespace: Option[String], __elementLabel: Option[String],

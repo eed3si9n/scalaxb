@@ -18,8 +18,8 @@ object CustomizationUsage {
     true
   }
   
-  object CustomXMLProtocol extends general.DefaultXMLProtocol {
-    override lazy val __IntXMLFormat = new XMLFormat[Int] {
+  trait CustomXMLStandardTypes extends scalaxb.DefaultXMLStandardTypes {
+    override def __buildIntXMLFormat: XMLFormat[Int] = new XMLFormat[Int] {
       def reads(seq: scala.xml.NodeSeq): Either[String, Int] = try { Right(seq.text.toInt + 1) }
         catch { case e: Exception => Left(e.toString) }
 
@@ -28,7 +28,7 @@ object CustomizationUsage {
         Helper.stringToXML((obj - 1).toString, namespace, elementLabel, scope)
     }
     
-    override lazy val __LongXMLFormat = new XMLFormat[Long] {
+    override def __buildLongXMLFormat: XMLFormat[Long] = new XMLFormat[Long] {
       def reads(seq: scala.xml.NodeSeq): Either[String, Long] = try { Right(seq.text.toLong + 1) }
         catch { case e: Exception => Left(e.toString) }
 
@@ -37,6 +37,8 @@ object CustomizationUsage {
         Helper.stringToXML((obj - 1).toString, namespace, elementLabel, scope)
     }
   }
+  
+  object CustomXMLProtocol extends general.DefaultXMLProtocol with CustomXMLStandardTypes
   
   def testSingularSimpleType {
     import CustomXMLProtocol._
@@ -60,14 +62,15 @@ object CustomizationUsage {
     val obj = fromXML[SingularSimpleTypeTest](subject)
     
     def check(obj: Any) = obj match {
-        case SingularSimpleTypeTest(1, None, None, Some(Some(1)), Seq(2, 1), Seq(), 
+        case SingularSimpleTypeTest(2, None, None, Some(Some(2)), Seq(3, 2), Seq(), 
           WHOLE, None, None, None, Seq(WHOLE, SKIM), Seq(),
           None, None) =>
         case _ => error("match failed: " + obj.toString)
       }
+    println(obj)
     check(obj)
     val document = toXML[SingularSimpleTypeTest](obj, "foo", defaultScope)
-    check(fromXML[SingularSimpleTypeTest](document))
+      check(fromXML[SingularSimpleTypeTest](document))
     println(document)
   }
 }

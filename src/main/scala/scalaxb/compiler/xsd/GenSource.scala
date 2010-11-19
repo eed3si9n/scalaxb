@@ -81,10 +81,19 @@ abstract class GenSource(val schema: SchemaDecl,
     val typeNames = context.typeNames(packageName(schema, context))
     val name = typeNames(schema)
     val imports = dependentSchemas map { sch =>
-      val pkg = packageName(sch, context)
-      val name = context.typeNames(pkg)(sch)
-      "import " + pkg.map(_ + ".").getOrElse("") + name + "._"
-    }
+        val pkg = packageName(sch, context)
+        val name = context.typeNames(pkg)(sch)
+        "import " + pkg.map(_ + ".").getOrElse("") + name + "._"
+      }
+    val traitSuperNames = "scalaxb.XMLStandardTypes" :: (dependentSchemas.toList map { sch =>
+        val pkg = packageName(sch, context)
+        pkg.map(_ + ".").getOrElse("") + context.typeNames(pkg)(sch)
+      })
+    val defaultTraitSuperNames =
+      List(buildDefaultProtocolName(name), "scalaxb.DefaultXMLStandardTypes") ::: (dependentSchemas.toList map { sch =>
+        val pkg = packageName(sch, context)
+        pkg.map(_ + ".").getOrElse("") + buildDefaultProtocolName(context.typeNames(pkg)(sch))
+      })
     
     def makeScopes(scope: scala.xml.NamespaceBinding): List[(Option[String], String)] =
       if (scope == null || scope.uri == null) Nil
@@ -97,23 +106,25 @@ abstract class GenSource(val schema: SchemaDecl,
     <source>/** usage:
 import scalaxb._
 import Scalaxb._
-{packageImportString}import {name}._
+{packageImportString}import Default{name}._
 
 val obj = fromXML[Foo](node)
 val document = toXML[Foo](obj, "foo", defaultScope)
 **/
-object {name} extends {name} with scalaxb.DefaultXMLStandardTypes
-trait {name} extends scalaxb.XMLStandardTypes {{
-  import scalaxb.Scalaxb._
-  
-  { if (imports.isEmpty) ""
-    else imports.mkString(newline + indent(1)) + newline }
-  val targetNamespace: Option[String] = { quote(schema.targetNamespace) }
-  val defaultScope = toScope({ if (scopes.isEmpty) "Nil: _*"
-    else scopes.map(x => quote(x._1) + " -> " + quote(x._2)).mkString("," + newline + indent(2)) })
-  
-{implicitValues}
+trait {name} extends { traitSuperNames.mkString(" with ") } {{
+{implicitValues}  
+}}
 
+object { buildDefaultProtocolName(name) } extends { defaultTraitSuperNames.mkString(" with ") } {{
+  import scalaxb.Scalaxb._
+  val defaultScope = toScope({ if (scopes.isEmpty) "Nil: _*"
+    else scopes.map(x => quote(x._1) + " -> " + quote(x._2)).mkString("," + newline + indent(2)) })  
+}}
+
+trait { buildDefaultProtocolName(name) } extends {name} {{
+  import scalaxb.Scalaxb._
+  private val targetNamespace: Option[String] = { quote(schema.targetNamespace) }
+  
 {companions}
 }}</source>
   }
@@ -137,7 +148,7 @@ trait {name} extends scalaxb.XMLStandardTypes {{
       
   def makeTrait(decl: ComplexTypeDecl): Snippet = {
     val name = buildTypeName(decl)
-    val formatterName = name + "Format"
+    val formatterName = buildFormatterName(decl.namespace, name)
     log("GenSource.makeTrait: emitting " + name)
 
     val childElements = if (decl.mixed) Nil
@@ -171,7 +182,7 @@ trait {name} extends scalaxb.XMLStandardTypes {{
     val imports = extendedSchemas map { sch =>
       val pkg = packageName(sch, context)
       val name = context.typeNames(pkg)(sch)
-      "import " + pkg.map(_ + ".").getOrElse("") + name + "._"
+      "import " + pkg.map(_ + ".").getOrElse("") + buildDefaultProtocolName(name) + "._"
     }  
     
     val traitCode = <source>{ buildComment(decl) }trait {name}{extendString} {{
@@ -182,8 +193,7 @@ trait {name} extends scalaxb.XMLStandardTypes {{
 }}</source>
     
     val compDepth = 1
-    val implicitValueCode = <source>  implicit lazy val {formatterName}: scalaxb.XMLFormat[{name}] = build{formatterName}</source>
-    val companionCode = <source>  def build{formatterName} = new scalaxb.XMLFormat[{name}] {{
+    val companionCode = <source>  override def build{formatterName} = new scalaxb.XMLFormat[{name}] {{
     { if (imports.isEmpty) ""
         else imports.mkString(newline + indent(2)) + newline + indent(2) 
     }def reads(seq: scala.xml.NodeSeq): Either[String, {name}] = seq match {{
@@ -217,13 +227,17 @@ trait {name} extends scalaxb.XMLStandardTypes {{
     
     Snippet(Seq(traitCode) ++ compositorCodes.flatMap(_.defition),
      Seq(companionCode) ++ compositorCodes.flatMap(_.companion),
-     Seq(implicitValueCode) ++ compositorCodes.flatMap(_.implicitValue))
+     Seq(makeImplicitValue(name, formatterName)) ++ compositorCodes.flatMap(_.implicitValue))
   }
-        
+  
+  def makeImplicitValue(name: String, formatterName: String) =
+    <source>  implicit lazy val {formatterName}: scalaxb.XMLFormat[{name}] = build{formatterName}
+  def build{formatterName}: scalaxb.XMLFormat[{name}]</source>
+  
   def makeCaseClassWithType(name: String, decl: ComplexTypeDecl): Snippet = {
     log("GenSource#makeCaseClassWithType: emitting " + name)
     
-    val formatterName = name + "Format"
+    val formatterName = buildFormatterName(decl.namespace, name)
     
     val primary = decl.content match {
       case ComplexContentDecl(CompContRestrictionDecl(_, x, _)) => x
@@ -338,15 +352,15 @@ trait {name} extends scalaxb.XMLStandardTypes {{
     }
     
     val groups = filterGroup(decl)
-    val companionSuperNames: List[String] = "scalaxb.ElemNameParser[" + name + "]" :: groups.map(groupTypeName(_) + "Format")
+    val companionSuperNames: List[String] = "scalaxb.ElemNameParser[" + name + "]" :: groups.map(g => 
+      buildFormatterName(g.namespace, groupTypeName(g)))
     
     val caseClassCode = <source>{ buildComment(decl) }case class {name}({paramsString}){extendString}{ if (accessors.size == 0) ""
       else " {" + newline +
         indent(1) + accessors.mkString(newline + indent(1)) + newline +
         "}" + newline }</source>
     
-    val implicitValueCode = <source>  implicit lazy val {formatterName}: scalaxb.XMLFormat[{name}] = build{formatterName}</source>
-    def companionCode = if (simpleFromXml) <source>  def build{formatterName} = new scalaxb.XMLFormat[{name}] with scalaxb.CanWriteChildNodes[{name}] {{
+    def companionCode = if (simpleFromXml) <source>  override def build{formatterName} = new scalaxb.XMLFormat[{name}] with scalaxb.CanWriteChildNodes[{name}] {{
     def reads(seq: scala.xml.NodeSeq): Either[String, {name}] = seq match {{
       case node: scala.xml.Node => Right({name}({argsString}))
       case _ => Left("reads failed: seq must be scala.xml.Node")
@@ -354,7 +368,7 @@ trait {name} extends scalaxb.XMLStandardTypes {{
     
 {makeWritesAttribute}{makeWritesChildNodes}
   }}</source>
-    else <source>  def build{formatterName} = new {companionSuperNames.mkString(" with ")} {{
+    else <source>  override def build{formatterName} = new {companionSuperNames.mkString(" with ")} {{
     { if (decl.isNamed) "override def typeName: Option[String] = Some(" + quote(decl.name) + ")" + newline + newline + indent(2)  
       else ""
     }{ if (decl.mixed) "override def isMixed: Boolean = true" + newline + newline + indent(2)
@@ -376,7 +390,7 @@ trait {name} extends scalaxb.XMLStandardTypes {{
     
     Snippet(Seq(caseClassCode) ++ compositorCodes.flatMap(_.defition),
       Seq(companionCode) ++ compositorCodes.flatMap(_.companion),
-      Seq(implicitValueCode) ++ compositorCodes.flatMap(_.implicitValue))
+      Seq(makeImplicitValue(name, formatterName)) ++ compositorCodes.flatMap(_.implicitValue))
   }
     
   def buildComment(p: Product) = p match {
@@ -409,7 +423,7 @@ trait {name} extends scalaxb.XMLStandardTypes {{
   
   def makeSequence(seq: SequenceDecl): Snippet = {
     val name = makeTypeName(context.compositorNames(seq))
-    val formatterName = name + "Format"
+    val formatterName = buildFormatterName(schema.targetNamespace, name)
     
     val particles = flattenElements(schema.targetNamespace, name, seq)
     val paramList = particles.map { buildParam }
@@ -430,22 +444,20 @@ trait {name} extends scalaxb.XMLStandardTypes {{
     val superString = if (superNames.isEmpty) ""
       else " extends " + superNames.mkString(" with ")
     
-    val implicitValueCode = <source>  implicit lazy val {formatterName}: scalaxb.XMLFormat[{name}] = build{formatterName}</source>
-    
     Snippet(<source>{ buildComment(seq) }case class {name}({paramsString}){superString}</source>,
-     <source>  def build{formatterName} = new scalaxb.XMLFormat[{name}] {{
+     <source>  override def build{formatterName} = new scalaxb.XMLFormat[{name}] {{
     def reads(seq: scala.xml.NodeSeq): Either[String, {name}] = Left("don't call me.")
     
 {makeWritesXML}
   }}</source>,
-      implicitValueCode)
+      makeImplicitValue(name, formatterName))
   }
     
   def makeGroup(group: GroupDecl): Snippet = {
     val compositors = context.compositorParents.filter(
       x => x._2 == makeGroupComplexType(group)).keysIterator.toList
     val name = makeTypeName(context.compositorNames(group))
-    val formatterName = name + "Format"
+    val formatterName = buildFormatterName(group.namespace, name)
       
     val compositor = primaryCompositor(group)
     val param = buildParam(compositor)
@@ -467,7 +479,7 @@ trait {name} extends scalaxb.XMLStandardTypes {{
     val groups = filterGroup(compositor)
     val superNames: List[String] = 
       if (groups.isEmpty) List("scalaxb.AnyElemNameParser")
-      else groups.map(groupTypeName(_) + "Format")
+      else groups.map { g => buildFormatterName(g.namespace, groupTypeName(g)) }
     
     val companionCode = <source>{ buildComment(group) }  trait {formatterName} extends {superNames.mkString(" with ")} {{  
     def parse{name}: Parser[{param.baseTypeName}] =
@@ -488,7 +500,7 @@ trait {name} extends scalaxb.XMLStandardTypes {{
   
   def makeAttributeGroup(group: AttributeGroupDecl): Snippet = {
     val name = buildTypeName(group)
-    val formatterName = name + "Format"
+    val formatterName = buildFormatterName(group.namespace, name)
         
     val attributes = buildAttributes(group.attributes)  
     val paramList = attributes.map { buildParam }
@@ -516,7 +528,7 @@ trait {name} extends scalaxb.XMLStandardTypes {{
   
   def makeEnumType(decl: SimpleTypeDecl) = {
     val name = buildTypeName(decl)
-    val formatterName = name + "Format"
+    val formatterName = buildFormatterName(decl.namespace, name)
     val enums = filterEnumeration(decl)
     
     def makeEnum(enum: EnumerationDecl) =
@@ -546,9 +558,7 @@ object {name} {{
 
 { enumString }</source>
     }  // match
-    
-    val implicitValueCode = <source>  implicit lazy val {formatterName}: scalaxb.XMLFormat[{name}] = build{formatterName}</source>
-    
+        
     Snippet(traitCode,
       <source>  def build{formatterName} = new scalaxb.XMLFormat[{name}] {{
     def reads(seq: scala.xml.NodeSeq): Either[String, {name}] = Right({name}.fromString(seq.text))
@@ -559,7 +569,7 @@ object {name} {{
         __elementLabel getOrElse {{ error("missing element label.") }},
         scala.xml.Null, __scope, scala.xml.Text(__obj.toString))
   }}</source>,
-      implicitValueCode)
+      makeImplicitValue(name, formatterName))
   }
         
   def flattenSuperNames(decl: ComplexTypeDecl): List[String] = 

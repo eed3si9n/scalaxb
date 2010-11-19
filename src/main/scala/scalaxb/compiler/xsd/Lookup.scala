@@ -199,6 +199,20 @@ trait Lookup extends ContextProcessor {
     }    
   }
   
+  def buildFormatterName(namespace: Option[String], name: String): String = {
+    val pkg = packageName(namespace, context) getOrElse {""}
+    val lastPart = pkg.split('.').reverse.head
+    
+    lastPart.capitalize + name + "Format"
+  }
+  
+  def buildDefaultProtocolName(name: String): String = {
+    config.classPrefix match {
+      case Some(p) => p + "Default" + name.drop(p.length)
+      case None => "Default" + name
+    }
+  }
+  
   def baseType(decl: SimpleTypeDecl): BuiltInSimpleTypeSymbol = decl.content match {
     case SimpTypRestrictionDecl(base: BuiltInSimpleTypeSymbol, _) => base
     case SimpTypRestrictionDecl(ReferenceTypeSymbol(decl2@SimpleTypeDecl(_, _, _, _, _)), _) => baseType(decl2)

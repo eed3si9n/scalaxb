@@ -100,8 +100,8 @@ trait XMLOutput extends Args {
   }
   
   def buildAttributeString(group: AttributeGroupDecl): String =
-    "attr = " + buildParam(group).baseTypeName + "Format" + ".toAttribute(__obj." + makeParamName(buildParam(group).name) +
-    ", attr, __scope)"
+    "attr = " + buildFormatterName(group.namespace, buildParam(group).baseTypeName) + 
+    ".toAttribute(__obj." + makeParamName(buildParam(group).name) + ", attr, __scope)"
     
   def buildToString(selector: String, typeSymbol: XsTypeSymbol): String = typeSymbol match {
     case symbol: BuiltInSimpleTypeSymbol if (buildTypeName(symbol) == "java.util.GregorianCalendar") ||

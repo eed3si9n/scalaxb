@@ -240,7 +240,7 @@ trait Args extends Params {
     buildSelector(pos) + ".toList"
     
   def buildAttributeGroupArg(group: AttributeGroupDecl): String = {
-    val formatterName = buildTypeName(group) + "Format"
+    val formatterName = buildFormatterName(group.namespace, buildTypeName(group))
     formatterName + ".reads(node).right.get"
   }
   

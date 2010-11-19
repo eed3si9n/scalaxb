@@ -368,7 +368,7 @@ trait ContextProcessor extends ScalaNames with PackageName {
   }
   
   def makeProtectedTypeName(schema: SchemaDecl, context: XsdContext): String =
-    makeProtectedTypeName(schema.targetNamespace, "DefaultXMLProtocol", "", context)
+    makeProtectedTypeName(schema.targetNamespace, "XMLProtocol", "", context)
   
   def makeProtectedTypeName(namespace: Option[String], elem: ElemDecl, context: XsdContext): String =
     makeProtectedTypeName(elem.namespace orElse namespace, elem.name, "", context)

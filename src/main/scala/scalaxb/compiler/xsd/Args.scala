@@ -66,17 +66,30 @@ trait Args extends Params {
     
     retval
   }
-   
+      
   def buildArg(decl: Decl): String = decl match {
     case elem: ElemDecl        => buildArg(elem, 0)
-    case attr: AttributeDecl   => buildArg(attr)
+    case attr: AttributeDecl   => buildArg(attr, buildSelector(attr), false)
     case ref: AttributeRef     => buildArg(buildAttribute(ref))
     case group: AttributeGroupDecl => buildAttributeGroupArg(group)
     case _ => error("GenSource#buildArg unsupported delcaration " + decl.toString)
   }
   
+  def buildArgForAttribute(decl: AttributeLike, longAttribute: Boolean): String =
+    if (longAttribute) {
+      decl match {
+        case attr: AttributeDecl   => 
+          val o = attr.copy(use = OptionalUse)
+          val arg = buildArg(o, buildSelector(o), longAttribute)
+          if (longAttribute) arg + " map { " + quote(buildNodeName(o)) + " -> _ }"
+          else arg
+        case ref: AttributeRef     => buildArgForAttribute(buildAttribute(ref), longAttribute)
+        case group: AttributeGroupDecl => buildAttributeGroupArg(group)
+      }
+    } else buildArg(decl)
+    
   def toOptional(that: ElemDecl) = that.copy(minOccurs = 0, annotation = None)
-
+    
   // called by makeCaseClassWithType. By spec, <all> contains only elements.
   def buildArgForAll(particle: Particle, longAll: Boolean): String = {
     val o = particle match {
@@ -123,14 +136,12 @@ trait Args extends Params {
             symbol.toString + " with " + symbol.decl.toString)
       case _ => error("GenSource#buildArg: " + elem.toString + " Invalid type " + elem.typeSymbol.getClass.toString + ": " + elem.typeSymbol.toString)    
     }
-      
-  def buildArg(attr: AttributeDecl): String = attr.typeSymbol match {
-    case symbol: BuiltInSimpleTypeSymbol => buildArg(buildTypeName(symbol), buildSelector(attr), 
-      toCardinality(toMinOccurs(attr), 1), false, attr.defaultValue, attr.fixedValue) 
-    case ReferenceTypeSymbol(decl: SimpleTypeDecl) =>
-      buildArg(decl, buildSelector(attr), attr.defaultValue, attr.fixedValue,
-        toCardinality(toMinOccurs(attr), 1), false, false)
-    
+  
+  def buildArg(attr: AttributeDecl, selector: String, wrapForLong: Boolean): String = attr.typeSymbol match {
+    case symbol: BuiltInSimpleTypeSymbol => buildArg(buildTypeName(symbol), selector, 
+      toCardinality(attr), false, attr.defaultValue, attr.fixedValue, wrapForLong) 
+    case ReferenceTypeSymbol(decl: SimpleTypeDecl) => buildArg(decl, selector, attr.defaultValue, attr.fixedValue,
+      toCardinality(attr), false, wrapForLong)
     case ReferenceTypeSymbol(decl: ComplexTypeDecl) => error("Args: Attribute with complex type " + decl.toString)
     case _ => error("Args: unsupported type: " + attr.typeSymbol)
   }
@@ -159,25 +170,22 @@ trait Args extends Params {
     if (elem.namespace == schema.targetNamespace) elem.name
     else (elem.namespace map { "{" + _ + "}" } getOrElse { "" }) + elem.name
   
+  def buildNodeName(attr: AttributeDecl): String =
+    if (attr.global) "@" + (attr.namespace map { "{" + _ + "}" } getOrElse { "" }) + attr.name
+    else "@" + attr.name
+  
   def buildSelector(elem: ElemDecl): String = buildSelector(buildNodeName(elem))
-  
-  def buildSelector(pos: Int): String =
-    "p" + (pos + 1)
-  
-  def buildSelector(attr: AttributeDecl): String =
-    if (attr.global) buildSelector("@" +
-      (attr.namespace map { "{" + _ + "}" } getOrElse { "" }) + attr.name)
-    else buildSelector("@" + attr.name)
-
+  def buildSelector(pos: Int): String = "p" + (pos + 1)
+  def buildSelector(attr: AttributeDecl): String = buildSelector(buildNodeName(attr))
   def buildSelector(nodeName: String): String = "(node \\ \"" + nodeName + "\")"
   
-  def buildArgForAnyAttribute(parent: ComplexTypeDecl): String =
-    buildArgForAnyAttribute(flattenAttributes(parent))
+  def buildArgForAnyAttribute(parent: ComplexTypeDecl, longAttribute: Boolean): String =
+    buildArgForAnyAttribute(flattenAttributes(parent), longAttribute)
   
-  def buildArgForAnyAttribute(parent: AttributeGroupDecl): String =
-    buildArgForAnyAttribute(flattenAttributes(parent.attributes))
+  def buildArgForAnyAttribute(parent: AttributeGroupDecl, longAttribute: Boolean): String =
+    buildArgForAnyAttribute(flattenAttributes(parent.attributes), longAttribute)
   
-  def buildArgForAnyAttribute(attributes: List[AttributeLike]): String = {
+  def buildArgForAnyAttribute(attributes: List[AttributeLike], longAttribute: Boolean): String = {
     def makeCaseEntry(attr: AttributeDecl) = if (attr.global)
       "case scala.xml.PrefixedAttribute(pre, key, value, _) if pre == elem.scope.getPrefix(" +
         (attr.namespace map { quote(_) } getOrElse { "null" }) + ") &&" + newline +

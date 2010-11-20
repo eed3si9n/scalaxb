@@ -157,7 +157,7 @@ trait { buildDefaultProtocolName(name) } extends {name} {{
     val paramList = list.map { buildParam }
     val defaultType = makeProtectedTypeName(schema.targetNamespace, decl, context)    
     val argList = list map {
-      case any: AnyAttributeDecl => buildArgForAnyAttribute(decl)
+      case any: AnyAttributeDecl => buildArgForAnyAttribute(decl, false)
       case x => buildArg(x)
     }
     val superNames = buildSuperNames(decl)
@@ -254,8 +254,10 @@ trait { buildDefaultProtocolName(name) } extends {name} {{
     val childElements = if (decl.mixed) flattenMixed(decl)
       else flatParticles 
     val attributes = buildAttributes(decl)    
-    val list = List.concat[Decl](childElements, attributes)
-    
+    val longAttribute = (attributes.size + childElements.size > MaxParticleSize &&
+      childElements.size + 1 <= MaxParticleSize)
+    val list = if (longAttribute) List.concat[Decl](childElements, List(buildLongAttributeRef))
+      else List.concat[Decl](childElements, attributes)
     if (list.size > 22) error("A case class with > 22 parameters cannot be created: " +
       name + ": " + decl)
     
@@ -283,31 +285,24 @@ trait { buildDefaultProtocolName(name) } extends {name} {{
         case _ => (0 to flatParticles.size - 1).toList map { i => buildArg(flatParticles(i), i) }
       }
     
-    val accessors = primary match {
-      case Some(all: AllDecl) if longAll => generateAccessors(all)
-      case _ => generateAccessors(paramList, splitSequences(decl))
-    }
+    val accessors = (primary match {
+        case Some(all: AllDecl) if longAll => generateAccessors(all)
+        case _ => generateAccessors(paramList, splitSequences(decl))
+      }) ::: (if (longAttribute) generateAccessors(attributes) else Nil)
     log("GenSource#makeCaseClassWithType: generateAccessors " + accessors)
-      
-    var attributeArgs = attributes map {
-      case any: AnyAttributeDecl => buildArgForAnyAttribute(decl)
-      case x => buildArg(x) 
-    }
-    
+        
     val compositors = context.compositorParents.filter(
       x => x._2 == decl).keysIterator.toList
         
     val extendString = if (superNames.isEmpty) ""
       else " extends " + superNames.mkString(" with ")
     
-    val hasSequenceParam = (paramList.size == 1) &&
-      (paramList.head.cardinality == Multiple) &&
-      (!paramList.head.attribute) &&
-      (!decl.mixed)
+    val hasSequenceParam = (paramList.size == 1) && (paramList.head.cardinality == Multiple) &&
+      (!paramList.head.attribute) && (!decl.mixed) && (!longAll)
     
     def paramsString = if (hasSequenceParam)
-      makeParamName(paramList.head.name) + ": " + buildTypeName(paramList.head.typeSymbol) + "*"      
-    else paramList.map(_.toScalaCode).mkString("," + newline + indent(1))
+        makeParamName(paramList.head.name) + ": " + buildTypeName(paramList.head.typeSymbol) + "*"      
+      else paramList.map(_.toScalaCode).mkString("," + newline + indent(1))
     
     val simpleFromXml: Boolean = if (flatParticles.isEmpty && !decl.mixed) true
       else (decl.content, primary) match {
@@ -315,24 +310,34 @@ trait { buildDefaultProtocolName(name) } extends {name} {{
         case (_, Some(all: AllDecl)) => true
         case _ => false
       }
+    
+    def argsString = if (hasSequenceParam) particleArgs.head + ": _*"
+      else {
+        val particleString = if (decl.mixed) "Seq.concat(" + particleArgs.mkString("," + newline + indent(4)) + ")"
+          else if (longAll) "scala.collection.immutable.ListMap(List(" + newline + 
+              indent(4) + particleArgs.mkString("," + newline + indent(4)) + ").flatten[(String, scalaxb.DataRecord[Any])]: _*)"
+          else decl.content.content match {
+            case SimpContRestrictionDecl(base: XsTypeSymbol, _, _) =>
+              buildArg(decl.content.asInstanceOf[SimpleContentDecl], base)
+            case SimpContExtensionDecl(base: XsTypeSymbol, _) =>
+              buildArg(decl.content.asInstanceOf[SimpleContentDecl], base)
+            case _ => particleArgs.mkString("," + newline + indent(4))
+          }
+          
+        val attributeArgs = attributes map {
+            case any: AnyAttributeDecl => buildArgForAnyAttribute(decl, longAttribute)
+            case x => buildArgForAttribute(x, longAttribute) 
+        }
         
-    def argsString = if (decl.mixed)
-      "Seq.concat(" + particleArgs.mkString("," + newline + indent(4)) + ")" +
-        (if (attributeArgs.isEmpty) ""
-        else "," + newline + indent(4) + attributeArgs.mkString("," + newline + indent(4)))
-    else if (longAll) "scala.collection.immutable.ListMap(List(" + newline + 
-        indent(4) + particleArgs.mkString("," + newline + indent(4)) + ").flatten[(String, scalaxb.DataRecord[Any])]: _*)" +
-        (if (attributeArgs.isEmpty) ""
-        else "," + newline + indent(4) + attributeArgs.mkString("," + newline + indent(4)))
-    else if (hasSequenceParam) particleArgs.head + ": _*"
-    else decl.content.content match {
-      case SimpContRestrictionDecl(base: XsTypeSymbol, _, _) =>
-        (buildArg(decl.content.asInstanceOf[SimpleContentDecl], base) :: attributeArgs).mkString("," + newline + indent(4))
-      case SimpContExtensionDecl(base: XsTypeSymbol, _) =>
-        (buildArg(decl.content.asInstanceOf[SimpleContentDecl], base) :: attributeArgs).mkString("," + newline + indent(4))
-      case _ =>
-        (particleArgs ::: attributeArgs).mkString("," + newline + indent(4))
-    }
+        val attributeString = if (attributes.isEmpty) ""
+            else if (longAttribute) "scala.collection.immutable.ListMap(List(" + newline + 
+                indent(4) + attributeArgs.mkString("," + newline + indent(4)) + ").flatten[(String, scalaxb.DataRecord[Any])]: _*)"
+            else attributeArgs.mkString("," + newline + indent(4))
+        
+        if (!particleString.isEmpty && !attributeString.isEmpty) particleString + "," + newline +
+          indent(4) + attributeString
+        else particleString + attributeString
+      }
     
     val childElemParams = paramList.filter(!_.attribute)
     
@@ -505,7 +510,7 @@ trait { buildDefaultProtocolName(name) } extends {name} {{
     val attributes = buildAttributes(group.attributes)  
     val paramList = attributes.map { buildParam }
     val argList = attributes map {
-        case any: AnyAttributeDecl => buildArgForAnyAttribute(group)
+        case any: AnyAttributeDecl => buildArgForAnyAttribute(group, false)
         case x => buildArg(x) 
       }
     val paramsString = paramList.map(
@@ -781,6 +786,28 @@ object {name} {{
           wrapperName + ".get(" +  quote(buildNodeName(elem)) + ") map { _.as[" + buildTypeName(elem.typeSymbol) + "] }"
         case _        => "def " + makeParamName(elem.name) + " = " + 
           wrapperName + "(" +  quote(buildNodeName(elem)) + ").as[" + buildTypeName(elem.typeSymbol) + "]"
+      }
+    }
+  }
+  
+  def generateAccessors(attributes: List[AttributeLike]): List[String] = {
+    val wrapperName = makeParamName("attributes")
+    
+    attributes collect {
+      case attr: AttributeDecl   => (attr, toCardinality(attr))
+      case ref: AttributeRef     =>
+        val attr = buildAttribute(ref)
+        (attr, toCardinality(attr))
+      case group: AttributeGroupDecl => (group, Single)
+    } map { _ match {
+        case (attr: AttributeDecl, Optional) => "def " + makeParamName(attr.name) + " = " + 
+          wrapperName + ".get(" +  quote(buildNodeName(attr)) + ") map { _.as[" + buildTypeName(attr.typeSymbol) + "] }"
+        case (attr: AttributeDecl, Single) => "def " + makeParamName(attr.name) + " = " + 
+          wrapperName + "(" +  quote(buildNodeName(attr)) + ").as[" + buildTypeName(attr.typeSymbol) + "]"
+        case (group: AttributeGroupDecl, Optional) => "def " + makeParamName(group.name) + " = " + 
+          wrapperName + ".get(" +  quote(group.name) + ") map { _.as[" + buildTypeName(group) + "] }"
+        case (group: AttributeGroupDecl, Single) => "def " + makeParamName(group.name) + " = " + 
+          wrapperName + "(" +  quote(group.name) + ").as[" + buildTypeName(group) + "]"
       }
     }
   }

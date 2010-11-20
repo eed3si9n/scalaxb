@@ -45,6 +45,13 @@ trait Params extends Lookup {
   def toCardinality(occurrence: Occurrence): Cardinality =
     toCardinality(occurrence.minOccurs, occurrence.maxOccurs)
   
+  def toCardinality(attr: AttributeDecl): Cardinality = {
+    val minOccurs = if (attr.use == RequiredUse || 
+        attr.fixedValue.isDefined || attr.defaultValue.isDefined) 1
+      else 0
+    toCardinality(minOccurs, 1)
+  }
+  
   case class Param(namespace: Option[String],
     name: String,
     typeSymbol: XsTypeSymbol,
@@ -97,13 +104,10 @@ trait Params extends Lookup {
   }
   
   def buildParam(attr: AttributeDecl): Param = {
-    val cardinality = if (toMinOccurs(attr) == 0) Optional
-    else Single
     val name = if (!attr.global) attr.name
-    else Option[String](schema.scope.getPrefix(attr.namespace.orNull)).
-      getOrElse("") + attr.name
+      else Option[String](schema.scope.getPrefix(attr.namespace.orNull)).getOrElse("") + attr.name
     
-    val retval = Param(attr.namespace, name, attr.typeSymbol, cardinality, false, true)
+    val retval = Param(attr.namespace, name, attr.typeSymbol, toCardinality(attr), false, true)
     log("GenSource#buildParam:  " + retval)
     retval
   }
@@ -141,12 +145,6 @@ trait Params extends Lookup {
   
   def buildParam(any: AnyAttributeDecl): Param =
     Param(None, ANY_ATTR_PARAM, XsAnyAttribute, Multiple, false, true)
-
-  def toMinOccurs(attr: AttributeDecl) = 
-    if (attr.use == RequiredUse ||
-      attr.fixedValue.isDefined ||
-      attr.defaultValue.isDefined) 1
-    else 0
   
   def primaryCompositor(group: GroupDecl): HasParticle =
     if (group.particles.size == 1) group.particles(0) match {
@@ -194,6 +192,9 @@ trait Params extends Lookup {
   
   def buildLongAllRef(all: AllDecl) =
     ElemDecl(Some(INTERNAL_NAMESPACE), "all", XsLongAll, None, None, 1, 1, None, None, None)
+  
+  def buildLongAttributeRef =
+    ElemDecl(Some(INTERNAL_NAMESPACE), "attributes", XsLongAttribute, None, None, 1, 1, None, None, None)
   
   def buildAnyRef(any: AnyDecl) = {
     anyNumber += 1

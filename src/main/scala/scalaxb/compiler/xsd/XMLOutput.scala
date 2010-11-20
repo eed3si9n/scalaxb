@@ -84,8 +84,8 @@ trait XMLOutput extends Args {
     val namespaceString = if (attr.global) "__scope.getPrefix(" + quote(attr.namespace.orNull) + ")"
       else "null"
     val name = "__obj." + makeParamName(buildParam(attr).name)
-        
-    if (toMinOccurs(attr) == 0)
+    
+    if (toCardinality(attr) == Optional)
       name + " foreach { x => attr = scala.xml.Attribute(" + namespaceString + ", " + quote(attr.name) +
         ", " + buildToString("x", attr.typeSymbol) + ", attr) }"
     else attr.defaultValue match {

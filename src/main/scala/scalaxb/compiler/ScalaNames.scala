@@ -31,6 +31,7 @@ trait ScalaNames {
     | "ArrayBuffer"
     | "ArraySeq"
     | "ArrayStack"
+    | "Attributes"
     | "BigDecimal"
     | "BigInt"
     | "BitSet"

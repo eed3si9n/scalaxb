@@ -40,6 +40,10 @@ object XsLongAll extends XsTypeSymbol {
   val name = "XsLongAll"
 }
 
+object XsLongAttribute extends XsTypeSymbol {
+  val name = "XsLongAttribute"
+}
+
 object XsAnySimpleType extends XsTypeSymbol {
   val name = "XsAnySimpleType"
 }

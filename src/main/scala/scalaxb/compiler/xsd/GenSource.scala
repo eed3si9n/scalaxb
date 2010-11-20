@@ -230,9 +230,16 @@ trait { buildDefaultProtocolName(name) } extends {name} {{
      Seq(makeImplicitValue(name, formatterName)) ++ compositorCodes.flatMap(_.implicitValue))
   }
   
-  def makeImplicitValue(name: String, formatterName: String) =
+  def makeImplicitValue(name: String, formatterName: String): Node =
     <source>  implicit lazy val {formatterName}: scalaxb.XMLFormat[{name}] = build{formatterName}
   def build{formatterName}: scalaxb.XMLFormat[{name}]</source>
+  
+  def makeImplicitValue(group: AttributeGroupDecl): Node = {
+    val name = buildTypeName(group)
+    val formatterName = buildFormatterName(group.namespace, name)
+    <source>  implicit lazy val {formatterName}: scalaxb.AttributeGroupFormat[{name}] = build{formatterName}
+  def build{formatterName}: scalaxb.AttributeGroupFormat[{name}]</source>
+  }
   
   def makeCaseClassWithType(name: String, decl: ComplexTypeDecl): Snippet = {
     log("GenSource#makeCaseClassWithType: emitting " + name)
@@ -518,17 +525,23 @@ trait { buildDefaultProtocolName(name) } extends {name} {{
     val argsString = argList.mkString("," + newline + indent(3))  
     val attributeString = attributes.map(x => buildAttributeString(x)).mkString(newline + indent(2))
     
-    Snippet(<source>{ buildComment(group) }case class {name}({paramsString})</source>,
-     <source>  object {formatterName} {{
-    def reads(node: scala.xml.Node): Either[String, {name}] =
-      Right({name}({argsString}))
-  
-    def toAttribute(__obj: {name}, __attr: scala.xml.MetaData, __scope: scala.xml.NamespaceBinding) = {{
+    val caseClassCode = <source>{ buildComment(group) }case class {name}({paramsString})</source>
+    val companionCode = <source>  override def build{formatterName} = new scalaxb.AttributeGroupFormat[{name}] {{
+    def reads(seq: scala.xml.NodeSeq): Either[String, {name}] = seq match {{
+      case node: scala.xml.Node => Right({name}({argsString}))
+      case _ => Left("reads failed: seq must be scala.xml.Node")
+    }}
+    
+    def toAttribute(__obj: {name}, __attr: scala.xml.MetaData, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {{
       var attr: scala.xml.MetaData  = __attr
       {attributeString}
       attr
-    }} 
-  }}</source>)
+    }}
+  }}</source>
+    
+    Snippet(Seq(caseClassCode),
+      Seq(companionCode),
+      Seq(makeImplicitValue(group)))
   }
   
   def makeEnumType(decl: SimpleTypeDecl) = {
@@ -805,9 +818,9 @@ object {name} {{
         case (attr: AttributeDecl, Single) => "def " + makeParamName(attr.name) + " = " + 
           wrapperName + "(" +  quote(buildNodeName(attr)) + ").as[" + buildTypeName(attr.typeSymbol) + "]"
         case (group: AttributeGroupDecl, Optional) => "def " + makeParamName(group.name) + " = " + 
-          wrapperName + ".get(" +  quote(group.name) + ") map { _.as[" + buildTypeName(group) + "] }"
+          wrapperName + ".get(" +  quote(buildNodeName(group)) + ") map { _.as[" + buildTypeName(group) + "] }"
         case (group: AttributeGroupDecl, Single) => "def " + makeParamName(group.name) + " = " + 
-          wrapperName + "(" +  quote(group.name) + ").as[" + buildTypeName(group) + "]"
+          wrapperName + "(" +  quote(buildNodeName(group)) + ").as[" + buildTypeName(group) + "]"
       }
     }
   }

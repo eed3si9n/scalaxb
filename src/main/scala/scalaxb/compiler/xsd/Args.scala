@@ -71,7 +71,7 @@ trait Args extends Params {
     case elem: ElemDecl        => buildArg(elem, 0)
     case attr: AttributeDecl   => buildArg(attr, buildSelector(attr), false)
     case ref: AttributeRef     => buildArg(buildAttribute(ref))
-    case group: AttributeGroupDecl => buildAttributeGroupArg(group)
+    case group: AttributeGroupDecl => buildAttributeGroupArg(group, false)
     case _ => error("GenSource#buildArg unsupported delcaration " + decl.toString)
   }
   
@@ -84,7 +84,7 @@ trait Args extends Params {
           if (longAttribute) arg + " map { " + quote(buildNodeName(o)) + " -> _ }"
           else arg
         case ref: AttributeRef     => buildArgForAttribute(buildAttribute(ref), longAttribute)
-        case group: AttributeGroupDecl => buildAttributeGroupArg(group)
+        case group: AttributeGroupDecl => buildAttributeGroupArg(group, longAttribute)
       }
     } else buildArg(decl)
     
@@ -168,11 +168,15 @@ trait Args extends Params {
   
   def buildNodeName(elem: ElemDecl): String =
     if (elem.namespace == schema.targetNamespace) elem.name
-    else (elem.namespace map { "{" + _ + "}" } getOrElse { "" }) + elem.name
+    else (elem.namespace map { "{" + _ + "}" } getOrElse {""}) + elem.name
   
   def buildNodeName(attr: AttributeDecl): String =
-    if (attr.global) "@" + (attr.namespace map { "{" + _ + "}" } getOrElse { "" }) + attr.name
+    if (attr.global) "@" + (attr.namespace map { "{" + _ + "}" } getOrElse {""}) + attr.name
     else "@" + attr.name
+  
+  def buildNodeName(group: AttributeGroupDecl): String = 
+    if (group.namespace == schema.targetNamespace) group.name
+    else (group.namespace map { "{" + _ + "}" } getOrElse {""}) + group.name
   
   def buildSelector(elem: ElemDecl): String = buildSelector(buildNodeName(elem))
   def buildSelector(pos: Int): String = "p" + (pos + 1)
@@ -247,9 +251,12 @@ trait Args extends Params {
   def buildArgForOptTextRecord(pos: Int): String =
     buildSelector(pos) + ".toList"
     
-  def buildAttributeGroupArg(group: AttributeGroupDecl): String = {
+  def buildAttributeGroupArg(group: AttributeGroupDecl, longAttribute: Boolean): String = {
     val formatterName = buildFormatterName(group.namespace, buildTypeName(group))
-    formatterName + ".reads(node).right.get"
+    val arg = formatterName + ".reads(node).right"
+    if (longAttribute) arg + ".toOption map { x => " + 
+      quote(buildNodeName(group)) + " -> scalaxb.DataRecord(None, None, x) }"
+    else arg + ".get"
   }
   
   def flattenAttributes(decl: ComplexTypeDecl): List[AttributeLike] =

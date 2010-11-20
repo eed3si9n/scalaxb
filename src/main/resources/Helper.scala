@@ -620,6 +620,13 @@ trait CanWriteChildNodes[A] extends CanWriteXML[A] {
       writesChildNodes(obj, scope): _*)  
 }
 
+trait AttributeGroupFormat[A] extends scalaxb.XMLFormat[A] {
+  def writes(__obj: A, __namespace: Option[String], __elementLabel: Option[String],
+    __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq = error("don't call me.")
+  
+  def toAttribute(__obj: A, __attr: scala.xml.MetaData, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData
+}
+
 trait ElemNameParser[A] extends AnyElemNameParser with XMLFormat[A] with CanWriteChildNodes[A] {
   def reads(seq: scala.xml.NodeSeq): Either[String, A] = seq match {
     case node: scala.xml.Node =>
@@ -683,6 +690,8 @@ class ElemNameSeqPosition(val source: Seq[ElemName], val offset: Int) extends
   override def line = 1
   override def column = offset + 1
 }
+
+
 
 class HexBinary(_length: Int) extends scala.collection.IndexedSeq[Byte] {
   private var array = new Array[Byte](_length)

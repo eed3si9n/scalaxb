@@ -159,7 +159,19 @@
       <xs:attribute name="string28" type="xs:string"/>
       <xs:attribute name="string29" type="xs:string"/>
       <xs:attribute name="string30" type="xs:string"/>
+      <xs:attributeGroup ref="coreattrs"/>
     </xs:complexType>
   </xs:element>
+  
+  <xs:attributeGroup name="coreattrs">
+    <xs:annotation>
+      <xs:documentation>
+      core attributes common to most elements
+      id       document-wide unique id
+      </xs:documentation>
+    </xs:annotation>
+    <xs:attribute name="id" type="xs:ID"/>
+    <xs:attribute name="class" type="xs:NMTOKENS"/>
+  </xs:attributeGroup>
 </xs:schema>
 

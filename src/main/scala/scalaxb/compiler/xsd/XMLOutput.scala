@@ -77,8 +77,8 @@ trait XMLOutput extends Args {
   }
   
   def buildAttributeString(any: AnyAttributeDecl): String =
-    "__obj." + makeParamName(ANY_ATTR_PARAM) + ".foreach { x =>" + newline +
-    indent(4) + "attr = scala.xml.Attribute((x.namespace map { __scope.getPrefix(_) }).orNull, x.key.orNull, x.value, attr) }"
+    "__obj." + makeParamName(ATTRS_PARAM) + ".toList map {" + newline +
+    indent(4) + "case (key, x) => attr = scala.xml.Attribute((x.namespace map { __scope.getPrefix(_) }).orNull, x.key.orNull, x.value.toString, attr) }"
     
   def buildAttributeString(attr: AttributeDecl): String = {
     val namespaceString = if (attr.global) "__scope.getPrefix(" + quote(attr.namespace.orNull) + ")"

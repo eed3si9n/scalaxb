@@ -48,9 +48,11 @@ trait Args extends Params {
     def fromU = buildFromXML(typeName, "_")
     def fromValue(x: String) = buildFromXML(typeName, "scala.xml.Text(" + quote(x) + ")")
     
-    val retval = if (wrapForLongAll)
-      selector + ".headOption map { x => scalaxb.DataRecord(x, " + buildFromXML(typeName, "x") + ") }"
-    else (cardinality, nillable) match {
+    val retval = if (wrapForLongAll) {
+      // PrefixedAttribute only contains pre, so you need to pass in node to get the namespace.
+      if (selector.contains("@")) selector + ".headOption map { x => scalaxb.DataRecord(x, node, " + buildFromXML(typeName, "x") + ") }"
+      else selector + ".headOption map { x => scalaxb.DataRecord(x, " + buildFromXML(typeName, "x") + ") }"
+    } else (cardinality, nillable) match {
       case (Multiple, true)  => selector + ".toSeq map { _.nilOption map { " + fromU + " }}"
       case (Multiple, false) => selector + ".toSeq map { " + fromU + " }"
       case (Optional, true)  => selector + ".headOption map { _.nilOption map { " + fromU + " }}"
@@ -194,23 +196,26 @@ trait Args extends Params {
       "case scala.xml.PrefixedAttribute(pre, key, value, _) if pre == elem.scope.getPrefix(" +
         (attr.namespace map { quote(_) } getOrElse { "null" }) + ") &&" + newline +
       indent(8) + "key == " + quote(attr.name) + " => Nil"
-    else
-      "case scala.xml.UnprefixedAttribute(key, value, _) if key == " + quote(attr.name) + " => Nil"
+    else "case scala.xml.UnprefixedAttribute(key, value, _) if key == " + quote(attr.name) + " => Nil"
     
-    "node match {" + newline +
+    val xs = "node match {" + newline +
     indent(5) + "case elem: scala.xml.Elem =>" + newline +
-    indent(5) + "  (elem.attributes.toList) flatMap {" + newline +
+    indent(5) + "  elem.attributes.toList flatMap {" + newline +
     attributes.collect {
       case x: AttributeDecl => makeCaseEntry(x)
     }.mkString(indent(7), newline + indent(7), newline) +
     indent(5) + "    case scala.xml.UnprefixedAttribute(key, value, _) =>" + newline +
-    indent(5) + "      List(scalaxb.DataRecord(None, Some(key), value.text))" + newline +
+    indent(5) + "      List((\"@\" + key, scalaxb.DataRecord(None, Some(key), value.text)))" + newline +
     indent(5) + "    case scala.xml.PrefixedAttribute(pre, key, value, _) =>" + newline +
-    indent(5) + "      List(scalaxb.DataRecord(Option[String](elem.scope.getURI(pre)), Some(key), value.text))" + newline +
+    indent(5) + "      val ns = elem.scope.getURI(pre)" + newline +
+    indent(5) + "      List((\"@{\" + ns + \"}\" + key, scalaxb.DataRecord(Option[String](ns), Some(key), value.text)))" + newline +
     indent(5) + "    case _ => Nil" + newline +
     indent(5) + "  }" + newline +
     indent(5) + "case _ => Nil" + newline +
-    indent(4) + "}" 
+    indent(4) + "}"
+    
+    if (longAttribute) xs
+    else "scala.collection.immutable.ListMap((" + xs + "): _*)"
   }
     
   def buildArgForMixed(particle: Particle, pos: Int): String =

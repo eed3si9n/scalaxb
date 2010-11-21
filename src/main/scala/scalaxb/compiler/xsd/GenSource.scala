@@ -330,17 +330,36 @@ trait { buildDefaultProtocolName(name) } extends {name} {{
               buildArg(decl.content.asInstanceOf[SimpleContentDecl], base)
             case _ => particleArgs.mkString("," + newline + indent(4))
           }
-          
-        val attributeArgs = attributes map {
-            case any: AnyAttributeDecl => buildArgForAnyAttribute(decl, longAttribute)
-            case x => buildArgForAttribute(x, longAttribute) 
-        }
         
         val attributeString = if (attributes.isEmpty) ""
-            else if (longAttribute) "scala.collection.immutable.ListMap(List(" + newline + 
-                indent(4) + attributeArgs.mkString("," + newline + indent(4)) + ").flatten[(String, scalaxb.DataRecord[Any])]: _*)"
-            else attributeArgs.mkString("," + newline + indent(4))
-        
+          else {
+            val notAnyAttributes = attributes filter { 
+              case any: AnyAttributeDecl => false
+              case _ => true
+            }
+            val anyAttributes = attributes filter {
+              case any: AnyAttributeDecl => true
+              case _ => false
+            }            
+            
+            if (longAttribute) {
+              val nonAnyString = if (notAnyAttributes.isEmpty) ""
+                else "List(" + newline + 
+                  indent(4) + (notAnyAttributes map { x => 
+                    buildArgForAttribute(x, longAttribute) }).mkString("," + newline + indent(4)) + newline +
+                  indent(4)  + ").flatten[(String, scalaxb.DataRecord[Any])]"
+              val anyString = if (anyAttributes.isEmpty) ""
+                else "(" + buildArgForAnyAttribute(decl, longAttribute) + ")"
+              "scala.collection.immutable.ListMap(" + 
+                (if (nonAnyString != "" && anyString != "") nonAnyString + " ::: " + anyString
+                 else nonAnyString + anyString ) + ": _*)"
+            } 
+            else (attributes map {
+                    case any: AnyAttributeDecl => buildArgForAnyAttribute(decl, longAttribute)
+                    case x => buildArgForAttribute(x, longAttribute) 
+                 }).mkString("," + newline + indent(4))              
+          } // if-else
+          
         if (!particleString.isEmpty && !attributeString.isEmpty) particleString + "," + newline +
           indent(4) + attributeString
         else particleString + attributeString
@@ -392,7 +411,24 @@ trait { buildDefaultProtocolName(name) } extends {name} {{
 {makeWritesAttribute}{makeWritesChildNodes}  }}</source>
     
     def makeWritesAttribute = if (attributes.isEmpty) <source></source>
-      else <source>    override def writesAttribute(__obj: {name}, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {{
+      else if (longAttribute) {
+        val cases = attributes collect {
+          case attr: AttributeDecl => "case (" + quote(buildNodeName(attr)) + ", _) => " + buildAttributeString(attr)
+          case ref: AttributeRef =>
+            val attr = buildAttribute(ref)
+            "case (" + quote(buildNodeName(attr)) + ", _) => " + buildAttributeString(attr)
+          case group: AttributeGroupDecl => "case (" + quote(buildNodeName(group)) + ", _) => " + buildAttributeString(group)
+        }
+        val caseString = if (cases.isEmpty) ""
+          else cases.mkString(newline + indent(4)) + newline + indent(4)
+        <source>    override def writesAttribute(__obj: {name}, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {{
+      var attr: scala.xml.MetaData  = scala.xml.Null
+      __obj.{makeParamName(ATTRS_PARAM)}.toList map {{
+        {caseString}case (key, x) => attr = scala.xml.Attribute((x.namespace map {{ __scope.getPrefix(_) }}).orNull, x.key.orNull, x.value.toString, attr)
+      }}
+      attr
+    }}</source>
+      } else <source>    override def writesAttribute(__obj: {name}, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {{
       var attr: scala.xml.MetaData  = scala.xml.Null
       { attributes.map(x => buildAttributeString(x)).mkString(newline + indent(3)) }
       attr
@@ -795,16 +831,16 @@ object {name} {{
       case elem: ElemDecl => elem
       case ref: ElemRef   => buildElement(ref)
     } map { elem => toCardinality(elem.minOccurs, elem.maxOccurs) match {
-        case Optional => "def " + makeParamName(elem.name) + " = " + 
+        case Optional => "lazy val " + makeParamName(elem.name) + " = " + 
           wrapperName + ".get(" +  quote(buildNodeName(elem)) + ") map { _.as[" + buildTypeName(elem.typeSymbol) + "] }"
-        case _        => "def " + makeParamName(elem.name) + " = " + 
+        case _        => "lazy val " + makeParamName(elem.name) + " = " + 
           wrapperName + "(" +  quote(buildNodeName(elem)) + ").as[" + buildTypeName(elem.typeSymbol) + "]"
       }
     }
   }
   
   def generateAccessors(attributes: List[AttributeLike]): List[String] = {
-    val wrapperName = makeParamName("attributes")
+    val wrapperName = makeParamName(ATTRS_PARAM)
     
     attributes collect {
       case attr: AttributeDecl   => (attr, toCardinality(attr))
@@ -813,13 +849,13 @@ object {name} {{
         (attr, toCardinality(attr))
       case group: AttributeGroupDecl => (group, Single)
     } map { _ match {
-        case (attr: AttributeDecl, Optional) => "def " + makeParamName(attr.name) + " = " + 
+        case (attr: AttributeDecl, Optional) => "lazy val " + makeParamName(attr.name) + " = " + 
           wrapperName + ".get(" +  quote(buildNodeName(attr)) + ") map { _.as[" + buildTypeName(attr.typeSymbol) + "] }"
-        case (attr: AttributeDecl, Single) => "def " + makeParamName(attr.name) + " = " + 
+        case (attr: AttributeDecl, Single) => "lazy val " + makeParamName(attr.name) + " = " + 
           wrapperName + "(" +  quote(buildNodeName(attr)) + ").as[" + buildTypeName(attr.typeSymbol) + "]"
-        case (group: AttributeGroupDecl, Optional) => "def " + makeParamName(group.name) + " = " + 
+        case (group: AttributeGroupDecl, Optional) => "lazy val " + makeParamName(group.name) + " = " + 
           wrapperName + ".get(" +  quote(buildNodeName(group)) + ") map { _.as[" + buildTypeName(group) + "] }"
-        case (group: AttributeGroupDecl, Single) => "def " + makeParamName(group.name) + " = " + 
+        case (group: AttributeGroupDecl, Single) => "lazy val " + makeParamName(group.name) + " = " + 
           wrapperName + "(" +  quote(buildNodeName(group)) + ").as[" + buildTypeName(group) + "]"
       }
     }
@@ -840,7 +876,7 @@ object {name} {{
             
       val paramList = particles map { buildParam }
       paramList map { p =>
-        "def " + makeParamName(p.name) + " = " + wrapperName + "." +  makeParamName(p.name)
+        "lazy val " + makeParamName(p.name) + " = " + wrapperName + "." +  makeParamName(p.name)
       }
     case _ => Nil
   }
@@ -887,15 +923,28 @@ object {name} {{
       None, None, 0, Integer.MAX_VALUE, None, None, None))
   else Nil
     
-  def buildAttributes(decl: ComplexTypeDecl): List[AttributeLike] =
-    mergeAttributes(decl.content.content match {
+  def buildAttributes(decl: ComplexTypeDecl): List[AttributeLike] = {
+    val attributes = mergeAttributes(decl.content.content match {
       case SimpContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) => buildAttributes(base)
       case SimpContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _) => buildAttributes(base)
       case CompContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) => buildAttributes(base)
       case CompContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) => buildAttributes(base)
       case _ => Nil
     }, buildAttributes(decl.content.content.attributes))
-
+    
+    // rearrange attributes so AnyAttributeDecl comes at the end.
+    val notAnyAttributes = attributes filter { 
+      case any: AnyAttributeDecl => false
+      case _ => true
+    }
+    val anyAttributes = attributes filter {
+      case any: AnyAttributeDecl => true
+      case _ => false
+    }
+    if (anyAttributes.isEmpty) notAnyAttributes
+    else notAnyAttributes ::: List(anyAttributes.head)
+  }
+  
   def buildAttributes(attributes: List[AttributeLike]): List[AttributeLike] =
     attributes map(resolveRef)
   

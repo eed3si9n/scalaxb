@@ -257,8 +257,8 @@ object PurchaseOrderUsage {
     </choice1>
     val obj = fromXML[Choice1](subject)
     obj match {
-      case Choice1(_, "en",
-        Seq(DataRecord(Some("http://www.w3.org/1999/xhtml"), Some("href"), "4Q99.html"))) =>
+      case Choice1(_, "en", attributes) if attributes("@{http://www.w3.org/1999/xhtml}href") ==
+        DataRecord(Some("http://www.w3.org/1999/xhtml"), Some("href"), "4Q99.html") =>
       case _ => error("match failed: " + obj.toString)
     }
     
@@ -295,7 +295,8 @@ object PurchaseOrderUsage {
     </foo>
     val obj = fromXML[Element2](subject)
     obj match {
-      case Element2(Seq(DataRecord(Some("http://www.w3.org/1999/xhtml"), Some("href"), "4Q99.html"))) =>
+      case Element2(attributes) if attributes("@{http://www.w3.org/1999/xhtml}href") ==
+        DataRecord(Some("http://www.w3.org/1999/xhtml"), Some("href"), "4Q99.html") =>
       case _ => error("match failed: " + obj.toString)
     }
     
@@ -303,7 +304,8 @@ object PurchaseOrderUsage {
     println(document)
     val obj2 = fromXML[Element2](document)
     obj2 match {
-      case Element2(Seq(DataRecord(Some("http://www.w3.org/1999/xhtml"), Some("href"), "4Q99.html"))) =>
+      case Element2(attributes) if attributes("@{http://www.w3.org/1999/xhtml}href") ==
+        DataRecord(Some("http://www.w3.org/1999/xhtml"), Some("href"), "4Q99.html") =>
       case _ => error("match failed: " + obj2.toString)
     }
   }

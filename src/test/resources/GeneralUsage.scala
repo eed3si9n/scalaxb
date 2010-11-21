@@ -22,6 +22,7 @@ object GeneralUsage {
     testChoiceComplexType
     testAny
     testLongAll
+    testLongAttribute
     true
   }
   
@@ -265,5 +266,19 @@ object GeneralUsage {
     
     val document = toXML[LongAllTest](obj, "foo", defaultScope)
     println(document)
+  }
+  
+  def testLongAttribute {
+    val subject = <foo xmlns="http://www.example.com/general"
+        xmlns:xs="http://www.w3.org/2001/XMLSchema"
+        milk1="SKIM" />
+    val obj = fromXML[LongAttributeTest](subject)
+    obj.milk1 match {
+      case Some(SKIM) =>
+      case _ => error("match failed: " + obj.toString)
+    }
+    
+    val document = toXML[LongAttributeTest](obj, "foo", defaultScope)
+    println(document)    
   }
 }

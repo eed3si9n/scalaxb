@@ -1,6 +1,6 @@
 package scalaxb
 
-import scala.xml.{Node, NodeSeq, NamespaceBinding, Elem, PrefixedAttribute}
+import scala.xml.{Node, NodeSeq, NamespaceBinding, Elem, UnprefixedAttribute, PrefixedAttribute}
 import javax.xml.datatype.{XMLGregorianCalendar}
 
 object Scalaxb {
@@ -402,7 +402,19 @@ object DataRecord extends DefaultXMLStandardTypes {
     case elem: Elem => 
       val ns = Option[String](elem.scope.getURI(elem.prefix))
       val key = Some(elem.label)
-      DataRecord(ns, key, value)
+      DataRecord(ns, key, value)    
+    case _ => DataRecord(value)
+  }
+  
+  def apply[A:CanWriteXML](node: Node, parent: Node, value: A): DataRecord[A] = node match {
+    case elem: Elem => DataRecord(node, value)
+    case attr: UnprefixedAttribute =>
+      val key = Some(attr.key)
+      DataRecord(None, key, value)
+    case attr: PrefixedAttribute =>
+      val ns = Option[String](attr.getNamespace(node))
+      val key = Some(attr.key)
+      DataRecord(ns, key, value)     
     case _ => DataRecord(value)
   }
   

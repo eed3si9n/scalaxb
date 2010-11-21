@@ -125,14 +125,14 @@ trait Lookup extends ContextProcessor {
     case XsNillableAny  => "scalaxb.DataRecord[Option[Any]]"
     case XsLongAll      => "Map[String, scalaxb.DataRecord[Any]]"
     case XsLongAttribute => "Map[String, scalaxb.DataRecord[Any]]"
+    case XsAnyAttribute  => "Map[String, scalaxb.DataRecord[Any]]"
     case XsDataRecord(ReferenceTypeSymbol(decl: ComplexTypeDecl)) if compositorWrapper.contains(decl) =>
       compositorWrapper(decl) match {
         case choice: ChoiceDecl => buildChoiceTypeName(decl, choice)
         case _ => "scalaxb.DataRecord[Any]"
       }
     case r: XsDataRecord => "scalaxb.DataRecord[Any]"
-    case XsMixed        => "scalaxb.DataRecord[Any]"
-    case XsAnyAttribute => "scalaxb.DataRecord[String]"
+    case XsMixed         => "scalaxb.DataRecord[Any]"
     case symbol: BuiltInSimpleTypeSymbol => symbol.name
     case ReferenceTypeSymbol(decl: SimpleTypeDecl) => buildTypeName(decl)
     case ReferenceTypeSymbol(decl: ComplexTypeDecl) => buildTypeName(decl)

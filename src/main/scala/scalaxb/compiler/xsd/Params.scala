@@ -23,8 +23,8 @@
 package scalaxb.compiler.xsd
 import scala.collection.mutable
 
-trait Params extends Lookup {  
-  val ANY_ATTR_PARAM = "anyAttribute"
+trait Params extends Lookup {
+  val ATTRS_PARAM = "attributes"
   var argNumber = 0
   var anyNumber = 0
   
@@ -97,6 +97,8 @@ trait Params extends Lookup {
     
     val retval = if (nillable && typeSymbol == XsAny) Param(elem.namespace, elem.name, XsNillableAny, 
         toCardinality(elem.minOccurs, elem.maxOccurs), false, false)
+      else if (typeSymbol == XsLongAttribute) Param(elem.namespace, elem.name, typeSymbol, 
+          toCardinality(elem.minOccurs, elem.maxOccurs), nillable, true)
       else Param(elem.namespace, elem.name, typeSymbol, 
         toCardinality(elem.minOccurs, elem.maxOccurs), nillable, false)
     log("GenSource#buildParam:  " + retval)
@@ -122,6 +124,9 @@ trait Params extends Lookup {
   def buildSubstitionGroupSymbol(typeSymbol: XsTypeSymbol): XsTypeSymbol =
     XsDataRecord(typeSymbol)
   
+  def buildParam(any: AnyAttributeDecl): Param =
+    Param(None, ATTRS_PARAM, XsAnyAttribute, Single, false, true)
+  
   def buildCompositorSymbol(compositor: HasParticle, typeSymbol: XsTypeSymbol): XsTypeSymbol =
     compositor match {
       case ref: GroupRef =>
@@ -142,9 +147,6 @@ trait Params extends Lookup {
     Param(None, "arg1", symbol,
       toCardinality(compositor.minOccurs, compositor.maxOccurs), false, false)
   }
-  
-  def buildParam(any: AnyAttributeDecl): Param =
-    Param(None, ANY_ATTR_PARAM, XsAnyAttribute, Multiple, false, true)
   
   def primaryCompositor(group: GroupDecl): HasParticle =
     if (group.particles.size == 1) group.particles(0) match {
@@ -194,7 +196,7 @@ trait Params extends Lookup {
     ElemDecl(Some(INTERNAL_NAMESPACE), "all", XsLongAll, None, None, 1, 1, None, None, None)
   
   def buildLongAttributeRef =
-    ElemDecl(Some(INTERNAL_NAMESPACE), "attributes", XsLongAttribute, None, None, 1, 1, None, None, None)
+    ElemDecl(Some(INTERNAL_NAMESPACE), ATTRS_PARAM, XsLongAttribute, None, None, 1, 1, None, None, None)
   
   def buildAnyRef(any: AnyDecl) = {
     anyNumber += 1

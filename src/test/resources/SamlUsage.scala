@@ -20,6 +20,11 @@ object SamlUsage {
     true
   }
   
+  // case class AttributeType(AttributeValue: Seq[scalaxb.DataRecord[Option[Any]]],
+  //   Name: String,
+  //   NameFormat: Option[java.net.URI],
+  //   FriendlyName: Option[String],
+  //   attributes: Map[String, scalaxb.DataRecord[Any]])
   def testAttribute {
     val subject = <saml:Attribute
       xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion"
@@ -41,7 +46,7 @@ object SamlUsage {
         "urn:oid:1.3.6.1.4.1.5923.1.1.1.1",
         Some(_),
         Some("eduPersonAffiliation"),
-        Seq(z@DataRecord(_, _, _))) => 
+        attributes) => 
       case _ => error("match failed: " + obj.toString)
     }
     

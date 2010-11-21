@@ -642,7 +642,7 @@ object {name} {{
     }
   
   def buildOptions(decl: ComplexTypeDecl): List[String] = {
-    val set = mutable.Set.empty[String]
+    val set = mutable.ListBuffer.empty[String]
     def addIfMatch(typeSymbol: XsTypeSymbol, choice: ChoiceDecl) = {
       typeSymbol match {
         case symbol: ReferenceTypeSymbol =>
@@ -659,7 +659,7 @@ object {name} {{
       case _ => // do nothing
     }
         
-    set.toList
+    set.toList.distinct
   }
   
   // reverse lookup all choices that contains that.

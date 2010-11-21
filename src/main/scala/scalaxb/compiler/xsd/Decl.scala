@@ -28,6 +28,14 @@ import scala.collection.immutable
 
 abstract class Decl
 
+object Incrementor {
+  var i: Int = 1000
+  def nextInt: Int = {
+    i = i + 1
+    i
+  }
+}
+
 case class XsdContext(
   schemas: mutable.ListBuffer[SchemaDecl] =
     mutable.ListBuffer.empty[SchemaDecl],
@@ -67,7 +75,7 @@ class ParserConfig {
   val attrList  = mutable.ListBuffer.empty[AttributeDecl]
   val topGroups = mutable.ListMap.empty[String, GroupDecl]
   val topAttrGroups = mutable.ListMap.empty[String, AttributeGroupDecl]
-  val choices   = mutable.Set.empty[ChoiceDecl]
+  val choices   = mutable.ListBuffer.empty[ChoiceDecl]
   var schemas: List[SchemaDecl] = Nil
   val typeToAnnotatable = mutable.ListMap.empty[TypeDecl, Annotatable]
   
@@ -146,7 +154,7 @@ case class SchemaDecl(targetNamespace: Option[String],
     elemList: List[ElemDecl],
     topTypes: Map[String, TypeDecl],
     typeList: List[TypeDecl],
-    choices: Set[ChoiceDecl],
+    choices: List[ChoiceDecl],
     topAttrs: Map[String, AttributeDecl],
     attrList: List[AttributeDecl],
     topGroups: Map[String, GroupDecl],
@@ -240,7 +248,7 @@ object SchemaDecl {
       config.elemList.toList,
       immutable.ListMap.empty[String, TypeDecl] ++ config.topTypes,
       config.typeList.toList,
-      config.choices,
+      config.choices.toList,
       immutable.ListMap.empty[String, AttributeDecl] ++ config.topAttrs,
       config.attrList.toList,
       immutable.ListMap.empty[String, GroupDecl] ++ config.topGroups,
@@ -559,7 +567,7 @@ case class SimpleTypeDecl(namespace: Option[String],
 
 object SimpleTypeDecl {
   def fromXML(node: scala.xml.Node, family: String, config: ParserConfig): SimpleTypeDecl =
-    fromXML(node, "simpleType@" + family + ":" + scala.util.Random.nextInt, family, config)
+    fromXML(node, "simpleType@" + family + ":" + Incrementor.nextInt, family, config)
   
   def fromXML(node: scala.xml.Node, name: String, family: String, config: ParserConfig): SimpleTypeDecl = {
     var content: ContentTypeDecl = null
@@ -739,7 +747,7 @@ object CompositorDecl {
 case class SequenceDecl(particles: List[Particle],
   minOccurs: Int,
   maxOccurs: Int,
-  rand: Double = math.random) extends CompositorDecl with HasParticle
+  uniqueId: Int = Incrementor.nextInt) extends CompositorDecl with HasParticle
 
 object SequenceDecl {
   def fromXML(node: scala.xml.Node, config: ParserConfig) = {
@@ -752,7 +760,7 @@ object SequenceDecl {
 case class ChoiceDecl(particles: List[Particle],
   minOccurs: Int,
   maxOccurs: Int,
-  rand: Double = math.random) extends CompositorDecl with HasParticle
+  uniqueId: Int = Incrementor.nextInt) extends CompositorDecl with HasParticle
 
 object ChoiceDecl {
   def fromXML(node: scala.xml.Node, config: ParserConfig) = {
@@ -767,7 +775,7 @@ object ChoiceDecl {
 case class AllDecl(particles: List[Particle],
   minOccurs: Int,
   maxOccurs: Int,
-  rand: Double = math.random) extends CompositorDecl with HasParticle
+  uniqueId: Int = Incrementor.nextInt) extends CompositorDecl with HasParticle
 
 object AllDecl {
   def fromXML(node: scala.xml.Node, config: ParserConfig) = {

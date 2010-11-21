@@ -29,24 +29,25 @@ trait ComplexTypeContent {
 
 abstract class ContentTypeDecl extends Decl
 
-case class SimpContRestrictionDecl(base: XsTypeSymbol,
+case class SimpContRestrictionDecl(base: XsTypeSymbol, simpleType: Option[XsTypeSymbol],
   facets: List[Facetable],
   attributes: List[AttributeLike]) extends ContentTypeDecl with ComplexTypeContent
 
 object SimpContRestrictionDecl {
   def fromXML(node: scala.xml.Node, family: String, config: ParserConfig) = {
+    val simpleType = (node \ "simpleType").headOption map { x =>
+      val decl = SimpleTypeDecl.fromXML(x, family, config)
+      config.typeList += decl
+      val symbol = new ReferenceTypeSymbol(decl.name)
+      symbol.decl = decl
+      symbol
+    }
+    
     val base = (node \ "@base").headOption match {
       case Some(x) => TypeSymbolParser.fromString(x.text, config)
       case None    =>
-        (node \ "simpleType").headOption match {
-          case Some(x) => Some(x.text)
-            val decl = SimpleTypeDecl.fromXML(x, family, config)
-            config.typeList += decl
-            val symbol = new ReferenceTypeSymbol(decl.name)
-            symbol.decl = decl
-            symbol
-          
-          case None    => error("SimpContRestrictionDecl#fromXML: restriction must have either base attribute or simpleType.")
+        simpleType getOrElse {
+          error("SimpContRestrictionDecl#fromXML: restriction must have either base attribute or simpleType.")
         }
     }
     
@@ -60,7 +61,7 @@ object SimpContRestrictionDecl {
       case _ =>
     }
     
-    SimpContRestrictionDecl(base, facets, attributes.reverse)
+    SimpContRestrictionDecl(base, simpleType, facets, attributes.reverse)
   }
 }
 

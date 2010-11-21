@@ -156,11 +156,18 @@ trait Args extends Params {
   // called by makeCaseClassWithType
   def buildArg(content: SimpleContentDecl, typeSymbol: XsTypeSymbol): String = typeSymbol match {
     case base: BuiltInSimpleTypeSymbol => buildArg(buildTypeName(base), "node", Single)
-    case ReferenceTypeSymbol(ComplexTypeDecl(_, _, _, _, _, content: SimpleContentDecl, _, _)) =>
-      content.content match {	 	
-        case SimpContRestrictionDecl(base: XsTypeSymbol, _, _) => buildArg(content, base)
-        case SimpContExtensionDecl(base: XsTypeSymbol, _) => buildArg(content, base)
-       	case _ => error("Args: Unsupported content " + content.content.toString)     	
+    case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
+      decl.content match {
+        case simp@SimpleContentDecl(SimpContRestrictionDecl(base: XsTypeSymbol, _, _, _)) => buildArg(simp, base)      
+        case simp@SimpleContentDecl(SimpContExtensionDecl(base: XsTypeSymbol, _)) => buildArg(simp, base)        
+        
+        // http://www.w3.org/TR/xmlschema-1/#d0e7923
+        case comp: ComplexContentDecl => content match {
+          case SimpleContentDecl(SimpContRestrictionDecl(_, Some(simpleType: XsTypeSymbol), _, _))  =>
+            buildArg(content, simpleType)
+          case _ => error("Args: Unsupported content " + content.toString)
+        }
+        case _ => error("Args: Unsupported content " + content.toString)
       }
     case ReferenceTypeSymbol(decl: SimpleTypeDecl) =>
       buildArg(decl, "node", None, None, Single, false, false)

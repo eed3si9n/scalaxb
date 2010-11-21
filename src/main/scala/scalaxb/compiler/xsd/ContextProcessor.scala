@@ -150,7 +150,7 @@ trait ContextProcessor extends ScalaNames with PackageName {
       case CompContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
         associateSubType(typ, base)
       
-      case SimpContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
+      case SimpContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _, _) =>
         associateSubType(typ, base)
       case SimpContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _) =>
         associateSubType(typ, base)

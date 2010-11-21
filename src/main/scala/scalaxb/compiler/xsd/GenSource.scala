@@ -323,14 +323,13 @@ trait { buildDefaultProtocolName(name) } extends {name} {{
         val particleString = if (decl.mixed) "Seq.concat(" + particleArgs.mkString("," + newline + indent(4)) + ")"
           else if (longAll) "scala.collection.immutable.ListMap(List(" + newline + 
               indent(4) + particleArgs.mkString("," + newline + indent(4)) + ").flatten[(String, scalaxb.DataRecord[Any])]: _*)"
-          else decl.content.content match {
-            case SimpContRestrictionDecl(base: XsTypeSymbol, _, _) =>
-              buildArg(decl.content.asInstanceOf[SimpleContentDecl], base)
-            case SimpContExtensionDecl(base: XsTypeSymbol, _) =>
-              buildArg(decl.content.asInstanceOf[SimpleContentDecl], base)
+          else decl.content match {
+            case simp@SimpleContentDecl(SimpContRestrictionDecl(base: XsTypeSymbol, _, _, _)) =>
+              buildArg(simp, base)      
+            case simp@SimpleContentDecl(SimpContExtensionDecl(base: XsTypeSymbol, _)) =>
+              buildArg(simp, base)
             case _ => particleArgs.mkString("," + newline + indent(4))
-          }
-        
+          }        
         val attributeString = if (attributes.isEmpty) ""
           else {
             val notAnyAttributes = attributes filter { 
@@ -373,7 +372,7 @@ trait { buildDefaultProtocolName(name) } extends {name} {{
     def childString = if (decl.mixed) "__obj." + makeParamName(MIXED_PARAM) + 
       ".toSeq flatMap { x => toXML[scalaxb.DataRecord[Any]](x, x.namespace, x.key, __scope, false) }"
     else decl.content.content match {
-      case SimpContRestrictionDecl(base: XsTypeSymbol, _, _) => "Seq(scala.xml.Text(__obj.value.toString))"
+      case SimpContRestrictionDecl(base: XsTypeSymbol, _, _, _) => "Seq(scala.xml.Text(__obj.value.toString))"
       case SimpContExtensionDecl(base: XsTypeSymbol, _) =>   "Seq(scala.xml.Text(__obj.value.toString))"
       case _ =>
         if (childElemParams.isEmpty) "Nil"
@@ -726,7 +725,7 @@ object {name} {{
     anyNumber = 0
     
     val build: ComplexTypeContent =>? List[ElemDecl] = {
-      case SimpContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
+      case SimpContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _, _) =>
         flattenElements(base)
       case SimpContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _) =>
         flattenElements(base)
@@ -755,7 +754,7 @@ object {name} {{
   
   // used to generte accessor
   def splitSequences(decl: ComplexTypeDecl): List[SequenceDecl] = decl.content.content match {
-    case SimpContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) => splitSequences(base)
+    case SimpContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _, _) => splitSequences(base)
     case SimpContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _) => splitSequences(base)
 
     // complex content means 1. has child elements 2. has attributes
@@ -886,7 +885,7 @@ object {name} {{
     anyNumber = 0
     
     val build: ComplexTypeContent =>? List[ElemDecl] = {
-      case SimpContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
+      case SimpContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _, _) =>
         buildParticles(base, makeTypeName(base.name))
       
       case SimpContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _) =>
@@ -925,7 +924,7 @@ object {name} {{
     
   def buildAttributes(decl: ComplexTypeDecl): List[AttributeLike] = {
     val attributes = mergeAttributes(decl.content.content match {
-      case SimpContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) => buildAttributes(base)
+      case SimpContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _, _) => buildAttributes(base)
       case SimpContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _) => buildAttributes(base)
       case CompContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) => buildAttributes(base)
       case CompContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) => buildAttributes(base)

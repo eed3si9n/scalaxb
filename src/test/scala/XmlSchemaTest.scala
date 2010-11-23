@@ -5,7 +5,7 @@ object XmlSchemaTest extends TestBase {
   val inFile  = new File("src/test/resources/xmlschema.xsd")
   val outFile = new File(tmp, "XMLSchema.scala")
   
-  lazy val generated = module.process(inFile, outFile,
+  lazy val generated = module.process(inFile, outFile, outProtocolFile,
     Config(packageNames = Map(Some("http://www.w3.org/2001/XMLSchema") -> Some("org.w3.xmlschema")),
       classPrefix = Some("X"),
       paramPrefix = Some("m")

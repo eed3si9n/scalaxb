@@ -22,7 +22,7 @@
 
 package scalaxb.compiler.xsd
 
-import scalaxb.compiler.{Logger, Config}
+import scalaxb.compiler.{Logger, Config, Snippet}
 import scala.collection.mutable
 import scala.collection.{Map}
 import scala.xml._
@@ -32,23 +32,19 @@ abstract class GenSource(val schema: SchemaDecl,
     val context: XsdContext) extends Parsers with XMLOutput {  
   type =>?[A, B] = PartialFunction[A, B]
   
-  case class Snippet(defition: Seq[Node],
-    companion: Seq[Node] = <source/>,
-    implicitValue: Seq[Node]  = <source/>)
-  
   val topElems = schema.topElems
   val elemList = schema.elemList
   val choices = schema.choices
   val MIXED_PARAM = "mixed"
   
-  def run: Seq[Node] = {
+  def run: Snippet = {
     log("xsd: GenSource.run")
     
     val nodes = mutable.ListBuffer.empty[Node]
     val companions = mutable.ListBuffer.empty[Node]
     val implicitValues = mutable.ListBuffer.empty[Node]
     def splitSnippet(snippet: Snippet) {
-      nodes ++= snippet.defition
+      nodes ++= snippet.definition
       companions ++= snippet.companion
       implicitValues ++= snippet.implicitValue
     }
@@ -73,69 +69,17 @@ abstract class GenSource(val schema: SchemaDecl,
     for (group <- schema.topAttrGroups.valuesIterator)
       splitSnippet(makeAttributeGroup(group))
     
-    nodes += makeXMLProtocol(companions, implicitValues)
-    nodes
+    Snippet(nodes, companions, implicitValues)
   }
-  
-  def makeXMLProtocol(companions: Seq[Node], implicitValues: Seq[Node]) = {
-    val typeNames = context.typeNames(packageName(schema, context))
-    val name = typeNames(schema)
-    val imports = dependentSchemas map { sch =>
-        val pkg = packageName(sch, context)
-        val name = context.typeNames(pkg)(sch)
-        "import " + pkg.map(_ + ".").getOrElse("") + name + "._"
-      }
-    val traitSuperNames = "scalaxb.XMLStandardTypes" :: (dependentSchemas.toList map { sch =>
-        val pkg = packageName(sch, context)
-        pkg.map(_ + ".").getOrElse("") + context.typeNames(pkg)(sch)
-      })
-    val defaultTraitSuperNames =
-      List(buildDefaultProtocolName(name), "scalaxb.DefaultXMLStandardTypes") ::: (dependentSchemas.toList map { sch =>
-        val pkg = packageName(sch, context)
-        pkg.map(_ + ".").getOrElse("") + buildDefaultProtocolName(context.typeNames(pkg)(sch))
-      })
     
-    def makeScopes(scope: scala.xml.NamespaceBinding): List[(Option[String], String)] =
-      if (scope == null || scope.uri == null) Nil
-      else if (scope.prefix == null) (None, scope.uri) :: makeScopes(scope.parent)
-      else (Some(scope.prefix), scope.uri) :: makeScopes(scope.parent)
-    val scopes = makeScopes(schema.scope)
-    val packageImportString = packageName(schema, context) map { pkg =>
-      "import " + pkg + "._" + newline } getOrElse {""}
+  def makeSuperType(decl: ComplexTypeDecl): Snippet = {
+    val localName = makeProtectedTypeName(schema.targetNamespace, decl, context)
+    val fqn = buildFullyQualifiedName(schema, localName)
+    makeCaseClassWithType(localName, fqn, decl)
+  }
     
-    <source>/** usage:
-import scalaxb._
-import Scalaxb._
-{packageImportString}import Default{name}._
-
-val obj = fromXML[Foo](node)
-val document = toXML[Foo](obj, "foo", defaultScope)
-**/
-trait {name} extends { traitSuperNames.mkString(" with ") } {{
-{implicitValues}  
-}}
-
-object { buildDefaultProtocolName(name) } extends { defaultTraitSuperNames.mkString(" with ") } {{
-  import scalaxb.Scalaxb._
-  val defaultScope = toScope({ if (scopes.isEmpty) "Nil: _*"
-    else scopes.map(x => quote(x._1) + " -> " + quote(x._2)).mkString("," + newline + indent(2)) })  
-}}
-
-trait { buildDefaultProtocolName(name) } extends {name} {{
-  import scalaxb.Scalaxb._
-  private val targetNamespace: Option[String] = { quote(schema.targetNamespace) }
-  
-{companions}
-}}</source>
-  }
-  
-  def makeSuperType(decl: ComplexTypeDecl): Snippet =
-    makeCaseClassWithType(makeProtectedTypeName(schema.targetNamespace, decl, context), decl)
-      
-  def makeType(decl: ComplexTypeDecl): Snippet = {
-    val typeNames = context.typeNames(packageName(decl.namespace, context))
-    makeCaseClassWithType(typeNames(decl), decl)
-  }
+  def makeType(decl: ComplexTypeDecl): Snippet =
+    makeCaseClassWithType(buildTypeName(decl, true), buildTypeName(decl, false), decl)
   
   def types(namespace: Option[String], name: String) =
     (for (schema <- schemas;
@@ -147,15 +91,16 @@ trait { buildDefaultProtocolName(name) } extends {name} {{
       }
       
   def makeTrait(decl: ComplexTypeDecl): Snippet = {
-    val name = buildTypeName(decl)
-    val formatterName = buildFormatterName(decl.namespace, name)
-    log("GenSource.makeTrait: emitting " + name)
+    val localName = buildTypeName(decl, true)
+    val fqn = buildTypeName(decl, false)
+    val formatterName = buildFormatterName(decl.namespace, localName)
+    log("GenSource.makeTrait: emitting " + fqn)
 
     val childElements = if (decl.mixed) Nil
       else flattenElements(decl)
     val list = List.concat[Decl](childElements, buildAttributes(decl))
     val paramList = list.map { buildParam }
-    val defaultType = makeProtectedTypeName(schema.targetNamespace, decl, context)    
+    val defaultType = buildFullyQualifiedName(schema, makeProtectedTypeName(schema.targetNamespace, decl, context))    
     val argList = list map {
       case any: AnyAttributeDecl => buildArgForAnyAttribute(decl, false)
       case x => buildArg(x)
@@ -167,25 +112,25 @@ trait { buildDefaultProtocolName(name) } extends {name} {{
     
     def makeCaseEntry(decl: ComplexTypeDecl) =
       "case (" + quoteNamespace(decl.namespace) + ", " + quote(Some(decl.family)) + ") => " + 
-        "Right(" + buildFromXML(buildTypeName(decl), "node") + ")"
+        "Right(" + buildFromXML(buildTypeName(decl, false), "node") + ")"
     
     def makeToXmlCaseEntry(decl: ComplexTypeDecl) =
-      "case x: " + buildTypeName(decl) + " => " + 
-        buildToXML(buildTypeName(decl), "x, __namespace, __elementLabel, __scope, true")
+      "case x: " + buildTypeName(decl, false) + " => " + 
+        buildToXML(buildTypeName(decl, false), "x, __namespace, __elementLabel, __scope, true")
         
     val compositors = context.compositorParents.filter(_._2 == decl).keysIterator.toList
     val extendedSubtypes = context.baseToSubs(decl) filter { sub =>
       !schema.typeList.contains(sub) && !dependentSchemas.exists(_.typeList.contains(sub)) }
-    val extendedSchemas = (for (sub <- extendedSubtypes;
-                                sch <- context.schemas; if sch.typeList.contains(sub))
-                             yield sch).toList.distinct
-    val imports = extendedSchemas map { sch =>
-      val pkg = packageName(sch, context)
-      val name = context.typeNames(pkg)(sch)
-      "import " + pkg.map(_ + ".").getOrElse("") + buildDefaultProtocolName(name) + "._"
-    }  
+    // val extendedSchemas = (for (sub <- extendedSubtypes;
+    //                             sch <- context.schemas; if sch.typeList.contains(sub))
+    //                          yield sch).toList.distinct
+    // val imports = extendedSchemas map { sch =>
+    //   val pkg = packageName(sch, context)
+    //   val name = context.typeNames(pkg)(sch)
+    //   "import " + pkg.map(_ + ".").getOrElse("") + buildDefaultProtocolName(name) + "._"
+    // }  
     
-    val traitCode = <source>{ buildComment(decl) }trait {name}{extendString} {{
+    val traitCode = <source>{ buildComment(decl) }trait {localName}{extendString} {{
   {
   val vals = for (param <- paramList)
     yield  "val " + param.toScalaCode
@@ -193,10 +138,12 @@ trait { buildDefaultProtocolName(name) } extends {name} {{
 }}</source>
     
     val compDepth = 1
-    val companionCode = <source>  override def build{formatterName} = new scalaxb.XMLFormat[{name}] {{
-    { if (imports.isEmpty) ""
-        else imports.mkString(newline + indent(2)) + newline + indent(2) 
-    }def reads(seq: scala.xml.NodeSeq): Either[String, {name}] = seq match {{
+    val companionCode = <source>  override def build{formatterName} = new Default{formatterName} {{}}
+  trait Default{formatterName} extends scalaxb.XMLFormat[{fqn}] {{
+    val targetNamespace: Option[String] = { quote(schema.targetNamespace) }
+    { // if (imports.isEmpty) ""
+      //  else imports.mkString(newline + indent(2)) + newline + indent(2) 
+    }def reads(seq: scala.xml.NodeSeq): Either[String, {fqn}] = seq match {{
       case node: scala.xml.Node =>     
         scalaxb.Helper.instanceType(node) match {{
           { val cases = for (sub <- context.baseToSubs(decl))
@@ -209,7 +156,7 @@ trait { buildDefaultProtocolName(name) } extends {name} {{
       case _ => Left("reads failed: seq must be scala.xml.Node")  
     }}
     
-    def writes(__obj: {name}, __namespace: Option[String], __elementLabel: Option[String],
+    def writes(__obj: {fqn}, __namespace: Option[String], __elementLabel: Option[String],
         __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq = __obj match {{
       { val cases = for (sub <- context.baseToSubs(decl))
           yield makeToXmlCaseEntry(sub)
@@ -225,26 +172,25 @@ trait { buildDefaultProtocolName(name) } extends {name} {{
     val compositorCodes = if (decl.abstractValue) compositors map { makeCompositor }
       else Nil
     
-    Snippet(Seq(traitCode) ++ compositorCodes.flatMap(_.defition),
+    Snippet(Seq(traitCode) ++ compositorCodes.flatMap(_.definition),
      Seq(companionCode) ++ compositorCodes.flatMap(_.companion),
-     Seq(makeImplicitValue(name, formatterName)) ++ compositorCodes.flatMap(_.implicitValue))
+     Seq(makeImplicitValue(fqn, formatterName)) ++ compositorCodes.flatMap(_.implicitValue))
   }
   
-  def makeImplicitValue(name: String, formatterName: String): Node =
-    <source>  implicit lazy val {formatterName}: scalaxb.XMLFormat[{name}] = build{formatterName}
-  def build{formatterName}: scalaxb.XMLFormat[{name}]</source>
+  def makeImplicitValue(fqn: String, formatterName: String): Node =
+    <source>  implicit lazy val {formatterName}: scalaxb.XMLFormat[{fqn}] = build{formatterName}
+  def build{formatterName}: scalaxb.XMLFormat[{fqn}]</source>
   
   def makeImplicitValue(group: AttributeGroupDecl): Node = {
-    val name = buildTypeName(group)
-    val formatterName = buildFormatterName(group.namespace, name)
-    <source>  implicit lazy val {formatterName}: scalaxb.AttributeGroupFormat[{name}] = build{formatterName}
-  def build{formatterName}: scalaxb.AttributeGroupFormat[{name}]</source>
+    val formatterName = buildFormatterName(group)
+    val fqn = buildTypeName(group, false)
+    <source>  implicit lazy val {formatterName}: scalaxb.AttributeGroupFormat[{fqn}] = build{formatterName}
+  def build{formatterName}: scalaxb.AttributeGroupFormat[{fqn}]</source>
   }
   
-  def makeCaseClassWithType(name: String, decl: ComplexTypeDecl): Snippet = {
-    log("GenSource#makeCaseClassWithType: emitting " + name)
-    
-    val formatterName = buildFormatterName(decl.namespace, name)
+  def makeCaseClassWithType(localName: String, fqn: String, decl: ComplexTypeDecl): Snippet = {
+    log("GenSource#makeCaseClassWithType: emitting " + fqn)
+    val formatterName = buildFormatterName(decl.namespace, localName)
     
     val primary = decl.content match {
       case ComplexContentDecl(CompContRestrictionDecl(_, x, _)) => x
@@ -253,7 +199,7 @@ trait { buildDefaultProtocolName(name) } extends {name} {{
     }
         
     val superNames: List[String] = if (context.baseToSubs.contains(decl))
-      List(buildTypeName(decl))
+      List(buildTypeName(decl, true))
     else buildSuperNames(decl)
     
     val flatParticles = flattenElements(decl)
@@ -266,7 +212,7 @@ trait { buildDefaultProtocolName(name) } extends {name} {{
     val list = if (longAttribute) List.concat[Decl](childElements, List(buildLongAttributeRef))
       else List.concat[Decl](childElements, attributes)
     if (list.size > 22) error("A case class with > 22 parameters cannot be created: " +
-      name + ": " + decl)
+      fqn + ": " + decl)
     
     val paramList = list.map { buildParam }
     // val dependents = ((flatParticles flatMap { buildDependentType } collect {
@@ -366,7 +312,7 @@ trait { buildDefaultProtocolName(name) } extends {name} {{
     
     val childElemParams = paramList.filter(!_.attribute)
     
-    def makeWritesChildNodes = <source>    def writesChildNodes(__obj: {name}, __scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node] =
+    def makeWritesChildNodes = <source>    def writesChildNodes(__obj: {fqn}, __scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node] =
       {childString}</source>
     
     def childString = if (decl.mixed) "__obj." + makeParamName(MIXED_PARAM) + 
@@ -382,30 +328,36 @@ trait { buildDefaultProtocolName(name) } extends {name} {{
     }
     
     val groups = filterGroup(decl)
-    val companionSuperNames: List[String] = "scalaxb.ElemNameParser[" + name + "]" :: groups.map(g => 
+    val companionSuperNames: List[String] = "scalaxb.ElemNameParser[" + fqn + "]" :: groups.map(g => 
       buildFormatterName(g.namespace, groupTypeName(g)))
     
-    val caseClassCode = <source>{ buildComment(decl) }case class {name}({paramsString}){extendString}{ if (accessors.size == 0) ""
+    val caseClassCode = <source>{ buildComment(decl) }case class {localName}({paramsString}){extendString}{ if (accessors.size == 0) ""
       else " {" + newline +
         indent(1) + accessors.mkString(newline + indent(1)) + newline +
         "}" + newline }</source>
     
-    def companionCode = if (simpleFromXml) <source>  override def build{formatterName} = new scalaxb.XMLFormat[{name}] with scalaxb.CanWriteChildNodes[{name}] {{
-    def reads(seq: scala.xml.NodeSeq): Either[String, {name}] = seq match {{
-      case node: scala.xml.Node => Right({name}({argsString}))
+    def companionCode = if (simpleFromXml) <source>  override def build{formatterName} = new Default{formatterName} {{}}
+  trait Default{formatterName} extends scalaxb.XMLFormat[{fqn}] with scalaxb.CanWriteChildNodes[{fqn}] {{
+    val targetNamespace: Option[String] = { quote(schema.targetNamespace) }
+    
+    def reads(seq: scala.xml.NodeSeq): Either[String, {fqn}] = seq match {{
+      case node: scala.xml.Node => Right({fqn}({argsString}))
       case _ => Left("reads failed: seq must be scala.xml.Node")
     }}
     
 {makeWritesAttribute}{makeWritesChildNodes}
   }}</source>
-    else <source>  override def build{formatterName} = new {companionSuperNames.mkString(" with ")} {{
+    else <source>  override def build{formatterName} = new Default{formatterName} {{}}
+  trait Default{formatterName} extends {companionSuperNames.mkString(" with ")} {{
+    val targetNamespace: Option[String] = { quote(schema.targetNamespace) }
+    
     { if (decl.isNamed) "override def typeName: Option[String] = Some(" + quote(decl.name) + ")" + newline + newline + indent(2)  
       else ""
     }{ if (decl.mixed) "override def isMixed: Boolean = true" + newline + newline + indent(2)
-       else "" }def parser(node: scala.xml.Node): Parser[{name}] =
+       else "" }def parser(node: scala.xml.Node): Parser[{fqn}] =
       { parserList.mkString(" ~ " + newline + indent(3)) } ^^
       {{ case { parserVariableList.mkString(" ~ ") } =>
-      {name}({argsString}) }}
+      {fqn}({argsString}) }}
     
 {makeWritesAttribute}{makeWritesChildNodes}  }}</source>
     
@@ -420,14 +372,14 @@ trait { buildDefaultProtocolName(name) } extends {name} {{
         }
         val caseString = if (cases.isEmpty) ""
           else cases.mkString(newline + indent(4)) + newline + indent(4)
-        <source>    override def writesAttribute(__obj: {name}, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {{
+        <source>    override def writesAttribute(__obj: {fqn}, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {{
       var attr: scala.xml.MetaData  = scala.xml.Null
       __obj.{makeParamName(ATTRS_PARAM)}.toList map {{
         {caseString}case (key, x) => attr = scala.xml.Attribute((x.namespace map {{ __scope.getPrefix(_) }}).orNull, x.key.orNull, x.value.toString, attr)
       }}
       attr
     }}</source>
-      } else <source>    override def writesAttribute(__obj: {name}, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {{
+      } else <source>    override def writesAttribute(__obj: {fqn}, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {{
       var attr: scala.xml.MetaData  = scala.xml.Null
       { attributes.map(x => buildAttributeString(x)).mkString(newline + indent(3)) }
       attr
@@ -435,9 +387,9 @@ trait { buildDefaultProtocolName(name) } extends {name} {{
     
     val compositorCodes = compositors map { makeCompositor }
     
-    Snippet(Seq(caseClassCode) ++ compositorCodes.flatMap(_.defition),
+    Snippet(Seq(caseClassCode) ++ compositorCodes.flatMap(_.definition),
       Seq(companionCode) ++ compositorCodes.flatMap(_.companion),
-      Seq(makeImplicitValue(name, formatterName)) ++ compositorCodes.flatMap(_.implicitValue))
+      Seq(makeImplicitValue(fqn, formatterName)) ++ compositorCodes.flatMap(_.implicitValue))
   }
     
   def buildComment(p: Product) = p match {
@@ -450,29 +402,25 @@ trait { buildDefaultProtocolName(name) } extends {name} {{
     case _ => ""
   }
   
+  // family is used to split sequences.
   def makeCompositor(compositor: HasParticle): Snippet = compositor match {
     case seq: SequenceDecl  => makeSequence(seq)
     case _ => 
       val superNames: List[String] = buildOptions(compositor)
       val superString = if (superNames.isEmpty) ""
         else " extends " + superNames.mkString(" with ")
-      val name = makeTypeName(context.compositorNames(compositor))
-      Snippet(<source>trait {name}{superString}</source>)
-  }
-  
-  def makeCompositorImport(compositor: HasParticle) = compositor match {
-    case seq: SequenceDecl =>
-      val name = makeTypeName(context.compositorNames(seq))
-      <source>import {name}._
-  </source> 
-    case _ => <source></source>
+      val localName = makeTypeName(context.compositorNames(compositor))
+      Snippet(<source>trait {localName}{superString}</source>)
   }
   
   def makeSequence(seq: SequenceDecl): Snippet = {
-    val name = makeTypeName(context.compositorNames(seq))
-    val formatterName = buildFormatterName(schema.targetNamespace, name)
+    val localName = makeTypeName(context.compositorNames(seq))
+    val fqn = buildFullyQualifiedName(schema, localName)
+    val formatterName = buildFormatterName(schema.targetNamespace, localName)
     
-    val particles = flattenElements(schema.targetNamespace, name, seq)
+    // pass in local name for the family.
+    // since the sequence is already split at this point, it does not require resplitting.
+    val particles = flattenElements(schema.targetNamespace, localName, seq)
     val paramList = particles.map { buildParam }
     val hasSequenceParam = (paramList.size == 1) &&
       (paramList.head.cardinality == Multiple) &&
@@ -480,7 +428,7 @@ trait { buildDefaultProtocolName(name) } extends {name} {{
     val paramsString = if (hasSequenceParam)
         makeParamName(paramList.head.name) + ": " + buildTypeName(paramList.head.typeSymbol) + "*"      
       else paramList.map(_.toScalaCode).mkString("," + newline + indent(1))    
-    def makeWritesXML = <source>    def writes(__obj: {name}, __namespace: Option[String], __elementLabel: Option[String], 
+    def makeWritesXML = <source>    def writes(__obj: {fqn}, __namespace: Option[String], __elementLabel: Option[String], 
         __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
       {childString}</source>
     def childString = if (paramList.isEmpty) "Nil"
@@ -491,21 +439,25 @@ trait { buildDefaultProtocolName(name) } extends {name} {{
     val superString = if (superNames.isEmpty) ""
       else " extends " + superNames.mkString(" with ")
     
-    Snippet(<source>{ buildComment(seq) }case class {name}({paramsString}){superString}</source>,
-     <source>  override def build{formatterName} = new scalaxb.XMLFormat[{name}] {{
-    def reads(seq: scala.xml.NodeSeq): Either[String, {name}] = Left("don't call me.")
+    Snippet(<source>{ buildComment(seq) }case class {localName}({paramsString}){superString}</source>,
+     <source>  override def build{formatterName} = new Default{formatterName} {{}} 
+  trait Default{formatterName} extends scalaxb.XMLFormat[{fqn}] {{
+    val targetNamespace: Option[String] = { quote(schema.targetNamespace) }
+    
+    def reads(seq: scala.xml.NodeSeq): Either[String, {fqn}] = Left("don't call me.")
     
 {makeWritesXML}
   }}</source>,
-      makeImplicitValue(name, formatterName))
+      makeImplicitValue(fqn, formatterName))
   }
     
   def makeGroup(group: GroupDecl): Snippet = {
     val compositors = context.compositorParents.filter(
       x => x._2 == makeGroupComplexType(group)).keysIterator.toList
-    val name = makeTypeName(context.compositorNames(group))
-    val formatterName = buildFormatterName(group.namespace, name)
-      
+    val localName = makeTypeName(context.compositorNames(group))
+    val fqn = buildFullyQualifiedName(schema, localName)
+    val formatterName = buildFormatterName(group.namespace, localName)
+    
     val compositor = primaryCompositor(group)
     val param = buildParam(compositor)
     val wrapperParam = compositor match {
@@ -529,25 +481,28 @@ trait { buildDefaultProtocolName(name) } extends {name} {{
       else groups.map { g => buildFormatterName(g.namespace, groupTypeName(g)) }
     
     val companionCode = <source>{ buildComment(group) }  trait {formatterName} extends {superNames.mkString(" with ")} {{  
-    def parse{name}: Parser[{param.baseTypeName}] =
+    private val targetNamespace: Option[String] = { quote(schema.targetNamespace) }
+    
+    def parse{localName}: Parser[{param.baseTypeName}] =
       {parser}
   
-    def parse{name}(wrap: Boolean): Parser[{wrapperParam.baseTypeName}] =
+    def parse{localName}(wrap: Boolean): Parser[{wrapperParam.baseTypeName}] =
       {wrapperParser}
     
-    def parsemixed{name}: Parser[Seq[{mixedParam.baseTypeName}]] =
+    def parsemixed{localName}: Parser[Seq[{mixedParam.baseTypeName}]] =
       {mixedparser}
   }}</source>
     
     val compositorCodes = compositors map { makeCompositor }
-    Snippet(compositorCodes.flatMap(_.defition),
+    Snippet(compositorCodes.flatMap(_.definition),
       Seq(companionCode) ++ compositorCodes.flatMap(_.companion),
       compositorCodes.flatMap(_.implicitValue))
   }
   
   def makeAttributeGroup(group: AttributeGroupDecl): Snippet = {
-    val name = buildTypeName(group)
-    val formatterName = buildFormatterName(group.namespace, name)
+    val localName = buildTypeName(group, true)
+    val fqn = buildTypeName(group, false)
+    val formatterName = buildFormatterName(group.namespace, localName)
         
     val attributes = buildAttributes(group.attributes)  
     val paramList = attributes.map { buildParam }
@@ -560,14 +515,17 @@ trait { buildDefaultProtocolName(name) } extends {name} {{
     val argsString = argList.mkString("," + newline + indent(3))  
     val attributeString = attributes.map(x => buildAttributeString(x)).mkString(newline + indent(2))
     
-    val caseClassCode = <source>{ buildComment(group) }case class {name}({paramsString})</source>
-    val companionCode = <source>  override def build{formatterName} = new scalaxb.AttributeGroupFormat[{name}] {{
-    def reads(seq: scala.xml.NodeSeq): Either[String, {name}] = seq match {{
-      case node: scala.xml.Node => Right({name}({argsString}))
+    val caseClassCode = <source>{ buildComment(group) }case class {localName}({paramsString})</source>
+    val companionCode = <source>  override def build{formatterName} = new Default{formatterName} {{}} 
+  trait Default{formatterName} extends scalaxb.AttributeGroupFormat[{fqn}] {{
+    val targetNamespace: Option[String] = { quote(schema.targetNamespace) }
+    
+    def reads(seq: scala.xml.NodeSeq): Either[String, {fqn}] = seq match {{
+      case node: scala.xml.Node => Right({fqn}({argsString}))
       case _ => Left("reads failed: seq must be scala.xml.Node")
     }}
     
-    def toAttribute(__obj: {name}, __attr: scala.xml.MetaData, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {{
+    def toAttribute(__obj: {fqn}, __attr: scala.xml.MetaData, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {{
       var attr: scala.xml.MetaData  = __attr
       {attributeString}
       attr
@@ -580,31 +538,32 @@ trait { buildDefaultProtocolName(name) } extends {name} {{
   }
   
   def makeEnumType(decl: SimpleTypeDecl) = {
-    val name = buildTypeName(decl)
-    val formatterName = buildFormatterName(decl.namespace, name)
+    val localName = buildTypeName(decl, true)
+    val fqn = buildTypeName(decl, false)
+    val formatterName = buildFormatterName(decl.namespace, localName)
     val enums = filterEnumeration(decl)
     
     def makeEnum(enum: EnumerationDecl) =
-      "case object " + buildTypeName(name, enum) + " extends " + name + 
+      "case object " + buildTypeName(localName, enum, true) + " extends " + localName + 
       " { override def toString = " + quote(enum.value) + " }"
     
     def makeCaseEntry(enum: EnumerationDecl) =
-      indent(2) + "case " + quote(enum.value) + " => " + buildTypeName(name, enum) + newline
+      indent(2) + "case " + quote(enum.value) + " => " + buildTypeName(localName, enum, true) + newline
     
     val enumString = enums.map(makeEnum).mkString(newline)
     
     val traitCode = enums match {
       case Nil =>
-<source>case class {name}()
+<source>case class {localName}()
 
-object {name} {{
-  def fromString(value: String): {name} = {name}()
+object {localName} {{
+  def fromString(value: String): {localName} = {localName}()
 }}</source>    
       case _ =>
-<source>trait {name}
+<source>trait {localName}
 
-object {name} {{
-  def fromString(value: String): {name} = value match {{
+object {localName} {{
+  def fromString(value: String): {localName} = value match {{
 { enums.map(e => makeCaseEntry(e)) }
   }}
 }}
@@ -613,31 +572,27 @@ object {name} {{
     }  // match
         
     Snippet(traitCode,
-      <source>  def build{formatterName} = new scalaxb.XMLFormat[{name}] {{
-    def reads(seq: scala.xml.NodeSeq): Either[String, {name}] = Right({name}.fromString(seq.text))
+      <source>  def build{formatterName} = new Default{formatterName} {{}}
+  trait Default{formatterName} extends scalaxb.XMLFormat[{fqn}] {{
+    val targetNamespace: Option[String] = { quote(schema.targetNamespace) }
     
-    def writes(__obj: {name}, __namespace: Option[String], __elementLabel: Option[String],
+    def reads(seq: scala.xml.NodeSeq): Either[String, {fqn}] = Right({fqn}.fromString(seq.text))
+    
+    def writes(__obj: {fqn}, __namespace: Option[String], __elementLabel: Option[String],
         __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
       scala.xml.Elem(scalaxb.Helper.getPrefix(__namespace, __scope).orNull, 
         __elementLabel getOrElse {{ error("missing element label.") }},
         scala.xml.Null, __scope, scala.xml.Text(__obj.toString))
   }}</source>,
-      makeImplicitValue(name, formatterName))
+      makeImplicitValue(fqn, formatterName))
   }
-        
-  def flattenSuperNames(decl: ComplexTypeDecl): List[String] = 
-    (decl.content.content.base match {
-      case ReferenceTypeSymbol(base: ComplexTypeDecl) => 
-        buildTypeName(base) :: flattenSuperNames(base)
-      case _ => Nil
-    }) ::: buildOptions(decl)
-  
+    
   def buildSuperNames(decl: ComplexTypeDecl) =
     buildSuperName(decl) ::: buildOptions(decl)
   
   def buildSuperName(decl: ComplexTypeDecl) = 
     decl.content.content.base match {
-      case ReferenceTypeSymbol(base: ComplexTypeDecl) => List(buildTypeName(base))
+      case ReferenceTypeSymbol(base: ComplexTypeDecl) => List(buildTypeName(base, true))
       case _ => Nil
     }
   
@@ -849,13 +804,13 @@ object {name} {{
       case group: AttributeGroupDecl => (group, Single)
     } map { _ match {
         case (attr: AttributeDecl, Optional) => "lazy val " + makeParamName(attr.name) + " = " + 
-          wrapperName + ".get(" +  quote(buildNodeName(attr)) + ") map { _.as[" + buildTypeName(attr.typeSymbol) + "] }"
+          wrapperName + ".get(" +  quote(buildNodeName(attr)) + ") map { _.as[" + buildTypeName(attr.typeSymbol, true) + "] }"
         case (attr: AttributeDecl, Single) => "lazy val " + makeParamName(attr.name) + " = " + 
-          wrapperName + "(" +  quote(buildNodeName(attr)) + ").as[" + buildTypeName(attr.typeSymbol) + "]"
+          wrapperName + "(" +  quote(buildNodeName(attr)) + ").as[" + buildTypeName(attr.typeSymbol, true) + "]"
         case (group: AttributeGroupDecl, Optional) => "lazy val " + makeParamName(group.name) + " = " + 
-          wrapperName + ".get(" +  quote(buildNodeName(group)) + ") map { _.as[" + buildTypeName(group) + "] }"
+          wrapperName + ".get(" +  quote(buildNodeName(group)) + ") map { _.as[" + buildTypeName(group, true) + "] }"
         case (group: AttributeGroupDecl, Single) => "lazy val " + makeParamName(group.name) + " = " + 
-          wrapperName + "(" +  quote(buildNodeName(group)) + ").as[" + buildTypeName(group) + "]"
+          wrapperName + "(" +  quote(buildNodeName(group)) + ").as[" + buildTypeName(group, true) + "]"
       }
     }
   }

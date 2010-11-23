@@ -8,7 +8,7 @@ import org.w3.xmldsig._
 import org.w3.xmlenc._
 import org.xml.saml2.assertion._
 import org.xml.saml2.metadata._
-import org.xml.saml2.assertion.DefaultXMLProtocol._
+import DefaultXMLProtocol._
 
 object SamlUsage {
   def main(args: Array[String]) = {

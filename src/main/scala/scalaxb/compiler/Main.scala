@@ -80,8 +80,9 @@ object Main {
       new File(outdir, namepart + ".scala") 
     }
     
-    if (paramParser.parse(args))
+    if (paramParser.parse(args) && !files.isEmpty)
       module.processFiles(files.map { file => (file, buildOutputFile(file, outdir)) },
+          new File(outdir, "xmlprotocol.scala"),
           Config(packageNames, classPrefix, paramPrefix, wrappedComplexTypes.toList) )
   }
 }

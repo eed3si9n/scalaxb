@@ -14,6 +14,9 @@ object Scalaxb {
     format.writes(obj, namespace, elementLabel, scope, typeAttribute)
   def toXML[A](obj: A, elementLabel: String, scope: NamespaceBinding)(implicit format: CanWriteXML[A]): NodeSeq =
     toXML(obj, None, Some(elementLabel), scope, false)
+    
+  /** @param pairs - pairs of (prefix, namespace URI) 
+   */
   def toScope(pairs: (Option[String], String)*): NamespaceBinding =
     pairs.reverse.foldLeft[NamespaceBinding](scala.xml.TopScope) { (scope, pair) =>
       scala.xml.NamespaceBinding(pair._1.getOrElse{null}, pair._2, scope) }

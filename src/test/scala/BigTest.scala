@@ -5,7 +5,7 @@ object BigTest extends TestBase {
   val inFile  = new File("src/test/resources/big.xsd")
   val outFile = new File(tmp, "big.scala")
   
-  lazy val generated = module.process(inFile, outFile,
+  lazy val generated = module.process(inFile, outFile, outProtocolFile,
     Config(packageNames = Map(None -> Some("big") ),
       classPrefix = Some("X"),
       paramPrefix = Some("m_"),

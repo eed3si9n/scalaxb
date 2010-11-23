@@ -3,7 +3,7 @@ import java.io.{File}
 object XhtmlTest extends TestBase {
   val inFile  = new File("src/test/resources/xhtml1-strict.xsd")
   val outFile = new File(tmp, "xhtml1-strict.scala")
-  lazy val generated = module.process(inFile, outFile, "org.w3.xhtml")
+  lazy val generated = module.process(inFile, outFile, outProtocolFile, "org.w3.xhtml")
   
   "xhtml1-strict.scala file must compile so that Html can be used" in {
     (List("import scalaxb._",

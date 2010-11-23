@@ -14,7 +14,7 @@ object PurchaseOrderTest extends TestBase {
   }
   
   // override val module = new scalaxb.compiler.xsd.Driver with Verbose
-  lazy val generated = module.process(inFile, outFile, "ipo")
+  lazy val generated = module.process(inFile, outFile, outProtocolFile, "ipo")
   
   "ipo.scala file must compile so Address can be used" in {
     (List("import ipo._",

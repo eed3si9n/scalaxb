@@ -107,7 +107,7 @@ trait Params extends Lookup {
   
   def buildParam(attr: AttributeDecl): Param = {
     val name = if (!attr.global) attr.name
-      else Option[String](schema.scope.getPrefix(attr.namespace.orNull)).getOrElse("") + attr.name
+      else makePrefix(attr.namespace, context) + attr.name
     
     val retval = Param(attr.namespace, name, attr.typeSymbol, toCardinality(attr), false, true)
     log("GenSource#buildParam:  " + retval)
@@ -239,7 +239,8 @@ trait Params extends Lookup {
       occurrence.minOccurs, occurrence.maxOccurs, Some(occurrence.nillable), None, None)
   }
   
-  def buildChoiceTypeName(decl: ComplexTypeDecl, choice: ChoiceDecl): String = 
+  def buildChoiceTypeName(decl: ComplexTypeDecl, choice: ChoiceDecl,
+      shortLocal: Boolean): String = 
     if (choice.particles.size < 1) "scalaxb.DataRecord[Any]"
     else {
       val firstParticle = choice.particles(0)
@@ -277,7 +278,7 @@ trait Params extends Lookup {
         case Some(x) => buildTypeName(x)
         case None =>
           if (!containsForeignType(choice) &&
-              (choice.particles forall { isOptionDescendant }) ) buildTypeName(decl)
+              (choice.particles forall { isOptionDescendant }) ) buildTypeName(decl, shortLocal)
           else "Any"
       }
       if (buildOccurrence(choice).nillable) "scalaxb.DataRecord[Option[" + member + "]]"

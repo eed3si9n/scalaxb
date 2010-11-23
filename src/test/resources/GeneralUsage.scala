@@ -82,6 +82,7 @@ object GeneralUsage {
   }
       
   def testSingularSimpleType {
+    println("testSingularSimpleType")
     val subject = <foo xmlns="http://www.example.com/general"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
       <number1>1</number1>
@@ -103,8 +104,8 @@ object GeneralUsage {
       }
     check(obj)
     val document = toXML[SingularSimpleTypeTest](obj, "foo", defaultScope)
-    check(fromXML[SingularSimpleTypeTest](document))
     println(document)
+    check(fromXML[SingularSimpleTypeTest](document))
   }
   
   def testList {
@@ -211,6 +212,7 @@ object GeneralUsage {
   </xs:complexType>
   */
   def testAny {
+    println("testAny")
     val subject = <foo xmlns="http://www.example.com/general"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xmlns:xs="http://www.w3.org/2001/XMLSchema">
@@ -241,9 +243,13 @@ object GeneralUsage {
         case _ => error("match failed: " + obj.toString)
       }
     check(obj)
-    val document = toXML[AnyTest](obj, "foo", defaultScope)
-    check(fromXML[AnyTest](document))
+    val scope = toScope(None -> "http://www.example.com/general",
+      Some("gen") -> "http://www.example.com/general",
+      Some("xsi") -> "http://www.w3.org/2001/XMLSchema-instance",
+      Some("xs") -> "http://www.w3.org/2001/XMLSchema")
+    val document = toXML[AnyTest](obj, "foo", scope)
     println(document)
+    check(fromXML[AnyTest](document))
   }
   
   def testLongAll {

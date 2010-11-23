@@ -6,7 +6,7 @@ object GeneralTest extends TestBase {
   val usageFile = new File(tmp, "GeneralUsage.scala")
   val custumFile = new File(tmp, "CustomizationUsage.scala")
   
-  lazy val generated = module.process(inFile, outFile, "general")
+  lazy val generated = module.process(inFile, outFile, outProtocolFile, "general")
   copyFileFromResource("GeneralUsage.scala", usageFile)
   copyFileFromResource("CustomizationUsage.scala", custumFile)
   

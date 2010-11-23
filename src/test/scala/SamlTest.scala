@@ -19,6 +19,7 @@ object SamlTest extends TestBase {
       xencschemaxsd -> xencschemascala,
       samlschemaassertion2xsd -> samlschemaassertion2scala,
       samlschemametadata2xsd -> samlschemametadata2scala),
+    outProtocolFile,
     Config(packageNames = Map(None -> Some("saml"),
       Some("http://www.w3.org/2000/09/xmldsig#") -> Some("org.w3.xmldsig"),
       Some("http://www.w3.org/2001/04/xmlenc#") -> Some("org.w3.xmlenc"),

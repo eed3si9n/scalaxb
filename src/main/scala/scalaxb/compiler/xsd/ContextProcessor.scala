@@ -48,6 +48,11 @@ trait ContextProcessor extends ScalaNames with PackageName {
   def logger: Logger
   def log(msg: String) = logger.log(msg)
   def config: Config
+  val newline = System.getProperty("line.separator")
+  val XSI_URL = "http://www.w3.org/2001/XMLSchema-instance"
+  val XSI_PREFIX = "xsi"
+  val XML_URI = "http://www.w3.org/XML/1998/namespace"
+  val XML_PREFIX = "xml"
   
   def processContext(context: XsdContext) {
     context.packageNames ++= config.packageNames
@@ -63,6 +68,7 @@ trait ContextProcessor extends ScalaNames with PackageName {
     for (schema <- context.schemas) {
       val typeNames = context.typeNames(packageName(schema, context))
       typeNames(schema) = makeProtectedTypeName(schema, context)
+      resolveType(schema, context)
     }
     
     for (schema <- context.schemas;
@@ -164,6 +170,59 @@ trait ContextProcessor extends ScalaNames with PackageName {
     }
     
     makeCompositorNames(context)
+  }
+  
+  def resolveType(schema: SchemaDecl, context: XsdContext) {
+    def containsType(namespace: Option[String], typeName: String): Boolean =
+      if (namespace == schema.targetNamespace && schema.topTypes.contains(typeName)) true
+      else context.schemas.exists(schema => schema.targetNamespace == namespace &&
+            schema.topTypes.contains(typeName))
+    
+    def getType(namespace: Option[String], typeName: String): TypeDecl =
+      if (namespace == schema.targetNamespace && schema.topTypes.contains(typeName)) schema.topTypes(typeName)
+      else
+        (for (schema <- context.schemas;
+            if schema.targetNamespace == namespace;
+            if schema.topTypes.contains(typeName))
+          yield schema.topTypes(typeName)).headOption getOrElse {
+            error("Type not found: " + namespace.map("{" + _ + "}").getOrElse{""} + ":" + typeName)
+          }
+        
+    def resolveTypeSymbol(typeSymbol: XsTypeSymbol) {
+      typeSymbol match {
+        case symbol: ReferenceTypeSymbol =>
+          if (symbol.decl != null) symbol.decl
+          else {
+            val (namespace, typeName) = TypeSymbolParser.splitTypeName(symbol.name, schema)
+            if (containsType(namespace, typeName)) symbol.decl = getType(namespace, typeName) 
+            else error("resolveType type not found: " + symbol.name + " " + symbol)   
+          }
+        case _ =>
+      }
+    }
+        
+    for (elem <- schema.elemList) resolveTypeSymbol(elem.typeSymbol)
+    
+    for (attr <- schema.attrList) attr.typeSymbol match {
+      case symbol: ReferenceTypeSymbol => resolveTypeSymbol(symbol)
+      case _ =>
+    } // match    
+    
+    for (typ <- schema.typeList) typ match {
+      case SimpleTypeDecl(_, _, _, res: SimpTypRestrictionDecl, _) =>
+        resolveTypeSymbol(res.base)
+      case SimpleTypeDecl(_, _, _, list: SimpTypListDecl, _) =>
+        resolveTypeSymbol(list.itemType) 
+      case ComplexTypeDecl(_, _, _, _, _, SimpleContentDecl(res: SimpContRestrictionDecl), _, _) =>
+        resolveTypeSymbol(res.base)
+      case ComplexTypeDecl(_, _, _, _, _, SimpleContentDecl(ext: SimpContExtensionDecl), _, _) =>
+        resolveTypeSymbol(ext.base)      
+      case ComplexTypeDecl(_, _, _, _, _, ComplexContentDecl(res: CompContRestrictionDecl), _, _) =>
+        resolveTypeSymbol(res.base)
+      case ComplexTypeDecl(_, _, _, _, _, ComplexContentDecl(ext: CompContExtensionDecl), _, _) =>
+        resolveTypeSymbol(ext.base)  
+      case _ =>
+    }
   }
   
   def makeEnumValues(decl: SimpleTypeDecl, context: XsdContext) {
@@ -419,6 +478,20 @@ trait ContextProcessor extends ScalaNames with PackageName {
     else identifier(base)
   }
   
+  def makePrefix(namespace: Option[String], context: XsdContext): String = namespace map { ns =>
+    if (ns == XML_URI) XML_PREFIX
+    else context.prefixes.getOrElse(ns, "")
+  } getOrElse {""}
+      
   def identifier(value: String) =
     """\W""".r.replaceAllIn(value, "")
+      
+  def quote(value: Option[String]): String = value map {
+    "Some(\"" + _ + "\")"
+  } getOrElse { "None" }
+  
+  def quote(value: String): String = if (value == null) "null"
+    else "\"" + value + "\""
+
+  def indent(indent: Int) = "  " * indent
 }

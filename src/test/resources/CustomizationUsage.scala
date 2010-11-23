@@ -38,14 +38,13 @@ object CustomizationUsage {
     }
   }
   
-  trait CustomXMLProtocol extends general.DefaultXMLProtocol {
-    private val targetNamespace: Option[String] = Some("http://www.example.com/general")
-    
-    override def buildGeneralSingularSimpleTypeTestFormat = new scalaxb.ElemNameParser[SingularSimpleTypeTest] {
+  trait CustomXMLProtocol extends DefaultXMLProtocol {
+    override def buildGeneralSingularSimpleTypeTestFormat = new CustomGeneralSingularSimpleTypeTestFormat {}
+    trait CustomGeneralSingularSimpleTypeTestFormat extends DefaultGeneralSingularSimpleTypeTestFormat {
       override def typeName: Option[String] = Some("SingularSimpleTypeTest")
       
       // hardcode to SKIM.
-      def parser(node: scala.xml.Node): Parser[SingularSimpleTypeTest] =
+      override def parser(node: scala.xml.Node): Parser[SingularSimpleTypeTest] =
         (scalaxb.ElemName(targetNamespace, "number1")) ~ 
         (scalaxb.ElemName(targetNamespace, "number2")) ~ 
         opt(scalaxb.ElemName(targetNamespace, "number3")) ~ 
@@ -73,28 +72,6 @@ object CustomizationUsage {
           p12.toSeq map { _.nilOption map { fromXML[MilkType](_) }},
           (node \ "@attr1").headOption map { fromXML[Long](_) },
           (node \ "@attr2").headOption map { fromXML[MilkType](_) }) }
-
-      override def writesAttribute(__obj: SingularSimpleTypeTest, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {
-        var attr: scala.xml.MetaData  = scala.xml.Null
-        __obj.attr1 foreach { x => attr = scala.xml.Attribute(null, "attr1", x.toString, attr) }
-        __obj.attr2 foreach { x => attr = scala.xml.Attribute(null, "attr2", x.toString, attr) }
-        attr
-      }
-
-      def writesChildNodes(__obj: SingularSimpleTypeTest, __scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node] =
-        Seq.concat(toXML[Long](__obj.number1, None, Some("number1"), __scope, false),
-          toXML[Option[Long]](__obj.number2, None, Some("number2"), __scope, false),
-          __obj.number3 map { toXML[Long](_, None, Some("number3"), __scope, false) } getOrElse {Nil},
-          __obj.number4 map { toXML[Option[Long]](_, None, Some("number4"), __scope, false) } getOrElse {Nil},
-          __obj.number5 flatMap { toXML[Long](_, None, Some("number5"), __scope, false) },
-          __obj.number6 flatMap { toXML[Option[Long]](_, None, Some("number6"), __scope, false) },
-          toXML[MilkType](__obj.milk1, None, Some("milk1"), __scope, false),
-          toXML[Option[MilkType]](__obj.milk2, None, Some("milk2"), __scope, false),
-          __obj.milk3 map { toXML[MilkType](_, None, Some("milk3"), __scope, false) } getOrElse {Nil},
-          __obj.milk4 map { toXML[Option[MilkType]](_, None, Some("milk4"), __scope, false) } getOrElse {Nil},
-          __obj.milk5 flatMap { toXML[MilkType](_, None, Some("milk5"), __scope, false) },
-          __obj.milk6 flatMap { toXML[Option[MilkType]](_, None, Some("milk6"), __scope, false) })
-
     }
   }
   
@@ -105,8 +82,6 @@ object CustomizationUsage {
       Some("gen") -> "http://www.example.com/general",
       Some("xsi") -> "http://www.w3.org/2001/XMLSchema-instance")    
   }
-  
-  
   
   def testSingularSimpleType {
     import CustomXMLProtocol._

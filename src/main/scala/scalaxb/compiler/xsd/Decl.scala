@@ -60,7 +60,8 @@ case class XsdContext(
   groups: mutable.ListBuffer[(SchemaDecl, GroupDecl)] =
     mutable.ListBuffer.empty[(SchemaDecl, GroupDecl)],
   substituteGroups: mutable.ListBuffer[(Option[String], String)] =
-    mutable.ListBuffer.empty[(Option[String], String)]
+    mutable.ListBuffer.empty[(Option[String], String)],
+  prefixes: mutable.ListMap[String, String] = mutable.ListMap.empty[String, String]
     ) {
 }
 
@@ -78,35 +79,6 @@ class ParserConfig {
   val choices   = mutable.ListBuffer.empty[ChoiceDecl]
   var schemas: List[SchemaDecl] = Nil
   val typeToAnnotatable = mutable.ListMap.empty[TypeDecl, Annotatable]
-  
-  def containsType(name: String): Boolean =
-    containsType(TypeSymbolParser.splitTypeName(name, this))
-  
-  def containsType(pair: (Option[String], String)): Boolean =
-    containsType(pair._1, pair._2)
-  
-  def containsType(namespace: Option[String], typeName: String): Boolean = {
-    if (namespace == targetNamespace && topTypes.contains(typeName)) true
-    else
-      schemas.exists(schema => schema.targetNamespace == namespace &&
-          schema.topTypes.contains(typeName))
-  }
-  
-  def getType(name: String): TypeDecl = {
-    val (namespace, typeName) = TypeSymbolParser.splitTypeName(name, this)
-    getType(namespace, typeName)
-  }
-  
-  def getType(namespace: Option[String], typeName: String): TypeDecl =
-    if (namespace == targetNamespace && topTypes.contains(typeName)) topTypes(typeName)
-    else
-      (for (schema <- schemas;
-          if schema.targetNamespace == namespace;
-          if schema.topTypes.contains(typeName))
-        yield schema.topTypes(typeName)) match {
-        case x :: xs => x
-        case Nil     => error("Type not found: {" + namespace + "}:" + typeName)
-      }
 }
 
 object TypeSymbolParser {
@@ -122,9 +94,8 @@ object TypeSymbolParser {
       case _ => new ReferenceTypeSymbol(name)
     }
   }
-
-  def splitTypeName(name: String, config: ParserConfig):
-      (Option[String], String) = {
+  
+  def splitTypeName(name: String, config: ParserConfig): (Option[String], String) = {
     if (name.contains('@')) (config.targetNamespace, name)
     else if (name.contains(':')) {
       val prefix = name.dropRight(name.length - name.indexOf(':'))
@@ -132,6 +103,15 @@ object TypeSymbolParser {
       Option[String](config.scope.getURI(prefix)) -> value
     } else (Option[String](config.scope.getURI(null)), name)
   }
+  
+  def splitTypeName(name: String, schema: SchemaDecl): (Option[String], String) = {
+    if (name.contains('@')) (schema.targetNamespace, name)
+    else if (name.contains(':')) {
+      val prefix = name.dropRight(name.length - name.indexOf(':'))
+      val value = name.drop(name.indexOf(':') + 1)
+      Option[String](schema.scope.getURI(prefix)) -> value
+    } else (Option[String](schema.scope.getURI(null)), name)
+  }  
 }
 
 trait Particle {
@@ -223,23 +203,13 @@ object SchemaDecl {
       case _ =>
     }
     
-    resolveType(config)
-    
-    var scopeToBuild = scala.xml.NamespaceBinding("xsi", "http://www.w3.org/2001/XMLSchema-instance", 
-      scala.xml.TopScope) 
-    for (s <- config.schemas.map(_.scope) ::: List(config.scope)) {
-      var scope = s
-      while (scope != null) {
-        if (scope.prefix != null && scope.uri != null &&
-            scopeToBuild.getPrefix(scope.uri) == null)
-          scopeToBuild = scala.xml.NamespaceBinding(scope.prefix, scope.uri, scopeToBuild)
-        scope = scope.parent
-      }
-    }
-    config.targetNamespace foreach { x =>
-      scopeToBuild = scala.xml.NamespaceBinding(null, x, scopeToBuild)
-    }
-        
+    var scope = schema.scope
+    while (scope != null) {
+      if (scope.prefix != null && scope.uri != null &&
+          context.prefixes.get(scope.uri).isEmpty) context.prefixes(scope.uri) = scope.prefix
+      scope = scope.parent
+    } // while
+                
     val annotation = (node \ "annotation").headOption map { x =>
       AnnotationDecl.fromXML(x, config) }
       
@@ -255,61 +225,8 @@ object SchemaDecl {
       immutable.ListMap.empty[String, AttributeGroupDecl] ++ config.topAttrGroups,
       immutable.ListMap.empty[TypeDecl, Annotatable] ++ config.typeToAnnotatable,
       annotation,
-      scopeToBuild)
+      schema.scope)
   }
-  
-  def resolveType(config: ParserConfig) {    
-    for (elem <- config.elemList)
-      resolveType(elem.typeSymbol, config)
-             
-    for (attr <- config.attrList) {
-      attr.typeSymbol match {
-        case symbol: BuiltInSimpleTypeSymbol =>
-        
-        case symbol: ReferenceTypeSymbol =>
-          if (symbol.decl == null) {
-            if (!config.containsType(symbol.name))
-              error("SchemaDecl: type not found " + attr.name + ": " + symbol.name)
-            config.getType(symbol.name) match {
-              case decl: SimpleTypeDecl => symbol.decl = decl
-              case _ => error("SchemaDecl: type does not match ")
-            } // match            
-          } // if
-      } // match    
-    } // for
-    
-    for (typ <- config.typeList) typ match {
-      case SimpleTypeDecl(_, _, _, res: SimpTypRestrictionDecl, _) =>
-        resolveType(res.base, config)
-      case SimpleTypeDecl(_, _, _, list: SimpTypListDecl, _) =>
-        resolveType(list.itemType, config) 
-      case ComplexTypeDecl(_, _, _, _, _, SimpleContentDecl(res: SimpContRestrictionDecl), _, _) =>
-        resolveType(res.base, config)
-      case ComplexTypeDecl(_, _, _, _, _, SimpleContentDecl(ext: SimpContExtensionDecl), _, _) =>
-        resolveType(ext.base, config)      
-      case ComplexTypeDecl(_, _, _, _, _, ComplexContentDecl(res: CompContRestrictionDecl), _, _) =>
-        resolveType(res.base, config)
-      case ComplexTypeDecl(_, _, _, _, _, ComplexContentDecl(ext: CompContExtensionDecl), _, _) =>
-        resolveType(ext.base, config)
-        
-      case _ =>
-    }
-  }
-  
-  def resolveType(value: XsTypeSymbol, config: ParserConfig): Unit = value match {
-    case symbol: ReferenceTypeSymbol =>
-      if (symbol.decl == null) {
-        if (!config.containsType(symbol.name))
-          error("SchemaDecl#resolveType type not found: " + symbol.name + " " +
-            symbol)
-        symbol.decl = config.getType(symbol.name)
-      } // if
-      
-    case symbol: BuiltInSimpleTypeSymbol => // do nothing 
-    case XsAnySimpleType => // do nothing
-    case XsAny => // do nothing
-  } // match
-
 }
 
 abstract class AttributeLike extends Decl

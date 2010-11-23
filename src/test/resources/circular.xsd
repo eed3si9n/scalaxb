@@ -1,0 +1,15 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<xs:schema targetNamespace="http://www.example.com/circular"
+    xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:cir="http://www.example.com/circular"
+    xmlns:r="http://www.example.com/Report">
+  <import namespace="http://www.example.com/Report"/>
+  
+  <element name="circularTest">
+    <complexType>
+      <sequence>
+        <element name="parts" type="r:PartsType"/>
+      </sequence>
+    </complexType>
+  </element>
+</xs:schema>

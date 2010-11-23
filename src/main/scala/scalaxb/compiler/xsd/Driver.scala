@@ -22,10 +22,10 @@
  
 package scalaxb.compiler.xsd
 
-import scalaxb.compiler.{Module, Config}
+import scalaxb.compiler.{Module, Config, Snippet}
 import java.io.{File, Reader, PrintWriter}
 import collection.mutable
-import scala.xml.{Elem}
+import scala.xml.{Node, Elem}
 import scala.xml.factory.{XMLLoader}
 import javax.xml.parsers.SAXParser
 
@@ -42,11 +42,18 @@ class Driver extends Module { driver =>
     }).processContext(context)
   
   override def generate(xsd: Schema, dependents: Seq[Schema],
-      context: Context, cnfg: Config) =
+      context: Context, cnfg: Config): Snippet =
     (new GenSource(xsd, dependents, context) {
       val logger = driver
       val config = cnfg
     }).run
+  
+  override def generateProtocol(snippet: Snippet,
+      context: Context, cnfg: Config): Seq[Node] =
+    (new GenProtocol(context) {
+      val logger = driver
+      val config = cnfg
+    }).generateProtocol(snippet)
   
   override def toImportable(in: Reader): Importable = new Importable {
     val reader = in

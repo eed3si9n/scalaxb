@@ -5,7 +5,7 @@ object MixedContentTest extends TestBase {
   val outFile   = new File(tmp, "mixed.scala")
   val usageFile = new File(tmp, "MixedUsage.scala")
   
-  lazy val generated = module.process(inFile, outFile, "mixed")
+  lazy val generated = module.process(inFile, outFile, outProtocolFile, "mixed")
   copyFileFromResource("MixedUsage.scala", usageFile)
     
   "mixed.scala file must compile together with MixedUsage.scala" in {

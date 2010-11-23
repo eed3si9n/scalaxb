@@ -30,8 +30,14 @@ import scala.xml.{Node}
 case class Config(packageNames: Map[Option[String], Option[String]] = Map(None -> None),
   classPrefix: Option[String] = None,
   paramPrefix: Option[String] = None,
-  wrappedComplexTypes: List[String] = Nil)
+  wrappedComplexTypes: List[String] = Nil,
+  primaryNamespace: Option[String] = None,
+  seperateProtocol: Boolean = true)
 
+case class Snippet(definition: Seq[Node],
+  companion: Seq[Node] = <source/>,
+  implicitValue: Seq[Node]  = <source/>)
+    
 trait Module extends Logger {
   type Schema
   type Context
@@ -48,14 +54,15 @@ trait Module extends Logger {
     def toSchema(context: Context): Schema
   }
   
-  def process(file: File, output: File, packageName: String): List[File] =
-    process(file, output,
+  def process(file: File, output: File, outProtocol: File, packageName: String): List[File] =
+    process(file, output, outProtocol,
       Config(packageNames = Map(None -> Some(packageName))))
   
-  def process(file: File, output: File, config: Config): List[File] = 
-    processFiles(List((file, output)), config)
+  def process(file: File, output: File, outProtocol: File, config: Config): List[File] = 
+    processFiles(List((file, output)), outProtocol, config)
   
-  def processFiles(filePairs: Seq[(File, File)], config: Config): List[File] = {    
+  def processFiles(filePairs: Seq[(File, File)],
+      outProtocol: File, config: Config): List[File] = {    
     val files = filePairs.map(_._1)
     files.foreach(file => if (!file.exists)
       error("file not found: " + file.toString))
@@ -65,47 +72,77 @@ trait Module extends Logger {
           new java.io.FileInputStream(pair._1), encoding)) ->
         new PrintWriter(new java.io.OutputStreamWriter(
           new java.io.FileOutputStream(pair._2), encoding)) 
-      }).toMap, config)
+      }).toMap,
+      new PrintWriter(new java.io.OutputStreamWriter(
+        new java.io.FileOutputStream(outProtocol), encoding)),
+      config)
     val outfiles = ListBuffer.empty[File] ++ (filePairs map { _._2 })
     outfiles foreach { file =>
       println("generated " + file + ".")
     }
+    outfiles += outProtocol
+    println("generated " + outProtocol + ".")
     
     if (filePairs.size > 0) {
       val parent = filePairs(0)._2.getParentFile
       val helper = new File(parent, "Helper.scala")
       copyFileFromResource("/Helper.scala", helper)
       outfiles += helper
+      println("generated " + helper + ".")
     }
     
     outfiles.toList
   }
   
-  def processReaders(inputToOutput: Map[Reader, PrintWriter], config: Config) = {    
+  def processReaders(inputToOutput: Map[Reader, PrintWriter],
+      outProtocol: PrintWriter, config0: Config) = {    
+    val companions = ListBuffer.empty[Node]
+    val implicitValues = ListBuffer.empty[Node]
+    val nodes = ListBuffer.empty[Node]
+    def splitSnippet(snippet: Snippet) {
+      nodes ++= snippet.definition
+      companions ++= snippet.companion
+      implicitValues ++= snippet.implicitValue
+    }
+    
     val context = buildContext
     val importables = inputToOutput.keysIterator.toList map { toImportable(_) }
-    val sorted = sortByDependency(importables)
-    val schemas = Map[Importable, Schema](sorted map { file =>
+    val config: Config = config0.primaryNamespace map { _ => config0 } getOrElse {
+      val pns: Option[String] = importables.head.targetNamespace
+      config0.copy(primaryNamespace = pns)
+    }    
+    
+    val schemas = Map[Importable, Schema](importables map { file =>
       (file, parse(file, context)) }: _*)
     processContext(context, config)
-    
-    sorted foreach { importable =>
+    importables foreach { importable =>
       val schema = schemas(importable)
-      val dependents = importable.imports flatMap { i => dependentImportables(sorted, Some(i)).map(schemas(_)) }
+      val dependents = importable.imports flatMap { i => dependentImportables(importables, Some(i)).map(schemas(_)) }
       
       val out = inputToOutput(importable.reader)
-      try {
-        val nodes = generate(schema, dependents, context, config)
-        printNodes(nodes, out)
-      }
-      finally {
+      try {    
+        val snippet = generate(schema, dependents, context, config)
+        splitSnippet(snippet)
+        printNodes(snippet.definition, out)
+      } finally {
         out.flush()
         out.close()
       }
     }
+    
+    val protocolNodes = generateProtocol(Snippet(nodes, companions, implicitValues), context, config)
+    try {
+      printNodes(protocolNodes, outProtocol)
+    } finally {
+      outProtocol.flush()
+      outProtocol.close()      
+    }
   }
   
   def generate(schema: Schema, dependents: Seq[Schema],
+    context: Context, config: Config): Snippet
+    
+  def generateProtocol(snippet: Snippet,
     context: Context, config: Config): Seq[Node]
     
   def toImportable(in: Reader): Importable
@@ -115,26 +152,26 @@ trait Module extends Logger {
     case _ => Nil
   }
   
-  def sortByDependency(files: Seq[Importable]): Seq[Importable] = {        
-    val XML_URI = "http://www.w3.org/XML/1998/namespace"    
-    val unsorted = ListBuffer.empty[Importable]
-    unsorted.appendAll(files)
-    val sorted = ListBuffer.empty[Importable]
-    val upperlimit = unsorted.size * unsorted.size
-        
-    for (i <- 0 to upperlimit if unsorted.size > 0) {
-      val importable = unsorted(i % unsorted.size)
-      if (importable.imports forall { namespace =>
-          (namespace == XML_URI) ||
-          dependentImportables(files, Some(namespace)).forall(sorted.contains) }) {
-        unsorted -= importable
-        sorted += importable
-      } // if
-    }
-    
-    if (unsorted.size > 0) error("Circular import: " + unsorted.toList)
-    sorted
-  }
+  // def sortByDependency(files: Seq[Importable]): Seq[Importable] = {        
+  //   val XML_URI = "http://www.w3.org/XML/1998/namespace"    
+  //   val unsorted = ListBuffer.empty[Importable]
+  //   unsorted.appendAll(files)
+  //   val sorted = ListBuffer.empty[Importable]
+  //   val upperlimit = unsorted.size * unsorted.size
+  //       
+  //   for (i <- 0 to upperlimit if unsorted.size > 0) {
+  //     val importable = unsorted(i % unsorted.size)
+  //     if (importable.imports forall { namespace =>
+  //         (namespace == XML_URI) ||
+  //         dependentImportables(files, Some(namespace)).forall(sorted.contains) }) {
+  //       unsorted -= importable
+  //       sorted += importable
+  //     } // if
+  //   }
+  //   
+  //   if (unsorted.size > 0) error("Circular import: " + unsorted.toList)
+  //   sorted
+  // }
   
   def buildContext: Context
   

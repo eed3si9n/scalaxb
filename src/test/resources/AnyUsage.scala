@@ -4,7 +4,7 @@
 
 import scalaxb._
 import Scalaxb._
-import any._
+import anycontent._
 
 object AnyUsage {
   def main(args: Array[String]) = {
@@ -18,7 +18,7 @@ object AnyUsage {
   }
   
   def testAny {
-    import any.DefaultXMLProtocol._
+    import anycontent.DefaultXMLProtocol._
     
     val subject = <foo xmlns="http://www.example.com/any"
         xmlns:xs="http://www.w3.org/2001/XMLSchema"
@@ -95,7 +95,7 @@ object AnyUsage {
   }
   
   def testAny2 {
-    import any.DefaultXMLProtocol._
+    import anycontent.DefaultXMLProtocol._
     
     val ExampleCom = new java.net.URI("http://www.example.com/")
     val ExampleQName = javax.xml.namespace.QName.valueOf("{http://www.example.com/}foo")

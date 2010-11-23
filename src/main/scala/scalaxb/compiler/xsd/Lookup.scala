@@ -31,9 +31,7 @@ trait Lookup extends ContextProcessor {
   def context: XsdContext
   
   val schemas = context.schemas.toList
-  val newline = System.getProperty("line.separator")
   val compositorWrapper = mutable.ListMap.empty[ComplexTypeDecl, HasParticle]
-  val XML_URI = "http://www.w3.org/XML/1998/namespace"
   val INTERNAL_NAMESPACE = "http://scalaxb.org/internal"
   
   def elements(namespace: Option[String], name: String) =
@@ -120,7 +118,7 @@ trait Lookup extends ContextProcessor {
   def buildAttributeGroup(ref: AttributeGroupRef) =
     attributeGroups(ref.namespace, ref.name)
   
-  def buildTypeName(typeSymbol: XsTypeSymbol): String = typeSymbol match {
+  def buildTypeName(typeSymbol: XsTypeSymbol, shortLocal: Boolean = false): String = typeSymbol match {
     case XsAny          => "scalaxb.DataRecord[Any]"
     case XsNillableAny  => "scalaxb.DataRecord[Option[Any]]"
     case XsLongAll      => "Map[String, scalaxb.DataRecord[Any]]"
@@ -128,77 +126,68 @@ trait Lookup extends ContextProcessor {
     case XsAnyAttribute  => "Map[String, scalaxb.DataRecord[Any]]"
     case XsDataRecord(ReferenceTypeSymbol(decl: ComplexTypeDecl)) if compositorWrapper.contains(decl) =>
       compositorWrapper(decl) match {
-        case choice: ChoiceDecl => buildChoiceTypeName(decl, choice)
+        case choice: ChoiceDecl => buildChoiceTypeName(decl, choice, shortLocal)
         case _ => "scalaxb.DataRecord[Any]"
       }
     case r: XsDataRecord => "scalaxb.DataRecord[Any]"
     case XsMixed         => "scalaxb.DataRecord[Any]"
     case symbol: BuiltInSimpleTypeSymbol => symbol.name
-    case ReferenceTypeSymbol(decl: SimpleTypeDecl) => buildTypeName(decl)
-    case ReferenceTypeSymbol(decl: ComplexTypeDecl) => buildTypeName(decl)
-    case symbol: AttributeGroupSymbol => buildTypeName(attributeGroups(symbol.namespace, symbol.name))
-    case XsXMLFormat(decl: ComplexTypeDecl) => "scalaxb.XMLFormat[" + buildTypeName(decl) + "]"
-    case XsXMLFormat(group: AttributeGroupDecl) => "scalaxb.XMLFormat[" + buildTypeName(group) + "]"
+    case ReferenceTypeSymbol(decl: SimpleTypeDecl) => buildTypeName(decl, shortLocal)
+    case ReferenceTypeSymbol(decl: ComplexTypeDecl) => buildTypeName(decl, shortLocal)
+    case symbol: AttributeGroupSymbol => buildTypeName(attributeGroups(symbol.namespace, symbol.name), shortLocal)
+    case XsXMLFormat(decl: ComplexTypeDecl) => "scalaxb.XMLFormat[" + buildTypeName(decl, shortLocal) + "]"
+    case XsXMLFormat(group: AttributeGroupDecl) => "scalaxb.XMLFormat[" + buildTypeName(group, shortLocal) + "]"
   }
   
-  def buildChoiceTypeName(decl: ComplexTypeDecl, choice: ChoiceDecl): String
+  def buildChoiceTypeName(decl: ComplexTypeDecl, choice: ChoiceDecl, shortLocal: Boolean): String
   
   def xmlFormatTypeName(decl: ComplexTypeDecl): String =
-    "scalaxb.XMLFormat[" + buildTypeName(decl) + "]"
+    "scalaxb.XMLFormat[" + buildTypeName(decl, false) + "]"
   
-  def buildTypeName(decl: ComplexTypeDecl, localOnly: Boolean = false): String = {
-    val pkg = packageName(decl, context)
-    val typeNames = context.typeNames(pkg)
-    if (!typeNames.contains(decl))
-      error(pkg + ": Type name not found: " + decl.toString)
+  def buildTypeName(decl: ComplexTypeDecl, shortLocal: Boolean): String =
+    buildTypeName(packageName(decl, context), decl, shortLocal)
     
-    if (localOnly) typeNames(decl)
-    else if (pkg == packageName(schema, context)) typeNames(decl)
-    else pkg match {
-      case Some(x) => x + "." + typeNames(decl)
-      case None => typeNames(decl)
-    }
+  def buildEnumTypeName(decl: SimpleTypeDecl, shortLocal: Boolean): String =
+    buildTypeName(packageName(decl, context), decl, shortLocal)
+  
+  def buildTypeName(pkg: Option[String], decl: Decl, shortLocal: Boolean): String = {
+    val typeNames = context.typeNames(pkg)
+    if (!typeNames.contains(decl)) error(pkg + ": Type name not found: " + decl.toString)
+    
+    if (shortLocal && pkg == packageName(schema, context)) typeNames(decl)
+    else buildFullyQualifiedName(pkg, typeNames(decl))    
   }
   
-  def buildEnumTypeName(decl: SimpleTypeDecl): String =
-    buildTypeName(packageName(decl, context), decl)
-  
-  def buildTypeName(pkg: Option[String], decl: Decl): String = {
-    val typeNames = context.typeNames(pkg)
-    if (!typeNames.contains(decl))
-      error(pkg + ": Type name not found: " + decl.toString)
-    
-    if (pkg == packageName(schema, context)) typeNames(decl)
-    else pkg match {
-      case Some(x) => x + "." + typeNames(decl)
-      case None => typeNames(decl)
-    }    
-  }
-  
-  def buildTypeName(decl: SimpleTypeDecl): String = decl.content match {
-    case x@SimpTypRestrictionDecl(_, _) if containsEnumeration(decl)  => buildEnumTypeName(decl)
-    case x: SimpTypRestrictionDecl                                    => buildTypeName(baseType(decl))
+  def buildTypeName(decl: SimpleTypeDecl, shortLocal: Boolean): String = decl.content match {
+    case x@SimpTypRestrictionDecl(_, _) if containsEnumeration(decl)  => buildEnumTypeName(decl, shortLocal)
+    case x: SimpTypRestrictionDecl                                    => buildTypeName(baseType(decl), shortLocal)
     case SimpTypListDecl(ReferenceTypeSymbol(itemType: SimpleTypeDecl)) if containsEnumeration(itemType) =>
-      "Seq[" + buildEnumTypeName(itemType) + "]"
-    case x: SimpTypListDecl => "Seq[" + buildTypeName(baseType(decl)) + "]"
-    case x: SimpTypUnionDecl => buildTypeName(baseType(decl))
+      "Seq[" + buildEnumTypeName(itemType, shortLocal) + "]"
+    case x: SimpTypListDecl => "Seq[" + buildTypeName(baseType(decl), shortLocal) + "]"
+    case x: SimpTypUnionDecl => buildTypeName(baseType(decl), shortLocal)
   }
   
-  def buildTypeName(group: AttributeGroupDecl): String =
-    buildTypeName(packageName(group, context), group)
+  def buildTypeName(group: AttributeGroupDecl, shortLocal: Boolean): String =
+    buildTypeName(packageName(group, context), group, shortLocal)
   
-  def buildTypeName(enumTypeName: String, enum: EnumerationDecl): String = {
+  def buildTypeName(enumTypeName: String, enum: EnumerationDecl, shortLocal: Boolean): String = {
     val pkg = packageName(schema, context)
     val typeNames = context.enumValueNames(pkg)
     if (!typeNames.contains(enumTypeName, enum))
       error(pkg + ": Type name not found: " + enum.toString)
     
-    if (pkg == packageName(schema, context)) typeNames(enumTypeName, enum)
-    else pkg match {
-      case Some(x) => x + "." + typeNames(enumTypeName, enum)
-      case None => typeNames(enumTypeName, enum)
-    }    
+    if (shortLocal && pkg == packageName(schema, context)) typeNames(enumTypeName, enum)
+    else buildFullyQualifiedName(pkg, typeNames(enumTypeName, enum))   
   }
+  
+  def buildFullyQualifiedName(sch: SchemaDecl, localName: String): String =
+    buildFullyQualifiedName(packageName(sch, context), localName)
+  
+  def buildFullyQualifiedName(pkg: Option[String], localName: String): String =
+    pkg.map(_ + ".").getOrElse("") + localName
+  
+  def buildFormatterName(group: AttributeGroupDecl): String =
+    buildFormatterName(group.namespace, buildTypeName(group, true))
   
   def buildFormatterName(namespace: Option[String], name: String): String = {
     val pkg = packageName(namespace, context) getOrElse {""}
@@ -206,14 +195,7 @@ trait Lookup extends ContextProcessor {
     
     lastPart.capitalize + name + "Format"
   }
-  
-  def buildDefaultProtocolName(name: String): String = {
-    config.classPrefix match {
-      case Some(p) => p + "Default" + name.drop(p.length)
-      case None => "Default" + name
-    }
-  }
-  
+    
   def baseType(decl: SimpleTypeDecl): BuiltInSimpleTypeSymbol = decl.content match {
     case SimpTypRestrictionDecl(base: BuiltInSimpleTypeSymbol, _) => base
     case SimpTypRestrictionDecl(ReferenceTypeSymbol(decl2@SimpleTypeDecl(_, _, _, _, _)), _) => baseType(decl2)
@@ -236,18 +218,9 @@ trait Lookup extends ContextProcessor {
     elem.namespace map { x =>
       context.substituteGroups.contains((elem.namespace, elem.name))
     } getOrElse { false }
-    
+  
   def quoteNamespace(namespace: Option[String]) =
     if (namespace == schema.targetNamespace) "targetNamespace"
     else quote(namespace)
-    
-  def quote(value: Option[String]): String = value map {
-    "Some(\"" + _ + "\")"
-  } getOrElse { "None" }
-
-  def quote(value: String): String = if (value == null) "null"
-    else "\"" + value + "\""
-  
-  def indent(indent: Int) = "  " * indent
 }
  

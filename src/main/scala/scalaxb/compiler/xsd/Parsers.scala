@@ -82,7 +82,9 @@ trait Parsers extends Args with Params {
     
     def buildSeqConverter(seq: SequenceDecl, mixed: Boolean,
         wrapInDataRecord: Boolean): String = {
-      lazy val name = makeTypeName(context.compositorNames(seq))
+      lazy val localName = makeTypeName(context.compositorNames(seq))
+      lazy val fqn = buildFullyQualifiedName(schema, localName)
+      
       val particles = buildParticles(seq)
       val parserVariableList = if (mixed) (0 to particles.size * 2 - 1) map { buildSelector }
         else (0 to particles.size - 1) map { buildSelector }
@@ -102,8 +104,8 @@ trait Parsers extends Args with Params {
       "{ case " +
       parserVariableList.mkString(" ~ ") + 
       (if (mixed) " => Seq.concat(" + argsString + ")"
-      else if (wrapInDataRecord) " => scalaxb.DataRecord(" + name + "(" + argsString + "))"
-      else " => " + name + "(" + argsString + ")") +
+      else if (wrapInDataRecord) " => scalaxb.DataRecord(" + fqn + "(" + argsString + "))"
+      else " => " + fqn + "(" + argsString + ")") +
       " }"
     }
     

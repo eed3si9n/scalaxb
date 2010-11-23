@@ -113,7 +113,7 @@ trait Args extends Params {
       case symbol: BuiltInSimpleTypeSymbol => buildArg(buildTypeName(symbol), selector, 
         toCardinality(elem.minOccurs, elem.maxOccurs), elem.nillable getOrElse(false), elem.defaultValue, elem.fixedValue, wrapForLongAll)
       case ReferenceTypeSymbol(decl: SimpleTypeDecl) =>
-        if (containsEnumeration(decl)) buildArg(buildTypeName(decl), selector, 
+        if (containsEnumeration(decl)) buildArg(buildTypeName(decl, false), selector, 
           toCardinality(elem.minOccurs, elem.maxOccurs), elem.nillable getOrElse(false), elem.defaultValue, elem.fixedValue, wrapForLongAll)
         else buildArg(decl, selector, elem.defaultValue, elem.fixedValue,
           toCardinality(elem.minOccurs, elem.maxOccurs), elem.nillable getOrElse(false), wrapForLongAll) 
@@ -124,7 +124,7 @@ trait Args extends Params {
             case (Optional, true) => selector + " getOrElse { None }"
             case _ => selector
           }
-        else buildArg(buildTypeName(decl), selector,
+        else buildArg(buildTypeName(decl, false), selector,
           toCardinality(elem.minOccurs, elem.maxOccurs), elem.nillable getOrElse(false), elem.defaultValue, elem.fixedValue, wrapForLongAll)
       case XsAny => buildArg(
           if (elem.nillable getOrElse(false)) buildTypeName(XsNillableAny)
@@ -151,7 +151,7 @@ trait Args extends Params {
   def buildArg(decl: SimpleTypeDecl, selector: String,
       defaultValue: Option[String], fixedValue: Option[String],
       cardinality: Cardinality, nillable: Boolean, wrapForLongAll: Boolean): String =  
-    buildArg(buildTypeName(decl), selector, cardinality, nillable, defaultValue, fixedValue, wrapForLongAll)
+    buildArg(buildTypeName(decl, false), selector, cardinality, nillable, defaultValue, fixedValue, wrapForLongAll)
     
   // called by makeCaseClassWithType
   def buildArg(content: SimpleContentDecl, typeSymbol: XsTypeSymbol): String = typeSymbol match {
@@ -264,7 +264,7 @@ trait Args extends Params {
     buildSelector(pos) + ".toList"
     
   def buildAttributeGroupArg(group: AttributeGroupDecl, longAttribute: Boolean): String = {
-    val formatterName = buildFormatterName(group.namespace, buildTypeName(group))
+    val formatterName = buildFormatterName(group)
     val arg = formatterName + ".reads(node).right"
     if (longAttribute) arg + ".toOption map { x => " + 
       quote(buildNodeName(group)) + " -> scalaxb.DataRecord(None, None, x) }"

@@ -68,7 +68,7 @@ object Main {
         { x: String => files append (new File(x)) })
     }
     
-    val module = if (verbose) new scalaxb.compiler.xsd.Driver with Verbose
+    lazy val module = if (verbose) new scalaxb.compiler.xsd.Driver with Verbose
       else new scalaxb.compiler.xsd.Driver
     
     def buildOutputFile(input: File, outdir: File) = {

@@ -33,9 +33,9 @@ trait Params extends Lookup {
   val SingleUnnillable = Occurrence(1, 1, false)
   
   abstract class Cardinality
-  case object Optional extends Cardinality
-  case object Single extends Cardinality
-  case object Multiple extends Cardinality
+  case object Optional extends Cardinality { override def toString: String = "Optional" }
+  case object Single extends Cardinality { override def toString: String = "Single" }
+  case object Multiple extends Cardinality { override def toString: String = "Multiple" }
   
   def toCardinality(minOccurs: Int, maxOccurs: Int): Cardinality =
     if (maxOccurs > 1) Multiple
@@ -82,7 +82,7 @@ trait Params extends Lookup {
     case attr: AttributeDecl => buildParam(attr)
     case any: AnyAttributeDecl => buildParam(any)
     case group: AttributeGroupDecl => buildParam(group)
-    case _ => error("GenSource#buildParam: unsupported delcaration " + decl.toString)
+    case _ => error("Params#buildParam: unsupported delcaration " + decl.toString)
   }
   
   def buildParam(elem: ElemDecl): Param = {
@@ -101,7 +101,7 @@ trait Params extends Lookup {
           toCardinality(elem.minOccurs, elem.maxOccurs), nillable, true)
       else Param(elem.namespace, elem.name, typeSymbol, 
         toCardinality(elem.minOccurs, elem.maxOccurs), nillable, false)
-    log("GenSource#buildParam:  " + retval)
+    log("Params#buildParam:  " + retval.toString)
     retval
   }
   
@@ -110,14 +110,14 @@ trait Params extends Lookup {
       else makePrefix(attr.namespace, context) + attr.name
     
     val retval = Param(attr.namespace, name, attr.typeSymbol, toCardinality(attr), false, true)
-    log("GenSource#buildParam:  " + retval)
+    log("Params#buildParam:  " + retval.toString)
     retval
   }
   
   def buildParam(group: AttributeGroupDecl): Param = {
     val retval = Param(group.namespace, group.name,
       new AttributeGroupSymbol(group.namespace, group.name), Single, false, true)
-    log("GenSource#buildParam:  " + retval)
+    log("Params#buildParam:  " + retval.toString)
     retval    
   }
   
@@ -156,7 +156,7 @@ trait Params extends Lookup {
       case choice: ChoiceDecl   => choice
       case all: AllDecl         => all  
     }
-    else error("GenSource#primaryCompositor: group must contain one content model: " + group)
+    else error("Params#primaryCompositor: group must contain one content model: " + group)
 
   // context.compositorNames contains the definition of GroupDecl,
   // while particle GroupDecl may differ in cardinality.

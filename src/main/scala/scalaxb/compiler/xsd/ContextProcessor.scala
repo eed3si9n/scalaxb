@@ -71,6 +71,15 @@ trait ContextProcessor extends ScalaNames with PackageName {
       resolveType(schema, context)
     }
     
+    def nameEumSimpleType(schema: SchemaDecl, decl: SimpleTypeDecl, 
+       initialName: String, postfix: String = "Type") {
+      val typeNames = context.typeNames(packageName(schema, context))
+      if (!typeNames.contains(decl)) {
+        typeNames(decl) = makeProtectedTypeName(schema.targetNamespace, initialName, postfix, context)
+        makeEnumValues(decl, context)
+      } // if
+    }
+    
     for (schema <- context.schemas;
         elem <- schema.elemList;
         val typeSymbol = elem.typeSymbol;
@@ -82,15 +91,13 @@ trait ContextProcessor extends ScalaNames with PackageName {
         anonymousTypes += pair
         val typeNames = context.typeNames(packageName(schema, context))
         typeNames(decl) = makeProtectedTypeName(schema.targetNamespace, elem, context)
-      case decl@SimpleTypeDecl(_, _, _, _, _) if containsEnumeration(decl) =>
-        val typeNames = context.typeNames(packageName(schema, context))
-        typeNames(decl) = makeProtectedTypeName(schema.targetNamespace, elem, context)
-        makeEnumValues(decl, context)
+      case decl: SimpleTypeDecl if containsEnumeration(decl) =>
+        nameEumSimpleType(schema, decl, elem.name, "")
       case _ =>
     }
     
     val namedTypes = mutable.ListBuffer.empty[(SchemaDecl, ComplexTypeDecl)]
-    
+        
     for (schema <- context.schemas;
         typ <- schema.topTypes) typ match {
       case (_, decl: ComplexTypeDecl) =>   
@@ -99,9 +106,7 @@ trait ContextProcessor extends ScalaNames with PackageName {
         val typeNames = context.typeNames(packageName(schema, context))
         typeNames(decl) = makeProtectedTypeName(schema.targetNamespace, decl, context)
       case (_, decl@SimpleTypeDecl(_, _, _, _, _)) if containsEnumeration(decl) =>
-        val typeNames = context.typeNames(packageName(schema, context))
-        typeNames(decl) = makeProtectedTypeName(schema.targetNamespace, decl, context)
-        makeEnumValues(decl, context)
+        nameEumSimpleType(schema, decl, decl.name)
       case _ =>      
     }
     
@@ -126,17 +131,9 @@ trait ContextProcessor extends ScalaNames with PackageName {
     }
     
     for (schema <- context.schemas;
-        attr <- schema.attrList) attr.typeSymbol match {
-          
-      case ReferenceTypeSymbol(decl: SimpleTypeDecl) =>
-        if (!decl.isNamed &&
-            containsEnumeration(decl)) {
-          val typeNames = context.typeNames(packageName(schema, context))
-          typeNames(decl) = makeProtectedTypeName(schema.targetNamespace, attr, context)
-          makeEnumValues(decl, context)
-        }
-      
-      case _ =>  
+        typ <- schema.typeList) typ match {
+      case decl: SimpleTypeDecl if containsEnumeration(decl) => nameEumSimpleType(schema, decl, decl.family)
+      case _ =>      
     }
     
     for (schema <- context.schemas;

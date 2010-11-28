@@ -24,6 +24,7 @@ package scalaxb.compiler.xsd
 
 import scalaxb.compiler.{Module, Config, Snippet}
 import java.io.{File, Reader, PrintWriter}
+import java.net.{URI}
 import collection.mutable
 import scala.xml.{Node, Elem}
 import scala.xml.factory.{XMLLoader}
@@ -41,9 +42,8 @@ class Driver extends Module { driver =>
       val config = cnfg    
     }).processContext(context)
   
-  override def generate(xsd: Schema, dependents: Seq[Schema],
-      context: Context, cnfg: Config): Snippet =
-    (new GenSource(xsd, dependents, context) {
+  override def generate(xsd: Schema, context: Context, cnfg: Config): Snippet =
+    (new GenSource(xsd, context) {
       val logger = driver
       val config = cnfg
     }).run
@@ -55,14 +55,20 @@ class Driver extends Module { driver =>
       val config = cnfg
     }).generateProtocol(snippet)
   
-  override def toImportable(in: Reader): Importable = new Importable {
+  override def toImportable(alocation: URI, in: Reader, aout: PrintWriter): Importable = new Importable {
     val reader = in
+    val out = aout
+    val location = alocation
     val elem = CustomXML.load(reader)
     val schemaLite = SchemaLite.fromXML(elem)
     val targetNamespace = schemaLite.targetNamespace
-    val imports: Seq[String] = schemaLite.imports.collect {
+    val importNamespaces: Seq[String] = schemaLite.imports collect {
       case ImportDecl(Some(namespace: String), _) => namespace
     }
+    val importLocations: Seq[String] = schemaLite.imports collect {
+      case ImportDecl(_, Some(schemaLocation: String)) => schemaLocation
+    }
+    val includeLocations: Seq[String] = schemaLite.includes map { _.schemaLocation }
     
     def toSchema(context: Context): Schema = {
       val schema = SchemaDecl.fromXML(elem, context)

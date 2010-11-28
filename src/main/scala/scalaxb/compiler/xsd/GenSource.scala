@@ -28,7 +28,6 @@ import scala.collection.{Map}
 import scala.xml._
 
 abstract class GenSource(val schema: SchemaDecl,
-    val dependentSchemas: Seq[SchemaDecl],
     val context: XsdContext) extends Parsers with XMLOutput {  
   type =>?[A, B] = PartialFunction[A, B]
   
@@ -119,8 +118,8 @@ abstract class GenSource(val schema: SchemaDecl,
         buildToXML(buildTypeName(decl, false), "x, __namespace, __elementLabel, __scope, true")
         
     val compositors = context.compositorParents.filter(_._2 == decl).keysIterator.toList
-    val extendedSubtypes = context.baseToSubs(decl) filter { sub =>
-      !schema.typeList.contains(sub) && !dependentSchemas.exists(_.typeList.contains(sub)) }
+    // val extendedSubtypes = context.baseToSubs(decl) filter { sub =>
+    //   !schema.typeList.contains(sub) && !dependentSchemas.exists(_.typeList.contains(sub)) }
     // val extendedSchemas = (for (sub <- extendedSubtypes;
     //                             sch <- context.schemas; if sch.typeList.contains(sub))
     //                          yield sch).toList.distinct

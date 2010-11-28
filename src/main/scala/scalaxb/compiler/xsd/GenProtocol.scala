@@ -29,20 +29,7 @@ abstract class GenProtocol(val context: XsdContext) extends ContextProcessor {
   def generateProtocol(snippet: Snippet): Seq[Node] = {
     
     val name = makeTypeName("XMLProtocol")
-    
-    val dependentSchemas: List[SchemaDecl] = Nil
-    val scopeSchemas = context.schemas
-    
-    val traitSuperNames = "scalaxb.XMLStandardTypes" :: (dependentSchemas.toList map { sch =>
-        val pkg = packageName(sch, context)
-        pkg.map(_ + ".").getOrElse("") + context.typeNames(pkg)(sch)
-      })
-    val defaultTraitSuperNames =
-      List(buildDefaultProtocolName(name), "scalaxb.DefaultXMLStandardTypes") ::: (dependentSchemas.toList map { sch =>
-        val pkg = packageName(sch, context)
-        pkg.map(_ + ".").getOrElse("") + buildDefaultProtocolName(context.typeNames(pkg)(sch))
-      })    
-    
+    val scopeSchemas = context.schemas    
     def makeScopes(schemas: List[SchemaDecl]): List[(Option[String], String)] = schemas match {
       case x :: xs => 
         x.targetNamespace map { ns =>
@@ -74,11 +61,11 @@ import Scalaxb._
 val obj = fromXML[Foo](node)
 val document = toXML[Foo](obj, "foo", defaultScope)
 **/
-trait {name} extends { traitSuperNames.mkString(" with ") } {{
+trait {name} extends scalaxb.XMLStandardTypes {{
 {snippet.implicitValue}  
 }}
 
-object { buildDefaultProtocolName(name) } extends { defaultTraitSuperNames.mkString(" with ") } {{
+object { buildDefaultProtocolName(name) } extends { buildDefaultProtocolName(name) } with scalaxb.DefaultXMLStandardTypes {{
   import scalaxb.Scalaxb._
   val defaultScope = toScope({ if (scopes.isEmpty) "Nil: _*"
     else scopes.map(x => quote(x._1) + " -> " + quote(x._2)).mkString("," + newline + indent(2)) })  

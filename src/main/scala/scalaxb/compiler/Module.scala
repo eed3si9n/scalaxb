@@ -25,6 +25,7 @@ package scalaxb.compiler
 import scala.collection.{Map, Set}
 import scala.collection.mutable.{ListBuffer, ListMap}
 import java.io.{File, BufferedReader, Reader, PrintWriter}
+import java.net.{URI}
 import scala.xml.{Node}
 
 case class Config(packageNames: Map[Option[String], Option[String]] = Map(None -> None),
@@ -49,8 +50,12 @@ trait Module extends Logger {
   
   trait Importable {
     def targetNamespace: Option[String]
-    def imports: Seq[String]
+    def importNamespaces: Seq[String]
+    def importLocations: Seq[String]
+    def includeLocations: Seq[String]
     def reader: Reader
+    def out: PrintWriter
+    def location: URI
     def toSchema(context: Context): Schema
   }
   
@@ -68,11 +73,12 @@ trait Module extends Logger {
       error("file not found: " + file.toString))
       
     processReaders( (filePairs map { pair =>
+        (pair._1.toURI,
         new BufferedReader(new java.io.InputStreamReader(
-          new java.io.FileInputStream(pair._1), encoding)) ->
+          new java.io.FileInputStream(pair._1), encoding)),
         new PrintWriter(new java.io.OutputStreamWriter(
-          new java.io.FileOutputStream(pair._2), encoding)) 
-      }).toMap,
+          new java.io.FileOutputStream(pair._2), encoding)) )
+      }),
       new PrintWriter(new java.io.OutputStreamWriter(
         new java.io.FileOutputStream(outProtocol), encoding)),
       config)
@@ -94,7 +100,7 @@ trait Module extends Logger {
     outfiles.toList
   }
   
-  def processReaders(inputToOutput: Map[Reader, PrintWriter],
+  def processReaders(fileTriplets: Seq[(URI, Reader, PrintWriter)],
       outProtocol: PrintWriter, config0: Config) = {    
     val companions = ListBuffer.empty[Node]
     val implicitValues = ListBuffer.empty[Node]
@@ -106,7 +112,7 @@ trait Module extends Logger {
     }
     
     val context = buildContext
-    val importables = inputToOutput.keysIterator.toList map { toImportable(_) }
+    val importables = fileTriplets.toList map { x => toImportable(x._1, x._2, x._3) }
     val config: Config = config0.primaryNamespace map { _ => config0 } getOrElse {
       val pns: Option[String] = importables.head.targetNamespace
       config0.copy(primaryNamespace = pns)
@@ -115,13 +121,17 @@ trait Module extends Logger {
     val schemas = Map[Importable, Schema](importables map { file =>
       (file, parse(file, context)) }: _*)
     processContext(context, config)
+    
+    // check for all dependencies before proceeding.
+    importables foreach { importable => 
+      val dependents = dependentFiles(importable, importables) map { i => schemas(i) }
+    }
+    
     importables foreach { importable =>
       val schema = schemas(importable)
-      val dependents = importable.imports flatMap { i => dependentImportables(importables, Some(i)).map(schemas(_)) }
-      
-      val out = inputToOutput(importable.reader)
+      val out = importable.out
       try {    
-        val snippet = generate(schema, dependents, context, config)
+        val snippet = generate(schema, context, config)
         splitSnippet(snippet)
         printNodes(snippet.definition, out)
       } finally {
@@ -139,40 +149,39 @@ trait Module extends Logger {
     }
   }
   
-  def generate(schema: Schema, dependents: Seq[Schema],
-    context: Context, config: Config): Snippet
+  def generate(schema: Schema, context: Context, config: Config): Snippet
     
   def generateProtocol(snippet: Snippet,
     context: Context, config: Config): Seq[Node]
     
-  def toImportable(in: Reader): Importable
+  def toImportable(location: URI, in: Reader, out: PrintWriter): Importable
   
-  def dependentImportables(files: Seq[Importable], namespace: Option[String]) = namespace match {
-    case Some(x) => files filter { _.targetNamespace == namespace }
-    case _ => Nil
+  def dependentFiles(importable: Importable, files: List[Importable]): List[Importable] = {
+    def shorten(uri: URI): String = {
+      val path = Option[String](uri.getPath) getOrElse {""}
+      (new File(path)).getName
+    }
+    
+    val nsBased = importable.importNamespaces.toList flatMap { ns =>
+      files filter { _.targetNamespace == ns }
+    }
+    val XML_LOCATION = "http://www.w3.org/2001/xml.xsd"
+    val locationBased = importable.importLocations.toList flatMap { loc =>
+      val deps = files filter { f => shorten(f.location) == shorten(new URI(loc)) }
+      if (deps.isEmpty && loc != XML_LOCATION) println("Warning: " + importable.location.toString + " imports " + loc +
+        " but no schema with that name was compiled together.")
+      deps
+    }
+    val includes = importable.includeLocations.toList flatMap { loc =>
+      val deps = files filter { f => shorten(f.location) == shorten(new URI(loc)) }
+      if (deps.isEmpty) println("Warning: " + importable.location.toString + " includes " + loc +
+        " but no schema with that name was compiled together.")
+      deps
+    }
+    
+    (nsBased ::: locationBased ::: includes).distinct
   }
-  
-  // def sortByDependency(files: Seq[Importable]): Seq[Importable] = {        
-  //   val XML_URI = "http://www.w3.org/XML/1998/namespace"    
-  //   val unsorted = ListBuffer.empty[Importable]
-  //   unsorted.appendAll(files)
-  //   val sorted = ListBuffer.empty[Importable]
-  //   val upperlimit = unsorted.size * unsorted.size
-  //       
-  //   for (i <- 0 to upperlimit if unsorted.size > 0) {
-  //     val importable = unsorted(i % unsorted.size)
-  //     if (importable.imports forall { namespace =>
-  //         (namespace == XML_URI) ||
-  //         dependentImportables(files, Some(namespace)).forall(sorted.contains) }) {
-  //       unsorted -= importable
-  //       sorted += importable
-  //     } // if
-  //   }
-  //   
-  //   if (unsorted.size > 0) error("Circular import: " + unsorted.toList)
-  //   sorted
-  // }
-  
+    
   def buildContext: Context
   
   def processContext(context: Context, config: Config): Unit
@@ -180,13 +189,15 @@ trait Module extends Logger {
   def parse(importable: Importable, context: Context): Schema
     = importable.toSchema(context)
     
-  def parse(in: Reader): Schema
-    = parse(toImportable(in), buildContext)
+  def parse(location: URI, in: Reader, out: PrintWriter): Schema
+    = parse(toImportable(location, in, out), buildContext)
   
-  def parse(file: File): Schema
-    = parse(new BufferedReader(
-      new java.io.InputStreamReader(
-        new java.io.FileInputStream(file), encoding)))
+  def parse(inFile: File, outFile: File): Schema
+    = parse(inFile.toURI,
+        new BufferedReader(new java.io.InputStreamReader(
+          new java.io.FileInputStream(inFile), encoding)),
+        new PrintWriter(new java.io.OutputStreamWriter(
+          new java.io.FileOutputStream(outFile), encoding)))
     
   def printNodes(nodes: Seq[Node], out: PrintWriter) {
     import scala.xml._

@@ -754,7 +754,7 @@ object GroupDecl {
 }
 
 case class SchemaLite(targetNamespace: Option[String],
-    imports: List[ImportDecl])
+    imports: List[ImportDecl], includes: List[IncludeDecl])
 
 object SchemaLite {
   def fromXML(node: scala.xml.Node) = {
@@ -768,8 +768,14 @@ object SchemaLite {
       val decl = ImportDecl.fromXML(node)
       importList = decl :: importList
     }
-
-    SchemaLite(targetNamespace, importList.reverse)
+    
+    var includeList: List[IncludeDecl] = Nil
+    for (node <- schema \ "include") {
+      val decl = IncludeDecl.fromXML(node)
+      includeList = decl :: includeList
+    }
+    
+    SchemaLite(targetNamespace, importList.reverse, includeList.reverse)
   }
 }
 
@@ -781,6 +787,15 @@ object ImportDecl {
     val namespace = (node \ "@namespace").headOption map { _.text }
     val schemaLocation = (node \ "@schemaLocation").headOption map { _.text }
     ImportDecl(namespace, schemaLocation)
+  }
+}
+
+case class IncludeDecl(schemaLocation: String) extends Decl
+
+object IncludeDecl {
+  def fromXML(node: scala.xml.Node) = {
+    val schemaLocation = (node \ "@schemaLocation").text
+    IncludeDecl(schemaLocation)
   }
 }
 

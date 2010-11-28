@@ -8,7 +8,7 @@ object PurchaseOrderTest extends TestBase {
   copyFileFromResource("PurchaseOrderUsage.scala", usageFile)
   
   "ipo.xsd is parsable" in {
-     module.parse(inFile) must be like {
+     module.parse(inFile, outFile) must be like {
        case schema: scalaxb.compiler.xsd.SchemaDecl => true
      }
   }

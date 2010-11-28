@@ -16,10 +16,12 @@ Installation
 
 scalaxb is tested only under Scala 2.8. You can install it using sbaz:
 
+    $ sudo sbaz update
     $ sudo sbaz install scalaxb
 
 and upgrade it if you've installed it before:
 
+    $ sudo sbaz update
     $ sudo sbaz upgrade
 
 or build from source:
@@ -126,7 +128,7 @@ into XML document:
 How to use the generated code
 -----------------------------
 
-You need to call four `import` to use the generated classes along with some helper classes in Helper.scala.
+You need to call four `import` to use the generated classes along with some helper classes in scalaxb.scala.
 
     import scalaxb._
     import Scalaxb._

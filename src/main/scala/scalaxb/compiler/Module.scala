@@ -91,8 +91,8 @@ trait Module extends Logger {
     
     if (filePairs.size > 0) {
       val parent = filePairs(0)._2.getParentFile
-      val helper = new File(parent, "Helper.scala")
-      copyFileFromResource("/Helper.scala", helper)
+      val helper = new File(parent, "scalaxb.scala")
+      copyFileFromResource("/scalaxb.scala", helper)
       outfiles += helper
       println("generated " + helper + ".")
     }

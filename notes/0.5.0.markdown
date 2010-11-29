@@ -1,0 +1,27 @@
+- Generates typeclass-based XML data binding code in a separate file `xmlprotocol.scala`.
+- Renames runtime package name from `org.scalaxb.rt` to `scalaxb` and the helper file to `scalaxb.scala`.
+- Fixes handling of `<xs:all>` containing >22 items (GH-10).
+- Fixes handling of `<xs:complexType>` containing >22 attribtues (GH-11).
+- Fixes handling of `<xs:complexType>` with `<xs:simpleContent>`, which restricts a mixed `<xs:complexContent>` (GH-12).
+- Fixes output instability (GH-13).
+- Fixes handling of circular `<xs:import>` by consolidating the XML databinding code into a single trait (GH-14).
+- Adds warning when `<xs:include>` item is missing from compilation (GH-15).
+
+I'd like to thank everyone who gave me feedback and reported issues. Special thanks go to [Debasish Ghosh](http://debasishg.blogspot.com/) for his inspirational articles and [Andreas Sewe](http://www.stg.tu-darmstadt.de/staff/andreas_sewe/index.en.jsp) for reporting all of the above bugs.
+
+The most significant change is that the XML data binding code has moved from occupying the companion object of the case class to a separate trait called `XMLProtocol`. The usage code looks something like this:
+
+    import scalaxb._
+    import Scalaxb._
+    import ipo._
+    import DefaultXMLProtocol._
+
+    val shipTo = fromXML[Address](<shipTo>
+        <name>foo</name>
+        <street>1537 Paper Street</street>
+        <city>Wilmington</city>
+      </shipTo>)
+
+The `shipTo` would now be
+
+    Address("foo", "1537 Paper Street", "Wilmington")

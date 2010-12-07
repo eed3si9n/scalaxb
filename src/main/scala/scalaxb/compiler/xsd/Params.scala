@@ -60,16 +60,14 @@ trait Params extends Lookup {
     
     def baseTypeName: String = buildTypeName(typeSymbol)
     
+    def singleTypeName: String =
+      if (nillable) "Option[" + baseTypeName + "]"
+      else baseTypeName
+    
     def typeName: String = cardinality match {
-      case Single   =>
-        if (nillable) "Option[" + baseTypeName + "]"
-        else baseTypeName
-      case Optional =>
-        if (nillable) "Option[Option[" + baseTypeName + "]]"
-        else "Option[" + baseTypeName + "]"
-      case Multiple => 
-        if (nillable) "Seq[Option[" + baseTypeName + "]]"
-        else "Seq[" + baseTypeName + "]"
+      case Single   => singleTypeName
+      case Optional => "Option[" + singleTypeName + "]"
+      case Multiple => "Seq[" + singleTypeName + "]"
     }      
     
     def toScalaCode: String =

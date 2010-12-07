@@ -252,8 +252,8 @@ abstract class GenSource(val schema: SchemaDecl,
     val hasSequenceParam = (paramList.size == 1) && (paramList.head.cardinality == Multiple) &&
       (!paramList.head.attribute) && (!decl.mixed) && (!longAll)
     
-    def paramsString = if (hasSequenceParam)
-        makeParamName(paramList.head.name) + ": " + buildTypeName(paramList.head.typeSymbol) + "*"      
+    def paramsString = if (hasSequenceParam) makeParamName(paramList.head.name) + ": " + 
+        paramList.head.singleTypeName + "*"
       else paramList.map(_.toScalaCode).mkString("," + newline + indent(1))
     
     val simpleFromXml: Boolean = if (flatParticles.isEmpty && !decl.mixed) true

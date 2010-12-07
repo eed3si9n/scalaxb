@@ -25,7 +25,6 @@ import scala.collection.mutable
 
 trait Params extends Lookup {
   val ATTRS_PARAM = "attributes"
-  var argNumber = 0
   var anyNumber = 0
   
   case class Occurrence(minOccurs: Int, maxOccurs: Int, nillable: Boolean)
@@ -218,13 +217,12 @@ trait Params extends Lookup {
       })
 
   def buildCompositorRef(compositor: HasParticle, occurrence: Occurrence): ElemDecl = {    
-    argNumber += 1
-    val name = "arg" + argNumber 
-
     val typeName = compositor match {
       case group: GroupDecl => groupTypeName(group)
       case _ => makeTypeName(context.compositorNames(compositor))
     }
+    val name = typeName.toLowerCase
+    
     val symbol = new ReferenceTypeSymbol(typeName)
     val decl = ComplexTypeDecl(schema.targetNamespace, symbol.name, symbol.name,
       false, false, ComplexContentDecl.empty, Nil, None)

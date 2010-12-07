@@ -675,7 +675,6 @@ object {localName} {{
   }
   
   def flattenElements(decl: ComplexTypeDecl): List[ElemDecl] = {
-    argNumber = 0
     anyNumber = 0
     
     val build: ComplexTypeContent =>? List[ElemDecl] = {
@@ -835,7 +834,6 @@ object {localName} {{
   }
   
   def buildParticles(decl: ComplexTypeDecl, name: String): List[ElemDecl] = {
-    argNumber = 0
     anyNumber = 0
     
     val build: ComplexTypeContent =>? List[ElemDecl] = {

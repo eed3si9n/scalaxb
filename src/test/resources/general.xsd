@@ -48,6 +48,12 @@
     </xs:sequence>
   </xs:complexType>
   
+  <xs:complexType name="NillablePersonStarTest">
+    <xs:sequence>
+      <xs:element name="person" maxOccurs="unbounded" nillable="true" type="gen:Person"/>
+    </xs:sequence>
+  </xs:complexType>
+  
   <xs:complexType name="ChoiceComplexTypeTest">
     <xs:sequence>
       <xs:choice>

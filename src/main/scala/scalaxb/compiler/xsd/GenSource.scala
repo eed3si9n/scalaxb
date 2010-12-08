@@ -96,9 +96,9 @@ abstract class GenSource(val schema: SchemaDecl,
     log("GenSource.makeTrait: emitting " + fqn)
 
     val childElements = if (decl.mixed) Nil
-      else flattenElements(decl)
+      else flattenElements(decl, 0)
     val list = List.concat[Decl](childElements, buildAttributes(decl))
-    val paramList = list.map { buildParam }
+    val paramList = list map { buildParam }
     val defaultType = buildFullyQualifiedName(schema, makeProtectedTypeName(schema.targetNamespace, decl, context))    
     val argList = list map {
       case any: AnyAttributeDecl => buildArgForAnyAttribute(decl, false)
@@ -201,7 +201,7 @@ abstract class GenSource(val schema: SchemaDecl,
       List(buildTypeName(decl, true))
     else buildSuperNames(decl)
     
-    val flatParticles = flattenElements(decl)
+    val flatParticles = flattenElements(decl, 0)
     // val particles = buildParticles(decl, name)
     val childElements = if (decl.mixed) flattenMixed(decl)
       else flatParticles 
@@ -213,7 +213,7 @@ abstract class GenSource(val schema: SchemaDecl,
     if (list.size > 22) error("A case class with > 22 parameters cannot be created: " +
       fqn + ": " + decl)
     
-    val paramList = list.map { buildParam }
+    val paramList = list map { buildParam }
     // val dependents = ((flatParticles flatMap { buildDependentType } collect {
     //   case ReferenceTypeSymbol(d: ComplexTypeDecl) if d != decl => d
     // }).toList ++ (attributes collect {
@@ -419,8 +419,8 @@ abstract class GenSource(val schema: SchemaDecl,
     
     // pass in local name for the family.
     // since the sequence is already split at this point, it does not require resplitting.
-    val particles = flattenElements(schema.targetNamespace, localName, seq)
-    val paramList = particles.map { buildParam }
+    val particles = flattenElements(schema.targetNamespace, localName, seq, 0)
+    val paramList = particles map { buildParam }
     val hasSequenceParam = (paramList.size == 1) &&
       (paramList.head.cardinality == Multiple) &&
       (!paramList.head.attribute)
@@ -461,12 +461,9 @@ abstract class GenSource(val schema: SchemaDecl,
     val param = buildParam(compositor)
     val wrapperParam = compositor match {
       case choice: ChoiceDecl => param
-      case _ => Param(param.namespace, param.name, XsDataRecord(param.typeSymbol),
-        param.cardinality, param.nillable, param.attribute)
+      case _ => param.copy(typeSymbol = XsDataRecord(param.typeSymbol))
     }
-    val mixedParam = Param(param.namespace, param.name, XsDataRecord(XsAny),
-      param.cardinality, param.nillable, param.attribute)
-    
+    val mixedParam = param.copy(typeSymbol = XsDataRecord(XsAny))
     val parser = buildCompositorParser(compositor, SingleUnnillable, false, false)
     val wrapperParser = compositor match {
       case choice: ChoiceDecl => parser
@@ -504,7 +501,7 @@ abstract class GenSource(val schema: SchemaDecl,
     val formatterName = buildFormatterName(group.namespace, localName)
         
     val attributes = buildAttributes(group.attributes)  
-    val paramList = attributes.map { buildParam }
+    val paramList = attributes map { buildParam }
     val argList = attributes map {
         case any: AnyAttributeDecl => buildArgForAnyAttribute(group, false)
         case x => buildArg(x) 
@@ -674,25 +671,25 @@ object {localName} {{
       }).distinct
   }
   
-  def flattenElements(decl: ComplexTypeDecl): List[ElemDecl] = {
+  def flattenElements(decl: ComplexTypeDecl, index: Int): List[ElemDecl] = {
     anyNumber = 0
     
     val build: ComplexTypeContent =>? List[ElemDecl] = {
       case SimpContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _, _) =>
-        flattenElements(base)
+        flattenElements(base, index)
       case SimpContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _) =>
-        flattenElements(base)
+        flattenElements(base, index)
       
       // complex content means 1. has child elements 2. has attributes
       case CompContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
-        flattenElements(base)        
+        flattenElements(base, index)        
       case res@CompContRestrictionDecl(XsAny, _, _) =>
-        res.compositor map { flattenElements(decl.namespace, decl.family, _) } getOrElse { Nil }
+        res.compositor map { flattenElements(decl.namespace, decl.family, _, index) } getOrElse { Nil }
       case ext@CompContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
-        flattenElements(base) :::
-          (ext.compositor map { flattenElements(decl.namespace, decl.family, _) } getOrElse { Nil })
+        flattenElements(base, index) :::
+          (ext.compositor map { flattenElements(decl.namespace, decl.family, _, index) } getOrElse { Nil })
       case ext@CompContExtensionDecl(XsAny, _, _) =>
-        ext.compositor map { flattenElements(decl.namespace, decl.family, _) } getOrElse { Nil }
+        ext.compositor map { flattenElements(decl.namespace, decl.family, _, index) } getOrElse { Nil }
       case _ => Nil
     }
     
@@ -730,21 +727,21 @@ object {localName} {{
   }
      
   def flattenElements(namespace: Option[String], family: String,
-      compositor: HasParticle): List[ElemDecl] = {    
+      compositor: HasParticle, index: Int): List[ElemDecl] = {    
     compositor match {
       case ref:GroupRef =>
-        List(buildCompositorRef(ref))
+        List(buildCompositorRef(ref, index))
 
       case group:GroupDecl =>
-        List(buildCompositorRef(group))
+        List(buildCompositorRef(group, index))
 
       case seq: SequenceDecl =>
-        splitLongSequence(namespace, family, compositor.particles) flatMap {
-          case ref: GroupRef            => List(buildCompositorRef(ref))
-          case compositor2: HasParticle => List(buildCompositorRef(compositor2))
-          case elem: ElemDecl           => List(elem)
-          case ref: ElemRef             => List(buildElement(ref))
-          case any: AnyDecl             => List(buildAnyRef(any))
+        splitLongSequence(namespace, family, compositor.particles).zipWithIndex flatMap {
+          case (ref: GroupRef, i: Int)            => List(buildCompositorRef(ref, i))
+          case (compositor2: HasParticle, i: Int) => List(buildCompositorRef(compositor2, i))
+          case (elem: ElemDecl, i: Int)           => List(elem)
+          case (ref: ElemRef, i: Int)             => List(buildElement(ref))
+          case (any: AnyDecl, i: Int)             => List(buildAnyRef(any))
         }
 
       case all: AllDecl =>
@@ -756,7 +753,7 @@ object {localName} {{
         }
 
       case choice: ChoiceDecl =>
-        List(buildCompositorRef(choice))
+        List(buildCompositorRef(choice, index))
     }          
   }
   
@@ -818,14 +815,14 @@ object {localName} {{
         compositorWrapper.contains(decl) &&
         splits.contains(compositorWrapper(decl)) =>  
       val wrapperName = makeParamName(param.name)
-      val particles = compositorWrapper(decl).particles flatMap {
-        case ref: GroupRef            => List(buildCompositorRef(ref))
-        case compositor2: HasParticle => List(buildCompositorRef(compositor2))
-        case elem: ElemDecl           => List(elem)
-        case ref: ElemRef             => List(buildElement(ref))
-        case any: AnyDecl             => List(buildAnyRef(any))
+      val particles = compositorWrapper(decl).particles.zipWithIndex flatMap {
+        case (ref: GroupRef, i: Int)            => List(buildCompositorRef(ref, i))
+        case (compositor2: HasParticle, i: Int) => List(buildCompositorRef(compositor2, i))
+        case (elem: ElemDecl, i: Int)           => List(elem)
+        case (ref: ElemRef, i: Int)             => List(buildElement(ref))
+        case (any: AnyDecl, i: Int)             => List(buildAnyRef(any))
       }
-            
+      
       val paramList = particles map { buildParam }
       paramList map { p =>
         "lazy val " + makeParamName(p.name) + " = " + wrapperName + "." +  makeParamName(p.name)

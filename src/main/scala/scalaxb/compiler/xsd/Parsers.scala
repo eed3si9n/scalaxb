@@ -93,7 +93,7 @@ trait Parsers extends Args with Params {
           else buildArgForOptTextRecord(i) }
         else (0 to particles.size - 1).toList map { i => buildArg(particles(i), i) }
       val paramList = if (mixed) Nil
-        else particles.map { buildParam }
+        else particles map { buildParam }
       val hasSequenceParam = (paramList.size == 1) &&
         (paramList.head.cardinality == Multiple) &&
         (!mixed)
@@ -256,15 +256,15 @@ trait Parsers extends Args with Params {
   }
 
   def buildParticles(compositor: HasParticle): List[ElemDecl] =
-    compositor.particles map {
-      case ref: GroupRef            => buildCompositorRef(ref)        
-      case seq: SequenceDecl        =>
-        if (containsSingleChoice(seq)) buildCompositorRef(singleChoice(seq))
-        else buildCompositorRef(seq)
-      case compositor2: HasParticle => buildCompositorRef(compositor2)
-      case elem: ElemDecl           => elem
-      case ref: ElemRef             => buildElement(ref)
-      case any: AnyDecl             => buildAnyRef(any)
+    compositor.particles.zipWithIndex map {
+      case (ref: GroupRef, i: Int)            => buildCompositorRef(ref, i)        
+      case (seq: SequenceDecl, i: Int)        =>
+        if (containsSingleChoice(seq)) buildCompositorRef(singleChoice(seq), i)
+        else buildCompositorRef(seq, i)
+      case (compositor2: HasParticle, i: Int) => buildCompositorRef(compositor2, i)
+      case (elem: ElemDecl, i: Int)           => elem
+      case (ref: ElemRef, i: Int)             => buildElement(ref)
+      case (any: AnyDecl, i: Int)             => buildAnyRef(any)
     }
   
   def buildTextParser = "optTextRecord"
@@ -283,7 +283,7 @@ trait Parsers extends Args with Params {
     
     case ref: ElemRef       => Seq(buildElement(ref).typeSymbol)
     case ref: GroupRef      => buildDependentType(buildGroup(ref)) 
-    case compositor: HasParticle => Seq(buildCompositorRef(compositor).typeSymbol)
+    case compositor: HasParticle => Seq(buildCompositorRef(compositor, 0).typeSymbol)
     case _                  => Nil  
   }
   

@@ -130,20 +130,16 @@ trait Params extends Lookup {
         buildCompositorSymbol(buildGroup(ref), typeSymbol)
       case group: GroupDecl =>
         val primary = primaryCompositor(group)
-        val compositorRef = buildCompositorRef(primary)
+        val compositorRef = buildCompositorRef(primary, 0)
         buildCompositorSymbol(primaryCompositor(group), compositorRef.typeSymbol)
       case seq: SequenceDecl => typeSymbol
       case _ => XsDataRecord(typeSymbol)    
     }
   
   /// called by makeGroup
-  def buildParam(compositor: HasParticle): Param = {
-    val elem = buildCompositorRef(compositor)
-    val symbol = buildCompositorSymbol(compositor, elem.typeSymbol)
-    
-    Param(None, "arg1", symbol,
+  def buildParam(compositor: HasParticle): Param =
+    Param(None, "arg1", buildCompositorSymbol(compositor, buildCompositorRef(compositor, 0).typeSymbol),
       toCardinality(compositor.minOccurs, compositor.maxOccurs), false, false)
-  }
   
   def primaryCompositor(group: GroupDecl): HasParticle =
     if (group.particles.size == 1) group.particles(0) match {
@@ -201,8 +197,8 @@ trait Params extends Lookup {
       else "any" + anyNumber
     ElemDecl(Some(INTERNAL_NAMESPACE), name, XsAny, None, None, any.minOccurs, any.maxOccurs, None, None, None)
   }
-  
-  def buildCompositorRef(compositor: HasParticle): ElemDecl =
+    
+  def buildCompositorRef(compositor: HasParticle, index: Int): ElemDecl =
     buildCompositorRef(
       compositor match {
         case ref: GroupRef => buildGroup(ref)
@@ -212,14 +208,19 @@ trait Params extends Lookup {
         // overriding nillable because nillable options are handled elsewhere.
         case choice: ChoiceDecl => buildOccurrence(compositor).copy(nillable = false)
         case _ => buildOccurrence(compositor)
-      })
-
-  def buildCompositorRef(compositor: HasParticle, occurrence: Occurrence): ElemDecl = {    
+      },
+      index)
+  
+  def buildCompositorRef(compositor: HasParticle, occurrence: Occurrence, index: Int): ElemDecl = {    
     val typeName = compositor match {
       case group: GroupDecl => groupTypeName(group)
       case _ => makeTypeName(context.compositorNames(compositor))
     }
-    val name = typeName.toLowerCase
+    val name = compositor match {
+      // there may be multiple reference to the same group
+      case group: GroupDecl => "arg" + (index + 1)
+      case _ => typeName.toLowerCase 
+    }
     
     val symbol = new ReferenceTypeSymbol(typeName)
     val decl = ComplexTypeDecl(schema.targetNamespace, symbol.name, symbol.name,

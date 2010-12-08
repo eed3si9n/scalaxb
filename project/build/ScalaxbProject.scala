@@ -2,7 +2,7 @@ import sbt._
 
 class ScalaxbProject(info: ProjectInfo) extends DefaultProject(info) with posterous.Publish
     with ScalaBazaarTask {
-  val specs = "org.scala-tools.testing" % "specs_2.8.0" % "1.6.5" % "test"
+  val specs = "org.scala-tools.testing" % ("specs_" + crossScalaVersionString) % "1.6.6" % "test"
   val junit = "junit" % "junit" % "4.7" % "test"
   
   val scalaToolsSnapshots = "Scala-Tools Snapshots" at "http://scala-tools.org/repo-snapshots"

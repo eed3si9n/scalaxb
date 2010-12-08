@@ -1,7 +1,7 @@
 scalaxb installation
 ====================
 
-scalaxb is tested only under Scala 2.8. 
+scalaxb is tested only under Scala 2.8.1. 
 
 Installation using Scala Bazaar System (sbaz)
 ---------------------------------------------
@@ -9,6 +9,7 @@ Installation using Scala Bazaar System (sbaz)
 The following downloads and installs the latest shared build of scalaxb
 to the sbaz managed directory:
 
+  $ sudo sbaz update
   $ sudo sbaz install scalaxb
   
 Here's how to upgrade it if you've installed it before:
@@ -30,10 +31,11 @@ Grab scalaxb's source and build:
    
   $ git clone git://github.com/eed3si9n/scalaxb.git scalaxb
   $ cd scalaxb
-  $ sbt sbaz
+  $ sbt update sbaz
 
-This produces target/scala_2.8.0/lib/scalaxb.jar and 
-target/scala_2.8.0/scalaxb-x.x.x.sbp.
+This downloads the dependent libraries and produces
+- target/scala_2.8.1/lib/scalaxb.jar 
+- target/scala_2.8.1/scalaxb-x.x.x.sbp
 
 You can use sbaz to install scalaxb package under the managed directory:
 
@@ -44,11 +46,9 @@ Alternatively, you can manually install the jar files.
 Unix
 ----
 
-Set the environment variable $SCALA_HOME to the appropriate directory.
-
 Copy the jar in your ~/bin directory, then put the line
 
-  java -Xmx1G -cp "$SCALA_HOME/lib/scala-library.jar:scalaxb.jar" scalaxb.compiler.Main "$@"
+  java -Xmx1G -cp "scalaxb.jar" scalaxb.compiler.Main "$@"
 
 in a file called scalaxb in your ~/bin directory and do
 
@@ -63,7 +63,7 @@ Windows
 Create a batch file scalaxb.bat:
 
   set SCRIPT_DIR=%~dp0
-  java -Xmx512M -jar "$SCALA_HOME\lib\scala-library.jar;%SCRIPT_DIR%scalaxb.jar" %*
+  java -Xmx1G -jar "%SCRIPT_DIR%scalaxb.jar" %*
 
 and put the jar in the same directory as the batch file. Put scalaxb.bat on your
 path so that you can launch scalaxb in any directory by typing scalaxb at the

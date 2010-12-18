@@ -1,15 +1,18 @@
 import sbt._
 
-class ScalaxbProject(info: ProjectInfo) extends DefaultProject(info) with posterous.Publish
+class ScalaxbProject(info: ProjectInfo) extends ParentProject(info) with posterous.Publish
     with ScalaBazaarTask {
   val specsVersion = crossScalaVersionString match {
     case "2.8.0" => "1.6.5"
     case _ => "1.6.6"
   }
+  
   val specs = "org.scala-tools.testing" % ("specs_" + crossScalaVersionString) % specsVersion % "test"
   val junit = "junit" % "junit" % "4.7" % "test"
   
   val scalaToolsSnapshots = "Scala-Tools Snapshots" at "http://scala-tools.org/repo-snapshots"
+  
+  lazy val cli = project("cli", "scalaxb cli")
   
   override def description = "XML data binding tool for Scala."
   

@@ -1,7 +1,7 @@
 import java.io.{File}
 
 object AnyContentTest extends TestBase {
-  val inFile = new File("src/test/resources/any.xsd")
+  val inFile = new File("cli/src/test/resources/any.xsd")
   val outFile = new File(tmp, "any.scala")
   lazy val generated = module.process(inFile, outFile, outProtocolFile, "anycontent")
   val usageFile = new File(tmp, "AnyUsage.scala")

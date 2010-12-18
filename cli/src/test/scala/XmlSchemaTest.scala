@@ -2,7 +2,7 @@ import java.io.{File}
 import scalaxb.compiler.{Config}
 
 object XmlSchemaTest extends TestBase {
-  val inFile  = new File("src/test/resources/xmlschema.xsd")
+  val inFile  = new File("cli/src/test/resources/xmlschema.xsd")
   val outFile = new File(tmp, "XMLSchema.scala")
   
   lazy val generated = module.process(inFile, outFile, outProtocolFile,

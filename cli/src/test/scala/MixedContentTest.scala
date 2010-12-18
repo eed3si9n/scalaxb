@@ -1,7 +1,7 @@
 import java.io.{File}
 
 object MixedContentTest extends TestBase {
-  val inFile    = new File("src/test/resources/mixed.xsd")
+  val inFile    = new File("cli/src/test/resources/mixed.xsd")
   val outFile   = new File(tmp, "mixed.scala")
   val usageFile = new File(tmp, "MixedUsage.scala")
   

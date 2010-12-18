@@ -2,10 +2,10 @@ import java.io.{File}
 import scalaxb.compiler.{Config}
 
 object SamlTest extends TestBase {
-  val xmldsigcoreschemaxsd = new File("src/test/resources/xmldsig-core-schema.xsd")
-  val xencschemaxsd = new File("src/test/resources/xenc-schema.xsd")
-  val samlschemaassertion2xsd = new File("src/test/resources/saml-schema-assertion-2.0.xsd")
-  val samlschemametadata2xsd = new File("src/test/resources/saml-schema-metadata-2.0.xsd")
+  val xmldsigcoreschemaxsd = new File("cli/src/test/resources/xmldsig-core-schema.xsd")
+  val xencschemaxsd = new File("cli/src/test/resources/xenc-schema.xsd")
+  val samlschemaassertion2xsd = new File("cli/src/test/resources/saml-schema-assertion-2.0.xsd")
+  val samlschemametadata2xsd = new File("cli/src/test/resources/saml-schema-metadata-2.0.xsd")
   
   val xmldsigcoreschemascala = new File(tmp, "xmldsig-core-schema.scala")
   val xencschemascala = new File(tmp, "xenc-schema.scala")

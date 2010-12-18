@@ -2,9 +2,9 @@ import java.io.{File}
 import scalaxb.compiler.{Config}
 
 object ImportTest extends TestBase {
-  val ipoxsd    = new File("src/test/resources/ipo.xsd")
-  val reportxsd = new File("src/test/resources/report.xsd")
-  val circularxsd = new File("src/test/resources/circular.xsd")
+  val ipoxsd    = new File("cli/src/test/resources/ipo.xsd")
+  val reportxsd = new File("cli/src/test/resources/report.xsd")
+  val circularxsd = new File("cli/src/test/resources/circular.xsd")
   val iposcala = new File(tmp, "ipo.scala")
   val reportscala = new File(tmp, "report.scala")
   val circularscala = new File(tmp, "circular.scala")

@@ -14,6 +14,7 @@ to the sbaz managed directory:
   
 Here's how to upgrade it if you've installed it before:
 
+  $ sudo sbaz update
   $ sudo sbaz upgrade
 
 Build from source
@@ -31,7 +32,7 @@ Grab scalaxb's source and build:
    
   $ git clone git://github.com/eed3si9n/scalaxb.git scalaxb
   $ cd scalaxb
-  $ sbt update sbaz
+  $ sbt update "project scalaxb" sbaz
 
 This downloads the dependent libraries and produces
 - target/scala_2.8.1/lib/scalaxb.jar 
@@ -39,7 +40,7 @@ This downloads the dependent libraries and produces
 
 You can use sbaz to install scalaxb package under the managed directory:
 
-  $ sudo sbaz install -f target/scala_2.8.0/scalaxb-x.x.x.sbp
+  $ sudo sbaz install -f target/scala_2.8.1/scalaxb-x.x.x.sbp
 
 Alternatively, you can manually install the jar files.
 

@@ -4,26 +4,30 @@ import java.io.{File, InputStream, FileWriter}
 trait ScalaBazaarTask extends ScalaScriptTask with ProguardProject {  
   def ouputLibPath = (outputPath ##) / "lib"
   
-  lazy val versionlessJarName = name + ".jar"
+  lazy val sbazName = name
+  override def scriptName = sbazName
+  
+  lazy val versionlessJarName = sbazName + ".jar"
   def versionlessJarPath = ouputLibPath / versionlessJarName
-  lazy val bazaarPackageName = name + "-" + version + ".sbp"
+  lazy val bazaarPackageName = sbazName + "-" + version + ".sbp"
   def bazaarPackagePath = (outputPath ##) / bazaarPackageName
-  lazy val bazaarAdvertName = name + "-" + version + ".advert"
+  lazy val bazaarAdvertName = sbazName + "-" + version + ".advert"
   def bazaarAdvertPath = (outputPath ##) / bazaarAdvertName  
   def outputMetaPath = (outputPath ##) / "meta"
   def descriptionPath = outputMetaPath / "description"
   def outputDocPath = (outputPath ##) / "doc"
   def bazaarDepends: List[String] = Nil
   def description: String
+  def bazaarPackageBaseURL: String
     
-  lazy val sbaz = sbazTask(bazaarDepends, Some(description))
+  lazy val sbazPack = sbazPackTask(bazaarDepends, Some(description))
   
-  def sbazTask(depends: List[String], description: Option[String]) = task {
+  def sbazPackTask(depends: List[String], description: Option[String]) = task {
     if (!outputMetaPath.asFile.exists)
       outputMetaPath.asFile.mkdir
     
     val pack = <package>
-  <name>{name}</name>
+  <name>{sbazName}</name>
   <version>{version}</version>{
 if (!depends.isEmpty)
     <depends>{
@@ -41,7 +45,7 @@ if (!depends.isEmpty)
 
     val advert = <availablePackage>
   {pack}
-  <link>INSERT LINK HERE</link>
+  <link>{bazaarPackageBaseURL + bazaarPackageName}</link>
 </availablePackage>
 
     writeFile(descriptionPath.asFile, pack.toString)

@@ -1,10 +1,11 @@
 import sbt._
 
 class ScalaxbProject(info: ProjectInfo) extends ParentProject(info) with posterous.Publish {
-  lazy val cli = project("cli", "scalaxb cli", new CliProject(_))
+  lazy val cli = project("cli", "scalaxb", new CliProject(_))
   
   class CliProject(info: ProjectInfo) extends DefaultProject(info) with ScalaBazaarTask {
     override def description = "XML data binding tool for Scala."
+    override def bazaarPackageBaseURL = "http://cloud.github.com/downloads/eed3si9n/scalaxb/"
     override def testCompileOptions = super.testCompileOptions ++ Seq(CompileOption("-no-specialization"))
   }
   

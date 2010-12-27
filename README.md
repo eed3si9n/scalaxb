@@ -28,7 +28,7 @@ or build from source:
 
     $ git clone git://github.com/eed3si9n/scalaxb.git scalaxb
     $ cd scalaxb
-    $ sbt sbaz
+    $ sbt "project scalaxb" sbaz-pack
 
 See the file called INSTALL for details.
 

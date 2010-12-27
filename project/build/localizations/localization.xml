@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<localization>
+	<item key="schema file" lang="ja" value="スキーマファイル" />
+	<item key="schema URL" lang="ja" value="スキーマ URL" />
+	<item key="default package" lang="ja" value="対象パッケージ" />
+	<item key="compile" lang="ja" value="コンパイル" />
+	<item key="namespace URI" lang="ja" value="名前空間 URI" />
+	<item key="package" lang="ja" value="パッケージ" />
+</localization>

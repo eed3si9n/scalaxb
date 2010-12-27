@@ -1,12 +1,31 @@
 import sbt._
 
 class ScalaxbProject(info: ProjectInfo) extends ParentProject(info) with posterous.Publish {
+  lazy val parentPath = path("project")
+  
   lazy val cli = project("cli", "scalaxb", new CliProject(_))
   
   class CliProject(info: ProjectInfo) extends DefaultProject(info) with ScalaBazaarTask {
     override def description = "XML data binding tool for Scala."
     override def bazaarPackageBaseURL = "http://cloud.github.com/downloads/eed3si9n/scalaxb/"
     override def testCompileOptions = super.testCompileOptions ++ Seq(CompileOption("-no-specialization"))
+  }
+  
+  lazy val web = project("web", "scalaxb-appengine", new WebProject(_), cli)
+  class WebProject(info: ProjectInfo) extends AppengineProject(info) with GenerateClientTask {
+    override def localizationsPath = parentPath / "build" / "localizations"
+    
+    val uf_version = "0.2.2"
+    lazy val uf         = "net.databinder" %% "unfiltered-filter" % uf_version
+    lazy val uf_uploads = "net.databinder" %% "unfiltered-uploads" % uf_version
+    // lazy val uf_spec    = "net.databinder" %% "unfiltered-spec" % uf_version
+
+    lazy val deployLocal = deployLocalTask
+
+    def deployLocalTask = task {
+      args => 
+        devAppserverStartTask(args) dependsOn(prepareWebapp, devAppserverStop, devAppserverStop) 
+    }
   }
   
   val specsVersion = crossScalaVersionString match {
@@ -17,7 +36,9 @@ class ScalaxbProject(info: ProjectInfo) extends ParentProject(info) with postero
   val specs = "org.scala-tools.testing" % ("specs_" + crossScalaVersionString) % specsVersion % "test"
   val junit = "junit" % "junit" % "4.7" % "test"
   
-  val scalaToolsSnapshots = "Scala-Tools Snapshots" at "http://scala-tools.org/repo-snapshots"
+  val scalaToolsSnapshots      = "Scala Tools Snapshots" at "http://scala-tools.org/repo-snapshots"
+  val scalaToolsNexusSnapshots = "Scala Tools Nexus Snapshots" at "http://nexus.scala-tools.org/content/repositories/snapshots/"
+  val scalaToolsNexusReleases  = "Scala Tools Nexus Releases" at "http://nexus.scala-tools.org/content/repositories/releases/"
   
   override def managedStyle = ManagedStyle.Maven
   val publishTo = "Scala Tools Nexus" at "http://nexus.scala-tools.org/content/repositories/snapshots/"

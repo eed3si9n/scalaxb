@@ -190,6 +190,26 @@
     </xs:all>
   </xs:complexType>
   
+  <xs:complexType name="TopLevelMultipleSeqTest">
+    <xs:sequence minOccurs="0" maxOccurs="unbounded">
+      <xs:element name="firstName" type="xs:string"/>
+      <xs:element name="lastName" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>  
+  
+  <xs:complexType name="TopLevelOptionalSeqTest">
+    <xs:sequence minOccurs="0">
+      <xs:element name="firstName" type="xs:string"/>
+      <xs:element name="lastName" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+  
+  <xs:complexType name="TopLevelMultipleSeqAnyTest" mixed="true">
+    <xs:sequence minOccurs="0" maxOccurs="unbounded">
+      <xs:any namespace="##other" processContents="lax"/>
+    </xs:sequence>
+  </xs:complexType>
+  
   <xs:complexType name="Person">
     <xs:sequence>
       <xs:element name="firstName" type="xs:string"/>

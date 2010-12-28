@@ -370,14 +370,25 @@ trait ContextProcessor extends ScalaNames with PackageName {
     def makeCompositorName(compositor: HasParticle, decl: ComplexTypeDecl) {      
       compositor match {
         case seq: SequenceDecl =>
-          if (isFirstCompositor) {
-            isFirstCompositorSequence = true
-            context.compositorNames(compositor) = familyName(decl)
-          } 
-          else {
+          val separateSequence = if (!isFirstCompositor ||
+              seq.minOccurs != 1 || seq.maxOccurs != 1)
+            if (seq.particles.size == 1) seq.particles(0) match {
+              case any: AnyDecl => false
+              case choice: ChoiceDecl => false
+              case _ => true
+            } 
+            else true
+          else false
+          
+          if (separateSequence) {
             context.compositorNames(compositor) = familyName(decl) + "Sequence" + apparentSequenceNumber
             context.compositorParents(compositor) = decl
           }
+          else {
+            isFirstCompositorSequence = true
+            context.compositorNames(compositor) = familyName(decl)
+          }
+          
           sequenceNumber += 1
           
           if (seq.particles.size > MaxParticleSize || isWrapped(decl.namespace, decl.family))

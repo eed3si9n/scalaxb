@@ -185,6 +185,11 @@ trait Params extends Lookup {
     case _ => Occurrence(compos.minOccurs, compos.maxOccurs, false)
   }
   
+  def mergeOccurrence(lhs: Occurrence, rhs: Occurrence): Occurrence =
+    Occurrence(math.min(lhs.minOccurs, rhs.minOccurs),
+      math.max(lhs.maxOccurs, rhs.maxOccurs),
+      lhs.nillable || rhs.nillable)
+  
   def buildLongAllRef(all: AllDecl) =
     ElemDecl(Some(INTERNAL_NAMESPACE), "all", XsLongAll, None, None, 1, 1, None, None, None)
   

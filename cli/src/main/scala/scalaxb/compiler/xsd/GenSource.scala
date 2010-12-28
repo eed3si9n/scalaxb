@@ -419,7 +419,7 @@ abstract class GenSource(val schema: SchemaDecl,
     
     // pass in local name for the family.
     // since the sequence is already split at this point, it does not require resplitting.
-    val particles = flattenElements(schema.targetNamespace, localName, seq, 0)
+    val particles = flattenElements(schema.targetNamespace, localName, seq, 0, false)
     val paramList = particles map { buildParam }
     val hasSequenceParam = (paramList.size == 1) &&
       (paramList.head.cardinality == Multiple) &&
@@ -684,12 +684,12 @@ object {localName} {{
       case CompContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
         flattenElements(base, index)        
       case res@CompContRestrictionDecl(XsAny, _, _) =>
-        res.compositor map { flattenElements(decl.namespace, decl.family, _, index) } getOrElse { Nil }
+        res.compositor map { flattenElements(decl.namespace, decl.family, _, index, true) } getOrElse { Nil }
       case ext@CompContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
         flattenElements(base, index) :::
-          (ext.compositor map { flattenElements(decl.namespace, decl.family, _, index) } getOrElse { Nil })
+          (ext.compositor map { flattenElements(decl.namespace, decl.family, _, index, true) } getOrElse { Nil })
       case ext@CompContExtensionDecl(XsAny, _, _) =>
-        ext.compositor map { flattenElements(decl.namespace, decl.family, _, index) } getOrElse { Nil }
+        ext.compositor map { flattenElements(decl.namespace, decl.family, _, index, true) } getOrElse { Nil }
       case _ => Nil
     }
     
@@ -727,7 +727,7 @@ object {localName} {{
   }
      
   def flattenElements(namespace: Option[String], family: String,
-      compositor: HasParticle, index: Int): List[ElemDecl] = {    
+      compositor: HasParticle, index: Int, wrapTopSequence: Boolean): List[ElemDecl] = {    
     compositor match {
       case ref:GroupRef =>
         List(buildCompositorRef(ref, index))
@@ -736,14 +736,27 @@ object {localName} {{
         List(buildCompositorRef(group, index))
 
       case seq: SequenceDecl =>
-        splitLongSequence(namespace, family, compositor.particles).zipWithIndex flatMap {
+        if (wrapTopSequence &&
+          (seq.minOccurs != 1 || seq.maxOccurs != 1))
+          if (seq.particles.size == 1) compositor.particles(0) match {
+            case any: AnyDecl => List(buildAnyRef(any.copy(
+              minOccurs = math.min(any.minOccurs, seq.minOccurs),
+              maxOccurs = math.max(any.maxOccurs, seq.maxOccurs)) ))
+            case choice: ChoiceDecl => 
+              val occurence = mergeOccurrence(buildOccurrence(choice).copy(nillable = false),
+                buildOccurrence(seq))
+              List(buildCompositorRef(choice, occurence, 0))
+            case _ => List(buildCompositorRef(seq, index))
+          }
+          else List(buildCompositorRef(seq, index))
+        else splitLongSequence(
+            namespace, family, compositor.particles).zipWithIndex flatMap {
           case (ref: GroupRef, i: Int)            => List(buildCompositorRef(ref, i))
           case (compositor2: HasParticle, i: Int) => List(buildCompositorRef(compositor2, i))
           case (elem: ElemDecl, i: Int)           => List(elem)
           case (ref: ElemRef, i: Int)             => List(buildElement(ref))
           case (any: AnyDecl, i: Int)             => List(buildAnyRef(any))
         }
-
       case all: AllDecl =>
         if (isLongAll(all, namespace, family)) List(buildLongAllRef(all))
         else compositor.particles flatMap {

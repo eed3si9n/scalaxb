@@ -647,11 +647,15 @@ trait ElemNameParser[A] extends AnyElemNameParser with XMLFormat[A] with CanWrit
     case node: scala.xml.Node =>
       parse(parser(node), node.child) match {
         case x: Success[_] => Right(x.get)
-        case x: Failure => Left(x.msg)
-        case x: Error => Left(x.msg)
+        case x: Failure => Left(parserErrorMsg(x.msg, node))
+        case x: Error => Left(parserErrorMsg(x.msg, node))
       }
     case _ => Left("seq must be scala.xml.Node")
   }
+  
+  private def parserErrorMsg(msg: String, node: scala.xml.Node): String =
+    if (msg contains "paser error: ") msg
+    else "parser error \"" + msg + "\" while parsing " + node.toString
   
   def parser(node: scala.xml.Node): Parser[A]
   def isMixed: Boolean = false

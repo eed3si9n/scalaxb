@@ -10,6 +10,11 @@ import DefaultXMLProtocol._
 object GeneralUsage {
   val NS = Some("http://www.example.com/general")
   
+  val scope = toScope(None -> "http://www.example.com/general",
+    Some("gen") -> "http://www.example.com/general",
+    Some("xsi") -> "http://www.w3.org/2001/XMLSchema-instance",
+    Some("xs") -> "http://www.w3.org/2001/XMLSchema")
+    
   def main(args: Array[String]) = {
     allTests
   }
@@ -23,6 +28,9 @@ object GeneralUsage {
     testAny
     testLongAll
     testLongAttribute
+    testTopLevelMultipleSeq
+    testTopLevelOptionalSeq
+    testTopLevelMustipleSeqAny
     true
   }
   
@@ -251,7 +259,7 @@ object GeneralUsage {
     println(document)
     check(fromXML[AnyTest](document))
   }
-  
+    
   def testLongAll {
     val subject = <foo xmlns="http://www.example.com/general"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -286,5 +294,58 @@ object GeneralUsage {
     
     val document = toXML[LongAttributeTest](obj, "foo", defaultScope)
     println(document)    
+  }
+  
+  def testTopLevelMultipleSeq {
+    println("testTopLevelMultipleSeq")
+    val subject = <foo xmlns="http://www.example.com/general"
+        xmlns:gen="http://www.example.com/general"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    </foo>
+    val obj = fromXML[TopLevelMultipleSeqTest](subject)
+    
+    def check(obj: Any) = obj match {
+        case TopLevelMultipleSeqTest() =>
+        case _ => error("match failed: " + obj.toString)
+      }
+    check(obj)
+    val document = toXML[TopLevelMultipleSeqTest](obj, "foo", scope)
+    println(document)
+    check(fromXML[TopLevelMultipleSeqTest](document))    
+  }
+  
+  def testTopLevelOptionalSeq {
+    println("testTopLevelOptionalSeq")
+    val subject = <foo xmlns="http://www.example.com/general"
+        xmlns:gen="http://www.example.com/general"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    </foo>
+    val obj = fromXML[TopLevelOptionalSeqTest](subject)
+    
+    def check(obj: Any) = obj match {
+        case TopLevelOptionalSeqTest(None) =>
+        case _ => error("match failed: " + obj.toString)
+      }
+    check(obj)
+    val document = toXML[TopLevelOptionalSeqTest](obj, "foo", scope)
+    println(document)
+    check(fromXML[TopLevelOptionalSeqTest](document))    
+  }
+  
+  def testTopLevelMustipleSeqAny {
+    println("testTopLevelMustipleSeqAny")
+    val subject = <foo xmlns="http://www.example.com/general"
+        xmlns:gen="http://www.example.com/general"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">something</foo>
+    val obj = fromXML[TopLevelMultipleSeqAnyTest](subject)
+    
+    def check(obj: Any) = obj match {
+        case TopLevelMultipleSeqAnyTest(Seq(DataRecord(None, None, "something"))) =>
+        case _ => error("match failed: " + obj.toString)
+      }
+    check(obj)
+    val document = toXML[TopLevelMultipleSeqAnyTest](obj, "foo", scope)
+    println(document)
+    check(fromXML[TopLevelMultipleSeqAnyTest](document))    
   }
 }

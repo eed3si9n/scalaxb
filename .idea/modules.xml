@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/cli/scalaxb.iml" filepath="$PROJECT_DIR$/cli/scalaxb.iml" />
+      <module fileurl="file://$PROJECT_DIR$/web/scalaxb-appengine.iml" filepath="$PROJECT_DIR$/web/scalaxb-appengine.iml" />
+    </modules>
+  </component>
+</project>
+

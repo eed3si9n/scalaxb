@@ -1,4 +1,5 @@
 .DS_Store
+memo.txt
 doc
 tags
 tests/tmp
@@ -7,3 +8,5 @@ lib_managed/
 src_managed/
 project/boot/
 tmp/
+.idea/workspace.xml
+.idea/tasks.xml

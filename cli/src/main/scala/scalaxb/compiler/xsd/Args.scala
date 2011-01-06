@@ -270,16 +270,28 @@ trait Args extends Params {
       quote(buildNodeName(group)) + " -> scalaxb.DataRecord(None, None, x) }"
     else arg + ".get"
   }
-  
-  def flattenAttributes(decl: ComplexTypeDecl): List[AttributeLike] =
-    flattenAttributes(decl.content.content.attributes) ::: (
-    decl.content.content match {
-      case CompContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, attr) => 
-        flattenAttributes(base)
-      case CompContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, attr) =>
-        flattenAttributes(base)
+
+  def flattenAttributes(decl: ComplexTypeDecl): List[AttributeLike] = {
+    val attributes = mergeAttributes(decl.content.content match {
+      case SimpContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _, _) => flattenAttributes(base)
+      case SimpContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _)         => flattenAttributes(base)
+      case CompContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _)    => flattenAttributes(base)
+      case CompContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _)      => flattenAttributes(base)
       case _ => Nil
-    })
+    }, flattenAttributes(decl.content.content.attributes))
+
+    // rearrange attributes so AnyAttributeDecl comes at the end.
+    val notAnyAttributes = attributes filter {
+      case any: AnyAttributeDecl => false
+      case _ => true
+    }
+    val anyAttributes = attributes filter {
+      case any: AnyAttributeDecl => true
+      case _ => false
+    }
+    if (anyAttributes.isEmpty) notAnyAttributes
+    else notAnyAttributes ::: List(anyAttributes.head)
+  }
   
   // return a list of either AttributeDecl or AnyAttributeDecl
   def flattenAttributes(attributes: List[AttributeLike]): List[AttributeLike] =
@@ -290,4 +302,43 @@ trait Args extends Params {
       case group: AttributeGroupDecl => flattenAttributes(group.attributes)
       case ref: AttributeGroupRef    => flattenAttributes(buildAttributeGroup(ref).attributes)
     }
+
+  def mergeAttributes(parent: List[AttributeLike],
+      child: List[AttributeLike]): List[AttributeLike] = child match {
+    case x :: xs => mergeAttributes(mergeAttributes(parent, x), xs)
+    case Nil => parent
+  }
+
+  def mergeAttributes(parent: List[AttributeLike],
+      child: AttributeLike): List[AttributeLike] =
+    if (!parent.exists(x => isSameAttribute(x, child))) parent ::: List(child)
+    else parent.map (x =>
+      if (isSameAttribute(x, child)) child match {
+        // since OO's hierarchy does not allow base members to be ommited,
+        // child overrides needs to be implemented some other way.
+        case attr: AttributeDecl =>
+          Some(x)
+        case _ => Some(x)
+      }
+      else Some(x) ).flatten
+
+  def isSameAttribute(lhs: AttributeLike, rhs: AttributeLike) = {
+    def resolveRef(attribute: AttributeLike): AttributeLike = attribute match {
+      case any: AnyAttributeDecl => any
+      case attr: AttributeDecl => attr
+      case ref: AttributeRef   => buildAttribute(ref)
+      case group: AttributeGroupDecl => group
+      case ref: AttributeGroupRef    => buildAttributeGroup(ref)
+    }
+
+    (resolveRef(lhs), resolveRef(rhs)) match {
+      case (x: AnyAttributeDecl, y: AnyAttributeDecl) => true
+      case (x: AttributeDecl, y: AttributeDecl) =>
+        (x.name == y.name && x.namespace == y.namespace)
+      case (x: AttributeGroupDecl, y: AttributeGroupDecl) =>
+        (x.name == y.name && x.namespace == y.namespace)
+      case _ => false
+    }
+  }
+
 }

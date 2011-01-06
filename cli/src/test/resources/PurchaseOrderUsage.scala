@@ -322,7 +322,8 @@ object PurchaseOrderUsage {
       case DatedData(XMLCalendar("2010-02-06Z"),
         HexBinary(15),
         Array('A', 'B', 'C', 'D', 'E', 'F', 'G'),
-        Coreattrs(None, Some("foo"))) =>
+        Some("foo"),
+        None) =>
       case _ => error("match failed: " + obj.toString)
     }
     val document = toXML(obj, None, Some("foo"), subject.scope)
@@ -386,7 +387,7 @@ object PurchaseOrderUsage {
       case Head(Seq(DataRecord(Some("http://www.example.com/IPO"), Some("script"), ""),
         DataRecord(Some("http://www.example.com/IPO"), Some("script"), "")),
         DataRecord(None, None, HeadSequence1("bar", Seq(DataRecord(Some("http://www.example.com/IPO"), Some("script"), "")) )),
-        I18n(Some(Ltr), None, None), None, None) =>
+        None, None, Some(Ltr), None, None) =>
       case _ => error("match failed: " + obj.toString)
     }
     

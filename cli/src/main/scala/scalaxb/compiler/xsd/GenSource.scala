@@ -97,7 +97,7 @@ abstract class GenSource(val schema: SchemaDecl,
 
     val childElements = if (decl.mixed) Nil
       else flattenElements(decl, 0)
-    val list = List.concat[Decl](childElements, buildAttributes(decl))
+    val list = List.concat[Decl](childElements, flattenAttributes(decl))
     val paramList = list map { buildParam }
     val defaultType = buildFullyQualifiedName(schema, makeProtectedTypeName(schema.targetNamespace, decl, context))    
     val argList = list map {
@@ -205,7 +205,7 @@ abstract class GenSource(val schema: SchemaDecl,
     // val particles = buildParticles(decl, name)
     val childElements = if (decl.mixed) flattenMixed(decl)
       else flatParticles 
-    val attributes = buildAttributes(decl)    
+    val attributes = flattenAttributes(decl)
     val longAttribute = (attributes.size + childElements.size > MaxParticleSize &&
       childElements.size + 1 <= MaxParticleSize)
     val list = if (longAttribute) List.concat[Decl](childElements, List(buildLongAttributeRef))
@@ -500,7 +500,7 @@ abstract class GenSource(val schema: SchemaDecl,
     val fqn = buildTypeName(group, false)
     val formatterName = buildFormatterName(group.namespace, localName)
         
-    val attributes = buildAttributes(group.attributes)  
+    val attributes = flattenAttributes(group.attributes)
     val paramList = attributes map { buildParam }
     val argList = attributes map {
         case any: AnyAttributeDecl => buildArgForAnyAttribute(group, false)
@@ -884,68 +884,32 @@ object {localName} {{
       None, None, 0, Integer.MAX_VALUE, None, None, None))
   else Nil
     
-  def buildAttributes(decl: ComplexTypeDecl): List[AttributeLike] = {
-    val attributes = mergeAttributes(decl.content.content match {
-      case SimpContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _, _) => buildAttributes(base)
-      case SimpContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _) => buildAttributes(base)
-      case CompContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) => buildAttributes(base)
-      case CompContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) => buildAttributes(base)
-      case _ => Nil
-    }, buildAttributes(decl.content.content.attributes))
-    
-    // rearrange attributes so AnyAttributeDecl comes at the end.
-    val notAnyAttributes = attributes filter { 
-      case any: AnyAttributeDecl => false
-      case _ => true
-    }
-    val anyAttributes = attributes filter {
-      case any: AnyAttributeDecl => true
-      case _ => false
-    }
-    if (anyAttributes.isEmpty) notAnyAttributes
-    else notAnyAttributes ::: List(anyAttributes.head)
-  }
-  
-  def buildAttributes(attributes: List[AttributeLike]): List[AttributeLike] =
-    attributes map(resolveRef)
-  
-  def resolveRef(attribute: AttributeLike): AttributeLike = attribute match {
-    case any: AnyAttributeDecl => any
-    case attr: AttributeDecl => attr
-    case ref: AttributeRef   => buildAttribute(ref)
-    case group: AttributeGroupDecl => group
-    case ref: AttributeGroupRef    => buildAttributeGroup(ref)    
-  }
-    
-  def mergeAttributes(parent: List[AttributeLike],
-      child: List[AttributeLike]): List[AttributeLike] = child match {
-    case x :: xs => mergeAttributes(mergeAttributes(parent, x), xs)
-    case Nil => parent
-  }
-  
-  def mergeAttributes(parent: List[AttributeLike],
-      child: AttributeLike): List[AttributeLike] =
-    if (!parent.exists(x => isSame(x, child))) parent ::: List(child)
-    else parent.map (x =>
-      if (isSame(x, child)) child match {
-        // since OO's hierarchy does not allow base members to be ommited,
-        // child overrides needs to be implemented some other way.
-        case attr: AttributeDecl =>
-          Some(x)
-        case _ => Some(x)
-      }
-      else Some(x) ).flatten
-      
-  def isSame(lhs: AttributeLike, rhs: AttributeLike) =
-    (resolveRef(lhs), resolveRef(rhs)) match {
-      case (x: AnyAttributeDecl, y: AnyAttributeDecl) => true
-      case (x: AttributeDecl, y: AttributeDecl) =>
-        (x.name == y.name && x.namespace == y.namespace)
-      case (x: AttributeGroupDecl, y: AttributeGroupDecl) =>
-        (x.name == y.name && x.namespace == y.namespace)
-      case _ => false
-    }
-    
+//  def buildAttributes(decl: ComplexTypeDecl): List[AttributeLike] = {
+//    val attributes = mergeAttributes(decl.content.content match {
+//      case SimpContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _, _) => buildAttributes(base)
+//      case SimpContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _) => buildAttributes(base)
+//      case CompContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) => buildAttributes(base)
+//      case CompContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) => buildAttributes(base)
+//      case _ => Nil
+//    }, buildAttributes(decl.content.content.attributes))
+//
+//    // rearrange attributes so AnyAttributeDecl comes at the end.
+//    val notAnyAttributes = attributes filter {
+//      case any: AnyAttributeDecl => false
+//      case _ => true
+//    }
+//    val anyAttributes = attributes filter {
+//      case any: AnyAttributeDecl => true
+//      case _ => false
+//    }
+//    if (anyAttributes.isEmpty) notAnyAttributes
+//    else notAnyAttributes ::: List(anyAttributes.head)
+//  }
+//
+//  def buildAttributes(attributes: List[AttributeLike]): List[AttributeLike] =
+//    attributes map(resolveRef)
+//
+
   def makeSchemaComment = 
     <source>// Generated by &lt;a href="http://scalaxb.org/"&gt;scalaxb&lt;/a&gt;.{makeAnnotation(schema.annotation)}</source>
   

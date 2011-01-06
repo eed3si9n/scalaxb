@@ -239,7 +239,7 @@ object AttributeLike {
           child.label))
       yield fromXML(child, config)
   
-  def fromXML(node: scala.xml.Node, config: ParserConfig): AttributeLike  = {
+  private def fromXML(node: scala.xml.Node, config: ParserConfig): AttributeLike  = {
     if (node.label == "anyAttribute")
       AnyAttributeDecl.fromXML(node, config)
     else if (node.label == "attributeGroup")
@@ -381,7 +381,7 @@ object AttributeGroupDecl {
       AnnotationDecl.fromXML(x, config) }
     
     AttributeGroupDecl(config.targetNamespace,
-      name, attributes.toList.reverse, annotation)
+      name, attributes, annotation)
   } 
 }
 
@@ -555,7 +555,7 @@ object ComplexTypeDecl {
     
     // val contentModel = ContentModel.fromSchema(firstChild(node))
     ComplexTypeDecl(config.targetNamespace, name, family, abstractValue, mixed, 
-      content, attributes.reverse, annotation)
+      content, attributes, annotation)
   }
 }
 

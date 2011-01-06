@@ -52,16 +52,8 @@ object SimpContRestrictionDecl {
     }
     
     val facets = Facetable.fromParent(node, config)
-    
-    var attributes: List[AttributeLike] = Nil
-    for (child <- node.child) child match {
-      case <attribute>{ _* }</attribute> =>
-        attributes = AttributeLike.fromXML(child, config) :: attributes
-
-      case _ =>
-    }
-    
-    SimpContRestrictionDecl(base, simpleType, facets, attributes.reverse)
+    val attributes = AttributeLike.fromParentNode(node, config)
+    SimpContRestrictionDecl(base, simpleType, facets, attributes)
   }
 }
 
@@ -84,16 +76,8 @@ object SimpContExtensionDecl {
           case None    => error("SimpContExtensionDecl#fromXML: restriction must have either base attribute or simpleType.")
         }
     }
-    var attributes: List[AttributeLike] = Nil
-
-    for (child <- node.child) child match {
-      case <attribute>{ _* }</attribute> =>
-        attributes = AttributeLike.fromXML(child, config) :: attributes
-
-      case _ =>
-    }
-
-    SimpContExtensionDecl(base, attributes.reverse)
+    val attributes = AttributeLike.fromParentNode(node, config)
+    SimpContExtensionDecl(base, attributes)
   }  
 }
 case class CompContRestrictionDecl(base: XsTypeSymbol,
@@ -114,7 +98,6 @@ object CompContRestrictionDecl {
     val baseName = (node \ "@base").text
     val base = TypeSymbolParser.fromString(baseName, config)
     var compositor: Option[HasParticle] = None
-    var attributes: List[AttributeLike] = Nil
     
     for (child <- node.child) child match {
       case <group>{ _* }</group> =>
@@ -125,13 +108,12 @@ object CompContRestrictionDecl {
         compositor = Some(CompositorDecl.fromXML(child, config))
       case <sequence>{ _* }</sequence> =>
         compositor = Some(CompositorDecl.fromXML(child, config))
-      case <attribute>{ _* }</attribute> =>
-        attributes = AttributeLike.fromXML(child, config) :: attributes
-      
+
       case _ =>
     }
-    
-    CompContRestrictionDecl(base, compositor, attributes.reverse)
+
+    val attributes = AttributeLike.fromParentNode(node, config)
+    CompContRestrictionDecl(base, compositor, attributes)
   }
 }
 
@@ -144,7 +126,6 @@ object CompContExtensionDecl {
     val baseName = (node \ "@base").text
     val base = TypeSymbolParser.fromString(baseName, config)
     var compositor: Option[HasParticle] = None
-    var attributes: List[AttributeLike] = Nil
     
     for (child <- node.child) child match {
       case <group>{ _* }</group> =>
@@ -155,13 +136,11 @@ object CompContExtensionDecl {
         compositor = Some(CompositorDecl.fromXML(child, config))
       case <sequence>{ _* }</sequence> =>
         compositor = Some(CompositorDecl.fromXML(child, config))
-      case <attribute>{ _* }</attribute> =>
-        attributes = AttributeLike.fromXML(child, config) :: attributes
-      
       case _ =>
     }
-       
-    CompContExtensionDecl(base, compositor, attributes.reverse)
+
+    val attributes = AttributeLike.fromParentNode(node, config)
+    CompContExtensionDecl(base, compositor, attributes)
   }  
 }
 

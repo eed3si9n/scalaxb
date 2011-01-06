@@ -1,7 +1,9 @@
 import java.io.{File}
-import scalaxb.compiler.{Config}
+import scalaxb.compiler.{Config, Verbose}
+import scalaxb.compiler.xsd.{Driver}
 
 object XmlSchemaTest extends TestBase {
+  // override val module = new Driver with Verbose
   val inFile  = new File("cli/src/test/resources/xmlschema.xsd")
   val outFile = new File(tmp, "XMLSchema.scala")
   
@@ -25,6 +27,7 @@ object XmlSchemaTest extends TestBase {
             <element name="street" type="string"/>
             <element name="city"   type="string"/>
           </sequence>
+          <attribute name="attr" type="string"/>
         </complexType>
       </schema>""", // " 
       """toXML[XSchema](fromXML[XSchema](document),
@@ -34,10 +37,12 @@ object XmlSchemaTest extends TestBase {
        """xmlns:ipo="http://www.example.com/IPO" """ +
        """xmlns="http://www.w3.org/2001/XMLSchema">""" +
        """<complexType name="Address">""" +
-       """<sequence><element type="string"></element>""" + 
-       """<element type="string"></element>""" + 
-       """<element type="string"></element>""" +
-       """</sequence></complexType></schema>""", // "
+       """<sequence><element name="name" type="string"></element>""" +
+       """<element name="street" type="string"></element>""" +
+       """<element name="city" type="string"></element>""" +
+       """</sequence>""" +
+       """<attribute name="attr" type="string"></attribute>""" +
+       """</complexType></schema>""", // "
      outdir = "./tmp")
   }
 }

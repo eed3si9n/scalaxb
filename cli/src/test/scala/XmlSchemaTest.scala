@@ -37,11 +37,11 @@ object XmlSchemaTest extends TestBase {
        """xmlns:ipo="http://www.example.com/IPO" """ +
        """xmlns="http://www.w3.org/2001/XMLSchema">""" +
        """<complexType name="Address">""" +
-       """<sequence><element name="name" type="string"></element>""" +
-       """<element name="street" type="string"></element>""" +
-       """<element name="city" type="string"></element>""" +
+       """<sequence><element type="string" name="name"></element>""" +
+       """<element type="string" name="street"></element>""" +
+       """<element type="string" name="city"></element>""" +
        """</sequence>""" +
-       """<attribute name="attr" type="string"></attribute>""" +
+       """<attribute type="string" name="attr"></attribute>""" +
        """</complexType></schema>""", // "
      outdir = "./tmp")
   }

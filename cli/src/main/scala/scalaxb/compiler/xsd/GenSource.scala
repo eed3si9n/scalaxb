@@ -803,7 +803,7 @@ object {localName} {{
   
   def generateAccessors(attributes: List[AttributeLike]): List[String] = {
     val wrapperName = makeParamName(ATTRS_PARAM)
-    
+
     attributes collect {
       case attr: AttributeDecl   => (attr, toCardinality(attr))
       case ref: AttributeRef     =>
@@ -811,14 +811,11 @@ object {localName} {{
         (attr, toCardinality(attr))
       case group: AttributeGroupDecl => (group, Single)
     } map { _ match {
-        case (attr: AttributeDecl, Optional) => "lazy val " + makeParamName(attr.name) + " = " + 
+        case (attr: AttributeDecl, Optional) => "lazy val " + makeParamName(buildParam(attr).name) + " = " +
           wrapperName + ".get(" +  quote(buildNodeName(attr)) + ") map { _.as[" + buildTypeName(attr.typeSymbol, true) + "] }"
-        case (attr: AttributeDecl, Single) => "lazy val " + makeParamName(attr.name) + " = " + 
+        case (attr: AttributeDecl, Single) => "lazy val " + makeParamName(buildParam(attr).name) + " = " +
           wrapperName + "(" +  quote(buildNodeName(attr)) + ").as[" + buildTypeName(attr.typeSymbol, true) + "]"
-        case (group: AttributeGroupDecl, Optional) => "lazy val " + makeParamName(group.name) + " = " + 
-          wrapperName + ".get(" +  quote(buildNodeName(group)) + ") map { _.as[" + buildTypeName(group, true) + "] }"
-        case (group: AttributeGroupDecl, Single) => "lazy val " + makeParamName(group.name) + " = " + 
-          wrapperName + "(" +  quote(buildNodeName(group)) + ").as[" + buildTypeName(group, true) + "]"
+
       }
     }
   }

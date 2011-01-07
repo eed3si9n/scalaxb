@@ -132,7 +132,7 @@ abstract class GenSource(val schema: SchemaDecl,
     val traitCode = <source>{ buildComment(decl) }trait {localName}{extendString} {{
   {
   val vals = for (param <- paramList)
-    yield  "val " + param.toScalaCode
+    yield  "val " + param.toTraitScalaCode
   vals.mkString(newline + indent(1))}
 }}</source>
     

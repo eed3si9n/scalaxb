@@ -69,9 +69,14 @@ trait Params extends Lookup {
       case Optional => "Option[" + singleTypeName + "]"
       case Multiple => "Seq[" + singleTypeName + "]"
     }      
-    
-    def toScalaCode: String =
+
+    def toTraitScalaCode: String =
       makeParamName(name) + ": " + typeName
+
+    def toScalaCode: String =
+      toTraitScalaCode + (
+        if (cardinality == Optional && attribute) " = None"
+        else "")
   }
   
   def buildParam(decl: Decl): Param = decl match {

@@ -1,7 +1,7 @@
 import java.io.{File}
 
 object XhtmlTest extends TestBase {
-  val inFile  = new File("cli/src/test/resources/xhtml1-strict.xsd")
+  val inFile  = new File("integration/src/test/resources/xhtml1-strict.xsd")
   val outFile = new File(tmp, "xhtml1-strict.scala")
   lazy val generated = module.process(inFile, outFile, outProtocolFile, "xhtml")
   

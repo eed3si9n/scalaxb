@@ -2,7 +2,7 @@ import java.io.{File}
 import scalaxb.compiler.{Config}
 
 object BigTest extends TestBase {
-  val inFile  = new File("cli/src/test/resources/big.xsd")
+  val inFile  = new File("integration/src/test/resources/big.xsd")
   val outFile = new File(tmp, "big.scala")
   
   lazy val generated = module.process(inFile, outFile, outProtocolFile,

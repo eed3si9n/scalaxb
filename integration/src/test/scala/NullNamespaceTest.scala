@@ -2,7 +2,7 @@ import java.io.{File}
 import scalaxb.compiler.{Config}
 
 object NullNamespaceTest extends TestBase {
-  val inFile  = new File("cli/src/test/resources/nullnamespace.xsd")
+  val inFile  = new File("integration/src/test/resources/nullnamespace.xsd")
   val outFile = new File(tmp, "nullnamespace.scala")
   
   lazy val generated = module.process(inFile, outFile, outProtocolFile,

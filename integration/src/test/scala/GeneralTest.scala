@@ -1,7 +1,7 @@
 import java.io.{File}
 
 object GeneralTest extends TestBase {
-  val inFile    = new File("cli/src/test/resources/general.xsd")
+  val inFile    = new File("integration/src/test/resources/general.xsd")
   val outFile   = new File(tmp, "general.scala")
   val usageFile = new File(tmp, "GeneralUsage.scala")
   val custumFile = new File(tmp, "CustomizationUsage.scala")

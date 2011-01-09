@@ -9,17 +9,9 @@ class ScalaxbProject(info: ProjectInfo) extends ParentProject(info) with postero
   
   lazy val cli = project("cli", "scalaxb", new CliProject(_))
   
-  class CliProject(info: ProjectInfo) extends DefaultProject(info) with ScalaBazaarTask {
-    val specsVersion = crossScalaVersionString match {
-      case "2.8.0" => "1.6.5"
-      case _ => "1.6.6"
-    }
-    val specs = "org.scala-tools.testing" % ("specs_" + crossScalaVersionString) % specsVersion % "test"
-    val junit = "junit" % "junit" % "4.7" % "test"
-    
+  class CliProject(info: ProjectInfo) extends DefaultProject(info) with ScalaBazaarTask {    
     override def description = "XML data binding tool for Scala."
     override def bazaarPackageBaseURL = "http://cloud.github.com/downloads/eed3si9n/scalaxb/"
-    override def testCompileOptions = super.testCompileOptions ++ Seq(CompileOption("-no-specialization"))
   }
   
   lazy val web = project("web", "scalaxb-appengine", new WebProject(_), cli)
@@ -38,6 +30,19 @@ class ScalaxbProject(info: ProjectInfo) extends ParentProject(info) with postero
         devAppserverStartTask(args) dependsOn(prepareWebapp, devAppserverStop, devAppserverStop) 
     }
   }
+  
+  lazy val integration = project("integration", "scalaxb integration", new IntegrationProject(_), cli)
+  
+  class IntegrationProject(info: ProjectInfo) extends DefaultProject(info) {
+    val specsVersion = crossScalaVersionString match {
+      case "2.8.0" => "1.6.5"
+      case _ => "1.6.6"
+    }
+    val specs = "org.scala-tools.testing" % ("specs_" + crossScalaVersionString) % specsVersion % "test"
+    val junit = "junit" % "junit" % "4.7" % "test"
+    
+    override def testCompileOptions = super.testCompileOptions ++ Seq(CompileOption("-no-specialization"))
+  }  
   
   override def managedStyle = ManagedStyle.Maven
   val publishTo = "Scala Tools Nexus" at "http://nexus.scala-tools.org/content/repositories/snapshots/"

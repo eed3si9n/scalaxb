@@ -2,7 +2,7 @@ import java.io.{File}
 import scalaxb.compiler.{Verbose}
 
 object PurchaseOrderTest extends TestBase {
-  val inFile    = new File("cli/src/test/resources/ipo.xsd")
+  val inFile    = new File("integration/src/test/resources/ipo.xsd")
   val outFile   = new File(tmp, "ipo.scala")
   val usageFile = new File(tmp, "PurchaseOrderUsage.scala")
   copyFileFromResource("PurchaseOrderUsage.scala", usageFile)

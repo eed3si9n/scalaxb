@@ -4,14 +4,14 @@ import java.io.{File, InputStream, FileWriter}
 trait ScalaBazaarTask extends ScalaScriptTask with ProguardProject {  
   def ouputLibPath = (outputPath ##) / "lib"
   
-  lazy val sbazName = name
+  def sbazName = name
   override def scriptName = sbazName
   
-  lazy val versionlessJarName = sbazName + ".jar"
+  def versionlessJarName = sbazName + ".jar"
   def versionlessJarPath = ouputLibPath / versionlessJarName
-  lazy val bazaarPackageName = sbazName + "-" + version + ".sbp"
+  def bazaarPackageName = sbazName + "-" + version + ".sbp"
   def bazaarPackagePath = (outputPath ##) / bazaarPackageName
-  lazy val bazaarAdvertName = sbazName + "-" + version + ".advert"
+  def bazaarAdvertName = sbazName + "-" + version + ".advert"
   def bazaarAdvertPath = (outputPath ##) / bazaarAdvertName  
   def outputMetaPath = (outputPath ##) / "meta"
   def descriptionPath = outputMetaPath / "description"

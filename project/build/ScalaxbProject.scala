@@ -1,7 +1,7 @@
 import sbt._
 
-class ScalaxbProject(info: ProjectInfo) extends ParentProject(info) with posterous.Publish {
-  lazy val parentPath = path("project")
+class ScalaxbProject(info: ProjectInfo) extends ParentProject(info) {
+  lazy val parentPath = path(".")
   
   val scalaToolsSnapshots      = "Scala Tools Snapshots" at "http://scala-tools.org/repo-snapshots"
   val scalaToolsNexusSnapshots = "Scala Tools Nexus Snapshots" at "http://nexus.scala-tools.org/content/repositories/snapshots/"
@@ -9,14 +9,15 @@ class ScalaxbProject(info: ProjectInfo) extends ParentProject(info) with postero
   
   lazy val cli = project("cli", "scalaxb", new CliProject(_))
   
-  class CliProject(info: ProjectInfo) extends DefaultProject(info) with ScalaBazaarTask {    
+  class CliProject(info: ProjectInfo) extends DefaultProject(info) with ScalaBazaarTask with posterous.Publish {    
     override def description = "XML data binding tool for Scala."
     override def bazaarPackageBaseURL = "http://cloud.github.com/downloads/eed3si9n/scalaxb/"
+    override def notesPath = parentPath / "notes"
   }
   
   lazy val web = project("web", "scalaxb-appengine", new WebProject(_), cli)
   class WebProject(info: ProjectInfo) extends AppengineProject(info) with GenerateClientTask {
-    override def localizationsPath = parentPath / "build" / "localizations"
+    override def localizationsPath = parentPath / "project" / "build" / "localizations"
     
     val uf_version = "0.2.2"
     lazy val uf         = "net.databinder" %% "unfiltered-filter" % uf_version

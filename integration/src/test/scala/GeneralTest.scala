@@ -2,11 +2,10 @@ import java.io.{File}
 
 object GeneralTest extends TestBase {
   val inFile    = new File("integration/src/test/resources/general.xsd")
-  val outFile   = new File(tmp, "general.scala")
   val usageFile = new File(tmp, "GeneralUsage.scala")
   val custumFile = new File(tmp, "CustomizationUsage.scala")
   
-  lazy val generated = module.process(inFile, outFile, outProtocolFile, "general")
+  lazy val generated = module.process(inFile, "general", tmp)
   copyFileFromResource("GeneralUsage.scala", usageFile)
   copyFileFromResource("CustomizationUsage.scala", custumFile)
   

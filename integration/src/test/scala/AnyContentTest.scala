@@ -2,8 +2,7 @@ import java.io.{File}
 
 object AnyContentTest extends TestBase {
   val inFile = new File("integration/src/test/resources/any.xsd")
-  val outFile = new File(tmp, "any.scala")
-  lazy val generated = module.process(inFile, outFile, outProtocolFile, "anycontent")
+  lazy val generated = module.process(inFile, "anycontent", tmp)
   val usageFile = new File(tmp, "AnyUsage.scala")
   copyFileFromResource("AnyUsage.scala", usageFile)
   

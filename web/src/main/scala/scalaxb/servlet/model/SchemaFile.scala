@@ -1,14 +1,9 @@
 package scalaxb.servlet.model
 
 import java.net.{URI}
-import java.io.{File, Reader, StringWriter, PrintWriter}
+import java.io.{File, Reader}
 
-case class SchemaFile(uri: URI, reader: Reader) {
-  val out = new StringWriter
-  val printout = new PrintWriter(out)
-  
-  def toTriplet = (uri, reader, printout)
-}
+case class SchemaFile(uri: URI, reader: Reader)
 
 object SchemaFile {
   import java.net.URL

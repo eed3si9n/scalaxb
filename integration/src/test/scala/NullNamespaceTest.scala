@@ -3,10 +3,10 @@ import scalaxb.compiler.{Config}
 
 object NullNamespaceTest extends TestBase {
   val inFile  = new File("integration/src/test/resources/nullnamespace.xsd")
-  val outFile = new File(tmp, "nullnamespace.scala")
   
-  lazy val generated = module.process(inFile, outFile, outProtocolFile,
-    Config(packageNames = Map[Option[String], Option[String]]()) )
+  lazy val generated = module.process(inFile,
+    Config(packageNames = Map[Option[String], Option[String]](),
+      outdir = tmp) )
   
   "nullnamespace.scala file must compile so that Foo can be used" in {
     (List("import scalaxb.Scalaxb._",

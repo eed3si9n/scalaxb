@@ -1,11 +1,15 @@
 package scalaxb.servlet.model
 
 import java.net.{URI}
-import java.io.{InputStream, OutputStream, ByteArrayOutputStream, ByteArrayInputStream}
+import java.io.{InputStream, OutputStream, ByteArrayOutputStream, ByteArrayInputStream, StringWriter, PrintWriter}
 
-case class ScalaFile(fileName: String, content: String) {
+class ScalaFile(val fileName: String) {
+  val out = new StringWriter
+  val printout = new PrintWriter(out)
+  def content = out.toString
+
   def inputStream: InputStream =
-    new ByteArrayInputStream(content.getBytes)
+    new ByteArrayInputStream(out.toString.getBytes)
   
   def write(out: OutputStream) {
     val in = inputStream
@@ -23,28 +27,6 @@ case class ScalaFile(fileName: String, content: String) {
 
 object ScalaFile {
   import java.util.zip.{ZipOutputStream, ZipEntry}
-  
-  def fromURI(url: URI, content: String) = {
-    val xsdFileName = url.getPath.split("/").toList.reverse.head
-    val fileName = """([.]\w+)$""".r.replaceFirstIn(xsdFileName, ".scala")
-    ScalaFile(fileName, content)
-  }
-  
-  def fromResource(source: String, fileName: String) = {
-    val in = getClass.getResourceAsStream(source)
-    val reader = new java.io.BufferedReader(new java.io.InputStreamReader(in))
-    val out = new java.io.StringWriter()
-    val printout = new java.io.PrintWriter(out)
-    var line: Option[String] = None
-    line = Option[String](reader.readLine)
-    while (line != None) {
-      line foreach { printout.println }
-      line = Option[String](reader.readLine)
-    }
-    in.close
-    printout.flush
-    ScalaFile(fileName, out.toString)
-  }
   
   def zip(files: Seq[ScalaFile]): Array[Byte] = {
     val out = new ByteArrayOutputStream()

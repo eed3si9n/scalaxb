@@ -5,18 +5,12 @@ object ImportTest extends TestBase {
   val ipoxsd    = new File("integration/src/test/resources/ipo.xsd")
   val reportxsd = new File("integration/src/test/resources/report.xsd")
   val circularxsd = new File("integration/src/test/resources/circular.xsd")
-  val iposcala = new File(tmp, "ipo.scala")
-  val reportscala = new File(tmp, "report.scala")
-  val circularscala = new File(tmp, "circular.scala")
   
   lazy val generated = module.processFiles(
-    List(ipoxsd -> iposcala,
-      reportxsd -> reportscala,
-      circularxsd -> circularscala),
-    outProtocolFile,
+    List(ipoxsd, reportxsd, circularxsd),
     Config(packageNames = Map(None -> Some("ipo"),
-      Some("http://www.example.com/Report") -> Some("report")
-    )) )
+      Some("http://www.example.com/Report") -> Some("report") ),
+      outdir = tmp) )
     
   "report.xsd must generate report.scala file" in {
     generated(0) must exist

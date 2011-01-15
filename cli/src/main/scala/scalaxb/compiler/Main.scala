@@ -70,19 +70,13 @@ object Main {
     
     lazy val module = if (verbose) new scalaxb.compiler.xsd.Driver with Verbose
       else new scalaxb.compiler.xsd.Driver
-    
-    def buildOutputFile(input: File, outdir: File) = {
-      if (!input.exists)
-        error("file not found: " + input.toString)
 
-      val name = input.getName
-      val namepart = name.splitAt(name.indexOf('.'))._1
-      new File(outdir, namepart + ".scala") 
-    }
-    
     if (paramParser.parse(args) && !files.isEmpty)
-      module.processFiles(files.map { file => (file, buildOutputFile(file, outdir)) },
-          new File(outdir, "xmlprotocol.scala"),
-          Config(packageNames, classPrefix, paramPrefix, wrappedComplexTypes.toList) )
+      module.processFiles(files,
+        Config(packageNames = packageNames,
+          outdir = outdir,
+          classPrefix = classPrefix,
+          paramPrefix = paramPrefix,
+          wrappedComplexTypes = wrappedComplexTypes.toList) )
   }
 }

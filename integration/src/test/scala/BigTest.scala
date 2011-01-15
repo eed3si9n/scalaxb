@@ -3,10 +3,10 @@ import scalaxb.compiler.{Config}
 
 object BigTest extends TestBase {
   val inFile  = new File("integration/src/test/resources/big.xsd")
-  val outFile = new File(tmp, "big.scala")
   
-  lazy val generated = module.process(inFile, outFile, outProtocolFile,
+  lazy val generated = module.process(inFile,
     Config(packageNames = Map(None -> Some("big") ),
+      outdir = tmp,
       classPrefix = Some("X"),
       paramPrefix = Some("m_"),
       wrappedComplexTypes = List("barOne")) )

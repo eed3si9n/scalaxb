@@ -22,7 +22,7 @@
 
 package scalaxb.compiler.xsd
 
-import scalaxb.compiler.{Logger}
+import scalaxb.compiler.{Logger, ReferenceNotFound}
 import scala.collection.mutable
 
 trait Lookup extends ContextProcessor {
@@ -40,7 +40,7 @@ trait Lookup extends ContextProcessor {
           if schema.topElems.contains(name))
         yield schema.topElems(name)) match {
         case x :: xs => x
-        case Nil     => error("Element not found: {" + namespace + "}" + name)
+        case Nil     => throw new ReferenceNotFound("element" , namespace, name)
       }  
   
   def buildElement(ref: ElemRef) = {
@@ -66,7 +66,7 @@ trait Lookup extends ContextProcessor {
          if schema.topGroups.contains(name))
        yield schema.topGroups(name)) match {
        case x :: xs => x
-       case Nil     => error("Group not found: {" + namespace + "}" + name)
+       case Nil     => throw new ReferenceNotFound("group" , namespace, name)
     }
 
   def buildGroup(ref: GroupRef) = {
@@ -94,7 +94,7 @@ trait Lookup extends ContextProcessor {
             if schema.topAttrs.contains(name))
           yield schema.topAttrs(name)) match {
           case x :: xs => x
-          case Nil     => error("Attribute not found: {" + namespace + "}:" + name)
+          case Nil     => throw new ReferenceNotFound("attribute" , namespace, name)
         }
   
   def buildAttribute(ref: AttributeRef) = {
@@ -112,7 +112,7 @@ trait Lookup extends ContextProcessor {
           if schema.topAttrGroups.contains(name))
         yield schema.topAttrGroups(name)) match {
         case x :: xs => x
-        case Nil     => error("Attribute group not found: {" + namespace + "}" + name)
+        case Nil     => throw new ReferenceNotFound("attribute group" , namespace, name)
       }
       
   def buildAttributeGroup(ref: AttributeGroupRef) =

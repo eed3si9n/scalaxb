@@ -22,7 +22,7 @@
 
 package scalaxb.compiler.xsd
 
-import scalaxb.compiler.{ScalaNames, Logger, Config}
+import scalaxb.compiler.{ScalaNames, Logger, Config, ReferenceNotFound}
 import scala.collection.mutable
 
 trait PackageName {
@@ -182,7 +182,7 @@ trait ContextProcessor extends ScalaNames with PackageName {
             if schema.targetNamespace == namespace;
             if schema.topTypes.contains(typeName))
           yield schema.topTypes(typeName)).headOption getOrElse {
-            error("Type not found: " + namespace.map("{" + _ + "}").getOrElse{""} + ":" + typeName)
+            throw new ReferenceNotFound("type" , namespace, typeName)
           }
         
     def resolveTypeSymbol(typeSymbol: XsTypeSymbol) {
@@ -192,7 +192,7 @@ trait ContextProcessor extends ScalaNames with PackageName {
           else {
             val (namespace, typeName) = TypeSymbolParser.splitTypeName(symbol.name, schema)
             if (containsType(namespace, typeName)) symbol.decl = getType(namespace, typeName) 
-            else error("resolveType type not found: " + symbol.name + " " + symbol)   
+            else throw new ReferenceNotFound("type" , namespace, typeName)
           }
         case _ =>
       }

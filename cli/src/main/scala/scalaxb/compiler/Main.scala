@@ -31,6 +31,8 @@ object Main {
   def main(args: Array[String]) {
     try { start(args) } 
     catch {
+      case e: ReferenceNotFound =>
+        println(e.getMessage)
       case e: Exception =>
         e.printStackTrace
     }

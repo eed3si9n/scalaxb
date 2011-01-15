@@ -296,3 +296,7 @@ trait Logger {
     Console.flush
   }
 }
+
+class ReferenceNotFound(kind: String, namespace: Option[String], name: String) extends RuntimeException(
+  "Error: Referenced " + kind + " " +
+    (namespace map { "{" + _ + "}" } getOrElse {""}) + name + " was not found.")

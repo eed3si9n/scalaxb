@@ -1,0 +1,4 @@
+- Fixes `<xs:sequence>` handling. (GH-19)
+- Fixes `<xs:attributeGroup>` handling. (GH-21)
+- Improves error message when a referenced schema or referenced component is missing.
+- [Searches for missing schema](http://scalaxb.org/multiple-schema-files) in the current directory. (GH-23)

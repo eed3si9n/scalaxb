@@ -46,14 +46,15 @@ object PurchaseOrderUsage {
       <state>DE</state>
       <zip>19808</zip>
     </shipTo>
-    
+
+    val Zipcode = BigInt(19808)
     val address = fromXML[Addressable](subject)
     address match {
       case USAddress("Foo",
         "1537 Paper Street",
         "Wilmington",
         DE,
-        19808) =>
+        Zipcode) =>
       case _ => error("match failed: " + address.toString)
     }
     
@@ -67,11 +68,12 @@ object PurchaseOrderUsage {
       <USPrice>4.00</USPrice>
       <shipDate>2010-02-06Z</shipDate>
     </item>
-    
+
+    val One = BigInt(1)
     val item = fromXML[Item](subject)
     item match {
       case Item("Olive Soap",
-        1,
+        One,
         usPrice,
         None,
         Some(XMLCalendar("2010-02-06Z")),

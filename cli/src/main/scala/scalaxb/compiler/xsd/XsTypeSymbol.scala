@@ -126,11 +126,11 @@ object XsIDREFS           extends BuiltInSimpleTypeSymbol("Array[String]") {}
 object XsENTITY           extends BuiltInSimpleTypeSymbol("String") {}
 object XsENTITIES         extends BuiltInSimpleTypeSymbol("Array[String]") {}
 object XsDecimal          extends BuiltInSimpleTypeSymbol("BigDecimal") {}
-object XsInteger          extends BuiltInSimpleTypeSymbol("Int") {} // BigInt
-object XsNonPositiveInteger extends BuiltInSimpleTypeSymbol("Int") {} // BigInt
-object XsNegativeInteger    extends BuiltInSimpleTypeSymbol("Int") {} // BigInt
-object XsNonNegativeInteger extends BuiltInSimpleTypeSymbol("Int") {} // BigInt
-object XsPositiveInteger    extends BuiltInSimpleTypeSymbol("Int") {} // BigInt
+object XsInteger          extends BuiltInSimpleTypeSymbol("BigInt") {}
+object XsNonPositiveInteger extends BuiltInSimpleTypeSymbol("BigInt") {}
+object XsNegativeInteger    extends BuiltInSimpleTypeSymbol("BigInt") {}
+object XsNonNegativeInteger extends BuiltInSimpleTypeSymbol("BigInt") {}
+object XsPositiveInteger    extends BuiltInSimpleTypeSymbol("BigInt") {}
 object XsLong             extends BuiltInSimpleTypeSymbol("Long") {}
 object XsUnsignedLong     extends BuiltInSimpleTypeSymbol("BigInt") {}
 object XsInt              extends BuiltInSimpleTypeSymbol("Int") {}

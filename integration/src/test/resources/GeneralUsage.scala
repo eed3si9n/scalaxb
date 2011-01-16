@@ -9,6 +9,17 @@ import DefaultXMLProtocol._
 
 object GeneralUsage {
   val NS = Some("http://www.example.com/general")
+
+
+  object Int_ {
+    def unapply(x: BigInt) =
+      if (x >= Int.MinValue && x <= Int.MaxValue) Some(x.toInt)
+      else None
+
+    def unapply(x: BigDecimal) =
+      if (x >= Int.MinValue && x <= Int.MaxValue) Some(x.toInt)
+      else None
+  }
   
   val scope = toScope(None -> "http://www.example.com/general",
     Some("gen") -> "http://www.example.com/general",
@@ -71,13 +82,10 @@ object GeneralUsage {
     </foo>
     
     val obj = fromXML[SingularBuiltInTypeTest](subject)
-    
-    val BI = BigInt(1)
-    val BD = BigDecimal(1)
     def check(obj: Any) = obj match {
         case SingularBuiltInTypeTest(
-          SingularBuiltInTypeTestSequence1(1, 1, 1, 1, 1.0F, 1.0, 1, -1, -1, 1),
-          SingularBuiltInTypeTestSequence2(1, BI, 1, 1, 1, BD, false, "foo", "foo", "foo"),
+          SingularBuiltInTypeTestSequence1(1, 1, 1, 1, 1.0F, 1.0, Int_(1), Int_(-1), Int_(-1), Int_(1)),
+          SingularBuiltInTypeTestSequence2(Int_(1), Int_(1), 1, 1, 1, Int_(1), false, "foo", "foo", "foo"),
           SingularBuiltInTypeTestSequence3("en-US", "foo", "foo", "foo",  Array("foo"),
             "foo", "foo", Array("foo"), "foo", Array("foo"))
           ) =>

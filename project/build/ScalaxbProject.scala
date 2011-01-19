@@ -9,10 +9,13 @@ class ScalaxbProject(info: ProjectInfo) extends ParentProject(info) {
   
   lazy val cli = project("cli", "scalaxb", new CliProject(_))
   
-  class CliProject(info: ProjectInfo) extends DefaultProject(info) with ScalaBazaarTask with posterous.Publish {    
+  class CliProject(info: ProjectInfo) extends DefaultProject(info) with VersionFileTask
+      with ScalaBazaarTask with posterous.Publish {    
     override def description = "XML data binding tool for Scala."
     override def bazaarPackageBaseURL = "http://cloud.github.com/downloads/eed3si9n/scalaxb/"
     override def notesPath = parentPath / "notes"
+    override def versionFilePackage = "scalaxb"
+    override def compileAction = super.compileAction dependsOn(versionfile)
   }
   
   lazy val web = project("web", "scalaxb-appengine", new WebProject(_), cli)

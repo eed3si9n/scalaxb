@@ -30,7 +30,7 @@ class Argument(
         description: String,
         val allowMultiple: Boolean,
         action: String => Unit
-        ) extends OptionDefinition(false, null, name, null, name, 
+        ) extends OptionDefinition(false, null, name, null, name,
           description, action, false, false) {
 
   override def shortDescription = "argument " + name
@@ -69,7 +69,7 @@ class BooleanArgOptionDefinition(
         valueName: String,
         description: String,
         action: Boolean => Unit
-        ) extends OptionDefinition(true, shortopt, longopt, null, valueName, 
+        ) extends OptionDefinition(true, shortopt, longopt, null, valueName,
           description, { a: String =>
     val boolValue = a.toLowerCase match {
       case "true" => true
@@ -91,7 +91,7 @@ class KeyValueArgOptionDefinition(
         valueName: String,
         description: String,
         action: (String, String) => Unit
-        ) extends OptionDefinition(true, shortopt, longopt, keyName, valueName, 
+        ) extends OptionDefinition(true, shortopt, longopt, keyName, valueName,
           description, { a: String =>
   a.indexOf('=') match {
     case -1     => throw new IllegalArgumentException("Expected a key=value pair")
@@ -106,7 +106,7 @@ class KeyIntValueArgOptionDefinition(
         valueName: String,
         description: String,
         action: (String, Int) => Unit
-        ) extends OptionDefinition(true, shortopt, longopt, keyName, valueName, 
+        ) extends OptionDefinition(true, shortopt, longopt, keyName, valueName,
           description, { a: String =>
   a.indexOf('=') match {
     case -1     => throw new IllegalArgumentException("Expected a key=value pair")
@@ -121,7 +121,7 @@ class KeyDoubleValueArgOptionDefinition(
         valueName: String,
         description: String,
         action: (String, Double) => Unit
-        ) extends OptionDefinition(true, shortopt, longopt, keyName, valueName, 
+        ) extends OptionDefinition(true, shortopt, longopt, keyName, valueName,
           description, { a: String =>
   a.indexOf('=') match {
     case -1     => throw new IllegalArgumentException("Expected a key=value pair")
@@ -136,11 +136,11 @@ class KeyBooleanValueArgOptionDefinition(
         valueName: String,
         description: String,
         action: (String, Boolean) => Unit
-        ) extends OptionDefinition(true, shortopt, longopt, null, valueName, 
+        ) extends OptionDefinition(true, shortopt, longopt, null, valueName,
           description, { a: String =>
     if (!a.contains("="))
       throw new IllegalArgumentException("Expected a key=value pair")
-    
+
     val key = a.dropRight(a.length - a.indexOf('='))
     val boolValue = a.drop(a.indexOf('=') + 1).toLowerCase match {
       case "true" => true
@@ -154,7 +154,7 @@ class KeyBooleanValueArgOptionDefinition(
     }
     action(key, boolValue)},
     false, true)
-      
+
 class FlagOptionDefinition(
         shortopt: Option[String],
         longopt: String,
@@ -165,17 +165,19 @@ class FlagOptionDefinition(
 
 /**
  * OptionParser is instantiated within your object,
- * set up by an (ordered) sequence of invocations of 
+ * set up by an (ordered) sequence of invocations of
  * the various builder methods such as #opt or #arg
  */
 case class OptionParser(
         programName: Option[String],
+        version: Option[String],
         errorOnUnknownArgument: Boolean) {
-  def this() = this(None, true)
-  def this(programName: String) = this(Some(programName), true)
-  def this(errorOnUnknownArgument: Boolean) = this(None, errorOnUnknownArgument)
+  def this() = this(None, None, true)
+  def this(programName: String) = this(Some(programName), None, true)
+  def this(programName: String, version: String) = this(Some(programName), Some(version), true)
+  def this(errorOnUnknownArgument: Boolean) = this(None, None, errorOnUnknownArgument)
   def this(programName: String, errorOnUnknownArgument: Boolean) =
-    this(Some(programName), errorOnUnknownArgument)
+    this(Some(programName), None , errorOnUnknownArgument)
 
   val options = new ListBuffer[OptionDefinition]
   val arguments = new ListBuffer[Argument]
@@ -186,7 +188,7 @@ case class OptionParser(
   val defaultKeyName = "<key>"
   val defaultValueName = "<value>"
   var argList: Option[Argument] = None
-  
+
   // -------- Defining options ---------------
   def add(option: OptionDefinition) {
     option match {
@@ -205,28 +207,28 @@ case class OptionParser(
 
   def opt(longopt: String, description: String, action: String => Unit) =
     add(new ArgOptionDefinition(None, longopt, defaultValueName, description, action))
-      
+
   def opt(shortopt: String, longopt: String, valueName: String,
       description: String, action: String => Unit) =
     add(new ArgOptionDefinition(Some(shortopt), longopt, valueName, description, action))
-  
+
   def opt(shortopt: Option[String], longopt: String, valueName: String,
       description: String, action: String => Unit) =
     add(new ArgOptionDefinition(shortopt, longopt, valueName, description, action))
-      
+
   def opt(shortopt: String, longopt: String, description: String, action: => Unit) =
     add(new FlagOptionDefinition(Some(shortopt), longopt, description, action))
 
   def opt(longopt: String, description: String, action: => Unit) =
     add(new FlagOptionDefinition(None, longopt, description, action))
-      
+
   // we have to give these typed options separate names, because of &^@$! type erasure
   def intOpt(shortopt: String, longopt: String, description: String, action: Int => Unit) =
     add(new IntArgOptionDefinition(Some(shortopt), longopt, defaultValueName, description, action))
 
   def intOpt(longopt: String, description: String, action: Int => Unit) =
     add(new IntArgOptionDefinition(None, longopt, defaultValueName, description, action))
-      
+
   def intOpt(shortopt: String, longopt: String, valueName: String,
       description: String, action: Int => Unit) =
     add(new IntArgOptionDefinition(Some(shortopt), longopt, valueName, description, action))
@@ -234,13 +236,13 @@ case class OptionParser(
   def intOpt(shortopt: Option[String], longopt: String, valueName: String,
       description: String, action: Int => Unit) =
     add(new IntArgOptionDefinition(shortopt, longopt, valueName, description, action))
-      
+
   def doubleOpt(shortopt: String, longopt: String, description: String, action: Double => Unit) =
     add(new DoubleArgOptionDefinition(Some(shortopt), longopt, defaultValueName, description, action))
 
   def doubleOpt(longopt: String, description: String, action: Double => Unit) =
     add(new DoubleArgOptionDefinition(None, longopt, defaultValueName, description, action))
-      
+
   def doubleOpt(shortopt: String, longopt: String, valueName: String,
       description: String, action: Double => Unit) =
     add(new DoubleArgOptionDefinition(Some(shortopt), longopt, valueName, description, action))
@@ -248,13 +250,13 @@ case class OptionParser(
   def doubleOpt(shortopt: Option[String], longopt: String, valueName: String,
       description: String, action: Double => Unit) =
     add(new DoubleArgOptionDefinition(shortopt, longopt, valueName, description, action))
-    
+
   def booleanOpt(shortopt: String, longopt: String, description: String, action: Boolean => Unit) =
     add(new BooleanArgOptionDefinition(Some(shortopt), longopt, defaultValueName, description, action))
 
   def booleanOpt(longopt: String, description: String, action: Boolean => Unit) =
     add(new BooleanArgOptionDefinition(None, longopt, defaultValueName, description, action))
-  
+
   def booleanOpt(shortopt: String, longopt: String, valueName: String,
       description: String, action: Boolean => Unit) =
     add(new BooleanArgOptionDefinition(Some(shortopt), longopt, valueName, description, action))
@@ -262,13 +264,13 @@ case class OptionParser(
   def booleanOpt(shortopt: Option[String], longopt: String, valueName: String,
       description: String, action: Boolean => Unit) =
     add(new BooleanArgOptionDefinition(shortopt, longopt, valueName, description, action))
-      
+
   def keyValueOpt(shortopt: String, longopt: String, description: String, action: (String, String) => Unit) =
     add(new KeyValueArgOptionDefinition(Some(shortopt), longopt, defaultKeyName, defaultValueName, description, action))
 
   def keyValueOpt(longopt: String, description: String, action: (String, String) => Unit) =
     add(new KeyValueArgOptionDefinition(None, longopt, defaultKeyName, defaultValueName, description, action))
-  
+
   def keyValueOpt(shortopt: String, longopt: String, keyName: String, valueName: String,
       description: String, action: (String, String) => Unit) =
     add(new KeyValueArgOptionDefinition(Some(shortopt), longopt, keyName, valueName, description, action))
@@ -276,13 +278,13 @@ case class OptionParser(
   def keyValueOpt(shortopt: Option[String], longopt: String, keyName: String, valueName: String,
       description: String, action: (String, String) => Unit) =
     add(new KeyValueArgOptionDefinition(shortopt, longopt, keyName, valueName, description, action))
-  
+
   def keyIntValueOpt(shortopt: String, longopt: String, description: String, action: (String, Int) => Unit) =
     add(new KeyIntValueArgOptionDefinition(Some(shortopt), longopt, defaultKeyName, defaultValueName, description, action))
 
   def keyIntValueOpt(longopt: String, description: String, action: (String, Int) => Unit) =
     add(new KeyIntValueArgOptionDefinition(None, longopt, defaultKeyName, defaultValueName, description, action))
-  
+
   def keyIntValueOpt(shortopt: String, longopt: String, keyName: String, valueName: String,
       description: String, action: (String, Int) => Unit) =
     add(new KeyIntValueArgOptionDefinition(Some(shortopt), longopt, keyName, valueName, description, action))
@@ -290,13 +292,13 @@ case class OptionParser(
   def keyIntValueOpt(shortopt: Option[String], longopt: String, keyName: String, valueName: String,
       description: String, action: (String, Int) => Unit) =
     add(new KeyIntValueArgOptionDefinition(shortopt, longopt, keyName, valueName, description, action))
-  
+
   def keyDoubleValueOpt(shortopt: String, longopt: String, description: String, action: (String, Double) => Unit) =
     add(new KeyDoubleValueArgOptionDefinition(Some(shortopt), longopt, defaultKeyName, defaultValueName, description, action))
 
   def keyDoubleValueOpt(longopt: String, description: String, action: (String, Double) => Unit) =
     add(new KeyDoubleValueArgOptionDefinition(None, longopt, defaultKeyName, defaultValueName, description, action))
-    
+
   def keyDoubleValueOpt(shortopt: String, longopt: String, keyName: String, valueName: String,
       description: String, action: (String, Double) => Unit) =
     add(new KeyDoubleValueArgOptionDefinition(Some(shortopt), longopt, keyName, valueName, description, action))
@@ -318,20 +320,20 @@ case class OptionParser(
   def keyBooleanValueOpt(shortopt: Option[String], longopt: String, keyName: String, valueName: String,
       description: String, action: (String, Boolean) => Unit) =
     add(new KeyBooleanValueArgOptionDefinition(shortopt, longopt, keyName, valueName, description, action))
-  
+
   def help(shortopt: String, longopt: String, description: String = "show this help message") =
     add(new FlagOptionDefinition(Some(shortopt), longopt, description, {this.showUsage; exit}))
 
   def help(shortopt: Option[String], longopt: String, description: String) =
     add(new FlagOptionDefinition(shortopt, longopt, description, {this.showUsage; exit}))
-  
+
   def separator(description: String) =
     add(new SeparatorDefinition(description))
 
   // regular arguments without the - or -- which have a name purely for help
   def arg(name: String, description: String, action: String => Unit) =
     add(new Argument(name, description, false, action))
-  
+
   // arglist allows multiple arguments
   def arglist(name: String, description: String, action: String => Unit) =
     add(new Argument(name, description, true, action))
@@ -342,26 +344,27 @@ case class OptionParser(
     case x if !x.canBeInvoked => x.description
     case x if x.keyValueArgument =>
       (x.shortopt map { o => "-" + o + ":" + x.keyName + "=" + x.valueName + " | " } getOrElse { "" }) +
-      "--" + x.longopt + ":" + x.keyName + "=" + x.valueName + NLTB + x.description    
+      "--" + x.longopt + ":" + x.keyName + "=" + x.valueName + NLTB + x.description
     case x if x.gobbleNextArgument =>
       (x.shortopt map { o => "-" + o + " " + x.valueName + " | " } getOrElse { "" }) +
       "--" + x.longopt + " " + x.valueName + NLTB + x.description
     case _ =>
-      (opt.shortopt map { o => "-" + o + " | " } getOrElse { "" }) + 
+      (opt.shortopt map { o => "-" + o + " | " } getOrElse { "" }) +
       "--" + opt.longopt + NLTB + opt.description
   }) ++= (argList match {
     case Some(x: Argument) => List(x.valueName + NLTB + x.description)
     case None              => arguments.map(a => a.valueName + NLTB + a.description)
   })
-  
+
   def usage: String = {
-    val prorgamText = programName match {
-      case Some(x) => x + " "
-      case None    => ""
-    }
+    val prorgamText = programName map { _ + " " } getOrElse { "" }
+    val versionText = programName map { pg =>
+      version map { NL + pg + " " + _ } getOrElse { "" }
+    } getOrElse { "" }
     val optionText = if (options.isEmpty) {""} else {"[options] "}
     val argumentList = argumentNames.mkString(" ")
-    NL + "Usage: " + prorgamText + optionText + argumentList + NLNL + 
+
+    versionText + NL + "Usage: " + prorgamText + optionText + argumentList + NLNL +
     "  " + descriptions.mkString(NL + "  ") + NL
   }
 
@@ -392,6 +395,7 @@ case class OptionParser(
     val requiredArgs = arguments.clone
     var answer = true
     var argListCount = 0
+    var indexOutOfBounds = false
 
     while (i < args.length) {
       val arg = args(i)
@@ -404,24 +408,24 @@ case class OptionParser(
             (arg.startsWith("--" + opt.longopt + ":") ||
             (opt.shortopt map { o => arg.startsWith("-" + o + ":") } getOrElse { false }))))
       )
-      
+
       matchingOption match {
         case None =>
           if (arg.startsWith("-")) {
             if (errorOnUnknownArgument) {
               System.err.println("Error: Unknown argument '" + arg + "'")
-              answer = false              
+              answer = false
             } else
               System.err.println("Warning: Unknown argument '" + arg + "'")
           } else if (argList.isDefined) {
             argListCount += 1
             if (!applyArgument(argList.get, arg)) {
               answer = false
-            }            
+            }
           } else if (requiredArgs.isEmpty) {
             if (errorOnUnknownArgument) {
               System.err.println("Error: Unknown argument '" + arg + "'")
-              answer = false              
+              answer = false
             } else
               System.err.println("Warning: Unknown argument '" + arg + "'")
           } else {
@@ -430,11 +434,21 @@ case class OptionParser(
               answer = false
             }
           }
-          
+
         case Some(option) =>
           val argToPass = if (option.gobbleNextArgument) {
             i += 1;
-            args(i)
+
+            if (i >= args.length) {
+              indexOutOfBounds = true
+              if (errorOnUnknownArgument) {
+                System.err.println("Error: missing value after '" + arg + "'")
+                answer = false
+              } else
+                System.err.println("Warning: missing value after '" + arg + "'")
+              ""
+            } else
+              args(i)
           } else if (option.keyValueArgument &&
               (option.shortopt map { o => arg.startsWith("-" + o + ":") } getOrElse { false })) {
             arg.drop(("-" + option.shortopt.get + ":").length)
@@ -443,18 +457,18 @@ case class OptionParser(
             arg.drop(("--" + option.longopt + ":").length)
           } else
             ""
-          
-          if (!applyArgument(option, argToPass)) {
+
+          if (!indexOutOfBounds && !applyArgument(option, argToPass)) {
             answer = false
           }
       }
       i += 1
     }
-    
+
     if (!requiredArgs.isEmpty ||
         (argListCount == 0 && argList.isDefined)) {
       System.err.println("Error: missing arguments: " + argumentNames.mkString(", "))
-      answer = false      
+      answer = false
     }
     if (!answer)
       showUsage

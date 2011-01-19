@@ -22,12 +22,13 @@
 
 package scalaxb.compiler
 
+import scalaxb.{Version}
 import org.github.scopt.OptionParser
 import scala.collection.{Map, Set}
 import scala.collection.mutable.{ListBuffer, ListMap}
 import java.io.{File, BufferedReader, Reader, PrintWriter}
 
-object Main {
+object Main extends Version {
   def main(args: Array[String]) {
     try { start(args) } 
     catch {
@@ -49,7 +50,7 @@ object Main {
     val files = ListBuffer.empty[File]
     
     packageNames(None) = None
-    val paramParser = new OptionParser("scalaxb") {
+    val paramParser = new OptionParser("scalaxb", version) {
       opt("d", "outdir", "<directory>", "generated files will go into <directory>",
         { d: String => outdir = new File(d) })
       opt("p", "package", "<package>", "specifies the target package",

@@ -463,7 +463,7 @@ abstract class GenSource(val schema: SchemaDecl,
       case choice: ChoiceDecl => param
       case _ => param.copy(typeSymbol = XsDataRecord(param.typeSymbol))
     }
-    val mixedParam = param.copy(typeSymbol = XsDataRecord(XsAny))
+    val mixedParam = param.copy(typeSymbol = XsDataRecord(XsAnyType))
     val parser = buildCompositorParser(compositor, SingleUnnillable, false, false)
     val wrapperParser = compositor match {
       case choice: ChoiceDecl => parser
@@ -641,13 +641,13 @@ object {localName} {{
     // complex content means 1. has child elements 2. has attributes
     case CompContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
       filterGroup(base)        
-    case res@CompContRestrictionDecl(XsAny, _, _) =>
+    case res@CompContRestrictionDecl(XsAnyType, _, _) =>
       filterGroup(res.compositor)
     
     case ext@CompContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
       filterGroup(base) :::
         filterGroup(ext.compositor)
-    case ext@CompContExtensionDecl(XsAny, _, _) =>
+    case ext@CompContExtensionDecl(XsAnyType, _, _) =>
       filterGroup(ext.compositor)
       
     case _ => Nil    
@@ -683,12 +683,12 @@ object {localName} {{
       // complex content means 1. has child elements 2. has attributes
       case CompContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
         flattenElements(base, index)        
-      case res@CompContRestrictionDecl(XsAny, _, _) =>
+      case res@CompContRestrictionDecl(XsAnyType, _, _) =>
         res.compositor map { flattenElements(decl.namespace, decl.family, _, index, true) } getOrElse { Nil }
       case ext@CompContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
         flattenElements(base, index) :::
           (ext.compositor map { flattenElements(decl.namespace, decl.family, _, index, true) } getOrElse { Nil })
-      case ext@CompContExtensionDecl(XsAny, _, _) =>
+      case ext@CompContExtensionDecl(XsAnyType, _, _) =>
         ext.compositor map { flattenElements(decl.namespace, decl.family, _, index, true) } getOrElse { Nil }
       case _ => Nil
     }
@@ -709,12 +709,12 @@ object {localName} {{
 
     // complex content means 1. has child elements 2. has attributes
     case CompContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) => splitSequences(base)        
-    case res@CompContRestrictionDecl(XsAny, _, _) =>
+    case res@CompContRestrictionDecl(XsAnyType, _, _) =>
       res.compositor map { splitSequences(decl.namespace, decl.family, _) } getOrElse { Nil }
     case ext@CompContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
       splitSequences(base) :::
         (ext.compositor map { splitSequences(decl.namespace, decl.family, _) } getOrElse { Nil })
-    case ext@CompContExtensionDecl(XsAny, _, _) =>
+    case ext@CompContExtensionDecl(XsAnyType, _, _) =>
       ext.compositor map { splitSequences(decl.namespace, decl.family, _) } getOrElse { Nil }
     case _ => Nil
   }
@@ -853,13 +853,13 @@ object {localName} {{
       // complex content means 1. has child elements 2. has attributes
       case CompContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
         buildParticles(base, makeTypeName(base.name))        
-      case res@CompContRestrictionDecl(XsAny, _, _) =>
+      case res@CompContRestrictionDecl(XsAnyType, _, _) =>
         buildParticles(res.compositor, name)
       
       case ext@CompContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
         buildParticles(base, makeTypeName(base.name)) :::
           buildParticles(ext.compositor, name)
-      case ext@CompContExtensionDecl(XsAny, _, _) =>
+      case ext@CompContExtensionDecl(XsAnyType, _, _) =>
         buildParticles(ext.compositor, name)
         
       case _ => Nil

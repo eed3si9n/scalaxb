@@ -417,7 +417,7 @@ case class ElemDecl(namespace: Option[String],
 object ElemDecl {
   def fromXML(node: scala.xml.Node, namespace: Option[String], config: ParserConfig) = {
     val name = (node \ "@name").text
-    var typeSymbol: XsTypeSymbol = XsAny
+    var typeSymbol: XsTypeSymbol = XsAnyType
     val typeName = (node \ "@type").text
     
     if (typeName != "") {

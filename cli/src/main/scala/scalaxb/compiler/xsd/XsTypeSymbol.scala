@@ -28,8 +28,8 @@ trait XsTypeSymbol extends scala.xml.TypeSymbol {
   override def toString(): String = name 
 }
 
-object XsAny extends XsTypeSymbol {
-  val name = "XsAny"
+object XsAnyType extends XsTypeSymbol {
+  val name = "XsAnyType"
 }
 
 object XsNillableAny extends XsTypeSymbol {
@@ -144,7 +144,7 @@ object XsTypeSymbol {
   type =>?[A, B] = PartialFunction[A, B]
   
   val toTypeSymbol: String =>? XsTypeSymbol = {
-    case "anyType"        => XsAny
+    case "anyType"        => XsAnyType
     case "anySimpleType"  => XsAnySimpleType
     case "duration"       => XsDuration
     case "dateTime"       => XsDateTime

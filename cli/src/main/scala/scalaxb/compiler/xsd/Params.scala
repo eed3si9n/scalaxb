@@ -97,7 +97,7 @@ trait Params extends Lookup {
         case _ => elem.typeSymbol
       }
     
-    val retval = if (nillable && typeSymbol == XsAny) Param(elem.namespace, elem.name, XsNillableAny, 
+    val retval = if (nillable && typeSymbol == XsAnyType) Param(elem.namespace, elem.name, XsNillableAny,
         toCardinality(elem.minOccurs, elem.maxOccurs), false, false)
       else if (typeSymbol == XsLongAttribute) Param(elem.namespace, elem.name, typeSymbol, 
           toCardinality(elem.minOccurs, elem.maxOccurs), nillable, true)
@@ -205,7 +205,7 @@ trait Params extends Lookup {
     anyNumber += 1
     val name = if (anyNumber <= 1) "any"
       else "any" + anyNumber
-    ElemDecl(Some(INTERNAL_NAMESPACE), name, XsAny, None, None, any.minOccurs, any.maxOccurs, None, None, None)
+    ElemDecl(Some(INTERNAL_NAMESPACE), name, XsAnyType, None, None, any.minOccurs, any.maxOccurs, None, None, None)
   }
     
   def buildCompositorRef(compositor: HasParticle, index: Int): ElemDecl =

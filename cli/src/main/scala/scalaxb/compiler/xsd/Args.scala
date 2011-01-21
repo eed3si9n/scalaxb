@@ -35,7 +35,7 @@ trait Args extends Params {
   
   // called by buildConverter
   def buildArg(selector: String, typeSymbol: XsTypeSymbol): String = typeSymbol match {
-    case XsAny                                      => selector
+    case XsAnyType                                  => selector
     case symbol: BuiltInSimpleTypeSymbol            => buildArg(buildTypeName(symbol), selector, Single)
     case ReferenceTypeSymbol(decl: SimpleTypeDecl)  => buildArg(buildTypeName(baseType(decl)), selector, Single)
     case ReferenceTypeSymbol(decl: ComplexTypeDecl) => buildFromXML(buildTypeName(typeSymbol), selector)
@@ -126,9 +126,9 @@ trait Args extends Params {
           }
         else buildArg(buildTypeName(decl, false), selector,
           toCardinality(elem.minOccurs, elem.maxOccurs), elem.nillable getOrElse(false), elem.defaultValue, elem.fixedValue, wrapForLongAll)
-      case XsAny => buildArg(
+      case XsAnyType => buildArg(
           if (elem.nillable getOrElse(false)) buildTypeName(XsNillableAny)
-          else buildTypeName(XsAny), selector,
+          else buildTypeName(XsAnyType), selector,
         toCardinality(elem.minOccurs, elem.maxOccurs), false, elem.defaultValue, elem.fixedValue, wrapForLongAll)
       
       case symbol: ReferenceTypeSymbol =>
@@ -234,7 +234,7 @@ trait Args extends Params {
       case ref: GroupRef => true
       case elem: ElemDecl =>
         elem.typeSymbol match {
-          case XsAny => true
+          case XsAnyType => true
           case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
             if (compositorWrapper.contains(decl)) true
             else false

@@ -119,9 +119,9 @@ trait Lookup extends ContextProcessor {
     attributeGroups(ref.namespace, ref.name)
   
   def buildTypeName(typeSymbol: XsTypeSymbol, shortLocal: Boolean = false): String = typeSymbol match {
-    case XsAny          => "scalaxb.DataRecord[Any]"
-    case XsNillableAny  => "scalaxb.DataRecord[Option[Any]]"
-    case XsLongAll      => "Map[String, scalaxb.DataRecord[Any]]"
+    case XsAnyType       => "scalaxb.DataRecord[Any]"
+    case XsNillableAny   => "scalaxb.DataRecord[Option[Any]]"
+    case XsLongAll       => "Map[String, scalaxb.DataRecord[Any]]"
     case XsLongAttribute => "Map[String, scalaxb.DataRecord[Any]]"
     case XsAnyAttribute  => "Map[String, scalaxb.DataRecord[Any]]"
     case XsDataRecord(ReferenceTypeSymbol(decl: ComplexTypeDecl)) if compositorWrapper.contains(decl) =>

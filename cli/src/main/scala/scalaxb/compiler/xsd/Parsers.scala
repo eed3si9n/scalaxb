@@ -40,7 +40,7 @@ trait Parsers extends Args with Params {
   
   def buildAnyParser(occurrence: Occurrence, mixed: Boolean, wrapInDataRecord: Boolean): String = {
     val converter = if (occurrence.nillable) buildFromXML("scalaxb.DataRecord[Option[Any]]", "_")
-      else buildFromXML(buildTypeName(XsAny), "_")
+      else buildFromXML(buildTypeName(XsAnyType), "_")
     
     buildParserString(if (mixed) "((any ^^ (" + converter + ")) ~ " + newline +
         indent(3) + buildTextParser + ") ^^ " + newline +
@@ -222,7 +222,7 @@ trait Parsers extends Args with Params {
           buildCompositorParser(compositor, occurrence.copy(nillable = o.nillable), mixed, wrapInDataRecord)
         }
         else addConverter(buildParserString(elem, occurrence))      
-      case XsAny => buildAnyParser(occurrence, mixed, wrapInDataRecord)
+      case XsAnyType => buildAnyParser(occurrence, mixed, wrapInDataRecord)
       case XsLongAll => ""
       
       case symbol: ReferenceTypeSymbol =>

@@ -86,13 +86,13 @@ case class CompContRestrictionDecl(base: XsTypeSymbol,
   
 object CompContRestrictionDecl {
   def empty =
-    CompContRestrictionDecl(XsAny, None, Nil)
+    CompContRestrictionDecl(XsAnyType, None, Nil)
   
   def fromAttributes(attributes: List[AttributeLike]) = 
-    CompContRestrictionDecl(XsAny, None, attributes)
+    CompContRestrictionDecl(XsAnyType, None, attributes)
   
   def fromCompositor(compositor: HasParticle, attributes: List[AttributeLike]) =
-    CompContRestrictionDecl(XsAny, Some(compositor), attributes)
+    CompContRestrictionDecl(XsAnyType, Some(compositor), attributes)
   
   def fromXML(node: scala.xml.Node, config: ParserConfig) = {
     val baseName = (node \ "@base").text

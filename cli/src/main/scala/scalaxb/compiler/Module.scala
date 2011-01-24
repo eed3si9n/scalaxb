@@ -26,7 +26,9 @@ import scala.collection.{Map, Set}
 import scala.collection.mutable.{ListBuffer, ListMap}
 import java.io.{File, BufferedReader, Reader, PrintWriter}
 import java.net.{URI}
-import scala.xml.{Node}
+import scala.xml.{Node, Elem}
+import scala.xml.factory.{XMLLoader}
+import javax.xml.parsers.SAXParser
 
 case class Config(packageNames: Map[Option[String], Option[String]] = Map(None -> None),
   classPrefix: Option[String] = None,
@@ -40,20 +42,21 @@ case class Snippet(definition: Seq[Node],
   companion: Seq[Node] = <source/>,
   implicitValue: Seq[Node]  = <source/>)
 
-trait CanBeReader[A] {
-  def toReader(value: A): Reader
-  def toURI(value: A): URI
-}
-
 trait CanBeWriter[A] {
  def toWriter(value: A): PrintWriter
  def newInstance(fileName: String): A
 }
 
+trait CanBeRawSchema[A, B] {
+  def toRawSchema(value: A): B
+  def toURI(value: A): URI
+}
+
 trait Module extends Logger {
+  type RawSchema
   type Schema
   type Context
-  
+
   def verbose: Boolean = false
   
   val encoding = "UTF-8"
@@ -64,15 +67,15 @@ trait Module extends Logger {
     def importNamespaces: Seq[String]
     def importLocations: Seq[String]
     def includeLocations: Seq[String]
-    def reader: Reader
+    def raw: RawSchema
     def out: PrintWriter
     def location: URI
     def toSchema(context: Context): Schema
   }
 
-  implicit val fileReader = new CanBeReader[File] {
-    override def toReader(value: File) = new BufferedReader(new java.io.InputStreamReader(
-        new java.io.FileInputStream(value), encoding))
+  implicit val fileReader = new CanBeRawSchema[File, RawSchema] {
+    override def toRawSchema(value: File) = readerToRawSchema(new BufferedReader(new java.io.InputStreamReader(
+        new java.io.FileInputStream(value), encoding)))
     override def toURI(value: File) = value.toURI
   }
 
@@ -97,11 +100,13 @@ trait Module extends Logger {
     outfiles
   }
 
-  def toOutput[From: CanBeReader, To: CanBeWriter](file: From): To =
-    implicitly[CanBeWriter[To]].newInstance("""([.]\w+)$""".r.replaceFirstIn(
-      new File(implicitly[CanBeReader[From]].toURI(file).getPath).getName, ".scala"))
+  def toOutput[From, To](file: From)
+      (implicit ev: CanBeRawSchema[From, RawSchema], evTo: CanBeWriter[To]): To =
+    evTo.newInstance("""([.]\w+)$""".r.replaceFirstIn(
+      new File(ev.toURI(file).getPath).getName, ".scala"))
 
-  def processReaders[From: CanBeReader, To: CanBeWriter](files: Seq[From], config0: Config): List[To] = {
+  def processReaders[From, To](files: Seq[From], config0: Config)
+     (implicit ev: CanBeRawSchema[From, RawSchema], evTo: CanBeWriter[To]): List[To] = {
     val companions = ListBuffer.empty[Node]
     val implicitValues = ListBuffer.empty[Node]
     val nodes = ListBuffer.empty[Node]
@@ -117,9 +122,7 @@ trait Module extends Logger {
     importables ++= (files.toList map { x =>
       val out = toOutput(x)
       outputs += out
-      toImportable(implicitly[CanBeReader[From]].toURI(x),
-        implicitly[CanBeReader[From]].toReader(x),
-        implicitly[CanBeWriter[To]].toWriter(out))
+      toImportable(ev.toURI(x), ev.toRawSchema(x), evTo.toWriter(out))
     })
 
     val config: Config = config0.primaryNamespace map { _ => config0 } getOrElse {
@@ -146,9 +149,9 @@ trait Module extends Logger {
 
       val out = toOutput(x)
       outputs += out
-      val importable = toImportable(implicitly[CanBeReader[File]].toURI(x),
-        implicitly[CanBeReader[File]].toReader(x),
-        implicitly[CanBeWriter[To]].toWriter(out))
+      val importable = toImportable(implicitly[CanBeRawSchema[File, RawSchema]].toURI(x),
+        implicitly[CanBeRawSchema[File, RawSchema]].toRawSchema(x),
+        evTo.toWriter(out))
       schemas(importable) = parse(importable, context)
       importable
     })
@@ -195,7 +198,7 @@ trait Module extends Logger {
   def generateProtocol(snippet: Snippet,
     context: Context, config: Config): Seq[Node]
     
-  def toImportable(location: URI, in: Reader, out: PrintWriter): Importable
+  def toImportable(location: URI, rawschema: RawSchema, out: PrintWriter): Importable
   
   def missingDependencies(importable: Importable, files: List[Importable]): List[String] = {
     def shorten(uri: URI): String = {
@@ -233,12 +236,14 @@ trait Module extends Logger {
   def buildContext: Context
   
   def processContext(context: Context, config: Config): Unit
-  
+
+  def readerToRawSchema(reader: Reader): RawSchema
+
   def parse(importable: Importable, context: Context): Schema
     = importable.toSchema(context)
     
   def parse(location: URI, in: Reader, out: PrintWriter): Schema
-    = parse(toImportable(location, in, out), buildContext)
+    = parse(toImportable(location, readerToRawSchema(in), out), buildContext)
     
   def printNodes(nodes: Seq[Node], out: PrintWriter) {
     import scala.xml._
@@ -284,6 +289,17 @@ trait Module extends Logger {
 
   def copyFileFromResource(source: String, dest: File) =
     printFromResource(source, new java.io.PrintWriter(new java.io.FileWriter(dest)))
+}
+
+object CustomXML extends XMLLoader[Elem] {
+  override def parser: SAXParser = {
+    val factory = javax.xml.parsers.SAXParserFactory.newInstance()
+    factory.setFeature("http://xml.org/sax/features/validation", false)
+    factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", false)
+    factory.setFeature("http://apache.org/xml/features/nonvalidating/load-dtd-grammar", false)
+    factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false)
+    factory.newSAXParser()
+  }
 }
 
 trait Verbose extends Module {

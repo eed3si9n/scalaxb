@@ -1,12 +1,12 @@
 package scalaxb.servlet.model
 
 import java.io.{StringWriter, PrintWriter}
-import scalaxb.compiler.{Config, CanBeReader, CanBeWriter}
+import scalaxb.compiler.{Config, CanBeRawSchema, CanBeWriter, CustomXML}
 
 object Driver {
   def process(files: Seq[SchemaFile], config: Config) = {
-    implicit val fileReader = new CanBeReader[SchemaFile] {
-      override def toReader(value: SchemaFile) = value.reader
+    implicit val fileReader = new CanBeRawSchema[SchemaFile, scala.xml.Node] {
+      override def toRawSchema(value: SchemaFile) = CustomXML.load(value.reader)
       override def toURI(value: SchemaFile) = value.uri
     }
     implicit val fileWriter = new CanBeWriter[ScalaFile] {

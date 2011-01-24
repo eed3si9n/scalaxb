@@ -100,6 +100,40 @@ trait Module extends Logger {
     outfiles
   }
 
+  def processString(input: String, packageName: String): List[String] =
+    processString(input, Config(packageNames = Map(None -> Some(packageName))))
+
+  def processString(input: String, config: Config): List[String] = {
+    implicit val stringReader = new CanBeRawSchema[String, RawSchema] {
+      override def toRawSchema(value: String) = readerToRawSchema(new java.io.StringReader(value))
+      override def toURI(value: String) = new URI("file://C:/temp.txt")
+    }
+
+    implicit val stringWriter = new CanBeWriter[java.io.StringWriter] {
+      override def toWriter(value: java.io.StringWriter) = new PrintWriter(value)
+      override def newInstance(fileName: String) = new java.io.StringWriter
+    }
+
+    processReaders(Seq(input), config) map {_.toString}
+  }
+
+  def processNode(input: Node, packageName: String): List[String] =
+    processNode(input, Config(packageNames = Map(None -> Some(packageName))))
+
+  def processNode(input: Node, config: Config): List[String] = {
+    implicit val nodeReader = new CanBeRawSchema[Node, RawSchema] {
+      override def toRawSchema(value: Node) = nodeToRawSchema(value)
+      override def toURI(value: Node) = new URI("file://C:/temp.txt")
+    }
+
+    implicit val stringWriter = new CanBeWriter[java.io.StringWriter] {
+      override def toWriter(value: java.io.StringWriter) = new PrintWriter(value)
+      override def newInstance(fileName: String) = new java.io.StringWriter
+    }
+
+    processReaders(Seq(input), config) map {_.toString}
+  }
+
   def toOutput[From, To](file: From)
       (implicit ev: CanBeRawSchema[From, RawSchema], evTo: CanBeWriter[To]): To =
     evTo.newInstance("""([.]\w+)$""".r.replaceFirstIn(
@@ -238,6 +272,8 @@ trait Module extends Logger {
   def processContext(context: Context, config: Config): Unit
 
   def readerToRawSchema(reader: Reader): RawSchema
+
+  def nodeToRawSchema(node: Node): RawSchema
 
   def parse(importable: Importable, context: Context): Schema
     = importable.toSchema(context)

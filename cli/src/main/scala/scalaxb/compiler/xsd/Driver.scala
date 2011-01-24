@@ -77,4 +77,6 @@ class Driver extends Module { driver =>
   }
 
   def readerToRawSchema(reader: Reader): RawSchema = CustomXML.load(reader)
+
+  def nodeToRawSchema(node: Node) = node
 }

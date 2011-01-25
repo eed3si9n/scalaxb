@@ -265,7 +265,16 @@
 			</xs:element>
     </xs:sequence>
   </xs:complexType>
-  
+
+  <xs:element name="SubstitutionGroup" type="xs:anyType" abstract="true"/>
+  <xs:element name="SubGroupMember" type="gen:MilkType" substitutionGroup="gen:SubstitutionGroup"/>
+  <xs:element name="SubGroupMember2" type="gen:Person" substitutionGroup="gen:SubstitutionGroup"/>
+  <xs:complexType name="SubstitutionGroupTest">
+    <xs:sequence>
+      <xs:element ref="gen:SubstitutionGroup"/>
+    </xs:sequence>
+  </xs:complexType>
+
   <xs:element name="longAttributeTest">
     <xs:complexType>
       <xs:attribute name="milk1" type="gen:MilkType"/>

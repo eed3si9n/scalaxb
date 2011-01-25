@@ -176,9 +176,9 @@ trait Parsers extends Args with Params {
   def buildSubstitionGroupParser(elem: ElemDecl, occurrence: Occurrence, mixed: Boolean): String = {
     log("Parsers#buildSubstitionGroupParser")    
     
-    val particles = schema.topElems.valuesIterator.toList filter { x =>
-      x.substitutionGroup map { sub => 
-        elements(sub._1, sub._2) == elem
+    val particles = schema.topElems.valuesIterator.toList filter {
+      _.substitutionGroup map { sub =>
+        sub._1 == elem.namespace && sub._2 == elem.name
       } getOrElse { false }
     }
     val parserList = particles map { particle =>
@@ -187,7 +187,7 @@ trait Parsers extends Args with Params {
     val choiceOperator = "|"
     val base = if (parserList.size > 0)
       parserList.mkString(" " + choiceOperator + " " + newline + indent(3))
-    else ""
+    else "any"
     
     buildParserString(base, occurrence)
   }

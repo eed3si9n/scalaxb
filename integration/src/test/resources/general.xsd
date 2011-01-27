@@ -1,7 +1,8 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <xs:schema targetNamespace="http://www.example.com/general"
     xmlns:xs="http://www.w3.org/2001/XMLSchema"
-    xmlns:gen="http://www.example.com/general">
+    xmlns:gen="http://www.example.com/general"
+    elementFormDefault="qualified">
   <xs:complexType name="SingularBuiltInTypeTest">
     <xs:sequence>
       <xs:element name="int" type="xs:int"/>

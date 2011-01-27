@@ -68,6 +68,8 @@ case class XsdContext(
 class ParserConfig {
   var scope: scala.xml.NamespaceBinding = _
   var targetNamespace: Option[String] = None
+  var elementQualifiedDefault: Boolean = false
+  var attributeQualifiedDefault: Boolean = false
   val topElems  = mutable.ListMap.empty[String, ElemDecl]
   val elemList  = mutable.ListBuffer.empty[ElemDecl]
   val topTypes  = mutable.ListMap.empty[String, TypeDecl]
@@ -130,6 +132,8 @@ trait Annotatable {
 }
 
 case class SchemaDecl(targetNamespace: Option[String],
+    elementQualifiedDefault: Boolean,
+    attributeQualifiedDefault: Boolean,
     topElems: Map[String, ElemDecl],
     elemList: List[ElemDecl],
     topTypes: Map[String, TypeDecl],
@@ -165,12 +169,16 @@ object SchemaDecl {
     
     config.scope = schema.scope
     config.targetNamespace = schema.attribute("targetNamespace").headOption map { _.text }
+    config.elementQualifiedDefault = schema.attribute("elementFormDefault").headOption map {
+      _.text == "qualified"} getOrElse {false}
+    config.attributeQualifiedDefault = schema.attribute("attributeFormDefault").headOption map {
+      _.text == "qualified"} getOrElse {false}
     config.schemas = context.schemas.toList
     
     for (child <- schema.child) child match {
       case <element>{ _* }</element>  =>
         (child \ "@name").headOption foreach {  x =>
-          val elem = ElemDecl.fromXML(child, config.targetNamespace, config)
+          val elem = ElemDecl.fromXML(child, true, config)
           config.topElems += (elem.name -> elem) }
       
       case <attribute>{ _* }</attribute>  =>
@@ -214,6 +222,8 @@ object SchemaDecl {
       AnnotationDecl.fromXML(x, config) }
       
     SchemaDecl(config.targetNamespace,
+      config.elementQualifiedDefault,
+      config.attributeQualifiedDefault,
       immutable.ListMap.empty[String, ElemDecl] ++ config.topElems,
       config.elemList.toList,
       immutable.ListMap.empty[String, TypeDecl] ++ config.topTypes,
@@ -306,11 +316,12 @@ object AttributeRef {
 case class AttributeDecl(namespace: Option[String],
     name: String,
     typeSymbol: XsTypeSymbol,
-    defaultValue: Option[String],
-    fixedValue: Option[String],
-    use: AttributeUse,
-    annotation: Option[AnnotationDecl],
-    global: Boolean) extends AttributeLike with Annotatable {
+    defaultValue: Option[String] = None,
+    fixedValue: Option[String] = None,
+    use: AttributeUse = OptionalUse,
+    qualified: Boolean = false,
+    annotation: Option[AnnotationDecl] = None,
+    global: Boolean = true) extends AttributeLike with Annotatable {
   override def toString = "@" + name
 }
 
@@ -343,11 +354,13 @@ object AttributeDecl {
       case "required"   => RequiredUse
       case _            => OptionalUse
     }
+    val qualified = (node \ "@form").headOption map {
+      _.text == "qualifeid" } getOrElse {config.attributeQualifiedDefault}
     val annotation = (node \ "annotation").headOption map { x =>
       AnnotationDecl.fromXML(x, config) }
 
     val attr = AttributeDecl(config.targetNamespace,
-      name, typeSymbol, defaultValue, fixedValue, use, annotation,
+      name, typeSymbol, defaultValue, fixedValue, use, qualified, annotation,
       global)
     config.attrList += attr
     attr
@@ -410,12 +423,14 @@ case class ElemDecl(namespace: Option[String],
   fixedValue: Option[String],  
   minOccurs: Int,
   maxOccurs: Int,
-  nillable: Option[Boolean],
-  substitutionGroup: Option[(Option[String], String)],
-  annotation: Option[AnnotationDecl]) extends Decl with Particle with Annotatable
+  nillable: Option[Boolean] = None,
+  global: Boolean = false,
+  qualified: Boolean = false,
+  substitutionGroup: Option[(Option[String], String)] = None,
+  annotation: Option[AnnotationDecl] = None) extends Decl with Particle with Annotatable
 
 object ElemDecl {
-  def fromXML(node: scala.xml.Node, namespace: Option[String], config: ParserConfig) = {
+  def fromXML(node: scala.xml.Node, global: Boolean, config: ParserConfig) = {
     val name = (node \ "@name").text
     var typeSymbol: XsTypeSymbol = XsAnyType
     val typeName = (node \ "@type").text
@@ -441,7 +456,9 @@ object ElemDecl {
         case _ =>
       }
     } // if-else
-    
+
+    val qualified = (node \ "@form").headOption map {
+      _.text == "qualifeid" } getOrElse {config.elementQualifiedDefault}
     val defaultValue = (node \ "@default").headOption map { _.text }
     val fixedValue = (node \ "@fixed").headOption map { _.text }
     val minOccurs = CompositorDecl.buildOccurrence((node \ "@minOccurs").text)
@@ -452,8 +469,8 @@ object ElemDecl {
     val annotation = (node \ "annotation").headOption map { x =>
       AnnotationDecl.fromXML(x, config) }
     
-    val elem = ElemDecl(namespace, 
-      name, typeSymbol, defaultValue, fixedValue, minOccurs, maxOccurs, nillable,
+    val elem = ElemDecl(config.targetNamespace,
+      name, typeSymbol, defaultValue, fixedValue, minOccurs, maxOccurs, nillable, global, qualified,
       substitutionGroup, annotation)
     config.elemList += elem
     if (typeName == "") typeSymbol match {
@@ -627,7 +644,7 @@ object CompositorDecl {
     }) map(node =>
       node match {
         case <element>{ _* }</element>   =>
-          if ((node \ "@name").headOption.isDefined) ElemDecl.fromXML(node, None, config)
+          if ((node \ "@name").headOption.isDefined) ElemDecl.fromXML(node, false, config)
           else if ((node \ "@ref").headOption.isDefined) ElemRef.fromXML(node, config)
           else error("xsd: Unspported content type " + node.toString) 
         case <choice>{ _* }</choice>     => ChoiceDecl.fromXML(node, config)

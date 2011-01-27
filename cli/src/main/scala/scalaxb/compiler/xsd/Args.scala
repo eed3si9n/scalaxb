@@ -21,7 +21,7 @@
  */
  
 package scalaxb.compiler.xsd
- 
+
 trait Args extends Params {
   def buildFromXML(typeName: String): String = "fromXML[" + typeName + "]"
   def buildFromXML(typeName: String, selector: String): String =
@@ -83,7 +83,7 @@ trait Args extends Params {
         case attr: AttributeDecl   => 
           val o = attr.copy(use = OptionalUse)
           val arg = buildArg(o, buildSelector(o), longAttribute)
-          if (longAttribute) arg + " map { " + quote(buildNodeName(o)) + " -> _ }"
+          if (longAttribute) arg + " map { " + quote(buildNodeName(o, false)) + " -> _ }"
           else arg
         case ref: AttributeRef     => buildArgForAttribute(buildAttribute(ref), longAttribute)
         case group: AttributeGroupDecl => buildAttributeGroupArg(group, longAttribute)
@@ -100,7 +100,7 @@ trait Args extends Params {
       case _ => error("buildArgForAll unsupported type: " + particle)
     }
     val arg = buildArg(o, buildSelector(o), longAll)
-    if (longAll) arg + " map { " + quote(buildNodeName(o)) + " -> _ }"
+    if (longAll) arg + " map { " + quote(buildNodeName(o, true)) + " -> _ }"
     else arg
   }
   
@@ -174,22 +174,31 @@ trait Args extends Params {
         
     case _ => error("Args: Unsupported type " + typeSymbol.toString)    
   }
-  
-  def buildNodeName(elem: ElemDecl): String =
-    if (elem.namespace == schema.targetNamespace) elem.name
-    else (elem.namespace map { "{" + _ + "}" } getOrElse {""}) + elem.name
-  
-  def buildNodeName(attr: AttributeDecl): String =
+
+  // scala's <foo/> \ "foo" syntax is not namespace aware, but {ns}foo is useful for long all.
+  def buildNodeName(elem: ElemDecl, prependNamespace: Boolean): String =
+    if (elem.global) elem.namespace match {
+      case None => elem.name
+      case Some(ns) =>
+        if (prependNamespace) "{%s}".format(ns) + elem.name
+        else elem.name
+    }
+    else elem.name
+
+  // scala's <foo ns:attr1="" /> \ "@{uri}attr1" syntax requires ns, but {uri} should be ommitted for long attr.
+  def buildNodeName(attr: AttributeDecl, prependNamespace: Boolean): String =
     if (attr.global) "@" + (attr.namespace map { "{" + _ + "}" } getOrElse {""}) + attr.name
+    else if (prependNamespace && attr.qualified) "@" +
+      (elementNamespace(attr.global, attr.namespace, attr.qualified) map { "{" + _ + "}" } getOrElse {""}) + attr.name
     else "@" + attr.name
   
   def buildNodeName(group: AttributeGroupDecl): String = 
     if (group.namespace == schema.targetNamespace) group.name
     else (group.namespace map { "{" + _ + "}" } getOrElse {""}) + group.name
   
-  def buildSelector(elem: ElemDecl): String = buildSelector(buildNodeName(elem))
+  def buildSelector(elem: ElemDecl): String = buildSelector(buildNodeName(elem, false))
   def buildSelector(pos: Int): String = "p" + (pos + 1)
-  def buildSelector(attr: AttributeDecl): String = buildSelector(buildNodeName(attr))
+  def buildSelector(attr: AttributeDecl): String = buildSelector(buildNodeName(attr, true))
   def buildSelector(nodeName: String): String = "(node \\ \"" + nodeName + "\")"
   
   def buildArgForAnyAttribute(parent: ComplexTypeDecl, longAttribute: Boolean): String =
@@ -199,7 +208,7 @@ trait Args extends Params {
     buildArgForAnyAttribute(flattenAttributes(parent.attributes), longAttribute)
   
   def buildArgForAnyAttribute(attributes: List[AttributeLike], longAttribute: Boolean): String = {
-    def makeCaseEntry(attr: AttributeDecl) = if (attr.global)
+    def makeCaseEntry(attr: AttributeDecl) = if (attr.global || attr.qualified)
       "case scala.xml.PrefixedAttribute(pre, key, value, _) if pre == elem.scope.getPrefix(" +
         (attr.namespace map { quote(_) } getOrElse { "null" }) + ") &&" + newline +
       indent(8) + "key == " + quote(attr.name) + " => Nil"

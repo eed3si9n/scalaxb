@@ -1,6 +1,7 @@
 <schema targetNamespace="http://www.example.com/IPO"
         xmlns="http://www.w3.org/2001/XMLSchema"
-        xmlns:ipo="http://www.example.com/IPO">
+        xmlns:ipo="http://www.example.com/IPO"
+        elementFormDefault="qualified">
 
   <annotation>
     <documentation xml:lang="en">

@@ -55,8 +55,10 @@ trait Params extends Lookup {
     name: String,
     typeSymbol: XsTypeSymbol,
     cardinality: Cardinality,
-    nillable: Boolean,
-    attribute: Boolean) {
+    nillable: Boolean = false,
+    global: Boolean = false,
+    qualified: Boolean = false,
+    attribute: Boolean = false) {
     
     def baseTypeName: String = buildTypeName(typeSymbol)
     
@@ -98,11 +100,11 @@ trait Params extends Lookup {
       }
     
     val retval = if (nillable && typeSymbol == XsAnyType) Param(elem.namespace, elem.name, XsNillableAny,
-        toCardinality(elem.minOccurs, elem.maxOccurs), false, false)
+        toCardinality(elem.minOccurs, elem.maxOccurs))
       else if (typeSymbol == XsLongAttribute) Param(elem.namespace, elem.name, typeSymbol, 
-          toCardinality(elem.minOccurs, elem.maxOccurs), nillable, true)
+          toCardinality(elem.minOccurs, elem.maxOccurs), nillable, false, false, true)
       else Param(elem.namespace, elem.name, typeSymbol, 
-        toCardinality(elem.minOccurs, elem.maxOccurs), nillable, false)
+        toCardinality(elem.minOccurs, elem.maxOccurs), nillable, elem.global, elem.qualified, false)
     log("Params#buildParam:  " + retval.toString)
     retval
   }
@@ -111,14 +113,14 @@ trait Params extends Lookup {
     val name = if (!attr.global) attr.name
       else makePrefix(attr.namespace, context) + attr.name
     
-    val retval = Param(attr.namespace, name, attr.typeSymbol, toCardinality(attr), false, true)
+    val retval = Param(attr.namespace, name, attr.typeSymbol, toCardinality(attr), false, false, false, true)
     log("Params#buildParam:  " + retval.toString)
     retval
   }
   
   def buildParam(group: AttributeGroupDecl): Param = {
     val retval = Param(group.namespace, group.name,
-      new AttributeGroupSymbol(group.namespace, group.name), Single, false, true)
+      new AttributeGroupSymbol(group.namespace, group.name), Single, false, false, true)
     log("Params#buildParam:  " + retval.toString)
     retval    
   }
@@ -127,7 +129,7 @@ trait Params extends Lookup {
     XsDataRecord(typeSymbol)
   
   def buildParam(any: AnyAttributeDecl): Param =
-    Param(None, ATTRS_PARAM, XsAnyAttribute, Single, false, true)
+    Param(None, ATTRS_PARAM, XsAnyAttribute, Single, false, false, true)
   
   def buildCompositorSymbol(compositor: HasParticle, typeSymbol: XsTypeSymbol): XsTypeSymbol =
     compositor match {
@@ -144,7 +146,7 @@ trait Params extends Lookup {
   /// called by makeGroup
   def buildParam(compositor: HasParticle): Param =
     Param(None, "arg1", buildCompositorSymbol(compositor, buildCompositorRef(compositor, 0).typeSymbol),
-      toCardinality(compositor.minOccurs, compositor.maxOccurs), false, false)
+      toCardinality(compositor.minOccurs, compositor.maxOccurs))
   
   def primaryCompositor(group: GroupDecl): HasParticle =
     if (group.particles.size == 1) group.particles(0) match {
@@ -196,16 +198,16 @@ trait Params extends Lookup {
       lhs.nillable || rhs.nillable)
   
   def buildLongAllRef(all: AllDecl) =
-    ElemDecl(Some(INTERNAL_NAMESPACE), "all", XsLongAll, None, None, 1, 1, None, None, None)
+    ElemDecl(Some(INTERNAL_NAMESPACE), "all", XsLongAll, None, None, 1, 1)
   
   def buildLongAttributeRef =
-    ElemDecl(Some(INTERNAL_NAMESPACE), ATTRS_PARAM, XsLongAttribute, None, None, 1, 1, None, None, None)
+    ElemDecl(Some(INTERNAL_NAMESPACE), ATTRS_PARAM, XsLongAttribute, None, None, 1, 1)
   
   def buildAnyRef(any: AnyDecl) = {
     anyNumber += 1
     val name = if (anyNumber <= 1) "any"
       else "any" + anyNumber
-    ElemDecl(Some(INTERNAL_NAMESPACE), name, XsAnyType, None, None, any.minOccurs, any.maxOccurs, None, None, None)
+    ElemDecl(Some(INTERNAL_NAMESPACE), name, XsAnyType, None, None, any.minOccurs, any.maxOccurs)
   }
     
   def buildCompositorRef(compositor: HasParticle, index: Int): ElemDecl =
@@ -243,7 +245,7 @@ trait Params extends Lookup {
     typeNames(decl) = typeName
     
     ElemDecl(schema.targetNamespace, name, symbol, None, None,
-      occurrence.minOccurs, occurrence.maxOccurs, Some(occurrence.nillable), None, None)
+      occurrence.minOccurs, occurrence.maxOccurs, Some(occurrence.nillable), false, false, None, None)
   }
   
   def buildChoiceTypeName(decl: ComplexTypeDecl, choice: ChoiceDecl,

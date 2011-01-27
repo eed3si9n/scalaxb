@@ -25,7 +25,7 @@ import scala.collection.mutable
 
 trait XMLOutput extends Args {  
   def buildXMLString(param: Param): String = {
-    val ns = quoteNamespace(param.namespace)
+    val ns = elementNamespaceString(param.global, param.namespace, param.qualified)
     val name = "__obj." + makeParamName(param.name)
     
     val typeAttribute = param.typeSymbol match {
@@ -81,7 +81,7 @@ trait XMLOutput extends Args {
     indent(4) + "case (key, x) => attr = scala.xml.Attribute((x.namespace map { __scope.getPrefix(_) }).orNull, x.key.orNull, x.value.toString, attr) }"
     
   def buildAttributeString(attr: AttributeDecl): String = {
-    val namespaceString = if (attr.global) "__scope.getPrefix(" + quote(attr.namespace.orNull) + ")"
+    val namespaceString = if (attr.global || attr.qualified) "__scope.getPrefix(" + quote(attr.namespace.orNull) + ")"
       else "null"
     val name = "__obj." + makeParamName(buildParam(attr).name)
     

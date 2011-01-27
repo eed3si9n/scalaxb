@@ -30,7 +30,7 @@ abstract class GenProtocol(val context: XsdContext) extends ContextProcessor {
     
     val name = makeTypeName("XMLProtocol")
     val scopeSchemas = context.schemas    
-    def makeScopes(schemas: List[SchemaDecl]): List[(Option[String], String)] = schemas match {
+    def makeScopes(ss: List[SchemaDecl]): List[(Option[String], String)] = ss match {
       case x :: xs => 
         x.targetNamespace map { ns =>
           val prefix = makePrefix(x.targetNamespace, context)
@@ -39,13 +39,17 @@ abstract class GenProtocol(val context: XsdContext) extends ContextProcessor {
         } getOrElse { makeScopes(xs) }
       case _ => Nil
     }
-    
-    val scopes = config.primaryNamespace map { ns =>
-      ((None, ns) :: makeScopes(scopeSchemas.toList) :::
-        List((Some(XSI_PREFIX) -> XSI_URL)) ).distinct
-    } getOrElse {makeScopes(scopeSchemas.toList) ::: 
-        List((Some(XSI_PREFIX) -> XSI_URL) ).distinct}
-    
+
+    val scopes0 = makeScopes(scopeSchemas.toList) ::: List((Some(XSI_PREFIX) -> XSI_URL))
+    val scopes = config.primaryNamespace match {
+      case Some(ns) =>
+        val primaryPair = if (context.schemas forall {_.elementQualifiedDefault}) List((None, ns))
+          else if (scopes0 exists {_._1 == ns}) Nil
+          else List((Some("unq"), ns))
+        (primaryPair ::: scopes0).distinct
+      case _ => scopes0.distinct
+    }
+
     val pkg = packageName(config.primaryNamespace, context)
     val packageString = pkg map { "package " + _ + newline } getOrElse{""}
     val packageImportString = pkg map { "import " + _ + "._" + newline } getOrElse {""}

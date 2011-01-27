@@ -35,8 +35,8 @@ object SamlUsage {
       NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri"
       Name="urn:oid:1.3.6.1.4.1.5923.1.1.1.1"
       FriendlyName="eduPersonAffiliation">
-      <saml:AttributeValue xsi:type="xs:string">member</saml:AttributeValue>
-      <saml:AttributeValue xsi:type="xs:string">staff</saml:AttributeValue>
+      <AttributeValue xsi:type="xs:string">member</AttributeValue>
+      <AttributeValue xsi:type="xs:string">staff</AttributeValue>
     </saml:Attribute>
     
     val obj = fromXML[AttributeType](subject)

@@ -363,10 +363,10 @@ abstract class GenSource(val schema: SchemaDecl,
     def makeWritesAttribute = if (attributes.isEmpty) <source></source>
       else if (longAttribute) {
         val cases = attributes collect {
-          case attr: AttributeDecl => "case (" + quote(buildNodeName(attr)) + ", _) => " + buildAttributeString(attr)
+          case attr: AttributeDecl => "case (" + quote(buildNodeName(attr, false)) + ", _) => " + buildAttributeString(attr)
           case ref: AttributeRef =>
             val attr = buildAttribute(ref)
-            "case (" + quote(buildNodeName(attr)) + ", _) => " + buildAttributeString(attr)
+            "case (" + quote(buildNodeName(attr, false)) + ", _) => " + buildAttributeString(attr)
           case group: AttributeGroupDecl => "case (" + quote(buildNodeName(group)) + ", _) => " + buildAttributeString(group)
         }
         val caseString = if (cases.isEmpty) ""
@@ -794,9 +794,9 @@ object {localName} {{
       case ref: ElemRef   => buildElement(ref)
     } map { elem => toCardinality(elem.minOccurs, elem.maxOccurs) match {
         case Optional => "lazy val " + makeParamName(elem.name) + " = " + 
-          wrapperName + ".get(" +  quote(buildNodeName(elem)) + ") map { _.as[" + buildTypeName(elem.typeSymbol) + "] }"
+          wrapperName + ".get(" +  quote(buildNodeName(elem, true)) + ") map { _.as[" + buildTypeName(elem.typeSymbol) + "] }"
         case _        => "lazy val " + makeParamName(elem.name) + " = " + 
-          wrapperName + "(" +  quote(buildNodeName(elem)) + ").as[" + buildTypeName(elem.typeSymbol) + "]"
+          wrapperName + "(" +  quote(buildNodeName(elem, true)) + ").as[" + buildTypeName(elem.typeSymbol) + "]"
       }
     }
   }
@@ -812,16 +812,16 @@ object {localName} {{
       case group: AttributeGroupDecl => (group, Single)
     } map { _ match {
         case (attr: AttributeDecl, Optional) => "lazy val " + makeParamName(buildParam(attr).name) + " = " +
-          wrapperName + ".get(" +  quote(buildNodeName(attr)) + ") map { _.as[" + buildTypeName(attr.typeSymbol, true) + "] }"
+          wrapperName + ".get(" +  quote(buildNodeName(attr, false)) + ") map { _.as[" + buildTypeName(attr.typeSymbol, true) + "] }"
         case (attr: AttributeDecl, Single) => "lazy val " + makeParamName(buildParam(attr).name) + " = " +
-          wrapperName + "(" +  quote(buildNodeName(attr)) + ").as[" + buildTypeName(attr.typeSymbol, true) + "]"
+          wrapperName + "(" +  quote(buildNodeName(attr, false)) + ").as[" + buildTypeName(attr.typeSymbol, true) + "]"
 
       }
     }
   }
   
   def generateAccessors(params: List[Param], splits: List[SequenceDecl]) = params flatMap {
-    case param@Param(_, _, ReferenceTypeSymbol(decl@ComplexTypeDecl(_, _, _, _, _, _, _, _)), _, _, _) if
+    case param@Param(_, _, ReferenceTypeSymbol(decl@ComplexTypeDecl(_, _, _, _, _, _, _, _)), _, _, _, _, _) if
         compositorWrapper.contains(decl) &&
         splits.contains(compositorWrapper(decl)) =>  
       val wrapperName = makeParamName(param.name)
@@ -878,7 +878,7 @@ object {localName} {{
           
   def flattenMixed(decl: ComplexTypeDecl) = if (decl.mixed)
     List(ElemDecl(Some(INTERNAL_NAMESPACE), MIXED_PARAM, XsMixed,
-      None, None, 0, Integer.MAX_VALUE, None, None, None))
+      None, None, 0, Integer.MAX_VALUE))
   else Nil
     
 //  def buildAttributes(decl: ComplexTypeDecl): List[AttributeLike] = {

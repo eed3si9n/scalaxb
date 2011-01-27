@@ -12,6 +12,9 @@ object Scalaxb {
   def toXML[A](obj: A, namespace: Option[String], elementLabel: Option[String],
       scope: NamespaceBinding, typeAttribute: Boolean = false)(implicit format: CanWriteXML[A]): NodeSeq =
     format.writes(obj, namespace, elementLabel, scope, typeAttribute)
+  def toXML[A](obj: A, namespace: Option[String], elementLabel: String, scope: NamespaceBinding)
+      (implicit format: CanWriteXML[A]): NodeSeq =
+    toXML(obj, namespace, Some(elementLabel), scope, false)
   def toXML[A](obj: A, elementLabel: String, scope: NamespaceBinding)(implicit format: CanWriteXML[A]): NodeSeq =
     toXML(obj, None, Some(elementLabel), scope, false)
     

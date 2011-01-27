@@ -241,10 +241,10 @@ trait Parsers extends Args with Params {
     
   def buildParserString(elem: ElemDecl, occurrence: Occurrence): String =
     buildParserString("scalaxb.ElemName(" +
-      quoteNamespace(elem.namespace orElse schema.targetNamespace) + ", " +
+      elementNamespaceString(elem.global, elem.namespace, elem.qualified) + ", " +
       quote(elem.name) + ")",
       occurrence)
-  
+
   def buildParserString(base: String, occurrence: Occurrence) =
     if (occurrence.maxOccurs > 1) "rep(" + base + ")"
     else if (occurrence.minOccurs == 0) "opt(" + base + ")"
@@ -290,9 +290,9 @@ trait Parsers extends Args with Params {
   def buildImplicitParams(dependents: List[Decl]) =
     immutable.ListMap[Decl, Param]((for (i <- 0 to dependents.size - 1)
       yield (dependents(i), 
-        Param(None, "ev" + i, XsXMLFormat(dependents(i)), Single, false, false) )): _*)
+        Param(None, "ev" + i, XsXMLFormat(dependents(i)), Single) )): _*)
   
   /// for recursive complex types, which would call this#toXML or this#fromXML.
   def buildFakeImplicitParam(decl: ComplexTypeDecl): Param =
-    Param(None, "this", XsXMLFormat(decl), Single, false, false)
+    Param(None, "this", XsXMLFormat(decl), Single)
 }

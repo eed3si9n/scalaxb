@@ -142,6 +142,7 @@ object XsUnsignedByte     extends BuiltInSimpleTypeSymbol("Int") {}
 
 object XsTypeSymbol {
   type =>?[A, B] = PartialFunction[A, B]
+  val LOCAL_ELEMENT = "http://scalaxb.org/local-element"
   
   val toTypeSymbol: String =>? XsTypeSymbol = {
     case "anyType"        => XsAnyType

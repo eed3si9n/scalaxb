@@ -42,23 +42,22 @@ trait Lookup extends ContextProcessor {
         case x :: xs => x
         case Nil     => throw new ReferenceNotFound("element" , namespace, name)
       }  
-  
-  def buildElement(ref: ElemRef) = {
-    val that = elements(ref.namespace, ref.name)
 
-    // http://www.w3.org/TR/xmlschema-0/#Globals
-    // In other words, global declarations cannot contain the attributes
-    // minOccurs, maxOccurs, or use.
-    ElemDecl(that.namespace, that.name, that.typeSymbol, that.defaultValue,
-      that.fixedValue, ref.minOccurs, ref.maxOccurs, ref.nillable match {
-        case None => that.nillable
-        case _    => ref.nillable
-      },
-      that.substitutionGroup, that.annotation)
-  }
+  // http://www.w3.org/TR/xmlschema-0/#Globals
+  // In other words, global declarations cannot contain the attributes
+  // minOccurs, maxOccurs, or use.
+  def buildElement(ref: ElemRef) =
+    Some(elements(ref.namespace, ref.name)) map { that =>
+      that.copy(minOccurs = ref.minOccurs,
+        maxOccurs = ref.maxOccurs,
+        nillable = ref.nillable match {
+          case None => that.nillable
+          case _    => ref.nillable
+        })
+    } get
 
   def buildElement(base: BuiltInSimpleTypeSymbol): ElemDecl = 
-    ElemDecl(schema.targetNamespace, "value", base, None, None, 1, 1, None, None, None)
+    ElemDecl(schema.targetNamespace, "value", base, None, None, 1, 1)
 
   def groups(namespace: Option[String], name: String) =
     (for (schema <- schemas;
@@ -80,10 +79,10 @@ trait Lookup extends ContextProcessor {
   }
   
   lazy val xmlAttrs = Map[String, AttributeDecl](
-    ("lang" -> AttributeDecl(Some(XML_URI), "lang", XsString, None, None, OptionalUse, None, true)),
-    ("space" -> AttributeDecl(Some(XML_URI), "space", XsString, None, None, OptionalUse, None, true)),
-    ("base" -> AttributeDecl(Some(XML_URI), "base", XsAnyURI, None, None, OptionalUse, None, true)),
-    ("id" -> AttributeDecl(Some(XML_URI), "id", XsID, None, None, OptionalUse, None, true))
+    ("lang" -> AttributeDecl(Some(XML_URI), "lang", XsString)),
+    ("space" -> AttributeDecl(Some(XML_URI), "space", XsString)),
+    ("base" -> AttributeDecl(Some(XML_URI), "base", XsAnyURI)),
+    ("id" -> AttributeDecl(Some(XML_URI), "id", XsID))
   )
   
   def attrs(namespace: Option[String], name: String) =
@@ -96,16 +95,17 @@ trait Lookup extends ContextProcessor {
           case x :: xs => x
           case Nil     => throw new ReferenceNotFound("attribute" , namespace, name)
         }
-  
-  def buildAttribute(ref: AttributeRef) = {
-    val that = attrs(ref.namespace, ref.name)
-    // http://www.w3.org/TR/xmlschema-0/#Globals
-    // In other words, global declarations cannot contain the attributes
-    // minOccurs, maxOccurs, or use.
-    AttributeDecl(that.namespace, that.name, that.typeSymbol,
-      ref.defaultValue, ref.fixedValue, ref.use, that.annotation, that.global)
-  }
-  
+
+  // http://www.w3.org/TR/xmlschema-0/#Globals
+  // In other words, global declarations cannot contain the attributes
+  // minOccurs, maxOccurs, or use.
+  def buildAttribute(ref: AttributeRef) =
+    Some(attrs(ref.namespace, ref.name)) map { that =>
+      that.copy(defaultValue = ref.defaultValue,
+        fixedValue = ref.fixedValue,
+        use = ref.use)
+    } get
+
   def attributeGroups(namespace: Option[String], name: String) =
     (for (schema <- schemas;
           if schema.targetNamespace == namespace;
@@ -215,12 +215,20 @@ trait Lookup extends ContextProcessor {
     )
     
   def isSubstitionGroup(elem: ElemDecl) =
-    elem.namespace map { x =>
+    elem.global && (elem.namespace map { x =>
       context.substituteGroups.contains((elem.namespace, elem.name))
-    } getOrElse { false }
+    } getOrElse { false })
   
-  def quoteNamespace(namespace: Option[String]) =
+  def quoteNamespace(namespace: Option[String]): String =
     if (namespace == schema.targetNamespace) "targetNamespace"
     else quote(namespace)
+
+  def elementNamespace(global: Boolean, namespace: Option[String], qualified: Boolean): Option[String] =
+    if (global) namespace
+    else if (qualified) schema.targetNamespace
+    else None
+
+  def elementNamespaceString(global: Boolean, namespace: Option[String], qualified: Boolean): String =
+    quoteNamespace(elementNamespace(global, namespace, qualified))
 }
  

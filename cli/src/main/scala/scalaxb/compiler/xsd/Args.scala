@@ -24,8 +24,8 @@ package scalaxb.compiler.xsd
 
 trait Args extends Params {
   def buildFromXML(typeName: String): String = "fromXML[" + typeName + "]"
-  def buildFromXML(typeName: String, selector: String): String =
-    buildFromXML(typeName) + "(" + selector + ")"
+  def buildFromXML(typeName: String, selector: String, stackString: String): String =
+    buildFromXML(typeName) + "(%s, %s)".format(selector, stackString)
   
   def buildToXML(typeName: String, args: String): String =
     "toXML[" + typeName + "](" + args + ")" 
@@ -38,20 +38,23 @@ trait Args extends Params {
     case XsAnyType                                  => selector
     case symbol: BuiltInSimpleTypeSymbol            => buildArg(buildTypeName(symbol), selector, Single)
     case ReferenceTypeSymbol(decl: SimpleTypeDecl)  => buildArg(buildTypeName(baseType(decl)), selector, Single)
-    case ReferenceTypeSymbol(decl: ComplexTypeDecl) => buildFromXML(buildTypeName(typeSymbol), selector)
+    case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
+      buildFromXML(buildTypeName(typeSymbol), selector, "scalaxb.ElemName(node) :: stack")
   }
   
   def buildArg(typeName: String, selector: String, cardinality: Cardinality,
       nillable: Boolean = false, defaultValue: Option[String] = None, fixedValue: Option[String] = None,
       wrapForLongAll: Boolean = false): String = {    
-    def fromSelector = buildFromXML(typeName, selector)
-    def fromU = buildFromXML(typeName, "_")
-    def fromValue(x: String) = buildFromXML(typeName, "scala.xml.Text(" + quote(x) + ")")
+    def fromSelector = buildFromXML(typeName, selector, "scalaxb.ElemName(node) :: stack")
+    def fromU = buildFromXML(typeName, "_", "scalaxb.ElemName(node) :: stack")
+    def fromValue(x: String) = buildFromXML(typeName, "scala.xml.Text(" + quote(x) + ")", "scalaxb.ElemName(node) :: stack")
     
     val retval = if (wrapForLongAll) {
       // PrefixedAttribute only contains pre, so you need to pass in node to get the namespace.
-      if (selector.contains("@")) selector + ".headOption map { x => scalaxb.DataRecord(x, node, " + buildFromXML(typeName, "x") + ") }"
-      else selector + ".headOption map { x => scalaxb.DataRecord(x, " + buildFromXML(typeName, "x") + ") }"
+      if (selector.contains("@")) selector + ".headOption map { x => scalaxb.DataRecord(x, node, " +
+        buildFromXML(typeName, "x", "scalaxb.ElemName(node) :: stack") + ") }"
+      else selector + ".headOption map { x => scalaxb.DataRecord(x, " +
+        buildFromXML(typeName, "x", "scalaxb.ElemName(node) :: stack") + ") }"
     } else (cardinality, nillable) match {
       case (Multiple, true)  => selector + ".toSeq map { _.nilOption map { " + fromU + " }}"
       case (Multiple, false) => selector + ".toSeq map { " + fromU + " }"

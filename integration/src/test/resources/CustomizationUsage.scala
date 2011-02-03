@@ -20,7 +20,7 @@ object CustomizationUsage {
   
   trait CustomXMLStandardTypes extends scalaxb.DefaultXMLStandardTypes {
     override def __buildIntXMLFormat: XMLFormat[Int] = new XMLFormat[Int] {
-      def reads(seq: scala.xml.NodeSeq): Either[String, Int] = try { Right(seq.text.toInt + 1) }
+      def reads(seq: scala.xml.NodeSeq, stack: List[scalaxb.ElemName]): Either[String, Int] = try { Right(seq.text.toInt + 1) }
         catch { case e: Exception => Left(e.toString) }
 
       def writes(obj: Int, namespace: Option[String], elementLabel: Option[String],
@@ -29,7 +29,7 @@ object CustomizationUsage {
     }
     
     override def __buildLongXMLFormat: XMLFormat[Long] = new XMLFormat[Long] {
-      def reads(seq: scala.xml.NodeSeq): Either[String, Long] = try { Right(seq.text.toLong + 1) }
+      def reads(seq: scala.xml.NodeSeq, stack: List[scalaxb.ElemName]): Either[String, Long] = try { Right(seq.text.toLong + 1) }
         catch { case e: Exception => Left(e.toString) }
 
       def writes(obj: Long, namespace: Option[String], elementLabel: Option[String],
@@ -44,34 +44,34 @@ object CustomizationUsage {
       override def typeName: Option[String] = Some("SingularSimpleTypeTest")
       
       // hardcode to SKIM.
-      override def parser(node: scala.xml.Node): Parser[SingularSimpleTypeTest] =
-        (scalaxb.ElemName(targetNamespace, "number1")) ~ 
-        (scalaxb.ElemName(targetNamespace, "number2")) ~ 
-        opt(scalaxb.ElemName(targetNamespace, "number3")) ~ 
-        opt(scalaxb.ElemName(targetNamespace, "number4")) ~ 
-        rep(scalaxb.ElemName(targetNamespace, "number5")) ~ 
-        rep(scalaxb.ElemName(targetNamespace, "number6")) ~ 
-        (scalaxb.ElemName(targetNamespace, "milk1")) ~ 
-        (scalaxb.ElemName(targetNamespace, "milk2")) ~ 
-        opt(scalaxb.ElemName(targetNamespace, "milk3")) ~ 
-        opt(scalaxb.ElemName(targetNamespace, "milk4")) ~ 
-        rep(scalaxb.ElemName(targetNamespace, "milk5")) ~ 
+      override def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[general.SingularSimpleTypeTest] =
+        (scalaxb.ElemName(targetNamespace, "number1")) ~
+        (scalaxb.ElemName(targetNamespace, "number2")) ~
+        opt(scalaxb.ElemName(targetNamespace, "number3")) ~
+        opt(scalaxb.ElemName(targetNamespace, "number4")) ~
+        rep(scalaxb.ElemName(targetNamespace, "number5")) ~
+        rep(scalaxb.ElemName(targetNamespace, "number6")) ~
+        (scalaxb.ElemName(targetNamespace, "milk1")) ~
+        (scalaxb.ElemName(targetNamespace, "milk2")) ~
+        opt(scalaxb.ElemName(targetNamespace, "milk3")) ~
+        opt(scalaxb.ElemName(targetNamespace, "milk4")) ~
+        rep(scalaxb.ElemName(targetNamespace, "milk5")) ~
         rep(scalaxb.ElemName(targetNamespace, "milk6")) ^^
         { case p1 ~ p2 ~ p3 ~ p4 ~ p5 ~ p6 ~ p7 ~ p8 ~ p9 ~ p10 ~ p11 ~ p12 =>
-        SingularSimpleTypeTest(fromXML[Long](p1),
-          p2.nilOption map { fromXML[Long](_) },
-          p3.headOption map { fromXML[Long](_) },
-          p4.headOption map { _.nilOption map { fromXML[Long](_) }},
-          p5.toSeq map { fromXML[Long](_) },
-          p6.toSeq map { _.nilOption map { fromXML[Long](_) }},
+        general.SingularSimpleTypeTest(fromXML[Long](p1, scalaxb.ElemName(node) :: stack),
+          p2.nilOption map { fromXML[Long](_, scalaxb.ElemName(node) :: stack) },
+          p3.headOption map { fromXML[Long](_, scalaxb.ElemName(node) :: stack) },
+          p4.headOption map { _.nilOption map { fromXML[Long](_, scalaxb.ElemName(node) :: stack) }},
+          p5.toSeq map { fromXML[Long](_, scalaxb.ElemName(node) :: stack) },
+          p6.toSeq map { _.nilOption map { fromXML[Long](_, scalaxb.ElemName(node) :: stack) }},
           SKIM,
-          p8.nilOption map { fromXML[MilkType](_) },
-          p9.headOption map { fromXML[MilkType](_) },
-          p10.headOption map { _.nilOption map { fromXML[MilkType](_) }},
-          p11.toSeq map { fromXML[MilkType](_) },
-          p12.toSeq map { _.nilOption map { fromXML[MilkType](_) }},
-          (node \ "@attr1").headOption map { fromXML[Long](_) },
-          (node \ "@attr2").headOption map { fromXML[MilkType](_) }) }
+          p8.nilOption map { fromXML[general.MilkType](_, scalaxb.ElemName(node) :: stack) },
+          p9.headOption map { fromXML[general.MilkType](_, scalaxb.ElemName(node) :: stack) },
+          p10.headOption map { _.nilOption map { fromXML[general.MilkType](_, scalaxb.ElemName(node) :: stack) }},
+          p11.toSeq map { fromXML[general.MilkType](_, scalaxb.ElemName(node) :: stack) },
+          p12.toSeq map { _.nilOption map { fromXML[general.MilkType](_, scalaxb.ElemName(node) :: stack) }},
+          (node \ "@attr1").headOption map { fromXML[Long](_, scalaxb.ElemName(node) :: stack) },
+          (node \ "@attr2").headOption map { fromXML[general.MilkType](_, scalaxb.ElemName(node) :: stack) }) }
     }
   }
   

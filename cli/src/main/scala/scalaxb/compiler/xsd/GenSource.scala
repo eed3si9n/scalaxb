@@ -111,7 +111,7 @@ abstract class GenSource(val schema: SchemaDecl,
     
     def makeCaseEntry(decl: ComplexTypeDecl) =
       "case (" + quoteNamespace(decl.namespace) + ", " + quote(Some(decl.family)) + ") => " + 
-        "Right(" + buildFromXML(buildTypeName(decl, false), "node") + ")"
+        "Right(" + buildFromXML(buildTypeName(decl, false), "node", "stack") + ")"
     
     def makeToXmlCaseEntry(decl: ComplexTypeDecl) =
       "case x: " + buildTypeName(decl, false) + " => " + 
@@ -142,14 +142,14 @@ abstract class GenSource(val schema: SchemaDecl,
     val targetNamespace: Option[String] = { quote(schema.targetNamespace) }
     { // if (imports.isEmpty) ""
       //  else imports.mkString(newline + indent(2)) + newline + indent(2) 
-    }def reads(seq: scala.xml.NodeSeq): Either[String, {fqn}] = seq match {{
+    }def reads(seq: scala.xml.NodeSeq, stack: List[scalaxb.ElemName]): Either[String, {fqn}] = seq match {{
       case node: scala.xml.Node =>     
         scalaxb.Helper.instanceType(node) match {{
           { val cases = for (sub <- context.baseToSubs(decl))
               yield makeCaseEntry(sub)
             cases.mkString(newline + indent(4 + compDepth))        
           }
-          { if (!decl.abstractValue) "case _ => Right(" + buildFromXML(defaultType, "node") + ")"
+          { if (!decl.abstractValue) "case _ => Right(" + buildFromXML(defaultType, "node", "stack") + ")"
             else """case x => Left("Unknown type: " + x)""" }
         }}
       case _ => Left("reads failed: seq must be scala.xml.Node")  
@@ -339,7 +339,7 @@ abstract class GenSource(val schema: SchemaDecl,
   trait Default{formatterName} extends scalaxb.XMLFormat[{fqn}] with scalaxb.CanWriteChildNodes[{fqn}] {{
     val targetNamespace: Option[String] = { quote(schema.targetNamespace) }
     
-    def reads(seq: scala.xml.NodeSeq): Either[String, {fqn}] = seq match {{
+    def reads(seq: scala.xml.NodeSeq, stack: List[scalaxb.ElemName]): Either[String, {fqn}] = seq match {{
       case node: scala.xml.Node => Right({fqn}({argsString}))
       case _ => Left("reads failed: seq must be scala.xml.Node")
     }}
@@ -353,7 +353,7 @@ abstract class GenSource(val schema: SchemaDecl,
     { if (decl.isNamed) "override def typeName: Option[String] = Some(" + quote(decl.name) + ")" + newline + newline + indent(2)  
       else ""
     }{ if (decl.mixed) "override def isMixed: Boolean = true" + newline + newline + indent(2)
-       else "" }def parser(node: scala.xml.Node): Parser[{fqn}] =
+       else "" }def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[{fqn}] =
       { parserList.mkString(" ~ " + newline + indent(3)) } ^^
       {{ case { parserVariableList.mkString(" ~ ") } =>
       {fqn}({argsString}) }}
@@ -443,7 +443,7 @@ abstract class GenSource(val schema: SchemaDecl,
   trait Default{formatterName} extends scalaxb.XMLFormat[{fqn}] {{
     val targetNamespace: Option[String] = { quote(schema.targetNamespace) }
     
-    def reads(seq: scala.xml.NodeSeq): Either[String, {fqn}] = Left("don't call me.")
+    def reads(seq: scala.xml.NodeSeq, stack: List[scalaxb.ElemName]): Either[String, {fqn}] = Left("don't call me.")
     
 {makeWritesXML}
   }}</source>,
@@ -479,13 +479,13 @@ abstract class GenSource(val schema: SchemaDecl,
     val companionCode = <source>{ buildComment(group) }  trait {formatterName} extends {superNames.mkString(" with ")} {{  
     private val targetNamespace: Option[String] = { quote(schema.targetNamespace) }
     
-    def parse{localName}: Parser[{param.baseTypeName}] =
+    def parse{localName}(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[{param.baseTypeName}] =
       {parser}
   
-    def parse{localName}(wrap: Boolean): Parser[{wrapperParam.baseTypeName}] =
+    def parse{localName}(node: scala.xml.Node, stack: List[scalaxb.ElemName], wrap: Boolean): Parser[{wrapperParam.baseTypeName}] =
       {wrapperParser}
     
-    def parsemixed{localName}: Parser[Seq[{mixedParam.baseTypeName}]] =
+    def parsemixed{localName}(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[Seq[{mixedParam.baseTypeName}]] =
       {mixedparser}
   }}</source>
     
@@ -516,7 +516,7 @@ abstract class GenSource(val schema: SchemaDecl,
   trait Default{formatterName} extends scalaxb.AttributeGroupFormat[{fqn}] {{
     val targetNamespace: Option[String] = { quote(schema.targetNamespace) }
     
-    def reads(seq: scala.xml.NodeSeq): Either[String, {fqn}] = seq match {{
+    def reads(seq: scala.xml.NodeSeq, stack: List[scalaxb.ElemName]): Either[String, {fqn}] = seq match {{
       case node: scala.xml.Node => Right({fqn}({argsString}))
       case _ => Left("reads failed: seq must be scala.xml.Node")
     }}
@@ -572,7 +572,8 @@ object {localName} {{
   trait Default{formatterName} extends scalaxb.XMLFormat[{fqn}] {{
     val targetNamespace: Option[String] = { quote(schema.targetNamespace) }
     
-    def reads(seq: scala.xml.NodeSeq): Either[String, {fqn}] = Right({fqn}.fromString(seq.text))
+    def reads(seq: scala.xml.NodeSeq, stack: List[scalaxb.ElemName]): Either[String, {fqn}] =
+      Right({fqn}.fromString(seq.text))
     
     def writes(__obj: {fqn}, __namespace: Option[String], __elementLabel: Option[String],
         __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =

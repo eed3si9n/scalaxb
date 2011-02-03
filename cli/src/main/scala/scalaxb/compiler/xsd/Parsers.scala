@@ -39,8 +39,9 @@ trait Parsers extends Args with Params {
   }
   
   def buildAnyParser(occurrence: Occurrence, mixed: Boolean, wrapInDataRecord: Boolean): String = {
-    val converter = if (occurrence.nillable) buildFromXML("scalaxb.DataRecord[Option[Any]]", "_")
-      else buildFromXML(buildTypeName(XsAnyType), "_")
+    val converter = if (occurrence.nillable) buildFromXML("scalaxb.DataRecord[Option[Any]]", "_",
+        "scalaxb.ElemName(node) :: stack")
+      else buildFromXML(buildTypeName(XsAnyType), "_", "scalaxb.ElemName(node) :: stack")
     
     buildParserString(if (mixed) "((any ^^ (" + converter + ")) ~ " + newline +
         indent(3) + buildTextParser + ") ^^ " + newline +
@@ -65,8 +66,9 @@ trait Parsers extends Args with Params {
   
   def buildGroupParser(group: GroupDecl, occurrence: Occurrence,
       mixed: Boolean, wrapInDataRecord: Boolean): String =
-    buildParserString(if (mixed) "parsemixed" + groupTypeName(group)
-      else "parse" + groupTypeName(group) + (if (wrapInDataRecord) "(true)" else ""),
+    buildParserString(if (mixed) "parsemixed" + groupTypeName(group) + "(node, scalaxb.ElemName(node) :: stack)"
+      else "parse" + groupTypeName(group) + (if (wrapInDataRecord) "(node, scalaxb.ElemName(node) :: stack, true)"
+        else "(node, scalaxb.ElemName(node) :: stack)"),
       occurrence)
     
   // for unmixed wrapped in data record, this should generate Seq(DataRecord(None, None, Foo("1", "2")))

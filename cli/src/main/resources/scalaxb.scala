@@ -4,10 +4,14 @@ import scala.xml.{Node, NodeSeq, NamespaceBinding, Elem, UnprefixedAttribute, Pr
 import javax.xml.datatype.{XMLGregorianCalendar}
 
 object Scalaxb {
-  def fromXML[A](seq: NodeSeq)(implicit format: XMLFormat[A]): A = format.reads(seq) match {
+  def fromXML[A](seq: NodeSeq, stack: List[ElemName] = Nil)
+                (implicit format: XMLFormat[A]): A = format.reads(seq, stack) match {
     case Right(a) => a
-    case Left(a) => error(a)
+    case Left(a) => throw new ParserFailure(a)
   }
+
+  def fromXMLEither[A](seq: NodeSeq, stack: List[ElemName] = Nil)
+                      (implicit format: XMLFormat[A]): Either[String, A] = format.reads(seq, stack)
   
   def toXML[A](obj: A, namespace: Option[String], elementLabel: Option[String],
       scope: NamespaceBinding, typeAttribute: Boolean = false)(implicit format: CanWriteXML[A]): NodeSeq =
@@ -28,7 +32,7 @@ object Scalaxb {
 trait XMLFormat[A] extends CanWriteXML[A] with CanReadXML[A]
 
 trait CanReadXML[A] {
-  def reads(seq: scala.xml.NodeSeq): Either[String, A]
+  def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, A]
 }
 
 trait CanWriteXML[A] {
@@ -38,7 +42,7 @@ trait CanWriteXML[A] {
 
 trait DefaultXMLStandardTypes extends XMLStandardTypes {
   override def __buildNodeXMLFormat: XMLFormat[Node] = new XMLFormat[Node] {
-    def reads(seq: scala.xml.NodeSeq): Either[String, Node] = seq match {
+    def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, Node] = seq match {
       case node: Node => Right(node)
       case _ => Left("scala.xml.Node is required.")
     }
@@ -48,14 +52,14 @@ trait DefaultXMLStandardTypes extends XMLStandardTypes {
   }
   
   override def __buildNodeSeqXMLFormat: XMLFormat[NodeSeq] = new XMLFormat[NodeSeq] {
-    def reads(seq: scala.xml.NodeSeq): Either[String, NodeSeq] = Right(seq)
+    def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, NodeSeq] = Right(seq)
     
     def writes(obj: NodeSeq, namespace: Option[String], elementLabel: Option[String],
       scope: NamespaceBinding, typeAttribute: Boolean): NodeSeq = obj
   }
   
   override def __buildElemXMLFormat: XMLFormat[Elem] = new XMLFormat[Elem] {
-    def reads(seq: scala.xml.NodeSeq): Either[String, Elem] = seq match {
+    def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, Elem] = seq match {
       case elem: Elem => Right(elem)
       case _ => Left("scala.xml.Elem is required.")
     }
@@ -65,7 +69,7 @@ trait DefaultXMLStandardTypes extends XMLStandardTypes {
   }
   
   override def __buildStringXMLFormat: XMLFormat[String] = new XMLFormat[String] {
-    def reads(seq: scala.xml.NodeSeq): Either[String, String] = Right(seq.text)
+    def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, String] = Right(seq.text)
     
     def writes(obj: String, namespace: Option[String], elementLabel: Option[String],
         scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
@@ -73,8 +77,8 @@ trait DefaultXMLStandardTypes extends XMLStandardTypes {
   }
   
   override def __buildIntXMLFormat: XMLFormat[Int] = new XMLFormat[Int] {
-    def reads(seq: scala.xml.NodeSeq): Either[String, Int] = try { Right(seq.text.toInt) }
-      catch { case e: Exception => Left(e.toString) }
+    def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, Int] = try {
+      Right(seq.text.toInt) } catch { case e: Exception => Left(e.toString) }
     
     def writes(obj: Int, namespace: Option[String], elementLabel: Option[String],
         scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
@@ -82,8 +86,8 @@ trait DefaultXMLStandardTypes extends XMLStandardTypes {
   }
   
   override def __buildByteXMLFormat: XMLFormat[Byte] = new XMLFormat[Byte] {
-    def reads(seq: scala.xml.NodeSeq): Either[String, Byte] = try { Right(seq.text.toByte) }
-      catch { case e: Exception => Left(e.toString) }
+    def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, Byte] = try {
+      Right(seq.text.toByte) } catch { case e: Exception => Left(e.toString) }
     
     def writes(obj: Byte, namespace: Option[String], elementLabel: Option[String],
         scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
@@ -91,8 +95,8 @@ trait DefaultXMLStandardTypes extends XMLStandardTypes {
   }
   
   override def __buildShortXMLFormat: XMLFormat[Short] = new XMLFormat[Short] {
-    def reads(seq: scala.xml.NodeSeq): Either[String, Short] = try { Right(seq.text.toShort) }
-      catch { case e: Exception => Left(e.toString) }
+    def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, Short] = try {
+      Right(seq.text.toShort) } catch { case e: Exception => Left(e.toString) }
       
     def writes(obj: Short, namespace: Option[String], elementLabel: Option[String],
         scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
@@ -100,8 +104,8 @@ trait DefaultXMLStandardTypes extends XMLStandardTypes {
   }
   
   override def __buildLongXMLFormat: XMLFormat[Long] = new XMLFormat[Long] {
-    def reads(seq: scala.xml.NodeSeq): Either[String, Long] = try { Right(seq.text.toLong) }
-      catch { case e: Exception => Left(e.toString) }
+    def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, Long] = try {
+      Right(seq.text.toLong) } catch { case e: Exception => Left(e.toString) }
     
     def writes(obj: Long, namespace: Option[String], elementLabel: Option[String],
         scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
@@ -109,8 +113,8 @@ trait DefaultXMLStandardTypes extends XMLStandardTypes {
   }
   
   override def __buildBigDecimalXMLFormat: XMLFormat[BigDecimal] = new XMLFormat[BigDecimal] {
-    def reads(seq: scala.xml.NodeSeq): Either[String, BigDecimal] = try { Right(BigDecimal(seq.text)) }
-      catch { case e: Exception => Left(e.toString) }
+    def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, BigDecimal] = try {
+      Right(BigDecimal(seq.text)) } catch { case e: Exception => Left(e.toString) }
       
     def writes(obj: BigDecimal, namespace: Option[String], elementLabel: Option[String],
         scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
@@ -118,8 +122,8 @@ trait DefaultXMLStandardTypes extends XMLStandardTypes {
   }
   
   override def __buildBigIntXMLFormat: XMLFormat[BigInt] = new XMLFormat[BigInt] {
-    def reads(seq: scala.xml.NodeSeq): Either[String, BigInt] = try { Right(BigInt(seq.text)) }
-      catch { case e: Exception => Left(e.toString) }
+    def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, BigInt] = try {
+      Right(BigInt(seq.text)) } catch { case e: Exception => Left(e.toString) }
       
     def writes(obj: BigInt, namespace: Option[String], elementLabel: Option[String],
         scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
@@ -127,8 +131,8 @@ trait DefaultXMLStandardTypes extends XMLStandardTypes {
   }
   
   override def __buildFloatXMLFormat: XMLFormat[Float] = new XMLFormat[Float] {
-    def reads(seq: scala.xml.NodeSeq): Either[String, Float] = try { Right(seq.text.toFloat) }
-      catch { case e: Exception => Left(e.toString) }
+    def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, Float] = try {
+      Right(seq.text.toFloat) } catch { case e: Exception => Left(e.toString) }
       
     def writes(obj: Float, namespace: Option[String], elementLabel: Option[String],
         scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
@@ -136,8 +140,8 @@ trait DefaultXMLStandardTypes extends XMLStandardTypes {
   }
   
   override def __buildDoubleXMLFormat: XMLFormat[Double] = new XMLFormat[Double] {
-    def reads(seq: scala.xml.NodeSeq): Either[String, Double] = try { Right(seq.text.toDouble) }
-      catch { case e: Exception => Left(e.toString) }
+    def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, Double] = try {
+      Right(seq.text.toDouble) } catch { case e: Exception => Left(e.toString) }
       
     def writes(obj: Double, namespace: Option[String], elementLabel: Option[String],
         scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
@@ -145,8 +149,8 @@ trait DefaultXMLStandardTypes extends XMLStandardTypes {
   }
   
   override def __buildBooleanXMLFormat: XMLFormat[Boolean] = new XMLFormat[Boolean] {
-    def reads(seq: scala.xml.NodeSeq): Either[String, Boolean] = try { Right(seq.text.toBoolean) }
-      catch { case e: Exception => Left(e.toString) }
+    def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, Boolean] = try {
+      Right(seq.text.toBoolean) } catch { case e: Exception => Left(e.toString) }
       
     def writes(obj: Boolean, namespace: Option[String], elementLabel: Option[String],
         scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
@@ -154,7 +158,8 @@ trait DefaultXMLStandardTypes extends XMLStandardTypes {
   }
   
   override def __buildDurationXMLFormat: XMLFormat[javax.xml.datatype.Duration] = new XMLFormat[javax.xml.datatype.Duration] {
-    def reads(seq: scala.xml.NodeSeq): Either[String, javax.xml.datatype.Duration] = try { Right(Helper.toDuration(seq.text)) }
+    def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, javax.xml.datatype.Duration] =
+      try { Right(Helper.toDuration(seq.text)) }
       catch { case e: Exception => Left(e.toString) }
       
     def writes(obj: javax.xml.datatype.Duration, namespace: Option[String], elementLabel: Option[String],
@@ -163,8 +168,8 @@ trait DefaultXMLStandardTypes extends XMLStandardTypes {
   }
   
   override def __buildCalendarXMLFormat: XMLFormat[XMLGregorianCalendar] = new XMLFormat[XMLGregorianCalendar] {
-    def reads(seq: scala.xml.NodeSeq): Either[String, XMLGregorianCalendar] = try { Right(XMLCalendar(seq.text)) }
-      catch { case e: Exception => Left(e.toString) }
+    def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, XMLGregorianCalendar] = try {
+      Right(XMLCalendar(seq.text)) } catch { case e: Exception => Left(e.toString) }
       
     def writes(obj: XMLGregorianCalendar, namespace: Option[String], elementLabel: Option[String],
         scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
@@ -178,9 +183,8 @@ trait DefaultXMLStandardTypes extends XMLStandardTypes {
   }
   
   override def __buildQNameXMLFormat: XMLFormat[javax.xml.namespace.QName] = new  XMLFormat[javax.xml.namespace.QName] {
-    def reads(seq: scala.xml.NodeSeq): Either[String, javax.xml.namespace.QName] = try {
-      Right(javax.xml.namespace.QName.valueOf(seq.text))
-    } catch { case e: Exception => Left(e.toString) }
+    def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, javax.xml.namespace.QName] = try {
+      Right(javax.xml.namespace.QName.valueOf(seq.text)) } catch { case e: Exception => Left(e.toString) }
       
     def writes(obj: javax.xml.namespace.QName, namespace: Option[String], elementLabel: Option[String],
         scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
@@ -188,8 +192,8 @@ trait DefaultXMLStandardTypes extends XMLStandardTypes {
   }
   
   override def __buildStringArrayXMLFormat: XMLFormat[Array[String]] = new XMLFormat[Array[String]] {
-    def reads(seq: scala.xml.NodeSeq): Either[String, Array[String]] = try { Right(Helper.splitBySpace(seq.text)) }
-      catch { case e: Exception => Left(e.toString) }
+    def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, Array[String]] = try {
+      Right(Helper.splitBySpace(seq.text)) } catch { case e: Exception => Left(e.toString) }
       
     def writes(obj: Array[String], namespace: Option[String], elementLabel: Option[String],
         scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
@@ -197,8 +201,8 @@ trait DefaultXMLStandardTypes extends XMLStandardTypes {
   }
   
   override def __buildByteArrayXMLFormat: XMLFormat[Array[Byte]] = new XMLFormat[Array[Byte]] {
-    def reads(seq: scala.xml.NodeSeq): Either[String, Array[Byte]] = try { Right(Helper.toByteArray(seq.text)) }
-      catch { case e: Exception => Left(e.toString) }
+    def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, Array[Byte]] = try {
+      Right(Helper.toByteArray(seq.text)) } catch { case e: Exception => Left(e.toString) }
       
     def writes(obj: Array[Byte], namespace: Option[String], elementLabel: Option[String],
         scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
@@ -206,8 +210,8 @@ trait DefaultXMLStandardTypes extends XMLStandardTypes {
   }
   
   override def __buildHexBinaryXMLFormat: XMLFormat[HexBinary] = new XMLFormat[HexBinary] {
-    def reads(seq: scala.xml.NodeSeq): Either[String, HexBinary] = try { Right(Helper.toHexBinary(seq.text)) }
-      catch { case e: Exception => Left(e.toString) }
+    def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, HexBinary] = try {
+      Right(Helper.toHexBinary(seq.text)) } catch { case e: Exception => Left(e.toString) }
     
     def writes(obj: HexBinary, namespace: Option[String], elementLabel: Option[String],
         scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
@@ -215,8 +219,8 @@ trait DefaultXMLStandardTypes extends XMLStandardTypes {
   }
   
   override def __buildURIXMLFormat: XMLFormat[java.net.URI] = new XMLFormat[java.net.URI] {
-    def reads(seq: scala.xml.NodeSeq): Either[String, java.net.URI] = try { Right(Helper.toURI(seq.text)) }
-      catch { case e: Exception => Left(e.toString) }
+    def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, java.net.URI] = try {
+      Right(Helper.toURI(seq.text)) } catch { case e: Exception => Left(e.toString) }
       
     def writes(obj: java.net.URI, namespace: Option[String], elementLabel: Option[String],
         scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
@@ -230,9 +234,8 @@ trait DefaultXMLStandardTypes extends XMLStandardTypes {
   }
   
   override def __buildDataRecordAnyXMLFormat: XMLFormat[DataRecord[Any]] = new XMLFormat[DataRecord[Any]] {
-    def reads(seq: scala.xml.NodeSeq): Either[String, DataRecord[Any]] = try {
-      Right(DataRecord.fromAny(seq))
-    } catch { case e: Exception => Left(e.toString) }    
+    def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, DataRecord[Any]] = try {
+      Right(DataRecord.fromAny(seq)) } catch { case e: Exception => Left(e.toString) }
     
     def writes(obj: DataRecord[Any], namespace: Option[String], elementLabel: Option[String],
         scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
@@ -241,9 +244,8 @@ trait DefaultXMLStandardTypes extends XMLStandardTypes {
   
   override def __buildDataRecordOptionAnyXMLFormat: XMLFormat[DataRecord[Option[Any]]] =
     new XMLFormat[DataRecord[Option[Any]]] {
-      def reads(seq: scala.xml.NodeSeq): Either[String, DataRecord[Option[Any]]] = try {
-        Right(DataRecord.fromNillableAny(seq))
-      } catch { case e: Exception => Left(e.toString) }    
+      def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, DataRecord[Option[Any]]] = try {
+        Right(DataRecord.fromNillableAny(seq)) } catch { case e: Exception => Left(e.toString) }
     
       def writes(obj: DataRecord[Option[Any]], namespace: Option[String], elementLabel: Option[String],
           scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
@@ -325,9 +327,9 @@ trait XMLStandardTypes {
   def __buildURIXMLFormat: XMLFormat[java.net.URI]
   
   implicit def seqXMLFormat[A: XMLFormat]: XMLFormat[Seq[A]] = new XMLFormat[Seq[A]] {
-    def reads(seq: scala.xml.NodeSeq): Either[String, Seq[A]] = try {
+    def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, Seq[A]] = try {
       val xs = Helper.splitBySpace(seq.text).toSeq
-      Right(xs map { x => Scalaxb.fromXML[A](scala.xml.Text(x)) })
+      Right(xs map { x => Scalaxb.fromXML[A](scala.xml.Text(x), stack) })
     } catch { case e: Exception => Left(e.toString) }
     
     def writes(obj: Seq[A], namespace: Option[String], elementLabel: Option[String],
@@ -451,49 +453,49 @@ object DataRecord extends DefaultXMLStandardTypes {
     instanceType(elem) match {
       case (XS, xstype)   =>
         xstype match {
-          case Some("int")                => DataRecord(ns, key, XS, xstype, fromXML[Int](elem))
-          case Some("byte")               => DataRecord(ns, key, XS, xstype, fromXML[Byte](elem))
-          case Some("short")              => DataRecord(ns, key, XS, xstype, fromXML[Short](elem))
-          case Some("long")               => DataRecord(ns, key, XS, xstype, fromXML[Long](elem))
-          case Some("float")              => DataRecord(ns, key, XS, xstype, fromXML[Float](elem))
-          case Some("double")             => DataRecord(ns, key, XS, xstype, fromXML[Double](elem))
-          case Some("integer")            => DataRecord(ns, key, XS, xstype, fromXML[Int](elem))
-          case Some("nonPositiveInteger") => DataRecord(ns, key, XS, xstype, fromXML[Int](elem))
-          case Some("negativeInteger")    => DataRecord(ns, key, XS, xstype, fromXML[Int](elem))
-          case Some("nonNegativeInteger") => DataRecord(ns, key, XS, xstype, fromXML[Int](elem))
-          case Some("positiveInteger")    => DataRecord(ns, key, XS, xstype, fromXML[Int](elem))
-          case Some("unsignedLong")       => DataRecord(ns, key, XS, xstype, fromXML[BigInt](elem))
-          case Some("unsignedInt")        => DataRecord(ns, key, XS, xstype, fromXML[Long](elem))
-          case Some("unsignedShort")      => DataRecord(ns, key, XS, xstype, fromXML[Int](elem))
-          case Some("unsignedByte")       => DataRecord(ns, key, XS, xstype, fromXML[Int](elem))
-          case Some("decimal")            => DataRecord(ns, key, XS, xstype, fromXML[BigDecimal](elem))
-          case Some("boolean")            => DataRecord(ns, key, XS, xstype, fromXML[Boolean](elem))
-          case Some("string")             => DataRecord(ns, key, XS, xstype, fromXML[String](elem))
-          case Some("normalizedString")   => DataRecord(ns, key, XS, xstype, fromXML[String](elem))
-          case Some("token")              => DataRecord(ns, key, XS, xstype, fromXML[String](elem))
-          case Some("language")           => DataRecord(ns, key, XS, xstype, fromXML[String](elem))
-          case Some("Name")               => DataRecord(ns, key, XS, xstype, fromXML[String](elem))
-          case Some("NCName")             => DataRecord(ns, key, XS, xstype, fromXML[String](elem))
-          case Some("NMTOKEN")            => DataRecord(ns, key, XS, xstype, fromXML[String](elem))
-          case Some("NMTOKENS")           => DataRecord(ns, key, XS, xstype, fromXML[Array[String]](elem))
-          case Some("ID")                 => DataRecord(ns, key, XS, xstype, fromXML[String](elem))
-          case Some("IDREF")              => DataRecord(ns, key, XS, xstype, fromXML[String](elem))
-          case Some("IDREFS")             => DataRecord(ns, key, XS, xstype, fromXML[Array[String]](elem))
-          case Some("ENTITY")             => DataRecord(ns, key, XS, xstype, fromXML[String](elem))
-          case Some("ENTITIES")           => DataRecord(ns, key, XS, xstype, fromXML[Array[String]](elem))
-          case Some("hexBinary")          => DataRecord(ns, key, XS, xstype, fromXML[HexBinary](elem))
-          case Some("base64Binary")       => DataRecord(ns, key, XS, xstype, fromXML[Array[Byte]](elem))
-          case Some("anyURI")             => DataRecord(ns, key, XS, xstype, fromXML[java.net.URI](elem))
-          case Some("QName")              => DataRecord(ns, key, XS, xstype, fromXML[javax.xml.namespace.QName](elem))
-          case Some("NOTATION")           => DataRecord(ns, key, XS, xstype, fromXML[javax.xml.namespace.QName](elem))
-          case Some("duration")           => DataRecord(ns, key, XS, xstype, fromXML[javax.xml.datatype.Duration](elem))
-          case Some("dateTime")           => DataRecord(ns, key, XS, xstype, fromXML[XMLGregorianCalendar](elem))
-          case Some("time")               => DataRecord(ns, key, XS, xstype, fromXML[XMLGregorianCalendar](elem))
-          case Some("gYearMonth")         => DataRecord(ns, key, XS, xstype, fromXML[XMLGregorianCalendar](elem))
-          case Some("gYear")              => DataRecord(ns, key, XS, xstype, fromXML[XMLGregorianCalendar](elem))
-          case Some("gMonthDay")          => DataRecord(ns, key, XS, xstype, fromXML[XMLGregorianCalendar](elem))
-          case Some("gDay")               => DataRecord(ns, key, XS, xstype, fromXML[XMLGregorianCalendar](elem))
-          case Some("gMonth")             => DataRecord(ns, key, XS, xstype, fromXML[XMLGregorianCalendar](elem))
+          case Some("int")                => DataRecord(ns, key, XS, xstype, fromXML[Int](elem, Nil))
+          case Some("byte")               => DataRecord(ns, key, XS, xstype, fromXML[Byte](elem, Nil))
+          case Some("short")              => DataRecord(ns, key, XS, xstype, fromXML[Short](elem, Nil))
+          case Some("long")               => DataRecord(ns, key, XS, xstype, fromXML[Long](elem, Nil))
+          case Some("float")              => DataRecord(ns, key, XS, xstype, fromXML[Float](elem, Nil))
+          case Some("double")             => DataRecord(ns, key, XS, xstype, fromXML[Double](elem, Nil))
+          case Some("integer")            => DataRecord(ns, key, XS, xstype, fromXML[Int](elem, Nil))
+          case Some("nonPositiveInteger") => DataRecord(ns, key, XS, xstype, fromXML[Int](elem, Nil))
+          case Some("negativeInteger")    => DataRecord(ns, key, XS, xstype, fromXML[Int](elem, Nil))
+          case Some("nonNegativeInteger") => DataRecord(ns, key, XS, xstype, fromXML[Int](elem, Nil))
+          case Some("positiveInteger")    => DataRecord(ns, key, XS, xstype, fromXML[Int](elem, Nil))
+          case Some("unsignedLong")       => DataRecord(ns, key, XS, xstype, fromXML[BigInt](elem, Nil))
+          case Some("unsignedInt")        => DataRecord(ns, key, XS, xstype, fromXML[Long](elem, Nil))
+          case Some("unsignedShort")      => DataRecord(ns, key, XS, xstype, fromXML[Int](elem, Nil))
+          case Some("unsignedByte")       => DataRecord(ns, key, XS, xstype, fromXML[Int](elem, Nil))
+          case Some("decimal")            => DataRecord(ns, key, XS, xstype, fromXML[BigDecimal](elem, Nil))
+          case Some("boolean")            => DataRecord(ns, key, XS, xstype, fromXML[Boolean](elem, Nil))
+          case Some("string")             => DataRecord(ns, key, XS, xstype, fromXML[String](elem, Nil))
+          case Some("normalizedString")   => DataRecord(ns, key, XS, xstype, fromXML[String](elem, Nil))
+          case Some("token")              => DataRecord(ns, key, XS, xstype, fromXML[String](elem, Nil))
+          case Some("language")           => DataRecord(ns, key, XS, xstype, fromXML[String](elem, Nil))
+          case Some("Name")               => DataRecord(ns, key, XS, xstype, fromXML[String](elem, Nil))
+          case Some("NCName")             => DataRecord(ns, key, XS, xstype, fromXML[String](elem, Nil))
+          case Some("NMTOKEN")            => DataRecord(ns, key, XS, xstype, fromXML[String](elem, Nil))
+          case Some("NMTOKENS")           => DataRecord(ns, key, XS, xstype, fromXML[Array[String]](elem, Nil))
+          case Some("ID")                 => DataRecord(ns, key, XS, xstype, fromXML[String](elem, Nil))
+          case Some("IDREF")              => DataRecord(ns, key, XS, xstype, fromXML[String](elem, Nil))
+          case Some("IDREFS")             => DataRecord(ns, key, XS, xstype, fromXML[Array[String]](elem, Nil))
+          case Some("ENTITY")             => DataRecord(ns, key, XS, xstype, fromXML[String](elem, Nil))
+          case Some("ENTITIES")           => DataRecord(ns, key, XS, xstype, fromXML[Array[String]](elem, Nil))
+          case Some("hexBinary")          => DataRecord(ns, key, XS, xstype, fromXML[HexBinary](elem, Nil))
+          case Some("base64Binary")       => DataRecord(ns, key, XS, xstype, fromXML[Array[Byte]](elem, Nil))
+          case Some("anyURI")             => DataRecord(ns, key, XS, xstype, fromXML[java.net.URI](elem, Nil))
+          case Some("QName")              => DataRecord(ns, key, XS, xstype, fromXML[javax.xml.namespace.QName](elem, Nil))
+          case Some("NOTATION")           => DataRecord(ns, key, XS, xstype, fromXML[javax.xml.namespace.QName](elem, Nil))
+          case Some("duration")           => DataRecord(ns, key, XS, xstype, fromXML[javax.xml.datatype.Duration](elem, Nil))
+          case Some("dateTime")           => DataRecord(ns, key, XS, xstype, fromXML[XMLGregorianCalendar](elem, Nil))
+          case Some("time")               => DataRecord(ns, key, XS, xstype, fromXML[XMLGregorianCalendar](elem, Nil))
+          case Some("gYearMonth")         => DataRecord(ns, key, XS, xstype, fromXML[XMLGregorianCalendar](elem, Nil))
+          case Some("gYear")              => DataRecord(ns, key, XS, xstype, fromXML[XMLGregorianCalendar](elem, Nil))
+          case Some("gMonthDay")          => DataRecord(ns, key, XS, xstype, fromXML[XMLGregorianCalendar](elem, Nil))
+          case Some("gDay")               => DataRecord(ns, key, XS, xstype, fromXML[XMLGregorianCalendar](elem, Nil))
+          case Some("gMonth")             => DataRecord(ns, key, XS, xstype, fromXML[XMLGregorianCalendar](elem, Nil))
           
           case _          => DataRecord(ns, key, XS, xstype, elem)
         }      
@@ -523,49 +525,49 @@ object DataRecord extends DefaultXMLStandardTypes {
     else instanceType(elem) match {
       case (XS, xstype)   =>
         xstype match {
-          case Some("int")                => DataRecord(ns, key, XS, xstype, Some(fromXML[Int](elem)))
-          case Some("byte")               => DataRecord(ns, key, XS, xstype, Some(fromXML[Byte](elem)))
-          case Some("short")              => DataRecord(ns, key, XS, xstype, Some(fromXML[Short](elem)))
-          case Some("long")               => DataRecord(ns, key, XS, xstype, Some(fromXML[Long](elem)))
-          case Some("float")              => DataRecord(ns, key, XS, xstype, Some(fromXML[Float](elem)))
-          case Some("double")             => DataRecord(ns, key, XS, xstype, Some(fromXML[Double](elem)))
-          case Some("integer")            => DataRecord(ns, key, XS, xstype, Some(fromXML[Int](elem)))
-          case Some("nonPositiveInteger") => DataRecord(ns, key, XS, xstype, Some(fromXML[Int](elem)))
-          case Some("negativeInteger")    => DataRecord(ns, key, XS, xstype, Some(fromXML[Int](elem)))
-          case Some("nonNegativeInteger") => DataRecord(ns, key, XS, xstype, Some(fromXML[Int](elem)))
-          case Some("positiveInteger")    => DataRecord(ns, key, XS, xstype, Some(fromXML[Int](elem)))
-          case Some("unsignedLong")       => DataRecord(ns, key, XS, xstype, Some(fromXML[BigInt](elem)))
-          case Some("unsignedInt")        => DataRecord(ns, key, XS, xstype, Some(fromXML[Long](elem)))
-          case Some("unsignedShort")      => DataRecord(ns, key, XS, xstype, Some(fromXML[Int](elem)))
-          case Some("unsignedByte")       => DataRecord(ns, key, XS, xstype, Some(fromXML[Int](elem)))
-          case Some("decimal")            => DataRecord(ns, key, XS, xstype, Some(fromXML[BigDecimal](elem)))
-          case Some("boolean")            => DataRecord(ns, key, XS, xstype, Some(fromXML[Boolean](elem)))
-          case Some("string")             => DataRecord(ns, key, XS, xstype, Some(fromXML[String](elem)))
-          case Some("normalizedString")   => DataRecord(ns, key, XS, xstype, Some(fromXML[String](elem)))
-          case Some("token")              => DataRecord(ns, key, XS, xstype, Some(fromXML[String](elem)))
-          case Some("language")           => DataRecord(ns, key, XS, xstype, Some(fromXML[String](elem)))
-          case Some("Name")               => DataRecord(ns, key, XS, xstype, Some(fromXML[String](elem)))
-          case Some("NCName")             => DataRecord(ns, key, XS, xstype, Some(fromXML[String](elem)))
-          case Some("NMTOKEN")            => DataRecord(ns, key, XS, xstype, Some(fromXML[String](elem)))
-          case Some("NMTOKENS")           => DataRecord(ns, key, XS, xstype, Some(fromXML[Array[String]](elem)))
-          case Some("ID")                 => DataRecord(ns, key, XS, xstype, Some(fromXML[String](elem)))
-          case Some("IDREF")              => DataRecord(ns, key, XS, xstype, Some(fromXML[String](elem)))
-          case Some("IDREFS")             => DataRecord(ns, key, XS, xstype, Some(fromXML[Array[String]](elem)))
-          case Some("ENTITY")             => DataRecord(ns, key, XS, xstype, Some(fromXML[String](elem)))
-          case Some("ENTITIES")           => DataRecord(ns, key, XS, xstype, Some(fromXML[Array[String]](elem)))
-          case Some("hexBinary")          => DataRecord(ns, key, XS, xstype, Some(fromXML[HexBinary](elem)))
-          case Some("base64Binary")       => DataRecord(ns, key, XS, xstype, Some(fromXML[Array[Byte]](elem)))
-          case Some("anyURI")             => DataRecord(ns, key, XS, xstype, Some(fromXML[java.net.URI](elem)))
-          case Some("QName")              => DataRecord(ns, key, XS, xstype, Some(fromXML[javax.xml.namespace.QName](elem)))
-          case Some("NOTATION")           => DataRecord(ns, key, XS, xstype, Some(fromXML[javax.xml.namespace.QName](elem)))
-          case Some("duration")           => DataRecord(ns, key, XS, xstype, Some(fromXML[javax.xml.datatype.Duration](elem)))
-          case Some("dateTime")           => DataRecord(ns, key, XS, xstype, Some(fromXML[XMLGregorianCalendar](elem)))
-          case Some("time")               => DataRecord(ns, key, XS, xstype, Some(fromXML[XMLGregorianCalendar](elem)))
-          case Some("gYearMonth")         => DataRecord(ns, key, XS, xstype, Some(fromXML[XMLGregorianCalendar](elem)))
-          case Some("gYear")              => DataRecord(ns, key, XS, xstype, Some(fromXML[XMLGregorianCalendar](elem)))
-          case Some("gMonthDay")          => DataRecord(ns, key, XS, xstype, Some(fromXML[XMLGregorianCalendar](elem)))
-          case Some("gDay")               => DataRecord(ns, key, XS, xstype, Some(fromXML[XMLGregorianCalendar](elem)))
-          case Some("gMonth")             => DataRecord(ns, key, XS, xstype, Some(fromXML[XMLGregorianCalendar](elem)))
+          case Some("int")                => DataRecord(ns, key, XS, xstype, Some(fromXML[Int](elem, Nil)))
+          case Some("byte")               => DataRecord(ns, key, XS, xstype, Some(fromXML[Byte](elem, Nil)))
+          case Some("short")              => DataRecord(ns, key, XS, xstype, Some(fromXML[Short](elem, Nil)))
+          case Some("long")               => DataRecord(ns, key, XS, xstype, Some(fromXML[Long](elem, Nil)))
+          case Some("float")              => DataRecord(ns, key, XS, xstype, Some(fromXML[Float](elem, Nil)))
+          case Some("double")             => DataRecord(ns, key, XS, xstype, Some(fromXML[Double](elem, Nil)))
+          case Some("integer")            => DataRecord(ns, key, XS, xstype, Some(fromXML[Int](elem, Nil)))
+          case Some("nonPositiveInteger") => DataRecord(ns, key, XS, xstype, Some(fromXML[Int](elem, Nil)))
+          case Some("negativeInteger")    => DataRecord(ns, key, XS, xstype, Some(fromXML[Int](elem, Nil)))
+          case Some("nonNegativeInteger") => DataRecord(ns, key, XS, xstype, Some(fromXML[Int](elem, Nil)))
+          case Some("positiveInteger")    => DataRecord(ns, key, XS, xstype, Some(fromXML[Int](elem, Nil)))
+          case Some("unsignedLong")       => DataRecord(ns, key, XS, xstype, Some(fromXML[BigInt](elem, Nil)))
+          case Some("unsignedInt")        => DataRecord(ns, key, XS, xstype, Some(fromXML[Long](elem, Nil)))
+          case Some("unsignedShort")      => DataRecord(ns, key, XS, xstype, Some(fromXML[Int](elem, Nil)))
+          case Some("unsignedByte")       => DataRecord(ns, key, XS, xstype, Some(fromXML[Int](elem, Nil)))
+          case Some("decimal")            => DataRecord(ns, key, XS, xstype, Some(fromXML[BigDecimal](elem, Nil)))
+          case Some("boolean")            => DataRecord(ns, key, XS, xstype, Some(fromXML[Boolean](elem, Nil)))
+          case Some("string")             => DataRecord(ns, key, XS, xstype, Some(fromXML[String](elem, Nil)))
+          case Some("normalizedString")   => DataRecord(ns, key, XS, xstype, Some(fromXML[String](elem, Nil)))
+          case Some("token")              => DataRecord(ns, key, XS, xstype, Some(fromXML[String](elem, Nil)))
+          case Some("language")           => DataRecord(ns, key, XS, xstype, Some(fromXML[String](elem, Nil)))
+          case Some("Name")               => DataRecord(ns, key, XS, xstype, Some(fromXML[String](elem, Nil)))
+          case Some("NCName")             => DataRecord(ns, key, XS, xstype, Some(fromXML[String](elem, Nil)))
+          case Some("NMTOKEN")            => DataRecord(ns, key, XS, xstype, Some(fromXML[String](elem, Nil)))
+          case Some("NMTOKENS")           => DataRecord(ns, key, XS, xstype, Some(fromXML[Array[String]](elem, Nil)))
+          case Some("ID")                 => DataRecord(ns, key, XS, xstype, Some(fromXML[String](elem, Nil)))
+          case Some("IDREF")              => DataRecord(ns, key, XS, xstype, Some(fromXML[String](elem, Nil)))
+          case Some("IDREFS")             => DataRecord(ns, key, XS, xstype, Some(fromXML[Array[String]](elem, Nil)))
+          case Some("ENTITY")             => DataRecord(ns, key, XS, xstype, Some(fromXML[String](elem, Nil)))
+          case Some("ENTITIES")           => DataRecord(ns, key, XS, xstype, Some(fromXML[Array[String]](elem, Nil)))
+          case Some("hexBinary")          => DataRecord(ns, key, XS, xstype, Some(fromXML[HexBinary](elem, Nil)))
+          case Some("base64Binary")       => DataRecord(ns, key, XS, xstype, Some(fromXML[Array[Byte]](elem, Nil)))
+          case Some("anyURI")             => DataRecord(ns, key, XS, xstype, Some(fromXML[java.net.URI](elem, Nil)))
+          case Some("QName")              => DataRecord(ns, key, XS, xstype, Some(fromXML[javax.xml.namespace.QName](elem, Nil)))
+          case Some("NOTATION")           => DataRecord(ns, key, XS, xstype, Some(fromXML[javax.xml.namespace.QName](elem, Nil)))
+          case Some("duration")           => DataRecord(ns, key, XS, xstype, Some(fromXML[javax.xml.datatype.Duration](elem, Nil)))
+          case Some("dateTime")           => DataRecord(ns, key, XS, xstype, Some(fromXML[XMLGregorianCalendar](elem, Nil)))
+          case Some("time")               => DataRecord(ns, key, XS, xstype, Some(fromXML[XMLGregorianCalendar](elem, Nil)))
+          case Some("gYearMonth")         => DataRecord(ns, key, XS, xstype, Some(fromXML[XMLGregorianCalendar](elem, Nil)))
+          case Some("gYear")              => DataRecord(ns, key, XS, xstype, Some(fromXML[XMLGregorianCalendar](elem, Nil)))
+          case Some("gMonthDay")          => DataRecord(ns, key, XS, xstype, Some(fromXML[XMLGregorianCalendar](elem, Nil)))
+          case Some("gDay")               => DataRecord(ns, key, XS, xstype, Some(fromXML[XMLGregorianCalendar](elem, Nil)))
+          case Some("gMonth")             => DataRecord(ns, key, XS, xstype, Some(fromXML[XMLGregorianCalendar](elem, Nil)))
           
           case _          => DataRecord(ns, key, XS, xstype, Some(elem))
         }      
@@ -604,6 +606,23 @@ case class ElemName(namespace: Option[String], name: String) {
   def nil = Helper.isNil(node)
   def nilOption: Option[ElemName] = if (nil) None else Some(this)
   def splitBySpace = Helper.splitBySpace(text)
+  override def toString = namespace match {
+    case Some(x) => "{%s}%s".format(x, name)
+    case _ => name
+  }
+}
+
+object ElemName {
+  implicit def apply(node: scala.xml.Node): ElemName = node match {
+    case x: scala.xml.Elem =>
+      val elemName = ElemName(Option[String](x.scope.getURI(x.prefix)), x.label)
+      elemName.node = x
+      elemName
+    case _ =>
+      val elemName = ElemName(None, "")
+      elemName.node = node
+      elemName
+  }
 }
 
 trait AnyElemNameParser extends scala.util.parsing.combinator.Parsers {
@@ -646,40 +665,33 @@ trait AttributeGroupFormat[A] extends scalaxb.XMLFormat[A] {
 }
 
 trait ElemNameParser[A] extends AnyElemNameParser with XMLFormat[A] with CanWriteChildNodes[A] {
-  def reads(seq: scala.xml.NodeSeq): Either[String, A] = seq match {
+  def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, A] = seq match {
     case node: scala.xml.Node =>
-      parse(parser(node), node.child) match {
+      parse(parser(node, stack), node.child) match {
         case x: Success[_] => Right(x.get)
-        case x: Failure => Left(parserErrorMsg(x.msg, node))
+        case x: Failure => Left(parserErrorMsg(x.msg, x.next, ElemName(node) :: stack))
         case x: Error => Left(parserErrorMsg(x.msg, node))
       }
     case _ => Left("seq must be scala.xml.Node")
   }
-  
+
+  private def parserErrorMsg(msg: String, next: scala.util.parsing.input.Reader[Elem], stack: List[ElemName]): String =
+    if (msg contains "paser error ") msg
+    else "parser error \"" + msg + "\" while parsing " + stack.reverse.mkString("/", "/", "/") + next.pos.longString
+
   private def parserErrorMsg(msg: String, node: scala.xml.Node): String =
-    if (msg contains "paser error: ") msg
+    if (msg contains "paser error ") msg
     else "parser error \"" + msg + "\" while parsing " + node.toString
   
-  def parser(node: scala.xml.Node): Parser[A]
+  def parser(node: scala.xml.Node, stack: List[ElemName]): Parser[A]
   def isMixed: Boolean = false
   
   def parse[A](p: Parser[A], in: Seq[scala.xml.Node]): ParseResult[A] = 
     p(new ElemNameSeqReader(elementNames(in)))
   
   def elementNames(in: Seq[scala.xml.Node]): Seq[ElemName] =
-    if (isMixed) in map { toElemName }
-    else in collect { case x: scala.xml.Elem => toElemName(x) }
-    
-  def toElemName(in: scala.xml.Node) = in match {
-    case x: scala.xml.Elem =>    
-      val elemName = ElemName(Option[String](x.scope.getURI(x.prefix)), x.label)
-      elemName.node = x
-      elemName
-    case _ =>
-      val elemName = ElemName(None, "")
-      elemName.node = in
-      elemName      
-  }
+    if (isMixed) in map { x => ElemName(x) }
+    else in collect { case x: scala.xml.Elem => ElemName(x) }
 }
 
 class ElemNameSeqReader(seq: Seq[ElemName],
@@ -707,7 +719,7 @@ class ElemNameSeqReader(seq: Seq[ElemName],
 class ElemNameSeqPosition(val source: Seq[ElemName], val offset: Int) extends 
     scala.util.parsing.input.Position {
   protected def lineContents =
-    source.toString
+    source.mkString
     
   override def line = 1
   override def column = offset + 1
@@ -832,3 +844,5 @@ object Helper {
     } getOrElse { scala.xml.Text(obj) }
   }
 }
+
+class ParserFailure(message: String) extends RuntimeException(message)

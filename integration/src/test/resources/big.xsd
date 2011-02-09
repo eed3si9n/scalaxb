@@ -2,7 +2,7 @@
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
   <xs:element name="foo">
     <xs:complexType>
-     <xs:sequence>
+     <xs:sequence maxOccurs="unbounded">
        <xs:element name="string1" type="xs:string"/>
        <xs:element name="string2" type="xs:string"/>
        <xs:element name="string3" type="xs:string"/>

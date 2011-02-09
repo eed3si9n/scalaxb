@@ -76,18 +76,22 @@ trait Parsers extends Args with Params {
   // Seq(DataRecord(Some("ipo") Some("a"), "1"), DataRecord(None, None, "foo"), DataRecord(Some("ipo") Some("b"), "2"))
   def buildSeqParser(seq: SequenceDecl,
       occurrence: Occurrence, mixed: Boolean, wrapInDataRecord: Boolean): String = {
+    val splits = if (mixed) seq.particles
+      else if (seq.particles.size <= MaxParticleSize) seq.particles
+      else splitLong[SequenceDecl](seq.particles) { SequenceDecl(_, 1, 1, 0) }
+
     val parserList = if (mixed) (0 to seq.particles.size * 2 - 1).toList map { i =>
         if (i % 2 == 0) buildParser(seq.particles(i / 2), mixed, mixed)
         else buildTextParser
       }
-      else seq.particles.map { buildParser(_, mixed, mixed) }
+      else splits map { buildParser(_, mixed, mixed) }
     
     def buildSeqConverter(seq: SequenceDecl, mixed: Boolean,
         wrapInDataRecord: Boolean): String = {
       lazy val localName = makeTypeName(context.compositorNames(seq))
       lazy val fqn = buildFullyQualifiedName(schema, localName)
       
-      val particles = buildParticles(seq)
+      val particles = buildParticles(splits)
       val parserVariableList = if (mixed) (0 to particles.size * 2 - 1) map { buildSelector }
         else (0 to particles.size - 1) map { buildSelector }
       val argList = if (mixed) (0 to particles.size * 2 - 1).toList map { i =>
@@ -253,12 +257,12 @@ trait Parsers extends Args with Params {
     else "(" + base + ")"
     
   def buildParticles(com: Option[HasParticle], name: String): List[ElemDecl] = com match {
-    case Some(c) => buildParticles(c)
+    case Some(c) => buildParticles(c.particles)
     case None => Nil
   }
 
-  def buildParticles(compositor: HasParticle): List[ElemDecl] =
-    compositor.particles.zipWithIndex map {
+  def buildParticles(particles: List[Particle]): List[ElemDecl] =
+    particles.zipWithIndex map {
       case (ref: GroupRef, i: Int)            => buildCompositorRef(ref, i)        
       case (seq: SequenceDecl, i: Int)        =>
         if (containsSingleChoice(seq)) buildCompositorRef(singleChoice(seq), i)

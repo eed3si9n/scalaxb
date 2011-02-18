@@ -74,8 +74,25 @@ trait Module extends Logger {
   }
 
   implicit val fileReader = new CanBeRawSchema[File, RawSchema] {
-    override def toRawSchema(value: File) = readerToRawSchema(new BufferedReader(new java.io.InputStreamReader(
-        new java.io.FileInputStream(value), encoding)))
+    override def toRawSchema(value: File) = {
+      val BOM_SIZE = 4
+      val EF = 0xEF.toByte
+      val BB = 0xBB.toByte
+      val BF = 0xBF.toByte
+      val FE = 0xFE.toByte
+      val FF = 0xFF.toByte
+      val bom = Array.ofDim[Byte](BOM_SIZE)
+      val in = new java.io.PushbackInputStream(new java.io.FileInputStream(value), BOM_SIZE)
+      val readSize = in.read(bom, 0, bom.length)
+      val (bomSize, encoding) = bom.toList match {
+        case EF :: BB :: BF :: xs => (3, "UTF-8")
+        case FE :: FF :: xs       => (2, "UTF-16BE")
+        case FF :: FE :: xs       => (2, "UTF-16LE")
+        case _                    => (0, "UTF-8")
+      }
+      in.unread(bom, bomSize, readSize - bomSize)
+      readerToRawSchema(new BufferedReader(new java.io.InputStreamReader(in, encoding)))
+    }
     override def toURI(value: File) = value.toURI
   }
 

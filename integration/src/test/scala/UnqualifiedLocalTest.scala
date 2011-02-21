@@ -6,7 +6,7 @@ object UnqualifiedLocalTest extends TestBase {
   lazy val generated = module.process(inFile, "unqualified", tmp)
 
   "unqualified.scala file must compile so that Foo can be used" in {
-    (List("import scalaxb.Scalaxb._",
+    (List("import scalaxb._",
       "import unqualified.DefaultXMLProtocol._",
       """toXML[unqualified.Foo](fromXML[unqualified.Foo](""" +
     """<unq:foo xmlns:unq="http://www.example.com/unqualified" attribute1="bar">""" +
@@ -23,7 +23,7 @@ object UnqualifiedLocalTest extends TestBase {
   lazy val generated2 = module.process(inFile2, "qualified", tmp)
 
   "qualified.scala file must compile so that Foo can be used" in {
-    (List("import scalaxb.Scalaxb._",
+    (List("import scalaxb._",
       "import qualified.DefaultXMLProtocol._",
       """toXML[qualified.Foo](fromXML[qualified.Foo](""" +
     """<q:foo xmlns:q="http://www.example.com/qualified" q:attribute1="bar">""" +

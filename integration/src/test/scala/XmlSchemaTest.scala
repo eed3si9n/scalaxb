@@ -14,7 +14,6 @@ object XmlSchemaTest extends TestBase {
     
   "XMLSchema.scala file must compile so that Schema can be used" in {
     (List("import scalaxb._",
-      "import Scalaxb._",
       "import org.w3.xmlschema._",
       "import XDefaultXMLProtocol._",
       """val document = <schema targetNamespace="http://www.example.com/IPO"

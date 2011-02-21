@@ -3,7 +3,6 @@
  */
 
 import scalaxb._
-import Scalaxb._
 import general._
 
 object CustomizationUsage {
@@ -76,7 +75,7 @@ object CustomizationUsage {
   }
   
   object CustomXMLProtocol extends CustomXMLProtocol with CustomXMLStandardTypes {
-    import scalaxb.Scalaxb._
+    import scalaxb._
     val defaultScope = toScope(None -> "http://www.example.com/general",
       Some("xs") -> "http://www.w3.org/2001/XMLSchema",
       Some("gen") -> "http://www.example.com/general",

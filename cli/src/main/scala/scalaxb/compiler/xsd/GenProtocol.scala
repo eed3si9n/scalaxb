@@ -59,7 +59,6 @@ abstract class GenProtocol(val context: XsdContext) extends ContextProcessor {
 /**
 usage:
 import scalaxb._
-import Scalaxb._
 {packageImportString}import Default{name}._
 
 val obj = fromXML[Foo](node)
@@ -70,13 +69,13 @@ trait {name} extends scalaxb.XMLStandardTypes {{
 }}
 
 object { buildDefaultProtocolName(name) } extends { buildDefaultProtocolName(name) } with scalaxb.DefaultXMLStandardTypes {{
-  import scalaxb.Scalaxb._
+  import scalaxb._
   val defaultScope = toScope({ if (scopes.isEmpty) "Nil: _*"
     else scopes.map(x => quote(x._1) + " -> " + quote(x._2)).mkString("," + newline + indent(2)) })  
 }}
 
 trait { buildDefaultProtocolName(name) } extends {name} {{
-  import scalaxb.Scalaxb._
+  import scalaxb._
 
 {snippet.companion}
 }}</source>
@@ -127,7 +126,6 @@ trait { buildDefaultProtocolName(name) } extends {name} {{
 // 
 //     <source>/** usage:
 // import scalaxb._
-// import Scalaxb._
 // {packageImportString}import Default{name}._
 // 
 // val obj = fromXML[Foo](node)
@@ -138,13 +136,13 @@ trait { buildDefaultProtocolName(name) } extends {name} {{
 // }}
 // 
 // object { buildDefaultProtocolName(name) } extends { defaultTraitSuperNames.mkString(" with ") } {{
-//   import scalaxb.Scalaxb._
+//   import scalaxb._
 //   val defaultScope = toScope({ if (scopes.isEmpty) "Nil: _*"
 //     else scopes.map(x => quote(x._1) + " -> " + quote(x._2)).mkString("," + newline + indent(2)) })  
 // }}
 // 
 // trait { buildDefaultProtocolName(name) } extends {name} {{
-//   import scalaxb.Scalaxb._
+//   import scalaxb._
 //   private val targetNamespace: Option[String] = { quote(schema.targetNamespace) }
 // 
 // {companions}

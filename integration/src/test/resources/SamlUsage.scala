@@ -3,7 +3,6 @@
  */
 
 import scalaxb._
-import Scalaxb._
 import org.w3.xmldsig._
 import org.w3.xmlenc._
 import org.xml.saml2.assertion._

@@ -3,7 +3,6 @@
  */
 
 import scalaxb._
-import Scalaxb._
 import general._
 import DefaultXMLProtocol._
 

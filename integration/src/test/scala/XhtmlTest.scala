@@ -6,7 +6,6 @@ object XhtmlTest extends TestBase {
   
   "xhtml1-strict.scala file must compile so that Html can be used" in {
     (List("import scalaxb._",
-      "import Scalaxb._",
       "import xhtml._",
       "import DefaultXMLProtocol._",
       """val document = <html xmlns="http://www.w3.org/1999/xhtml" lang="en">""" + // "

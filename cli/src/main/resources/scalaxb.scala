@@ -3,7 +3,7 @@ package scalaxb
 import scala.xml.{Node, NodeSeq, NamespaceBinding, Elem, UnprefixedAttribute, PrefixedAttribute}
 import javax.xml.datatype.{XMLGregorianCalendar}
 
-object `package` extends DefaultXMLStandardTypes {
+object `package` extends XMLStandardTypes {
   def fromXML[A](seq: NodeSeq, stack: List[ElemName] = Nil)
                 (implicit format: XMLFormat[A]): A = format.reads(seq, stack) match {
     case Right(a) => a
@@ -40,7 +40,7 @@ trait CanWriteXML[A] {
       scope: NamespaceBinding, typeAttribute: Boolean): NodeSeq
 }
 
-trait DefaultXMLStandardTypes {
+trait XMLStandardTypes {
   implicit lazy val __NodeXMLFormat: XMLFormat[Node] = new XMLFormat[Node] {
     def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, Node] = seq match {
       case node: Node => Right(node)
@@ -311,7 +311,7 @@ trait DataRecord[+A] {
   }
 }
 
-object DataRecord extends DefaultXMLStandardTypes {
+object DataRecord extends XMLStandardTypes {
   private case class DataWriter[+A](
     namespace: Option[String],
     key: Option[String],

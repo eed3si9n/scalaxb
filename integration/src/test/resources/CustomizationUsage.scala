@@ -17,7 +17,7 @@ object CustomizationUsage {
     true
   }
   
-  trait CustomXMLStandardTypes extends scalaxb.DefaultXMLStandardTypes {
+  trait CustomXMLStandardTypes extends scalaxb.XMLStandardTypes {
     override implicit lazy val __IntXMLFormat: XMLFormat[Int] = new XMLFormat[Int] {
       def reads(seq: scala.xml.NodeSeq, stack: List[scalaxb.ElemName]): Either[String, Int] = try { Right(seq.text.toInt + 1) }
         catch { case e: Exception => Left(e.toString) }
@@ -37,7 +37,7 @@ object CustomizationUsage {
     }
   }
   
-  trait CustomXMLProtocol extends DefaultXMLProtocol {
+  trait CustomXMLProtocol extends XMLProtocol {
     trait CustomGeneralSingularSimpleTypeTestFormat extends DefaultGeneralSingularSimpleTypeTestFormat {
       override def typeName: Option[String] = Some("SingularSimpleTypeTest")
       

@@ -65,7 +65,7 @@ val document = toXML[Foo](obj, "foo", defaultScope)
 **/
 object `package` extends { buildDefaultProtocolName(name) } {{ }}
 
-trait { buildDefaultProtocolName(name) } extends scalaxb.DefaultXMLStandardTypes {{
+trait { buildDefaultProtocolName(name) } extends scalaxb.XMLStandardTypes {{
   val defaultScope = scalaxb.toScope({ if (scopes.isEmpty) "Nil: _*"
     else scopes.map(x => quote(x._1) + " -> " + quote(x._2)).mkString("," + newline + indent(2)) })
 {snippet.implicitValue}
@@ -73,71 +73,9 @@ trait { buildDefaultProtocolName(name) } extends scalaxb.DefaultXMLStandardTypes
 }}</source>
   }
   
-  def buildDefaultProtocolName(name: String): String = {
+  def buildDefaultProtocolName(name: String): String =
     config.classPrefix match {
-      case Some(p) => p + "Default" + name.drop(p.length)
-      case None => "Default" + name
+      case Some(p) => p + name.drop(p.length)
+      case None => name
     }
-  }
-  
-//   def makeXMLProtocol(companions: Seq[Node], implicitValues: Seq[Node]) = {
-//     val typeNames = context.typeNames(packageName(schema, context))
-//     val name = typeNames(schema)
-//     val imports = dependentSchemas map { sch =>
-//         val pkg = packageName(sch, context)
-//         val name = context.typeNames(pkg)(sch)
-//         "import " + pkg.map(_ + ".").getOrElse("") + name + "._"
-//       }
-//     val traitSuperNames = "scalaxb.XMLStandardTypes" :: (dependentSchemas.toList map { sch =>
-//         val pkg = packageName(sch, context)
-//         pkg.map(_ + ".").getOrElse("") + context.typeNames(pkg)(sch)
-//       })
-//     val defaultTraitSuperNames =
-//       List(buildDefaultProtocolName(name), "scalaxb.DefaultXMLStandardTypes") ::: (dependentSchemas.toList map { sch =>
-//         val pkg = packageName(sch, context)
-//         pkg.map(_ + ".").getOrElse("") + buildDefaultProtocolName(context.typeNames(pkg)(sch))
-//       })
-// 
-//     def makeScopes(schemas: List[SchemaDecl]): List[(Option[String], String)] = schemas match {
-//       case x :: xs => 
-//         x.targetNamespace map { ns =>
-//           val prefix = makePrefix(x.targetNamespace, context)
-//           if (prefix == "") makeScopes(xs)
-//           else (Some(prefix), ns) :: makeScopes(xs)
-//         } getOrElse { makeScopes(xs) }
-//       case _ => Nil
-//     }
-// 
-//     val scopes = schema.targetNamespace map { ns =>
-//       ((None, ns) :: makeScopes(schema :: dependentSchemas.toList) :::
-//         List((Some(XSI_PREFIX) -> XSI_URL)) ).distinct
-//     } getOrElse {makeScopes(dependentSchemas.toList).distinct}
-// 
-//     val packageImportString = packageName(schema, context) map { pkg =>
-//       "import " + pkg + "._" + newline } getOrElse {""}
-// 
-//     <source>/** usage:
-// import scalaxb._
-// {packageImportString}import Default{name}._
-// 
-// val obj = fromXML[Foo](node)
-// val document = toXML[Foo](obj, "foo", defaultScope)
-// **/
-// trait {name} extends { traitSuperNames.mkString(" with ") } {{
-// {implicitValues}  
-// }}
-// 
-// object { buildDefaultProtocolName(name) } extends { defaultTraitSuperNames.mkString(" with ") } {{
-//   import scalaxb._
-//   val defaultScope = toScope({ if (scopes.isEmpty) "Nil: _*"
-//     else scopes.map(x => quote(x._1) + " -> " + quote(x._2)).mkString("," + newline + indent(2)) })  
-// }}
-// 
-// trait { buildDefaultProtocolName(name) } extends {name} {{
-//   import scalaxb._
-//   private val targetNamespace: Option[String] = { quote(schema.targetNamespace) }
-// 
-// {companions}
-// }}</source>
-//   }
 }

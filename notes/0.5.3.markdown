@@ -1,0 +1,34 @@
+## breaking changes (no `import`)
+- Moved helper functions from `Scalaxb` object into `scalaxb` package object.
+- Moved default typeclass instances from `DefaultXMLProtocol` trait to the package object of the generated class. (inspired by [@jsuereth][9] at #nescala)
+
+Before:
+
+    import scalaxb._
+    import Scalaxb._
+    import ipo._
+    import DefaultXMLProtocol._
+    val shipTo = fromXML[Address](subject)
+
+After:
+
+    val shipTo = scalaxb.fromXML[ipo.Address](subject)
+
+## bug fixes and minor enhancements
+- Maps `xs:integer`, etc. to `BigInt`.
+- Fixed substitution group parsing ([GH-25][3] reported by [@dbolene][2])
+- Implements `attributeFormDefault`, `elementFormDefault`, and `form` support. ([GH-26][4] reported by [@dbolene][2])
+- Fixed parsing long sequence. ([GH-29][6] reported by E-Fir)
+- Implements UTF-8 and UTF-16 BOM handling. ([GH-31][7] reported by [@fredferrao][8])
+- Prints version number. ([GH-24][1] requested by [@dbolene][2])
+- Prints better parser error message. ([GH-27][5] reported by [@dbolene][2])
+
+  [1]: https://github.com/eed3si9n/scalaxb/issues/24
+  [2]: http://twitter.com/dbolene
+  [3]: https://github.com/eed3si9n/scalaxb/issues/25
+  [4]: https://github.com/eed3si9n/scalaxb/issues/26
+  [5]: https://github.com/eed3si9n/scalaxb/issues/27
+  [6]: https://github.com/eed3si9n/scalaxb/issues/29
+  [7]: https://github.com/eed3si9n/scalaxb/issues/31
+  [8]: http://twitter.com/fredferrao/status/37878780798316544
+  [9]: http://suereth.blogspot.com/2011/02/slides-for-todays-nescala-talk.html

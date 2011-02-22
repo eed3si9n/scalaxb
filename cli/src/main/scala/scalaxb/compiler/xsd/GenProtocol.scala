@@ -59,24 +59,17 @@ abstract class GenProtocol(val context: XsdContext) extends ContextProcessor {
 /**
 usage:
 import scalaxb._
-{packageImportString}import Default{name}._
+{packageImportString}
 
 val obj = fromXML[Foo](node)
 val document = toXML[Foo](obj, "foo", defaultScope)
 **/
-trait {name} extends scalaxb.XMLStandardTypes {{
-{snippet.implicitValue}  
-}}
+object `package` extends { buildDefaultProtocolName(name) } {{ }}
 
-object { buildDefaultProtocolName(name) } extends { buildDefaultProtocolName(name) } with scalaxb.DefaultXMLStandardTypes {{
-  import scalaxb._
-  val defaultScope = toScope({ if (scopes.isEmpty) "Nil: _*"
-    else scopes.map(x => quote(x._1) + " -> " + quote(x._2)).mkString("," + newline + indent(2)) })  
-}}
-
-trait { buildDefaultProtocolName(name) } extends {name} {{
-  import scalaxb._
-
+trait { buildDefaultProtocolName(name) } extends scalaxb.DefaultXMLStandardTypes {{
+  val defaultScope = scalaxb.toScope({ if (scopes.isEmpty) "Nil: _*"
+    else scopes.map(x => quote(x._1) + " -> " + quote(x._2)).mkString("," + newline + indent(2)) })
+{snippet.implicitValue}
 {snippet.companion}
 }}</source>
   }

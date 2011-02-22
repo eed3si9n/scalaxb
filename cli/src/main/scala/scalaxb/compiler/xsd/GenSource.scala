@@ -137,8 +137,7 @@ abstract class GenSource(val schema: SchemaDecl,
 }}</source>
     
     val compDepth = 1
-    val companionCode = <source>  override def build{formatterName} = new Default{formatterName} {{}}
-  trait Default{formatterName} extends scalaxb.XMLFormat[{fqn}] {{
+    val companionCode = <source>  trait Default{formatterName} extends scalaxb.XMLFormat[{fqn}] {{
     val targetNamespace: Option[String] = { quote(schema.targetNamespace) }
     { // if (imports.isEmpty) ""
       //  else imports.mkString(newline + indent(2)) + newline + indent(2) 
@@ -177,14 +176,12 @@ abstract class GenSource(val schema: SchemaDecl,
   }
   
   def makeImplicitValue(fqn: String, formatterName: String): Node =
-    <source>  implicit lazy val {formatterName}: scalaxb.XMLFormat[{fqn}] = build{formatterName}
-  def build{formatterName}: scalaxb.XMLFormat[{fqn}]</source>
+    <source>  implicit lazy val {formatterName}: scalaxb.XMLFormat[{fqn}] = new Default{formatterName} {{}}</source>
   
   def makeImplicitValue(group: AttributeGroupDecl): Node = {
     val formatterName = buildFormatterName(group)
     val fqn = buildTypeName(group, false)
-    <source>  implicit lazy val {formatterName}: scalaxb.AttributeGroupFormat[{fqn}] = build{formatterName}
-  def build{formatterName}: scalaxb.AttributeGroupFormat[{fqn}]</source>
+    <source>  implicit lazy val {formatterName}: scalaxb.AttributeGroupFormat[{fqn}] = new Default{formatterName} {{}}</source>
   }
   
   def makeCaseClassWithType(localName: String, fqn: String, decl: ComplexTypeDecl): Snippet = {
@@ -315,7 +312,7 @@ abstract class GenSource(val schema: SchemaDecl,
       {childString}</source>
     
     def childString = if (decl.mixed) "__obj." + makeParamName(MIXED_PARAM) + 
-      ".toSeq flatMap { x => toXML[scalaxb.DataRecord[Any]](x, x.namespace, x.key, __scope, false) }"
+      ".toSeq flatMap { x => " + buildToXML("scalaxb.DataRecord[Any]", "x, x.namespace, x.key, __scope, false") + " }"
     else decl.content.content match {
       case SimpContRestrictionDecl(base: XsTypeSymbol, _, _, _) => "Seq(scala.xml.Text(__obj.value.toString))"
       case SimpContExtensionDecl(base: XsTypeSymbol, _) =>   "Seq(scala.xml.Text(__obj.value.toString))"
@@ -335,8 +332,7 @@ abstract class GenSource(val schema: SchemaDecl,
         indent(1) + accessors.mkString(newline + indent(1)) + newline +
         "}" + newline }</source>
     
-    def companionCode = if (simpleFromXml) <source>  override def build{formatterName} = new Default{formatterName} {{}}
-  trait Default{formatterName} extends scalaxb.XMLFormat[{fqn}] with scalaxb.CanWriteChildNodes[{fqn}] {{
+    def companionCode = if (simpleFromXml) <source>  trait Default{formatterName} extends scalaxb.XMLFormat[{fqn}] with scalaxb.CanWriteChildNodes[{fqn}] {{
     val targetNamespace: Option[String] = { quote(schema.targetNamespace) }
     
     def reads(seq: scala.xml.NodeSeq, stack: List[scalaxb.ElemName]): Either[String, {fqn}] = seq match {{
@@ -346,8 +342,7 @@ abstract class GenSource(val schema: SchemaDecl,
     
 {makeWritesAttribute}{makeWritesChildNodes}
   }}</source>
-    else <source>  override def build{formatterName} = new Default{formatterName} {{}}
-  trait Default{formatterName} extends {companionSuperNames.mkString(" with ")} {{
+    else <source>  trait Default{formatterName} extends {companionSuperNames.mkString(" with ")} {{
     val targetNamespace: Option[String] = { quote(schema.targetNamespace) }
     
     { if (decl.isNamed) "override def typeName: Option[String] = Some(" + quote(decl.name) + ")" + newline + newline + indent(2)  
@@ -439,8 +434,7 @@ abstract class GenSource(val schema: SchemaDecl,
       else " extends " + superNames.mkString(" with ")
     
     Snippet(<source>{ buildComment(seq) }case class {localName}({paramsString}){superString}</source>,
-     <source>  override def build{formatterName} = new Default{formatterName} {{}} 
-  trait Default{formatterName} extends scalaxb.XMLFormat[{fqn}] {{
+     <source>  trait Default{formatterName} extends scalaxb.XMLFormat[{fqn}] {{
     val targetNamespace: Option[String] = { quote(schema.targetNamespace) }
     
     def reads(seq: scala.xml.NodeSeq, stack: List[scalaxb.ElemName]): Either[String, {fqn}] = Left("don't call me.")
@@ -512,8 +506,7 @@ abstract class GenSource(val schema: SchemaDecl,
     val attributeString = attributes.map(x => buildAttributeString(x)).mkString(newline + indent(2))
     
     val caseClassCode = <source>{ buildComment(group) }case class {localName}({paramsString})</source>
-    val companionCode = <source>  override def build{formatterName} = new Default{formatterName} {{}} 
-  trait Default{formatterName} extends scalaxb.AttributeGroupFormat[{fqn}] {{
+    val companionCode = <source>  trait Default{formatterName} extends scalaxb.AttributeGroupFormat[{fqn}] {{
     val targetNamespace: Option[String] = { quote(schema.targetNamespace) }
     
     def reads(seq: scala.xml.NodeSeq, stack: List[scalaxb.ElemName]): Either[String, {fqn}] = seq match {{

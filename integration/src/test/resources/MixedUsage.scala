@@ -4,7 +4,6 @@
 
 import scalaxb._
 import mixed._
-import DefaultXMLProtocol._
 
 object MixedUsage {
   def main(args: Array[String]) = {

@@ -4,7 +4,6 @@
 
 import scalaxb._
 import general._
-import DefaultXMLProtocol._
 
 object GeneralUsage {
   val NS = Some("http://www.example.com/general")

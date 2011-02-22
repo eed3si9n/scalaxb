@@ -18,7 +18,7 @@ object CustomizationUsage {
   }
   
   trait CustomXMLStandardTypes extends scalaxb.DefaultXMLStandardTypes {
-    override def __buildIntXMLFormat: XMLFormat[Int] = new XMLFormat[Int] {
+    override implicit lazy val __IntXMLFormat: XMLFormat[Int] = new XMLFormat[Int] {
       def reads(seq: scala.xml.NodeSeq, stack: List[scalaxb.ElemName]): Either[String, Int] = try { Right(seq.text.toInt + 1) }
         catch { case e: Exception => Left(e.toString) }
 
@@ -26,8 +26,8 @@ object CustomizationUsage {
           scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
         Helper.stringToXML((obj - 1).toString, namespace, elementLabel, scope)
     }
-    
-    override def __buildLongXMLFormat: XMLFormat[Long] = new XMLFormat[Long] {
+
+    override implicit lazy val __LongXMLFormat: XMLFormat[Long] = new XMLFormat[Long] {
       def reads(seq: scala.xml.NodeSeq, stack: List[scalaxb.ElemName]): Either[String, Long] = try { Right(seq.text.toLong + 1) }
         catch { case e: Exception => Left(e.toString) }
 
@@ -38,7 +38,6 @@ object CustomizationUsage {
   }
   
   trait CustomXMLProtocol extends DefaultXMLProtocol {
-    override def buildGeneralSingularSimpleTypeTestFormat = new CustomGeneralSingularSimpleTypeTestFormat {}
     trait CustomGeneralSingularSimpleTypeTestFormat extends DefaultGeneralSingularSimpleTypeTestFormat {
       override def typeName: Option[String] = Some("SingularSimpleTypeTest")
       
@@ -73,18 +72,16 @@ object CustomizationUsage {
           (node \ "@attr2").headOption map { fromXML[general.MilkType](_, scalaxb.ElemName(node) :: stack) }) }
     }
   }
-  
-  object CustomXMLProtocol extends CustomXMLProtocol with CustomXMLStandardTypes {
-    import scalaxb._
-    val defaultScope = toScope(None -> "http://www.example.com/general",
+
+  def testSingularSimpleType {
+    val customXMLProtocol = new CustomXMLProtocol with CustomXMLStandardTypes {}
+    implicit val GeneralSingularSimpleTypeTestFormat = new customXMLProtocol.CustomGeneralSingularSimpleTypeTestFormat {}
+
+    val defaultScope = scalaxb.toScope(None -> "http://www.example.com/general",
       Some("xs") -> "http://www.w3.org/2001/XMLSchema",
       Some("gen") -> "http://www.example.com/general",
-      Some("xsi") -> "http://www.w3.org/2001/XMLSchema-instance")    
-  }
-  
-  def testSingularSimpleType {
-    import CustomXMLProtocol._
-    
+      Some("xsi") -> "http://www.w3.org/2001/XMLSchema-instance")
+
     val subject0 = <foo>1</foo>
     val obj0 = fromXML[Int](subject0)
     println(obj0)

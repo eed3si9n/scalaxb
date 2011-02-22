@@ -6,14 +6,12 @@ object UnqualifiedLocalTest extends TestBase {
   lazy val generated = module.process(inFile, "unqualified", tmp)
 
   "unqualified.scala file must compile so that Foo can be used" in {
-    (List("import scalaxb._",
-      "import unqualified.DefaultXMLProtocol._",
-      """toXML[unqualified.Foo](fromXML[unqualified.Foo](""" +
+    (List("""scalaxb.toXML[unqualified.Foo](scalaxb.fromXML[unqualified.Foo](""" +
     """<unq:foo xmlns:unq="http://www.example.com/unqualified" attribute1="bar">""" +
     "<string1></string1>" +
     """</unq:foo>), """ +
     """Some("http://www.example.com/unqualified"), "foo", """ +
-    """toScope(Some("unq") -> "http://www.example.com/unqualified") ).toString"""),
+    """scalaxb.toScope(Some("unq") -> "http://www.example.com/unqualified") ).toString"""),
      generated) must evaluateTo("""<unq:foo attribute1="bar" xmlns:unq="http://www.example.com/unqualified">""" +
     "<string1></string1>" +
     "</unq:foo>", outdir = "./tmp")
@@ -23,14 +21,12 @@ object UnqualifiedLocalTest extends TestBase {
   lazy val generated2 = module.process(inFile2, "qualified", tmp)
 
   "qualified.scala file must compile so that Foo can be used" in {
-    (List("import scalaxb._",
-      "import qualified.DefaultXMLProtocol._",
-      """toXML[qualified.Foo](fromXML[qualified.Foo](""" +
+    (List("""scalaxb.toXML[qualified.Foo](scalaxb.fromXML[qualified.Foo](""" +
     """<q:foo xmlns:q="http://www.example.com/qualified" q:attribute1="bar">""" +
     "<q:string1></q:string1>" +
     """</q:foo>), """ +
     """Some("http://www.example.com/qualified"), "foo", """ +
-    """toScope(Some("q") -> "http://www.example.com/qualified") ).toString"""),
+    """scalaxb.toScope(Some("q") -> "http://www.example.com/qualified") ).toString"""),
      generated2) must evaluateTo("""<q:foo q:attribute1="bar" xmlns:q="http://www.example.com/qualified">""" +
     "<q:string1></q:string1>" +
     "</q:foo>", outdir = "./tmp")

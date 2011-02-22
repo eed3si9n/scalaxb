@@ -4,7 +4,6 @@
 
 import scalaxb._
 import ipo._
-import DefaultXMLProtocol._
 
 object PurchaseOrderUsage {
   def main(args: Array[String]) = {

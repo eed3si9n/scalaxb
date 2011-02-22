@@ -3,7 +3,7 @@ package scalaxb
 import scala.xml.{Node, NodeSeq, NamespaceBinding, Elem, UnprefixedAttribute, PrefixedAttribute}
 import javax.xml.datatype.{XMLGregorianCalendar}
 
-object `package` {
+object `package` extends DefaultXMLStandardTypes {
   def fromXML[A](seq: NodeSeq, stack: List[ElemName] = Nil)
                 (implicit format: XMLFormat[A]): A = format.reads(seq, stack) match {
     case Right(a) => a
@@ -40,8 +40,8 @@ trait CanWriteXML[A] {
       scope: NamespaceBinding, typeAttribute: Boolean): NodeSeq
 }
 
-trait DefaultXMLStandardTypes extends XMLStandardTypes {
-  override def __buildNodeXMLFormat: XMLFormat[Node] = new XMLFormat[Node] {
+trait DefaultXMLStandardTypes {
+  implicit lazy val __NodeXMLFormat: XMLFormat[Node] = new XMLFormat[Node] {
     def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, Node] = seq match {
       case node: Node => Right(node)
       case _ => Left("scala.xml.Node is required.")
@@ -51,14 +51,14 @@ trait DefaultXMLStandardTypes extends XMLStandardTypes {
       scope: NamespaceBinding, typeAttribute: Boolean): NodeSeq = obj
   }
 
-  override def __buildNodeSeqXMLFormat: XMLFormat[NodeSeq] = new XMLFormat[NodeSeq] {
+  implicit lazy val __NodeSeqXMLFormat: XMLFormat[NodeSeq] = new XMLFormat[NodeSeq] {
     def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, NodeSeq] = Right(seq)
 
     def writes(obj: NodeSeq, namespace: Option[String], elementLabel: Option[String],
       scope: NamespaceBinding, typeAttribute: Boolean): NodeSeq = obj
   }
 
-  override def __buildElemXMLFormat: XMLFormat[Elem] = new XMLFormat[Elem] {
+  implicit lazy val __ElemXMLFormat: XMLFormat[Elem] = new XMLFormat[Elem] {
     def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, Elem] = seq match {
       case elem: Elem => Right(elem)
       case _ => Left("scala.xml.Elem is required.")
@@ -68,7 +68,7 @@ trait DefaultXMLStandardTypes extends XMLStandardTypes {
       scope: NamespaceBinding, typeAttribute: Boolean): NodeSeq = obj
   }
 
-  override def __buildStringXMLFormat: XMLFormat[String] = new XMLFormat[String] {
+  implicit lazy val __StringXMLFormat: XMLFormat[String] = new XMLFormat[String] {
     def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, String] = Right(seq.text)
 
     def writes(obj: String, namespace: Option[String], elementLabel: Option[String],
@@ -76,7 +76,7 @@ trait DefaultXMLStandardTypes extends XMLStandardTypes {
       Helper.stringToXML(obj, namespace, elementLabel, scope)
   }
 
-  override def __buildIntXMLFormat: XMLFormat[Int] = new XMLFormat[Int] {
+  implicit lazy val __IntXMLFormat: XMLFormat[Int] = new XMLFormat[Int] {
     def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, Int] = try {
       Right(seq.text.toInt) } catch { case e: Exception => Left(e.toString) }
 
@@ -85,7 +85,7 @@ trait DefaultXMLStandardTypes extends XMLStandardTypes {
       Helper.stringToXML(obj.toString, namespace, elementLabel, scope)
   }
 
-  override def __buildByteXMLFormat: XMLFormat[Byte] = new XMLFormat[Byte] {
+  implicit lazy val __ByteXMLFormat: XMLFormat[Byte] = new XMLFormat[Byte] {
     def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, Byte] = try {
       Right(seq.text.toByte) } catch { case e: Exception => Left(e.toString) }
 
@@ -94,7 +94,7 @@ trait DefaultXMLStandardTypes extends XMLStandardTypes {
       Helper.stringToXML(obj.toString, namespace, elementLabel, scope)
   }
 
-  override def __buildShortXMLFormat: XMLFormat[Short] = new XMLFormat[Short] {
+  implicit lazy val __ShortXMLFormat: XMLFormat[Short] = new XMLFormat[Short] {
     def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, Short] = try {
       Right(seq.text.toShort) } catch { case e: Exception => Left(e.toString) }
 
@@ -103,7 +103,7 @@ trait DefaultXMLStandardTypes extends XMLStandardTypes {
       Helper.stringToXML(obj.toString, namespace, elementLabel, scope)
   }
 
-  override def __buildLongXMLFormat: XMLFormat[Long] = new XMLFormat[Long] {
+  implicit lazy val __LongXMLFormat: XMLFormat[Long] = new XMLFormat[Long] {
     def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, Long] = try {
       Right(seq.text.toLong) } catch { case e: Exception => Left(e.toString) }
 
@@ -112,7 +112,7 @@ trait DefaultXMLStandardTypes extends XMLStandardTypes {
       Helper.stringToXML(obj.toString, namespace, elementLabel, scope)
   }
 
-  override def __buildBigDecimalXMLFormat: XMLFormat[BigDecimal] = new XMLFormat[BigDecimal] {
+  implicit lazy val __BigDecimalXMLFormat: XMLFormat[BigDecimal] = new XMLFormat[BigDecimal] {
     def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, BigDecimal] = try {
       Right(BigDecimal(seq.text)) } catch { case e: Exception => Left(e.toString) }
 
@@ -121,7 +121,7 @@ trait DefaultXMLStandardTypes extends XMLStandardTypes {
       Helper.stringToXML(obj.toString, namespace, elementLabel, scope)
   }
 
-  override def __buildBigIntXMLFormat: XMLFormat[BigInt] = new XMLFormat[BigInt] {
+  implicit lazy val __BigIntXMLFormat: XMLFormat[BigInt] = new XMLFormat[BigInt] {
     def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, BigInt] = try {
       Right(BigInt(seq.text)) } catch { case e: Exception => Left(e.toString) }
 
@@ -130,7 +130,7 @@ trait DefaultXMLStandardTypes extends XMLStandardTypes {
       Helper.stringToXML(obj.toString, namespace, elementLabel, scope)
   }
 
-  override def __buildFloatXMLFormat: XMLFormat[Float] = new XMLFormat[Float] {
+  implicit lazy val __FloatXMLFormat: XMLFormat[Float] = new XMLFormat[Float] {
     def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, Float] = try {
       Right(seq.text.toFloat) } catch { case e: Exception => Left(e.toString) }
 
@@ -139,7 +139,7 @@ trait DefaultXMLStandardTypes extends XMLStandardTypes {
       Helper.stringToXML(obj.toString, namespace, elementLabel, scope)
   }
 
-  override def __buildDoubleXMLFormat: XMLFormat[Double] = new XMLFormat[Double] {
+  implicit lazy val __DoubleXMLFormat: XMLFormat[Double] = new XMLFormat[Double] {
     def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, Double] = try {
       Right(seq.text.toDouble) } catch { case e: Exception => Left(e.toString) }
 
@@ -148,7 +148,7 @@ trait DefaultXMLStandardTypes extends XMLStandardTypes {
       Helper.stringToXML(obj.toString, namespace, elementLabel, scope)
   }
 
-  override def __buildBooleanXMLFormat: XMLFormat[Boolean] = new XMLFormat[Boolean] {
+  implicit lazy val __BooleanXMLFormat: XMLFormat[Boolean] = new XMLFormat[Boolean] {
     def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, Boolean] = try {
       Right(seq.text.toBoolean) } catch { case e: Exception => Left(e.toString) }
 
@@ -157,7 +157,7 @@ trait DefaultXMLStandardTypes extends XMLStandardTypes {
       Helper.stringToXML(obj.toString, namespace, elementLabel, scope)
   }
 
-  override def __buildDurationXMLFormat: XMLFormat[javax.xml.datatype.Duration] = new XMLFormat[javax.xml.datatype.Duration] {
+  implicit lazy val __DurationXMLFormat: XMLFormat[javax.xml.datatype.Duration] = new XMLFormat[javax.xml.datatype.Duration] {
     def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, javax.xml.datatype.Duration] =
       try { Right(Helper.toDuration(seq.text)) }
       catch { case e: Exception => Left(e.toString) }
@@ -167,7 +167,7 @@ trait DefaultXMLStandardTypes extends XMLStandardTypes {
       Helper.stringToXML(obj.toString, namespace, elementLabel, scope)
   }
 
-  override def __buildCalendarXMLFormat: XMLFormat[XMLGregorianCalendar] = new XMLFormat[XMLGregorianCalendar] {
+  implicit lazy val __CalendarXMLFormat: XMLFormat[XMLGregorianCalendar] = new XMLFormat[XMLGregorianCalendar] {
     def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, XMLGregorianCalendar] = try {
       Right(XMLCalendar(seq.text)) } catch { case e: Exception => Left(e.toString) }
 
@@ -176,13 +176,13 @@ trait DefaultXMLStandardTypes extends XMLStandardTypes {
       Helper.stringToXML(obj.toXMLFormat, namespace, elementLabel, scope)
   }
 
-  override def __buildGregorianCalendarXMLWriter: CanWriteXML[java.util.GregorianCalendar] = new CanWriteXML[java.util.GregorianCalendar] {
+  implicit lazy val __GregorianCalendarXMLWriter: CanWriteXML[java.util.GregorianCalendar] = new CanWriteXML[java.util.GregorianCalendar] {
     def writes(obj: java.util.GregorianCalendar, namespace: Option[String], elementLabel: Option[String],
         scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
       Helper.stringToXML(Helper.toCalendar(obj).toXMLFormat, namespace, elementLabel, scope)
   }
 
-  override def __buildQNameXMLFormat: XMLFormat[javax.xml.namespace.QName] = new  XMLFormat[javax.xml.namespace.QName] {
+  implicit lazy val __QNameXMLFormat: XMLFormat[javax.xml.namespace.QName] = new  XMLFormat[javax.xml.namespace.QName] {
     def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, javax.xml.namespace.QName] = try {
       Right(javax.xml.namespace.QName.valueOf(seq.text)) } catch { case e: Exception => Left(e.toString) }
 
@@ -191,7 +191,7 @@ trait DefaultXMLStandardTypes extends XMLStandardTypes {
       Helper.stringToXML(obj.toString, namespace, elementLabel, scope)
   }
 
-  override def __buildStringArrayXMLFormat: XMLFormat[Array[String]] = new XMLFormat[Array[String]] {
+  implicit lazy val __StringArrayXMLFormat: XMLFormat[Array[String]] = new XMLFormat[Array[String]] {
     def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, Array[String]] = try {
       Right(Helper.splitBySpace(seq.text)) } catch { case e: Exception => Left(e.toString) }
 
@@ -200,7 +200,7 @@ trait DefaultXMLStandardTypes extends XMLStandardTypes {
       Helper.stringToXML(obj.mkString(" "), namespace, elementLabel, scope)
   }
 
-  override def __buildByteArrayXMLFormat: XMLFormat[Array[Byte]] = new XMLFormat[Array[Byte]] {
+  implicit lazy val __ByteArrayXMLFormat: XMLFormat[Array[Byte]] = new XMLFormat[Array[Byte]] {
     def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, Array[Byte]] = try {
       Right(Helper.toByteArray(seq.text)) } catch { case e: Exception => Left(e.toString) }
 
@@ -209,7 +209,7 @@ trait DefaultXMLStandardTypes extends XMLStandardTypes {
       Helper.stringToXML(Helper.toString(obj), namespace, elementLabel, scope)
   }
 
-  override def __buildHexBinaryXMLFormat: XMLFormat[HexBinary] = new XMLFormat[HexBinary] {
+  implicit lazy val __HexBinaryXMLFormat: XMLFormat[HexBinary] = new XMLFormat[HexBinary] {
     def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, HexBinary] = try {
       Right(Helper.toHexBinary(seq.text)) } catch { case e: Exception => Left(e.toString) }
 
@@ -218,7 +218,7 @@ trait DefaultXMLStandardTypes extends XMLStandardTypes {
       Helper.stringToXML(Helper.toString(obj), namespace, elementLabel, scope)
   }
 
-  override def __buildURIXMLFormat: XMLFormat[java.net.URI] = new XMLFormat[java.net.URI] {
+  implicit lazy val __URIXMLFormat: XMLFormat[java.net.URI] = new XMLFormat[java.net.URI] {
     def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, java.net.URI] = try {
       Right(Helper.toURI(seq.text)) } catch { case e: Exception => Left(e.toString) }
 
@@ -226,105 +226,6 @@ trait DefaultXMLStandardTypes extends XMLStandardTypes {
         scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
       Helper.stringToXML(obj.toString, namespace, elementLabel, scope)
   }
-
-  override def __buildNoneXMLWriter: CanWriteXML[None.type] = new  CanWriteXML[None.type] {
-    def writes(obj: None.type, namespace: Option[String], elementLabel: Option[String],
-        scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
-      Helper.nilElem(namespace, elementLabel.get, scope)
-  }
-
-  override def __buildDataRecordAnyXMLFormat: XMLFormat[DataRecord[Any]] = new XMLFormat[DataRecord[Any]] {
-    def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, DataRecord[Any]] = try {
-      Right(DataRecord.fromAny(seq)) } catch { case e: Exception => Left(e.toString) }
-
-    def writes(obj: DataRecord[Any], namespace: Option[String], elementLabel: Option[String],
-        scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
-      DataRecord.toXML(obj, namespace, elementLabel, scope, typeAttribute)
-  }
-
-  override def __buildDataRecordOptionAnyXMLFormat: XMLFormat[DataRecord[Option[Any]]] =
-    new XMLFormat[DataRecord[Option[Any]]] {
-      def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, DataRecord[Option[Any]]] = try {
-        Right(DataRecord.fromNillableAny(seq)) } catch { case e: Exception => Left(e.toString) }
-
-      def writes(obj: DataRecord[Option[Any]], namespace: Option[String], elementLabel: Option[String],
-          scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
-        DataRecord.toXML(obj, namespace, elementLabel, scope, typeAttribute)
-    }
-
-  override def __buildDataRecordMapWriter: CanWriteXML[Map[String, scalaxb.DataRecord[Any]]] =
-    new CanWriteXML[Map[String, scalaxb.DataRecord[Any]]] {
-      def writes(obj: Map[String, scalaxb.DataRecord[Any]], namespace: Option[String], elementLabel: Option[String],
-          scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
-        obj.valuesIterator.toList flatMap { x =>
-          scalaxb.toXML[DataRecord[Any]](x, x.namespace, x.key, scope, typeAttribute)
-        }
-    }
-}
-
-trait XMLStandardTypes {
-  implicit lazy val __NodeXMLFormat: XMLFormat[Node] = __buildNodeXMLFormat
-  def __buildNodeXMLFormat: XMLFormat[Node]
-
-  implicit lazy val __NodeSeqXMLFormat: XMLFormat[NodeSeq] = __buildNodeSeqXMLFormat
-  def __buildNodeSeqXMLFormat: XMLFormat[NodeSeq]
-
-  implicit lazy val __ElemXMLFormat: XMLFormat[Elem] = __buildElemXMLFormat
-  def __buildElemXMLFormat: XMLFormat[Elem]
-
-  implicit lazy val __StringXMLFormat: XMLFormat[String] = __buildStringXMLFormat
-  def __buildStringXMLFormat: XMLFormat[String]
-
-  implicit lazy val __IntXMLFormat: XMLFormat[Int] = __buildIntXMLFormat
-  def __buildIntXMLFormat: XMLFormat[Int]
-
-  implicit lazy val __ByteXMLFormat: XMLFormat[Byte] = __buildByteXMLFormat
-  def __buildByteXMLFormat: XMLFormat[Byte]
-
-  implicit lazy val __ShortXMLFormat: XMLFormat[Short] = __buildShortXMLFormat
-  def __buildShortXMLFormat: XMLFormat[Short]
-
-  implicit lazy val __LongXMLFormat: XMLFormat[Long] = __buildLongXMLFormat
-  def __buildLongXMLFormat: XMLFormat[Long]
-
-  implicit lazy val __BigDecimalXMLFormat: XMLFormat[BigDecimal] = __buildBigDecimalXMLFormat
-  def __buildBigDecimalXMLFormat: XMLFormat[BigDecimal]
-
-  implicit lazy val __BigIntXMLFormat: XMLFormat[BigInt] = __buildBigIntXMLFormat
-  def __buildBigIntXMLFormat: XMLFormat[BigInt]
-
-  implicit lazy val __FloatXMLFormat: XMLFormat[Float] = __buildFloatXMLFormat
-  def __buildFloatXMLFormat: XMLFormat[Float]
-
-  implicit lazy val __DoubleXMLFormat: XMLFormat[Double] = __buildDoubleXMLFormat
-  def __buildDoubleXMLFormat: XMLFormat[Double]
-
-  implicit lazy val __BooleanXMLFormat: XMLFormat[Boolean] = __buildBooleanXMLFormat
-  def __buildBooleanXMLFormat: XMLFormat[Boolean]
-
-  implicit lazy val __DurationXMLFormat: XMLFormat[javax.xml.datatype.Duration] = __buildDurationXMLFormat
-  def __buildDurationXMLFormat: XMLFormat[javax.xml.datatype.Duration]
-
-  implicit lazy val __CalendarXMLFormat: XMLFormat[XMLGregorianCalendar] = __buildCalendarXMLFormat
-  def __buildCalendarXMLFormat: XMLFormat[XMLGregorianCalendar]
-
-  implicit lazy val __GregorianCalendarXMLWriter: CanWriteXML[java.util.GregorianCalendar] = __buildGregorianCalendarXMLWriter
-  def __buildGregorianCalendarXMLWriter: CanWriteXML[java.util.GregorianCalendar]
-
-  implicit lazy val __QNameXMLFormat: XMLFormat[javax.xml.namespace.QName] = __buildQNameXMLFormat
-  def __buildQNameXMLFormat: XMLFormat[javax.xml.namespace.QName]
-
-  implicit lazy val __StringArrayXMLFormat: XMLFormat[Array[String]] = __buildStringArrayXMLFormat
-  def __buildStringArrayXMLFormat: XMLFormat[Array[String]]
-
-  implicit lazy val __ByteArrayXMLFormat: XMLFormat[Array[Byte]] = __buildByteArrayXMLFormat
-  def __buildByteArrayXMLFormat: XMLFormat[Array[Byte]]
-
-  implicit lazy val __HexBinaryXMLFormat: XMLFormat[HexBinary] = __buildHexBinaryXMLFormat
-  def __buildHexBinaryXMLFormat: XMLFormat[HexBinary]
-
-  implicit lazy val __URIXMLFormat: XMLFormat[java.net.URI] = __buildURIXMLFormat
-  def __buildURIXMLFormat: XMLFormat[java.net.URI]
 
   implicit def seqXMLFormat[A: XMLFormat]: XMLFormat[Seq[A]] = new XMLFormat[Seq[A]] {
     def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, Seq[A]] = try {
@@ -344,9 +245,6 @@ trait XMLStandardTypes {
       DataRecord.toXML(obj, namespace, elementLabel, scope, typeAttribute)
   }
 
-  implicit lazy val __NoneXMLWriter: CanWriteXML[None.type] = __buildNoneXMLWriter
-  def __buildNoneXMLWriter: CanWriteXML[None.type]
-
   implicit def someXMLWriter[A: CanWriteXML]: CanWriteXML[Some[A]] = new CanWriteXML[Some[A]] {
     def writes(obj: Some[A], namespace: Option[String], elementLabel: Option[String],
         scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
@@ -361,14 +259,39 @@ trait XMLStandardTypes {
     }
   }
 
-  implicit lazy val __DataRecordAnyXMLFormat: XMLFormat[DataRecord[Any]] = __buildDataRecordAnyXMLFormat
-  def __buildDataRecordAnyXMLFormat: XMLFormat[DataRecord[Any]]
+  implicit lazy val __NoneXMLWriter: CanWriteXML[None.type] = new  CanWriteXML[None.type] {
+    def writes(obj: None.type, namespace: Option[String], elementLabel: Option[String],
+        scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
+      Helper.nilElem(namespace, elementLabel.get, scope)
+  }
 
-  implicit lazy val __DataRecordOptionAnyXMLFormat: XMLFormat[DataRecord[Option[Any]]] = __buildDataRecordOptionAnyXMLFormat
-  def __buildDataRecordOptionAnyXMLFormat: XMLFormat[DataRecord[Option[Any]]]
+  implicit lazy val __DataRecordAnyXMLFormat: XMLFormat[DataRecord[Any]] = new XMLFormat[DataRecord[Any]] {
+    def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, DataRecord[Any]] = try {
+      Right(DataRecord.fromAny(seq)) } catch { case e: Exception => Left(e.toString) }
 
-  implicit lazy val __DataRecordMapWriter: CanWriteXML[Map[String, scalaxb.DataRecord[Any]]] = __buildDataRecordMapWriter
-  def __buildDataRecordMapWriter: CanWriteXML[Map[String, scalaxb.DataRecord[Any]]]
+    def writes(obj: DataRecord[Any], namespace: Option[String], elementLabel: Option[String],
+        scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
+      DataRecord.toXML(obj, namespace, elementLabel, scope, typeAttribute)
+  }
+
+  implicit lazy val __DataRecordOptionAnyXMLFormat: XMLFormat[DataRecord[Option[Any]]] =
+    new XMLFormat[DataRecord[Option[Any]]] {
+      def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, DataRecord[Option[Any]]] = try {
+        Right(DataRecord.fromNillableAny(seq)) } catch { case e: Exception => Left(e.toString) }
+
+      def writes(obj: DataRecord[Option[Any]], namespace: Option[String], elementLabel: Option[String],
+          scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
+        DataRecord.toXML(obj, namespace, elementLabel, scope, typeAttribute)
+    }
+
+  implicit lazy val __DataRecordMapWriter: CanWriteXML[Map[String, scalaxb.DataRecord[Any]]] =
+    new CanWriteXML[Map[String, scalaxb.DataRecord[Any]]] {
+      def writes(obj: Map[String, scalaxb.DataRecord[Any]], namespace: Option[String], elementLabel: Option[String],
+          scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
+        obj.valuesIterator.toList flatMap { x =>
+          scalaxb.toXML[DataRecord[Any]](x, x.namespace, x.key, scope, typeAttribute)
+        }
+    }
 }
 
 trait DataRecord[+A] {
@@ -630,7 +553,8 @@ trait AnyElemNameParser extends scala.util.parsing.combinator.Parsers {
   def any: Parser[ElemName] =
     accept("any", { case x: ElemName if x.name != "" => x })
 
-  def optTextRecord(implicit format: XMLFormat[String]) = opt(text ^^ (x => DataRecord(x.node.text)))
+  def optTextRecord(implicit format: XMLFormat[String]): Parser[Option[DataRecord[Any]]] =
+    opt(text ^^ (x => DataRecord(x.node.text)(format)))
 
   def text: Parser[ElemName] =
     accept("text", { case x: ElemName if x.name == "" => x })

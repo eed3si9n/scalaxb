@@ -23,12 +23,12 @@
 package scalaxb.compiler.xsd
 
 trait Args extends Params {
-  def buildFromXML(typeName: String): String = "fromXML[" + typeName + "]"
+  def buildFromXML(typeName: String): String = "scalaxb.fromXML[" + typeName + "]"
   def buildFromXML(typeName: String, selector: String, stackString: String): String =
     buildFromXML(typeName) + "(%s, %s)".format(selector, stackString)
   
   def buildToXML(typeName: String, args: String): String =
-    "toXML[" + typeName + "](" + args + ")" 
+    "scalaxb.toXML[" + typeName + "](" + args + ")"
         
   def buildFromString(typeName: String, selector: String): String =
     typeName + ".fromString(" + selector + ")"

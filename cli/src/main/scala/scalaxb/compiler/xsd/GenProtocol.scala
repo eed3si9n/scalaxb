@@ -60,7 +60,6 @@ abstract class GenProtocol(val context: XsdContext) extends ContextProcessor {
 usage:
 import scalaxb._
 {packageImportString}
-
 val obj = fromXML[Foo](node)
 val document = toXML[Foo](obj, "foo", defaultScope)
 **/

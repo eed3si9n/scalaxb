@@ -17,6 +17,29 @@ object UnqualifiedLocalTest extends TestBase {
     "</unq:foo>", outdir = "./tmp")
   }
 
+  "unqualified.scala file must compiled with an alternative toXML" in {
+    (List("""scalaxb.toXML[unqualified.Foo](scalaxb.fromXML[unqualified.Foo](""" +
+    """<unq:foo xmlns:unq="http://www.example.com/unqualified" attribute1="bar">""" +
+    "<string1></string1>" +
+    """</unq:foo>), """ +
+    """Some("http://www.example.com/unqualified"), Some("foo"), """ +
+    """scalaxb.toScope(Some("unq") -> "http://www.example.com/unqualified") ).toString"""),
+     generated) must evaluateTo("""<unq:foo attribute1="bar" xmlns:unq="http://www.example.com/unqualified">""" +
+    "<string1></string1>" +
+    "</unq:foo>", outdir = "./tmp")
+  }
+
+  "unqualified.scala file must compile so that Foo can be used without toplevel prefix" in {
+    (List("""scalaxb.toXML[unqualified.Foo](scalaxb.fromXML[unqualified.Foo](""" +
+    """<unq:foo xmlns:unq="http://www.example.com/unqualified" attribute1="bar">""" +
+    "<string1></string1>" +
+    """</unq:foo>), "foo", """ +
+    """scalaxb.toScope(Some("unq") -> "http://www.example.com/unqualified") ).toString"""),
+     generated) must evaluateTo("""<foo attribute1="bar" xmlns:unq="http://www.example.com/unqualified">""" +
+    "<string1></string1>" +
+    "</foo>", outdir = "./tmp")
+  }
+
   val inFile2  = new File("integration/src/test/resources/qualified.xsd")
   lazy val generated2 = module.process(inFile2, "qualified", tmp)
 

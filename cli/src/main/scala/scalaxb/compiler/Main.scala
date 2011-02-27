@@ -23,7 +23,7 @@
 package scalaxb.compiler
 
 import scalaxb.{Version}
-import org.github.scopt.OptionParser
+import scopt.OptionParser
 import scala.collection.{Map, Set}
 import scala.collection.mutable.{ListBuffer, ListMap}
 import java.io.{File, BufferedReader, Reader, PrintWriter}

@@ -6,11 +6,13 @@ class ScalaxbProject(info: ProjectInfo) extends ParentProject(info) {
   val scalaToolsSnapshots      = "Scala Tools Snapshots" at "http://scala-tools.org/repo-snapshots"
   val scalaToolsNexusSnapshots = "Scala Tools Nexus Snapshots" at "http://nexus.scala-tools.org/content/repositories/snapshots/"
   val scalaToolsNexusReleases  = "Scala Tools Nexus Releases" at "http://nexus.scala-tools.org/content/repositories/releases/"
-  
+   
   lazy val cli = project("cli", "scalaxb", new CliProject(_))
   
   class CliProject(info: ProjectInfo) extends DefaultProject(info) with VersionFileTask
-      with ScalaBazaarTask with posterous.Publish {    
+      with ScalaBazaarTask with posterous.Publish {
+    val scopt = "com.github.scopt" %% "scopt" % "1.0.0-SNAPSHOT"    
+            
     override def description = "XML data binding tool for Scala."
     override def bazaarPackageBaseURL = "http://cloud.github.com/downloads/eed3si9n/scalaxb/"
     override def notesPath = parentPath / "notes"

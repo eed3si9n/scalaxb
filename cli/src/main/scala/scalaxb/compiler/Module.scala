@@ -235,7 +235,7 @@ trait Module extends Logger {
     val outRuntime = implicitly[CanBeWriter[To]].newInstance("scalaxb.scala")
     val outRuntimeWriter = implicitly[CanBeWriter[To]].toWriter(outRuntime)
     try {
-      printFromResource("/scalaxb.scala", outRuntimeWriter)
+      printFromResource("/scalaxb.scala.template", outRuntimeWriter)
     } finally {
       outRuntimeWriter.flush()
       outRuntimeWriter.close()

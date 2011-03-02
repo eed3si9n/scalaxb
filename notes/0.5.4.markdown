@@ -1,0 +1,4 @@
+- Added sbt-scalaxb plugin by [@max4f][1].
+
+  [1]: http://twitter.com/max4f
+  

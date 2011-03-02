@@ -1,13 +1,13 @@
 [app]
   version: 0.5.4-SNAPSHOT
   org: org.scalaxb
-  name: scalaxb
+  name: scalaxb_2.8.1
   class: scalaxb.compiler.SbtApp
 [scala]
   version: 2.8.1
 [repositories]
   local
   maven-local
-  scala-tools-releases
-  scala-tools-snapshots
+  scala-tools-nexus-releases: http://nexus.scala-tools.org/content/repositories/releases/
+  scala-tools-nexus-snapshots: http://nexus.scala-tools.org/content/repositories/snapshots/
   maven-central

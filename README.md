@@ -11,6 +11,17 @@ This is still at ALPHA state, and many things may not work.
 I'd really appreciate if you could run it against your favorite xsd
 file and let me know the result.
 
+sbt-scalaxb
+-----------
+
+To call `compile-xsd` from sbt, put this in your Plugins.scala:
+
+    import sbt._
+
+    class Plugins(info: ProjectInfo) extends PluginDefinition(info) {
+      val scalaxb = "org.scalaxb" % "sbt-scalaxb" % "0.5.4-SNAPSHOT"
+    }
+
 Installation
 ------------
 

@@ -50,6 +50,13 @@ class ScalaxbProject(info: ProjectInfo) extends ParentProject(info) {
     override def testCompileOptions = super.testCompileOptions ++ Seq(CompileOption("-no-specialization"))
   }  
   
+  lazy val pluginProject = project("sbt-scalaxb", "sbt-scalaxb", new ScalaxbPluginProject(_))
+  
+  class ScalaxbPluginProject(info: ProjectInfo) extends PluginProject(info) {
+    val scalaxb = "org.scalaxb" % "scalaxb_2.8.1" % projectVersion.value.toString
+    override def managedStyle = ManagedStyle.Maven
+  }
+  
   override def managedStyle = ManagedStyle.Maven
   val publishTo = "Scala Tools Nexus" at "http://nexus.scala-tools.org/content/repositories/snapshots/"
   // val publishTo = "Scala Tools Nexus" at "http://nexus.scala-tools.org/content/repositories/releases/"

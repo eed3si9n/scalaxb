@@ -4,23 +4,24 @@ import sbt._
 import sbt.{FileUtilities => FU}
 
 trait ScalaxbPlugin extends DefaultProject {
-  lazy val defaultPackageName = "generated"
+  lazy val generatedPackageName = "generated"
   
   lazy val rootPath = path(".")
   lazy val scalaSourcePath = rootPath / "src" / "main" / "scala"
   lazy val xsdSourcePath = rootPath / "src" / "main" / "xsd"
-  lazy val scalaxbOutputPath = scalaSourcePath / defaultPackageName
+  lazy val scalaxbOutputPath = scalaSourcePath / generatedPackageName
   
   lazy val compileXsd = compileXsdAction(scalaxbOutputPath,
-    defaultPackageName, xsdSourcePath ** "*.xsd")
-  def compileXsdAction(out: Path, pkg: String, xsds: PathFinder) =
+    Seq("-p", generatedPackageName),
+    xsdSourcePath ** "*.xsd")
+  def compileXsdAction(out: Path, args: Seq[String], xsds: PathFinder) =
     task {
       FU.clean(out, log)
       FU.createDirectory(out, log)
     } && runTask(
       Some(scalaxbCompilerMain),
       scalaxbDepPath ** "*.jar",
-      Seq("-d", out.toString, "-p", pkg) ++ xsds.getPaths
+      Seq("-d", out.toString) ++ args ++ xsds.getPaths
     )
   
   val scalaxbCompilerMain = "scalaxb.compiler.Main"

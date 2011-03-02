@@ -7,10 +7,10 @@ trait ScalaxbPlugin extends DefaultProject {
   lazy val generatedPackageName = "generated"
   
   lazy val rootPath = path(".")
-  lazy val scalaSourcePath = rootPath / "src" / "main" / "scala"
   lazy val xsdSourcePath = rootPath / "src" / "main" / "xsd"
-  lazy val scalaxbOutputPath = scalaSourcePath / generatedPackageName
-  
+  lazy val scalaxbOutputPath = outputRootPath / "src_generated"
+  override def mainSourceRoots = super.mainSourceRoots +++ (scalaxbOutputPath##) 
+    
   lazy val compileXsd = compileXsdAction(scalaxbOutputPath,
     Seq("-p", generatedPackageName),
     xsdSourcePath ** "*.xsd")

@@ -206,14 +206,22 @@ trait Lookup extends ContextProcessor {
     case _ => error("GenSource: Unsupported content " +  decl.content.toString)
   }
   
-  def containsForeignType(compositor: HasParticle) =
+  def containsForeignType(compositor: HasParticle): Boolean = {
+    def elemContainsForeignType(elem: ElemDecl): Boolean = elem.typeSymbol match {
+      case ReferenceTypeSymbol(decl: ComplexTypeDecl) => decl.namespace != schema.targetNamespace
+      case ReferenceTypeSymbol(decl: SimpleTypeDecl)  => decl.namespace != schema.targetNamespace
+      case _ => true
+    }
+
     compositor.particles.exists(_ match {
-        case ref: ElemRef => ref.namespace != schema.targetNamespace
-        case ref: GroupRef => ref.namespace != schema.targetNamespace
+        case elem: ElemDecl => elemContainsForeignType(elem)
+        case ref: ElemRef   => elemContainsForeignType(buildElement(ref))
+        case ref: GroupRef  => ref.namespace != schema.targetNamespace
         case _ => false
       }
     )
-    
+  }
+
   def isSubstitionGroup(elem: ElemDecl) =
     elem.global && (elem.namespace map { x =>
       context.substituteGroups.contains((elem.namespace, elem.name))

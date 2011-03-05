@@ -1,0 +1,20 @@
+<xs:schema targetNamespace="http://www.example.com/xn"
+        xmlns="http://www.example.com/xn"
+        xmlns:xs="http://www.w3.org/2001/XMLSchema"
+        xmlns:xn="http://www.example.com/xn"
+        xmlns:xipo="http://www.example.com/IPO"
+        elementFormDefault="qualified">
+
+    <complexType name="Human">
+        <sequence>
+          <element name="name"   type="xs:string"/>
+        </sequence>
+    </complexType>
+
+    <xs:complexType name="CrossNamespaceChoice">
+        <xs:choice>
+            <xs:element name="address" type="xipo:USAddress"/>
+            <xs:element name="human" type="xn:Human" />
+        </xs:choice>
+    </xs:complexType>
+</xs:schema>

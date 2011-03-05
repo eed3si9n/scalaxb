@@ -33,7 +33,6 @@ abstract class GenSource(val schema: SchemaDecl,
   
   val topElems = schema.topElems
   val elemList = schema.elemList
-  val choices = schema.choices
   val MIXED_PARAM = "mixed"
   
   def run: Snippet = {
@@ -590,14 +589,17 @@ object {localName} {{
     val set = mutable.ListBuffer.empty[String]
     def addIfMatch(typeSymbol: XsTypeSymbol, choice: ChoiceDecl) = {
       typeSymbol match {
-        case symbol: ReferenceTypeSymbol =>
-          if (symbol.decl == decl && !containsForeignType(choice))
+        case ReferenceTypeSymbol(that: ComplexTypeDecl) =>
+          if (that.namespace == decl.namespace &&
+              that.name == decl.name &&
+              !containsForeignType(choice))
             set += makeTypeName(context.compositorNames(choice))
         case _ => 
       }
     }
     
-    for (choice <- choices;
+    for (sch <- context.schemas;
+        choice <- sch.choices;
         particle <- choice.particles) particle match {
       case elem: ElemDecl => addIfMatch(elem.typeSymbol, choice)
       case ref: ElemRef   => addIfMatch(buildElement(ref).typeSymbol, choice)      
@@ -609,7 +611,7 @@ object {localName} {{
   
   // reverse lookup all choices that contains that.
   def buildOptions(that: HasParticle): List[String] = {
-    val set = mutable.Set.empty[String]
+    val set = mutable.ListBuffer.empty[String]
     
     def addIfMatch(comp: HasParticle, choice: ChoiceDecl) {
       if (comp == that && !containsForeignType(choice))
@@ -626,9 +628,11 @@ object {localName} {{
         }
       }
     }
-    
-    choices foreach { addIfContains }        
-    set.toList    
+
+    for (sch <- context.schemas;
+        choice <- sch.choices)
+      addIfContains(choice)
+    set.toList.distinct
   }
   
   def filterGroup(decl: ComplexTypeDecl): List[GroupDecl] = decl.content.content match {

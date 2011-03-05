@@ -208,8 +208,8 @@ trait Lookup extends ContextProcessor {
   
   def containsForeignType(compositor: HasParticle): Boolean = {
     def elemContainsForeignType(elem: ElemDecl): Boolean = elem.typeSymbol match {
-      case ReferenceTypeSymbol(decl: ComplexTypeDecl) => decl.namespace != schema.targetNamespace
-      case ReferenceTypeSymbol(decl: SimpleTypeDecl)  => decl.namespace != schema.targetNamespace
+      case ReferenceTypeSymbol(decl: ComplexTypeDecl) => packageName(decl.namespace, context) != packageName(schema, context)
+      case ReferenceTypeSymbol(decl: SimpleTypeDecl)  => packageName(decl.namespace, context) != packageName(schema, context)
       case _ => true
     }
 

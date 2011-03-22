@@ -15,13 +15,13 @@ trait VersionFileTask extends DefaultProject {
   
   lazy val versionfile = task {
     val fullPath = versionFilePath / versionFileName
-    
-    if (!fullPath.asFile.exists) FileUtilities.write(fullPath.asFile, versionFileContent, log)
+    val content = versionFileContent
+
+    if (!fullPath.asFile.exists) FileUtilities.write(fullPath.asFile, content, log)
     else FileUtilities.readString(fullPath.asFile, log) match {
-        case Right(versionFileContent) => // do nothing
-        case _ => FileUtilities.write(fullPath.asFile, versionFileContent, log) 
-      }     
-    
+        case Right(`content`) => // do nothing
+        case _ => FileUtilities.write(fullPath.asFile, content, log)
+      }
     None
   }
 }

@@ -45,11 +45,15 @@ class ScalaxbProject(info: ProjectInfo) extends ParentProject(info) {
   
   trait TestProject extends DefaultProject {
     override def testCompileOptions = super.testCompileOptions ++ Seq(CompileOption("-no-specialization")) 
+    val crossVersionSpecs = crossScalaVersionString match {
+      case "2.9.0.RC1" => "specs_2.8.1"
+      case _ => "specs_" + crossScalaVersionString
+    }
     val specsVersion = crossScalaVersionString match {
       case "2.8.0" => "1.6.5"
       case _ => "1.6.6"
     }
-    val specs = "org.scala-tools.testing" % ("specs_" + crossScalaVersionString) % specsVersion % "test"
+    val specs = "org.scala-tools.testing" % crossVersionSpecs % specsVersion % "test"
     val junit = "junit" % "junit" % "4.7" % "test" 
   }
   

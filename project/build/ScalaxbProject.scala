@@ -23,7 +23,7 @@ class ScalaxbProject(info: ProjectInfo) extends ParentProject(info) {
   }
   
   lazy val web = project("web", "scalaxb-appengine", new WebProject(_), cli)
-  class WebProject(info: ProjectInfo) extends AppengineProject(info) with GenerateClientTask {
+  class WebProject(info: ProjectInfo) extends AppengineProject(info) with GenerateClientTask with NoPublish {
     override def localizationsPath = parentPath / "project" / "build" / "localizations"
     
     val uf_version = "0.2.2"
@@ -41,7 +41,7 @@ class ScalaxbProject(info: ProjectInfo) extends ParentProject(info) {
   
   lazy val integration = project("integration", "scalaxb-integration", new IntegrationProject(_), cli)
   
-  class IntegrationProject(info: ProjectInfo) extends DefaultProject(info) with TestProject
+  class IntegrationProject(info: ProjectInfo) extends DefaultProject(info) with TestProject with NoPublish
   
   trait TestProject extends DefaultProject {
     override def testCompileOptions = super.testCompileOptions ++ Seq(CompileOption("-no-specialization")) 
@@ -56,6 +56,11 @@ class ScalaxbProject(info: ProjectInfo) extends ParentProject(info) {
     val specs = "org.scala-tools.testing" % crossVersionSpecs % specsVersion % "test"
     val junit = "junit" % "junit" % "4.7" % "test" 
   }
+
+  trait NoPublish extends BasicManagedProject {
+    override protected def publishAction = task {None}
+    override protected def publishLocalAction = task {None}
+  }
   
   lazy val pluginProject = project("sbt-scalaxb", "sbt-scalaxb", new ScalaxbPluginProject(_))
   
@@ -63,7 +68,10 @@ class ScalaxbProject(info: ProjectInfo) extends ParentProject(info) {
     val scalaxb = "org.scalaxb" % "scalaxb_2.8.1" % projectVersion.value.toString
     override def managedStyle = ManagedStyle.Maven
   }
-  
+
+  override def publishAction = task {None}
+  override def publishLocalAction = task {None}
+
   override def managedStyle = ManagedStyle.Maven
   val publishTo = "Scala Tools Nexus" at "http://nexus.scala-tools.org/content/repositories/snapshots/"
   // val publishTo = "Scala Tools Nexus" at "http://nexus.scala-tools.org/content/repositories/releases/"

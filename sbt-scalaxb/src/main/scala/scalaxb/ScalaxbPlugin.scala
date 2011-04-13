@@ -10,7 +10,7 @@ trait ScalaxbPlugin extends DefaultProject {
   
   def rootPath = path(".")
   def xsdSourcePath = rootPath / "src" / "main" / "xsd"
-  def scalaxbOutputPath = outputRootPath / "src_generated"
+  def scalaxbOutputPath = rootPath / "src_generated"
   override def mainSourceRoots = super.mainSourceRoots +++ (scalaxbOutputPath##) 
     
   lazy val compileXsd = compileXsdAction(scalaxbOutputPath,

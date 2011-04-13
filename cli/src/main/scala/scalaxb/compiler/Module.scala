@@ -29,11 +29,13 @@ import java.net.{URI}
 import scala.xml.{Node, Elem}
 import scala.xml.factory.{XMLLoader}
 import javax.xml.parsers.SAXParser
+import xsd.XsdContext
 
 case class Config(packageNames: Map[Option[String], Option[String]] = Map(None -> None),
   classPrefix: Option[String] = None,
   paramPrefix: Option[String] = None,
   outdir: File = new File("."),
+  packageDir: Boolean = false,
   wrappedComplexTypes: List[String] = Nil,
   primaryNamespace: Option[String] = None,
   seperateProtocol: Boolean = true)
@@ -44,7 +46,7 @@ case class Snippet(definition: Seq[Node],
 
 trait CanBeWriter[A] {
  def toWriter(value: A): PrintWriter
- def newInstance(fileName: String): A
+ def newInstance(packageName: Option[String], fileName: String): A
 }
 
 trait CanBeRawSchema[A, B] {
@@ -68,7 +70,6 @@ trait Module extends Logger {
     def importLocations: Seq[String]
     def includeLocations: Seq[String]
     def raw: RawSchema
-    def out: PrintWriter
     def location: URI
     def toSchema(context: Context): Schema
   }
@@ -106,7 +107,7 @@ trait Module extends Logger {
     implicit val fileWriter = new CanBeWriter[File] {
       override def toWriter(value: File) = new PrintWriter(new java.io.OutputStreamWriter(
           new java.io.FileOutputStream(value), encoding))
-      override def newInstance(fileName: String) = new File(config.outdir, fileName)
+      override def newInstance(packageName: Option[String], fileName: String) = new File(config.outdir, fileName)
     }
 
     files.foreach(file => if (!file.exists)
@@ -128,7 +129,7 @@ trait Module extends Logger {
 
     implicit val stringWriter = new CanBeWriter[java.io.StringWriter] {
       override def toWriter(value: java.io.StringWriter) = new PrintWriter(value)
-      override def newInstance(fileName: String) = new java.io.StringWriter
+      override def newInstance(packageName: Option[String], fileName: String) = new java.io.StringWriter
     }
 
     processReaders(Seq(input), config) map {_.toString}
@@ -145,15 +146,15 @@ trait Module extends Logger {
 
     implicit val stringWriter = new CanBeWriter[java.io.StringWriter] {
       override def toWriter(value: java.io.StringWriter) = new PrintWriter(value)
-      override def newInstance(fileName: String) = new java.io.StringWriter
+      override def newInstance(packageName: Option[String], fileName: String) = new java.io.StringWriter
     }
 
     processReaders(Seq(input), config) map {_.toString}
   }
 
-  def toOutput[From, To](file: From)
+  def toOutput[From, To](packageName: Option[String], file: From)
       (implicit ev: CanBeRawSchema[From, RawSchema], evTo: CanBeWriter[To]): To =
-    evTo.newInstance("""([.]\w+)$""".r.replaceFirstIn(
+    evTo.newInstance(packageName, """([.]\w+)$""".r.replaceFirstIn(
       new File(ev.toURI(file).getPath).getName, ".scala"))
 
   def processReaders[From, To](files: Seq[From], config0: Config)
@@ -168,80 +169,90 @@ trait Module extends Logger {
     }
 
     val context = buildContext
-    val outputs = ListBuffer.empty[To]
-    val importables = ListBuffer.empty[Importable]
-    importables ++= (files.toList map { x =>
-      val out = toOutput(x)
-      outputs += out
-      toImportable(ev.toURI(x), ev.toRawSchema(x), evTo.toWriter(out))
-    })
-
+    val importables = ListMap[Importable, From](files map { file =>
+      (toImportable(ev.toURI(file), ev.toRawSchema(file)), file)}: _*)
     val config: Config = config0.primaryNamespace map { _ => config0 } getOrElse {
-      val pns: Option[String] = importables.head.targetNamespace
+      val pns: Option[String] = importables.head._1.targetNamespace
       config0.copy(primaryNamespace = pns)
     }    
     
-    val schemas = ListMap[Importable, Schema](importables map { file =>
-      (file, parse(file, context)) }: _*)
+    val schemas = ListMap[Importable, Schema](importables.toList map { case (importable, file) =>
+      (importable, parse(importable, context)) }: _*)
 
-    // check for all dependencies before proceeding.
-    val missings = (importables flatMap { importable =>
-      missingDependencies(importable, importables.toList) }).distinct
+    val additionalImportables = ListMap.empty[Importable, File]
 
-    val additional = missings flatMap  { x =>
-      val uri = new URI(x)
-      val file = new File(new File(uri.getPath).getName)
+    // recursively add missing files
+    def addMissingFiles() {
+      val current = importables.keysIterator.toList ::: additionalImportables.keysIterator.toList
+      // check for all dependencies before proceeding.
+      val missings = (current flatMap { importable =>
+        missingDependencies(importable, current) }).distinct
 
-      if (file.exists) Some(file)
-      else None
+      val additional = missings flatMap { x =>
+        val uri = new URI(x)
+        val file = new File(new File(uri.getPath).getName)
+
+        if (file.exists) Some(file)
+        else None
+      }
+      var added = false
+      additionalImportables ++= (additional map { x =>
+        println("Warning: added " + x + " to compilation.")
+        added = true
+        val importable = toImportable(implicitly[CanBeRawSchema[File, RawSchema]].toURI(x),
+          implicitly[CanBeRawSchema[File, RawSchema]].toRawSchema(x))
+        schemas(importable) = parse(importable, context)
+        (importable, x) })
+      if (added) addMissingFiles()
     }
-    importables ++= (additional map { x =>
-      println("Warning: added " + x + " to compilation.")
 
-      val out = toOutput(x)
-      outputs += out
-      val importable = toImportable(implicitly[CanBeRawSchema[File, RawSchema]].toURI(x),
-        implicitly[CanBeRawSchema[File, RawSchema]].toRawSchema(x),
-        evTo.toWriter(out))
-      schemas(importable) = parse(importable, context)
-      importable
-    })
-
+    addMissingFiles()
     processContext(context, config)
-    
-    importables foreach { importable =>
-      val schema = schemas(importable)
-      val out = importable.out
-      try {    
-        val snippet = generate(schema, context, config)
-        splitSnippet(snippet)
-        printNodes(snippet.definition, out)
+
+    def processImportables[A](xs: List[(Importable, A)])(implicit ev: CanBeRawSchema[A, RawSchema]) = xs map {
+      case (importable, file) =>
+        val schema = schemas(importable)
+        val output = toOutput(packageName(importable.targetNamespace, context), file)
+        val out = evTo.toWriter(output)
+        try {
+          val snippet = generate(schema, context, config)
+          splitSnippet(snippet)
+          printNodes(snippet.definition, out)
+        } finally {
+          out.flush()
+          out.close()
+        }
+        output
+    }
+
+    def processProtocol = {
+      val output = implicitly[CanBeWriter[To]].newInstance(packageName(None, context), "xmlprotocol.scala")
+      val out = implicitly[CanBeWriter[To]].toWriter(output)
+      val protocolNodes = generateProtocol(Snippet(nodes, companions, implicitValues), context, config)
+      try {
+        printNodes(protocolNodes, out)
       } finally {
         out.flush()
         out.close()
       }
+      output
     }
 
-    val outProtocol = implicitly[CanBeWriter[To]].newInstance("xmlprotocol.scala")
-    val outProtocolWriter = implicitly[CanBeWriter[To]].toWriter(outProtocol)
-    val protocolNodes = generateProtocol(Snippet(nodes, companions, implicitValues), context, config)
-    try {
-      printNodes(protocolNodes, outProtocolWriter)
-    } finally {
-      outProtocolWriter.flush()
-      outProtocolWriter.close()
+    def processRuntime = {
+      val output = implicitly[CanBeWriter[To]].newInstance(Some("scalaxb"), "scalaxb.scala")
+      val out = implicitly[CanBeWriter[To]].toWriter(output)
+      try {
+        printFromResource("/scalaxb.scala.template", out)
+      } finally {
+        out.flush()
+        out.close()
+      }
+      output
     }
 
-    val outRuntime = implicitly[CanBeWriter[To]].newInstance("scalaxb.scala")
-    val outRuntimeWriter = implicitly[CanBeWriter[To]].toWriter(outRuntime)
-    try {
-      printFromResource("/scalaxb.scala.template", outRuntimeWriter)
-    } finally {
-      outRuntimeWriter.flush()
-      outRuntimeWriter.close()
-    }
-
-    outputs.toList ::: List(outProtocol, outRuntime)
+    processImportables(importables.toList) :::
+    processImportables(additionalImportables.toList) :::
+    List(processProtocol, processRuntime)
   }
   
   def generate(schema: Schema, context: Context, config: Config): Snippet
@@ -249,7 +260,7 @@ trait Module extends Logger {
   def generateProtocol(snippet: Snippet,
     context: Context, config: Config): Seq[Node]
     
-  def toImportable(location: URI, rawschema: RawSchema, out: PrintWriter): Importable
+  def toImportable(location: URI, rawschema: RawSchema): Importable
   
   def missingDependencies(importable: Importable, files: List[Importable]): List[String] = {
     def shorten(uri: URI): String = {
@@ -288,6 +299,8 @@ trait Module extends Logger {
   
   def processContext(context: Context, config: Config): Unit
 
+  def packageName(namespace: Option[String], context: Context): Option[String]
+
   def readerToRawSchema(reader: Reader): RawSchema
 
   def nodeToRawSchema(node: Node): RawSchema
@@ -295,8 +308,8 @@ trait Module extends Logger {
   def parse(importable: Importable, context: Context): Schema
     = importable.toSchema(context)
     
-  def parse(location: URI, in: Reader, out: PrintWriter): Schema
-    = parse(toImportable(location, readerToRawSchema(in), out), buildContext)
+  def parse(location: URI, in: Reader): Schema
+    = parse(toImportable(location, readerToRawSchema(in)), buildContext)
     
   def printNodes(nodes: Seq[Node], out: PrintWriter) {
     import scala.xml._

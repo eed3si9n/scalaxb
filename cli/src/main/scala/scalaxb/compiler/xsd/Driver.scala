@@ -40,7 +40,10 @@ class Driver extends Module { driver =>
       val logger = driver
       val config = cnfg    
     }).processContext(context)
-  
+
+  override def packageName(namespace: Option[String], context: Context): Option[String] =
+    (new PackageName {}).packageName(namespace, context)
+
   override def generate(xsd: Schema, context: Context, cnfg: Config): Snippet =
     (new GenSource(xsd, context) {
       val logger = driver
@@ -54,8 +57,7 @@ class Driver extends Module { driver =>
       val config = cnfg
     }).generateProtocol(snippet)
   
-  override def toImportable(alocation: URI, rawschema: RawSchema, aout: PrintWriter): Importable = new Importable {
-    val out = aout
+  override def toImportable(alocation: URI, rawschema: RawSchema): Importable = new Importable {
     val location = alocation
     val raw = rawschema
     val schemaLite = SchemaLite.fromXML(raw)

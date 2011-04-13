@@ -48,7 +48,8 @@ object Main extends Version {
     var classPrefix: Option[String] = None
     var paramPrefix: Option[String] = None
     val files = ListBuffer.empty[File]
-    
+    var packageDir = false
+
     packageNames(None) = None
     val paramParser = new OptionParser("scalaxb", version) {
       opt("d", "outdir", "<directory>", "generated files will go into <directory>",
@@ -65,6 +66,8 @@ object Main extends Version {
       opt(None, "wrap-contents", "<complexType>",
         "wraps inner contents into a seperate case class",
         { w: String => wrappedComplexTypes append w })
+      // opt("package-dir", "generate package directories",
+      //  { packageDir = true })
       opt("v", "verbose", "be extra verbose",
         { verbose = true })
       arglist("<schema_file>...", "input schema to be converted",
@@ -78,6 +81,7 @@ object Main extends Version {
       module.processFiles(files,
         Config(packageNames = packageNames,
           outdir = outdir,
+          packageDir = packageDir,
           classPrefix = classPrefix,
           paramPrefix = paramPrefix,
           wrappedComplexTypes = wrappedComplexTypes.toList) )

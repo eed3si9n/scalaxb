@@ -11,7 +11,7 @@ object Driver {
     }
     implicit val fileWriter = new CanBeWriter[ScalaFile] {
       override def toWriter(value: ScalaFile) = value.printout
-      override def newInstance(fileName: String) = new ScalaFile(fileName)
+      override def newInstance(packageName: Option[String], fileName: String) = new ScalaFile(fileName)
     }
 
     val module = new scalaxb.compiler.xsd.Driver

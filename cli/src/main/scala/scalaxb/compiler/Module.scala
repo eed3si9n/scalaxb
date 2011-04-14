@@ -24,12 +24,12 @@ package scalaxb.compiler
 
 import scala.collection.{Map, Set}
 import scala.collection.mutable.{ListBuffer, ListMap}
-import java.io.{File, BufferedReader, Reader, PrintWriter}
 import java.net.{URI}
 import scala.xml.{Node, Elem}
 import scala.xml.factory.{XMLLoader}
 import javax.xml.parsers.SAXParser
 import xsd.XsdContext
+import java.io.{File, PrintWriter, Reader, BufferedReader}
 
 case class Config(packageNames: Map[Option[String], Option[String]] = Map(None -> None),
   classPrefix: Option[String] = None,
@@ -107,7 +107,13 @@ trait Module extends Logger {
     implicit val fileWriter = new CanBeWriter[File] {
       override def toWriter(value: File) = new PrintWriter(new java.io.OutputStreamWriter(
           new java.io.FileOutputStream(value), encoding))
-      override def newInstance(packageName: Option[String], fileName: String) = new File(config.outdir, fileName)
+      override def newInstance(packageName: Option[String], fileName: String) = {
+        val dir = if (config.packageDir) packageDir(packageName, config.outdir)
+                  else config.outdir
+        dir.mkdirs()
+        new File(dir, fileName)
+      }
+
     }
 
     files.foreach(file => if (!file.exists)
@@ -117,6 +123,10 @@ trait Module extends Logger {
     outfiles map { x => println("generated " + x + ".") }
     outfiles
   }
+
+  def packageDir(packageName: Option[String], dir: File) = packageName map { x =>
+    (dir /: x.split('.')) { new File(_, _) }
+  } getOrElse {dir}
 
   def processString(input: String, packageName: String): List[String] =
     processString(input, Config(packageNames = Map(None -> Some(packageName))))

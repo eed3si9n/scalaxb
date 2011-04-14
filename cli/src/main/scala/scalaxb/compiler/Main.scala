@@ -66,8 +66,8 @@ object Main extends Version {
       opt(None, "wrap-contents", "<complexType>",
         "wraps inner contents into a seperate case class",
         { w: String => wrappedComplexTypes append w })
-      // opt("package-dir", "generate package directories",
-      //  { packageDir = true })
+      opt("package-dir", "generate package directories",
+        { packageDir = true })
       opt("v", "verbose", "be extra verbose",
         { verbose = true })
       arglist("<schema_file>...", "input schema to be converted",

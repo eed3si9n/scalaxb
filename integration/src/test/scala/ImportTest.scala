@@ -9,8 +9,8 @@ object ImportTest extends TestBase {
   lazy val generated = module.processFiles(
     List(ipoxsd, reportxsd, circularxsd),
     Config(packageNames = Map(None -> Some("ipo"),
-      Some("http://www.example.com/Report") -> Some("report") ),
-      outdir = tmp) )
+      Some("http://www.example.com/Report") -> Some("org.report") ),
+      packageDir = true, outdir = tmp) )
     
   "report.xsd must generate report.scala file" in {
     generated(0) must exist
@@ -19,7 +19,7 @@ object ImportTest extends TestBase {
 
   "report.scala file must compile so that PurchaseReport can be used" in {
     (List("import ipo._",
-          "import report._",
+          "import org.report._",
           "PurchaseReport(RegionsType(), PartsType(), None, None).toString"),
      generated) must evaluateTo("PurchaseReport(RegionsType(WrappedArray()),PartsType(WrappedArray()),None,None)", outdir = "./tmp")
   }

@@ -2,11 +2,15 @@ package scalaxb
 
 import sbt._
 import sbt.{FileUtilities => FU}
+import java.net.URI
 
 trait ScalaxbPlugin extends DefaultProject {
   def generatedPackageName: String = "generated"
+  def generatedPackageNames: Map[URI, String] = Map()
   def generatedClassPrefix: Option[String] = None
   def generatedParamPrefix: Option[String] = None
+  def generatePackageDir: Boolean = true
+  def generateWrapContents: Seq[String] = Nil
   
   def rootPath = path(".")
   def xsdSourcePath = rootPath / "src" / "main" / "xsd"
@@ -15,8 +19,11 @@ trait ScalaxbPlugin extends DefaultProject {
     
   lazy val compileXsd = compileXsdAction(scalaxbOutputPath,
     Seq("-p", generatedPackageName) ++
+    (generatedPackageNames.toList map { case (ns, pkg) => "-p:%s=%s" format(ns.toString, pkg) }) ++
+    (if (generatePackageDir) Seq("--package-dir") else Nil) ++
     (generatedClassPrefix map { Seq("--class-prefix", _) } getOrElse {Nil}) ++
-    (generatedParamPrefix map { Seq("--param-prefix", _) } getOrElse {Nil}),
+    (generatedParamPrefix map { Seq("--param-prefix", _) } getOrElse {Nil}) ++
+    (generateWrapContents flatMap { Seq("--wrap-contents", _) }),
     xsdSourcePath ** "*.xsd")
 
   def compileXsdAction(out: Path, args: Seq[String], xsds: PathFinder) =

@@ -4,7 +4,7 @@
 - Fixes generated code for cross-package choices ([GH-33][4]).
 
 ## sbt-scalaxb
-1. Add `val scalaxb = "org.scalaxb" % "sbt-scalaxb" % "0.5.4-SNAPSHOT"` in your plugins.scala.
+1. Add `val scalaxb = "org.scalaxb" % "sbt-scalaxb" % "0.5.4"` in your plugins.scala.
 2. Mix `scalaxb.ScalaxbPlugin` into your project.
 3. `override def generatedPackageName = "something"`
 4. Place your xsd files in `src/main/xsd/`.

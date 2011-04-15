@@ -1,4 +1,16 @@
-- Added sbt-scalaxb plugin by [@max4f][1].
+- Added [sbt-scalaxb][2] plugin by [@max4f][1].
+- Added `--package-dir`, which generates package directory structure.
+- scalaxb is now available via [conscript][3]: `cs eed3si9n/scalaxb`.
+- Fixes generated code for cross-package choices ([GH-33][4]).
+
+## sbt-scalaxb
+1. Add `val scalaxb = "org.scalaxb" % "sbt-scalaxb" % "0.5.4-SNAPSHOT"` in your plugins.scala.
+2. Mix `scalaxb.ScalaxbPlugin` into your project.
+3. `override def generatedPackageName = "something"`
+4. Place your xsd files in `src/main/xsd/`.
+5. `> compile-xsd`
 
   [1]: http://twitter.com/max4f
-  
+  [2]: http://scalaxb.org/sbt-scalaxb
+  [3]: https://github.com/n8han/conscript
+  [4]: https://github.com/eed3si9n/scalaxb/issues/33

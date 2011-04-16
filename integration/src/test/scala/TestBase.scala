@@ -7,4 +7,5 @@ trait TestBase extends SpecificationWithJUnit with CompilerMatcher {
   val module = new Driver // with Verbose
   val tmp = new File("tmp")
   if (tmp.exists) deleteAll(tmp)
+  tmp.mkdirs() // you need this for copyFileFromResource
 }

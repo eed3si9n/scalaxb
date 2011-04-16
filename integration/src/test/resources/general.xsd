@@ -5,6 +5,8 @@
     elementFormDefault="qualified">
   <xs:complexType name="SingularBuiltInTypeTest">
     <xs:sequence>
+      <!--<xs:element name="anyType" type="xs:anyType"/>-->
+      <!--<xs:element name="anySimpleType" type="xs:anySimpleType" />-->
       <xs:element name="int" type="xs:int"/>
       <xs:element name="byte" type="xs:byte"/>
       <xs:element name="short" type="xs:short"/>

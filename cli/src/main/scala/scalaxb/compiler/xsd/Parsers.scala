@@ -228,7 +228,7 @@ trait Parsers extends Args with Params {
           buildCompositorParser(compositor, occurrence.copy(nillable = o.nillable), mixed, wrapInDataRecord)
         }
         else addConverter(buildParserString(elem, occurrence))      
-      case XsAnyType => buildAnyParser(occurrence, mixed, wrapInDataRecord)
+      case AnyType(symbol) => buildAnyParser(occurrence, mixed, wrapInDataRecord)
       case XsLongAll => ""
       
       case symbol: ReferenceTypeSymbol =>

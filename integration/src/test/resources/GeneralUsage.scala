@@ -77,6 +77,8 @@ object GeneralUsage {
       <IDREFS>foo</IDREFS>
       <ENTITY>foo</ENTITY>
       <ENTITIES>foo</ENTITIES>
+      <anyType xsi:type="string">foo</anyType>
+      <anySimpleType xsi:type="string">foo</anySimpleType>
     </foo>
     
     val obj = fromXML[SingularBuiltInTypeTest](subject)
@@ -85,7 +87,8 @@ object GeneralUsage {
           SingularBuiltInTypeTestSequence1(1, 1, 1, 1, 1.0F, 1.0, Int_(1), Int_(-1), Int_(-1), Int_(1)),
           SingularBuiltInTypeTestSequence2(Int_(1), Int_(1), 1, 1, 1, Int_(1), false, "foo", "foo", "foo"),
           SingularBuiltInTypeTestSequence3("en-US", "foo", "foo", "foo",  Array("foo"),
-            "foo", "foo", Array("foo"), "foo", Array("foo"))
+            "foo", "foo", Array("foo"), "foo", Array("foo")),
+          SingularBuiltInTypeTestSequence4(DataRecord(_, _, _), DataRecord(_, _, _))
           ) =>
         case _ => error("match failed: " + obj.toString)
       }

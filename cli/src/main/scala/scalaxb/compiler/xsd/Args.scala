@@ -129,9 +129,9 @@ trait Args extends Params {
           }
         else buildArg(buildTypeName(decl, false), selector,
           toCardinality(elem.minOccurs, elem.maxOccurs), elem.nillable getOrElse(false), elem.defaultValue, elem.fixedValue, wrapForLongAll)
-      case XsAnyType => buildArg(
+      case AnyType(symbol) => buildArg(
           if (elem.nillable getOrElse(false)) buildTypeName(XsNillableAny)
-          else buildTypeName(XsAnyType), selector,
+          else buildTypeName(symbol), selector,
         toCardinality(elem.minOccurs, elem.maxOccurs), false, elem.defaultValue, elem.fixedValue, wrapForLongAll)
       
       case symbol: ReferenceTypeSymbol =>

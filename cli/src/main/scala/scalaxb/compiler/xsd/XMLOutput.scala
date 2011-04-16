@@ -29,13 +29,13 @@ trait XMLOutput extends Args {
     val name = "__obj." + makeParamName(param.name)
     
     val typeAttribute = param.typeSymbol match {
-      case XsAnyType => "true"
-      case _         => "false"
+      case AnyType(symbol) => "true"
+      case _               => "false"
     }
     
     val xToXMLCode = "x => " + buildToXML(param.baseTypeName, "x, x.namespace, x.key, __scope, " + typeAttribute)
     val toXMLCode = param.typeSymbol match {
-      case XsAnyType            => xToXMLCode
+      case AnyType(symbol)      => xToXMLCode
       case XsNillableAny        => xToXMLCode
       case XsDataRecord(member) => xToXMLCode
       case _ => buildToXML(param.baseTypeName, "_, " + ns + ", " + quote(Some(param.name)) + 
@@ -43,7 +43,7 @@ trait XMLOutput extends Args {
     }
     
     val elemLabel = param.typeSymbol match {
-        case XsAnyType            => name + ".key"
+        case AnyType(symbol)      => name + ".key"
         case XsNillableAny        => name + ".key"
         case XsDataRecord(member) => name + ".key"
         case _ => quote(Some(param.name))
@@ -52,7 +52,7 @@ trait XMLOutput extends Args {
     val optionalType = "Option[" + param.baseTypeName + "]"
     val xOptionalToXMLCode = "x => " + buildToXML(optionalType, "x, x.namespace, x.key, __scope, " + typeAttribute)
     val optionalToXMLCode = param.typeSymbol match {
-      case XsAnyType            => xOptionalToXMLCode
+      case AnyType(symbol)      => xOptionalToXMLCode
       case XsDataRecord(member) => xOptionalToXMLCode
       case _ => buildToXML(optionalType, "_, " + ns + ", " + quote(Some(param.name)) + ", __scope, " + typeAttribute)
     }

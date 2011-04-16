@@ -78,6 +78,14 @@ object ReferenceTypeSymbol {
   def unapply(value: ReferenceTypeSymbol): Option[TypeDecl] = Some(value.decl)
 }
 
+object AnyType {
+  def unapply(value: XsTypeSymbol): Option[XsTypeSymbol] = value match {
+    case XsAnyType => Some(value)
+    case XsAnySimpleType => Some(value)
+    case _ => None
+  }
+}
+
 case class XsXMLFormat(member: Decl) extends XsTypeSymbol {
   val name = "XsXMLFormat(" + (member match {
     case decl: ComplexTypeDecl => decl.name

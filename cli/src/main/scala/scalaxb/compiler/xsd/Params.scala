@@ -90,7 +90,6 @@ trait Params extends Lookup {
   }
   
   def buildParam(elem: ElemDecl): Param = {
-    val nillable = elem.nillable getOrElse { false }
     val typeSymbol = if (isSubstitionGroup(elem)) buildSubstitionGroupSymbol(elem.typeSymbol)
       else elem.typeSymbol match {
         case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
@@ -98,13 +97,15 @@ trait Params extends Lookup {
           else elem.typeSymbol
         case _ => elem.typeSymbol
       }
-    
-    val retval = if (nillable && typeSymbol == XsAnyType) Param(elem.namespace, elem.name, XsNillableAny,
-        toCardinality(elem.minOccurs, elem.maxOccurs))
-      else if (typeSymbol == XsLongAttribute) Param(elem.namespace, elem.name, typeSymbol, 
-          toCardinality(elem.minOccurs, elem.maxOccurs), nillable, false, false, true)
-      else Param(elem.namespace, elem.name, typeSymbol, 
-        toCardinality(elem.minOccurs, elem.maxOccurs), nillable, elem.global, elem.qualified, false)
+    val nillable = elem.nillable getOrElse { false }
+    val retval = typeSymbol match {
+      case AnyType(symbol) if nillable =>
+        Param(elem.namespace, elem.name, XsNillableAny, toCardinality(elem.minOccurs, elem.maxOccurs))
+      case XsLongAttribute =>
+        Param(elem.namespace, elem.name, typeSymbol, toCardinality(elem.minOccurs, elem.maxOccurs), nillable, false, false, true)
+      case _ =>
+        Param(elem.namespace, elem.name, typeSymbol, toCardinality(elem.minOccurs, elem.maxOccurs), nillable, elem.global, elem.qualified, false)
+    }
     log("Params#buildParam:  " + retval.toString)
     retval
   }

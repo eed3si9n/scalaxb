@@ -1,5 +1,5 @@
 [app]
-  version: 0.5.4-SNAPSHOT
+  version: 0.5.4
   org: org.scalaxb
   name: scalaxb_2.8.1
   class: scalaxb.compiler.SbtApp

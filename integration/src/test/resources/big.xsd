@@ -30,11 +30,11 @@
        <xs:element name="string25" type="xs:string"/>
        <xs:element name="string26" type="xs:string"/>
        <xs:element name="string27" type="xs:string"/>
-       <xs:element name="string28" type="xs:string"/>
        <xs:sequence>
+         <xs:element name="string28" type="xs:string"/>
          <xs:element name="string29" type="xs:string"/>
-         <xs:element name="string30" type="xs:string"/>
        </xs:sequence>
+       <xs:any namespace="##other" processContents="lax" />
      </xs:sequence>
     </xs:complexType>
   </xs:element>

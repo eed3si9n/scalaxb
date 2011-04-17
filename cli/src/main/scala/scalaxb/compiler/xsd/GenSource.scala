@@ -196,7 +196,7 @@ abstract class GenSource(val schema: SchemaDecl,
     val superNames: List[String] = if (context.baseToSubs.contains(decl))
       List(buildTypeName(decl, true))
     else buildSuperNames(decl)
-    
+
     val flatParticles = flattenElements(decl, 0)
     // val particles = buildParticles(decl, name)
     val childElements = if (decl.mixed) flattenMixed(decl)
@@ -676,8 +676,8 @@ object {localName} {{
   }
   
   def flattenElements(decl: ComplexTypeDecl, index: Int): List[ElemDecl] = {
-    anyNumber = 0
-    
+    anyNumbers.clear()
+
     val build: ComplexTypeContent =>? List[ElemDecl] = {
       case SimpContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _, _) =>
         flattenElements(base, index)
@@ -845,7 +845,7 @@ object {localName} {{
   }
   
   def buildParticles(decl: ComplexTypeDecl, name: String): List[ElemDecl] = {
-    anyNumber = 0
+    anyNumbers.clear()
     
     val build: ComplexTypeContent =>? List[ElemDecl] = {
       case SimpContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _, _) =>

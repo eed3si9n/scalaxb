@@ -25,7 +25,7 @@ import scala.collection.mutable
 
 trait Params extends Lookup {
   val ATTRS_PARAM = "attributes"
-  var anyNumber = 0
+  val anyNumbers: mutable.Map[AnyDecl, Int] = mutable.Map()
   
   case class Occurrence(minOccurs: Int, maxOccurs: Int, nillable: Boolean)
   
@@ -205,7 +205,7 @@ trait Params extends Lookup {
     ElemDecl(Some(INTERNAL_NAMESPACE), ATTRS_PARAM, XsLongAttribute, None, None, 1, 1)
   
   def buildAnyRef(any: AnyDecl) = {
-    anyNumber += 1
+    val anyNumber = anyNumbers.getOrElseUpdate(any, anyNumbers.size + 1)
     val name = if (anyNumber <= 1) "any"
       else "any" + anyNumber
     ElemDecl(Some(INTERNAL_NAMESPACE), name, XsAnyType, None, None, any.minOccurs, any.maxOccurs)

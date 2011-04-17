@@ -720,7 +720,8 @@ object AllDecl {
 }
 
 case class AnyDecl(minOccurs: Int,
-  maxOccurs: Int) extends CompositorDecl with Particle
+  maxOccurs: Int,
+  uniqueId: Int = Incrementor.nextInt) extends CompositorDecl with Particle
 
 object AnyDecl {
   def fromXML(node: scala.xml.Node, config: ParserConfig) = {

@@ -28,7 +28,6 @@ import java.net.{URI}
 import scala.xml.{Node, Elem}
 import scala.xml.factory.{XMLLoader}
 import javax.xml.parsers.SAXParser
-import xsd.XsdContext
 import java.io.{File, PrintWriter, Reader, BufferedReader}
 
 case class Config(packageNames: Map[Option[String], Option[String]] = Map(None -> None),
@@ -392,3 +391,9 @@ trait Logger {
 class ReferenceNotFound(kind: String, namespace: Option[String], name: String) extends RuntimeException(
   "Error: Referenced " + kind + " " +
     (namespace map { "{" + _ + "}" } getOrElse {""}) + name + " was not found.")
+
+class CaseClassTooLong(fqn: String, xmlname: String) extends RuntimeException(
+  """Error: A case class with > 22 parameters cannot be created for %s. Consider using --wrapped-content "%s" option.""".format(
+    fqn, xmlname
+  )
+)

@@ -34,6 +34,8 @@ object Main extends Version {
     catch {
       case e: ReferenceNotFound =>
         println(e.getMessage)
+      case e: CaseClassTooLong =>
+        println(e.getMessage)
       case e: Exception =>
         e.printStackTrace
     }

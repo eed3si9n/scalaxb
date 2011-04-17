@@ -40,7 +40,9 @@ abstract class GenProtocol(val context: XsdContext) extends ContextProcessor {
       case _ => Nil
     }
 
-    val scopes0 = makeScopes(scopeSchemas.toList) ::: List((Some(XSI_PREFIX) -> XSI_URL))
+    // including XS_URL into the default scope prints out the xsi:type, which is necessary for anyType round trip.
+    val scopes0 = makeScopes(scopeSchemas.toList) :::
+      List((Some(XSI_PREFIX) -> XSI_URL), (Some(XS_PREFIX) -> XS_URL))
     val scopes = config.primaryNamespace match {
       case Some(ns) =>
         val primaryPair = if (context.schemas forall {_.elementQualifiedDefault}) List((None, ns))

@@ -53,6 +53,8 @@ trait ContextProcessor extends ScalaNames with PackageName {
   val XSI_PREFIX = "xsi"
   val XML_URI = "http://www.w3.org/XML/1998/namespace"
   val XML_PREFIX = "xml"
+  val XS_URL = "http://www.w3.org/2001/XMLSchema"
+  val XS_PREFIX = "xs"
   
   def processContext(context: XsdContext) {
     context.packageNames ++= config.packageNames

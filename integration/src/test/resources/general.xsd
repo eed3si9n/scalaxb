@@ -314,6 +314,14 @@
       <xs:anyAttribute namespace="##any"/>
     </xs:complexType>
   </xs:element>
+
+  <xs:complexType name="anySimpleTypeExtension">
+    <xs:simpleContent>
+      <xs:extension base="xs:anySimpleType">
+         <xs:anyAttribute namespace="##any" processContents="lax"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
   
   <xs:attributeGroup name="coreattrs">
     <xs:annotation>

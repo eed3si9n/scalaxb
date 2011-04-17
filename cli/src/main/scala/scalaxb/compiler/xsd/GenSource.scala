@@ -307,21 +307,28 @@ abstract class GenSource(val schema: SchemaDecl,
     
     val childElemParams = paramList.filter(!_.attribute)
     
-    def makeWritesChildNodes = <source>    def writesChildNodes(__obj: {fqn}, __scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node] =
+    def makeWritesChildNodes = {
+      def simpleContentString(base: XsTypeSymbol) = base match {
+        case AnyType(symbol) => "Seq(scala.xml.Text(__obj.value.value.toString))"
+        case _ => "Seq(scala.xml.Text(__obj.value.toString))"
+      }
+
+      def childString = if (decl.mixed) "__obj." + makeParamName(MIXED_PARAM) +
+        ".toSeq flatMap { x => " + buildToXML("scalaxb.DataRecord[Any]", "x, x.namespace, x.key, __scope, false") + " }"
+      else decl.content.content match {
+        case SimpContRestrictionDecl(base: XsTypeSymbol, _, _, _) => simpleContentString(base)
+        case SimpContExtensionDecl(base: XsTypeSymbol, _)         => simpleContentString(base)
+        case _ =>
+          if (childElemParams.isEmpty) "Nil"
+          else if (childElemParams.size == 1) "(" + buildXMLString(childElemParams(0)) + ")"
+          else childElemParams.map(x =>
+            buildXMLString(x)).mkString("Seq.concat(", "," + newline + indent(4), ")")
+      }
+
+      <source>    def writesChildNodes(__obj: {fqn}, __scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node] =
       {childString}</source>
-    
-    def childString = if (decl.mixed) "__obj." + makeParamName(MIXED_PARAM) + 
-      ".toSeq flatMap { x => " + buildToXML("scalaxb.DataRecord[Any]", "x, x.namespace, x.key, __scope, false") + " }"
-    else decl.content.content match {
-      case SimpContRestrictionDecl(base: XsTypeSymbol, _, _, _) => "Seq(scala.xml.Text(__obj.value.toString))"
-      case SimpContExtensionDecl(base: XsTypeSymbol, _) =>   "Seq(scala.xml.Text(__obj.value.toString))"
-      case _ =>
-        if (childElemParams.isEmpty) "Nil"
-        else if (childElemParams.size == 1) "(" + buildXMLString(childElemParams(0)) + ")"
-        else childElemParams.map(x => 
-          buildXMLString(x)).mkString("Seq.concat(", "," + newline + indent(4), ")")
     }
-    
+
     val groups = filterGroup(decl)
     val companionSuperNames: List[String] = "scalaxb.ElemNameParser[" + fqn + "]" :: groups.map(g => 
       buildFormatterName(g.namespace, groupTypeName(g)))

@@ -40,6 +40,7 @@ object GeneralUsage {
     testTopLevelMultipleSeq
     testTopLevelOptionalSeq
     testTopLevelMustipleSeqAny
+    testSimpleAnyTypeExtension
     true
   }
   
@@ -77,8 +78,8 @@ object GeneralUsage {
       <IDREFS>foo</IDREFS>
       <ENTITY>foo</ENTITY>
       <ENTITIES>foo</ENTITIES>
-      <anyType xsi:type="string">foo</anyType>
-      <anySimpleType xsi:type="string">foo</anySimpleType>
+      <anyType xsi:type="xs:string">foo</anyType>
+      <anySimpleType xsi:type="xs:string">foo</anySimpleType>
     </foo>
     
     val obj = fromXML[SingularBuiltInTypeTest](subject)
@@ -88,14 +89,14 @@ object GeneralUsage {
           SingularBuiltInTypeTestSequence2(Int_(1), Int_(1), 1, 1, 1, Int_(1), false, "foo", "foo", "foo"),
           SingularBuiltInTypeTestSequence3("en-US", "foo", "foo", "foo",  Array("foo"),
             "foo", "foo", Array("foo"), "foo", Array("foo")),
-          SingularBuiltInTypeTestSequence4(DataRecord(_, _, _), DataRecord(_, _, _))
+          SingularBuiltInTypeTestSequence4(DataRecord(_, _, "foo"), DataRecord(_, _, "foo"))
           ) =>
         case _ => error("match failed: " + obj.toString)
       }
     check(obj)
     val document = toXML[SingularBuiltInTypeTest](obj, "foo", defaultScope)
-    check(fromXML[SingularBuiltInTypeTest](document))
     println(document)
+    check(fromXML[SingularBuiltInTypeTest](document))
   }
       
   def testSingularSimpleType {
@@ -356,5 +357,24 @@ object GeneralUsage {
     val document = toXML[TopLevelMultipleSeqAnyTest](obj, "foo", scope)
     println(document)
     check(fromXML[TopLevelMultipleSeqAnyTest](document))    
+  }
+
+  def testSimpleAnyTypeExtension {
+    println("testSimpleAnyTypeExtension")
+    val subject = <foo xmlns="http://www.example.com/general"
+        xmlns:gen="http://www.example.com/general"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:xs="http://www.w3.org/2001/XMLSchema"
+        xsi:type="xs:string">something</foo>
+    val obj = fromXML[AnySimpleTypeExtension](subject)
+
+    def check(obj: Any) = obj match {
+        case AnySimpleTypeExtension(DataRecord(_, _, "something"), _) =>
+        case _ => error("match failed: " + obj.toString)
+      }
+    check(obj)
+    val document = toXML[AnySimpleTypeExtension](obj, "foo", scope)
+    println(document)
+    check(fromXML[AnySimpleTypeExtension](document))
   }
 }

@@ -44,10 +44,6 @@ object XsLongAttribute extends XsTypeSymbol {
   val name = "XsLongAttribute"
 }
 
-object XsAnySimpleType extends XsTypeSymbol {
-  val name = "XsAnySimpleType"
-}
-
 object XsInterNamespace extends XsTypeSymbol {
   val name = "XsInterNamespace"
 }
@@ -103,6 +99,7 @@ abstract class DerivSym
 case class Extends(sym: XsTypeSymbol) extends DerivSym
 case class Restricts(sym: XsTypeSymbol) extends DerivSym
 
+object XsAnySimpleType    extends BuiltInSimpleTypeSymbol("XsAnySimpleType") {}
 object XsUnknown          extends BuiltInSimpleTypeSymbol("String") {}
 object XsDuration         extends BuiltInSimpleTypeSymbol("javax.xml.datatype.Duration") {}
 object XsDateTime         extends BuiltInSimpleTypeSymbol("javax.xml.datatype.XMLGregorianCalendar") {}

@@ -158,6 +158,7 @@ trait Args extends Params {
     
   // called by makeCaseClassWithType
   def buildArg(content: SimpleContentDecl, typeSymbol: XsTypeSymbol): String = typeSymbol match {
+    case AnyType(symbol) => buildArg(buildTypeName(symbol), "node", Single)
     case base: BuiltInSimpleTypeSymbol => buildArg(buildTypeName(base), "node", Single)
     case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
       decl.content match {

@@ -76,9 +76,11 @@ trait Params extends Lookup {
       makeParamName(name) + ": " + typeName
 
     def toScalaCode: String =
-      toTraitScalaCode + (
-        if (cardinality == Optional && attribute) " = None"
-        else "")
+      toTraitScalaCode + (cardinality match {
+        case Single if typeSymbol == XsLongAttribute => " = Map()"
+        case Optional if attribute => " = None"
+        case _ => ""
+      })
   }
   
   def buildParam(decl: Decl): Param = decl match {

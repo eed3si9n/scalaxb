@@ -22,6 +22,17 @@ object `package` extends XMLStandardTypes {
   def toXML[A](obj: A, elementLabel: String, scope: NamespaceBinding)(implicit format: CanWriteXML[A]): NodeSeq =
     toXML(obj, None, Some(elementLabel), scope, false)
 
+  /** @returns - maps from prefix to namespace URI.
+   */
+  def fromScope(scope: NamespaceBinding): List[(Option[String], String)] = {
+    def doFromScope(s: NamespaceBinding): List[(Option[String], String)] = {
+      lazy val parentMap: List[(Option[String], String)] = Option[NamespaceBinding](s.parent) map { doFromScope
+        } getOrElse { Nil }
+      Option[String](s.uri) map { uri => (Option[String](s.prefix) -> uri) :: parentMap } getOrElse {parentMap}
+    }
+    doFromScope(scope).reverse
+  }
+
   /** @param pairs - pairs of (prefix, namespace URI)
    */
   def toScope(pairs: (Option[String], String)*): NamespaceBinding =
@@ -237,6 +248,20 @@ trait XMLStandardTypes {
         scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
       Helper.stringToXML((obj map { x => scalaxb.toXML(x, namespace, elementLabel, scope, typeAttribute).text }).mkString(" "),
         namespace, elementLabel, scope)
+  }
+
+  implicit def dataRecordFormat[A: XMLFormat]: XMLFormat[DataRecord[A]] = new XMLFormat[DataRecord[A]] {
+    def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, DataRecord[A]] = seq match {
+      case node: Node =>
+        try {
+          Right(DataRecord(Some(node.namespace), Some(node.label), scalaxb.fromXML[A](node)))
+        } catch { case e: Exception => Left(e.toString) }
+      case _ => Left("scala.xml.Node is required.")
+    }
+
+    def writes(obj: DataRecord[A], namespace: Option[String], elementLabel: Option[String],
+        scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
+      DataRecord.toXML(obj, namespace, elementLabel, scope, typeAttribute)
   }
 
   implicit def dataRecordXMLWriter[A]: CanWriteXML[DataRecord[A]] = new CanWriteXML[DataRecord[A]] {

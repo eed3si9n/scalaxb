@@ -41,6 +41,7 @@ object GeneralUsage {
     testTopLevelOptionalSeq
     testTopLevelMustipleSeqAny
     testSimpleAnyTypeExtension
+    testDataRecord
     true
   }
   
@@ -376,5 +377,29 @@ object GeneralUsage {
     val document = toXML[AnySimpleTypeExtension](obj, "foo", scope)
     println(document)
     check(fromXML[AnySimpleTypeExtension](document))
+  }
+
+  def testDataRecord {
+    println("testDataRecord")
+    val subject = <foo xmlns="http://www.example.com/general"
+        xmlns:gen="http://www.example.com/general"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:xs="http://www.w3.org/2001/XMLSchema"><firstName>John</firstName><lastName>Doe</lastName></foo>
+    val obj = fromXML[DataRecord[Person]](subject)
+    val scopeList = fromScope(subject.scope)
+
+    scopeList match {
+      case (None, "http://www.example.com/general") :: xs =>
+      case _ => error(scopeList.toString)
+    }
+
+    def check(obj: Any) = obj match {
+        case DataRecord(_, Some("foo"), Person("John", "Doe")) =>
+        case _ => error("match failed: " + obj.toString)
+      }
+    check(obj)
+    val document = toXML[DataRecord[Person]](obj, "foo", toScope(scopeList: _*))
+    println(document)
+    check(fromXML[DataRecord[Person]](document))
   }
 }

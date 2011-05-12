@@ -56,6 +56,10 @@ object XsMixed extends XsTypeSymbol {
   val name = "XsMixed"
 }
 
+case class XsWildcard(namespaceConstraint: List[String]) extends XsTypeSymbol {
+  val name = "XsWildcard(" + namespaceConstraint.mkString(",") + ")"
+}
+
 case class XsDataRecord(member: XsTypeSymbol) extends XsTypeSymbol {
   val name = "XsDataRecord(" + member + ")"
 }
@@ -76,8 +80,9 @@ object ReferenceTypeSymbol {
 
 object AnyType {
   def unapply(value: XsTypeSymbol): Option[XsTypeSymbol] = value match {
-    case XsAnyType => Some(value)
-    case XsAnySimpleType => Some(value)
+    case x: XsWildcard => Some(x)
+    case XsAnyType => Some(XsAnyType)
+    case XsAnySimpleType => Some(XsAnySimpleType)
     case _ => None
   }
 }

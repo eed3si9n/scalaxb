@@ -35,7 +35,7 @@ trait Args extends Params {
   
   // called by buildConverter
   def buildArg(selector: String, typeSymbol: XsTypeSymbol): String = typeSymbol match {
-    case XsAnyType                                  => selector
+    case AnyType(symbol)                            => selector
     case symbol: BuiltInSimpleTypeSymbol            => buildArg(buildTypeName(symbol), selector, Single)
     case ReferenceTypeSymbol(decl: SimpleTypeDecl)  => buildArg(buildTypeName(baseType(decl)), selector, Single)
     case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
@@ -247,7 +247,7 @@ trait Args extends Params {
       case ref: GroupRef => true
       case elem: ElemDecl =>
         elem.typeSymbol match {
-          case XsAnyType => true
+          case AnyType(symbol) => true
           case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
             if (compositorWrapper.contains(decl)) true
             else false

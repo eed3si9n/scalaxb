@@ -7,7 +7,7 @@ import general._
 
 object GeneralUsage {
   val NS = Some("http://www.example.com/general")
-
+  val O = Some("http://www.example.com/other")
 
   object Int_ {
     def unapply(x: BigInt) =
@@ -128,6 +128,7 @@ object GeneralUsage {
   }
   
   def testList {
+    println("testList")
     val subject = <foo xmlns="http://www.example.com/general"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
       <numbers1>1 2 3</numbers1>
@@ -156,6 +157,7 @@ object GeneralUsage {
   }
   
   def testSingularComplexType {
+    println("testSingularComplexType")
     val subject = <foo xmlns="http://www.example.com/general"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
       <person1><firstName>John</firstName><lastName>Doe</lastName></person1>
@@ -181,6 +183,7 @@ object GeneralUsage {
   }
   
   def testChoiceComplexType {
+    println("testChoiceComplexType")
     val subject = <foo xmlns="http://www.example.com/general"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
       <person1><firstName>John</firstName><lastName>Doe</lastName></person1>
@@ -225,8 +228,8 @@ object GeneralUsage {
         <xs:element name="person4" minOccurs="0" nillable="true" type="gen:Person"/>
         <xs:any namespace="##other" processContents="lax" minOccurs="0"/>
       </xs:choice>
-      <xs:element name="person5" maxOccurs="unbounded" type="gen:Person"/>
       <xs:any namespace="##other" processContents="lax" maxOccurs="unbounded"/>
+      <xs:element name="person5" maxOccurs="unbounded" type="gen:Person"/>
     </xs:sequence>
   </xs:complexType>
   */
@@ -234,30 +237,31 @@ object GeneralUsage {
     println("testAny")
     val subject = <foo xmlns="http://www.example.com/general"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xmlns:xs="http://www.w3.org/2001/XMLSchema">
+        xmlns:xs="http://www.w3.org/2001/XMLSchema"
+        xmlns:o="http://www.example.com/other">
       <person1><firstName>John</firstName><lastName>Doe</lastName></person1>
-      <foo xsi:type="xs:int">1</foo>
+      <o:foo xsi:type="xs:int">1</o:foo>
       <person2 xsi:nil="true"/>
       <person3><firstName>John</firstName><lastName>Doe</lastName></person3>
-      <foo xsi:type="xs:int">1</foo>
-      <foo xsi:type="xs:int">1</foo>
+      <o:foo xsi:type="xs:int">1</o:foo>
+      <o:foo xsi:type="xs:int">1</o:foo>
+      <o:foo xsi:type="xs:int">1</o:foo><o:foo xsi:type="xs:int">1</o:foo>
       <person5><firstName>John</firstName><lastName>Doe</lastName></person5>
-        <person5><firstName>John</firstName><lastName>Doe</lastName></person5>
-      <foo xsi:type="xs:int">1</foo><foo xsi:type="xs:int">1</foo>
+      <person5><firstName>John</firstName><lastName>Doe</lastName></person5>
     </foo>
     val obj = fromXML[AnyTest](subject)
     
     def check(obj: Any) = obj match {
         case AnyTest(
           Person("John", "Doe"),
-          DataRecord(NS, Some("foo"), 1), // Single
+          DataRecord(O, Some("foo"), 1), // Single
           DataRecord(NS, Some("person2"), None),
           Some(Person("John", "Doe")),
-          Some(DataRecord(NS, Some("foo"), 1)), // optional
-          Some(DataRecord(NS, Some("foo"), Some(1))), // nillable optional
-          Seq(Person("John", "Doe"), Person("John", "Doe")),
-          Seq(DataRecord(NS, Some("foo"), 1), // multiple
-            DataRecord(NS, Some("foo"), 1))
+          Some(DataRecord(O, Some("foo"), 1)), // optional
+          Some(DataRecord(O, Some("foo"), Some(1))), // nillable optional
+          Seq(DataRecord(O, Some("foo"), 1), // multiple
+            DataRecord(O, Some("foo"), 1)),
+          Seq(Person("John", "Doe"), Person("John", "Doe"))
            ) =>
         case _ => error("match failed: " + obj.toString)
       }
@@ -265,7 +269,8 @@ object GeneralUsage {
     val scope = toScope(None -> "http://www.example.com/general",
       Some("gen") -> "http://www.example.com/general",
       Some("xsi") -> "http://www.w3.org/2001/XMLSchema-instance",
-      Some("xs") -> "http://www.w3.org/2001/XMLSchema")
+      Some("xs") -> "http://www.w3.org/2001/XMLSchema",
+      Some("o") -> "http://www.example.com/other")
     val document = toXML[AnyTest](obj, "foo", scope)
     println(document)
     check(fromXML[AnyTest](document))

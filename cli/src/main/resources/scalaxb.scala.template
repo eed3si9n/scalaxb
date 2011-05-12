@@ -575,8 +575,8 @@ trait AnyElemNameParser extends scala.util.parsing.combinator.Parsers {
   // we need this so treat ElemName as NodeSeq for fromXML etc.
   implicit def toNodeSeq(elem: Elem): scala.xml.NodeSeq = elem.node
 
-  def any: Parser[ElemName] =
-    accept("any", { case x: ElemName if x.name != "" => x })
+  def any(f: ElemName => Boolean): Parser[ElemName] =
+    accept("any", { case x: ElemName if x.name != "" && f(x) => x })
 
   def optTextRecord(implicit format: XMLFormat[String]): Parser[Option[DataRecord[Any]]] =
     opt(text ^^ (x => DataRecord(x.node.text)(format)))

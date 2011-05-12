@@ -33,28 +33,35 @@ trait XMLOutput extends Args {
       case _               => "false"
     }
     
-    val xToXMLCode = "x => " + buildToXML(param.baseTypeName, "x, x.namespace, x.key, __scope, " + typeAttribute)
-    val toXMLCode = param.typeSymbol match {
+    lazy val xToXMLCode = "x => " + buildToXML(param.baseTypeName, "x, x.namespace, x.key, __scope, " + typeAttribute)
+    lazy val toXMLCode = param.typeSymbol match {
       case AnyType(symbol)      => xToXMLCode
       case XsNillableAny        => xToXMLCode
       case XsDataRecord(member) => xToXMLCode
       case _ => buildToXML(param.baseTypeName, "_, " + ns + ", " + quote(Some(param.name)) + 
         ", __scope, " + typeAttribute)
     }
-    
-    val elemLabel = param.typeSymbol match {
-        case AnyType(symbol)      => name + ".key"
-        case XsNillableAny        => name + ".key"
-        case XsDataRecord(member) => name + ".key"
-        case _ => quote(Some(param.name))
-      }
-    
-    val optionalType = "Option[" + param.baseTypeName + "]"
-    val xOptionalToXMLCode = "x => " + buildToXML(optionalType, "x, x.namespace, x.key, __scope, " + typeAttribute)
-    val optionalToXMLCode = param.typeSymbol match {
+
+    lazy val optionalType = "Option[" + param.baseTypeName + "]"
+    lazy val xOptionalToXMLCode = "x => " + buildToXML(optionalType, "x, x.namespace, x.key, __scope, " + typeAttribute)
+    lazy val optionalToXMLCode = param.typeSymbol match {
       case AnyType(symbol)      => xOptionalToXMLCode
       case XsDataRecord(member) => xOptionalToXMLCode
       case _ => buildToXML(optionalType, "_, " + ns + ", " + quote(Some(param.name)) + ", __scope, " + typeAttribute)
+    }
+
+    lazy val singleToXMLCode = param.typeSymbol match {
+      case AnyType(symbol)      => "Some(" + name + ") map {" + xToXMLCode + "} get"
+      case XsNillableAny        => "Some(" + name + ") map {" + xToXMLCode + "} get"
+      case XsDataRecord(member) => "Some(" + name + ") map {" + xToXMLCode + "} get"
+      case _ => buildToXML(param.baseTypeName, name + ", " + ns + ", " + quote(Some(param.name)) + ", __scope, " + typeAttribute)
+    }
+
+    lazy val singleOptionalToXMLCode = param.typeSymbol match {
+      case AnyType(symbol)      => "Some(" + name + ") map {" + optionalToXMLCode + "} get"
+      case XsNillableAny        => "Some(" + name + ") map {" + optionalToXMLCode + "} get"
+      case XsDataRecord(member) => "Some(" + name + ") map {" + optionalToXMLCode + "} get"
+      case _ => buildToXML(optionalType, name + ", " + ns + ", " + quote(Some(param.name)) + ", __scope, " + typeAttribute)
     }
     
     val retval = (param.cardinality, param.nillable) match {
@@ -62,8 +69,8 @@ trait XMLOutput extends Args {
       case (Multiple, false) => name + " flatMap { " + toXMLCode + " }"
       case (Optional, true)  => name + " map { " +  optionalToXMLCode + " } getOrElse {Nil}" 
       case (Optional, false) => name + " map { " + toXMLCode + " } getOrElse {Nil}"
-      case (Single, true)    => buildToXML(optionalType, name + ", " + ns + ", " + elemLabel + ", __scope, " + typeAttribute)
-      case (Single, false)   => buildToXML(param.baseTypeName, name + ", " + ns + ", " + elemLabel + ", __scope, " + typeAttribute)
+      case (Single, true)    => singleOptionalToXMLCode
+      case (Single, false)   => singleToXMLCode
     }
     
     retval

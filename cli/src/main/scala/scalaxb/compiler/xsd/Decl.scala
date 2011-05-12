@@ -269,21 +269,18 @@ object LaxProcess extends ProcessContents
 object SkipProcess extends ProcessContents
 object StrictProcess extends ProcessContents
 
-case class AnyAttributeDecl(namespaceRange: String,
+case class AnyAttributeDecl(namespaceConstraint: List[String],
   processContents: ProcessContents) extends AttributeLike
 
 object AnyAttributeDecl {
   def fromXML(node: scala.xml.Node, config: ParserConfig) = {
-    val namespaceRange = (node \ "namespace").headOption match {
-      case None    => "##any"
-      case Some(x) => x.text
-    }
+    val namespaceConstraint = (node \ "@namespace").text.split(' ').toList
     val processContents = (node \ "@processContents").text match {
       case "lax"  => LaxProcess
       case "skip" => SkipProcess
       case _      => StrictProcess
     }
-    AnyAttributeDecl(namespaceRange, processContents)
+    AnyAttributeDecl(namespaceConstraint, processContents)
   }
 }
 
@@ -721,13 +718,21 @@ object AllDecl {
 
 case class AnyDecl(minOccurs: Int,
   maxOccurs: Int,
+  namespaceConstraint: List[String],
+  processContents: ProcessContents,
   uniqueId: Int = Incrementor.nextInt) extends CompositorDecl with Particle
 
 object AnyDecl {
   def fromXML(node: scala.xml.Node, config: ParserConfig) = {
     val minOccurs = CompositorDecl.buildOccurrence((node \ "@minOccurs").text)
     val maxOccurs = CompositorDecl.buildOccurrence((node \ "@maxOccurs").text)
-    AnyDecl(minOccurs, maxOccurs)
+    val namespaceConstraint = (node \ "@namespace").text.split(' ').toList
+    val processContents = (node \ "@processContents").text match {
+      case "lax"  => LaxProcess
+      case "skip" => SkipProcess
+      case _      => StrictProcess
+    }
+    AnyDecl(minOccurs, maxOccurs, namespaceConstraint, processContents)
   }
 }
 

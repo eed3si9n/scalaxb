@@ -210,7 +210,7 @@ trait Params extends Lookup {
     val anyNumber = anyNumbers.getOrElseUpdate(any, anyNumbers.size + 1)
     val name = if (anyNumber <= 1) "any"
       else "any" + anyNumber
-    ElemDecl(Some(INTERNAL_NAMESPACE), name, XsAnyType, None, None, any.minOccurs, any.maxOccurs)
+    ElemDecl(Some(INTERNAL_NAMESPACE), name, XsWildcard(any.namespaceConstraint), None, None, any.minOccurs, any.maxOccurs)
   }
     
   def buildCompositorRef(compositor: HasParticle, index: Int): ElemDecl =

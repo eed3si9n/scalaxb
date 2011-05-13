@@ -1,7 +1,7 @@
 [app]
   version: 0.5.4
   org: org.scalaxb
-  name: scalaxb_2.8.1
+  name: scalaxb
   class: scalaxb.compiler.SbtApp
 [scala]
   version: 2.8.1

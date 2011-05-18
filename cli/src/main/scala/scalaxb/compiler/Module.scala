@@ -163,8 +163,10 @@ trait Module extends Logger {
 
   def toOutput[From, To](packageName: Option[String], file: From)
       (implicit ev: CanBeRawSchema[From, RawSchema], evTo: CanBeWriter[To]): To =
-    evTo.newInstance(packageName, """([.]\w+)$""".r.replaceFirstIn(
-      new File(ev.toURI(file).getPath).getName, ".scala"))
+    evTo.newInstance(packageName, toFileNamePart(file) + ".scala")
+
+  def toFileNamePart[From](file: From)(implicit ev: CanBeRawSchema[From, RawSchema]): String =
+    """([.]\w+)$""".r.replaceFirstIn(new File(ev.toURI(file).getPath).getName, "")
 
   def processReaders[From, To](files: Seq[From], config0: Config)
      (implicit ev: CanBeRawSchema[From, RawSchema], evTo: CanBeWriter[To]): List[To] = {
@@ -235,7 +237,8 @@ trait Module extends Logger {
     }
 
     def processProtocol = {
-      val output = implicitly[CanBeWriter[To]].newInstance(packageName(None, context), "xmlprotocol.scala")
+      val output = implicitly[CanBeWriter[To]].newInstance(packageName(None, context),
+        toFileNamePart(files.head) + "_xmlprotocol.scala")
       val out = implicitly[CanBeWriter[To]].toWriter(output)
       val protocolNodes = generateProtocol(Snippet(nodes, companions, implicitValues), context, config)
       try {

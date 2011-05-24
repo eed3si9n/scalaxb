@@ -212,7 +212,15 @@
       <xs:any namespace="##other" processContents="lax"/>
     </xs:sequence>
   </xs:complexType>
-  
+
+  <xs:complexType name="ProtocolType">
+    <xs:choice minOccurs="1" maxOccurs="1">
+      <xs:element name="HTTP"/>
+      <xs:element name="TCP"/>
+      <xs:element name="UDP"/>
+    </xs:choice>
+  </xs:complexType>
+
   <xs:complexType name="Person">
     <xs:sequence>
       <xs:element name="firstName" type="xs:string"/>

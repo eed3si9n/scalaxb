@@ -287,6 +287,7 @@ trait Params extends Lookup {
       }
       
       val member = sameType match {
+        case Some(AnyType(x)) => "Any"
         case Some(x) => buildTypeName(x)
         case None =>
           if (!containsForeignType(choice) &&

@@ -28,7 +28,7 @@ class ScalaxbProject(info: ProjectInfo) extends ParentProject(info) {
   class WebProject(info: ProjectInfo) extends AppengineProject(info) with GenerateClientTask with NoPublish {
     override def localizationsPath = parentPath / "project" / "build" / "localizations"
     
-    val uf_version = "0.2.2"
+    val uf_version = "0.3.3"
     lazy val uf         = "net.databinder" %% "unfiltered-filter" % uf_version
     lazy val uf_uploads = "net.databinder" %% "unfiltered-uploads" % uf_version
 

@@ -61,13 +61,8 @@ object Module {
 
   def moduleByFileName(file: File, verbose: Boolean): Module = file.toString match {
     case FileExtension(".wsdl") =>
-      val elem = CustomXML.load(UnicodeFileReader.reader(file))
-      elem.label match {
-        case "definitions" =>
-          if (verbose) new scalaxb.compiler.wsdl11.Driver with Verbose
-          else new scalaxb.compiler.wsdl11.Driver
-        case _ => error("only wsdl 1.1 is supported: " + elem.label)
-      }
+      if (verbose) new scalaxb.compiler.wsdl11.Driver with Verbose
+      else new scalaxb.compiler.wsdl11.Driver
     case _ =>
       if (verbose) new scalaxb.compiler.xsd.Driver with Verbose
       else new scalaxb.compiler.xsd.Driver

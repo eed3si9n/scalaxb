@@ -10,7 +10,7 @@ import unfiltered.response._
 import unfiltered.request.{Path => UFPath}
 
 class CompilerFilter extends unfiltered.filter.Planify ({
-  case POST(UFPath(Seg("compile" :: what :: Nil), Params(params0, req))) =>
+  case req @ POST(UFPath(Seg("compile" :: what :: Nil)) & Params(params0)) =>
     val (params, multipart) = req match {
       case MultiPart(req) =>
         val data = MultiPartParams.Memory(req)

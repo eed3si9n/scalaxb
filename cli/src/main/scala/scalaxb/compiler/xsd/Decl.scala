@@ -84,11 +84,15 @@ class ParserConfig {
 }
 
 object TypeSymbolParser {
+  import scalaxb.compiler.Module
+
   val XML_SCHEMA_URI = "http://www.w3.org/2001/XMLSchema"
   val XML_URI = "http://www.w3.org/XML/1998/namespace"
   
-  def fromString(name: String, config: ParserConfig): XsTypeSymbol = {
-    val (namespace, typeName) = splitTypeName(name, config)
+  def fromString(name: String, config: ParserConfig): XsTypeSymbol = fromString(name, splitTypeName(name, config))
+
+  def fromString(name: String, pair: (Option[String], String)): XsTypeSymbol = {
+    val (namespace, typeName) = pair
     namespace match {
       case Some(XML_SCHEMA_URI) =>
         if (XsTypeSymbol.toTypeSymbol.isDefinedAt(typeName)) XsTypeSymbol.toTypeSymbol(typeName)
@@ -96,24 +100,14 @@ object TypeSymbolParser {
       case _ => new ReferenceTypeSymbol(name)
     }
   }
-  
-  def splitTypeName(name: String, config: ParserConfig): (Option[String], String) = {
+
+  def splitTypeName(name: String, config: ParserConfig): (Option[String], String) =
     if (name.contains('@')) (config.targetNamespace, name)
-    else if (name.contains(':')) {
-      val prefix = name.dropRight(name.length - name.indexOf(':'))
-      val value = name.drop(name.indexOf(':') + 1)
-      Option[String](config.scope.getURI(prefix)) -> value
-    } else (Option[String](config.scope.getURI(null)), name)
-  }
-  
-  def splitTypeName(name: String, schema: SchemaDecl): (Option[String], String) = {
+    else Module.splitTypeName(name, config.scope)
+
+  def splitTypeName(name: String, schema: SchemaDecl): (Option[String], String) =
     if (name.contains('@')) (schema.targetNamespace, name)
-    else if (name.contains(':')) {
-      val prefix = name.dropRight(name.length - name.indexOf(':'))
-      val value = name.drop(name.indexOf(':') + 1)
-      Option[String](schema.scope.getURI(prefix)) -> value
-    } else (Option[String](schema.scope.getURI(null)), name)
-  }  
+    else Module.splitTypeName(name, schema.scope)
 }
 
 trait Particle {
@@ -132,19 +126,19 @@ trait Annotatable {
 }
 
 case class SchemaDecl(targetNamespace: Option[String],
-    elementQualifiedDefault: Boolean,
-    attributeQualifiedDefault: Boolean,
-    topElems: Map[String, ElemDecl],
-    elemList: List[ElemDecl],
-    topTypes: Map[String, TypeDecl],
-    typeList: List[TypeDecl],
-    choices: List[ChoiceDecl],
-    topAttrs: Map[String, AttributeDecl],
-    attrList: List[AttributeDecl],
-    topGroups: Map[String, GroupDecl],
-    topAttrGroups: Map[String, AttributeGroupDecl],
-    typeToAnnotatable: Map[TypeDecl, Annotatable],
-    annotation: Option[AnnotationDecl],
+    elementQualifiedDefault: Boolean = false,
+    attributeQualifiedDefault: Boolean = false,
+    topElems: Map[String, ElemDecl] = Map(),
+    elemList: List[ElemDecl] = Nil,
+    topTypes: Map[String, TypeDecl] = Map(),
+    typeList: List[TypeDecl] = Nil,
+    choices: List[ChoiceDecl] = Nil,
+    topAttrs: Map[String, AttributeDecl] = Map(),
+    attrList: List[AttributeDecl] = Nil,
+    topGroups: Map[String, GroupDecl] = Map(),
+    topAttrGroups: Map[String, AttributeGroupDecl] = Map(),
+    typeToAnnotatable: Map[TypeDecl, Annotatable] = Map(),
+    annotation: Option[AnnotationDecl] = None,
     scope: scala.xml.NamespaceBinding) extends Decl with Annotatable {
   
   val newline = System.getProperty("line.separator")

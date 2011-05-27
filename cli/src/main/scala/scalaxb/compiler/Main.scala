@@ -75,11 +75,10 @@ object Main extends Version {
       arglist("<schema_file>...", "input schema to be converted",
         { x: String => files append (new File(x)) })
     }
-    
-    lazy val module = if (verbose) new scalaxb.compiler.xsd.Driver with Verbose
-      else new scalaxb.compiler.xsd.Driver
 
-    if (paramParser.parse(args) && !files.isEmpty)
+    if (paramParser.parse(args) && !files.isEmpty) {
+      val module = Module.moduleByFileName(files.head, verbose)
+
       module.processFiles(files,
         Config(packageNames = packageNames,
           outdir = outdir,
@@ -87,5 +86,6 @@ object Main extends Version {
           classPrefix = classPrefix,
           paramPrefix = paramPrefix,
           wrappedComplexTypes = wrappedComplexTypes.toList) )
+    }
   }
 }

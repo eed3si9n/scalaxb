@@ -55,6 +55,7 @@ trait CompilerMatcher {
    */
   def evaluateTo(expected: Any,
       outdir: String = ".",
+      classpath: List[String] = Nil,
       unchecked: Boolean = true) = new Matcher[(Seq[String], Seq[File])] {
     
     /** @param pair :=> (code: Seq[String], files: Seq[File])
@@ -68,7 +69,7 @@ trait CompilerMatcher {
           error("At least one line of code is required.")
         
         val holder = new Holder
-        val classpathList = List(jarPathOfClass(holder.getClass.getName))
+        val classpathList = jarPathOfClass(holder.getClass.getName) :: classpath
         
         val in = new BufferedReader(new StringReader(""))
         val out = new PrintWriter(new BufferedWriter(
@@ -80,8 +81,7 @@ trait CompilerMatcher {
           (origBootclasspath :: bootPathList).mkString(java.io.File.pathSeparator)
         
         val originalClasspath = settings.classpath.value
-        settings.classpath.value =
-          classpathList.mkString(java.io.File.pathSeparator)
+        settings.classpath.value = classpathList.distinct.mkString(java.io.File.pathSeparator)
         settings.outdir.value = outdir
         settings.unchecked.value = unchecked
         
@@ -111,15 +111,16 @@ trait CompilerMatcher {
   /** compile checks if the given list of files compiles without an error.
    * @param outdir: String - output dir for the interpreter
    */
-  def compile(outdir: String = ".") = new Matcher[Seq[File]]() {
+  def compile(outdir: String = ".", classpath: List[String] = Nil) = new Matcher[Seq[File]]() {
     
     /** @param files :=> Seq[File]
      */
     def apply(files: => Seq[File]) = {
       val settings = new Settings
       val origBootclasspath = settings.bootclasspath.value
-      settings.bootclasspath.value = 
-        (origBootclasspath :: bootPathList).mkString(java.io.File.pathSeparator)
+      settings.classpath.value = classpath.distinct.mkString(java.io.File.pathSeparator)
+      settings.bootclasspath.value =
+        (origBootclasspath :: bootPathList).distinct.mkString(java.io.File.pathSeparator)
       settings.outdir.value = outdir
       
       val reporter = new ConsoleReporter(settings)

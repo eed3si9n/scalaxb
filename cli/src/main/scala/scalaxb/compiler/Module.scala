@@ -53,6 +53,36 @@ trait CanBeRawSchema[A, B] {
   def toURI(value: A): URI
 }
 
+object Module {
+  import scala.util.matching.Regex
+
+  val NL = System.getProperty("line.separator")
+  val FileExtension = """.*([.]\w+)$""".r
+
+  def moduleByFileName(file: File, verbose: Boolean): Module = file.toString match {
+    case FileExtension(".wsdl") =>
+      val elem = CustomXML.load(UnicodeFileReader.reader(file))
+      elem.label match {
+        case "definitions" =>
+          if (verbose) new scalaxb.compiler.wsdl11.Driver with Verbose
+          else new scalaxb.compiler.wsdl11.Driver
+        case _ => error("only wsdl 1.1 is supported: " + elem.label)
+      }
+    case _ =>
+      if (verbose) new scalaxb.compiler.xsd.Driver with Verbose
+      else new scalaxb.compiler.xsd.Driver
+  }
+
+  def splitTypeName(name: String, scope: scala.xml.NamespaceBinding): (Option[String], String) =
+    if (name.contains(':')) {
+      val prefix = name.dropRight(name.length - name.indexOf(':'))
+      val value = name.drop(name.indexOf(':') + 1)
+      Option[String](scope.getURI(prefix)) -> value
+    } else (Option[String](scope.getURI(null)), name)
+
+  def indent(n: Int) = "  " * n
+}
+
 trait Module extends Logger {
   type RawSchema
   type Schema
@@ -74,25 +104,7 @@ trait Module extends Logger {
   }
 
   implicit val fileReader = new CanBeRawSchema[File, RawSchema] {
-    override def toRawSchema(value: File) = {
-      val BOM_SIZE = 4
-      val EF = 0xEF.toByte
-      val BB = 0xBB.toByte
-      val BF = 0xBF.toByte
-      val FE = 0xFE.toByte
-      val FF = 0xFF.toByte
-      val bom = Array.ofDim[Byte](BOM_SIZE)
-      val in = new java.io.PushbackInputStream(new java.io.FileInputStream(value), BOM_SIZE)
-      val readSize = in.read(bom, 0, bom.length)
-      val (bomSize, encoding) = bom.toList match {
-        case EF :: BB :: BF :: xs => (3, "UTF-8")
-        case FE :: FF :: xs       => (2, "UTF-16BE")
-        case FF :: FE :: xs       => (2, "UTF-16LE")
-        case _                    => (0, "UTF-8")
-      }
-      in.unread(bom, bomSize, readSize - bomSize)
-      readerToRawSchema(new BufferedReader(new java.io.InputStreamReader(in, encoding)))
-    }
+    override def toRawSchema(value: File) = readerToRawSchema(UnicodeFileReader.reader(value))
     override def toURI(value: File) = value.toURI
   }
 
@@ -250,23 +262,27 @@ trait Module extends Logger {
       output
     }
 
-    def processRuntime = {
-      val output = implicitly[CanBeWriter[To]].newInstance(Some("scalaxb"), "scalaxb.scala")
-      val out = implicitly[CanBeWriter[To]].toWriter(output)
-      try {
-        printFromResource("/scalaxb.scala.template", out)
-      } finally {
-        out.flush()
-        out.close()
-      }
-      output
-    }
-
     processImportables(importables.toList) :::
     processImportables(additionalImportables.toList) :::
-    List(processProtocol, processRuntime)
+    List(processProtocol) :::
+    generateRuntimeFiles[To]
   }
-  
+
+  def generateFromResource[To](packageName: Option[String], fileName: String, resourcePath: String)
+                              (implicit evTo: CanBeWriter[To]) = {
+    val output = implicitly[CanBeWriter[To]].newInstance(packageName, fileName)
+    val out = implicitly[CanBeWriter[To]].toWriter(output)
+    try {
+      printFromResource(resourcePath, out)
+    } finally {
+      out.flush()
+      out.close()
+    }
+    output
+  }
+
+  def generateRuntimeFiles[To](implicit evTo: CanBeWriter[To]): List[To]
+
   def generate(schema: Schema, context: Context, config: Config): Snippet
     
   def generateProtocol(snippet: Snippet,
@@ -367,6 +383,11 @@ trait Module extends Logger {
 
   def copyFileFromResource(source: String, dest: File) =
     printFromResource(source, new java.io.PrintWriter(new java.io.FileWriter(dest)))
+
+  def mergeSnippets(snippets: Seq[Snippet]) =
+    Snippet(snippets flatMap {_.definition},
+      snippets flatMap {_.companion},
+      snippets flatMap {_.implicitValue})
 }
 
 object CustomXML extends XMLLoader[Elem] {
@@ -377,6 +398,28 @@ object CustomXML extends XMLLoader[Elem] {
     factory.setFeature("http://apache.org/xml/features/nonvalidating/load-dtd-grammar", false)
     factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false)
     factory.newSAXParser()
+  }
+}
+
+object UnicodeFileReader {
+  def reader(value: File): Reader = {
+    val BOM_SIZE = 4
+    val EF = 0xEF.toByte
+    val BB = 0xBB.toByte
+    val BF = 0xBF.toByte
+    val FE = 0xFE.toByte
+    val FF = 0xFF.toByte
+    val bom = Array.ofDim[Byte](BOM_SIZE)
+    val in = new java.io.PushbackInputStream(new java.io.FileInputStream(value), BOM_SIZE)
+    val readSize = in.read(bom, 0, bom.length)
+    val (bomSize, encoding) = bom.toList match {
+      case EF :: BB :: BF :: xs => (3, "UTF-8")
+      case FE :: FF :: xs       => (2, "UTF-16BE")
+      case FF :: FE :: xs       => (2, "UTF-16LE")
+      case _                    => (0, "UTF-8")
+    }
+    in.unread(bom, bomSize, readSize - bomSize)
+    new BufferedReader(new java.io.InputStreamReader(in, encoding))
   }
 }
 

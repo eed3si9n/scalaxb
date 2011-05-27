@@ -22,8 +22,8 @@
  
 package scalaxb.compiler.xsd
 
-import scalaxb.compiler.{Module, Config, Snippet, CustomXML}
-import java.io.{File, Reader, PrintWriter}
+import scalaxb.compiler.{Module, Config, Snippet, CustomXML, CanBeWriter}
+import java.io.{File, Reader}
 import java.net.{URI}
 import collection.mutable
 import scala.xml.{Node, Elem}
@@ -77,6 +77,9 @@ class Driver extends Module { driver =>
       schema
     }
   }
+
+  def generateRuntimeFiles[To](implicit evTo: CanBeWriter[To]): List[To] =
+    List(generateFromResource[To](Some("scalaxb"), "scalaxb.scala", "/scalaxb.scala.template"))
 
   def readerToRawSchema(reader: Reader): RawSchema = CustomXML.load(reader)
 

@@ -33,14 +33,20 @@ trait Lookup extends ContextProcessor {
   val schemas = context.schemas.toList
   val compositorWrapper = mutable.ListMap.empty[ComplexTypeDecl, HasParticle]
   val INTERNAL_NAMESPACE = "http://scalaxb.org/internal"
-  
+
+  def elements(qname: (Option[String], String)): ElemDecl = elements(qname._1, qname._2)
+
   def elements(namespace: Option[String], name: String) =
     (for (schema <- schemas;
           if schema.targetNamespace == namespace;
           if schema.topElems.contains(name))
         yield schema.topElems(name)) match {
         case x :: xs => x
-        case Nil     => throw new ReferenceNotFound("element" , namespace, name)
+        case Nil     =>
+          (namespace, name) match {
+            case (Some(XS_URL), "schema") => ElemDecl(namespace, name, XsAnyType, None, None, 1, 1)
+            case _ => throw new ReferenceNotFound("element" , namespace, name)
+          }
       }  
 
   // http://www.w3.org/TR/xmlschema-0/#Globals

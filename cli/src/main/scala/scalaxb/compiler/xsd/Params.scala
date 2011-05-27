@@ -72,8 +72,9 @@ trait Params extends Lookup {
       case Multiple => "Seq[" + singleTypeName + "]"
     }      
 
-    def toTraitScalaCode: String =
-      makeParamName(name) + ": " + typeName
+    def toParamName: String = makeParamName(name)
+
+    def toTraitScalaCode: String = toParamName + ": " + typeName
 
     def toScalaCode: String =
       toTraitScalaCode + (cardinality match {

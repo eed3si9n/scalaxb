@@ -10,7 +10,7 @@ class ScalaxbProject(info: ProjectInfo) extends ParentProject(info) {
   lazy val cli = project("cli", "scalaxb", new CliProject(_))
   
   class CliProject(info: ProjectInfo) extends DefaultProject(info) with VersionFileTask
-      with ScalaBazaarTask with posterous.Publish with TestProject {
+      with ScalaBazaarTask with posterous.Publish with TestProject with scalaxb.ScalaxbPlugin {
     val scopt = "com.github.scopt" %% "scopt" % "1.0.0-SNAPSHOT"    
     val launch = "org.scala-tools.sbt" % "launcher-interface" % "0.7.4" % "provided" from (
       "http://databinder.net/repo/org.scala-tools.sbt/launcher-interface/0.7.4/jars/launcher-interface.jar")
@@ -19,6 +19,8 @@ class ScalaxbProject(info: ProjectInfo) extends ParentProject(info) {
     override def bazaarPackageBaseURL = "http://cloud.github.com/downloads/eed3si9n/scalaxb/"
     override def notesPath = parentPath / "notes"
     override def versionFilePackage = "scalaxb"
+    override def generatedPackageName = "wsdl20"
+    override def generatedClassPrefix = Some("X")
     override def compileAction = super.compileAction dependsOn(versionfile)
   }
   
@@ -54,7 +56,8 @@ class ScalaxbProject(info: ProjectInfo) extends ParentProject(info) {
       case _ => "1.6.6"
     }
     val specs = "org.scala-tools.testing" % crossVersionSpecs % specsVersion % "test"
-    val junit = "junit" % "junit" % "4.7" % "test" 
+    val junit = "junit" % "junit" % "4.7" % "test"
+    val dispatch_http = "net.databinder" %% "dispatch-http" % "0.8.1" % "test"
   }
 
   trait NoPublish extends BasicManagedProject {

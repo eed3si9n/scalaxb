@@ -182,11 +182,31 @@ abstract class GenSource(val schema: SchemaDecl,
     val fqn = buildTypeName(group, false)
     <source>  implicit lazy val {formatterName}: scalaxb.AttributeGroupFormat[{fqn}] = new Default{formatterName} {{}}</source>
   }
-  
+
+  def isQualifyAsIRIStyle(decl: ComplexTypeDecl): Boolean = {
+    val primary = decl.content match {
+      case ComplexContentDecl(CompContRestrictionDecl(_, x, _)) => x
+      case ComplexContentDecl(CompContExtensionDecl(_, x, _)) => x
+      case _ => None
+    }
+    primary match {
+      case Some(SequenceDecl(_, _, _, _)) =>
+        val flatParticles = flattenElements(decl, 0)
+        val attributes = flattenAttributes(decl)
+        flatParticles.forall(_.typeSymbol match {
+          case AnyType(symbol) => false
+          case symbol: BuiltInSimpleTypeSymbol => true
+          case ReferenceTypeSymbol(decl: SimpleTypeDecl) => true
+          case _ => false
+        }) && attributes.isEmpty
+      case _ => false
+    }
+  }
+
   def makeCaseClassWithType(localName: String, fqn: String, decl: ComplexTypeDecl): Snippet = {
     log("GenSource#makeCaseClassWithType: emitting " + fqn)
     val formatterName = buildFormatterName(decl.namespace, localName)
-    
+
     val primary = decl.content match {
       case ComplexContentDecl(CompContRestrictionDecl(_, x, _)) => x
       case ComplexContentDecl(CompContExtensionDecl(_, x, _)) => x

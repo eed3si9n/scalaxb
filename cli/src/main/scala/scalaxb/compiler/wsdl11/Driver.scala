@@ -166,6 +166,7 @@ class Driver extends Module { driver =>
   def generateRuntimeFiles[To](implicit evTo: CanBeWriter[To]): List[To] =
     List(generateFromResource[To](Some("scalaxb"), "scalaxb.scala", "/scalaxb.scala.template"),
       generateFromResource[To](Some("scalaxb"), "soap.scala", "/soap.scala.template"),
+      generateFromResource[To](Some("scalaxb"), "httpclients_dispatch.scala", "/httpclients_dispatch.scala.template"),
       generateFromResource[To](Some("soapenvelope12"), "soapenvelope12.scala", "/soapenvelope12.scala.template"),
       generateFromResource[To](Some("soapenvelope12"), "soapenvelope12_xmlprotocol.scala",
         "/soapenvelope12_xmlprotocol.scala.template"))

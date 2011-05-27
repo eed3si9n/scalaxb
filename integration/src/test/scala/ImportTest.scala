@@ -21,6 +21,6 @@ object ImportTest extends TestBase {
     (List("import ipo._",
           "import org.report._",
           "PurchaseReport(RegionsType(), PartsType(), None, None).toString"),
-     generated) must evaluateTo("PurchaseReport(RegionsType(WrappedArray()),PartsType(WrappedArray()),None,None)", outdir = "./tmp")
+     generated) must evaluateTo("PurchaseReport(RegionsType(List()),PartsType(List()),None,None)", outdir = "./tmp")
   }
 }

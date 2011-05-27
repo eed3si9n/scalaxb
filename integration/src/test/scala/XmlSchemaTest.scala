@@ -31,8 +31,7 @@ object XmlSchemaTest extends TestBase {
         Some("http://www.w3.org/2001/XMLSchema"), Some("schema"), document.scope).toString""" // "
      ),
      generated) must evaluateTo("""<schema targetNamespace="http://www.example.com/IPO" """ +
-       """xmlns:ipo="http://www.example.com/IPO" """ +
-       """xmlns="http://www.w3.org/2001/XMLSchema">""" +
+       """xmlns="http://www.w3.org/2001/XMLSchema" xmlns:ipo="http://www.example.com/IPO">""" +
        """<complexType name="Address">""" +
        """<sequence><element type="string" name="name"></element>""" +
        """<element type="string" name="street"></element>""" +

@@ -31,7 +31,6 @@ class ScalaxbProject(info: ProjectInfo) extends ParentProject(info) {
     val uf_version = "0.2.2"
     lazy val uf         = "net.databinder" %% "unfiltered-filter" % uf_version
     lazy val uf_uploads = "net.databinder" %% "unfiltered-uploads" % uf_version
-    // lazy val uf_spec    = "net.databinder" %% "unfiltered-spec" % uf_version
 
     lazy val deployLocal = deployLocalTask
 
@@ -48,7 +47,7 @@ class ScalaxbProject(info: ProjectInfo) extends ParentProject(info) {
   trait TestProject extends DefaultProject {
     override def testCompileOptions = super.testCompileOptions ++ Seq(CompileOption("-no-specialization")) 
     val crossVersionSpecs = crossScalaVersionString match {
-      case "2.9.0" => "specs_2.8.1"
+      case "2.9.0-1" => "specs_2.8.1"
       case _ => "specs_" + crossScalaVersionString
     }
     val specsVersion = crossScalaVersionString match {

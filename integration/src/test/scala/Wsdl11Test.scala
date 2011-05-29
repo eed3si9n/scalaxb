@@ -12,8 +12,7 @@ object Wsdl11Test extends TestBase {
       packageDir = true, outdir = tmp))
   val dependencyPath = new File("integration/lib_managed/scala_2.9.0/test/").getAbsoluteFile.listFiles.toList
   "stockquote.scala file must compile" in {
-    (List("""import stockquote._
-       val service = (new StockQuoteSoap12s with scalaxb.SoapClients with scalaxb.DispatchHttpClients {}).service
+    (List("""val service = (new stockquote.StockQuoteSoap12s with scalaxb.SoapClients with scalaxb.DispatchHttpClients {}).service
        val response = service.GetQuote(Some("GOOG"))""",
        """response.toString.contains("<Symbol>GOOG</Symbol>")"""), generated) must evaluateTo(true,
       outdir = "./tmp", classpath = dependencyPath map {_.toString})

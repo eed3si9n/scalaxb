@@ -1,0 +1,20 @@
+# new feature
+- Experimental support of [wsdl 1.1][1].
+
+## bug fixes and other minor enhancements
+- XML bindings are generated as `foo_xmlprotocol.scala`.
+- Uses Scala 2.9.0-1.
+- Web API uses [Unfiltered 0.3.3][6].
+- Adds default argument for `xs:anyAttribute`.
+- Adds support for `xs:anySimpleType`. ([#34][2] reported by [@psnively][3])
+- Fixes `xs:any` naming. ([#35][4] reported by [@psnively][3])
+- Adds typeclass instance for `DataRecord`. ([#40][5] reported by [@psnively][3])
+- Fixes `DataRecord` round trip. ([#43][5])
+- Fixes mapping of `xs:choice` of `xs:anyType`. ([#44][6] reported by [@psnively][3])
+
+  [1]: http://scalaxb.org/wsdl-support
+  [2]: https://github.com/eed3si9n/scalaxb/issues/34
+  [3]: http://twitter.com/psnively
+  [4]: https://github.com/eed3si9n/scalaxb/issues/35
+  [5]: https://github.com/eed3si9n/scalaxb/issues/43
+  [6]: http://unfiltered.databinder.net/

@@ -11,7 +11,7 @@ class ScalaxbProject(info: ProjectInfo) extends ParentProject(info) {
   
   class CliProject(info: ProjectInfo) extends DefaultProject(info) with VersionFileTask
       with ScalaBazaarTask with posterous.Publish with TestProject with scalaxb.ScalaxbPlugin {
-    val scopt = "com.github.scopt" %% "scopt" % "1.0.0-SNAPSHOT"    
+    val scopt = "com.github.scopt" %% "scopt" % "1.0.0"
     val launch = "org.scala-tools.sbt" % "launcher-interface" % "0.7.4" % "provided" from (
       "http://databinder.net/repo/org.scala-tools.sbt/launcher-interface/0.7.4/jars/launcher-interface.jar")
     

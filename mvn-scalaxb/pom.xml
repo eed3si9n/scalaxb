@@ -3,11 +3,11 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>org.scalaxb</groupId>
-  <artifactId>scalaxb-maven-plugin</artifactId>
-  <version>0.6-SNAPSHOT</version>
+  <artifactId>maven-scalaxb-plugin</artifactId>
+  <version>0.6.1-SNAPSHOT</version>
   <packaging>maven-plugin</packaging>
 
-  <name>Scalaxb Maven Plugin</name>
+  <name>Maven scalaxb Plugin</name>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

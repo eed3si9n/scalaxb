@@ -19,7 +19,7 @@ To call `compile-xsd` from sbt, put this in your Plugins.scala:
     import sbt._
 
     class Plugins(info: ProjectInfo) extends PluginDefinition(info) {
-      val scalaxb = "org.scalaxb" % "sbt-scalaxb" % "0.5.4-SNAPSHOT"
+      val scalaxb = "org.scalaxb" % "sbt-scalaxb" % "0.6.0"
       
       val scalaToolsNexusSnapshots = "Scala Tools Nexus Snapshots" at "http://nexus.scala-tools.org/content/repositories/snapshots/"
       val scalaToolsNexusReleases  = "Scala Tools Nexus Releases" at "http://nexus.scala-tools.org/content/repositories/releases/"
@@ -28,7 +28,7 @@ To call `compile-xsd` from sbt, put this in your Plugins.scala:
 Installation
 ------------
 
-scalaxb is tested only under Scala 2.8. You can install it using sbaz:
+scalaxb is tested only under Scala 2.8.1 and 2.9.0-1, but the sbaz distribution is only available for 2.9.0-1:
 
     $ sudo sbaz update
     $ sudo sbaz install scalaxb

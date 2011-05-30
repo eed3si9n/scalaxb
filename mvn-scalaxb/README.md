@@ -1,5 +1,5 @@
-mvn-scalaxb
-===========
+scalaxb Maven Plugin
+====================
 
 This is the maven plugin for invoking scalaxb as part of a maven
 build. By default, it binds to the generate-sources phase of the

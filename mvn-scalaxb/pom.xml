@@ -16,6 +16,12 @@
     <junit.version>4.8.2</junit.version>
   </properties>
 
+  <scm>
+    <connection>scm:git:git://github.com/eed3si9n/scalaxb.git</connection>
+    <developerConnection>scm:git:git@github.com:eed3si9n/scalaxb.git</developerConnection>
+    <url>https://github.com/mart/scalaxb</url>
+  </scm>
+
   <dependencies>
 
     <dependency>
@@ -77,6 +83,7 @@
 
   <build>
     <plugins>
+
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-plugin-plugin</artifactId>
@@ -93,7 +100,24 @@
           </execution>
         </executions>
       </plugin>
+
     </plugins>
+
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-release-plugin</artifactId>
+          <version>2.2-SNAPSHOT</version>
+          <configuration>
+            <pushChanges>false</pushChanges>
+            <scmCommentPrefix>mvn-scalaxb/</scmCommentPrefix>
+            <connectionUrl>scm:git:${basedir}/..</connectionUrl>
+          </configuration>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+
   </build>
 
   <profiles>
@@ -134,5 +158,16 @@
       </build>
     </profile>
   </profiles>
+
+  <distributionManagement>
+    <repository>
+      <id>scala-tools</id>
+      <url>http://nexus.scala-tools.org/content/repositories/releases/</url>
+    </repository>
+    <snapshotRepository>
+      <id>scala-tools</id>
+      <url>http://nexus.scala-tools.org/content/repositories/snapshots/</url>
+    </snapshotRepository>
+  </distributionManagement>
 
 </project>

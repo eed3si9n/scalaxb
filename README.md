@@ -178,7 +178,7 @@ Bug Reporting
 -------------
 
 You can send bug reports to [Issues](http://github.com/eed3si9n/scalaxb/issues),
-send me a [tweet to @eed3si9n](http://twitter.com/eed3si9n), or email.
+send me a [tweet to @scalaxb](http://twitter.com/scalaxb), or email.
 
 Licensing
 ---------
@@ -188,5 +188,5 @@ It's the MIT License. See the file called LICENSE.
 Contacts
 --------
 
-- eed3si9n at gmail dot com
-- [@eed3si9n](http://twitter.com/eed3si9n)
+- [mailing list](http://groups.google.com/group/scalaxb)
+- [@scalaxb](http://twitter.com/scalaxb)

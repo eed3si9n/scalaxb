@@ -348,7 +348,7 @@ abstract class GenSource(val schema: SchemaDecl,
       {childString}</source>
     }
 
-    val groups = filterGroup(decl)
+    val groups = filterGroup(decl) filter { g => primaryCompositor(g).particles.size > 0 }
     val companionSuperNames: List[String] = "scalaxb.ElemNameParser[" + fqn + "]" :: groups.map(g => 
       buildFormatterName(g.namespace, groupTypeName(g)))
     
@@ -495,7 +495,8 @@ abstract class GenSource(val schema: SchemaDecl,
       if (groups.isEmpty) List("scalaxb.AnyElemNameParser")
       else groups.map { g => buildFormatterName(g.namespace, groupTypeName(g)) }
     
-    val companionCode = <source>{ buildComment(group) }  trait {formatterName} extends {superNames.mkString(" with ")} {{  
+    val companionCode = if (compositor.particles.size == 0) <source></source>
+      else <source>{ buildComment(group) }  trait {formatterName} extends {superNames.mkString(" with ")} {{
     private val targetNamespace: Option[String] = { quote(schema.targetNamespace) }
     
     def parse{localName}(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[{param.baseTypeName}] =
@@ -753,11 +754,11 @@ object {localName} {{
   def flattenElements(namespace: Option[String], family: String,
       compositor: HasParticle, index: Int, wrapTopSequence: Boolean): List[ElemDecl] = {    
     compositor match {
-      case ref:GroupRef =>
-        List(buildCompositorRef(ref, index))
+      case ref:GroupRef => flattenElements(namespace, family, buildGroup(ref), index, wrapTopSequence)
 
       case group:GroupDecl =>
-        List(buildCompositorRef(group, index))
+        if (primaryCompositor(group).particles.isEmpty) Nil
+        else List(buildCompositorRef(group, index))
 
       case seq: SequenceDecl =>
         if (wrapTopSequence &&
@@ -770,12 +771,13 @@ object {localName} {{
               val occurence = mergeOccurrence(buildOccurrence(choice).copy(nillable = false),
                 buildOccurrence(seq))
               List(buildCompositorRef(choice, occurence, 0))
+            case group: GroupDecl => flattenElements(namespace, family, group, index, wrapTopSequence)
             case _ => List(buildCompositorRef(seq, index))
           }
           else List(buildCompositorRef(seq, index))
         else splitLongSequence(
             namespace, family, compositor.particles).zipWithIndex flatMap {
-          case (ref: GroupRef, i: Int)            => List(buildCompositorRef(ref, i))
+          case (ref: GroupRef, i: Int)            => flattenElements(namespace, family, buildGroup(ref), i, wrapTopSequence)
           case (compositor2: HasParticle, i: Int) => List(buildCompositorRef(compositor2, i))
           case (elem: ElemDecl, i: Int)           => List(elem)
           case (ref: ElemRef, i: Int)             => List(buildElement(ref))

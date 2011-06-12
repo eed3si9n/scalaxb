@@ -194,6 +194,15 @@
       <xs:element name="string30" type="xs:string"/>
     </xs:all>
   </xs:complexType>
+
+  <xs:complexType name="EmptyComplexTypeTest">
+  </xs:complexType>
+
+  <xs:complexType name="EmptySequenceGroupTest">
+    <xs:sequence>
+      <xs:group ref="gen:emptySeqGroup"/>
+    </xs:sequence>
+  </xs:complexType>
   
   <xs:complexType name="TopLevelMultipleSeqTest">
     <xs:sequence minOccurs="0" maxOccurs="unbounded">
@@ -373,4 +382,8 @@
     <xs:attribute name="id" type="xs:ID"/>
     <xs:attribute name="class" type="xs:NMTOKENS"/>
   </xs:attributeGroup>
+
+  <xs:group name="emptySeqGroup">
+      <xs:sequence/>
+  </xs:group>
 </xs:schema>

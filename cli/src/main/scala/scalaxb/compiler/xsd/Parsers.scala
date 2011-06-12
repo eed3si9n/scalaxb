@@ -91,7 +91,8 @@ trait Parsers extends Args with Params {
       else splitLong[SequenceDecl](seq.particles) { SequenceDecl(_, 1, 1, 0) }
 
     val parserList = if (mixed) (0 to seq.particles.size * 2 - 1).toList map { i =>
-        if (i % 2 == 0) buildParser(seq.particles(i / 2), mixed, mixed)
+        if (seq.particles.size == 0) buildTextParser
+        else if (i % 2 == 0) buildParser(seq.particles(i / 2), mixed, mixed)
         else buildTextParser
       }
       else splits map { buildParser(_, mixed, mixed) }
@@ -118,7 +119,8 @@ trait Parsers extends Args with Params {
         else argList.mkString("," + newline + indent(4))
 
       "{ case " +
-      parserVariableList.mkString(" ~ ") + 
+      (if (seq.particles.size == 0) "_"
+      else  parserVariableList.mkString(" ~ ")) +
       (if (mixed) " => Seq.concat(" + argsString + ")"
       else if (wrapInDataRecord) " => scalaxb.DataRecord(" + fqn + "(" + argsString + "))"
       else " => " + fqn + "(" + argsString + ")") +
@@ -151,7 +153,8 @@ trait Parsers extends Args with Params {
   // choice repeatable in case any one particle is repeatable.
   // this may violate the schema, but it is a compromise as long as plurals are
   // treated as Seq[DataRecord].
-  def buildChoiceParser(choice: ChoiceDecl, occurrence: Occurrence, mixed: Boolean): String = {    
+  def buildChoiceParser(choice: ChoiceDecl, occurrence: Occurrence, mixed: Boolean): String = {
+    assert(choice.particles.size > 0, "choice has no particles: " + choice)
     val containsStructure = if (mixed) true
       else choice.particles exists(_ match {
         case elem: ElemDecl => false

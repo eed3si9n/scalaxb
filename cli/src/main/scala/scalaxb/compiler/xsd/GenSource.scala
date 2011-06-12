@@ -801,12 +801,12 @@ object {localName} {{
     case content: ComplexTypeContent
         if content.base.isInstanceOf[BuiltInSimpleTypeSymbol] =>
       val symbol = content.base.asInstanceOf[BuiltInSimpleTypeSymbol]
-      List(buildElement(symbol))
+      List(buildSymbolElement(symbol))
     case content: ComplexTypeContent
         if content.base.isInstanceOf[ReferenceTypeSymbol] &&
         content.base.asInstanceOf[ReferenceTypeSymbol].decl.isInstanceOf[SimpleTypeDecl] =>
-      val symbol = content.base.asInstanceOf[ReferenceTypeSymbol].decl.asInstanceOf[SimpleTypeDecl]
-      List(buildElement(symbol))    
+      val symbol = content.base.asInstanceOf[ReferenceTypeSymbol]
+      List(buildSymbolElement(symbol))
   } 
   
   def generateAccessors(all: AllDecl): List[String] = {
@@ -893,13 +893,7 @@ object {localName} {{
     
     pf(decl.content.content)
   }
-      
-  def buildElement(decl: SimpleTypeDecl): ElemDecl = decl.content match {
-    case SimpTypRestrictionDecl(ReferenceTypeSymbol(base: SimpleTypeDecl), _) => buildElement(base)
-    case SimpTypRestrictionDecl(base: BuiltInSimpleTypeSymbol, _) => buildElement(base)
-    case _ => error("GenSource: unsupported type: " + decl)
-  }
-          
+
   def flattenMixed(decl: ComplexTypeDecl) = if (decl.mixed)
     List(ElemDecl(Some(INTERNAL_NAMESPACE), MIXED_PARAM, XsMixed,
       None, None, 0, Integer.MAX_VALUE))

@@ -62,8 +62,8 @@ trait Lookup extends ContextProcessor {
         })
     } get
 
-  def buildElement(base: BuiltInSimpleTypeSymbol): ElemDecl = 
-    ElemDecl(schema.targetNamespace, "value", base, None, None, 1, 1)
+  def buildSymbolElement(symbol: XsTypeSymbol): ElemDecl =
+    ElemDecl(schema.targetNamespace, "value", symbol, None, None, 1, 1)
 
   def groups(namespace: Option[String], name: String) =
     (for (schema <- schemas;

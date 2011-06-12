@@ -159,7 +159,7 @@
       <xs:element name="any6" maxOccurs="unbounded" nillable="true" type="xs:anyType"/>      
     </xs:sequence>
   </xs:complexType>
-  
+
   <xs:complexType name="LongAllTest">
     <xs:all>
       <xs:element name="address1" type="gen:Address"/>
@@ -256,6 +256,14 @@
     </xs:restriction>
   </xs:simpleType>
 
+  <xs:complexType name="ComplexListOfMilk">
+    <xs:simpleContent>
+      <xs:extension base="gen:ListOfMilkDerived">
+        <xs:attributeGroup ref="gen:coreattrs"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+
   <xs:simpleType name="ListOfBuiltInType">
     <xs:list itemType="xs:unsignedInt"/>
   </xs:simpleType>
@@ -266,6 +274,14 @@
       <xs:maxLength value="1"/>
     </xs:restriction>
   </xs:simpleType>
+
+  <xs:complexType name="ComplexListOfBuiltInType">
+    <xs:simpleContent>
+      <xs:extension base="gen:ListOfBuildIntTypeDerived">
+        <xs:attributeGroup ref="gen:coreattrs"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
 
   <xs:complexType name="DupeSequenceTest">
     <xs:sequence>

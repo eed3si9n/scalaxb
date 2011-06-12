@@ -116,7 +116,7 @@ trait XMLOutput extends Args {
     case symbol: BuiltInSimpleTypeSymbol => selector + ".toString"
     case ReferenceTypeSymbol(decl: SimpleTypeDecl) =>       
       decl.content match {
-        case x: SimpTypListDecl => selector + ".map(x => " + buildToString("x", baseType(decl)) + ").mkString(\" \")" 
+        case x: SimpTypListDecl => selector + ".map(x => " + buildToString("x", baseType(decl)) + ").mkString(\" \")"
         case _ => buildToString(selector, baseType(decl))
       }
     case _ => selector + ".toString"

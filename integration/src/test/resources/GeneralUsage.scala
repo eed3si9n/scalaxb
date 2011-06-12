@@ -136,17 +136,19 @@ object GeneralUsage {
       <numbers4>1</numbers4>
       <numbers5></numbers5><numbers5>1</numbers5>
       <numbers6 xsi:nil="true"/>
+      <numbers7>1 2 3</numbers7>
       
       <milk1>WHOLE</milk1>
       <milk2 xsi:nil="true"/>
       <milk5></milk5><milk5>SKIM</milk5>
       <milk6 xsi:nil="true"/>
+      <milk7>WHOLE</milk7>
     </foo>
     val obj = fromXML[ListTest](subject)
     
     def check(obj: Any) = obj match {
-        case ListTest(Seq(1, 2, 3), None, None, Some(Some(Seq(1))), Seq(Seq(), Seq(1)), Seq(None), 
-          Seq(WHOLE), None, None, None, Seq(Seq(), Seq(SKIM)), Seq(None), 
+        case ListTest(Seq(1, 2, 3), None, None, Some(Some(Seq(1))), Seq(Seq(), Seq(1)), Seq(None), Seq(1, 2, 3),
+          Seq(WHOLE), None, None, None, Seq(Seq(), Seq(SKIM)), Seq(None), Seq(WHOLE),
           None, None) =>
         case _ => error("match failed: " + obj.toString)
       }

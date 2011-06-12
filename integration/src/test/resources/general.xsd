@@ -115,13 +115,15 @@
       <xs:element name="numbers4" minOccurs="0" nillable="true" type="gen:ListOfBuiltInType"/>
       <xs:element name="numbers5" maxOccurs="unbounded" type="gen:ListOfBuiltInType"/>
       <xs:element name="numbers6" maxOccurs="unbounded" nillable="true" type="gen:ListOfBuiltInType"/>
-      
+      <xs:element name="numbers7" type="gen:ListOfBuildIntTypeDerived"/>
+
       <xs:element name="milk1" type="gen:ListOfMilk"/>
       <xs:element name="milk2" nillable="true" type="gen:ListOfMilk"/>
       <xs:element name="milk3" minOccurs="0" type="gen:ListOfMilk"/>
       <xs:element name="milk4" minOccurs="0" nillable="true" type="gen:ListOfMilk"/>
       <xs:element name="milk5" maxOccurs="unbounded" type="gen:ListOfMilk"/>
       <xs:element name="milk6" maxOccurs="unbounded" nillable="true" type="gen:ListOfMilk"/>
+      <xs:element name="milk7" type="gen:ListOfMilkDerived"/>
     </xs:sequence>
     
     <xs:attribute name="attr1" type="gen:ListOfBuiltInType"/>
@@ -235,22 +237,36 @@
       <xs:element name="state" type="xs:string"/>
     </xs:sequence>
   </xs:complexType>
-  
-  <xs:simpleType name="ListOfMilk">
-    <xs:list itemType="gen:MilkType"/>
-  </xs:simpleType>
-  
+
   <xs:simpleType name="MilkType">
     <xs:restriction base="xs:NMTOKEN">
       <xs:enumeration value="WHOLE"/>
       <xs:enumeration value="SKIM"/>
     </xs:restriction>
   </xs:simpleType>
-  
+
+  <xs:simpleType name="ListOfMilk">
+    <xs:list itemType="gen:MilkType"/>
+  </xs:simpleType>
+
+  <xs:simpleType name="ListOfMilkDerived">
+    <xs:restriction base="gen:ListOfMilk">
+      <xs:minLength value="0"/>
+      <xs:maxLength value="1"/>
+    </xs:restriction>
+  </xs:simpleType>
+
   <xs:simpleType name="ListOfBuiltInType">
     <xs:list itemType="xs:unsignedInt"/>
   </xs:simpleType>
-  
+
+  <xs:simpleType name="ListOfBuildIntTypeDerived">
+    <xs:restriction base="gen:ListOfBuiltInType">
+      <xs:minLength value="0"/>
+      <xs:maxLength value="1"/>
+    </xs:restriction>
+  </xs:simpleType>
+
   <xs:complexType name="DupeSequenceTest">
     <xs:sequence>
       <xs:element name="street" type="xs:string"/>

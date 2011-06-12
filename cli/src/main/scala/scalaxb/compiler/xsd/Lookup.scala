@@ -166,9 +166,8 @@ trait Lookup extends ContextProcessor {
   
   def buildTypeName(decl: SimpleTypeDecl, shortLocal: Boolean): String = decl.content match {
     case x@SimpTypRestrictionDecl(_, _) if containsEnumeration(decl)  => buildEnumTypeName(decl, shortLocal)
-    case x: SimpTypRestrictionDecl                                    => buildTypeName(baseType(decl), shortLocal)
-    case SimpTypListDecl(ReferenceTypeSymbol(itemType: SimpleTypeDecl)) if containsEnumeration(itemType) =>
-      "Seq[" + buildEnumTypeName(itemType, shortLocal) + "]"
+    case x: SimpTypRestrictionDecl                                    =>
+      buildTypeName(baseType(decl), shortLocal)
     case x: SimpTypListDecl => "Seq[" + buildTypeName(baseType(decl), shortLocal) + "]"
     case x: SimpTypUnionDecl => buildTypeName(baseType(decl), shortLocal)
   }
@@ -201,14 +200,12 @@ trait Lookup extends ContextProcessor {
     
     lastPart.capitalize + name + "Format"
   }
-    
-  def baseType(decl: SimpleTypeDecl): BuiltInSimpleTypeSymbol = decl.content match {
-    case SimpTypRestrictionDecl(base: BuiltInSimpleTypeSymbol, _) => base
-    case SimpTypRestrictionDecl(ReferenceTypeSymbol(decl2@SimpleTypeDecl(_, _, _, _, _)), _) => baseType(decl2)
-    case SimpTypListDecl(itemType: BuiltInSimpleTypeSymbol) => itemType
-    case SimpTypListDecl(ReferenceTypeSymbol(decl2@SimpleTypeDecl(_, _, _, _, _))) => baseType(decl2)
+
+  def baseType(decl: SimpleTypeDecl): XsTypeSymbol = decl.content match {
+    case SimpTypRestrictionDecl(base, _) => base
+    case SimpTypListDecl(itemType) => itemType
     case SimpTypUnionDecl() => XsString
-    
+
     case _ => error("GenSource: Unsupported content " +  decl.content.toString)
   }
   

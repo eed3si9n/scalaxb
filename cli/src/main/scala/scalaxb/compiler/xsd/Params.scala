@@ -183,8 +183,9 @@ trait Params extends Lookup {
       val o = buildOccurrence(primaryCompositor(group))
       Occurrence(math.min(group.minOccurs, o.minOccurs), math.max(group.maxOccurs, o.maxOccurs), o.nillable)
     case choice: ChoiceDecl =>
-      val minOccurs = (choice.minOccurs :: choice.particles.map(_.minOccurs)).min
-      val maxOccurs = (choice.maxOccurs :: choice.particles.map(_.maxOccurs)).max
+      val particleOccurences = choice.particles map {buildOccurrence}
+      val minOccurs = (choice.minOccurs :: particleOccurences.map(_.minOccurs)).min
+      val maxOccurs = (choice.maxOccurs :: particleOccurences.map(_.maxOccurs)).max
       val nillable = choice.particles exists {
         case elem: ElemDecl => elem.nillable getOrElse {false}
         case ref: ElemRef =>
@@ -193,7 +194,21 @@ trait Params extends Lookup {
         case _ => false
       }
       Occurrence(minOccurs, maxOccurs, nillable)
-    case _ => Occurrence(compos.minOccurs, compos.maxOccurs, false)
+    case _ =>
+      val minOccurs = if (isEmptyCompositor(compos)) 0
+                      else compos.minOccurs
+      Occurrence(minOccurs, compos.maxOccurs, false)
+  }
+
+  def isEmptyCompositor(compos: HasParticle): Boolean = compos match {
+    case ref: GroupRef => isEmptyCompositor(buildGroup(ref))
+    case group: GroupDecl => isEmptyCompositor(primaryCompositor(group))
+    case choice: ChoiceDecl =>
+      choice.particles forall {
+        case compositor2: HasParticle => isEmptyCompositor(compositor2)
+        case _ => false
+      }
+    case _ => compos.particles.isEmpty
   }
   
   def mergeOccurrence(lhs: Occurrence, rhs: Occurrence): Occurrence =

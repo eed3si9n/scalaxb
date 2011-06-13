@@ -203,7 +203,14 @@
       <xs:group ref="gen:emptySeqGroup"/>
     </xs:sequence>
   </xs:complexType>
-  
+
+  <xs:complexType name="EmptyChoiceGroupTest">
+    <xs:choice>
+      <xs:group ref="gen:emptySeqGroup"/>
+      <xs:element name="string1" type="xs:string"/>
+    </xs:choice>
+  </xs:complexType>
+
   <xs:complexType name="TopLevelMultipleSeqTest">
     <xs:sequence minOccurs="0" maxOccurs="unbounded">
       <xs:element name="firstName" type="xs:string"/>

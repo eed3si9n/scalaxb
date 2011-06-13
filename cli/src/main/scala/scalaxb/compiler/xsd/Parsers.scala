@@ -162,8 +162,11 @@ trait Parsers extends Args with Params {
         case _ => true
         })
     val singleOccurrence = occurrence.copy(minOccurs = 1, maxOccurs = 1) 
-    val parserList = choice.particles filterNot(
-        _.isInstanceOf[AnyDecl]) map {
+    val parserList = choice.particles filter {
+      case any: AnyDecl => false
+      case compositor: HasParticle if isEmptyCompositor(compositor) => false
+      case _ => true
+    } map {
       case elem: ElemDecl =>
         if (mixed && containsStructure) buildParser(SequenceDecl(List(elem), 1, 1, 0), singleOccurrence, mixed, true)
         else buildParser(elem, singleOccurrence, mixed, true)

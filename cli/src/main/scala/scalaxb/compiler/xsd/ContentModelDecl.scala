@@ -94,20 +94,20 @@ object CompContRestrictionDecl {
   def fromCompositor(compositor: HasParticle, attributes: List[AttributeLike]) =
     CompContRestrictionDecl(XsAnyType, Some(compositor), attributes)
   
-  def fromXML(node: scala.xml.Node, config: ParserConfig) = {
+  def fromXML(node: scala.xml.Node, family: String, config: ParserConfig) = {
     val baseName = (node \ "@base").text
     val base = TypeSymbolParser.fromString(baseName, config)
     var compositor: Option[HasParticle] = None
     
     for (child <- node.child) child match {
       case <group>{ _* }</group> =>
-        compositor = Some(CompositorDecl.fromXML(child, config))
+        compositor = Some(CompositorDecl.fromXML(child, family, config))
       case <all>{ _* }</all> =>
-        compositor = Some(CompositorDecl.fromXML(child, config))
+        compositor = Some(CompositorDecl.fromXML(child, family, config))
       case <choice>{ _* }</choice> =>
-        compositor = Some(CompositorDecl.fromXML(child, config))
+        compositor = Some(CompositorDecl.fromXML(child, family, config))
       case <sequence>{ _* }</sequence> =>
-        compositor = Some(CompositorDecl.fromXML(child, config))
+        compositor = Some(CompositorDecl.fromXML(child, family, config))
 
       case _ =>
     }
@@ -122,20 +122,20 @@ case class CompContExtensionDecl(base: XsTypeSymbol,
   attributes: List[AttributeLike]) extends ContentTypeDecl with ComplexTypeContent
 
 object CompContExtensionDecl {
-  def fromXML(node: scala.xml.Node, config: ParserConfig) = {
+  def fromXML(node: scala.xml.Node, family: String, config: ParserConfig) = {
     val baseName = (node \ "@base").text
     val base = TypeSymbolParser.fromString(baseName, config)
     var compositor: Option[HasParticle] = None
     
     for (child <- node.child) child match {
       case <group>{ _* }</group> =>
-        compositor = Some(CompositorDecl.fromXML(child, config))
+        compositor = Some(CompositorDecl.fromXML(child, family, config))
       case <all>{ _* }</all> =>
-        compositor = Some(CompositorDecl.fromXML(child, config))
+        compositor = Some(CompositorDecl.fromXML(child, family, config))
       case <choice>{ _* }</choice> =>
-        compositor = Some(CompositorDecl.fromXML(child, config))
+        compositor = Some(CompositorDecl.fromXML(child, family, config))
       case <sequence>{ _* }</sequence> =>
-        compositor = Some(CompositorDecl.fromXML(child, config))
+        compositor = Some(CompositorDecl.fromXML(child, family, config))
       case _ =>
     }
 

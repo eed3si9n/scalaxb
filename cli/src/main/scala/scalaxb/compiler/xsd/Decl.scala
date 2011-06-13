@@ -172,7 +172,7 @@ object SchemaDecl {
     for (child <- schema.child) child match {
       case <element>{ _* }</element>  =>
         (child \ "@name").headOption foreach {  x =>
-          val elem = ElemDecl.fromXML(child, true, config)
+          val elem = ElemDecl.fromXML(child, x.text, true, config)
           config.topElems += (elem.name -> elem) }
       
       case <attribute>{ _* }</attribute>  =>
@@ -421,7 +421,7 @@ case class ElemDecl(namespace: Option[String],
   annotation: Option[AnnotationDecl] = None) extends Decl with Particle with Annotatable
 
 object ElemDecl {
-  def fromXML(node: scala.xml.Node, global: Boolean, config: ParserConfig) = {
+  def fromXML(node: scala.xml.Node, family: String, global: Boolean, config: ParserConfig) = {
     val name = (node \ "@name").text
     var typeSymbol: XsTypeSymbol = XsAnyType
     val typeName = (node \ "@type").text
@@ -431,7 +431,7 @@ object ElemDecl {
     } else {
       for (child <- node.child) child match {
         case <complexType>{ _* }</complexType> =>
-          val decl = ComplexTypeDecl.fromXML(child, "complexType@" + name, name, config)
+          val decl = ComplexTypeDecl.fromXML(child, "complexType@" + family, name, config)
           config.typeList += decl
           val symbol = new ReferenceTypeSymbol(decl.name)
           symbol.decl = decl
@@ -541,20 +541,20 @@ object ComplexTypeDecl {
     for (child <- node.child) child match {
       case <group>{ _* }</group> =>
         content = ComplexContentDecl.fromCompositor(
-          CompositorDecl.fromXML(child, config), attributes)
+          CompositorDecl.fromXML(child, family, config), attributes)
       case <all>{ _* }</all> =>
         content = ComplexContentDecl.fromCompositor(
-          CompositorDecl.fromXML(child, config), attributes)
+          CompositorDecl.fromXML(child, family, config), attributes)
       case <choice>{ _* }</choice> =>
         content = ComplexContentDecl.fromCompositor(
-          CompositorDecl.fromXML(child, config), attributes)
+          CompositorDecl.fromXML(child, family, config), attributes)
       case <sequence>{ _* }</sequence> =>
         content = ComplexContentDecl.fromCompositor(
-          CompositorDecl.fromXML(child, config), attributes)
+          CompositorDecl.fromXML(child, family, config), attributes)
       case <simpleContent>{ _* }</simpleContent> =>
         content = SimpleContentDecl.fromXML(child, family, config)
       case <complexContent>{ _* }</complexContent> =>
-        content = ComplexContentDecl.fromXML(child, config)
+        content = ComplexContentDecl.fromXML(child, family, config)
       case _ =>
     }
     
@@ -609,14 +609,14 @@ object ComplexContentDecl {
   def fromCompositor(compositor: HasParticle, attributes: List[AttributeLike]) =
     ComplexContentDecl(CompContRestrictionDecl.fromCompositor(compositor, attributes))
   
-  def fromXML(node: scala.xml.Node, config: ParserConfig) = {
+  def fromXML(node: scala.xml.Node, family: String, config: ParserConfig) = {
     var content: ComplexTypeContent = CompContRestrictionDecl.empty
     
     for (child <- node.child) child match {
       case <restriction>{ _* }</restriction> =>
-        content = CompContRestrictionDecl.fromXML(child, config)
+        content = CompContRestrictionDecl.fromXML(child, family, config)
       case <extension>{ _* }</extension> =>
-        content = CompContExtensionDecl.fromXML(child, config)
+        content = CompContExtensionDecl.fromXML(child, family, config)
       case _ =>
     }
     
@@ -627,7 +627,7 @@ object ComplexContentDecl {
 abstract class CompositorDecl extends Decl
 
 object CompositorDecl {
-  def fromNodeSeq(seq: scala.xml.NodeSeq, config: ParserConfig): List[Particle] =
+  def fromNodeSeq(seq: scala.xml.NodeSeq, family: String, config: ParserConfig): List[Particle] =
     (seq.toList.collect {
       case elem: scala.xml.Elem
         if (elem.label != "annotation") &&
@@ -635,12 +635,12 @@ object CompositorDecl {
     }) map(node =>
       node match {
         case <element>{ _* }</element>   =>
-          if ((node \ "@name").headOption.isDefined) ElemDecl.fromXML(node, false, config)
+          if ((node \ "@name").headOption.isDefined) ElemDecl.fromXML(node, family, false, config)
           else if ((node \ "@ref").headOption.isDefined) ElemRef.fromXML(node, config)
           else error("xsd: Unspported content type " + node.toString) 
-        case <choice>{ _* }</choice>     => ChoiceDecl.fromXML(node, config)
-        case <sequence>{ _* }</sequence> => SequenceDecl.fromXML(node, config)
-        case <all>{ _* }</all>           => AllDecl.fromXML(node, config)
+        case <choice>{ _* }</choice>     => ChoiceDecl.fromXML(node, family, config)
+        case <sequence>{ _* }</sequence> => SequenceDecl.fromXML(node, family, config)
+        case <all>{ _* }</all>           => AllDecl.fromXML(node, family, config)
         case <any>{ _* }</any>           => AnyDecl.fromXML(node, config)
         case <group>{ _* }</group>       =>
           if ((node \ "@name").headOption.isDefined) GroupDecl.fromXML(node, config)
@@ -651,10 +651,10 @@ object CompositorDecl {
       }
     )
   
-  def fromXML(node: scala.xml.Node, config: ParserConfig): HasParticle = node match {
-    case <choice>{ _* }</choice>     => ChoiceDecl.fromXML(node, config)
-    case <sequence>{ _* }</sequence> => SequenceDecl.fromXML(node, config)
-    case <all>{ _* }</all>           => AllDecl.fromXML(node, config)
+  def fromXML(node: scala.xml.Node, family: String, config: ParserConfig): HasParticle = node match {
+    case <choice>{ _* }</choice>     => ChoiceDecl.fromXML(node, family, config)
+    case <sequence>{ _* }</sequence> => SequenceDecl.fromXML(node, family, config)
+    case <all>{ _* }</all>           => AllDecl.fromXML(node, family, config)
     case <group>{ _* }</group>       =>
       if ((node \ "@name").headOption.isDefined) GroupDecl.fromXML(node, config)
       else if ((node \ "@ref").headOption.isDefined) GroupRef.fromXML(node, config)
@@ -675,10 +675,10 @@ case class SequenceDecl(particles: List[Particle],
   uniqueId: Int = Incrementor.nextInt) extends CompositorDecl with HasParticle
 
 object SequenceDecl {
-  def fromXML(node: scala.xml.Node, config: ParserConfig) = {
+  def fromXML(node: scala.xml.Node, family: String, config: ParserConfig) = {
     val minOccurs = CompositorDecl.buildOccurrence((node \ "@minOccurs").text)
     val maxOccurs = CompositorDecl.buildOccurrence((node \ "@maxOccurs").text)
-    SequenceDecl(CompositorDecl.fromNodeSeq(node.child, config), minOccurs, maxOccurs)
+    SequenceDecl(CompositorDecl.fromNodeSeq(node.child, family, config), minOccurs, maxOccurs)
   }
 }
 
@@ -688,10 +688,10 @@ case class ChoiceDecl(particles: List[Particle],
   uniqueId: Int = Incrementor.nextInt) extends CompositorDecl with HasParticle
 
 object ChoiceDecl {
-  def fromXML(node: scala.xml.Node, config: ParserConfig) = {
+  def fromXML(node: scala.xml.Node, family: String, config: ParserConfig) = {
     val minOccurs = CompositorDecl.buildOccurrence((node \ "@minOccurs").text)
     val maxOccurs = CompositorDecl.buildOccurrence((node \ "@maxOccurs").text)
-    val choice = ChoiceDecl(CompositorDecl.fromNodeSeq(node.child, config), minOccurs, maxOccurs)
+    val choice = ChoiceDecl(CompositorDecl.fromNodeSeq(node.child, family, config), minOccurs, maxOccurs)
     config.choices += choice
     choice
   }
@@ -703,10 +703,10 @@ case class AllDecl(particles: List[Particle],
   uniqueId: Int = Incrementor.nextInt) extends CompositorDecl with HasParticle
 
 object AllDecl {
-  def fromXML(node: scala.xml.Node, config: ParserConfig) = {
+  def fromXML(node: scala.xml.Node, family: String, config: ParserConfig) = {
     val minOccurs = CompositorDecl.buildOccurrence((node \ "@minOccurs").text)
     val maxOccurs = CompositorDecl.buildOccurrence((node \ "@maxOccurs").text)
-    AllDecl(CompositorDecl.fromNodeSeq(node.child, config), minOccurs, maxOccurs)
+    AllDecl(CompositorDecl.fromNodeSeq(node.child, family, config), minOccurs, maxOccurs)
   }
 }
 
@@ -763,7 +763,7 @@ object GroupDecl {
     val annotation = (node \ "annotation").headOption map { x =>
       AnnotationDecl.fromXML(x, config) }
     val group = GroupDecl(config.targetNamespace, name,
-      CompositorDecl.fromNodeSeq(node.child, config), minOccurs, maxOccurs,
+      CompositorDecl.fromNodeSeq(node.child, name, config), minOccurs, maxOccurs,
       annotation)
     // config.choices += choice
     group

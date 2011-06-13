@@ -391,6 +391,22 @@
   </xs:attributeGroup>
 
   <xs:group name="emptySeqGroup">
-      <xs:sequence/>
+    <xs:sequence/>
+  </xs:group>
+
+  <xs:group name="dupeElemGroup1">
+    <xs:choice>
+      <xs:element name="dupeElem">
+        <xs:complexType/>
+      </xs:element>
+    </xs:choice>
+  </xs:group>
+
+  <xs:group name="dupeElemGroup2">
+    <xs:choice>
+      <xs:element name="dupeElem">
+        <xs:complexType/>
+      </xs:element>
+    </xs:choice>
   </xs:group>
 </xs:schema>

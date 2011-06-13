@@ -88,8 +88,8 @@ object GeneralUsage {
         case SingularBuiltInTypeTest(
           SingularBuiltInTypeTestSequence1(1, 1, 1, 1, 1.0F, 1.0, Int_(1), Int_(-1), Int_(-1), Int_(1)),
           SingularBuiltInTypeTestSequence2(Int_(1), Int_(1), 1, 1, 1, Int_(1), false, "foo", "foo", "foo"),
-          SingularBuiltInTypeTestSequence3("en-US", "foo", "foo", "foo",  Array("foo"),
-            "foo", "foo", Array("foo"), "foo", Array("foo")),
+          SingularBuiltInTypeTestSequence3("en-US", "foo", "foo", "foo",  Seq("foo"),
+            "foo", "foo", Seq("foo"), "foo", Seq("foo")),
           SingularBuiltInTypeTestSequence4(DataRecord(_, _, "foo"), DataRecord(_, _, "foo"))
           ) =>
         case _ => error("match failed: " + obj.toString)

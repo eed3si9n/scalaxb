@@ -202,15 +202,6 @@ trait XMLStandardTypes {
       Helper.stringToXML(obj.toString, namespace, elementLabel, scope)
   }
 
-  implicit lazy val __StringArrayXMLFormat: XMLFormat[Array[String]] = new XMLFormat[Array[String]] {
-    def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, Array[String]] = try {
-      Right(Helper.splitBySpace(seq.text)) } catch { case e: Exception => Left(e.toString) }
-
-    def writes(obj: Array[String], namespace: Option[String], elementLabel: Option[String],
-        scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
-      Helper.stringToXML(obj.mkString(" "), namespace, elementLabel, scope)
-  }
-
   implicit lazy val __ByteArrayXMLFormat: XMLFormat[Array[Byte]] = new XMLFormat[Array[Byte]] {
     def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, Array[Byte]] = try {
       Right(Helper.toByteArray(seq.text)) } catch { case e: Exception => Left(e.toString) }
@@ -423,12 +414,12 @@ object DataRecord extends XMLStandardTypes {
           case Some("Name")               => DataRecord(ns, key, XS, xstype, fromXML[String](elem, Nil))
           case Some("NCName")             => DataRecord(ns, key, XS, xstype, fromXML[String](elem, Nil))
           case Some("NMTOKEN")            => DataRecord(ns, key, XS, xstype, fromXML[String](elem, Nil))
-          case Some("NMTOKENS")           => DataRecord(ns, key, XS, xstype, fromXML[Array[String]](elem, Nil))
+          case Some("NMTOKENS")           => DataRecord(ns, key, XS, xstype, fromXML[Seq[String]](elem, Nil))
           case Some("ID")                 => DataRecord(ns, key, XS, xstype, fromXML[String](elem, Nil))
           case Some("IDREF")              => DataRecord(ns, key, XS, xstype, fromXML[String](elem, Nil))
-          case Some("IDREFS")             => DataRecord(ns, key, XS, xstype, fromXML[Array[String]](elem, Nil))
+          case Some("IDREFS")             => DataRecord(ns, key, XS, xstype, fromXML[Seq[String]](elem, Nil))
           case Some("ENTITY")             => DataRecord(ns, key, XS, xstype, fromXML[String](elem, Nil))
-          case Some("ENTITIES")           => DataRecord(ns, key, XS, xstype, fromXML[Array[String]](elem, Nil))
+          case Some("ENTITIES")           => DataRecord(ns, key, XS, xstype, fromXML[Seq[String]](elem, Nil))
           case Some("hexBinary")          => DataRecord(ns, key, XS, xstype, fromXML[HexBinary](elem, Nil))
           case Some("base64Binary")       => DataRecord(ns, key, XS, xstype, fromXML[Array[Byte]](elem, Nil))
           case Some("anyURI")             => DataRecord(ns, key, XS, xstype, fromXML[java.net.URI](elem, Nil))
@@ -493,12 +484,12 @@ object DataRecord extends XMLStandardTypes {
           case Some("Name")               => DataRecord(ns, key, XS, xstype, Some(fromXML[String](elem, Nil)))
           case Some("NCName")             => DataRecord(ns, key, XS, xstype, Some(fromXML[String](elem, Nil)))
           case Some("NMTOKEN")            => DataRecord(ns, key, XS, xstype, Some(fromXML[String](elem, Nil)))
-          case Some("NMTOKENS")           => DataRecord(ns, key, XS, xstype, Some(fromXML[Array[String]](elem, Nil)))
+          case Some("NMTOKENS")           => DataRecord(ns, key, XS, xstype, Some(fromXML[Seq[String]](elem, Nil)))
           case Some("ID")                 => DataRecord(ns, key, XS, xstype, Some(fromXML[String](elem, Nil)))
           case Some("IDREF")              => DataRecord(ns, key, XS, xstype, Some(fromXML[String](elem, Nil)))
-          case Some("IDREFS")             => DataRecord(ns, key, XS, xstype, Some(fromXML[Array[String]](elem, Nil)))
+          case Some("IDREFS")             => DataRecord(ns, key, XS, xstype, Some(fromXML[Seq[String]](elem, Nil)))
           case Some("ENTITY")             => DataRecord(ns, key, XS, xstype, Some(fromXML[String](elem, Nil)))
-          case Some("ENTITIES")           => DataRecord(ns, key, XS, xstype, Some(fromXML[Array[String]](elem, Nil)))
+          case Some("ENTITIES")           => DataRecord(ns, key, XS, xstype, Some(fromXML[Seq[String]](elem, Nil)))
           case Some("hexBinary")          => DataRecord(ns, key, XS, xstype, Some(fromXML[HexBinary](elem, Nil)))
           case Some("base64Binary")       => DataRecord(ns, key, XS, xstype, Some(fromXML[Array[Byte]](elem, Nil)))
           case Some("anyURI")             => DataRecord(ns, key, XS, xstype, Some(fromXML[java.net.URI](elem, Nil)))

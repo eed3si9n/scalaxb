@@ -128,13 +128,13 @@ object XsToken            extends BuiltInSimpleTypeSymbol("String") {}
 object XsLanguage         extends BuiltInSimpleTypeSymbol("String") {}
 object XsName             extends BuiltInSimpleTypeSymbol("String") {}
 object XsNMTOKEN          extends BuiltInSimpleTypeSymbol("String") {}
-object XsNMTOKENS         extends BuiltInSimpleTypeSymbol("Array[String]") {}
+object XsNMTOKENS         extends BuiltInSimpleTypeSymbol("Seq[String]") {}
 object XsNCName           extends BuiltInSimpleTypeSymbol("String") {}
 object XsID               extends BuiltInSimpleTypeSymbol("String") {}
 object XsIDREF            extends BuiltInSimpleTypeSymbol("String") {}
-object XsIDREFS           extends BuiltInSimpleTypeSymbol("Array[String]") {}
+object XsIDREFS           extends BuiltInSimpleTypeSymbol("Seq[String]") {}
 object XsENTITY           extends BuiltInSimpleTypeSymbol("String") {}
-object XsENTITIES         extends BuiltInSimpleTypeSymbol("Array[String]") {}
+object XsENTITIES         extends BuiltInSimpleTypeSymbol("Seq[String]") {}
 object XsDecimal          extends BuiltInSimpleTypeSymbol("BigDecimal") {}
 object XsInteger          extends BuiltInSimpleTypeSymbol("BigInt") {}
 object XsNonPositiveInteger extends BuiltInSimpleTypeSymbol("BigInt") {}

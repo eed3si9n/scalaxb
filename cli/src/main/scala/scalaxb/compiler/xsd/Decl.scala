@@ -431,14 +431,14 @@ object ElemDecl {
     } else {
       for (child <- node.child) child match {
         case <complexType>{ _* }</complexType> =>
-          val decl = ComplexTypeDecl.fromXML(child, "complexType@" + family, name, config)
+          val decl = ComplexTypeDecl.fromXML(child, "@%s/%s".format(family, name), "%s/%s".format(family, name), config)
           config.typeList += decl
           val symbol = new ReferenceTypeSymbol(decl.name)
           symbol.decl = decl
           typeSymbol = symbol
           
         case <simpleType>{ _* }</simpleType> =>
-          val decl = SimpleTypeDecl.fromXML(child, name, config)
+          val decl = SimpleTypeDecl.fromXML(child, "@%s/%s".format(family, name), config)
           config.typeList += decl
           val symbol = new ReferenceTypeSymbol(decl.name)
           symbol.decl = decl

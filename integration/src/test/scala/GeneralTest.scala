@@ -1,6 +1,9 @@
 import java.io.{File}
+import scalaxb.compiler._
+import scalaxb.compiler.xsd.Driver
 
 object GeneralTest extends TestBase {
+  override val module: Module = new Driver with Verbose
   val inFile    = new File("integration/src/test/resources/general.xsd")
   val usageFile = new File(tmp, "GeneralUsage.scala")
   val custumFile = new File(tmp, "CustomizationUsage.scala")

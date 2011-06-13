@@ -397,7 +397,13 @@
   <xs:group name="dupeElemGroup1">
     <xs:choice>
       <xs:element name="dupeElem">
-        <xs:complexType/>
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="dupeElem">
+              <xs:complexType/>
+            </xs:element>
+          </xs:sequence>
+        </xs:complexType>
       </xs:element>
     </xs:choice>
   </xs:group>
@@ -405,7 +411,13 @@
   <xs:group name="dupeElemGroup2">
     <xs:choice>
       <xs:element name="dupeElem">
-        <xs:complexType/>
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="dupeElem">
+              <xs:complexType/>
+            </xs:element>
+          </xs:sequence>
+        </xs:complexType>
       </xs:element>
     </xs:choice>
   </xs:group>

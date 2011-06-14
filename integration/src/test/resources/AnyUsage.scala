@@ -78,12 +78,12 @@ object AnyUsage {
           DataRecord(Some("http://www.example.com/any"), Some("Name"), "foo"),
           DataRecord(Some("http://www.example.com/any"), Some("NCName"), "foo"),
           DataRecord(Some("http://www.example.com/any"), Some("NMTOKEN"), "foo"),
-          DataRecord(Some("http://www.example.com/any"), Some("NMTOKENS"), Array("foo")),
+          DataRecord(Some("http://www.example.com/any"), Some("NMTOKENS"), Seq("foo")),
           DataRecord(Some("http://www.example.com/any"), Some("ID"), "foo"),
           DataRecord(Some("http://www.example.com/any"), Some("IDREF"), "foo"),
-          DataRecord(Some("http://www.example.com/any"), Some("IDREFS"), Array("foo")),
+          DataRecord(Some("http://www.example.com/any"), Some("IDREFS"), Seq("foo")),
           DataRecord(Some("http://www.example.com/any"), Some("ENTITY"), "foo"),
-          DataRecord(Some("http://www.example.com/any"), Some("ENTITIES"), Array("foo"))
+          DataRecord(Some("http://www.example.com/any"), Some("ENTITIES"), Seq("foo"))
         ) =>
       case _ => error("match failed: " + obj.toString)
     }
@@ -119,7 +119,7 @@ object AnyUsage {
     obj match {
       case Element1(
           DataRecord(Some("http://www.example.com/any"), Some("hexBinary"), HexBinary(15)),
-          DataRecord(Some("http://www.example.com/any"), Some("base64Binary"), Array('m')),
+          DataRecord(Some("http://www.example.com/any"), Some("base64Binary"), Base64Binary('m')),
           DataRecord(Some("http://www.example.com/any"), Some("anyURI"), ExampleCom),
           DataRecord(Some("http://www.example.com/any"), Some("QName"), ExampleQName),
           DataRecord(Some("http://www.example.com/any"), Some("NOTATION"), ExampleQName),

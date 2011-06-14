@@ -202,11 +202,11 @@ trait XMLStandardTypes {
       Helper.stringToXML(obj.toString, namespace, elementLabel, scope)
   }
 
-  implicit lazy val __ByteArrayXMLFormat: XMLFormat[Array[Byte]] = new XMLFormat[Array[Byte]] {
-    def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, Array[Byte]] = try {
-      Right(Helper.toByteArray(seq.text)) } catch { case e: Exception => Left(e.toString) }
+  implicit lazy val __Base64BinaryXMLFormat: XMLFormat[Base64Binary] = new XMLFormat[Base64Binary] {
+    def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, Base64Binary] = try {
+      Right(Helper.toBase64Binary(seq.text)) } catch { case e: Exception => Left(e.toString) }
 
-    def writes(obj: Array[Byte], namespace: Option[String], elementLabel: Option[String],
+    def writes(obj: Base64Binary, namespace: Option[String], elementLabel: Option[String],
         scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
       Helper.stringToXML(Helper.toString(obj), namespace, elementLabel, scope)
   }
@@ -421,7 +421,7 @@ object DataRecord extends XMLStandardTypes {
           case Some("ENTITY")             => DataRecord(ns, key, XS, xstype, fromXML[String](elem, Nil))
           case Some("ENTITIES")           => DataRecord(ns, key, XS, xstype, fromXML[Seq[String]](elem, Nil))
           case Some("hexBinary")          => DataRecord(ns, key, XS, xstype, fromXML[HexBinary](elem, Nil))
-          case Some("base64Binary")       => DataRecord(ns, key, XS, xstype, fromXML[Array[Byte]](elem, Nil))
+          case Some("base64Binary")       => DataRecord(ns, key, XS, xstype, fromXML[Base64Binary](elem, Nil))
           case Some("anyURI")             => DataRecord(ns, key, XS, xstype, fromXML[java.net.URI](elem, Nil))
           case Some("QName")              => DataRecord(ns, key, XS, xstype, fromXML[javax.xml.namespace.QName](elem, Nil))
           case Some("NOTATION")           => DataRecord(ns, key, XS, xstype, fromXML[javax.xml.namespace.QName](elem, Nil))
@@ -491,7 +491,7 @@ object DataRecord extends XMLStandardTypes {
           case Some("ENTITY")             => DataRecord(ns, key, XS, xstype, Some(fromXML[String](elem, Nil)))
           case Some("ENTITIES")           => DataRecord(ns, key, XS, xstype, Some(fromXML[Seq[String]](elem, Nil)))
           case Some("hexBinary")          => DataRecord(ns, key, XS, xstype, Some(fromXML[HexBinary](elem, Nil)))
-          case Some("base64Binary")       => DataRecord(ns, key, XS, xstype, Some(fromXML[Array[Byte]](elem, Nil)))
+          case Some("base64Binary")       => DataRecord(ns, key, XS, xstype, Some(fromXML[Base64Binary](elem, Nil)))
           case Some("anyURI")             => DataRecord(ns, key, XS, xstype, Some(fromXML[java.net.URI](elem, Nil)))
           case Some("QName")              => DataRecord(ns, key, XS, xstype, Some(fromXML[javax.xml.namespace.QName](elem, Nil)))
           case Some("NOTATION")           => DataRecord(ns, key, XS, xstype, Some(fromXML[javax.xml.namespace.QName](elem, Nil)))
@@ -661,25 +661,42 @@ class ElemNameSeqPosition(val source: Seq[ElemName], val offset: Int) extends
   override def column = offset + 1
 }
 
+class HexBinary(_vector: Vector[Byte]) extends scala.collection.IndexedSeq[Byte] {
+  private val vector = _vector
 
-
-class HexBinary(_length: Int) extends scala.collection.IndexedSeq[Byte] {
-  private var array = new Array[Byte](_length)
-
-  def length = array.length
-  def apply(idx: Int): Byte = array(idx)
+  def length = vector.length
+  def apply(idx: Int): Byte = vector(idx)
   override def toString: String = Helper.toString(this)
+  def toIndexedSeq: IndexedSeq[Byte] = vector
 }
 
 object HexBinary {
   def apply(xs: Byte*) = {
-    val value = new HexBinary(xs.length)
-    var i = 0
-    for (x <- xs.iterator) { value.array(i) = x; i += 1 }
-    value
+    import scala.collection.breakOut
+    val vector: Vector[Byte] = (xs.toIndexedSeq map {x: Byte => x})(breakOut)
+    new HexBinary(vector)
   }
 
   def unapplySeq[Byte](x: HexBinary) = Some(x.toIndexedSeq)
+}
+
+class Base64Binary(_vector: Vector[Byte]) extends scala.collection.IndexedSeq[Byte] {
+  private val vector = _vector
+
+  def length = vector.length
+  def apply(idx: Int): Byte = vector(idx)
+  override def toString: String = Helper.toString(this)
+  def toIndexedSeq: IndexedSeq[Byte] = vector
+}
+
+object Base64Binary {
+  def apply(xs: Byte*) = {
+    import scala.collection.breakOut
+    val vector: Vector[Byte] = (xs.toIndexedSeq map {x: Byte => x})(breakOut)
+    new Base64Binary(vector)
+  }
+
+  def unapplySeq[Byte](x: Base64Binary) = Some(x.toIndexedSeq)
 }
 
 object XMLCalendar {
@@ -719,8 +736,8 @@ object Helper {
     xmlGregorian
   }
 
-  def toString(value: Array[Byte]): String =
-    (new sun.misc.BASE64Encoder()).encodeBuffer(value).stripLineEnd
+  def toString(value: Base64Binary): String =
+    (new sun.misc.BASE64Encoder()).encodeBuffer(value.toIndexedSeq.toArray).stripLineEnd
 
   def toString(value: HexBinary): String =
     (value map { x => ("0" + Integer.toHexString(x.toInt)).takeRight(2) }).mkString.toUpperCase
@@ -730,8 +747,10 @@ object Helper {
     typeFactory.newDuration(value)
   }
 
-  def toByteArray(value: String) =
-    (new sun.misc.BASE64Decoder()).decodeBuffer(value)
+  def toBase64Binary(value: String) = {
+    val array = (new sun.misc.BASE64Decoder()).decodeBuffer(value)
+    Base64Binary(array: _*)
+  }
 
   def toHexBinary(value: String) = {
     val array = new Array[Byte](value.length / 2)

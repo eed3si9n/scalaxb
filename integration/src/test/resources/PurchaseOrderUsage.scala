@@ -321,7 +321,7 @@ object PurchaseOrderUsage {
     obj match {
       case DatedData(XMLCalendar("2010-02-06Z"),
         HexBinary(15),
-        Array('A', 'B', 'C', 'D', 'E', 'F', 'G'),
+        Base64Binary('A', 'B', 'C', 'D', 'E', 'F', 'G'),
         Some("foo"),
         None) =>
       case _ => error("match failed: " + obj.toString)

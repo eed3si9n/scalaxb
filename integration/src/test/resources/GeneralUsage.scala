@@ -2,8 +2,8 @@
  * @author  e.e d3si9n
  */
 
-import scalaxb._
 import general._
+import scalaxb._
 
 object GeneralUsage {
   val NS = Some("http://www.example.com/general")
@@ -79,6 +79,8 @@ object GeneralUsage {
       <IDREFS>foo</IDREFS>
       <ENTITY>foo</ENTITY>
       <ENTITIES>foo</ENTITIES>
+      <base64Binary>QUJDREVGRw==</base64Binary>
+      <hexBinary>0F</hexBinary>
       <anyType xsi:type="xs:string">foo</anyType>
       <anySimpleType xsi:type="xs:string">foo</anySimpleType>
     </foo>
@@ -90,7 +92,8 @@ object GeneralUsage {
           SingularBuiltInTypeTestSequence2(Int_(1), Int_(1), 1, 1, 1, Int_(1), false, "foo", "foo", "foo"),
           SingularBuiltInTypeTestSequence3("en-US", "foo", "foo", "foo",  Seq("foo"),
             "foo", "foo", Seq("foo"), "foo", Seq("foo")),
-          SingularBuiltInTypeTestSequence4(DataRecord(_, _, "foo"), DataRecord(_, _, "foo"))
+          SingularBuiltInTypeTestSequence4(Base64Binary('A', 'B', 'C', 'D', 'E', 'F', 'G'), HexBinary(15),
+            DataRecord(_, _, "foo"), DataRecord(_, _, "foo"))
           ) =>
         case _ => error("match failed: " + obj.toString)
       }

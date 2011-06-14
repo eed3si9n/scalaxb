@@ -213,20 +213,20 @@ trait XMLStandardTypes {
 
   implicit lazy val __Base64BinaryXMLFormat: XMLFormat[Base64Binary] = new XMLFormat[Base64Binary] {
     def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, Base64Binary] = try {
-      Right(Helper.toBase64Binary(seq.text)) } catch { case e: Exception => Left(e.toString) }
+      Right(Base64Binary(seq.text)) } catch { case e: Exception => Left(e.toString) }
 
     def writes(obj: Base64Binary, namespace: Option[String], elementLabel: Option[String],
         scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
-      Helper.stringToXML(Helper.toString(obj), namespace, elementLabel, scope)
+      Helper.stringToXML(obj.toString, namespace, elementLabel, scope)
   }
 
   implicit lazy val __HexBinaryXMLFormat: XMLFormat[HexBinary] = new XMLFormat[HexBinary] {
     def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, HexBinary] = try {
-      Right(Helper.toHexBinary(seq.text)) } catch { case e: Exception => Left(e.toString) }
+      Right(HexBinary(seq.text)) } catch { case e: Exception => Left(e.toString) }
 
     def writes(obj: HexBinary, namespace: Option[String], elementLabel: Option[String],
         scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
-      Helper.stringToXML(Helper.toString(obj), namespace, elementLabel, scope)
+      Helper.stringToXML(obj.toString, namespace, elementLabel, scope)
   }
 
   implicit lazy val __URIXMLFormat: XMLFormat[java.net.URI] = new XMLFormat[java.net.URI] {
@@ -675,15 +675,24 @@ class HexBinary(_vector: Vector[Byte]) extends scala.collection.IndexedSeq[Byte]
 
   def length = vector.length
   def apply(idx: Int): Byte = vector(idx)
-  override def toString: String = Helper.toString(this)
+  override def toString: String =
+    (vector map { x => ("0" + Integer.toHexString(x.toInt)).takeRight(2) }).mkString.toUpperCase
   def toIndexedSeq: IndexedSeq[Byte] = vector
 }
 
 object HexBinary {
-  def apply(xs: Byte*) = {
+  def apply(xs: Byte*): HexBinary = {
     import scala.collection.breakOut
     val vector: Vector[Byte] = (xs.toIndexedSeq map {x: Byte => x})(breakOut)
     new HexBinary(vector)
+  }
+
+  def apply(value: String): HexBinary = {
+    val array = new Array[Byte](value.length / 2)
+    for (i <- 0 to array.length - 1) {
+      array(i) = Integer.parseInt(value.drop(i * 2).take(2), 16).toByte
+    }
+    apply(array: _*)
   }
 
   def unapplySeq[Byte](x: HexBinary) = Some(x.toIndexedSeq)
@@ -694,15 +703,20 @@ class Base64Binary(_vector: Vector[Byte]) extends scala.collection.IndexedSeq[By
 
   def length = vector.length
   def apply(idx: Int): Byte = vector(idx)
-  override def toString: String = Helper.toString(this)
+  override def toString: String = (new sun.misc.BASE64Encoder()).encodeBuffer(vector.toArray).stripLineEnd
   def toIndexedSeq: IndexedSeq[Byte] = vector
 }
 
 object Base64Binary {
-  def apply(xs: Byte*) = {
+  def apply(xs: Byte*): Base64Binary = {
     import scala.collection.breakOut
     val vector: Vector[Byte] = (xs.toIndexedSeq map {x: Byte => x})(breakOut)
     new Base64Binary(vector)
+  }
+
+  def apply(value: String): Base64Binary = {
+    val array = (new sun.misc.BASE64Decoder()).decodeBuffer(value)
+    apply(array: _*)
   }
 
   def unapplySeq[Byte](x: Base64Binary) = Some(x.toIndexedSeq)
@@ -745,28 +759,9 @@ object Helper {
     xmlGregorian
   }
 
-  def toString(value: Base64Binary): String =
-    (new sun.misc.BASE64Encoder()).encodeBuffer(value.toIndexedSeq.toArray).stripLineEnd
-
-  def toString(value: HexBinary): String =
-    (value map { x => ("0" + Integer.toHexString(x.toInt)).takeRight(2) }).mkString.toUpperCase
-
   def toDuration(value: String) = {
     val typeFactory = javax.xml.datatype.DatatypeFactory.newInstance()
     typeFactory.newDuration(value)
-  }
-
-  def toBase64Binary(value: String) = {
-    val array = (new sun.misc.BASE64Decoder()).decodeBuffer(value)
-    Base64Binary(array: _*)
-  }
-
-  def toHexBinary(value: String) = {
-    val array = new Array[Byte](value.length / 2)
-    for (i <- 0 to array.length - 1) {
-      array(i) = Integer.parseInt(value.drop(i * 2).take(2), 16).toByte
-    }
-    HexBinary(array: _*)
   }
 
   def toURI(value: String) =

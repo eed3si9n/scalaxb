@@ -4,21 +4,30 @@ import scala.xml.{Node, NodeSeq, NamespaceBinding, Elem, UnprefixedAttribute, Pr
 import javax.xml.datatype.{XMLGregorianCalendar}
 
 object `package` extends XMLStandardTypes {
+  import annotation.implicitNotFound
+
+  @implicitNotFound(msg = "Cannot find XMLFormat type class for ${A}")
   def fromXML[A](seq: NodeSeq, stack: List[ElemName] = Nil)
                 (implicit format: XMLFormat[A]): A = format.reads(seq, stack) match {
     case Right(a) => a
     case Left(a) => throw new ParserFailure(a)
   }
 
+  @implicitNotFound(msg = "Cannot find XMLFormat type class for ${A}")
   def fromXMLEither[A](seq: NodeSeq, stack: List[ElemName] = Nil)
                       (implicit format: XMLFormat[A]): Either[String, A] = format.reads(seq, stack)
 
+  @implicitNotFound(msg = "Cannot find CanWriteXML type class for ${A}")
   def toXML[A](obj: A, namespace: Option[String], elementLabel: Option[String],
       scope: NamespaceBinding, typeAttribute: Boolean = false)(implicit format: CanWriteXML[A]): NodeSeq =
     format.writes(obj, namespace, elementLabel, scope, typeAttribute)
+
+  @implicitNotFound(msg = "Cannot find CanWriteXML type class for ${A}")
   def toXML[A](obj: A, namespace: Option[String], elementLabel: String, scope: NamespaceBinding)
       (implicit format: CanWriteXML[A]): NodeSeq =
     toXML(obj, namespace, Some(elementLabel), scope, false)
+
+  @implicitNotFound(msg = "Cannot find CanWriteXML type class for ${A}")
   def toXML[A](obj: A, elementLabel: String, scope: NamespaceBinding)(implicit format: CanWriteXML[A]): NodeSeq =
     toXML(obj, None, Some(elementLabel), scope, false)
 

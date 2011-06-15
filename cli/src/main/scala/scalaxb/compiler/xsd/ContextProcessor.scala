@@ -267,7 +267,7 @@ trait ContextProcessor extends ScalaNames with PackageName {
     case _ => error("Does not cointain single choice.")
   }
   
-  val ChunkParticleSize = 10
+  lazy val sequenceChunkSize = config.sequenceChunkSize
   val MaxParticleSize = 20
   
   def isWrapped(decl: ComplexTypeDecl): Boolean = isWrapped(decl.namespace, decl.family)
@@ -277,8 +277,8 @@ trait ContextProcessor extends ScalaNames with PackageName {
     config.wrappedComplexTypes.contains(family)
   
   def splitLong[A <: HasParticle](rest: List[Particle])(f: (List[Particle]) => A): List[A] =
-    if (rest.size <= ChunkParticleSize) List(f(rest))
-    else List(f(rest.take(ChunkParticleSize))) ::: splitLong[A](rest.drop(ChunkParticleSize))(f)
+    if (rest.size <= sequenceChunkSize) List(f(rest))
+    else List(f(rest.take(sequenceChunkSize))) ::: splitLong[A](rest.drop(sequenceChunkSize))(f)
     
   def makeCompositorNames(context: XsdContext) {
     var sequenceNumber = 0

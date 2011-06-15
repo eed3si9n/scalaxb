@@ -52,6 +52,7 @@ object Main extends Version {
     val files = ListBuffer.empty[File]
     var packageDir = false
     var generateRuntime = true
+    var sequenceChunkSize = 10
 
     packageNames(None) = None
     val paramParser = new OptionParser("scalaxb", version) {
@@ -69,6 +70,8 @@ object Main extends Version {
       opt(None, "wrap-contents", "<complexType>",
         "wraps inner contents into a seperate case class",
         { w: String => wrappedComplexTypes append w })
+      intOpt(None, "chunk-size", "<size>", "segments long sequences into chunks (default: 10)",
+        { size: Int => sequenceChunkSize = size })
       opt("package-dir", "generates package directories",
         { packageDir = true })
       opt("no-runtime", "skips runtime files",
@@ -89,7 +92,8 @@ object Main extends Version {
           classPrefix = classPrefix,
           paramPrefix = paramPrefix,
           wrappedComplexTypes = wrappedComplexTypes.toList,
-          generateRuntime = generateRuntime) )
+          generateRuntime = generateRuntime,
+          sequenceChunkSize = sequenceChunkSize) )
     }
   }
 }

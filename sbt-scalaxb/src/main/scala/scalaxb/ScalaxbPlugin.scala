@@ -11,7 +11,9 @@ trait ScalaxbPlugin extends DefaultProject {
   def generatedParamPrefix: Option[String] = None
   def generatePackageDir: Boolean = true
   def generateWrapContents: Seq[String] = Nil
-  
+  def generateRuntime: Boolean = true
+  def generatedChunkSize: Int = 10
+
   def rootPath = path(".")
   def xsdSourcePath = rootPath / "src" / "main" / "xsd"
   def scalaxbOutputPath = rootPath / "src_generated"
@@ -23,7 +25,9 @@ trait ScalaxbPlugin extends DefaultProject {
     (if (generatePackageDir) Seq("--package-dir") else Nil) ++
     (generatedClassPrefix map { Seq("--class-prefix", _) } getOrElse {Nil}) ++
     (generatedParamPrefix map { Seq("--param-prefix", _) } getOrElse {Nil}) ++
-    (generateWrapContents flatMap { Seq("--wrap-contents", _) }),
+    (generateWrapContents flatMap { Seq("--wrap-contents", _) }) ++
+    (if (generateRuntime) Nil else Seq("--no-runtime") ) ++
+    (if (generatedChunkSize == 10) Nil else Seq("--chunk-size", generatedChunkSize.toString) ),
     xsdSourcePath ** "*.xsd")
 
   def compileXsdAction(out: Path, args: Seq[String], xsds: PathFinder) =

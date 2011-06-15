@@ -39,7 +39,8 @@ case class Config(packageNames: Map[Option[String], Option[String]] = Map(None -
   wrappedComplexTypes: List[String] = Nil,
   primaryNamespace: Option[String] = None,
   seperateProtocol: Boolean = true,
-  generateRuntime: Boolean = true)
+  generateRuntime: Boolean = true,
+  sequenceChunkSize: Int = 10)
 
 case class Snippet(definition: Seq[Node],
   companion: Seq[Node] = <source/>,

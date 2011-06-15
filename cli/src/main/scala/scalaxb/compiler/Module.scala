@@ -37,7 +37,8 @@ case class Config(packageNames: Map[Option[String], Option[String]] = Map(None -
   packageDir: Boolean = false,
   wrappedComplexTypes: List[String] = Nil,
   primaryNamespace: Option[String] = None,
-  seperateProtocol: Boolean = true)
+  seperateProtocol: Boolean = true,
+  generateRuntime: Boolean = true)
 
 case class Snippet(definition: Seq[Node],
   companion: Seq[Node] = <source/>,
@@ -260,7 +261,8 @@ trait Module extends Logger {
     processImportables(importables.toList) :::
     processImportables(additionalImportables.toList) :::
     List(processProtocol) :::
-    generateRuntimeFiles[To]
+    (if (config.generateRuntime) generateRuntimeFiles[To]
+     else Nil)
   }
 
   def generateFromResource[To](packageName: Option[String], fileName: String, resourcePath: String)

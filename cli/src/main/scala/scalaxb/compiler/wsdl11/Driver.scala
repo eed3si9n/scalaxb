@@ -30,7 +30,6 @@ import java.io.{Reader}
 import java.net.{URI}
 import scala.xml.{Node}
 import scalaxb.compiler.xsd.{SchemaLite, SchemaDecl, XsdContext}
-import scala.Option._
 
 class Driver extends Module { driver =>
   type Schema = WsdlPair
@@ -51,11 +50,9 @@ class Driver extends Module { driver =>
     xsddriver.packageName(namespace, context.xsdcontext)
 
   override def processContext(context: Context, cnfg: Config) {
-    xsddriver.processContext(context.xsdcontext, mod(cnfg))
+    xsddriver.processContext(context.xsdcontext, cnfg)
     context.definitions foreach {processDefinition(_, context)}
   }
-
-  def mod(cnfg: Config) = cnfg.copy(classPrefix = Some("X"))
 
   def processDefinition(definition: XDefinitionsType, context: Context) {
     val ns = definition.targetNamespace map {_.toString}
@@ -68,7 +65,7 @@ class Driver extends Module { driver =>
 
   override def generateProtocol(snippet: Snippet,
       context: Context, cnfg: Config): Seq[Node] =
-    xsddriver.generateProtocol(snippet, context.xsdcontext, mod(cnfg))
+    xsddriver.generateProtocol(snippet, context.xsdcontext, cnfg)
 
   override def generate(pair: WsdlPair, cntxt: Context, cnfg: Config): Snippet = {
     val ns = (pair.definition, pair.schema) match {
@@ -85,12 +82,12 @@ class Driver extends Module { driver =>
         SchemaDecl(targetNamespace = ns, scope = pair.scope),
         cntxt.xsdcontext) {
         val logger = driver
-        val config = mod(cnfg)
+        val config = cnfg
       }
     }
 
     val xsdgenerated = pair.schema map {
-      xsddriver.generate(_, cntxt.xsdcontext, mod(cnfg))
+      xsddriver.generate(_, cntxt.xsdcontext, cnfg)
     } getOrElse { Snippet(<source></source>) }
 
     val wsdlgenerated = pair.definition map {

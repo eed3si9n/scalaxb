@@ -82,6 +82,8 @@ trait Params extends Lookup {
         case Optional if attribute => " = None"
         case _ => ""
       })
+
+    def map(f: String => String): Param = this.copy(name = f(name))
   }
   
   def buildParam(decl: Decl): Param = decl match {

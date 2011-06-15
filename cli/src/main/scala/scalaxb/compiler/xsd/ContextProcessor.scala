@@ -363,10 +363,9 @@ trait ContextProcessor extends ScalaNames with PackageName {
     
     def familyName(decl: ComplexTypeDecl): String = {
       val typeNames = context.typeNames(packageName(decl.namespace, context))
-      config.classPrefix match {
-        case Some(p) => typeNames(decl).drop(p.length)
-        case None => typeNames(decl)
-      }      
+      val x = typeNames(decl)
+      val prefixed = config.classPrefix map { p => x.drop(p.length) } getOrElse {x}
+      config.classPostfix map { p => prefixed.dropRight(p.length) } getOrElse {prefixed}
     }
     
     def makeCompositorName(compositor: HasParticle, decl: ComplexTypeDecl) {      
@@ -462,10 +461,14 @@ trait ContextProcessor extends ScalaNames with PackageName {
   def makeTypeName(name: String) = name match {
     case s if (s.startsWith("java.") || s.startsWith("javax.")) => s
     case _ =>
-      val base = config.classPrefix map { p =>
+      val prefixed = config.classPrefix map { p =>
         if (p.endsWith("_"))  p.capitalize + name
         else p.capitalize + name.capitalize
       } getOrElse { identifier(name).capitalize }
+      val base = config.classPostfix map { p =>
+        prefixed + p
+      } getOrElse {prefixed}
+
       if (startsWithNumber(base)) "Number" + base
       else if (isCommonlyUsedWord(base)) base + "Type"
       else base

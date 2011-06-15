@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="utf-8"?>
+<wsdl:definitions xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:tm="http://microsoft.com/wsdl/mime/textMatching/" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/" xmlns:tns="http://www.webservicex.net/" xmlns:s="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/" xmlns:http="http://schemas.xmlsoap.org/wsdl/http/" targetNamespace="http://www.webservicex.net/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">
+  <wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Barcode generator</wsdl:documentation>
+  <wsdl:types>
+    <s:schema elementFormDefault="qualified" targetNamespace="http://www.webservicex.net/">
+      <s:element name="GenerateBarCode">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="1" maxOccurs="1" name="BarCodeParam" type="tns:BarCodeData" />
+            <s:element minOccurs="0" maxOccurs="1" name="BarCodeText" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:complexType name="BarCodeData">
+        <s:sequence>
+          <s:element minOccurs="1" maxOccurs="1" name="Height" type="s:int" />
+          <s:element minOccurs="1" maxOccurs="1" name="Width" type="s:int" />
+          <s:element minOccurs="1" maxOccurs="1" name="Angle" type="s:int" />
+          <s:element minOccurs="1" maxOccurs="1" name="Ratio" type="s:int" />
+          <s:element minOccurs="1" maxOccurs="1" name="Module" type="s:int" />
+          <s:element minOccurs="1" maxOccurs="1" name="Left" type="s:int" />
+          <s:element minOccurs="1" maxOccurs="1" name="Top" type="s:int" />
+          <s:element minOccurs="1" maxOccurs="1" name="CheckSum" type="s:boolean" />
+          <s:element minOccurs="0" maxOccurs="1" name="FontName" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="BarColor" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="BGColor" type="s:string" />
+          <s:element minOccurs="1" maxOccurs="1" name="FontSize" type="s:float" />
+          <s:element minOccurs="1" maxOccurs="1" name="barcodeOption" type="tns:BarcodeOption" />
+          <s:element minOccurs="1" maxOccurs="1" name="barcodeType" type="tns:BarcodeType" />
+          <s:element minOccurs="1" maxOccurs="1" name="checkSumMethod" type="tns:CheckSumMethod" />
+          <s:element minOccurs="1" maxOccurs="1" name="showTextPosition" type="tns:ShowTextPosition" />
+          <s:element minOccurs="1" maxOccurs="1" name="BarCodeImageFormat" type="tns:ImageFormats" />
+        </s:sequence>
+      </s:complexType>
+      <s:simpleType name="BarcodeOption">
+        <s:restriction base="s:string">
+          <s:enumeration value="None" />
+          <s:enumeration value="Code" />
+          <s:enumeration value="Typ" />
+          <s:enumeration value="Both" />
+        </s:restriction>
+      </s:simpleType>
+      <s:simpleType name="BarcodeType">
+        <s:restriction base="s:string">
+          <s:enumeration value="Code_2_5_interleaved" />
+          <s:enumeration value="Code_2_5_industrial" />
+          <s:enumeration value="Code_2_5_matrix" />
+          <s:enumeration value="Code39" />
+          <s:enumeration value="Code39Extended" />
+          <s:enumeration value="Code128A" />
+          <s:enumeration value="Code128B" />
+          <s:enumeration value="Code128C" />
+          <s:enumeration value="Code93" />
+          <s:enumeration value="Code93Extended" />
+          <s:enumeration value="CodeMSI" />
+          <s:enumeration value="CodePostNet" />
+          <s:enumeration value="CodeCodabar" />
+          <s:enumeration value="CodeEAN8" />
+          <s:enumeration value="CodeEAN13" />
+          <s:enumeration value="CodeUPC_A" />
+          <s:enumeration value="CodeUPC_E0" />
+          <s:enumeration value="CodeUPC_E1" />
+          <s:enumeration value="CodeUPC_Supp2" />
+          <s:enumeration value="CodeUPC_Supp5" />
+          <s:enumeration value="CodeEAN128A" />
+          <s:enumeration value="CodeEAN128B" />
+          <s:enumeration value="CodeEAN128C" />
+        </s:restriction>
+      </s:simpleType>
+      <s:simpleType name="CheckSumMethod">
+        <s:restriction base="s:string">
+          <s:enumeration value="None" />
+          <s:enumeration value="Modulo10" />
+        </s:restriction>
+      </s:simpleType>
+      <s:simpleType name="ShowTextPosition">
+        <s:restriction base="s:string">
+          <s:enumeration value="TopLeft" />
+          <s:enumeration value="TopRight" />
+          <s:enumeration value="TopCenter" />
+          <s:enumeration value="BottomLeft" />
+          <s:enumeration value="BottomRight" />
+          <s:enumeration value="BottomCenter" />
+        </s:restriction>
+      </s:simpleType>
+      <s:simpleType name="ImageFormats">
+        <s:restriction base="s:string">
+          <s:enumeration value="BMP" />
+          <s:enumeration value="EMF" />
+          <s:enumeration value="EXIF" />
+          <s:enumeration value="GIF" />
+          <s:enumeration value="ICON" />
+          <s:enumeration value="JPEG" />
+          <s:enumeration value="MemoryBMP" />
+          <s:enumeration value="PNG" />
+          <s:enumeration value="TIFF" />
+          <s:enumeration value="WMF" />
+        </s:restriction>
+      </s:simpleType>
+      <s:element name="GenerateBarCodeResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="GenerateBarCodeResult" type="s:base64Binary" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+    </s:schema>
+  </wsdl:types>
+  <wsdl:message name="GenerateBarCodeSoapIn">
+    <wsdl:part name="parameters" element="tns:GenerateBarCode" />
+  </wsdl:message>
+  <wsdl:message name="GenerateBarCodeSoapOut">
+    <wsdl:part name="parameters" element="tns:GenerateBarCodeResponse" />
+  </wsdl:message>
+  <wsdl:portType name="BarCodeSoap">
+    <wsdl:operation name="GenerateBarCode">
+      <wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">WebserviceX.NET barcode library that provides the means to create barcodes for printing and display in any internet enabled applications. This web service supports Code 128, Industrial 2 of 5, Interleaved 2 of 5, Code 2 5 Matrix, Code 39, Code 39 Extended, Code 93, Code 93 Extended, Codabar, EAN13, EAN8, MSI, Postnet, Supp2, Supp5, UPC A, UPC E0 and UPC E1 barcode formats. This Barcodes returns byte image. It supports following image format JPEG, GIF, PNG, BMP, EMF, EXIF, ICON, MEMORY BMP, TIFF and WMF.</wsdl:documentation>
+      <wsdl:input message="tns:GenerateBarCodeSoapIn" />
+      <wsdl:output message="tns:GenerateBarCodeSoapOut" />
+    </wsdl:operation>
+  </wsdl:portType>
+  <wsdl:portType name="BarCodeHttpGet" />
+  <wsdl:portType name="BarCodeHttpPost" />
+  <wsdl:binding name="BarCodeSoap" type="tns:BarCodeSoap">
+    <soap:binding transport="http://schemas.xmlsoap.org/soap/http" />
+    <wsdl:operation name="GenerateBarCode">
+      <soap:operation soapAction="http://www.webservicex.net/GenerateBarCode" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:binding name="BarCodeSoap12" type="tns:BarCodeSoap">
+    <soap12:binding transport="http://schemas.xmlsoap.org/soap/http" />
+    <wsdl:operation name="GenerateBarCode">
+      <soap12:operation soapAction="http://www.webservicex.net/GenerateBarCode" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:binding name="BarCodeHttpGet" type="tns:BarCodeHttpGet">
+    <http:binding verb="GET" />
+  </wsdl:binding>
+  <wsdl:binding name="BarCodeHttpPost" type="tns:BarCodeHttpPost">
+    <http:binding verb="POST" />
+  </wsdl:binding>
+  <wsdl:service name="BarCode">
+    <wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Barcode generator</wsdl:documentation>
+    <wsdl:port name="BarCodeSoap" binding="tns:BarCodeSoap">
+      <soap:address location="http://www.webservicex.net/genericbarcode.asmx" />
+    </wsdl:port>
+    <wsdl:port name="BarCodeSoap12" binding="tns:BarCodeSoap12">
+      <soap12:address location="http://www.webservicex.net/genericbarcode.asmx" />
+    </wsdl:port>
+    <wsdl:port name="BarCodeHttpGet" binding="tns:BarCodeHttpGet">
+      <http:address location="http://www.webservicex.net/genericbarcode.asmx" />
+    </wsdl:port>
+    <wsdl:port name="BarCodeHttpPost" binding="tns:BarCodeHttpPost">
+      <http:address location="http://www.webservicex.net/genericbarcode.asmx" />
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>

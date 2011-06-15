@@ -76,8 +76,5 @@ trait { buildDefaultProtocolName(name) } extends scalaxb.XMLStandardTypes {{
   }
   
   def buildDefaultProtocolName(name: String): String =
-    config.classPrefix match {
-      case Some(p) => p + name.drop(p.length)
-      case None => name
-    }
+    config.classPrefix map { p => p + name.drop(p.length) } getOrElse {name}
 }

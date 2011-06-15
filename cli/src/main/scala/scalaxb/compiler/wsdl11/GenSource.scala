@@ -23,7 +23,7 @@
 package scalaxb.compiler.wsdl11
 
 import scalaxb.compiler.{Logger, Config, Snippet, ReferenceNotFound, Module}
-import Module.{NL, indent}
+import Module.{NL, indent, camelCase}
 
 trait GenSource {
   import wsdl11._
@@ -77,11 +77,9 @@ trait {name} {{
   }
 
   def makeOperation(op: XOperationType): String = {
-    def arg(input: XParamType) =
-      if (isOperationIRIStyleQualified(input)) buildIRIStyleArg(input) map {_.toScalaCode} mkString(", ")
-      else buildPartsArg(input)
+    def arg(input: XParamType) = buildIRIStyleArg(input) map {_.toScalaCode} mkString(", ")
 
-    val name = makeOperationName(op.name)
+    val name = camelCase(op.name)
     val retval = op.xoperationtypeoption match {
       case DataRecord(_, _, XOnewayoperationSequence(input)) =>
         "def %s(%s): Unit".format(name, arg(input))
@@ -98,14 +96,6 @@ trait {name} {{
 
     log("wsdl11#makeOperation: " + retval)
     retval
-  }
-
-  def makeOperationName(name: String): String = {
-    val (cap, rest) = name span {_.isUpper}
-    cap.size match {
-      case x if (x == 0) || (x == 1) || (x == name.size) => cap.toLowerCase + rest
-      case x => (cap take (x - 1)).toLowerCase + (cap drop (x - 1)) + rest
-    }
   }
 
   def makeSoapOpBinding(binding: XBinding_operationType, intf: XPortTypeType): String = {
@@ -170,16 +160,11 @@ trait {name} {{
     retval
   }
 
-  def invokeToXML(input: XParamType): String =
-    if (isOperationIRIStyleQualified(input)) {
-      val entity = "%s(%s)".format(paramTypeName(input), buildIRIStyleArg(input) map {_.toParamName} mkString(", "))
-      val inputElementLabel = "\"%s\"".format(toElement(paramMessage(input).part.head).name)
-      "scalaxb.toXML(%s, targetNamespace, %s, defaultScope)".format(entity, inputElementLabel)
-    } else
-      (paramMessage(input).part map { part =>
-        val name = part.name getOrElse {"in"}
-        "scalaxb.toXML(%s, targetNamespace, %s, defaultScope)".format(name, "\"%s\"".format(toElement(part).name))
-      }).mkString(", ")
+  def invokeToXML(input: XParamType): String = {
+    val entity = "%s(%s)".format(paramTypeName(input), buildIRIStyleArg(input) map {_.toParamName} mkString(", "))
+    val inputElementLabel = "\"%s\"".format(toElement(paramMessage(input).part.head).name)
+    "scalaxb.toXML(%s, targetNamespace, %s, defaultScope)".format(entity, inputElementLabel)
+  }
 
   def paramMessage(input: XParamType): XMessageType = context.messages(splitTypeName(input.message.toString))
 
@@ -198,7 +183,7 @@ trait {name} {{
     toTypeSymbol(part) match {
       case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
         val flatParticles = xsdgenerator.flattenElements(decl, 0)
-        flatParticles map { xsdgenerator.buildParam }
+        flatParticles map { p => xsdgenerator.buildParam(p) map {camelCase} }
       case x => error("unexpected type: " + x)
     }
   } getOrElse {error("unexpected input: " + input)}
@@ -256,22 +241,16 @@ trait {name} {{
     import scala.collection.mutable
 
     val parts = paramMessage(input).part
-
-    if (isOperationIRIStyleQualified(input)) {
-      val typeSymbol = toTypeSymbol(parts.head)
-      val decl = typeSymbol match {
-        case ReferenceTypeSymbol(decl: ComplexTypeDecl) => decl
-        case x => error("unexpected type: " + x.toString)
-      }
-      val flatParticles = xsdgenerator.flattenElements(decl, 0)
-      val paramList = flatParticles map { xsdgenerator.buildParam }
-      val entity = "%s(%s)".format(xsdgenerator.buildTypeName(typeSymbol, true),
-        paramList.map(_.toParamName).mkString("," + NL + indent(2)))
-      """%s, Map()""".format(entity)
-    } else {
-      ""
-
+    val typeSymbol = toTypeSymbol(parts.head)
+    val decl = typeSymbol match {
+      case ReferenceTypeSymbol(decl: ComplexTypeDecl) => decl
+      case x => error("unexpected type: " + x.toString)
     }
+    val flatParticles = xsdgenerator.flattenElements(decl, 0)
+    val paramList = flatParticles map { xsdgenerator.buildParam }
+    val entity = "%s(%s)".format(xsdgenerator.buildTypeName(typeSymbol, true),
+      paramList.map(_.toParamName).mkString("," + NL + indent(2)))
+    """%s, Map()""".format(entity)
   }
 
   def elementRefToTypeName(ref: Option[String]): String = ref map { x =>

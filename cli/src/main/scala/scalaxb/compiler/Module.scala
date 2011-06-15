@@ -32,6 +32,7 @@ import java.io.{File, PrintWriter, Reader, BufferedReader}
 
 case class Config(packageNames: Map[Option[String], Option[String]] = Map(None -> None),
   classPrefix: Option[String] = None,
+  classPostfix: Option[String] = None,
   paramPrefix: Option[String] = None,
   outdir: File = new File("."),
   packageDir: Boolean = false,
@@ -77,6 +78,14 @@ object Module {
     } else (Option[String](scope.getURI(null)), name)
 
   def indent(n: Int) = "  " * n
+
+  def camelCase(name: String): String = {
+    val (cap, rest) = name span {_.isUpper}
+    cap.size match {
+      case x if (x == 0) || (x == 1) || (x == name.size) => cap.toLowerCase + rest
+      case x => (cap take (x - 1)).toLowerCase + (cap drop (x - 1)) + rest
+    }
+  }
 }
 
 trait Module extends Logger {

@@ -81,22 +81,31 @@ trait {name} {{
       if (isOperationIRIStyleQualified(input)) buildIRIStyleArg(input) map {_.toScalaCode} mkString(", ")
       else buildPartsArg(input)
 
+    val name = makeOperationName(op.name)
     val retval = op.xoperationtypeoption match {
       case DataRecord(_, _, XOnewayoperationSequence(input)) =>
-        "def %s(%s): Unit".format(op.name, arg(input))
+        "def %s(%s): Unit".format(name, arg(input))
       case DataRecord(_, _, XRequestresponseoperationSequence(input, output, faults)) =>
-        "def %s(%s): Either[scalaxb.Fault[%s], %s]".format(op.name, arg(input),
+        "def %s(%s): Either[scalaxb.Fault[%s], %s]".format(name, arg(input),
           faultsToTypeName(faults), outputTypeName(output))
       case DataRecord(_, _, XSolicitresponseoperationSequence(output, input, faults)) =>
-        "def %s(%s): Either[scalaxb.Fault[%s], %s]".format(op.name, arg(input),
+        "def %s(%s): Either[scalaxb.Fault[%s], %s]".format(name, arg(input),
           faultsToTypeName(faults), outputTypeName(output))
       case DataRecord(_, _, XNotificationoperationSequence(output)) =>
-        "def %s: %s".format(op.name, outputTypeName(output))
+        "def %s: %s".format(name, outputTypeName(output))
       case _ => error("unsupported.")
     }
 
     log("wsdl11#makeOperation: " + retval)
     retval
+  }
+
+  def makeOperationName(name: String): String = {
+    val (cap, rest) = name span {_.isUpper}
+    cap.size match {
+      case x if (x == 0) || (x == 1) || (x == name.size) => cap.toLowerCase + rest
+      case x => (cap take (x - 1)).toLowerCase + (cap drop (x - 1)) + rest
+    }
   }
 
   def makeSoapOpBinding(binding: XBinding_operationType, intf: XPortTypeType): String = {

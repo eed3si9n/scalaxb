@@ -2,7 +2,11 @@
 <xs:schema targetNamespace="http://www.example.com/general"
     xmlns:xs="http://www.w3.org/2001/XMLSchema"
     xmlns:gen="http://www.example.com/general"
+    xmlns:xmime="http://www.w3.org/2005/05/xmlmime"
     elementFormDefault="qualified">
+  <xs:import namespace="http://www.w3.org/2005/05/xmlmime"
+        schemaLocation="http://www.w3.org/2005/05/xmlmime"/>
+
   <xs:complexType name="SingularBuiltInTypeTest">
     <xs:sequence>
       <xs:element name="int" type="xs:int"/>
@@ -423,4 +427,20 @@
       </xs:element>
     </xs:choice>
   </xs:group>
+
+  <xs:complexType name="JpegPictureType" xmime:expectedContentTypes="image/jpeg;q=1.0, image/tiff;q=0.8">
+    <xs:simpleContent>
+      <xs:restriction base="xmime:base64Binary" >
+        <xs:attribute ref="xmime:contentType" use="required" />
+      </xs:restriction>
+    </xs:simpleContent>
+  </xs:complexType>
+
+  <xs:element name="MimeTest">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="JpegPicture" type="gen:JpegPictureType"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
 </xs:schema>

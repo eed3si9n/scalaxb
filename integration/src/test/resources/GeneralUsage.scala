@@ -4,6 +4,7 @@
 
 import general._
 import scalaxb._
+import xmlmime.{Base64BinaryType => XBase64Binary, HexBinaryType => XHexBinary}
 
 object GeneralUsage {
   val NS = Some("http://www.example.com/general")

@@ -1,0 +1,17 @@
+## no `Array`
+- `xs:base64Binary` now maps to `scalaxb.Base64Binary` instead of `Array[Byte]`.
+- Both `scalaxb.HexBinary` and `scalaxb.Base64Binary` are backed by `Vector[Byte]` internally.
+- Other built-in types that previously mapped to `Array[String]` now maps to `Seq[String]`.
+
+## mvn-scalaxb
+- [scalaxb plugin for Maven](https://github.com/eed3si9n/scalaxb/tree/master/mvn-scalaxb) contributed by [@martiell](http://twitter.com/martiell).
+
+## bug fixes and minor enhancements
+- Fixes list derived types ([#54](https://github.com/eed3si9n/scalaxb/issues/54) reported by [@ikwzm](http://twitter.com/ikwzm)).
+- Fixes handling of empty sequences ([#55](https://github.com/eed3si9n/scalaxb/issues/55)).
+- Fixes naming of local elements with duplicate name and structure ([#56](https://github.com/eed3si9n/scalaxb/issues/56)).
+- Adds `@implicitNotFound` attributes on `fromXML` etc.
+- Adds `--no-runtime` option to skip generating `scalaxb.scala` ([#45](https://github.com/eed3si9n/scalaxb/issues/45) requested by [@martiell](http://twitter.com/martiell)).
+- Implements camel casing of wsdl operation name ([#52](https://github.com/eed3si9n/scalaxb/issues/52) requested by [@timperrett](http://twitter.com/timperrett)).
+- Removes `X` prefix on wsdl message case classes ([#51](https://github.com/eed3si9n/scalaxb/issues/51) requested by [@timperrett](http://twitter.com/timperrett)).
+- Adds `--chunk-size` option to handle 200+ parameters ([#58](https://github.com/eed3si9n/scalaxb/issues/58) reported by [@ecin](http://twitter.com/ecin)).

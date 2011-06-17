@@ -25,24 +25,10 @@ To call `compile-xsd` from sbt, put this in your Plugins.scala:
       val scalaToolsNexusReleases  = "Scala Tools Nexus Releases" at "http://nexus.scala-tools.org/content/repositories/releases/"
     }
 
-Installation
-------------
+`scalaxb` command line
+----------------------
 
-NOTE: If you have previously installed scalaxb using sbaz, remove it because it interferes with your code:
-
-    $ sudo sbaz remove scalaxb
-
-The best way to install scalaxb is to use [conscript](https://github.com/n8han/conscript):
-
-    $ cs eed3si9n/scalaxb
-
-or build from source:
-
-    $ git clone git://github.com/eed3si9n/scalaxb.git scalaxb
-    $ cd scalaxb
-    $ sbt "project scalaxb" update proguard
-
-See the file called INSTALL.md for details.
+See [INSTALL.md][1].
 
 Usage
 -----
@@ -188,3 +174,5 @@ Contacts
 
 - [mailing list](http://groups.google.com/group/scalaxb)
 - [@scalaxb](http://twitter.com/scalaxb)
+
+  [1]: https://github.com/eed3si9n/scalaxb/blob/master/INSTALL.md

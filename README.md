@@ -28,23 +28,21 @@ To call `compile-xsd` from sbt, put this in your Plugins.scala:
 Installation
 ------------
 
-scalaxb is tested only under Scala 2.8.1 and 2.9.0-1, but the sbaz distribution is only available for 2.9.0-1:
+NOTE: If you have previously installed scalaxb using sbaz, remove it because it interferes with your code:
 
-    $ sudo sbaz update
-    $ sudo sbaz install scalaxb
+    $ sudo sbaz remove scalaxb
 
-and upgrade it if you've installed it before:
+The best way to install scalaxb is to use [conscript](https://github.com/n8han/conscript):
 
-    $ sudo sbaz update
-    $ sudo sbaz upgrade
+    $ cs eed3si9n/scalaxb
 
 or build from source:
 
     $ git clone git://github.com/eed3si9n/scalaxb.git scalaxb
     $ cd scalaxb
-    $ sbt "project scalaxb" sbaz-pack
+    $ sbt "project scalaxb" update proguard
 
-See the file called INSTALL for details.
+See the file called INSTALL.md for details.
 
 Usage
 -----

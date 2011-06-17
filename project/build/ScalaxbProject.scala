@@ -10,18 +10,25 @@ class ScalaxbProject(info: ProjectInfo) extends ParentProject(info) {
   lazy val cli = project("cli", "scalaxb", new CliProject(_))
   
   class CliProject(info: ProjectInfo) extends DefaultProject(info) with VersionFileTask
-      with ScalaBazaarTask with posterous.Publish with TestProject with scalaxb.ScalaxbPlugin {
+      with ProguardProject with posterous.Publish with TestProject with scalaxb.ScalaxbPlugin {
     val scopt = "com.github.scopt" %% "scopt" % "1.0.0"
     val launch = "org.scala-tools.sbt" % "launcher-interface" % "0.7.4" % "provided" from (
       "http://databinder.net/repo/org.scala-tools.sbt/launcher-interface/0.7.4/jars/launcher-interface.jar")
-    
-    override def description = "XML data binding tool for Scala."
-    override def bazaarPackageBaseURL = "http://cloud.github.com/downloads/eed3si9n/scalaxb/"
+
     override def notesPath = parentPath / "notes"
     override def versionFilePackage = "scalaxb"
     override def generatedPackageName = "wsdl20"
     override def generatedClassPrefix = Some("X")
     override def compileAction = super.compileAction dependsOn(versionfile)
+    override def minJarName = "scalaxb-%s.min.jar" format version
+    override def proguardInJars = super.proguardInJars +++ scalaLibraryPath
+    override def proguardOptions = List("-dontoptimize",
+      "-dontobfuscate",
+      "-dontnote",
+      "-dontwarn",
+      "-ignorewarnings",
+      proguardKeepAllScala,
+      proguardKeepMain("*"))
   }
   
   lazy val web = project("web", "scalaxb-appengine", new WebProject(_), cli)

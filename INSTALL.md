@@ -20,18 +20,22 @@ Install conscript (cs).
 
 Install scalaxb using it.
 
-   $ cs eed3si9n/scalaxb
+    $ cs eed3si9n/scalaxb
 
 Currently, conscript does not work for Windows, but it will be fixed soon.
 
-Build from source
-=================
+Build from source or download jar
+=================================
 
-Install git.
+For release builds there should be a scalaxb-x.x.x.min.jar availble at github.
+
+- https://github.com/eed3si9n/scalaxb/downloads
+
+If you want to build from source, install git.
 
 - http://git-scm.com/
 
-Download and install simple-build-tool (sbt):
+Download and install simple-build-tool (sbt).
 
 - http://code.google.com/p/simple-build-tool/wiki/Build
   

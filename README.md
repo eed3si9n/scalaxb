@@ -47,6 +47,12 @@ Usage
             prefixes generated parameter names
       --wrap-contents <complexType>
             wraps inner contents into a seperate case class
+      --chunk-size <size>
+            segments long sequnces into chunks of <size>
+      --package-dir
+            generates package directories
+      --no-runtime
+            skips runtime files
       -v | --verbose
             be extra verbose
       <schema_file>
@@ -102,11 +108,8 @@ It also defines the package object for `ipo` package, which inherits `XMLProtoco
 
     /**
     usage:
-    import scalaxb._
-    import ipo._
-    
-    val obj = fromXML[Foo](node)
-    val document = toXML[Foo](obj, "foo", defaultScope)
+    val obj = scalaxb.fromXML[ipo.Foo](node)
+    val document = scalaxb.toXML[ipo.Foo](obj, "foo", ipo.defaultScope)
     **/
     object `package` extends XMLProtocol { }
 

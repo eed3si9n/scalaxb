@@ -12,8 +12,19 @@
       <repositories>
         <repository>
           <id>scala-tools.org</id>
-          <name>Scala-tools Maven2 Repository</name>
+          <name>Scala-tools Releases</name>
           <url>http://scala-tools.org/repo-releases</url>
+        </repository>
+        <repository>
+          <id>scala-tools.org</id>
+          <name>Scala-tools Snapshots</name>
+          <url>http://scala-tools.org/repo-snapshots</url>
+          <releases>
+            <enabled>false</enabled>
+          </releases>
+          <snapshots>
+            <enabled>true</enabled>
+          </snapshots>
         </repository>
       </repositories>
       <pluginRepositories>

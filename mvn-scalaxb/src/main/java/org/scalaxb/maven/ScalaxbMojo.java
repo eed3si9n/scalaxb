@@ -112,6 +112,14 @@ public class ScalaxbMojo extends AbstractMojo {
     private boolean generateRuntime;
 
     /**
+     * Maximum number of parameters to use in generated case class constructors.
+     * This allows parameters sequences to be separated into chunks of the given
+     * size.
+     * @parameter
+     */
+    private Integer chunkSize;
+
+    /**
      *
      * @parameter expression="${scalaxb.verbose}"
      */
@@ -207,6 +215,11 @@ public class ScalaxbMojo extends AbstractMojo {
 
         if (!generateRuntime) {
             args.add("--no-runtime");
+        }
+
+        if (chunkSize != null) {
+            args.add("--chunk-size");
+            args.add(chunkSize.toString());
         }
 
         if (wrapContents != null) {

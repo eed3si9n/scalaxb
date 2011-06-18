@@ -102,6 +102,16 @@ public class ScalaxbMojo extends AbstractMojo {
     private List<String> wrapContents;
 
     /**
+     * Generate the scalaxb classes required to use the generated bindings.
+     * This option is useful for preventing duplicate copies of the scalaxb
+     * runtime being present on the classpath when more than one jar contains
+     * scalaxb bindings.  To prevent the scalaxb runtime sources being
+     * generated, this option should be set to false.
+     * @parameter default-value="true"
+     */
+    private boolean generateRuntime;
+
+    /**
      *
      * @parameter expression="${scalaxb.verbose}"
      */
@@ -193,6 +203,10 @@ public class ScalaxbMojo extends AbstractMojo {
         if (parameterPrefix != null) {
             args.add("--param-prefix");
             args.add(parameterPrefix);
+        }
+
+        if (!generateRuntime) {
+            args.add("--no-runtime");
         }
 
         if (wrapContents != null) {

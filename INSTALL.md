@@ -1,7 +1,8 @@
 scalaxb installation
 ====================
 
-scalaxb is tested only under Scala 2.8.1. 
+scalaxb is tested under Scala 2.8.1, but should also work for 2.9.0-1.
+It also requires Java SE 6.
 
 Don't use sbaz
 ==============

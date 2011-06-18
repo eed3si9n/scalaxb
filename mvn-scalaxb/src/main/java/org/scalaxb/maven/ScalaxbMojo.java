@@ -24,8 +24,12 @@ package org.scalaxb.maven;
 
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.util.DirectoryScanner;
+import scala.collection.JavaConversions;
+import scalaxb.compiler.CaseClassTooLong;
+import scalaxb.compiler.ReferenceNotFound;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -98,30 +102,68 @@ public class ScalaxbMojo extends AbstractMojo {
     private List<String> wrapContents;
 
     /**
+     * Generate the scalaxb classes required to use the generated bindings.
+     * This option is useful for preventing duplicate copies of the scalaxb
+     * runtime being present on the classpath when more than one jar contains
+     * scalaxb bindings.  To prevent the scalaxb runtime sources being
+     * generated, this option should be set to false.
+     * @parameter default-value="true"
+     */
+    private boolean generateRuntime;
+
+    /**
+     * Maximum number of parameters to use in generated case class constructors.
+     * This allows parameters sequences to be separated into chunks of the given
+     * size.
+     * @parameter
+     */
+    private Integer chunkSize;
+
+    /**
      *
      * @parameter expression="${scalaxb.verbose}"
      */
     private boolean verbose;
 
-    public void execute() throws MojoExecutionException {
-        prepareOutputDirectory();
-        List<String> arguments = arguments();
-        generate(arguments);
+    public void execute() throws MojoExecutionException, MojoFailureException {
+        List<String> schemaFiles = schemaFiles();
+        if (schemaFiles.isEmpty()) {
+            getLog().warn("No XSD files found: not running scalaxb");
+        } else {
+            generateBindings(schemaFiles);
+        }
+    }
+
+    private void generateBindings(List<String> schemaFiles)
+            throws MojoExecutionException, MojoFailureException {
+
+        outputDirectory.mkdirs();
+        List<String> arguments = new ArrayList<String>();
+        arguments.addAll(arguments());
+        arguments.addAll(schemaFiles);
+
+        invokeCompiler(arguments);
 
         getLog().debug("Adding source root: " + outputDirectory.getAbsolutePath());
         project.addCompileSourceRoot(outputDirectory.getAbsolutePath());
     }
 
-    private void prepareOutputDirectory() {
-        outputDirectory.mkdirs();
-    }
+    private void invokeCompiler(List<String> arguments)
+            throws MojoExecutionException, MojoFailureException {
 
-    private void generate(List<String> arguments) {
         if (getLog().isInfoEnabled()) {
             getLog().info("Running in process: scalaxb " + argumentsToString(arguments));
         }
-        String[] args = arguments.toArray(new String[arguments.size()]);
-        scalaxb.compiler.Main.main(args);
+
+        try {
+            scalaxb.compiler.Main.start(JavaConversions.asScalaBuffer(arguments));
+        } catch (ReferenceNotFound ex) {
+            throw new MojoFailureException(ex.getMessage());
+        } catch (CaseClassTooLong ex) {
+            throw new MojoFailureException(ex.getMessage());
+        } catch (Exception ex) {
+            throw new MojoExecutionException("Error running scalaxb", ex);
+        }
     }
 
     /**
@@ -134,7 +176,8 @@ public class ScalaxbMojo extends AbstractMojo {
             if (safe.matcher(arg).matches()) {
                 str.append(arg);
             } else {
-                str.append('"' + arg.replaceAll("$", "\\$") + '"');
+                String escapedArg = arg.replaceAll("$", "\\$");
+                str.append('"').append(escapedArg).append('"');
             }
             str.append(' ');
         }
@@ -170,6 +213,15 @@ public class ScalaxbMojo extends AbstractMojo {
             args.add(parameterPrefix);
         }
 
+        if (!generateRuntime) {
+            args.add("--no-runtime");
+        }
+
+        if (chunkSize != null) {
+            args.add("--chunk-size");
+            args.add(chunkSize.toString());
+        }
+
         if (wrapContents != null) {
             for (String type : wrapContents) {
                 args.add("--wrap-contents");
@@ -177,7 +229,6 @@ public class ScalaxbMojo extends AbstractMojo {
             }
         }
 
-        args.addAll(schemaFiles());
         return unmodifiableList(args);
     }
 

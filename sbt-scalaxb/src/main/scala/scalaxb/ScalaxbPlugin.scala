@@ -1,48 +1,78 @@
 package scalaxb
 
 import sbt._
-import sbt.{FileUtilities => FU}
-import java.net.URI
+import scalaxb.{compiler => sc}
 
-trait ScalaxbPlugin extends DefaultProject {
-  def generatedPackageName: String = "generated"
-  def generatedPackageNames: Map[URI, String] = Map()
-  def generatedClassPrefix: Option[String] = None
-  def generatedParamPrefix: Option[String] = None
-  def generatePackageDir: Boolean = true
-  def generateWrapContents: Seq[String] = Nil
-  def generateRuntime: Boolean = true
-  def generatedChunkSize: Int = 10
+object ScalaxbPlugin extends Plugin {
+  import Keys._
+  import Project.Initialize
 
-  def rootPath = path(".")
-  def xsdSourcePath = rootPath / "src" / "main" / "xsd"
-  def scalaxbOutputPath = rootPath / "src_generated"
-  override def mainSourceRoots = super.mainSourceRoots +++ (scalaxbOutputPath##) 
-    
-  lazy val compileXsd = compileXsdAction(scalaxbOutputPath,
-    Seq("-p", generatedPackageName) ++
-    (generatedPackageNames.toList map { case (ns, pkg) => "-p:%s=%s" format(ns.toString, pkg) }) ++
-    (if (generatePackageDir) Seq("--package-dir") else Nil) ++
-    (generatedClassPrefix map { Seq("--class-prefix", _) } getOrElse {Nil}) ++
-    (generatedParamPrefix map { Seq("--param-prefix", _) } getOrElse {Nil}) ++
-    (generateWrapContents flatMap { Seq("--wrap-contents", _) }) ++
-    (if (generateRuntime) Nil else Seq("--no-runtime") ) ++
-    (if (generatedChunkSize == 10) Nil else Seq("--chunk-size", generatedChunkSize.toString) ),
-    xsdSourcePath ** "*.xsd")
+  val Scalaxb          = config("scalaxb") extend(Compile)
+  val scalaxb          = TaskKey[Seq[File]]("scalaxb")
+  val generate         = TaskKey[Seq[File]]("generate")
+  val xsdSource        = SettingKey[File]("xsd-source")
+  val packageName      = SettingKey[String]("package-name")
+  val packageNames     = SettingKey[Map[URI, String]]("package-names")
+  val classPrefix      = SettingKey[Option[String]]("class-prefix")
+  val paramPrefix      = SettingKey[Option[String]]("param-prefix")
+  val wrapContents     = SettingKey[Seq[String]]("wrap-contents")
+  val chunkSize        = SettingKey[Int]("chunk-size")
+  val packageDir       = SettingKey[Boolean]("package-dir")
+  val generateRuntime  = SettingKey[Boolean]("generate-runtime")
 
-  def compileXsdAction(out: Path, args: Seq[String], xsds: PathFinder) =
-    task {
-      FU.clean(out, log)
-      FU.createDirectory(out, log)
-    } && runTask(
-      Some(scalaxbCompilerMain),
-      scalaxbDepPath ** "*.jar",
-      Seq("-d", out.toString) ++ args ++ xsds.getPaths
-    )
-  
-  val scalaxbCompilerMain = "scalaxb.compiler.Main"
-  val scalaxbDepPath = info.parent match {
-    case Some(p) => p.info.pluginsManagedDependencyPath
-    case _ => info.pluginsManagedDependencyPath
+  val scalaxbConfig    = SettingKey[sc.Config]("scalaxb-config")
+  val combinedPackageNames = SettingKey[Map[Option[String], Option[String]]]("combined-package-names")
+
+  def generateTask(base: File, config: sc.Config, sources: Seq[File]): Seq[File] =
+    sources.headOption map { src =>
+      import sc._
+      val module = Module.moduleByFileName(src, false)
+      module.processFiles(sources, config.copy(outdir = base))
+    } getOrElse {Nil}
+
+  def cleanTask(base: File) {
+    IO.delete((base ** "*").get)
+    IO.createDirectory(base)
   }
+
+  def combinedPackageNamesSetting: Initialize[Map[Option[String], Option[String]]] =
+    (packageName, packageNames) { (x, xs) =>
+      (xs map { case (k, v) => ((Some(k.toString): Option[String]), Some(v)) }) updated (None, Some(x))
+    }
+
+  def scalaxbConfigSetting: Initialize[sc.Config] =
+    (combinedPackageNames, packageDir, classPrefix, paramPrefix,
+     wrapContents, generateRuntime, chunkSize) {
+      (pkg, pkgdir, cpre, ppre, w, rt, cs) =>
+      sc.Config(packageNames = pkg,
+        packageDir = pkgdir,
+        classPrefix = cpre,
+        paramPrefix = ppre,
+        wrappedComplexTypes = w.toList
+        // generateRuntime = rt,
+        // sequenceChunkSize = cs
+      )
+    }
+
+  override lazy val settings = inConfig(Scalaxb)(Seq(
+    generate <<= (sourceManaged, scalaxbConfig, sources, clean) map { (base, config, sources, _) =>
+      generateTask(base, config, sources) },
+    sourceManaged <<= (sourceManaged in Compile) { x => x },
+    sources <<= (xsdSource) map { xsd => (xsd ** "*.xsd").get },
+    xsdSource <<= (sourceDirectory) { src => src / "main" / "xsd" },
+    clean <<= (sourceManaged) map { (base) => cleanTask(base) },
+    packageName := "generated",
+    packageNames := Map(),
+    classPrefix := None,
+    paramPrefix := None,
+    wrapContents := Nil,
+    chunkSize := 10,
+    packageDir := true,
+    generateRuntime := true,
+    combinedPackageNames <<= combinedPackageNamesSetting,
+    scalaxbConfig <<= scalaxbConfigSetting
+  )) ++
+  Seq(
+    scalaxb <<= (generate in Scalaxb) map { x => x }
+  )
 }

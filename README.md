@@ -11,6 +11,17 @@ This is still at ALPHA state, and many things may not work.
 I'd really appreciate if you could run it against your favorite xsd
 file and let me know the result.
 
+sbt-scalaxb for sbt 0.10
+------------------------
+
+To call `scalaxb` from sbt 0.10, put this in your `project/plugins/build.sbt`:
+
+    libraryDependencies += "org.scalaxb" %% "sbt-scalaxb" % "0.6.0"
+
+    resolvers += ScalaToolsReleases
+
+    resolvers += ScalaToolsSnapshots
+
 sbt-scalaxb
 -----------
 

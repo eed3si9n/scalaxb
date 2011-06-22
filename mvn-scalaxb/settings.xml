@@ -11,12 +11,12 @@
       </activation>
       <repositories>
         <repository>
-          <id>scala-tools.org</id>
+          <id>scala-releases</id>
           <name>Scala-tools Releases</name>
           <url>http://scala-tools.org/repo-releases</url>
         </repository>
         <repository>
-          <id>scala-tools.org</id>
+          <id>scala-snapshots</id>
           <name>Scala-tools Snapshots</name>
           <url>http://scala-tools.org/repo-snapshots</url>
           <releases>

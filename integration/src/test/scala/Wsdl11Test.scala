@@ -4,7 +4,7 @@ import java.io.{File}
 import scalaxb.compiler.{Config}
 
 object Wsdl11Test extends TestBase {
-  override val module = new Driver with Verbose
+  override val module = new Driver // with Verbose
 
   lazy val generated = module.process(inFile,
     Config(packageNames = Map(None -> Some(packageName)),

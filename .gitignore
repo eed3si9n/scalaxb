@@ -13,3 +13,4 @@ tmp/
 .idea/tasks.xml
 *.iml
 Version.scala
+project/plugins/project/build.properties

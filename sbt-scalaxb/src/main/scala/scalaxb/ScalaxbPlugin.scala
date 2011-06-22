@@ -48,9 +48,9 @@ object ScalaxbPlugin extends Plugin {
         packageDir = pkgdir,
         classPrefix = cpre,
         paramPrefix = ppre,
-        wrappedComplexTypes = w.toList
-        // generateRuntime = rt,
-        // sequenceChunkSize = cs
+        wrappedComplexTypes = w.toList,
+        generateRuntime = rt,
+        sequenceChunkSize = cs
       )
     }
 

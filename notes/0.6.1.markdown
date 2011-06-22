@@ -1,10 +1,24 @@
+## goodbye sbaz, hello conscript
+sbaz allowed quick installation of scalaxb, but it also had its share of problems like scala version dependencies and contaminating the REPL classpath.
+Starting 0.6.1, scalaxb will no longer be supporting sbaz and recommend all users to switch to [conscript](https://github.com/n8han/conscript) for installing `scalaxb`.
+
+    $ sudo sbaz remove scalaxb
+    $ cs eed3si9n/scalaxb
+
 ## no `Array`
 - `xs:base64Binary` now maps to `scalaxb.Base64Binary` instead of `Array[Byte]`.
 - Both `scalaxb.HexBinary` and `scalaxb.Base64Binary` are backed by `Vector[Byte]` internally.
 - Other built-in types that previously mapped to `Array[String]` now maps to `Seq[String]`.
 
 ## mvn-scalaxb
-- [scalaxb plugin for Maven](https://github.com/eed3si9n/scalaxb/tree/master/mvn-scalaxb) contributed by [@martiell](http://twitter.com/martiell).
+[scalaxb plugin for Maven](http://scalaxb.org/mvn-scalaxb) was contributed by [@martiell](http://twitter.com/martiell).
+
+## sbt-scalaxb for sbt 0.10
+To call scalaxb from sbt 0.10, put this in your `project/plugins/build.sbt`:
+
+    libraryDependencies += "org.scalaxb" %% "sbt-scalaxb" % "0.6.1"
+
+    resolvers += ScalaToolsReleases
 
 ## bug fixes and minor enhancements
 - Fixes list derived types ([#54](https://github.com/eed3si9n/scalaxb/issues/54) reported by [@ikwzm](http://twitter.com/ikwzm)).

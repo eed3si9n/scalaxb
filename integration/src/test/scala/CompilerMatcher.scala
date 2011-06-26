@@ -21,8 +21,8 @@
  */
 
 import org.specs.matcher.Matcher
-import java.io.{File, PrintWriter, BufferedWriter, BufferedReader, StringReader, OutputStreamWriter}
-import scala.tools.nsc.{Global, Interpreter, Settings, GenericRunnerSettings}
+import java.io.{File}
+import scala.tools.nsc.{Settings}
 import scala.tools.nsc.util.{SourceFile, BatchSourceFile}
 import scala.tools.nsc.io.{PlainFile} 
 import scala.tools.nsc.reporters.{ConsoleReporter}
@@ -56,89 +56,88 @@ trait CompilerMatcher {
   def evaluateTo(expected: Any,
       outdir: String = ".",
       classpath: List[String] = Nil,
+      usecurrentcp: Boolean = false,
       unchecked: Boolean = true) = new Matcher[(Seq[String], Seq[File])] {
     
     /** @param pair :=> (code: Seq[String], files: Seq[File])
      */
     def apply(pair: => (Seq[String], Seq[File])) = {
-      try {
-        val code = pair._1
-        val files = pair._2
+      import scala.tools.nsc.interpreter.{IMain, Results => IR}
+      
+      val code = pair._1
+      val files = pair._2
         
-        if (code.size < 1)
-          error("At least one line of code is required.")
-        
-        val holder = new Holder
-        val classpathList = jarPathOfClass(holder.getClass.getName) :: classpath
-        
-        val in = new BufferedReader(new StringReader(""))
-        val out = new PrintWriter(new BufferedWriter(
-          new OutputStreamWriter(System.out)))        
-        val settings = new GenericRunnerSettings(out.println _)
-        val origBootclasspath = settings.bootclasspath.value
-        
-        settings.bootclasspath.value = 
-          (origBootclasspath :: bootPathList).mkString(java.io.File.pathSeparator)
-        
-        val originalClasspath = settings.classpath.value
-        settings.classpath.value = classpathList.distinct.mkString(java.io.File.pathSeparator)
-        settings.outdir.value = outdir
-        settings.unchecked.value = unchecked
-        
-        val interpreter = new Interpreter(settings)
-        interpreter.bind("$r_", holder.getClass.getName , holder)
-        interpreter.compileSources(files.map(toSourceFile(_)): _*)
-        
-        code.take(code.size - 1).foreach(interpreter.interpret(_))
-        val expression = code.last
-        interpreter.interpret("$r_.value = " + expression)
-        
-        if (holder.value != expected)
-          println("actual: " + holder.toString)
-        
-        (holder.value == expected,
-          code + " evaluates as expected",
-          code + " does not evaluate as expected")        
-      } catch {
-        case e: Exception =>
-          println(e.toString)
-          e.printStackTrace
-          throw(e)        
-      }
+      if (code.size < 1)
+        error("At least one line of code is required.")
+      
+      val s = settings(outdir, classpath, usecurrentcp, unchecked)
+      val main = new IMain(s)
+      main.compileSources(files.map(toSourceFile(_)): _*)
+      code map { c => main.interpret(c) match {
+        case IR.Error => error("Error interpreting %s" format (c))
+        case _ => 
+      }}
+      val recent = main.mostRecentVar
+      val holder = main.valueOfTerm(recent)
+      if (holder != Some(expected))
+        println("actual: " + holder.map(_.toString).getOrElse{"None"})
+      
+      (holder == Some(expected),
+        code + " evaluates as expected",
+        code + " does not evaluate as expected")
     }    
+  }
+  
+  private def settings(outdir: String, classpath: List[String],
+      usecurrentcp: Boolean, unchecked: Boolean) = {
+    import java.io.{PrintWriter, BufferedWriter, BufferedReader, StringReader, OutputStreamWriter}
+    import scala.tools.nsc.{GenericRunnerSettings}
+    
+    val currentcp = if (usecurrentcp) {
+      java.lang.Thread.currentThread.getContextClassLoader match {
+        case cl: java.net.URLClassLoader => cl.getURLs.toList map {_.toString}
+        case _ => error("classloader is not a URLClassLoader")
+      }
+    } else Nil
+    val classpathList = classpath ++ currentcp
+    val in = new BufferedReader(new StringReader(""))
+    val out = new PrintWriter(new BufferedWriter(
+      new OutputStreamWriter(System.out)))        
+    val settings = new GenericRunnerSettings(out.println _)
+    val origBootclasspath = settings.bootclasspath.value
+    
+    settings.bootclasspath.value = 
+      (origBootclasspath :: bootPathList).mkString(java.io.File.pathSeparator)
+    
+    val originalClasspath = settings.classpath.value
+    settings.classpath.value = classpathList.distinct.mkString(java.io.File.pathSeparator)
+    settings.outdir.value = outdir
+    settings.unchecked.value = unchecked
+    settings    
   }
   
   /** compile checks if the given list of files compiles without an error.
    * @param outdir: String - output dir for the interpreter
    */
-  def compile(outdir: String = ".", classpath: List[String] = Nil) = new Matcher[Seq[File]]() {
+  def compile(outdir: String = ".",
+    classpath: List[String] = Nil,
+    usecurrentcp: Boolean = false,
+    unchecked: Boolean = true) = new Matcher[Seq[File]]() {
     
     /** @param files :=> Seq[File]
      */
     def apply(files: => Seq[File]) = {
-      val settings = new Settings
-      val origBootclasspath = settings.bootclasspath.value
-      settings.classpath.value = classpath.distinct.mkString(java.io.File.pathSeparator)
-      settings.bootclasspath.value =
-        (origBootclasspath :: bootPathList).distinct.mkString(java.io.File.pathSeparator)
-      settings.outdir.value = outdir
+      import scala.tools.nsc.{Global}
       
-      val reporter = new ConsoleReporter(settings)
-      val compiler = new Global(settings, reporter)
-      
-      try {
-        val run = (new compiler.Run)
-        run.compile(files.map(_.getAbsolutePath).toList)
-        reporter.printSummary
-        (!reporter.hasErrors,
-          files.mkString + " compile(s)",
-          files.mkString + " do(es) not compile")
-      } catch {
-        case e: Exception =>
-          println(e.toString)
-          // e.printStackTrace
-          throw(e)
-      }
+      val s = settings(outdir, classpath, usecurrentcp, unchecked)
+      val reporter = new ConsoleReporter(s)
+      val compiler = new Global(s, reporter)
+      val run = (new compiler.Run)
+      run.compile(files.map(_.getAbsolutePath).toList)
+      reporter.printSummary
+      (!reporter.hasErrors,
+        files.mkString + " compile(s)",
+        files.mkString + " do(es) not compile")
     }
   }
 

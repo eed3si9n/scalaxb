@@ -3,7 +3,7 @@ import java.io.{File}
 import scalaxb.compiler.{Module, Verbose}
 import scalaxb.compiler.xsd.{Driver}
 
-trait TestBase extends SpecificationWithJUnit with CompilerMatcher {
+trait TestBase extends Specification with CompilerMatcher {
   val module: Module = new Driver // with Verbose
   val tmp = new File("tmp")
   if (tmp.exists) deleteAll(tmp)

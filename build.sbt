@@ -1,13 +1,5 @@
 name := "scalaxb"
 
-version := "0.6.2-SNAPSHOT"
-
-organization := "org.scalaxb"
-
-scalaVersion := "2.8.1"
-
-crossScalaVersions := Seq("2.9.0-1", "2.8.1")
-
 publishMavenStyle := true
 
 resolvers += ScalaToolsReleases

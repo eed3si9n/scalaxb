@@ -27,10 +27,6 @@ trait GenerateClientTask extends DefaultWebProject {
       }
     
     def script(lang: Lang) = """<html>
-<head>
-  <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.2.6/jquery.min.js" type="text/javascript"></script>
-
-</head>
 <body>
 <!-- begin -->
 <form id="frmCompile" enctype="multipart/form-data" method="POST">
@@ -46,6 +42,7 @@ trait GenerateClientTask extends DefaultWebProject {
   <li><button id="btnCompile" type="button">""" + localize("compile", lang) + """</button></li>
 </ul>
 </form>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.2.6/jquery.min.js" type="text/javascript"></script>
 <script type="text/javascript">
   // var baseURL = "http://localhost:8080/compile/";
   var baseURL = "http://scalaxb.appspot.com/compile/";

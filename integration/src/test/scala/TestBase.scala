@@ -1,4 +1,4 @@
-import org.specs._
+import org.specs2.mutable._
 import java.io.{File}
 import scalaxb.compiler.{Module, Verbose}
 import scalaxb.compiler.xsd.{Driver}

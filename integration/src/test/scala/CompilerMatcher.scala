@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-import org.specs.matcher.Matcher
+import org.specs2.matcher._
 import java.io.{File}
 import scala.tools.nsc.{Settings}
 import scala.tools.nsc.util.{SourceFile, BatchSourceFile}
@@ -58,14 +58,12 @@ trait CompilerMatcher {
       classpath: List[String] = Nil,
       usecurrentcp: Boolean = false,
       unchecked: Boolean = true) = new Matcher[(Seq[String], Seq[File])] {
-    
-    /** @param pair :=> (code: Seq[String], files: Seq[File])
-     */
-    def apply(pair: => (Seq[String], Seq[File])) = {
+
+    def apply[A <: (Seq[String], Seq[File])](pair: Expectable[A]) = {
       import scala.tools.nsc.interpreter.{IMain, Results => IR}
       
-      val code = pair._1
-      val files = pair._2
+      val code = pair.value._1
+      val files = pair.value._2
         
       if (code.size < 1)
         error("At least one line of code is required.")
@@ -82,9 +80,10 @@ trait CompilerMatcher {
       if (holder != Some(expected))
         println("actual: " + holder.map(_.toString).getOrElse{"None"})
       
-      (holder == Some(expected),
+      result(holder == Some(expected),
         code + " evaluates as expected",
-        code + " does not evaluate as expected")
+        code + " does not evaluate as expected",
+        pair)
     }    
   }
   
@@ -123,21 +122,20 @@ trait CompilerMatcher {
     classpath: List[String] = Nil,
     usecurrentcp: Boolean = false,
     unchecked: Boolean = true) = new Matcher[Seq[File]]() {
-    
-    /** @param files :=> Seq[File]
-     */
-    def apply(files: => Seq[File]) = {
+
+    def apply[A <: Seq[File]](files: Expectable[A]) = {
       import scala.tools.nsc.{Global}
       
       val s = settings(outdir, classpath, usecurrentcp, unchecked)
       val reporter = new ConsoleReporter(s)
       val compiler = new Global(s, reporter)
       val run = (new compiler.Run)
-      run.compile(files.map(_.getAbsolutePath).toList)
+      run.compile(files.value.map(_.getAbsolutePath).toList)
       reporter.printSummary
-      (!reporter.hasErrors,
-        files.mkString + " compile(s)",
-        files.mkString + " do(es) not compile")
+      result(!reporter.hasErrors,
+        files.value.mkString + " compile(s)",
+        files.value.mkString + " do(es) not compile",
+        files)
     }
   }
 

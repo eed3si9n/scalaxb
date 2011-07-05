@@ -268,8 +268,8 @@ trait ContextProcessor extends ScalaNames with PackageName {
   }
   
   lazy val sequenceChunkSize = config.sequenceChunkSize
-  val MaxParticleSize = 20
-  
+  lazy val contentsSizeLimit = config.contentsSizeLimit
+
   def isWrapped(decl: ComplexTypeDecl): Boolean = isWrapped(decl.namespace, decl.family)
   def isWrapped(namespace: Option[String], family: String): Boolean =
     (namespace map { ns =>
@@ -330,7 +330,7 @@ trait ContextProcessor extends ScalaNames with PackageName {
           else context.compositorNames(compositor) = groupName + "Sequence" + apparentSequenceNumber
           sequenceNumber += 1
           
-          if (seq.particles.size > MaxParticleSize || isWrapped(group.namespace, group.name))
+          if (seq.particles.size > contentsSizeLimit || isWrapped(group.namespace, group.name))
             splitLong[SequenceDecl](seq.particles) { formSequence(makeGroupComplexType(group), _) }
         case choice: ChoiceDecl =>
           context.compositorParents(compositor) = makeGroupComplexType(group)
@@ -392,7 +392,7 @@ trait ContextProcessor extends ScalaNames with PackageName {
           
           sequenceNumber += 1
           
-          if (seq.particles.size > MaxParticleSize || isWrapped(decl.namespace, decl.family))
+          if (seq.particles.size > contentsSizeLimit || isWrapped(decl.namespace, decl.family))
             splitLong[SequenceDecl](seq.particles) { formSequence(decl, _) }
         case choice: ChoiceDecl =>
           context.compositorParents(compositor) = decl

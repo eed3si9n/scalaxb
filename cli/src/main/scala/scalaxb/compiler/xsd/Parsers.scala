@@ -87,7 +87,7 @@ trait Parsers extends Args with Params {
   def buildSeqParser(seq: SequenceDecl,
       occurrence: Occurrence, mixed: Boolean, wrapInDataRecord: Boolean): String = {
     val splits = if (mixed) seq.particles
-      else if (seq.particles.size <= MaxParticleSize) seq.particles
+      else if (seq.particles.size <= contentsSizeLimit) seq.particles
       else splitLong[SequenceDecl](seq.particles) { SequenceDecl(_, 1, 1, 0) }
 
     val parserList = if (mixed) (0 to seq.particles.size * 2 - 1).toList map { i =>

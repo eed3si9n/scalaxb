@@ -222,8 +222,8 @@ abstract class GenSource(val schema: SchemaDecl,
     val childElements = if (decl.mixed) flattenMixed(decl)
       else flatParticles 
     val attributes = flattenAttributes(decl)
-    val longAttribute = (attributes.size + childElements.size > MaxParticleSize &&
-      childElements.size + 1 <= MaxParticleSize)
+    val longAttribute = (attributes.size + childElements.size > contentsSizeLimit &&
+      childElements.size + 1 <= contentsSizeLimit)
     val list = if (longAttribute) List.concat[Decl](childElements, List(buildLongAttributeRef))
       else List.concat[Decl](childElements, attributes)
     if (list.size > 22) throw new CaseClassTooLong(fqn, (decl.namespace map { "{" + _ + "}" } getOrElse {""}) + decl.family)
@@ -724,7 +724,7 @@ object {localName} {{
   
   // sometimes we don't have ComplexTypeDecl because it's a group.
   def splitLongSequence(namespace: Option[String], family: String, particles: List[Particle]): List[Particle] =
-    if (particles.size <= MaxParticleSize && !isWrapped(namespace, family)) particles
+    if (particles.size <= contentsSizeLimit && !isWrapped(namespace, family)) particles
     else splitLong[SequenceDecl](particles) { SequenceDecl(_, 1, 1, 0) }
   
   // used to generte accessor
@@ -746,7 +746,7 @@ object {localName} {{
   
   def splitSequences(namespace: Option[String], family: String,
         compositor: HasParticle): List[SequenceDecl] = compositor match {
-    case seq: SequenceDecl if seq.particles.size > MaxParticleSize || isWrapped(namespace, family) =>
+    case seq: SequenceDecl if seq.particles.size > contentsSizeLimit || isWrapped(namespace, family) =>
        splitLong[SequenceDecl](seq.particles) { xs => SequenceDecl(xs, 1, 1, 0) }
     case _ => Nil
   }
@@ -797,7 +797,7 @@ object {localName} {{
   }
   
   def isLongAll(all: AllDecl, namespace: Option[String], family: String): Boolean =
-    (all.particles.size > MaxParticleSize || isWrapped(namespace, family))
+    (all.particles.size > contentsSizeLimit || isWrapped(namespace, family))
   
   val buildSimpleTypeRef: ComplexTypeContent =>? List[ElemDecl] = {
     case content: ComplexTypeContent

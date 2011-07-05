@@ -53,6 +53,7 @@ object Main extends Version {
     var packageDir = false
     var generateRuntime = true
     var sequenceChunkSize = 10
+    var contentsSizeLimit = 20
 
     packageNames(None) = None
     val paramParser = new OptionParser("scalaxb", version) {
@@ -70,6 +71,8 @@ object Main extends Version {
       opt(None, "wrap-contents", "<complexType>",
         "wraps inner contents into a seperate case class",
         { w: String => wrappedComplexTypes append w })
+      intOpt(None, "contents-limit", "<size>", "defines long contents to be segmented (default: 20)",
+        { size: Int => contentsSizeLimit = size })
       intOpt(None, "chunk-size", "<size>", "segments long sequences into chunks (default: 10)",
         { size: Int => sequenceChunkSize = size })
       opt("package-dir", "generates package directories",
@@ -93,6 +96,7 @@ object Main extends Version {
           paramPrefix = paramPrefix,
           wrappedComplexTypes = wrappedComplexTypes.toList,
           generateRuntime = generateRuntime,
+          contentsSizeLimit = contentsSizeLimit,
           sequenceChunkSize = sequenceChunkSize) )
     }
   }

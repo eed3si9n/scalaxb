@@ -40,6 +40,7 @@ case class Config(packageNames: Map[Option[String], Option[String]] = Map(None -
   primaryNamespace: Option[String] = None,
   seperateProtocol: Boolean = true,
   generateRuntime: Boolean = true,
+  contentsSizeLimit: Int = 20,
   sequenceChunkSize: Int = 10)
 
 case class Snippet(definition: Seq[Node],

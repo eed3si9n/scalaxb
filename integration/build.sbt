@@ -7,3 +7,7 @@ libraryDependencies ++= Seq(
 )
 
 parallelExecution in Test := false
+
+publish := {}
+
+publishLocal := {}

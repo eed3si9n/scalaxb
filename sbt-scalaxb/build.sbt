@@ -1,3 +1,7 @@
 sbtPlugin := true
 
-libraryDependencies += "org.scalaxb" %% "scalaxb" % "0.6.1"
+scalaVersion := "2.8.1"
+
+crossScalaVersions := Seq("2.8.1")
+
+version <<= (sbtVersion, version) { (sv, nv) => "sbt" + sv + "_" + nv }

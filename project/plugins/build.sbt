@@ -1,1 +1,1 @@
-libraryDependencies += "com.eed3si9n" %% "sbt-appengine" % "0.1-SNAPSHOT"
+libraryDependencies <+= (sbtVersion) { sv => "com.eed3si9n" %% "sbt-appengine" % ("sbt" + sv + "_0.2") }

@@ -1,9 +1,9 @@
-package scalaxb
+package sbtscalaxb
 
 import sbt._
 import scalaxb.{compiler => sc}
 
-object ScalaxbPlugin extends Plugin {
+object Plugin extends sbt.Plugin {
   import Keys._
   import Project.Initialize
 
@@ -54,7 +54,7 @@ object ScalaxbPlugin extends Plugin {
       )
     }
 
-  override lazy val settings = inConfig(Scalaxb)(Seq(
+  lazy val scalaxbSettings: Seq[Project.Setting[_]] = inConfig(Scalaxb)(Seq(
     generate <<= (sourceManaged, scalaxbConfig, sources, clean) map { (base, config, sources, _) =>
       generateTask(base, config, sources) },
     sourceManaged <<= (sourceManaged in Compile) { x => x },

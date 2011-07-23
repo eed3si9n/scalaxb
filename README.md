@@ -18,7 +18,7 @@ To call `scalaxb` from sbt 0.10, put this in your `project/plugins/build.sbt`:
 
     libraryDependencies += "org.scalaxb" %% "sbt-scalaxb" % "0.6.1"
 
-    resolvers += ScalaToolsReleases
+    sourceGenerators in Compile <+= scalaxb.identity
 
 sbt-scalaxb
 -----------

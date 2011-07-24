@@ -56,10 +56,8 @@ trait GenSource {
       context.interfaces(splitTypeName(binding.typeValue.toString))
     }).distinct
 
-    mergeSnippets(
-      (interfaces map {makeInterface}) ++
-      (soap12Bindings map {makeSoapBinding})
-    )
+    Snippet((interfaces map {makeInterface}) ++
+      (soap12Bindings map {makeSoapBinding}): _*)
   }
 
   def makeInterface(intf: XPortTypeType): Snippet = {
@@ -285,7 +283,7 @@ trait {name} {{
     }}
   }}
 </source>
-    Snippet(<source></source>, bindingTrait)
+    Snippet(<source/>, <source/>, bindingTrait, <source/>)
   }
 
   def findPort(binding: XBindingType) =
@@ -302,11 +300,6 @@ trait {name} {{
         case x :: xs => x
         case Nil     => throw new ReferenceNotFound("element" , namespace, name)
       }
-
-  def mergeSnippets(snippets: Seq[Snippet]) =
-    Snippet(snippets flatMap {_.definition},
-      snippets flatMap {_.companion},
-      snippets flatMap {_.implicitValue})
 
   def splitTypeName(ref: String) = Module.splitTypeName(ref, scope)
 }

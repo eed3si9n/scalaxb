@@ -38,36 +38,27 @@ abstract class GenSource(val schema: SchemaDecl,
   def run: Snippet = {
     log("xsd: GenSource.run")
     
-    val nodes = mutable.ListBuffer.empty[Node]
-    val companions = mutable.ListBuffer.empty[Node]
-    val implicitValues = mutable.ListBuffer.empty[Node]
-    def splitSnippet(snippet: Snippet) {
-      nodes ++= snippet.definition
-      companions ++= snippet.companion
-      implicitValues ++= snippet.implicitValue
-    }
-    
-    nodes += makeSchemaComment
-    nodes += makePackageName(packageName(schema, context))
-    
+    val snippets = mutable.ListBuffer.empty[Snippet]
+    snippets += Snippet(makeSchemaComment ++ makePackageName(packageName(schema, context)), Nil, Nil, Nil)
+
     schema.typeList map {
       case decl: ComplexTypeDecl =>
         if (context.baseToSubs.keysIterator.contains(decl)) {
-          splitSnippet(makeTrait(decl))
-          if (!decl.abstractValue) splitSnippet(makeSuperType(decl))
+          snippets += makeTrait(decl)
+          if (!decl.abstractValue) snippets += makeSuperType(decl)
         }
-        else splitSnippet(makeType(decl))
+        else snippets += makeType(decl)
         
       case decl: SimpleTypeDecl =>
-        if (containsEnumeration(decl)) splitSnippet(makeEnumType(decl))
+        if (containsEnumeration(decl)) snippets += makeEnumType(decl)
     }
     
     for ((sch, group) <- context.groups if sch == this.schema)
-      splitSnippet(makeGroup(group))  
+      snippets += makeGroup(group)
     for (group <- schema.topAttrGroups.valuesIterator)
-      splitSnippet(makeAttributeGroup(group))
+      snippets += makeAttributeGroup(group)
     
-    Snippet(nodes, companions, implicitValues)
+    Snippet(snippets: _*)
   }
     
   def makeSuperType(decl: ComplexTypeDecl): Snippet = {
@@ -136,7 +127,7 @@ abstract class GenSource(val schema: SchemaDecl,
 }}</source>
     
     val compDepth = 1
-    val companionCode = <source>  trait Default{formatterName} extends scalaxb.XMLFormat[{fqn}] {{
+    val defaultFormats = <source>  trait Default{formatterName} extends scalaxb.XMLFormat[{fqn}] {{
     val targetNamespace: Option[String] = { quote(schema.targetNamespace) }
     { // if (imports.isEmpty) ""
       //  else imports.mkString(newline + indent(2)) + newline + indent(2) 
@@ -166,12 +157,11 @@ abstract class GenSource(val schema: SchemaDecl,
     }}
   }}</source>
     
-    val compositorCodes = if (decl.abstractValue) compositors map { makeCompositor }
+    val compositorCodes: Seq[Snippet] = if (decl.abstractValue) compositors map { makeCompositor }
       else Nil
     
-    Snippet(Seq(traitCode) ++ compositorCodes.flatMap(_.definition),
-     Seq(companionCode) ++ compositorCodes.flatMap(_.companion),
-     Seq(makeImplicitValue(fqn, formatterName)) ++ compositorCodes.flatMap(_.implicitValue))
+    Snippet(Snippet(traitCode, <source/>, defaultFormats, makeImplicitValue(fqn, formatterName)) +:
+      compositorCodes: _*)
   }
   
   def makeImplicitValue(fqn: String, formatterName: String): Node =
@@ -349,7 +339,7 @@ abstract class GenSource(val schema: SchemaDecl,
     }
 
     val groups = filterGroup(decl) filter { g => primaryCompositor(g).particles.size > 0 }
-    val companionSuperNames: List[String] = "scalaxb.ElemNameParser[" + fqn + "]" :: groups.map(g => 
+    val defaultFormatSuperNames: List[String] = "scalaxb.ElemNameParser[" + fqn + "]" :: groups.map(g =>
       buildFormatterName(g.namespace, groupTypeName(g)))
     
     val caseClassCode = <source>{ buildComment(decl) }case class {localName}({paramsString}){extendString}{ if (accessors.size == 0) ""
@@ -357,7 +347,7 @@ abstract class GenSource(val schema: SchemaDecl,
         indent(1) + accessors.mkString(newline + indent(1)) + newline +
         "}" + newline }</source>
     
-    def companionCode = if (simpleFromXml) <source>  trait Default{formatterName} extends scalaxb.XMLFormat[{fqn}] with scalaxb.CanWriteChildNodes[{fqn}] {{
+    def defaultFormats = if (simpleFromXml) <source>  trait Default{formatterName} extends scalaxb.XMLFormat[{fqn}] with scalaxb.CanWriteChildNodes[{fqn}] {{
     val targetNamespace: Option[String] = { quote(schema.targetNamespace) }
     
     def reads(seq: scala.xml.NodeSeq, stack: List[scalaxb.ElemName]): Either[String, {fqn}] = seq match {{
@@ -367,7 +357,7 @@ abstract class GenSource(val schema: SchemaDecl,
     
 {makeWritesAttribute}{makeWritesChildNodes}
   }}</source>
-    else <source>  trait Default{formatterName} extends {companionSuperNames.mkString(" with ")} {{
+    else <source>  trait Default{formatterName} extends {defaultFormatSuperNames.mkString(" with ")} {{
     val targetNamespace: Option[String] = { quote(schema.targetNamespace) }
     
     { if (decl.isNamed) "override def typeName: Option[String] = Some(" + quote(decl.name) + ")" + newline + newline + indent(2)  
@@ -405,10 +395,9 @@ abstract class GenSource(val schema: SchemaDecl,
     }}</source>
     
     val compositorCodes = compositors map { makeCompositor }
-    
-    Snippet(Seq(caseClassCode) ++ compositorCodes.flatMap(_.definition),
-      Seq(companionCode) ++ compositorCodes.flatMap(_.companion),
-      Seq(makeImplicitValue(fqn, formatterName)) ++ compositorCodes.flatMap(_.implicitValue))
+
+    Snippet(Snippet(caseClassCode, <source/>, defaultFormats, makeImplicitValue(fqn, formatterName)) +:
+      compositorCodes: _*)
   }
     
   def buildComment(p: Product) = p match {
@@ -459,7 +448,8 @@ abstract class GenSource(val schema: SchemaDecl,
       else " extends " + superNames.mkString(" with ")
     
     Snippet(<source>{ buildComment(seq) }case class {localName}({paramsString}){superString}</source>,
-     <source>  trait Default{formatterName} extends scalaxb.XMLFormat[{fqn}] {{
+      <source/>,
+      <source>  trait Default{formatterName} extends scalaxb.XMLFormat[{fqn}] {{
     val targetNamespace: Option[String] = { quote(schema.targetNamespace) }
     
     def reads(seq: scala.xml.NodeSeq, stack: List[scalaxb.ElemName]): Either[String, {fqn}] = Left("don't call me.")
@@ -495,7 +485,7 @@ abstract class GenSource(val schema: SchemaDecl,
       if (groups.isEmpty) List("scalaxb.AnyElemNameParser")
       else groups.map { g => buildFormatterName(g.namespace, groupTypeName(g)) }
     
-    val companionCode = if (compositor.particles.size == 0) <source></source>
+    val defaultFormats = if (compositor.particles.size == 0) <source></source>
       else <source>{ buildComment(group) }  trait {formatterName} extends {superNames.mkString(" with ")} {{
     private val targetNamespace: Option[String] = { quote(schema.targetNamespace) }
     
@@ -510,9 +500,8 @@ abstract class GenSource(val schema: SchemaDecl,
   }}</source>
     
     val compositorCodes = compositors map { makeCompositor }
-    Snippet(compositorCodes.flatMap(_.definition),
-      Seq(companionCode) ++ compositorCodes.flatMap(_.companion),
-      compositorCodes.flatMap(_.implicitValue))
+    Snippet(Snippet(Nil, Nil, defaultFormats, Nil) +:
+      compositorCodes: _*)
   }
   
   def makeAttributeGroup(group: AttributeGroupDecl): Snippet = {
@@ -532,7 +521,7 @@ abstract class GenSource(val schema: SchemaDecl,
     val attributeString = attributes.map(x => buildAttributeString(x)).mkString(newline + indent(2))
     
     val caseClassCode = <source>{ buildComment(group) }case class {localName}({paramsString})</source>
-    val companionCode = <source>  trait Default{formatterName} extends scalaxb.AttributeGroupFormat[{fqn}] {{
+    val defaultFormats = <source>  trait Default{formatterName} extends scalaxb.AttributeGroupFormat[{fqn}] {{
     val targetNamespace: Option[String] = { quote(schema.targetNamespace) }
     
     def reads(seq: scala.xml.NodeSeq, stack: List[scalaxb.ElemName]): Either[String, {fqn}] = seq match {{
@@ -547,9 +536,10 @@ abstract class GenSource(val schema: SchemaDecl,
     }}
   }}</source>
     
-    Snippet(Seq(caseClassCode),
-      Seq(companionCode),
-      Seq(makeImplicitValue(group)))
+    Snippet(caseClassCode,
+      <source/>,
+      defaultFormats,
+      makeImplicitValue(group))
   }
   
   def makeEnumType(decl: SimpleTypeDecl) = {
@@ -587,6 +577,7 @@ object {localName} {{
     }  // match
         
     Snippet(traitCode,
+      Nil,
       <source>  def build{formatterName} = new Default{formatterName} {{}}
   trait Default{formatterName} extends scalaxb.XMLFormat[{fqn}] {{
     val targetNamespace: Option[String] = { quote(schema.targetNamespace) }

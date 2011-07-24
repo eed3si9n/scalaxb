@@ -38,14 +38,26 @@ case class Config(packageNames: Map[Option[String], Option[String]] = Map(None -
   packageDir: Boolean = false,
   wrappedComplexTypes: List[String] = Nil,
   primaryNamespace: Option[String] = None,
+  encloseChildTypes: Boolean = true,
   seperateProtocol: Boolean = true,
   generateRuntime: Boolean = true,
   contentsSizeLimit: Int = 20,
   sequenceChunkSize: Int = 10)
 
+object Snippet {
+  def apply(definition: Node): Snippet = Snippet(definition, Nil, Nil, Nil)
+
+  def apply(snippets: Snippet*): Snippet =
+    Snippet(snippets flatMap {_.definition},
+      snippets flatMap {_.companion},
+      snippets flatMap {_.defaultFormats},
+      snippets flatMap {_.implicitValue})
+}
+
 case class Snippet(definition: Seq[Node],
-  companion: Seq[Node] = <source/>,
-  implicitValue: Seq[Node]  = <source/>)
+  companion: Seq[Node],
+  defaultFormats: Seq[Node],
+  implicitValue: Seq[Node])
 
 trait CanBeWriter[A] {
  def toWriter(value: A): PrintWriter
@@ -189,15 +201,7 @@ trait Module extends Logger {
 
   def processReaders[From, To](files: Seq[From], config0: Config)
      (implicit ev: CanBeRawSchema[From, RawSchema], evTo: CanBeWriter[To]): List[To] = {
-    val companions = ListBuffer.empty[Node]
-    val implicitValues = ListBuffer.empty[Node]
-    val nodes = ListBuffer.empty[Node]
-    def splitSnippet(snippet: Snippet) {
-      nodes ++= snippet.definition
-      companions ++= snippet.companion
-      implicitValues ++= snippet.implicitValue
-    }
-
+    val snippets = ListBuffer.empty[Snippet]
     val context = buildContext
     val importables = ListMap[Importable, From](files map { file =>
       (toImportable(ev.toURI(file), ev.toRawSchema(file)), file)}: _*)
@@ -246,7 +250,7 @@ trait Module extends Logger {
         val out = evTo.toWriter(output)
         try {
           val snippet = generate(schema, context, config)
-          splitSnippet(snippet)
+          snippets += snippet
           printNodes(snippet.definition, out)
         } finally {
           out.flush()
@@ -259,7 +263,7 @@ trait Module extends Logger {
       val output = implicitly[CanBeWriter[To]].newInstance(packageName(None, context),
         toFileNamePart(files.head) + "_xmlprotocol.scala")
       val out = implicitly[CanBeWriter[To]].toWriter(output)
-      val protocolNodes = generateProtocol(Snippet(nodes, companions, implicitValues), context, config)
+      val protocolNodes = generateProtocol(Snippet(snippets: _*), context, config)
       try {
         printNodes(protocolNodes, out)
       } finally {
@@ -395,6 +399,7 @@ trait Module extends Logger {
   def mergeSnippets(snippets: Seq[Snippet]) =
     Snippet(snippets flatMap {_.definition},
       snippets flatMap {_.companion},
+      snippets flatMap {_.defaultFormats},
       snippets flatMap {_.implicitValue})
 }
 

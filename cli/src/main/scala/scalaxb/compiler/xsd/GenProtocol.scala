@@ -69,7 +69,7 @@ trait { buildDefaultProtocolName(name) } extends scalaxb.XMLStandardTypes {{
   val defaultScope = scalaxb.toScope({ if (scopes.isEmpty) "Nil: _*"
     else scopes.map(x => quote(x._1) + " -> " + quote(x._2)).mkString("," + newline + indent(2)) })
 {snippet.implicitValue}
-{snippet.companion}
+{snippet.defaultFormats}
 }}</source>
   }
   

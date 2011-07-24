@@ -256,7 +256,7 @@ trait Params extends Lookup {
     }
     
     val symbol = new ReferenceTypeSymbol(typeName)
-    val decl = ComplexTypeDecl(schema.targetNamespace, symbol.name, symbol.name,
+    val decl = ComplexTypeDecl(schema.targetNamespace, symbol.name, List(symbol.name),
       false, false, ComplexContentDecl.empty, Nil, None)
 
     compositorWrapper(decl) = compositor

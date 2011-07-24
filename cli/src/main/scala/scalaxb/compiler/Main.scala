@@ -54,6 +54,7 @@ object Main extends Version {
     var generateRuntime = true
     var sequenceChunkSize = 10
     var contentsSizeLimit = 20
+    var prependFamilyName = false
 
     packageNames(None) = None
     val paramParser = new OptionParser("scalaxb", version) {
@@ -68,6 +69,8 @@ object Main extends Version {
         { p: String => classPrefix = Some(p) })
       opt(None, "param-prefix", "<prefix>", "prefixes generated parameter names",
         { p: String => paramPrefix = Some(p) })
+      opt("prepend-family", "prepends family name to class names",
+        { prependFamilyName = true })
       opt(None, "wrap-contents", "<complexType>",
         "wraps inner contents into a seperate case class",
         { w: String => wrappedComplexTypes append w })

@@ -100,7 +100,7 @@ abstract class GenSource(val schema: SchemaDecl,
       else " extends " + superNames.mkString(" with ")
     
     def makeCaseEntry(decl: ComplexTypeDecl) =
-      "case (" + quoteNamespace(decl.namespace) + ", " + quote(Some(decl.family)) + ") => " + 
+      "case (" + quoteNamespace(decl.namespace) + ", " + quote(Some(decl.family.head)) + ") => " +
         "Right(" + buildFromXML(buildTypeName(decl, false), "node", "stack") + ")"
     
     def makeToXmlCaseEntry(decl: ComplexTypeDecl) =
@@ -216,7 +216,7 @@ abstract class GenSource(val schema: SchemaDecl,
       childElements.size + 1 <= contentsSizeLimit)
     val list = if (longAttribute) List.concat[Decl](childElements, List(buildLongAttributeRef))
       else List.concat[Decl](childElements, attributes)
-    if (list.size > 22) throw new CaseClassTooLong(fqn, (decl.namespace map { "{" + _ + "}" } getOrElse {""}) + decl.family)
+    if (list.size > 22) throw new CaseClassTooLong(fqn, (decl.namespace map { "{" + _ + "}" } getOrElse {""}) + decl.family.head)
 
     val paramList = list map { buildParam }
     // val dependents = ((flatParticles flatMap { buildDependentType } collect {
@@ -428,7 +428,7 @@ abstract class GenSource(val schema: SchemaDecl,
     
     // pass in local name for the family.
     // since the sequence is already split at this point, it does not require resplitting.
-    val particles = flattenElements(schema.targetNamespace, localName, seq, 0, false)
+    val particles = flattenElements(schema.targetNamespace, List(localName), seq, 0, false)
     val paramList = particles map { buildParam }
     val hasSequenceParam = (paramList.size == 1) &&
       (paramList.head.cardinality == Multiple) &&
@@ -714,7 +714,7 @@ object {localName} {{
   }
   
   // sometimes we don't have ComplexTypeDecl because it's a group.
-  def splitLongSequence(namespace: Option[String], family: String, particles: List[Particle]): List[Particle] =
+  def splitLongSequence(namespace: Option[String], family: List[String], particles: List[Particle]): List[Particle] =
     if (particles.size <= contentsSizeLimit && !isWrapped(namespace, family)) particles
     else splitLong[SequenceDecl](particles) { SequenceDecl(_, 1, 1, 0) }
   
@@ -735,14 +735,14 @@ object {localName} {{
     case _ => Nil
   }
   
-  def splitSequences(namespace: Option[String], family: String,
+  def splitSequences(namespace: Option[String], family: List[String],
         compositor: HasParticle): List[SequenceDecl] = compositor match {
     case seq: SequenceDecl if seq.particles.size > contentsSizeLimit || isWrapped(namespace, family) =>
        splitLong[SequenceDecl](seq.particles) { xs => SequenceDecl(xs, 1, 1, 0) }
     case _ => Nil
   }
      
-  def flattenElements(namespace: Option[String], family: String,
+  def flattenElements(namespace: Option[String], family: List[String],
       compositor: HasParticle, index: Int, wrapTopSequence: Boolean): List[ElemDecl] = {    
     compositor match {
       case ref:GroupRef => flattenElements(namespace, family, buildGroup(ref), index, wrapTopSequence)
@@ -787,7 +787,7 @@ object {localName} {{
     }          
   }
   
-  def isLongAll(all: AllDecl, namespace: Option[String], family: String): Boolean =
+  def isLongAll(all: AllDecl, namespace: Option[String], family: List[String]): Boolean =
     (all.particles.size > contentsSizeLimit || isWrapped(namespace, family))
   
   val buildSimpleTypeRef: ComplexTypeContent =>? List[ElemDecl] = {

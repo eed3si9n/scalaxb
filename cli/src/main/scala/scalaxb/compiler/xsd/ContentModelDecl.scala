@@ -34,7 +34,7 @@ case class SimpContRestrictionDecl(base: XsTypeSymbol, simpleType: Option[XsType
   attributes: List[AttributeLike]) extends ContentTypeDecl with ComplexTypeContent
 
 object SimpContRestrictionDecl {
-  def fromXML(node: scala.xml.Node, family: String, config: ParserConfig) = {
+  def fromXML(node: scala.xml.Node, family: List[String], config: ParserConfig) = {
     val simpleType = (node \ "simpleType").headOption map { x =>
       val decl = SimpleTypeDecl.fromXML(x, family, config)
       config.typeList += decl
@@ -61,7 +61,7 @@ case class SimpContExtensionDecl(base: XsTypeSymbol,
   attributes: List[AttributeLike]) extends ContentTypeDecl with ComplexTypeContent
 
 object SimpContExtensionDecl {
-  def fromXML(node: scala.xml.Node, family: String, config: ParserConfig) = {
+  def fromXML(node: scala.xml.Node, family: List[String], config: ParserConfig) = {
     val base = (node \ "@base").headOption match {
       case Some(x) => TypeSymbolParser.fromString(x.text, config)
       case None    =>
@@ -94,7 +94,7 @@ object CompContRestrictionDecl {
   def fromCompositor(compositor: HasParticle, attributes: List[AttributeLike]) =
     CompContRestrictionDecl(XsAnyType, Some(compositor), attributes)
   
-  def fromXML(node: scala.xml.Node, family: String, config: ParserConfig) = {
+  def fromXML(node: scala.xml.Node, family: List[String], config: ParserConfig) = {
     val baseName = (node \ "@base").text
     val base = TypeSymbolParser.fromString(baseName, config)
     var compositor: Option[HasParticle] = None
@@ -122,7 +122,7 @@ case class CompContExtensionDecl(base: XsTypeSymbol,
   attributes: List[AttributeLike]) extends ContentTypeDecl with ComplexTypeContent
 
 object CompContExtensionDecl {
-  def fromXML(node: scala.xml.Node, family: String, config: ParserConfig) = {
+  def fromXML(node: scala.xml.Node, family: List[String], config: ParserConfig) = {
     val baseName = (node \ "@base").text
     val base = TypeSymbolParser.fromString(baseName, config)
     var compositor: Option[HasParticle] = None
@@ -147,7 +147,7 @@ object CompContExtensionDecl {
 case class SimpTypRestrictionDecl(base: XsTypeSymbol, facets: List[Facetable]) extends ContentTypeDecl
 
 object SimpTypRestrictionDecl {  
-  def fromXML(node: scala.xml.Node, family: String, config: ParserConfig) = {
+  def fromXML(node: scala.xml.Node, family: List[String], config: ParserConfig) = {
     val base = (node \ "@base").headOption match {
       case Some(x) => TypeSymbolParser.fromString(x.text, config)
       case None    =>
@@ -171,7 +171,7 @@ object SimpTypRestrictionDecl {
 case class SimpTypListDecl(itemType: XsTypeSymbol) extends ContentTypeDecl
 
 object SimpTypListDecl {
-  def fromXML(node: scala.xml.Node, family: String, config: ParserConfig) = {
+  def fromXML(node: scala.xml.Node, family: List[String], config: ParserConfig) = {
     val itemType = (node \ "@itemType").headOption match {
       case Some(x) => TypeSymbolParser.fromString(x.text, config)
       case None    =>

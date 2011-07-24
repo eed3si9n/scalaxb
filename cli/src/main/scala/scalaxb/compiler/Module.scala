@@ -38,7 +38,7 @@ case class Config(packageNames: Map[Option[String], Option[String]] = Map(None -
   packageDir: Boolean = false,
   wrappedComplexTypes: List[String] = Nil,
   primaryNamespace: Option[String] = None,
-  encloseChildTypes: Boolean = true,
+  prependFamilyName: Boolean = false,
   seperateProtocol: Boolean = true,
   generateRuntime: Boolean = true,
   contentsSizeLimit: Int = 20,
@@ -48,8 +48,8 @@ object Snippet {
   def apply(definition: Node): Snippet = Snippet(definition, Nil, Nil, Nil)
 
   def apply(snippets: Snippet*): Snippet =
-    Snippet(snippets flatMap {_.definition},
-      snippets flatMap {_.companion},
+    Snippet(snippets flatMap { s => s.companion ++ s.definition},
+      Nil,
       snippets flatMap {_.defaultFormats},
       snippets flatMap {_.implicitValue})
 }

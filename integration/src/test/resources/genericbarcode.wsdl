@@ -133,7 +133,7 @@
       </wsdl:output>
     </wsdl:operation>
   </wsdl:binding>
-  <wsdl:binding name="BarCodeSoap12" type="tns:BarCodeSoap">
+  <!-- wsdl:binding name="BarCodeSoap12" type="tns:BarCodeSoap">
     <soap12:binding transport="http://schemas.xmlsoap.org/soap/http" />
     <wsdl:operation name="GenerateBarCode">
       <soap12:operation soapAction="http://www.webservicex.net/GenerateBarCode" style="document" />
@@ -144,7 +144,7 @@
         <soap12:body use="literal" />
       </wsdl:output>
     </wsdl:operation>
-  </wsdl:binding>
+  </wsdl:binding -->
   <wsdl:binding name="BarCodeHttpGet" type="tns:BarCodeHttpGet">
     <http:binding verb="GET" />
   </wsdl:binding>
@@ -156,9 +156,9 @@
     <wsdl:port name="BarCodeSoap" binding="tns:BarCodeSoap">
       <soap:address location="http://www.webservicex.net/genericbarcode.asmx" />
     </wsdl:port>
-    <wsdl:port name="BarCodeSoap12" binding="tns:BarCodeSoap12">
+    <!-- <wsdl:port name="BarCodeSoap12" binding="tns:BarCodeSoap12">
       <soap12:address location="http://www.webservicex.net/genericbarcode.asmx" />
-    </wsdl:port>
+    </wsdl:port> -->
     <wsdl:port name="BarCodeHttpGet" binding="tns:BarCodeHttpGet">
       <http:address location="http://www.webservicex.net/genericbarcode.asmx" />
     </wsdl:port>

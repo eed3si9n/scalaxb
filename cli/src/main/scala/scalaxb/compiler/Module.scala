@@ -276,7 +276,7 @@ trait Module extends Logger {
     processImportables(importables.toList) :::
     processImportables(additionalImportables.toList) :::
     List(processProtocol) :::
-    (if (config.generateRuntime) generateRuntimeFiles[To]
+    (if (config.generateRuntime) generateRuntimeFiles[To](context)
      else Nil)
   }
 
@@ -293,7 +293,7 @@ trait Module extends Logger {
     output
   }
 
-  def generateRuntimeFiles[To](implicit evTo: CanBeWriter[To]): List[To]
+  def generateRuntimeFiles[To](context: Context)(implicit evTo: CanBeWriter[To]): List[To]
 
   def generate(schema: Schema, context: Context, config: Config): Snippet
     

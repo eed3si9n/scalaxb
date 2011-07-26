@@ -14,7 +14,7 @@ object Wsdl11Test extends TestBase {
   val inFile  = new File("integration/src/test/resources/genericbarcode.wsdl")
   "stockquote.scala file must compile" in {
     (List("""import genericbarcode._""",
-       """val service = (new BarCodeSoap12s with scalaxb.SoapClients with scalaxb.DispatchHttpClients {}).service
+       """val service = (new BarCodeSoapBindings with scalaxb.Soap11Clients with scalaxb.DispatchHttpClients {}).service
        val data = BarCodeData(120, 120, 0, 1, 1, 20, 20, true, None, None, None, 10.0f, Both, CodeEAN128B, NoneType, BottomCenter, PNG)
        println(scalaxb.toXML(data, "BarCodeParam", defaultScope))
        val response = service.generateBarCode(data, Some("1234")).right.get.get
@@ -26,7 +26,7 @@ object Wsdl11Test extends TestBase {
 //  val packageName = "stockquote"
 //  val inFile  = new File("integration/src/test/resources/stockquote.wsdl")
 //  "stockquote.scala file must compile" in {
-//    (List("""val service = (new stockquote.StockQuoteSoap12s with scalaxb.SoapClients with scalaxb.DispatchHttpClients {}).service
+//    (List("""val service = (new stockquote.StockQuoteSoap12Bindings with scalaxb.SoapClients with scalaxb.DispatchHttpClients {}).service
 //       val response = service.getQuote(Some("GOOG"))""",
 //       """response.toString.contains("<Symbol>GOOG</Symbol>")"""), generated) must evaluateTo(true,
 //      outdir = "./tmp", usecurrentcp = true)

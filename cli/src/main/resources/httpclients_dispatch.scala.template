@@ -9,7 +9,7 @@ trait DispatchHttpClients extends HttpClients {
     def request(in: String, address: java.net.URI, action: Option[java.net.URI]): String = {
       val http = new Http
       val header = Map(action.toList map { x => ("SOAPAction", "\"%s\"".format(x.toString)) }: _*)
-      http(url(address.toString) << (in, "application/soap+xml") <:< header as_str)
+      http(url(address.toString) << (in, "text/xml") <:< header as_str)
     }
   }
 }

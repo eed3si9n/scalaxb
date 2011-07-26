@@ -31,6 +31,7 @@ trait GenSource {
   import scala.collection.mutable
   import scala.xml.Node
 
+  val WSDL_SOAP11 = "http://schemas.xmlsoap.org/wsdl/soap/"
   val WSDL_SOAP12 = "http://schemas.xmlsoap.org/wsdl/soap12/"
   val WSDL_HTTP = "http://schemas.xmlsoap.org/wsdl/http"
   val SOAP_MEP_REQUEST_RESPONSE = "http://www.w3.org/2003/05/soap/mep/request-response"
@@ -47,18 +48,29 @@ trait GenSource {
     log("wsdl11: GenSource.generate")
     log("wsdl11: GenSource.generate: " + context.interfaces.toString)
 
-    val soap12Bindings = definition.binding filter { binding =>
-      binding.any.headOption map {
-        case DataRecord(_, _, node: Node) => node.scope.getURI((node.prefix)) == WSDL_SOAP12
-      } getOrElse {false}
-    }
-    val interfaces = (soap12Bindings.toList map { binding =>
+    val interfaces = ((soap11Bindings(definition) ++ soap12Bindings(definition)).toList map { binding =>
       context.interfaces(splitTypeName(binding.typeValue.toString))
     }).distinct
 
     Snippet((interfaces map {makeInterface}) ++
-      (soap12Bindings map {makeSoapBinding}): _*)
+      (soap11Bindings(definition) map {makeSoap11Binding}) ++
+      (soap12Bindings(definition) map {makeSoap12Binding}): _*)
   }
+
+  def soap12Bindings(definition: XDefinitionsType) =
+    definition.binding filter { binding =>
+      binding.any.headOption map {
+        case DataRecord(_, _, node: Node) => node.scope.getURI((node.prefix)) == WSDL_SOAP12
+      } getOrElse {false}
+    }
+
+  def soap11Bindings(definition: XDefinitionsType) =
+    if (!soap12Bindings(definition).isEmpty) Nil
+    else definition.binding filter { binding =>
+      binding.any.headOption map {
+        case DataRecord(_, _, node: Node) => node.scope.getURI((node.prefix)) == WSDL_SOAP11
+      } getOrElse {false}
+    }
 
   def makeInterface(intf: XPortTypeType): Snippet = {
     val name = intf.name.capitalize
@@ -96,7 +108,7 @@ trait {name} {{
     retval
   }
 
-  def makeSoapOpBinding(binding: XBinding_operationType, intf: XPortTypeType): String = {
+  def makeSoap12OpBinding(binding: XBinding_operationType, intf: XPortTypeType): String = {
     val op = (intf.operation filter {_.name == binding.name}).headOption getOrElse {
       error("operation %s was not found in %s".format(binding.name, intf.name))
     }
@@ -256,10 +268,38 @@ trait {name} {{
     xsdgenerator.buildTypeName(elem.typeSymbol, true)
   } getOrElse {"Any"}
 
+  def makeSoap11Binding(binding: XBindingType): Snippet = {
+    val name = binding.name.capitalize + "Binding"
+    val interfaceType = context.interfaces(splitTypeName(binding.typeValue.toString))
+    val interfaceTypeName = interfaceType.name.capitalize
+    val port = findPort(binding).headOption
+    val address = port flatMap {_.any flatMap {
+      case DataRecord(_, _, node: Node) if node.scope.getURI((node.prefix)) == WSDL_SOAP11 =>
+        Some((node \ "@location").text)
+      case _ => None
+    }}
+    val addressString = address map {"""lazy val baseAddress = new java.net.URI("%s")""".format(_)} getOrElse {""}
+
+    val bindingOps = binding.operation map { opBinding => makeSoap12OpBinding(opBinding, interfaceType) }
+    val opString = bindingOps.mkString(NL + "      ")
+    val bindingTrait = <source>
+  trait {name}s {{ this: scalaxb.Soap11Clients =>
+    lazy val targetNamespace: Option[String] = { xsdgenerator.quote(xsdgenerator.schema.targetNamespace) }
+    lazy val service: {interfaceTypeName} = new {name} {{}}
+    {addressString}
+
+    trait {name} extends {interfaceTypeName} {{
+      {opString}
+    }}
+  }}
+</source>
+    Snippet(<source/>, <source/>, bindingTrait, <source/>)
+  }
+
   // http://www.w3.org/TR/2007/REC-wsdl20-adjuncts-20070626/#soap-binding
   // http://www.w3.org/TR/2007/REC-soap12-part2-20070427/
-  def makeSoapBinding(binding: XBindingType): Snippet = {
-    val name = binding.name capitalize
+  def makeSoap12Binding(binding: XBindingType): Snippet = {
+    val name = binding.name.capitalize + "Binding"
     val interfaceType = context.interfaces(splitTypeName(binding.typeValue.toString))
     val interfaceTypeName = interfaceType.name.capitalize
     val port = findPort(binding).headOption
@@ -270,7 +310,7 @@ trait {name} {{
     }}
     val addressString = address map {"""lazy val baseAddress = new java.net.URI("%s")""".format(_)} getOrElse {""}
 
-    val bindingOps = binding.operation map { opBinding => makeSoapOpBinding(opBinding, interfaceType) }
+    val bindingOps = binding.operation map { opBinding => makeSoap12OpBinding(opBinding, interfaceType) }
     val opString = bindingOps.mkString(NL + "      ")
     val bindingTrait = <source>
   trait {name}s {{ this: scalaxb.SoapClients =>

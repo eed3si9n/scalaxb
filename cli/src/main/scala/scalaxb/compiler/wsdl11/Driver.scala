@@ -68,9 +68,9 @@ class Driver extends Module { driver =>
     xsddriver.generateProtocol(snippet, context.xsdcontext, cnfg)
 
   override def generate(pair: WsdlPair, cntxt: Context, cnfg: Config): Snippet = {
-    val ns = (pair.definition, pair.schema) match {
+    val ns = (pair.definition, pair.schemas) match {
       case (Some(wsdl), _) => wsdl.targetNamespace map {_.toString}
-      case (_, Some(schema)) => schema.targetNamespace
+      case (_, x :: xs) => x.targetNamespace
       case _ => None
     }
 
@@ -86,16 +86,16 @@ class Driver extends Module { driver =>
       }
     }
 
-    val xsdgenerated = pair.schema map {
+    val xsdgenerated = pair.schemas map {
       xsddriver.generate(_, cntxt.xsdcontext, cnfg)
-    } getOrElse { Snippet(<source></source>) }
+    }
 
     val wsdlgenerated = pair.definition map { wsdl =>
       cntxt.soap11 = !generator.soap11Bindings(wsdl).isEmpty
       generator.generate(wsdl)
     } getOrElse { Snippet(<source></source>) }
 
-    mergeSnippets(xsdgenerated :: wsdlgenerated :: Nil)
+    mergeSnippets(xsdgenerated ++ (wsdlgenerated :: Nil))
   }
 
   override def toImportable(alocation: URI, rawschema: RawSchema): Importable = new Importable {
@@ -105,21 +105,20 @@ class Driver extends Module { driver =>
     log("wsdl11.Driver#toImportable: " + alocation.toString)
     val location = alocation
     val raw = rawschema
-    lazy val (wsdl: Option[XDefinitionsType], xsdRawSchema: Option[Node]) = alocation.toString match {
+    lazy val (wsdl: Option[XDefinitionsType], xsdRawSchema: Seq[Node]) = alocation.toString match {
       case FileExtension(".wsdl") =>
         val w = scalaxb.fromXML[XDefinitionsType](rawschema)
-        val x = w.types map { _.any.head match {
+        val x: Seq[Node] = w.types map { _.any collect {
           case DataRecord(_, _, node: Node) => node
-          case _ => error("unexpected type: " + w.types)
-        }}
+        }} getOrElse {Nil}
         (Some(w), x)
       case FileExtension(".xsd")  =>
-        (None, Some(rawschema))
+        (None, List(rawschema))
     }
     lazy val schemaLite = xsdRawSchema map { SchemaLite.fromXML }
     lazy val targetNamespace = (wsdl, schemaLite) match {
       case (Some(wsdl), _) => wsdl.targetNamespace map {_.toString}
-      case (_, Some(schemaLite)) => schemaLite.targetNamespace
+      case (_, x :: xs) => x.targetNamespace
       case _ => None
     }
 
@@ -127,22 +126,22 @@ class Driver extends Module { driver =>
       (wsdl map { wsdl =>
         wsdl.importValue map {_.namespace.toString}
       } getOrElse {Nil}) ++
-      (schemaLite map { schemaLite =>
+      (schemaLite flatMap { schemaLite =>
         schemaLite.imports collect {
          case ImportDecl(Some(namespace: String), _) => namespace
-        }} getOrElse {Nil})
+        }})
 
     val importLocations: Seq[String] =
       (wsdl map { wsdl =>
         wsdl.importValue map {_.location.toString}
       } getOrElse {Nil}) ++
-      (schemaLite map { schemaLite =>
+      (schemaLite flatMap { schemaLite =>
         schemaLite.imports collect {
          case ImportDecl(_, Some(schemaLocation: String)) => schemaLocation
-        }} getOrElse {Nil})
-    val includeLocations: Seq[String] = schemaLite map { schemaLite =>
+        }})
+    val includeLocations: Seq[String] = schemaLite flatMap { schemaLite =>
       schemaLite.includes map { _.schemaLocation }
-    } getOrElse {Nil}
+    }
 
     def toSchema(context: Context): WsdlPair = {
       wsdl foreach { wsdl =>
@@ -176,7 +175,7 @@ class Driver extends Module { driver =>
         "/soapenvelope12_xmlprotocol.scala.template")))
 }
 
-case class WsdlPair(definition: Option[XDefinitionsType], schema: Option[SchemaDecl], scope: scala.xml.NamespaceBinding)
+case class WsdlPair(definition: Option[XDefinitionsType], schemas: Seq[SchemaDecl], scope: scala.xml.NamespaceBinding)
 
 case class WsdlContext(xsdcontext: XsdContext = XsdContext(),
                        definitions: mutable.ListBuffer[XDefinitionsType] = mutable.ListBuffer(),

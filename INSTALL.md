@@ -1,16 +1,8 @@
 scalaxb installation
 ====================
 
-scalaxb is tested under Scala 2.8.1, but should also work for 2.9.0-1.
+scalaxb is tested under Scala 2.9.0-1, but should also work for 2.8.1.
 It also requires Java SE 6.
-
-Don't use sbaz
-==============
-
-NOTE: If you have previously installed scalaxb using sbaz, remove it
-because it interferes with your code:
-
-    $ sudo sbaz remove scalaxb
 
 Use conscript
 =============
@@ -22,6 +14,14 @@ Install conscript (cs).
 Install scalaxb using it.
 
     $ cs eed3si9n/scalaxb
+
+Don't use sbaz
+==============
+
+NOTE: If you have previously installed scalaxb using sbaz, remove it
+because it interferes with your code:
+
+    $ sudo sbaz remove scalaxb
 
 Build from source
 =================================

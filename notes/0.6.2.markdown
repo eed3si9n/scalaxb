@@ -1,11 +1,11 @@
 ## sbt-scalaxb for sbt 0.10.1
 To call scalaxb from sbt 0.10.1, put this in your `project/plugins/build.sbt`:
 
-    libraryDependencies <+= (sbtVersion) { sv => "com.eed3si9n" %% "sbt-scalaxb" % ("sbt" + sv + "_0.6.2") }
+    libraryDependencies <+= (sbtVersion) { sv => "org.scalaxb" %% "sbt-scalaxb" % ("sbt" + sv + "_0.6.2") }
 
 and this in `build.sbt`:
 
-    seq(sbtscalaxb.Plugin.scalaxbSettings)
+    seq(sbtscalaxb.Plugin.scalaxbSettings: _*)
 
     sourceGenerators in Compile <+= scalaxb.identity
 

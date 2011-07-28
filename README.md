@@ -11,28 +11,18 @@ Some things may not work.
 I'd really appreciate if you could run it against your favorite xsd
 file and let me know the result.
 
-sbt-scalaxb for sbt 0.10
-------------------------
+sbt-scalaxb for sbt 0.10.1
+--------------------------
 
-To call `scalaxb` from sbt 0.10, put this in your `project/plugins/build.sbt`:
+To call scalaxb from sbt 0.10.1, put this in your `project/plugins/build.sbt`:
 
-    libraryDependencies += "org.scalaxb" %% "sbt-scalaxb" % "0.6.1"
+    libraryDependencies <+= (sbtVersion) { sv => "org.scalaxb" %% "sbt-scalaxb" % ("sbt" + sv + "_0.6.2") }
+
+and this in `build.sbt`:
+
+    seq(sbtscalaxb.Plugin.scalaxbSettings: _*)
 
     sourceGenerators in Compile <+= scalaxb.identity
-
-sbt-scalaxb
------------
-
-To call `compile-xsd` from sbt, put this in your Plugins.scala:
-
-    import sbt._
-
-    class Plugins(info: ProjectInfo) extends PluginDefinition(info) {
-      val scalaxb = "org.scalaxb" % "sbt-scalaxb" % "0.6.1"
-      
-      val scalaToolsNexusSnapshots = "Scala Tools Nexus Snapshots" at "http://nexus.scala-tools.org/content/repositories/snapshots/"
-      val scalaToolsNexusReleases  = "Scala Tools Nexus Releases" at "http://nexus.scala-tools.org/content/repositories/releases/"
-    }
 
 `scalaxb` command line
 ----------------------
@@ -54,10 +44,14 @@ Usage
             prefixes generated class names
       --param-prefix <prefix>
             prefixes generated parameter names
+      --prepend-family
+            prepends family name to class names
       --wrap-contents <complexType>
             wraps inner contents into a seperate case class
+      --contents-limit <size>
+            defines long contents to be segmented (default: 20)
       --chunk-size <size>
-            segments long sequnces into chunks of <size>
+            segments long sequences into chunks (default: 10)
       --package-dir
             generates package directories
       --no-runtime

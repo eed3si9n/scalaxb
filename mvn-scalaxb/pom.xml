@@ -109,7 +109,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-release-plugin</artifactId>
-          <version>2.2-SNAPSHOT</version>
+          <version>2.2</version>
           <configuration>
             <pushChanges>false</pushChanges>
             <scmCommentPrefix>mvn-scalaxb/</scmCommentPrefix>

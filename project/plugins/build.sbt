@@ -1,3 +1,5 @@
+libraryDependencies <+= (sbtVersion) { sv => "com.eed3si9n" %% "sbt-assembly" % ("sbt" + sv + "_0.4") }
+
 libraryDependencies <+= (sbtVersion) { sv => "com.eed3si9n" %% "sbt-appengine" % ("sbt" + sv + "_0.2") }
 
 // resolvers += "sbt-idea-repo" at "http://mpeltonen.github.com/maven/"

@@ -112,6 +112,7 @@ object XsTime             extends BuiltInSimpleTypeSymbol("javax.xml.datatype.XM
 object XsDate             extends BuiltInSimpleTypeSymbol("javax.xml.datatype.XMLGregorianCalendar") {}
 object XsGYearMonth       extends BuiltInSimpleTypeSymbol("javax.xml.datatype.XMLGregorianCalendar") {}
 object XsGYear            extends BuiltInSimpleTypeSymbol("javax.xml.datatype.XMLGregorianCalendar") {}
+object XsGMonthDay        extends BuiltInSimpleTypeSymbol("javax.xml.datatype.XMLGregorianCalendar") {}
 object XsGDay             extends BuiltInSimpleTypeSymbol("javax.xml.datatype.XMLGregorianCalendar") {}
 object XsGMonth           extends BuiltInSimpleTypeSymbol("javax.xml.datatype.XMLGregorianCalendar") {}
 object XsBoolean          extends BuiltInSimpleTypeSymbol("Boolean") {}
@@ -163,6 +164,7 @@ object XsTypeSymbol {
     case "date"           => XsDate
     case "gYearMonth"     => XsGYearMonth
     case "gYear"          => XsGYear
+    case "gMonthDay"      => XsGMonthDay
     case "gDay"           => XsGDay
     case "gMonth"         => XsGMonth
     case "boolean"        => XsBoolean

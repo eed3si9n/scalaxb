@@ -204,6 +204,9 @@
   <xs:complexType name="EmptyComplexTypeTest">
   </xs:complexType>
 
+  <xs:complexType name="EmptySequenceTest">
+  </xs:complexType>
+
   <xs:complexType name="EmptySequenceGroupTest">
     <xs:sequence>
       <xs:group ref="gen:emptySeqGroup"/>

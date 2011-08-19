@@ -176,35 +176,32 @@ trait ContextProcessor extends ScalaNames with PackageName {
     makeCompositorNames(context)
   }
 
+  def getTypeGlobally(namespace: Option[String], typeName: String, context: XsdContext): TypeDecl =
+    (for (schema <- context.schemas;
+        if schema.targetNamespace == namespace;
+        if schema.topTypes.contains(typeName))
+      yield schema.topTypes(typeName)).headOption getOrElse {
+        throw new ReferenceNotFound("type" , namespace, typeName)
+      }
+
   def resolveType(schema: SchemaDecl, context: XsdContext) {
-    def containsType(namespace: Option[String], typeName: String): Boolean =
-      if (namespace == schema.targetNamespace && schema.topTypes.contains(typeName)) true
-      else context.schemas.exists(schema => schema.targetNamespace == namespace &&
-            schema.topTypes.contains(typeName))
-    
-    def getType(namespace: Option[String], typeName: String): TypeDecl =
-      if (namespace == schema.targetNamespace && schema.topTypes.contains(typeName)) schema.topTypes(typeName)
-      else
-        (for (schema <- context.schemas;
-            if schema.targetNamespace == namespace;
-            if schema.topTypes.contains(typeName))
-          yield schema.topTypes(typeName)).headOption getOrElse {
-            throw new ReferenceNotFound("type" , namespace, typeName)
-          }
-        
+    def containsTypeLocally(namespace: Option[String], typeName: String): Boolean =
+      (namespace == schema.targetNamespace && schema.topTypes.contains(typeName))
+
+    // try to resolve the symbol using local schema first
     def resolveTypeSymbol(typeSymbol: XsTypeSymbol) {
       typeSymbol match {
         case symbol: ReferenceTypeSymbol =>
           if (symbol.decl != null) symbol.decl
           else {
             val (namespace, typeName) = TypeSymbolParser.splitTypeName(symbol.name, schema)
-            if (containsType(namespace, typeName)) symbol.decl = getType(namespace, typeName) 
-            else throw new ReferenceNotFound("type" , namespace, typeName)
+            if (containsTypeLocally(namespace, typeName)) symbol.decl = schema.topTypes(typeName)
+            else symbol.decl = getTypeGlobally(namespace, typeName, context)
           }
         case _ =>
       }
     }
-        
+
     for (elem <- schema.elemList) resolveTypeSymbol(elem.typeSymbol)
     
     for (attr <- schema.attrList) attr.typeSymbol match {

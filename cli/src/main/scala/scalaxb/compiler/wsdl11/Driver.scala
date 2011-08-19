@@ -50,6 +50,7 @@ class Driver extends Module { driver =>
     xsddriver.packageName(namespace, context.xsdcontext)
 
   override def processContext(context: Context, cnfg: Config) {
+    log("wsdl11.Driver#processContext: " + (context.xsdcontext.schemas.toList map {_.targetNamespace}))
     xsddriver.processContext(context.xsdcontext, cnfg)
     context.definitions foreach {processDefinition(_, context)}
   }

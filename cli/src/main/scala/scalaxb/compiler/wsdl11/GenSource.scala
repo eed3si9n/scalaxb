@@ -90,6 +90,8 @@ trait {name} {{
     def arg(input: XParamType) = buildIRIStyleArg(input) map {_.toScalaCode} mkString(", ")
 
     val name = camelCase(op.name)
+    log("wsdl11#makeOperation: " + name)
+
     val retval = op.xoperationtypeoption match {
       case DataRecord(_, _, XOnewayoperationSequence(input)) =>
         "def %s(%s): Unit".format(name, arg(input))
@@ -213,8 +215,15 @@ trait {name} {{
   }).mkString(", ")
 
   def toTypeSymbol(part: XPartType) = part.typeValue map { typeValue =>
-    import scalaxb.compiler.xsd.{TypeSymbolParser}
-    TypeSymbolParser.fromString(typeValue.toString, splitTypeName(typeValue.toString))
+    import scalaxb.compiler.xsd.{TypeSymbolParser, ReferenceTypeSymbol}
+    val symbol = TypeSymbolParser.fromString(typeValue.toString, splitTypeName(typeValue.toString))
+    symbol match {
+      case symbol: ReferenceTypeSymbol =>
+        val (namespace, typeName) = splitTypeName(typeValue.toString)
+        symbol.decl = xsdgenerator.getTypeGlobally(namespace, typeName, context.xsdcontext)
+      case _ =>
+    }
+    symbol
   } getOrElse {
     part.element map { element => xsdgenerator.elements(splitTypeName(element.toString)).typeSymbol
     } getOrElse {error("part does not have either type or element: " + part.toString)}
@@ -250,7 +259,8 @@ trait {name} {{
     case x :: xs =>
       val msg = context.messages(splitTypeName(x.message.toString))
       msg.part.headOption map { part =>
-        xsdgenerator.buildTypeName(toTypeSymbol(part), true)
+        val symbol = toTypeSymbol(part)
+        xsdgenerator.buildTypeName(symbol, true)
       } getOrElse {"Any"}
     case _ => "Any"
   }
@@ -258,7 +268,6 @@ trait {name} {{
   // @see http://www.w3.org/TR/2007/REC-wsdl20-adjuncts-20070626/#_http_operation_location_query_constr
   def buildInputArgs(input: XParamType): String = {
     import scalaxb.compiler.xsd.{ReferenceTypeSymbol, ComplexTypeDecl}
-    import scala.collection.mutable
 
     val parts = paramMessage(input).part
     val typeSymbol = toTypeSymbol(parts.head)

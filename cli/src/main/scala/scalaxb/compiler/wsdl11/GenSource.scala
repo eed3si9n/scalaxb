@@ -180,20 +180,30 @@ trait {name} {{
 
   def isOperationIRIStyleQualified(input: XParamType): Boolean = paramMessage(input).part.toList match {
     case part :: Nil =>
-      import scalaxb.compiler.xsd.{ReferenceTypeSymbol, ComplexTypeDecl}
+      import scalaxb.compiler.xsd.{ReferenceTypeSymbol, ComplexTypeDecl, BuiltInSimpleTypeSymbol}
       toTypeSymbol(part) match {
+        case symbol: BuiltInSimpleTypeSymbol => true
         case ReferenceTypeSymbol(decl: ComplexTypeDecl) => xsdgenerator.isQualifyAsIRIStyle(decl)
         case _ => false
       }
     case _ => false
   }
 
-  def buildIRIStyleArg(input: XParamType) = paramMessage(input).part.headOption map { part =>
-    import scalaxb.compiler.xsd.{ReferenceTypeSymbol, ComplexTypeDecl}
+  case class ParamCache(toScalaCode: String, toParamName: String)
+
+  def buildIRIStyleArg(input: XParamType): List[ParamCache] = paramMessage(input).part.headOption map { part =>
+    import scalaxb.compiler.xsd.{ReferenceTypeSymbol, ComplexTypeDecl, BuiltInSimpleTypeSymbol}
     toTypeSymbol(part) match {
+      case symbol: BuiltInSimpleTypeSymbol =>
+        val paramName = part.name getOrElse {"in"}
+        val scalaCode = "%s: %s".format(paramName, xsdgenerator.buildTypeName(symbol))
+        List(ParamCache(paramName, scalaCode))
       case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
         val flatParticles = xsdgenerator.flattenElements(decl, 0)
-        flatParticles map { p => xsdgenerator.buildParam(p) map {camelCase} }
+        flatParticles map { p =>
+          val param = xsdgenerator.buildParam(p) map {camelCase}
+          ParamCache(param.toScalaCode, param.toParamName)
+        }
       case x => error("unexpected type: " + x)
     }
   } getOrElse {error("unexpected input: " + input)}

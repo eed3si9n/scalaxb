@@ -23,19 +23,18 @@
 package scalaxb.compiler.xsd
 import scala.collection.mutable
 
+sealed abstract class Cardinality
+case object Optional extends Cardinality { override def toString: String = "Optional" }
+case object Single extends Cardinality { override def toString: String = "Single" }
+case object Multiple extends Cardinality { override def toString: String = "Multiple" }
+
 trait Params extends Lookup {
   val ATTRS_PARAM = "attributes"
   val anyNumbers: mutable.Map[AnyDecl, Int] = mutable.Map()
   
   case class Occurrence(minOccurs: Int, maxOccurs: Int, nillable: Boolean)
-  
   val SingleUnnillable = Occurrence(1, 1, false)
-  
-  abstract class Cardinality
-  case object Optional extends Cardinality { override def toString: String = "Optional" }
-  case object Single extends Cardinality { override def toString: String = "Single" }
-  case object Multiple extends Cardinality { override def toString: String = "Multiple" }
-  
+
   def toCardinality(minOccurs: Int, maxOccurs: Int): Cardinality =
     if (maxOccurs > 1) Multiple
     else if (minOccurs == 0) Optional

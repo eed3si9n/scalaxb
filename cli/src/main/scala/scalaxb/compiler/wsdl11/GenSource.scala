@@ -243,17 +243,6 @@ trait GenSource {
 
   def paramMessage(input: XParamType): XMessageType = context.messages(splitTypeName(input.message.toString))
 
-  def isOperationIRIStyleQualified(input: XParamType): Boolean = paramMessage(input).part.toList match {
-    case part :: Nil =>
-      import scalaxb.compiler.xsd.{ReferenceTypeSymbol, ComplexTypeDecl, BuiltInSimpleTypeSymbol}
-      toTypeSymbol(part) match {
-        case symbol: BuiltInSimpleTypeSymbol => true
-        case ReferenceTypeSymbol(decl: ComplexTypeDecl) => xsdgenerator.isQualifyAsIRIStyle(decl)
-        case _ => false
-      }
-    case _ => false
-  }
-
   case class ParamCache(toParamName: String, toScalaCode: String)
 
   def buildRPCStyleArg(part: XPartType): ParamCache = {
@@ -265,10 +254,13 @@ trait GenSource {
   def buildRPCStyleArgs(input: XParamType): List[ParamCache] = paramMessage(input).part.toList map {buildRPCStyleArg}
 
   def buildIRIStyleArgs(input: XParamType): List[ParamCache] = paramMessage(input).part.headOption map { part =>
-    import scalaxb.compiler.xsd.{ReferenceTypeSymbol, ComplexTypeDecl, BuiltInSimpleTypeSymbol}
+    import scalaxb.compiler.xsd.{ReferenceTypeSymbol, SimpleTypeDecl, ComplexTypeDecl, BuiltInSimpleTypeSymbol}
+    val paramName = part.name getOrElse {"in"}
     toTypeSymbol(part) match {
       case symbol: BuiltInSimpleTypeSymbol =>
-        val paramName = part.name getOrElse {"in"}
+        val scalaCode = "%s: %s".format(paramName, xsdgenerator.buildTypeName(symbol))
+        List(ParamCache(paramName, scalaCode))
+      case symbol@ReferenceTypeSymbol(decl: SimpleTypeDecl) =>
         val scalaCode = "%s: %s".format(paramName, xsdgenerator.buildTypeName(symbol))
         List(ParamCache(paramName, scalaCode))
       case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
@@ -340,23 +332,6 @@ trait GenSource {
         xsdgenerator.buildTypeName(symbol, true)
       } getOrElse {"Any"}
     case _ => "Any"
-  }
-
-  // @see http://www.w3.org/TR/2007/REC-wsdl20-adjuncts-20070626/#_http_operation_location_query_constr
-  def buildInputArgs(input: XParamType): String = {
-    import scalaxb.compiler.xsd.{ReferenceTypeSymbol, ComplexTypeDecl}
-
-    val parts = paramMessage(input).part
-    val typeSymbol = toTypeSymbol(parts.head)
-    val decl = typeSymbol match {
-      case ReferenceTypeSymbol(decl: ComplexTypeDecl) => decl
-      case x => error("unexpected type: " + x.toString)
-    }
-    val flatParticles = xsdgenerator.flattenElements(decl, 0)
-    val paramList = flatParticles map { xsdgenerator.buildParam }
-    val entity = "%s(%s)".format(xsdgenerator.buildTypeName(typeSymbol, true),
-      paramList.map(_.toParamName).mkString("," + NL + indent(2)))
-    """%s, Map()""".format(entity)
   }
 
   def elementRefToTypeName(ref: Option[String]): String = ref map { x =>

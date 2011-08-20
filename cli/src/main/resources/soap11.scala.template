@@ -42,25 +42,27 @@ trait Soap11Clients { this: HttpClients =>
 
     def requestResponse(in: scala.xml.NodeSeq, scope: scala.xml.NamespaceBinding,
                         address: java.net.URI, webMethod: String, action: Option[java.net.URI]):
-        Either[Fault[Detail], scala.xml.Node] = {
+        Either[Fault[Detail], scala.xml.NodeSeq] = {
       val envelope = Envelope(None, Body(Seq(DataRecord(None, None, in)), Map()), Nil, Map())
       buildResponse(soapRequest(Some(envelope), scope, address, webMethod, action))
     }
 
     def soapResponse(location: Option[String], params: Map[String, Any],
                      address: java.net.URI, webMethod: String, action: Option[java.net.URI]):
-        Either[Fault[Detail], scala.xml.Node] = {
+        Either[Fault[Detail], scala.xml.NodeSeq] = {
       buildResponse(soapRequest(None, scala.xml.TopScope, address, webMethod, action))
     }
 
     def buildResponse(soapResponse: Envelope):
-        Either[Fault[Detail], scala.xml.Node] = soapResponse.Body.any.headOption match {
+        Either[Fault[Detail], scala.xml.NodeSeq] = soapResponse.Body.any.headOption match {
       case Some(DataRecord(_, _, x: scala.xml.Elem)) if (x.label == "Fault") &&
           (x.scope.getURI(x.prefix) == SOAP_ENVELOPE11_URI) =>
         val fault = scalaxb.fromXML[soapenvelope11.Fault](x)
         Left(Fault(fault, fault.detail))
-      case Some(DataRecord(_, _, x: scala.xml.Elem)) => Right(x)
-      case _ => error("unexpected response: " + soapResponse.toString)
+      case _ =>
+        Right(soapResponse.Body.any collect {
+          case DataRecord(_, _, x: scala.xml.Node) => x
+        })
     }
   }
 }

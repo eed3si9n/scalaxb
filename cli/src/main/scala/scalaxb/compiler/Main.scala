@@ -50,6 +50,7 @@ object Main extends Version {
     var paramPrefix: Option[String] = None
     val files = ListBuffer.empty[File]
     var packageDir = false
+    var protocolFileName = "xmlprotocol.scala"
     var generateRuntime = true
     var sequenceChunkSize = 10
     var contentsSizeLimit = 20
@@ -79,6 +80,8 @@ object Main extends Version {
         { size: Int => sequenceChunkSize = size })
       opt("package-dir", "generates package directories",
         { packageDir = true })
+      opt(None, "protocol-file", "<name.scala>", "protocol file name (xmlprotocol.scala)",
+        { p: String => protocolFileName = p})
       opt("no-runtime", "skips runtime files",
         { generateRuntime = false })
       opt("v", "verbose", "be extra verbose",
@@ -97,6 +100,7 @@ object Main extends Version {
           classPrefix = classPrefix,
           paramPrefix = paramPrefix,
           wrappedComplexTypes = wrappedComplexTypes.toList,
+          protocolFileName = protocolFileName,
           generateRuntime = generateRuntime,
           contentsSizeLimit = contentsSizeLimit,
           sequenceChunkSize = sequenceChunkSize,

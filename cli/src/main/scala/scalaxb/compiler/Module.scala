@@ -40,6 +40,7 @@ case class Config(packageNames: Map[Option[String], Option[String]] = Map(None -
   primaryNamespace: Option[String] = None,
   prependFamilyName: Boolean = false,
   seperateProtocol: Boolean = true,
+  protocolFileName: String = "xmlprotocol.scala",
   generateRuntime: Boolean = true,
   contentsSizeLimit: Int = 20,
   sequenceChunkSize: Int = 10)
@@ -265,8 +266,7 @@ trait Module extends Logger {
     }
 
     def processProtocol = {
-      val output = implicitly[CanBeWriter[To]].newInstance(packageName(None, context),
-        toFileNamePart(files.head) + "_xmlprotocol.scala")
+      val output = implicitly[CanBeWriter[To]].newInstance(packageName(None, context), config.protocolFileName)
       val out = implicitly[CanBeWriter[To]].toWriter(output)
       val protocolNodes = generateProtocol(Snippet(snippets: _*), context, config)
       try {

@@ -1,3 +1,4 @@
 ## bug fixes and minor enhancements
 - Fixes `xs:gMonthDay` support. [#74](https://github.com/eed3si9n/scalaxb/issues/74)
-- Adds RPC-style SOAP message support [#77](https://github.com/eed3si9n/scalaxb/issues/77)
+- Adds RPC-style SOAP message support. [#77](https://github.com/eed3si9n/scalaxb/issues/77)
+- Adds `--protocol-file` option. [#76](https://github.com/eed3si9n/scalaxb/issues/76)

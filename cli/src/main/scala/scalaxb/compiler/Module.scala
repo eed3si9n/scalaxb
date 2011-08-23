@@ -204,10 +204,12 @@ trait Module extends Logger {
      (implicit ev: CanBeRawSchema[From, RawSchema], evTo: CanBeWriter[To]): List[To] = {
     val snippets = ListBuffer.empty[Snippet]
     val context = buildContext
-    val importables = ListMap[Importable, From](files map { file =>
-      (toImportable(ev.toURI(file), ev.toRawSchema(file)), file)}: _*)
+
+    val importables0 = ListMap[From, Importable](files map { f =>
+      f -> toImportable(ev.toURI(f), ev.toRawSchema(f))}: _*)
+    val importables = ListMap[Importable, From](files map { f => importables0(f) -> f }: _*)
     val config: Config = config0.primaryNamespace map { _ => config0 } getOrElse {
-      val pns: Option[String] = importables.head._1.targetNamespace
+      val pns: Option[String] = importables0(files.head).targetNamespace
       config0.copy(primaryNamespace = pns)
     }    
     

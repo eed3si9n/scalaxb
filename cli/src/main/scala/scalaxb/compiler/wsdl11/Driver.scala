@@ -37,7 +37,7 @@ class Driver extends Module { driver =>
   type RawSchema = scala.xml.Node
 
   val xsddriver = new scalaxb.compiler.xsd.Driver {
-    override val verbose = driver.verbose
+    override def verbose = driver.verbose
   }
 
   def buildContext = WsdlContext()

@@ -243,7 +243,7 @@ trait Params extends Lookup {
       },
       index)
   
-  def buildCompositorRef(compositor: HasParticle, occurrence: Occurrence, index: Int): ElemDecl = {    
+  def buildCompositorRef(compositor: HasParticle, occurrence: Occurrence, index: Int): ElemDecl = {
     val typeName = compositor match {
       case group: GroupDecl => groupTypeName(group)
       case _ => makeTypeName(context.compositorNames(compositor))
@@ -261,8 +261,7 @@ trait Params extends Lookup {
     compositorWrapper(decl) = compositor
 
     symbol.decl = decl
-    val typeNames = context.typeNames(packageName(decl.namespace, context))
-    typeNames(decl) = typeName
+    context.typeNames(decl) = typeName
     
     ElemDecl(schema.targetNamespace, name, symbol, None, None,
       occurrence.minOccurs, occurrence.maxOccurs, Some(occurrence.nillable), false, false, None, None)

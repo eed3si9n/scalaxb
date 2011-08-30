@@ -157,11 +157,10 @@ trait Lookup extends ContextProcessor {
     buildTypeName(packageName(decl, context), decl, shortLocal)
   
   def buildTypeName(pkg: Option[String], decl: Decl, shortLocal: Boolean): String = {
-    val typeNames = context.typeNames(pkg)
-    if (!typeNames.contains(decl)) error(pkg + ": Type name not found: " + decl.toString)
+    if (!context.typeNames.contains(decl)) error(pkg + ": Type name not found: " + decl.toString)
     
-    if (shortLocal && pkg == packageName(schema, context)) typeNames(decl)
-    else buildFullyQualifiedName(pkg, typeNames(decl))    
+    if (shortLocal && pkg == packageName(schema, context)) context.typeNames(decl)
+    else buildFullyQualifiedName(pkg, context.typeNames(decl))
   }
   
   def buildTypeName(decl: SimpleTypeDecl, shortLocal: Boolean): String = decl.content match {

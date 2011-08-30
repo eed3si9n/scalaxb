@@ -39,10 +39,7 @@ object Incrementor {
 case class XsdContext(
   schemas: mutable.ListBuffer[SchemaDecl] =
     mutable.ListBuffer.empty[SchemaDecl],
-  typeNames: mutable.ListMap[Option[String],
-    mutable.ListMap[Decl, String]] =
-      mutable.ListMap.empty[Option[String],
-      mutable.ListMap[Decl, String]],
+  typeNames: mutable.ListMap[NameKey, String] = mutable.ListMap(),
   enumValueNames: mutable.ListMap[Option[String],
       mutable.ListMap[(String, EnumerationDecl), String]] =
       mutable.ListMap.empty[Option[String],

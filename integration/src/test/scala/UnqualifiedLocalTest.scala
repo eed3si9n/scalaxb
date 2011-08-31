@@ -40,8 +40,9 @@ object UnqualifiedLocalTest extends TestBase {
     "</foo>", outdir = "./tmp")
   }
 
+  /*
   val inFile2  = new File("integration/src/test/resources/qualified.xsd")
-  lazy val generated2 = module.process(inFile2, "qualified", tmp)
+  lazy val generated2 = (new Driver).process(inFile2, "qualified", tmp)
 
   "qualified.scala file must compile so that Foo can be used" in {
     (List("""scalaxb.toXML[qualified.Foo](scalaxb.fromXML[qualified.Foo](""" +
@@ -53,5 +54,7 @@ object UnqualifiedLocalTest extends TestBase {
      generated2) must evaluateTo("""<q:foo q:attribute1="bar" xmlns:q="http://www.example.com/qualified">""" +
     "<q:string1></q:string1>" +
     "</q:foo>", outdir = "./tmp")
+
   }
+  */
 }

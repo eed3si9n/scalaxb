@@ -205,22 +205,24 @@ trait Module extends Logger {
     val snippets = ListBuffer.empty[Snippet]
     val context = buildContext
 
+    log("processReaders: %s" format files.toString())
+
     val importables0 = ListMap[From, Importable](files map { f =>
       f -> toImportable(ev.toURI(f), ev.toRawSchema(f))}: _*)
-    val importables = ListMap[Importable, From](files map { f => importables0(f) -> f }: _*)
+    val importables = Seq[(Importable, From)](files map { f => importables0(f) -> f }: _*)
     val config: Config = config0.primaryNamespace map { _ => config0 } getOrElse {
       val pns: Option[String] = importables0(files.head).targetNamespace
       config0.copy(primaryNamespace = pns)
     }    
     
-    val schemas = ListMap[Importable, Schema](importables.toList map { case (importable, file) =>
+    val schemas = ListMap[Importable, Schema](importables map { case (importable, file) =>
       (importable, parse(importable, context)) }: _*)
 
     val additionalImportables = ListMap.empty[Importable, File]
 
     // recursively add missing files
     def addMissingFiles() {
-      val current = importables.keysIterator.toList ::: additionalImportables.keysIterator.toList
+      val current = (importables map {_._1}) ++ additionalImportables.keysIterator.toList
       // check for all dependencies before proceeding.
       val missings = (current flatMap { importable =>
         missingDependencies(importable, current) }).distinct
@@ -309,7 +311,7 @@ trait Module extends Logger {
     
   def toImportable(location: URI, rawschema: RawSchema): Importable
   
-  def missingDependencies(importable: Importable, files: List[Importable]): List[String] = {
+  def missingDependencies(importable: Importable, files: Seq[Importable]): List[String] = {
     def shorten(uri: URI): String = {
       val path = Option[String](uri.getPath) getOrElse {""}
       (new File(path)).getName

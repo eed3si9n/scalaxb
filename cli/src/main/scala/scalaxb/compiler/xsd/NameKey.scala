@@ -28,17 +28,3 @@ object NameKey {
     case _ => error("unexpected Decl: " + decl.toString)
   }
 }
-
-//class NameRepository {
-//  import scala.collection.mutable
-//
-//  val names: mutable.ListMap[NameKey, String] = mutable.ListMap()
-//  def update(key: NameKey, name: String) { names(key) = name }
-//  def contains(key: NameKey): Boolean = names.contains(key)
-//  def getOrElseUpdate(key: NameKey, value: => String): String = names.getOrElseUpdate(key, value)
-//  def apply(key: NameKey): String = names(key)
-//  def containsValue(namespace: Option[String], value: String) =
-//    names exists {
-//      case (k: NameKey, v: String) => k.namespace == namespace && v == value
-//    }
-//}

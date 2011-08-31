@@ -37,28 +37,19 @@ object Incrementor {
 }
 
 case class XsdContext(
-  schemas: mutable.ListBuffer[SchemaDecl] =
-    mutable.ListBuffer.empty[SchemaDecl],
+  schemas: mutable.ListBuffer[SchemaDecl] = mutable.ListBuffer(),
   typeNames: mutable.ListMap[NameKey, String] = mutable.ListMap(),
   enumValueNames: mutable.ListMap[Option[String],
-      mutable.ListMap[(String, EnumerationDecl), String]] =
-      mutable.ListMap.empty[Option[String],
-      mutable.ListMap[(String, EnumerationDecl), String]],
-  packageNames: mutable.ListMap[Option[String], Option[String]] =
-    mutable.ListMap.empty[Option[String], Option[String]],
-  complexTypes: mutable.ListBuffer[(SchemaDecl, ComplexTypeDecl)] =
-    mutable.ListBuffer.empty[(SchemaDecl, ComplexTypeDecl)],
-  baseToSubs: mutable.ListMap[ComplexTypeDecl, List[ComplexTypeDecl]] =
-    mutable.ListMap.empty[ComplexTypeDecl, List[ComplexTypeDecl]],
-  compositorParents: mutable.ListMap[HasParticle, ComplexTypeDecl] =
-    mutable.ListMap.empty[HasParticle, ComplexTypeDecl],
-  compositorNames: mutable.ListMap[HasParticle, String] =
-    mutable.ListMap.empty[HasParticle, String],
-  groups: mutable.ListBuffer[(SchemaDecl, GroupDecl)] =
-    mutable.ListBuffer.empty[(SchemaDecl, GroupDecl)],
-  substituteGroups: mutable.ListBuffer[(Option[String], String)] =
-    mutable.ListBuffer.empty[(Option[String], String)],
-  prefixes: mutable.ListMap[String, String] = mutable.ListMap.empty[String, String]
+      mutable.ListMap[(String, EnumerationDecl), String]] = mutable.ListMap(),
+  packageNames: mutable.ListMap[Option[String], Option[String]] = mutable.ListMap(),
+  complexTypes: mutable.ListBuffer[(SchemaDecl, ComplexTypeDecl)] = mutable.ListBuffer(),
+  baseToSubs: mutable.ListMap[(SchemaDecl, ComplexTypeDecl), List[ComplexTypeDecl]] = mutable.ListMap(),
+  compositorParents: mutable.ListMap[HasParticle, ComplexTypeDecl] = mutable.ListMap(),
+  compositorNames: mutable.ListMap[HasParticle, String] = mutable.ListMap(),
+  groups: mutable.ListBuffer[(SchemaDecl, GroupDecl)] = mutable.ListBuffer(),
+  substituteGroups: mutable.ListBuffer[(Option[String], String)] = mutable.ListBuffer(),
+  prefixes: mutable.ListMap[String, String] = mutable.ListMap(),
+  duplicatedTypes: mutable.ListBuffer[(SchemaDecl, Decl)] = mutable.ListBuffer()
     ) {
 }
 

@@ -43,12 +43,13 @@ abstract class GenSource(val schema: SchemaDecl,
 
     schema.typeList map {
       case decl: ComplexTypeDecl =>
-        if (context.baseToSubs.keysIterator.contains(decl)) {
-          snippets += makeTrait(decl)
-          if (!decl.abstractValue) snippets += makeSuperType(decl)
+        if (!context.duplicatedTypes.contains((schema, decl))) {
+          if (context.baseToSubs.keysIterator.contains(decl)) {
+            snippets += makeTrait(decl)
+            if (!decl.abstractValue) snippets += makeSuperType(decl)
+          }
+          else snippets += makeType(decl)
         }
-        else snippets += makeType(decl)
-        
       case decl: SimpleTypeDecl =>
         if (containsEnumeration(decl)) snippets += makeEnumType(decl)
     }
@@ -134,7 +135,7 @@ abstract class GenSource(val schema: SchemaDecl,
     }def reads(seq: scala.xml.NodeSeq, stack: List[scalaxb.ElemName]): Either[String, {fqn}] = seq match {{
       case node: scala.xml.Node =>     
         scalaxb.Helper.instanceType(node) match {{
-          { val cases = for (sub <- context.baseToSubs(decl))
+          { val cases = for (sub <- context.baseToSubs((schema, decl)))
               yield makeCaseEntry(sub)
             cases.mkString(newline + indent(4 + compDepth))        
           }
@@ -146,7 +147,7 @@ abstract class GenSource(val schema: SchemaDecl,
     
     def writes(__obj: {fqn}, __namespace: Option[String], __elementLabel: Option[String],
         __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq = __obj match {{
-      { val cases = for (sub <- context.baseToSubs(decl))
+      { val cases = for (sub <- context.baseToSubs((schema, decl)))
           yield makeToXmlCaseEntry(sub)
         cases.mkString(newline + indent(2 + compDepth))        
       }
@@ -203,9 +204,9 @@ abstract class GenSource(val schema: SchemaDecl,
       case _ => None
     }
         
-    val superNames: List[String] = if (context.baseToSubs.contains(decl))
-      List(buildTypeName(decl, true))
-    else buildSuperNames(decl)
+    val superNames: List[String] =
+      if (context.baseToSubs.contains((schema, decl))) List(buildTypeName(decl, true))
+      else buildSuperNames(decl)
 
     val flatParticles = flattenElements(decl, 0)
     // val particles = buildParticles(decl, name)

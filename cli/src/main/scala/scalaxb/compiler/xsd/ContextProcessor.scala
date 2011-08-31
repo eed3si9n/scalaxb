@@ -74,21 +74,12 @@ trait ContextProcessor extends ScalaNames with PackageName {
     
     def nameEnumSimpleType(schema: SchemaDecl, decl: SimpleTypeDecl,
        initialName: String, postfix: String = "Type") {
-      if (!context.typeNames.contains(decl)) {
+      if (context.typeNames.contains(decl)) {
+        context.duplicatedTypes += ((schema, decl))
+      } else {
         context.typeNames(decl) = makeProtectedTypeName(schema.targetNamespace, initialName, postfix, context)
         makeEnumValues(decl, context)
-      } // if
-    }
-
-    def nameElemComplexType(schema: SchemaDecl, elem: ElemDecl, decl: ComplexTypeDecl): String = {
-      context.typeNames.getOrElseUpdate(decl, {
-        val prefix: Option[String] =
-          if (decl.family != List(elem.name, elem.name) && config.prependFamilyName) Some(decl.family.head)
-          else None
-        val name = makeProtectedTypeName(schema.targetNamespace, prefix, elem, context)
-        log("ContextProcessor#nameElemComplexType: %s's %s is named %s" format(elem.name, decl.name, name))
-        name
-      })
+      } // if-else
     }
 
     for {
@@ -99,10 +90,23 @@ trait ContextProcessor extends ScalaNames with PackageName {
       if typeSymbol.isInstanceOf[ReferenceTypeSymbol]
       val ref = typeSymbol.asInstanceOf[ReferenceTypeSymbol]
     } ref.decl match {
-      case decl: ComplexTypeDecl =>          
+      case decl: ComplexTypeDecl =>
         val pair = (schema, decl)
         anonymousTypes += pair
-        nameElemComplexType(schema, elem, decl)
+
+        if (context.typeNames.contains(decl)) {
+          context.duplicatedTypes += pair
+          println("Warning: %s is defined more than once.", elem.name)
+        }
+
+        context.typeNames.getOrElseUpdate(decl, {
+          val prefix: Option[String] =
+            if (decl.family != List(elem.name, elem.name) && config.prependFamilyName) Some(decl.family.head)
+            else None
+          val name = makeProtectedTypeName(schema.targetNamespace, prefix, elem, context)
+          log("ContextProcessor#processContent: %s's %s is named %s" format(elem.name, decl.name, name))
+          name
+        })
       case decl: SimpleTypeDecl if containsEnumeration(decl) =>
         nameEnumSimpleType(schema, decl, elem.name, "")
       case _ =>
@@ -115,7 +119,9 @@ trait ContextProcessor extends ScalaNames with PackageName {
       case (_, decl: ComplexTypeDecl) =>   
         val pair = (schema, decl)
         namedTypes += pair
-        context.typeNames.getOrElseUpdate(decl, makeProtectedTypeName(schema.targetNamespace, decl, context))
+
+        if (context.typeNames.contains(decl)) context.duplicatedTypes += pair
+        else context.typeNames.getOrElseUpdate(decl, makeProtectedTypeName(schema.targetNamespace, decl, context))
       case (_, decl@SimpleTypeDecl(_, _, _, _, _)) if containsEnumeration(decl) =>
         nameEnumSimpleType(schema, decl, decl.name)
       case _ =>      
@@ -149,30 +155,34 @@ trait ContextProcessor extends ScalaNames with PackageName {
     
     for (schema <- context.schemas;
         group <- schema.topAttrGroups.valuesIterator.toList) {
-      context.typeNames.getOrElseUpdate(group, makeProtectedTypeName(schema.targetNamespace, group, context))
+      if (context.typeNames.contains(group)) context.duplicatedTypes += ((schema, group))
+      else context.typeNames(group) = makeProtectedTypeName(schema.targetNamespace, group, context)
     }
     
-    def associateSubType(subType: ComplexTypeDecl, base: ComplexTypeDecl) {
-      if (context.baseToSubs.contains(base)) context.baseToSubs(base) = subType :: context.baseToSubs(base)
-      else context.baseToSubs(base) = subType :: Nil
+    def associateSubType(subType: ComplexTypeDecl, schema: SchemaDecl, base: ComplexTypeDecl) {
+      if (context.baseToSubs.contains((schema, base))) context.baseToSubs((schema, base)) =
+        subType :: context.baseToSubs((schema, base))
+      else context.baseToSubs((schema, base)) = subType :: Nil
     }
     
     for ((schema, typ) <- context.complexTypes)  typ.content.content match {
       case CompContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
-        associateSubType(typ, base)
+        associateSubType(typ, schema, base)
       case CompContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
-        associateSubType(typ, base)
+        associateSubType(typ, schema, base)
       
       case SimpContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _, _) =>
-        associateSubType(typ, base)
+        associateSubType(typ, schema, base)
       case SimpContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _) =>
-        associateSubType(typ, base)
+        associateSubType(typ, schema, base)
       case _ =>
     }
     
-    for (base <- context.baseToSubs.keysIterator;
-        if !base.abstractValue) {
-      context.typeNames.getOrElseUpdate(base, makeTraitName(base))
+    for (pair <- context.baseToSubs.keysIterator;
+         if !pair._2.abstractValue) {
+      val (schema, base) = pair
+      if (context.typeNames.contains(base)) context.duplicatedTypes += ((schema, base))
+      else context.typeNames(base) = makeTraitName(base)
     }
     
     makeCompositorNames(context)

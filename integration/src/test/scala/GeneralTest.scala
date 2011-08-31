@@ -3,13 +3,13 @@ import scalaxb.compiler._
 import scalaxb.compiler.xsd.Driver
 
 object GeneralTest extends TestBase {
-  // override val module: Module = new Driver with Verbose
+  override val module: Module = new Driver with Verbose
   val inFile    = new File("integration/src/test/resources/general.xsd")
   val mimeFile  = new File("integration/src/test/resources/xmlmime.xsd")
   val usageFile = new File(tmp, "GeneralUsage.scala")
   val custumFile = new File(tmp, "CustomizationUsage.scala")
   
-  lazy val generated = module.processFiles(Seq(mimeFile, inFile),
+  lazy val generated = module.processFiles(Seq(inFile, mimeFile),
     Config(packageNames = Map(None -> Some("general"),
         Some("http://www.w3.org/2005/05/xmlmime") -> Some("xmlmime")),
       outdir = tmp))

@@ -43,7 +43,7 @@ case class XsdContext(
       mutable.ListMap[(String, EnumerationDecl), String]] = mutable.ListMap(),
   packageNames: mutable.ListMap[Option[String], Option[String]] = mutable.ListMap(),
   complexTypes: mutable.ListBuffer[(SchemaDecl, ComplexTypeDecl)] = mutable.ListBuffer(),
-  baseToSubs: mutable.ListMap[(SchemaDecl, ComplexTypeDecl), List[ComplexTypeDecl]] = mutable.ListMap(),
+  baseToSubs: mutable.ListMap[ComplexTypeDecl, List[ComplexTypeDecl]] = mutable.ListMap(),
   compositorParents: mutable.ListMap[HasParticle, ComplexTypeDecl] = mutable.ListMap(),
   compositorNames: mutable.ListMap[HasParticle, String] = mutable.ListMap(),
   groups: mutable.ListBuffer[(SchemaDecl, GroupDecl)] = mutable.ListBuffer(),

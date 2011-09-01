@@ -1,4 +1,6 @@
 ## bug fixes and minor enhancements
 - Fixes `xs:gMonthDay` support. [#74](https://github.com/eed3si9n/scalaxb/issues/74)
 - Adds RPC-style SOAP message support. [#77](https://github.com/eed3si9n/scalaxb/issues/77)
-- Adds `--protocol-file` option. [#76](https://github.com/eed3si9n/scalaxb/issues/76)
+- Changes the default protocol file name to `xmlprotocol.scala`.
+- Adds `--protocol-file` and `--protocol-package` option. [#76](https://github.com/eed3si9n/scalaxb/issues/76)
+- Duplicated types are now ignored. [#78](https://github.com/eed3si9n/scalaxb/issues/78) requested by [@timperrett](https://github.com/timperrett)

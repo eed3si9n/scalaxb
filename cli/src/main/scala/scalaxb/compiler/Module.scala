@@ -37,10 +37,10 @@ case class Config(packageNames: Map[Option[String], Option[String]] = Map(None -
   outdir: File = new File("."),
   packageDir: Boolean = false,
   wrappedComplexTypes: List[String] = Nil,
-  primaryNamespace: Option[String] = None,
   prependFamilyName: Boolean = false,
   seperateProtocol: Boolean = true,
   protocolFileName: String = "xmlprotocol.scala",
+  protocolPackageName: Option[String] = None,
   generateRuntime: Boolean = true,
   contentsSizeLimit: Int = 20,
   sequenceChunkSize: Int = 10)
@@ -200,7 +200,7 @@ trait Module extends Logger {
   def toFileNamePart[From](file: From)(implicit ev: CanBeRawSchema[From, RawSchema]): String =
     """([.]\w+)$""".r.replaceFirstIn(new File(ev.toURI(file).getPath).getName, "")
 
-  def processReaders[From, To](files: Seq[From], config0: Config)
+  def processReaders[From, To](files: Seq[From], config: Config)
      (implicit ev: CanBeRawSchema[From, RawSchema], evTo: CanBeWriter[To]): List[To] = {
     val snippets = ListBuffer.empty[Snippet]
     val context = buildContext
@@ -210,10 +210,6 @@ trait Module extends Logger {
     val importables0 = ListMap[From, Importable](files map { f =>
       f -> toImportable(ev.toURI(f), ev.toRawSchema(f))}: _*)
     val importables = Seq[(Importable, From)](files map { f => importables0(f) -> f }: _*)
-    val config: Config = config0.primaryNamespace map { _ => config0 } getOrElse {
-      val pns: Option[String] = importables0(files.head).targetNamespace
-      config0.copy(primaryNamespace = pns)
-    }    
     
     val schemas = ListMap[Importable, Schema](importables map { case (importable, file) =>
       (importable, parse(importable, context)) }: _*)
@@ -272,7 +268,12 @@ trait Module extends Logger {
     def processProtocol = {
       val output = implicitly[CanBeWriter[To]].newInstance(packageName(None, context), config.protocolFileName)
       val out = implicitly[CanBeWriter[To]].toWriter(output)
-      val protocolNodes = generateProtocol(Snippet(snippets: _*), context, config)
+      val config2 = config.protocolPackageName match {
+        case Some(_) => config
+        case None =>
+          config.copy(protocolPackageName = packageName(importables0(files.head).targetNamespace, context))
+      }
+      val protocolNodes = generateProtocol(Snippet(snippets: _*), context, config2)
       try {
         printNodes(protocolNodes, out)
       } finally {

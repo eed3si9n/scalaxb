@@ -23,9 +23,8 @@
 package scalaxb.compiler
 
 import scalaxb.{Version}
-import scala.collection.{Map, Set}
 import scala.collection.mutable.{ListBuffer, ListMap}
-import java.io.{File, BufferedReader, Reader, PrintWriter}
+import java.io.File
 
 object Main extends Version {
   def main(args: Array[String]) {
@@ -51,6 +50,7 @@ object Main extends Version {
     val files = ListBuffer.empty[File]
     var packageDir = false
     var protocolFileName = "xmlprotocol.scala"
+    var protocolPackageName: Option[String] = None
     var generateRuntime = true
     var sequenceChunkSize = 10
     var contentsSizeLimit = 20
@@ -82,6 +82,8 @@ object Main extends Version {
         { packageDir = true })
       opt(None, "protocol-file", "<name.scala>", "protocol file name (xmlprotocol.scala)",
         { p: String => protocolFileName = p})
+      opt(None, "protocol-package", "<package>", "package for protocols",
+        { p: String => protocolPackageName = Some(p)})
       opt("no-runtime", "skips runtime files",
         { generateRuntime = false })
       opt("v", "verbose", "be extra verbose",
@@ -101,6 +103,7 @@ object Main extends Version {
           paramPrefix = paramPrefix,
           wrappedComplexTypes = wrappedComplexTypes.toList,
           protocolFileName = protocolFileName,
+          protocolPackageName = protocolPackageName,
           generateRuntime = generateRuntime,
           contentsSizeLimit = contentsSizeLimit,
           sequenceChunkSize = sequenceChunkSize,

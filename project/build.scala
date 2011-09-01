@@ -15,9 +15,10 @@ object Builds extends Build {
     version := "0.6.3-SNAPSHOT",
     organization := "org.scalaxb",
     scalaVersion := "2.9.0-1",
-    crossScalaVersions := Seq("2.9.0-1", "2.8.1"),
-    libraryDependencies ++= Seq(
-      "org.specs2" %% "specs2" % "1.4" % "test"
+    crossScalaVersions := Seq("2.9.1", "2.9.0-1", "2.8.1"),
+    libraryDependencies <+= scalaVersion(sv =>
+      if (sv == "2.8.1") "org.specs2" %% "specs2" % "1.4" % "test"
+      else "org.specs2" % "specs2_2.9.0-1" % "1.4" % "test"
     ),
     publishArtifact in (Compile, packageBin) := true,
     publishArtifact in (Test, packageBin) := false,

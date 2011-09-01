@@ -827,13 +827,11 @@ object {localName} {{
         val attr = buildAttribute(ref)
         (attr, toCardinality(attr))
       case group: AttributeGroupDecl => (group, Single)
-    } map { _ match {
-        case (attr: AttributeDecl, Optional) => "lazy val " + makeParamName(buildParam(attr).name) + " = " +
-          wrapperName + ".get(" +  quote(buildNodeName(attr, false)) + ") map { _.as[" + buildTypeName(attr.typeSymbol, true) + "] }"
-        case (attr: AttributeDecl, Single) => "lazy val " + makeParamName(buildParam(attr).name) + " = " +
-          wrapperName + "(" +  quote(buildNodeName(attr, false)) + ").as[" + buildTypeName(attr.typeSymbol, true) + "]"
-
-      }
+    } collect {
+      case (attr: AttributeDecl, Optional) => "lazy val " + makeParamName(buildParam(attr).name) + " = " +
+        wrapperName + ".get(" +  quote(buildNodeName(attr, false)) + ") map { _.as[" + buildTypeName(attr.typeSymbol, true) + "] }"
+      case (attr: AttributeDecl, Single) => "lazy val " + makeParamName(buildParam(attr).name) + " = " +
+        wrapperName + "(" +  quote(buildNodeName(attr, false)) + ").as[" + buildTypeName(attr.typeSymbol, true) + "]"
     }
   }
   

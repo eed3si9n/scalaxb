@@ -23,10 +23,10 @@ object Plugin extends sbt.Plugin {
   val scalaxbConfig    = SettingKey[sc.Config]("scalaxb-config")
   val combinedPackageNames = SettingKey[Map[Option[String], Option[String]]]("combined-package-names")
 
-  def generateTask(base: File, config: sc.Config, sources: Seq[File]): Seq[File] =
+  def generateTask(base: File, config: sc.Config, sources: Seq[File], ll: Level.Value): Seq[File] =
     sources.headOption map { src =>
       import sc._
-      val module = Module.moduleByFileName(src, false)
+      val module = Module.moduleByFileName(src, ll == Level.Debug)
       module.processFiles(sources, config.copy(outdir = base))
     } getOrElse {Nil}
 
@@ -55,9 +55,9 @@ object Plugin extends sbt.Plugin {
     }
 
   lazy val scalaxbSettings: Seq[Project.Setting[_]] = inConfig(Scalaxb)(Seq(
-    generate <<= (sourceManaged, scalaxbConfig, sources, clean) map { (base, config, sources, _) =>
-      generateTask(base, config, sources) },
-    sourceManaged <<= (sourceManaged in Compile) { x => x },
+    generate <<= (sourceManaged, scalaxbConfig, sources, logLevel, clean) map { (base, config, sources, ll, _) =>
+      generateTask(base, config, sources, ll) },
+    sourceManaged <<= (sourceManaged in Compile).identity,
     sources <<= (xsdSource) map { xsd => (xsd ** "*.xsd").get },
     xsdSource <<= (sourceDirectory) { src => src / "main" / "xsd" },
     clean <<= (sourceManaged) map { (base) => cleanTask(base) },
@@ -70,7 +70,8 @@ object Plugin extends sbt.Plugin {
     packageDir := true,
     generateRuntime := true,
     combinedPackageNames <<= combinedPackageNamesSetting,
-    scalaxbConfig <<= scalaxbConfigSetting
+    scalaxbConfig <<= scalaxbConfigSetting,
+    logLevel <<= (logLevel in Compile).identity
   )) ++
   Seq(
     scalaxb <<= (generate in Scalaxb) map { x => x }

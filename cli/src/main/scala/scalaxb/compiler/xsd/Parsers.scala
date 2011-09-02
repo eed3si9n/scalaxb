@@ -207,11 +207,8 @@ trait Parsers extends Args with Params {
       buildParser(particle, Occurrence(math.max(particle.minOccurs, 1), 1, occurrence.nillable), mixed, true)    
     }
     val choiceOperator = "|"
-    val base = if (parserList.size > 0)
-      parserList.mkString(" " + choiceOperator + " " + newline + indent(3))
-    else "any"
-    
-    buildParserString(base, occurrence)
+    if (parserList.size > 0) buildParserString(parserList.mkString(" " + choiceOperator + " " + newline + indent(3)), occurrence)
+    else buildAnyParser(List("##any"), occurrence, mixed, true)
   }
   
   def buildElemParser(elem: ElemDecl, occurrence: Occurrence, mixed: Boolean, wrapInDataRecord: Boolean): String = {

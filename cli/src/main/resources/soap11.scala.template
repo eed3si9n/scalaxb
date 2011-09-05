@@ -4,7 +4,7 @@ trait HttpClients {
   val httpClient: HttpClient
 
   trait HttpClient {
-    def request(in: String, address: java.net.URI, action: Option[java.net.URI]): String
+    def request(in: String, address: java.net.URI, headers: Map[String, String]): String
   }
 }
 
@@ -35,7 +35,9 @@ trait Soap11Clients { this: HttpClients =>
         case elem: scala.xml.Elem => elem
         case x => error("unexpected non-elem: " + x.toString)
       }}
-      val s = httpClient.request(r map {_.toString} getOrElse {""}, address, action)
+      val headers = scala.collection.mutable.Map[String, String]("Content-Type" -> "text/xml; charset=utf-8")
+      headers ++ action map { x => "SOAPAction" -> """"%s"""".format(x)}
+      val s = httpClient.request(r map {_.toString} getOrElse {""}, address, headers.toMap)
       val response = scala.xml.XML.loadString(s)
       scalaxb.fromXML[Envelope](response)
     }

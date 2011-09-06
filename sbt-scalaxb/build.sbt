@@ -1,9 +1,7 @@
 sbtPlugin := true
 
-scalaVersion := "2.8.1"
+scalaVersion := "2.9.1"
 
-crossScalaVersions := Seq("2.8.1")
-
-version <<= (sbtVersion, version) { (sv, nv) => "sbt" + sv + "_" + nv }
+crossScalaVersions := Seq("2.9.1")
 
 publishMavenStyle := true

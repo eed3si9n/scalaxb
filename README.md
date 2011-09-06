@@ -7,7 +7,7 @@ Schema (xsd) as the input file.
 Status
 ------
 
-Some things may not work.
+The latest is 0.6.3. Some things may not work.
 I'd really appreciate if you could run it against your favorite xsd
 file and let me know the result.
 
@@ -16,7 +16,7 @@ sbt-scalaxb for sbt 0.10.1
 
 To call scalaxb from sbt 0.10.1, put this in your `project/plugins/build.sbt`:
 
-    libraryDependencies <+= (sbtVersion) { sv => "org.scalaxb" %% "sbt-scalaxb" % ("sbt" + sv + "_0.6.2") }
+    libraryDependencies <+= (sbtVersion) { sv => "org.scalaxb" %% "sbt-scalaxb" % ("sbt" + sv + "_X.X") }
 
 and this in `build.sbt`:
 
@@ -28,38 +28,6 @@ and this in `build.sbt`:
 ----------------------
 
 See [INSTALL.md][1].
-
-Usage
------
-
-    $ scalaxb [options] <schema_file>...
-
-      -d <directory> | --outdir <directory>
-            generated files will go into <directory>
-      -p <package> | --package <package>
-            specifies the target package
-      -p:<namespaceURI>=<package> | --package:<namespaceURI>=<package>
-            specifies the target package for <namespaceURI>
-      --class-prefix <prefix>
-            prefixes generated class names
-      --param-prefix <prefix>
-            prefixes generated parameter names
-      --prepend-family
-            prepends family name to class names
-      --wrap-contents <complexType>
-            wraps inner contents into a seperate case class
-      --contents-limit <size>
-            defines long contents to be segmented (default: 20)
-      --chunk-size <size>
-            segments long sequences into chunks (default: 10)
-      --package-dir
-            generates package directories
-      --no-runtime
-            skips runtime files
-      -v | --verbose
-            be extra verbose
-      <schema_file>
-            input schema to be converted
 
 Documents
 ---------

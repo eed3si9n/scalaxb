@@ -1,5 +1,6 @@
 ## bug fixes and minor enhancements
 - Fixes `xs:gMonthDay` support. [#74](https://github.com/eed3si9n/scalaxb/issues/74)
+- Fixes SOAP 1.2 Content-Type HTTP header. [#80](https://github.com/eed3si9n/scalaxb/issues/80)
 - Adds RPC-style SOAP message support. [#77](https://github.com/eed3si9n/scalaxb/issues/77)
 - Changes the default protocol file name to `xmlprotocol.scala`.
 - Adds `--protocol-file` and `--protocol-package` option. [#76](https://github.com/eed3si9n/scalaxb/issues/76)

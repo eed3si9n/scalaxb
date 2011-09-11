@@ -12,9 +12,9 @@ object Builds extends Build {
     settings = Defaults.defaultSettings ++ AppenginePlugin.webSettings) dependsOn(cli)
   
   override lazy val settings = super.settings ++ Seq(
-    version := "0.6.3",
+    version := "0.6.4-SNAPSHOT",
     organization := "org.scalaxb",
-    scalaVersion := "2.9.0-1",
+    scalaVersion := "2.9.1",
     crossScalaVersions := Seq("2.9.1", "2.9.0-1", "2.8.1"),
     libraryDependencies <+= scalaVersion(sv =>
       if (sv == "2.8.1") "org.specs2" %% "specs2" % "1.4" % "test"

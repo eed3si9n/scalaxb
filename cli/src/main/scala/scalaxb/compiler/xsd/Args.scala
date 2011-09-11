@@ -24,8 +24,9 @@ package scalaxb.compiler.xsd
 
 trait Args extends Params {
   def buildFromXML(typeName: String): String = "scalaxb.fromXML[" + typeName + "]"
-  def buildFromXML(typeName: String, selector: String, stackString: String): String =
-    buildFromXML(typeName) + "(%s, %s)".format(selector, stackString)
+  def buildFromXML(typeName: String, selector: String, stackString: String, formatter: Option[String]): String =
+    buildFromXML(typeName) + "(%s, %s)%s".format(selector, stackString,
+      formatter map {"(" + _ + ")"} getOrElse {""})
   
   def buildToXML(typeName: String, args: String): String =
     "scalaxb.toXML[" + typeName + "](" + args + ")"
@@ -39,22 +40,23 @@ trait Args extends Params {
     case symbol: BuiltInSimpleTypeSymbol            => buildArg(buildTypeName(symbol), selector, Single)
     case ReferenceTypeSymbol(decl: SimpleTypeDecl)  => buildArg(buildTypeName(baseType(decl)), selector, Single)
     case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
-      buildFromXML(buildTypeName(typeSymbol), selector, "scalaxb.ElemName(node) :: stack")
+      buildFromXML(buildTypeName(typeSymbol), selector, "scalaxb.ElemName(node) :: stack", None)
   }
   
   def buildArg(typeName: String, selector: String, cardinality: Cardinality,
       nillable: Boolean = false, defaultValue: Option[String] = None, fixedValue: Option[String] = None,
-      wrapForLongAll: Boolean = false): String = {    
-    def fromSelector = buildFromXML(typeName, selector, "scalaxb.ElemName(node) :: stack")
-    def fromU = buildFromXML(typeName, "_", "scalaxb.ElemName(node) :: stack")
-    def fromValue(x: String) = buildFromXML(typeName, "scala.xml.Text(" + quote(x) + ")", "scalaxb.ElemName(node) :: stack")
+      wrapForLongAll: Boolean = false, formatter: Option[String] = None): String = {
+    val stack = "scalaxb.ElemName(node) :: stack"
+    def fromSelector = buildFromXML(typeName, selector, stack, formatter)
+    def fromU = buildFromXML(typeName, "_", stack, formatter)
+    def fromValue(x: String) = buildFromXML(typeName, "scala.xml.Text(" + quote(x) + ")", stack, formatter)
     
     val retval = if (wrapForLongAll) {
       // PrefixedAttribute only contains pre, so you need to pass in node to get the namespace.
       if (selector.contains("@")) selector + ".headOption map { x => scalaxb.DataRecord(x, node, " +
-        buildFromXML(typeName, "x", "scalaxb.ElemName(node) :: stack") + ") }"
+        buildFromXML(typeName, "x", stack, formatter) + ") }"
       else selector + ".headOption map { x => scalaxb.DataRecord(x, " +
-        buildFromXML(typeName, "x", "scalaxb.ElemName(node) :: stack") + ") }"
+        buildFromXML(typeName, "x", stack, formatter) + ") }"
     } else (cardinality, nillable) match {
       case (Multiple, true)  => selector + ".toSeq map { _.nilOption map { " + fromU + " }}"
       case (Multiple, false) => selector + ".toSeq map { " + fromU + " }"
@@ -116,10 +118,8 @@ trait Args extends Params {
       case symbol: BuiltInSimpleTypeSymbol => buildArg(buildTypeName(symbol), selector, 
         toCardinality(elem.minOccurs, elem.maxOccurs), elem.nillable getOrElse(false), elem.defaultValue, elem.fixedValue, wrapForLongAll)
       case ReferenceTypeSymbol(decl: SimpleTypeDecl) =>
-        if (containsEnumeration(decl)) buildArg(buildTypeName(decl, false), selector, 
+        buildArg(buildTypeName(decl, false), selector,
           toCardinality(elem.minOccurs, elem.maxOccurs), elem.nillable getOrElse(false), elem.defaultValue, elem.fixedValue, wrapForLongAll)
-        else buildArg(decl, selector, elem.defaultValue, elem.fixedValue,
-          toCardinality(elem.minOccurs, elem.maxOccurs), elem.nillable getOrElse(false), wrapForLongAll) 
       case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
         if (compositorWrapper.contains(decl))
           (toCardinality(elem.minOccurs, elem.maxOccurs), elem.nillable getOrElse {false}) match {
@@ -139,23 +139,32 @@ trait Args extends Params {
             symbol.toString + " with null decl")
         else error("GenSource#buildArg: " + elem.toString + " Invalid type " + symbol.getClass.toString + ": " +
             symbol.toString + " with " + symbol.decl.toString)
-      case _ => error("GenSource#buildArg: " + elem.toString + " Invalid type " + elem.typeSymbol.getClass.toString + ": " + elem.typeSymbol.toString)    
+      case _ => error("GenSource#buildArg: " + elem.toString + " Invalid type " + elem.typeSymbol.getClass.toString + ": " + elem.typeSymbol.toString)
     }
   
-  def buildArg(attr: AttributeDecl, selector: String, wrapForLong: Boolean): String = attr.typeSymbol match {
-    case symbol: BuiltInSimpleTypeSymbol => buildArg(buildTypeName(symbol), selector, 
-      toCardinality(attr), false, attr.defaultValue, attr.fixedValue, wrapForLong) 
-    case ReferenceTypeSymbol(decl: SimpleTypeDecl) => buildArg(decl, selector, attr.defaultValue, attr.fixedValue,
-      toCardinality(attr), false, wrapForLong)
-    case ReferenceTypeSymbol(decl: ComplexTypeDecl) => error("Args: Attribute with complex type " + decl.toString)
-    case _ => error("Args: unsupported type: " + attr.typeSymbol)
-  }
-  
-  def buildArg(decl: SimpleTypeDecl, selector: String,
-      defaultValue: Option[String], fixedValue: Option[String],
-      cardinality: Cardinality, nillable: Boolean, wrapForLongAll: Boolean): String =  
-    buildArg(buildTypeName(decl, false), selector, cardinality, nillable, defaultValue, fixedValue, wrapForLongAll)
-    
+  def buildArg(attr: AttributeDecl, selector: String, wrapForLong: Boolean): String =
+    attr.typeSymbol match {
+      // special treatment for QName attributes
+      case XsQName =>
+        buildArg(buildTypeName(XsQName), selector, toCardinality(attr), false,
+          attr.defaultValue, attr.fixedValue, wrapForLong, Some("scalaxb.qnameXMLFormat(node.scope)"))
+      case symbol: BuiltInSimpleTypeSymbol =>
+        buildArg(buildTypeName(symbol), selector, toCardinality(attr), false,
+          attr.defaultValue, attr.fixedValue, wrapForLong)
+
+      // special treatment for QName attributes
+      case ReferenceTypeSymbol(decl: SimpleTypeDecl) if buildTypeName(decl, false) == buildTypeName(XsQName) =>
+        buildArg(buildTypeName(decl, false), selector, toCardinality(attr), false,
+          attr.defaultValue, attr.fixedValue, wrapForLong, Some("scalaxb.qnameXMLFormat(node.scope)"))
+      case ReferenceTypeSymbol(decl: SimpleTypeDecl) =>
+        buildArg(buildTypeName(decl, false), selector, toCardinality(attr), false,
+          attr.defaultValue, attr.fixedValue, wrapForLong)
+      case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
+        error("Args: Attribute with complex type " + decl.toString)
+      case _ =>
+        error("Args: unsupported type: " + attr.typeSymbol)
+    }
+
   // called by makeCaseClassWithType
   def buildArg(content: SimpleContentDecl, typeSymbol: XsTypeSymbol): String = typeSymbol match {
     case AnyType(symbol) => buildArg(buildTypeName(symbol), "node", Single)
@@ -174,7 +183,7 @@ trait Args extends Params {
         case _ => error("Args: Unsupported content " + content.toString)
       }
     case ReferenceTypeSymbol(decl: SimpleTypeDecl) =>
-      buildArg(decl, "node", None, None, Single, false, false)
+      buildArg(buildTypeName(decl, false), "node", Single, false, None, None, false)
         
     case _ => error("Args: Unsupported type " + typeSymbol.toString)    
   }

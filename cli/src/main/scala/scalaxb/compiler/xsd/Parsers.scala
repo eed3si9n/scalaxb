@@ -40,8 +40,8 @@ trait Parsers extends Args with Params {
   
   def buildAnyParser(namespaceConstraint: List[String], occurrence: Occurrence, mixed: Boolean, wrapInDataRecord: Boolean): String = {
     val converter = if (occurrence.nillable) buildFromXML("scalaxb.DataRecord[Option[Any]]", "_",
-        "scalaxb.ElemName(node) :: stack")
-      else buildFromXML(buildTypeName(XsWildcard(namespaceConstraint)), "_", "scalaxb.ElemName(node) :: stack")
+        "scalaxb.ElemName(node) :: stack", None)
+      else buildFromXML(buildTypeName(XsWildcard(namespaceConstraint)), "_", "scalaxb.ElemName(node) :: stack", None)
     val parser = "any(%s)".format(namespaceConstraint match {
       case Nil => "_ => true"
       case "##any" :: Nil => "_ => true"

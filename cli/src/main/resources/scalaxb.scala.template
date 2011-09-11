@@ -202,9 +202,32 @@ trait XMLStandardTypes {
       Helper.stringToXML(Helper.toCalendar(obj).toXMLFormat, namespace, elementLabel, scope)
   }
 
-  implicit lazy val __QNameXMLFormat: XMLFormat[javax.xml.namespace.QName] = new  XMLFormat[javax.xml.namespace.QName] {
-    def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, javax.xml.namespace.QName] = try {
-      Right(javax.xml.namespace.QName.valueOf(seq.text)) } catch { case e: Exception => Left(e.toString) }
+  def qnameXMLFormat(scope: scala.xml.NamespaceBinding) = new XMLFormat[javax.xml.namespace.QName] {
+    def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, javax.xml.namespace.QName] =
+      seq match {
+        case node: scala.xml.Node =>
+          if (node.text startsWith "{") Right(javax.xml.namespace.QName.valueOf(node.text))
+          else if (node.text contains ':') {
+            val s = node.text
+            val prefix = s.dropRight(s.length - s.indexOf(':'))
+            val value = s.drop(s.indexOf(':') + 1)
+            Right(new javax.xml.namespace.QName(scope.getURI(prefix), value, prefix))
+          }
+          else Right(new javax.xml.namespace.QName(node.scope.getURI(null), node.text))
+        case _ => Left("scala.xml.Node is required")
+      }
+
+    def writes(obj: javax.xml.namespace.QName, namespace: Option[String], elementLabel: Option[String],
+        scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
+      Helper.stringToXML(obj.toString, namespace, elementLabel, scope)
+  }
+
+  implicit lazy val __QNameXMLFormat: XMLFormat[javax.xml.namespace.QName] = new XMLFormat[javax.xml.namespace.QName] {
+    def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, javax.xml.namespace.QName] =
+      seq match {
+        case node: scala.xml.Node => qnameXMLFormat(node.scope).reads(node, stack)
+        case _ => Left("scala.xml.Node is required")
+      }
 
     def writes(obj: javax.xml.namespace.QName, namespace: Option[String], elementLabel: Option[String],
         scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =

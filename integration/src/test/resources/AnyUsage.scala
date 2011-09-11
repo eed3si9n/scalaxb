@@ -93,18 +93,19 @@ object AnyUsage {
   
   def testAny2 {
     val ExampleCom = new java.net.URI("http://www.example.com/")
-    val ExampleQName = javax.xml.namespace.QName.valueOf("{http://www.example.com/}foo")
+    val ExampleQName = javax.xml.namespace.QName.valueOf("{http://www.example.com/any}foo")
     lazy val typeFactory = javax.xml.datatype.DatatypeFactory.newInstance()
     val ExampleDuration = typeFactory.newDuration("P1D")
     
     val subject = <foo xmlns="http://www.example.com/any"
+        xmlns:any="http://www.example.com/any"
         xmlns:xs="http://www.w3.org/2001/XMLSchema"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
           <hexBinary xsi:type="xs:hexBinary">0F</hexBinary>
           <base64Binary xsi:type="xs:base64Binary">bQ==</base64Binary>
           <anyURI xsi:type="xs:anyURI">http://www.example.com/</anyURI>
-          <QName xsi:type="xs:QName">{{http://www.example.com/}}foo</QName>
-          <NOTATION xsi:type="xs:NOTATION">{{http://www.example.com/}}foo</NOTATION>
+          <QName xsi:type="xs:QName">any:foo</QName>
+          <NOTATION xsi:type="xs:NOTATION">{{http://www.example.com/any}}foo</NOTATION>
           <duration xsi:type="xs:duration">P1D</duration>
           <dateTime xsi:type="xs:dateTime">2002-10-10T12:00:00Z</dateTime>
           <time xsi:type="xs:time">12:00:00Z</time>

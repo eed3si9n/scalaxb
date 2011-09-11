@@ -241,7 +241,7 @@ trait GenSource {
     } getOrElse {"()"}
   }
 
-  def paramMessage(input: XParamType): XMessageType = context.messages(splitTypeName(input.message.toString))
+  def paramMessage(input: XParamType): XMessageType = context.messages(splitTypeName(input.message))
 
   case class ParamCache(toParamName: String, toScalaCode: String)
 
@@ -281,21 +281,21 @@ trait GenSource {
 
   def toTypeSymbol(part: XPartType) = part.typeValue map { typeValue =>
     import scalaxb.compiler.xsd.{TypeSymbolParser, ReferenceTypeSymbol}
-    val symbol = TypeSymbolParser.fromString(typeValue.toString, splitTypeName(typeValue.toString))
+    val symbol = TypeSymbolParser.fromString(typeValue.toString, splitTypeName(typeValue))
     symbol match {
       case symbol: ReferenceTypeSymbol =>
-        val (namespace, typeName) = splitTypeName(typeValue.toString)
+        val (namespace, typeName) = splitTypeName(typeValue)
         symbol.decl = xsdgenerator.getTypeGlobally(namespace, typeName, context.xsdcontext)
       case _ =>
     }
     symbol
   } getOrElse {
-    part.element map { element => xsdgenerator.elements(splitTypeName(element.toString)).typeSymbol
+    part.element map { element => xsdgenerator.elements(splitTypeName(element)).typeSymbol
     } getOrElse {error("part does not have either type or element: " + part.toString)}
   }
 
   def toElement(part: XPartType) = part.element map  { element =>
-    xsdgenerator.elements(splitTypeName(element.toString))
+    xsdgenerator.elements(splitTypeName(element))
   } getOrElse {error("part does not have an element: " + part.toString)}
 
   def outputTypeName(output: XParamType, document: Boolean): String =
@@ -326,18 +326,13 @@ trait GenSource {
 
   def faultsToTypeName(faults: Seq[XFaultType]): String = faults.toList match {
     case x :: xs =>
-      val msg = context.messages(splitTypeName(x.message.toString))
+      val msg = context.messages(splitTypeName(x.message))
       msg.part.headOption map { part =>
         val symbol = toTypeSymbol(part)
         xsdgenerator.buildTypeName(symbol, true)
       } getOrElse {"Any"}
     case _ => "Any"
   }
-
-  def elementRefToTypeName(ref: Option[String]): String = ref map { x =>
-    val elem = xsdgenerator.elements(splitTypeName(x))
-    xsdgenerator.buildTypeName(elem.typeSymbol, true)
-  } getOrElse {"Any"}
 
   def makeBindingName(binding: XBindingType): String = {
     val name = xsdgenerator.makeTypeName(binding.name)
@@ -349,7 +344,7 @@ trait GenSource {
     val name = makeBindingName(binding)
     log("wsdl11#makeSoap11Binding: " + name)
 
-    val interfaceType = context.interfaces(splitTypeName(binding.typeValue.toString))
+    val interfaceType = context.interfaces(splitTypeName(binding.typeValue))
     val interfaceTypeName = interfaceType.name.capitalize
     val port = findPort(binding).headOption
     val address = port flatMap {_.any flatMap {
@@ -393,7 +388,7 @@ trait {interfaceTypeName} {{
   // http://www.w3.org/TR/2007/REC-soap12-part2-20070427/
   def makeSoap12Binding(binding: XBindingType): Snippet = {
     val name = makeBindingName(binding)
-    val interfaceType = context.interfaces(splitTypeName(binding.typeValue.toString))
+    val interfaceType = context.interfaces(splitTypeName(binding.typeValue))
     val interfaceTypeName = interfaceType.name.capitalize
     val port = findPort(binding).headOption
     val address = port flatMap {_.any flatMap {
@@ -436,7 +431,7 @@ trait {interfaceTypeName} {{
   def findPort(binding: XBindingType) =
     for {
       service <- context.services.valuesIterator.toList
-      port <- service.port if binding == context.bindings(splitTypeName(port.binding.toString))
+      port <- service.port if binding == context.bindings(splitTypeName(port.binding))
     } yield port
 
   def elements(namespace: Option[String], name: String) =
@@ -448,5 +443,5 @@ trait {interfaceTypeName} {{
         case Nil     => throw new ReferenceNotFound("element" , namespace, name)
       }
 
-  def splitTypeName(ref: String) = Module.splitTypeName(ref, scope)
+  def splitTypeName(qname: javax.xml.namespace.QName) = (Option[String](qname.getNamespaceURI), qname.getLocalPart)
 }

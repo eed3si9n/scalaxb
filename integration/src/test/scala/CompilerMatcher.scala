@@ -78,7 +78,7 @@ trait CompilerMatcher {
       val recent = main.mostRecentVar
       val holder = main.valueOfTerm(recent)
       if (holder != Some(expected))
-        println("actual: " + holder.map(_.toString).getOrElse{"None"})
+        println("actual(%s): %s" format(recent, holder.map(_.toString).getOrElse{"None"}))
       
       result(holder == Some(expected),
         code + " evaluates as expected",

@@ -3,17 +3,13 @@ package wsdl11
     
 /**
 usage:
-import scalaxb._
-import wsdl11._
-
-val obj = fromXML[Foo](node)
-val document = toXML[Foo](obj, "foo", defaultScope)
+val obj = scalaxb.fromXML[wsdl11.Foo](node)
+val document = scalaxb.toXML[wsdl11.Foo](obj, "foo", wsdl11.defaultScope)
 **/
 object `package` extends XXMLProtocol { }
 
 trait XXMLProtocol extends scalaxb.XMLStandardTypes {
-  val defaultScope = scalaxb.toScope(None -> "http://schemas.xmlsoap.org/wsdl/",
-    Some("wsdl") -> "http://schemas.xmlsoap.org/wsdl/",
+  val defaultScope = scalaxb.toScope(Some("wsdl") -> "http://schemas.xmlsoap.org/wsdl/",
     Some("xsi") -> "http://www.w3.org/2001/XMLSchema-instance",
     Some("xs") -> "http://www.w3.org/2001/XMLSchema")
   implicit lazy val Wsdl11XDocumentationFormat: scalaxb.XMLFormat[wsdl11.XDocumentation] = new DefaultWsdl11XDocumentationFormat {}
@@ -259,8 +255,8 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
       { case p1 =>
       wsdl11.XPartType(p1.headOption map { scalaxb.fromXML[wsdl11.XDocumentation](_, scalaxb.ElemName(node) :: stack) },
         (node \ "@name").headOption map { scalaxb.fromXML[String](_, scalaxb.ElemName(node) :: stack) },
-        (node \ "@type").headOption map { scalaxb.fromXML[javax.xml.namespace.QName](_, scalaxb.ElemName(node) :: stack) },
-        (node \ "@element").headOption map { scalaxb.fromXML[javax.xml.namespace.QName](_, scalaxb.ElemName(node) :: stack) },
+        (node \ "@type").headOption map { scalaxb.fromXML[javax.xml.namespace.QName](_, scalaxb.ElemName(node) :: stack)(scalaxb.qnameXMLFormat(node.scope)) },
+        (node \ "@element").headOption map { scalaxb.fromXML[javax.xml.namespace.QName](_, scalaxb.ElemName(node) :: stack)(scalaxb.qnameXMLFormat(node.scope)) },
         scala.collection.immutable.ListMap((node match {
           case elem: scala.xml.Elem =>
             elem.attributes.toList flatMap {
@@ -356,7 +352,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
       { case p1 =>
       wsdl11.XParamType(p1.headOption map { scalaxb.fromXML[wsdl11.XDocumentation](_, scalaxb.ElemName(node) :: stack) },
         (node \ "@name").headOption map { scalaxb.fromXML[String](_, scalaxb.ElemName(node) :: stack) },
-        scalaxb.fromXML[javax.xml.namespace.QName]((node \ "@message"), scalaxb.ElemName(node) :: stack)) }
+        scalaxb.fromXML[javax.xml.namespace.QName]((node \ "@message"), scalaxb.ElemName(node) :: stack)(scalaxb.qnameXMLFormat(node.scope))) }
     
     override def writesAttribute(__obj: wsdl11.XParamType, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {
       var attr: scala.xml.MetaData  = scala.xml.Null
@@ -380,7 +376,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
       { case p1 =>
       wsdl11.XFaultType(p1.headOption map { scalaxb.fromXML[wsdl11.XDocumentation](_, scalaxb.ElemName(node) :: stack) },
         scalaxb.fromXML[String]((node \ "@name"), scalaxb.ElemName(node) :: stack),
-        scalaxb.fromXML[javax.xml.namespace.QName]((node \ "@message"), scalaxb.ElemName(node) :: stack)) }
+        scalaxb.fromXML[javax.xml.namespace.QName]((node \ "@message"), scalaxb.ElemName(node) :: stack)(scalaxb.qnameXMLFormat(node.scope))) }
     
     override def writesAttribute(__obj: wsdl11.XFaultType, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {
       var attr: scala.xml.MetaData  = scala.xml.Null
@@ -401,7 +397,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
         scalaxb.Helper.instanceType(node) match {
           case (targetNamespace, Some("bindingType")) => Right(scalaxb.fromXML[wsdl11.XBindingType](node, stack))
           case (targetNamespace, Some("binding_operationType")) => Right(scalaxb.fromXML[wsdl11.XBinding_operationType](node, stack))
-          case (targetNamespace, Some("fault")) => Right(scalaxb.fromXML[wsdl11.XFault](node, stack))
+          // case (targetNamespace, Some("binding_operationType")) => Right(scalaxb.fromXML[wsdl11.XFault](node, stack))
           case _ => Right(scalaxb.fromXML[wsdl11.XStartWithExtensionsType](node, stack))
         }
       case _ => Left("reads failed: seq must be scala.xml.Node")  
@@ -448,7 +444,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
         p2.toSeq map { scalaxb.fromXML[scalaxb.DataRecord[Any]](_, scalaxb.ElemName(node) :: stack) },
         p3.toSeq map { scalaxb.fromXML[wsdl11.XBinding_operationType](_, scalaxb.ElemName(node) :: stack) },
         scalaxb.fromXML[String]((node \ "@name"), scalaxb.ElemName(node) :: stack),
-        scalaxb.fromXML[javax.xml.namespace.QName]((node \ "@type"), scalaxb.ElemName(node) :: stack)) }
+        scalaxb.fromXML[javax.xml.namespace.QName]((node \ "@type"), scalaxb.ElemName(node) :: stack)(scalaxb.qnameXMLFormat(node.scope))) }
     
     override def writesAttribute(__obj: wsdl11.XBindingType, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {
       var attr: scala.xml.MetaData  = scala.xml.Null
@@ -561,7 +557,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
       wsdl11.XPortType(p1.headOption map { scalaxb.fromXML[wsdl11.XDocumentation](_, scalaxb.ElemName(node) :: stack) },
         p2.headOption map { scalaxb.fromXML[scalaxb.DataRecord[Any]](_, scalaxb.ElemName(node) :: stack) },
         scalaxb.fromXML[String]((node \ "@name"), scalaxb.ElemName(node) :: stack),
-        scalaxb.fromXML[javax.xml.namespace.QName]((node \ "@binding"), scalaxb.ElemName(node) :: stack)) }
+        scalaxb.fromXML[javax.xml.namespace.QName]((node \ "@binding"), scalaxb.ElemName(node) :: stack)(scalaxb.qnameXMLFormat(node.scope))) }
     
     override def writesAttribute(__obj: wsdl11.XPortType, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {
       var attr: scala.xml.MetaData  = scala.xml.Null
@@ -577,7 +573,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
   }
 
 
-  trait Wsdl11XNotificationoperationGroupFormat extends scalaxb.AnyElemNameParser {  
+  trait Wsdl11XNotificationoperationGroupFormat extends scalaxb.AnyElemNameParser {
     private val targetNamespace: Option[String] = Some("http://schemas.xmlsoap.org/wsdl/")
     
     def parseXNotificationoperationGroup(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[wsdl11.XNotificationoperationSequence] =
@@ -609,7 +605,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
   }
 
 
-  trait Wsdl11XSolicitresponseoperationGroupFormat extends scalaxb.AnyElemNameParser {  
+  trait Wsdl11XSolicitresponseoperationGroupFormat extends scalaxb.AnyElemNameParser {
     private val targetNamespace: Option[String] = Some("http://schemas.xmlsoap.org/wsdl/")
     
     def parseXSolicitresponseoperationGroup(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[wsdl11.XSolicitresponseoperationSequence] =
@@ -661,7 +657,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
   }
 
 
-  trait Wsdl11XRequestresponseoperationGroupFormat extends scalaxb.AnyElemNameParser {  
+  trait Wsdl11XRequestresponseoperationGroupFormat extends scalaxb.AnyElemNameParser {
     private val targetNamespace: Option[String] = Some("http://schemas.xmlsoap.org/wsdl/")
     
     def parseXRequestresponseoperationGroup(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[wsdl11.XRequestresponseoperationSequence] =
@@ -713,7 +709,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
   }
 
 
-  trait Wsdl11XOnewayoperationGroupFormat extends scalaxb.AnyElemNameParser {  
+  trait Wsdl11XOnewayoperationGroupFormat extends scalaxb.AnyElemNameParser {
     private val targetNamespace: Option[String] = Some("http://schemas.xmlsoap.org/wsdl/")
     
     def parseXOnewayoperationGroup(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[wsdl11.XOnewayoperationSequence] =

@@ -101,7 +101,7 @@ abstract class GenSource(val schema: SchemaDecl,
     
     def makeCaseEntry(decl: ComplexTypeDecl) =
       "case (" + quoteNamespace(decl.namespace) + ", " + quote(Some(decl.family.head)) + ") => " +
-        "Right(" + buildFromXML(buildTypeName(decl, false), "node", "stack") + ")"
+        "Right(" + buildFromXML(buildTypeName(decl, false), "node", "stack", None) + ")"
     
     def makeToXmlCaseEntry(decl: ComplexTypeDecl) =
       "case x: " + buildTypeName(decl, false) + " => " + 
@@ -138,7 +138,7 @@ abstract class GenSource(val schema: SchemaDecl,
               yield makeCaseEntry(sub)
             cases.mkString(newline + indent(4 + compDepth))        
           }
-          { if (!decl.abstractValue) "case _ => Right(" + buildFromXML(defaultType, "node", "stack") + ")"
+          { if (!decl.abstractValue) "case _ => Right(" + buildFromXML(defaultType, "node", "stack", None) + ")"
             else """case x => Left("Unknown type: " + x)""" }
         }}
       case _ => Left("reads failed: seq must be scala.xml.Node")  

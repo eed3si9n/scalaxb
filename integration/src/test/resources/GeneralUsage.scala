@@ -50,38 +50,54 @@ object GeneralUsage {
     val subject = <foo xmlns="http://www.example.com/general"
         xmlns:xs="http://www.w3.org/2001/XMLSchema"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-      <int>1</int>
-      <byte>1</byte>
-      <short>1</short>
-      <long>1</long>
+      <string>foo</string>
+      <boolean>false</boolean>
+      <decimal>1</decimal>
       <float>1.0</float>
       <double>1.0</double>
-      <integer>1</integer>
-      <nonPositiveInteger>-1</nonPositiveInteger>
-      <negativeInteger>-1</negativeInteger>
-      <nonNegativeInteger>1</nonNegativeInteger>
-      <positiveInteger>1</positiveInteger>
-      <unsignedLong>1</unsignedLong>
-      <unsignedInt>1</unsignedInt>
-      <unsignedShort>1</unsignedShort>
-      <unsignedByte>1</unsignedByte>
-      <decimal>1</decimal>
-      <boolean>false</boolean>
-      <string>foo</string>
+      <duration>P1D</duration>
+      <dateTime>2002-10-10T12:00:00Z</dateTime>
+      <time>13:20:00Z</time>
+      <date>2002-10-09Z</date>
+      <gYearMonth>1999-05</gYearMonth>
+
+      <gYear>1999</gYear>
+      <gMonthDay>--10-10</gMonthDay>
+      <gDay>---10</gDay>
+      <gMonth>--10</gMonth>
+      <hexBinary>0F</hexBinary>
+      <base64Binary>QUJDREVGRw==</base64Binary>
+      <anyURI>http://localhost/</anyURI>
+      <QName>foo</QName>
+      <NOTATION>foo</NOTATION>
       <normalizedString>foo</normalizedString>
+
       <token>foo</token>
       <language>en-US</language>
-      <Name>foo</Name>
-      <NCName>foo</NCName>
       <NMTOKEN>foo</NMTOKEN>
       <NMTOKENS>foo</NMTOKENS>
+      <Name>foo</Name>
+      <NCName>foo</NCName>
       <ID>foo</ID>
       <IDREF>foo</IDREF>
       <IDREFS>foo</IDREFS>
       <ENTITY>foo</ENTITY>
+
       <ENTITIES>foo</ENTITIES>
-      <base64Binary>QUJDREVGRw==</base64Binary>
-      <hexBinary>0F</hexBinary>
+      <integer>1</integer>
+      <nonPositiveInteger>-1</nonPositiveInteger>
+      <negativeInteger>-1</negativeInteger>
+      <long>1</long>
+      <int>1</int>
+      <short>1</short>
+      <byte>1</byte>
+      <nonNegativeInteger>1</nonNegativeInteger>
+      <unsignedLong>1</unsignedLong>
+
+      <unsignedInt>1</unsignedInt>
+      <unsignedShort>1</unsignedShort>
+      <unsignedByte>1</unsignedByte>
+      <positiveInteger>1</positiveInteger>
       <anyType xsi:type="xs:string">foo</anyType>
       <anySimpleType xsi:type="xs:string">foo</anySimpleType>
     </foo>
@@ -89,13 +105,16 @@ object GeneralUsage {
     val obj = fromXML[SingularBuiltInTypeTest](subject)
     def check(obj: Any) = obj match {
         case SingularBuiltInTypeTest(
-          SingularBuiltInTypeTestSequence1(1, 1, 1, 1, 1.0F, 1.0, Int_(1), Int_(-1), Int_(-1), Int_(1)),
-          SingularBuiltInTypeTestSequence2(Int_(1), Int_(1), 1, 1, 1, Int_(1), false, "foo", "foo", "foo"),
-          SingularBuiltInTypeTestSequence3("en-US", "foo", "foo", "foo",  Seq("foo"),
-            "foo", "foo", Seq("foo"), "foo", Seq("foo")),
-          SingularBuiltInTypeTestSequence4(Base64Binary('A', 'B', 'C', 'D', 'E', 'F', 'G'), HexBinary(15),
-            DataRecord(_, _, "foo"), DataRecord(_, _, "foo"))
-          ) =>
+          SingularBuiltInTypeTestSequence1("foo", false, Int_(1), 1.0F, 1.0, du, dt, t, d, ym),
+          SingularBuiltInTypeTestSequence2(y, md, dd, m,
+            HexBinary(15), Base64Binary('A', 'B', 'C', 'D', 'E', 'F', 'G'),
+            uri, qname, notaton, "foo"),
+          SingularBuiltInTypeTestSequence3("foo", "en-US", "foo",  Seq("foo"), "foo",
+            "foo", "foo", "foo", Seq("foo"), "foo"),
+          SingularBuiltInTypeTestSequence4(Seq("foo"), Int_(1), Int_(-1), Int_(-1), 1,
+            1, 1, 1, Int_(1), Int_(1)),
+          SingularBuiltInTypeTestSequence5(1, 1, 1, Int_(1),
+            DataRecord(_, _, "foo"), DataRecord(_, _, "foo"))) =>
         case _ => error("match failed: " + obj.toString)
       }
     check(obj)

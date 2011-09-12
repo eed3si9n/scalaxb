@@ -22,10 +22,11 @@
 
 package scalaxb.compiler.wsdl11
 
-import scalaxb.compiler.{Logger, Config, Snippet, ReferenceNotFound, Module}
+import scalaxb.compiler.{Config, Snippet, ReferenceNotFound, Module}
 import Module.{NL, indent, camelCase}
+import com.weiglewilczek.slf4s.Logging
 
-trait GenSource {
+trait GenSource extends Logging {
   import wsdl11._
   import scalaxb.{DataRecord}
   import scala.collection.mutable
@@ -37,15 +38,13 @@ trait GenSource {
   val SOAP_MEP_REQUEST_RESPONSE = "http://www.w3.org/2003/05/soap/mep/request-response"
   val SOAP_MEP_SOAP_RESPONSE = "http://www.w3.org/2003/05/soap/mep/soap-response"
 
-  def logger: Logger
-  def log(msg: String) = logger.log(msg)
   def context: WsdlContext
   def scope: scala.xml.NamespaceBinding
   def schemas = context.xsdcontext.schemas.toList
   def xsdgenerator: scalaxb.compiler.xsd.GenSource
 
   def generate(definition: XDefinitionsType): Snippet = {
-    log("wsdl11: GenSource.generate")
+    logger.debug("generate")
     Snippet(
       (soap11Bindings(definition) map {makeSoap11Binding}) ++
       (soap12Bindings(definition) map {makeSoap12Binding}): _*)
@@ -76,7 +75,7 @@ trait GenSource {
       else buildRPCStyleArgs(input) map {_.toScalaCode} mkString(", ")
 
     val name = camelCase(op.name)
-    log("wsdl11#makeOperation: " + name)
+    logger.debug("makeOperation: " + name)
 
     val retval = op.xoperationtypeoption match {
       case DataRecord(_, _, XOnewayoperationSequence(input)) =>
@@ -92,7 +91,7 @@ trait GenSource {
       case _ => error("unsupported.")
     }
 
-    log("wsdl11#makeOperation: " + retval)
+    logger.debug("makeOperation: " + retval)
     retval
   }
 
@@ -112,7 +111,7 @@ trait GenSource {
   def makeSoap12OpBinding(binding: XBinding_operationType, intf: XPortTypeType,
                            defaultDocument: Boolean): String = {
     val op = boundOperation(binding, intf)
-    log("wsdl11#makeSoap12OpBinding: " + op.name)
+    logger.debug("makeSoap12OpBinding: " + op.name)
 
     val address = "baseAddress"
     val quotedMethod = "\"POST\""
@@ -163,7 +162,7 @@ trait GenSource {
 
     val retval = makeOperation(binding, intf, defaultDocument) + " = " + NL +
       "        " + opImpl
-    log(retval)
+    logger.debug(retval)
     retval
   }
 
@@ -342,7 +341,7 @@ trait GenSource {
 
   def makeSoap11Binding(binding: XBindingType): Snippet = {
     val name = makeBindingName(binding)
-    log("wsdl11#makeSoap11Binding: " + name)
+    logger.debug("makeSoap11Binding: " + name)
 
     val interfaceType = context.interfaces(splitTypeName(binding.typeValue))
     val interfaceTypeName = interfaceType.name.capitalize

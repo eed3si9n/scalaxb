@@ -29,6 +29,7 @@ import scala.xml.{Node, Elem}
 import scala.xml.factory.{XMLLoader}
 import javax.xml.parsers.SAXParser
 import java.io.{File, PrintWriter, Reader, BufferedReader}
+import com.weiglewilczek.slf4s.Logging
 
 case class Config(packageNames: Map[Option[String], Option[String]] = Map(None -> None),
   classPrefix: Option[String] = None,
@@ -103,7 +104,7 @@ object Module {
   }
 }
 
-trait Module extends Logger {
+trait Module extends Logging {
   type RawSchema
   type Schema
   type Context
@@ -205,7 +206,7 @@ trait Module extends Logger {
     val snippets = ListBuffer.empty[Snippet]
     val context = buildContext
 
-    log("processReaders: %s" format files.toString())
+    logger.debug("%s" format files.toString())
 
     val importables0 = ListMap[From, Importable](files map { f =>
       f -> toImportable(ev.toURI(f), ev.toRawSchema(f))}: _*)
@@ -376,18 +377,11 @@ trait Module extends Logger {
           if (elem.text.contains(newline)) out.println("")
           out.println("")
         }
-      case _                => log("error in Module: encountered "
+      case _                => logger.error("error in Module: encountered "
         + n.getClass() + " " + n.toString)
     }
     
     for (node <- nodes) { printNode(node) }
-  }
-  
-  override def log(msg: String) {
-    if (verbose) {
-      println("["+msg+"]")
-      Console.flush
-    }
   }
 
   def printFromResource(source: String, out: PrintWriter) {
@@ -448,13 +442,6 @@ object UnicodeFileReader {
 
 trait Verbose extends Module {
   override val verbose = true
-}
-
-trait Logger {
-  def log(msg: String) {
-    println("["+msg+"]")
-    Console.flush
-  }
 }
 
 class ReferenceNotFound(kind: String, namespace: Option[String], name: String) extends RuntimeException(

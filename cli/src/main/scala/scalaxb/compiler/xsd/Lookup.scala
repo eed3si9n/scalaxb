@@ -22,11 +22,10 @@
 
 package scalaxb.compiler.xsd
 
-import scalaxb.compiler.{Logger, ReferenceNotFound}
+import scalaxb.compiler.{ReferenceNotFound}
 import scala.collection.mutable
 
 trait Lookup extends ContextProcessor {
-  def logger: Logger
   def schema: SchemaDecl
   def context: XsdContext
   

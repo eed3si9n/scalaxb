@@ -22,8 +22,9 @@
 
 package scalaxb.compiler.xsd
 
-import scalaxb.compiler.{ScalaNames, Logger, Config, ReferenceNotFound}
+import scalaxb.compiler.{ScalaNames, Config, ReferenceNotFound}
 import scala.collection.mutable
+import com.weiglewilczek.slf4s.Logging
 
 trait PackageName {
   def packageName(schema: SchemaDecl, context: XsdContext): Option[String] =
@@ -44,9 +45,7 @@ trait PackageName {
     else None
 }
 
-trait ContextProcessor extends ScalaNames with PackageName {
-  def logger: Logger
-  def log(msg: String) = logger.log(msg)
+trait ContextProcessor extends ScalaNames with PackageName with Logging {
   def config: Config
   val newline = System.getProperty("line.separator")
   val XSI_URL = "http://www.w3.org/2001/XMLSchema-instance"
@@ -57,7 +56,7 @@ trait ContextProcessor extends ScalaNames with PackageName {
   val XS_PREFIX = "xs"
   
   def processContext(context: XsdContext) {
-    log("xsd.ContextProcessor#processContext")
+    logger.debug("processContext")
     context.packageNames ++= config.packageNames
     
     (None :: (config.packageNames.valuesIterator.toList.distinct)) map {
@@ -104,7 +103,7 @@ trait ContextProcessor extends ScalaNames with PackageName {
             if (decl.family != List(elem.name, elem.name) && config.prependFamilyName) Some(decl.family.head)
             else None
           val name = makeProtectedTypeName(schema.targetNamespace, prefix, elem, context)
-          log("ContextProcessor#processContent: %s's %s is named %s" format(elem.name, decl.name, name))
+          logger.debug("processContent: %s's %s is named %s" format(elem.name, decl.name, name))
           name
         })
       case decl: SimpleTypeDecl if containsEnumeration(decl) =>
@@ -152,14 +151,14 @@ trait ContextProcessor extends ScalaNames with PackageName {
          if !base.abstractValue &&
            !context.schemas.exists(schema => context.duplicatedTypes.contains((schema, base))) ) {
       context.typeNames(base) = makeTraitName(base)
-      log("ContextProcessor#processContext: naming trait %s" format context.typeNames(base))
+      logger.debug("processContext: naming trait %s" format context.typeNames(base))
     }
       
     for (schema <- context.schemas;
         group <- schema.topGroups.valuesIterator.toList) {
       val pair = (schema, group)
       context.groups += pair
-      log("ContextProcessor#processContext: added group " + group.name) 
+      logger.debug("processContext: added group " + group.name)
     }
     
     for (schema <- context.schemas;
@@ -167,7 +166,7 @@ trait ContextProcessor extends ScalaNames with PackageName {
       elem.substitutionGroup foreach { sub =>
         if (!context.substituteGroups.contains(sub)) {
           context.substituteGroups += sub
-          log("ContextProcessor#processContext: added sub group " + sub) 
+          logger.debug("processContext: added sub group " + sub)
         }
       }
     }

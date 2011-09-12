@@ -130,7 +130,7 @@ trait Parsers extends Args with Params {
     val base = parserList.mkString("(", " ~ " + newline + indent(3), ")") + " ^^ " + newline +
       indent(4) + buildSeqConverter(seq, mixed, wrapInDataRecord)
     val retval = buildParserString(base, occurrence)
-    log("Parsers#buildSeqParser:  " + seq + newline + retval)
+    logger.debug("buildSeqParser:  " + seq + newline + retval)
     retval
   }
   
@@ -191,12 +191,12 @@ trait Parsers extends Args with Params {
     else nonany
     
     val retval = buildParserString(base, occurrence)
-    log("Parsers#buildChoiceParser:  " + choice + newline + retval)
+    logger.debug("buildChoiceParser:  " + choice + newline + retval)
     retval
   }
     
   def buildSubstitionGroupParser(elem: ElemDecl, occurrence: Occurrence, mixed: Boolean): String = {
-    log("Parsers#buildSubstitionGroupParser")    
+    logger.debug("buildSubstitionGroupParser")
     
     val particles = schema.topElems.valuesIterator.toList filter {
       _.substitutionGroup map { sub =>

@@ -278,7 +278,7 @@ trait Args extends Params {
         else "Seq(" + selector + ")"
     }
     
-    log("Args#buildArgForMixed: " + cardinality + ": " + particle + ": " + retval)
+    logger.debug("buildArgForMixed: " + cardinality + ": " + particle + ": " + retval)
     retval
   }
   

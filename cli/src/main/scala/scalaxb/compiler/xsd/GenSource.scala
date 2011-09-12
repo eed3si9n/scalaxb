@@ -22,7 +22,7 @@
 
 package scalaxb.compiler.xsd
 
-import scalaxb.compiler.{Logger, Config, Snippet, CaseClassTooLong}
+import scalaxb.compiler.{Config, Snippet, CaseClassTooLong}
 import scala.collection.mutable
 import scala.collection.{Map}
 import scala.xml._
@@ -36,7 +36,7 @@ abstract class GenSource(val schema: SchemaDecl,
   val MIXED_PARAM = "mixed"
   
   def run: Snippet = {
-    log("xsd: GenSource.run")
+    logger.debug("run")
     
     val snippets = mutable.ListBuffer.empty[Snippet]
     snippets += Snippet(makeSchemaComment, Nil, Nil, Nil)
@@ -83,7 +83,7 @@ abstract class GenSource(val schema: SchemaDecl,
     val localName = buildTypeName(decl, true)
     val fqn = buildTypeName(decl, false)
     val formatterName = buildFormatterName(decl.namespace, localName)
-    log("GenSource.makeTrait: emitting " + fqn)
+    logger.debug("makeTrait: emitting " + fqn)
 
     val childElements = if (decl.mixed) Nil
       else flattenElements(decl, 0)
@@ -194,7 +194,7 @@ abstract class GenSource(val schema: SchemaDecl,
   }
 
   def makeCaseClassWithType(localName: String, fqn: String, decl: ComplexTypeDecl): Snippet = {
-    log("GenSource#makeCaseClassWithType: emitting " + fqn)
+    logger.debug("makeCaseClassWithType: emitting " + fqn)
     val formatterName = buildFormatterName(decl.namespace, localName)
 
     val primary = decl.content match {
@@ -246,7 +246,7 @@ abstract class GenSource(val schema: SchemaDecl,
         case Some(all: AllDecl) if longAll => generateAccessors(all)
         case _ => generateAccessors(paramList, splitSequences(decl))
       }) ::: (if (longAttribute) generateAccessors(attributes) else Nil)
-    log("GenSource#makeCaseClassWithType: generateAccessors " + accessors)
+    logger.debug("makeCaseClassWithType: generateAccessors " + accessors)
         
     val compositors = context.compositorParents.filter(
       x => x._2 == decl).keysIterator.toList

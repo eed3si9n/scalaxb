@@ -7,7 +7,7 @@ Schema (xsd) as the input file.
 Status
 ------
 
-The latest is 0.6.3. Some things may not work.
+The latest is 0.6.4. Some things may not work.
 I'd really appreciate if you could run it against your favorite xsd
 file and let me know the result.
 

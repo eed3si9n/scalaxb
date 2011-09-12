@@ -71,7 +71,7 @@ object Plugin extends sbt.Plugin {
     generateRuntime := true,
     combinedPackageNames <<= combinedPackageNamesSetting,
     scalaxbConfig <<= scalaxbConfigSetting,
-    logLevel <<= (logLevel in Compile).identity
+    logLevel := Level.Info
   )) ++
   Seq(
     scalaxb <<= (generate in Scalaxb) map { x => x }

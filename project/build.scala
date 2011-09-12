@@ -30,6 +30,7 @@ object Builds extends Build {
       if(v endsWith "-SNAPSHOT") Some("Scala Tools Nexus" at nexus + "snapshots/")
       else Some("Scala Tools Nexus" at nexus + "releases/")
     },
-    credentials += Credentials(Path.userHome / ".ivy2" / ".credentials")
+    credentials += Credentials(Path.userHome / ".ivy2" / ".credentials"),
+    publishMavenStyle := true
   )
 }

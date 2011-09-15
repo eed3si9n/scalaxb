@@ -40,9 +40,27 @@ abstract class GenProtocol(val context: XsdContext) extends ContextProcessor {
       case _ => Nil
     }
 
+    def makeDistinct(list: List[(Option[String], String)], counter: Int): List[(Option[String], String)] = {
+      def sortOption(a: (Option[String], String), b: (Option[String], String)) = {
+        (a._1, b._1) match {
+          case (None, _) => true
+          case (_, None) => false
+          case (a, b) => a.get < b.get
+        }
+      }
+
+      val sortedList = list.sortWith((a, b) => sortOption(a, b))
+      sortedList match {
+        case x :: l if x._1.isEmpty => { x :: makeDistinct(l, counter) }
+        case x :: l if !l.isEmpty && x._1.get == l.head._1.get => { (x._1.map(_ + counter.toString), x._2) :: makeDistinct(l, counter + 1) }
+        case x :: l => { x :: makeDistinct(l, counter) }
+        case _ => Nil
+      }
+    }
+
     // including XS_URL into the default scope prints out the xsi:type, which is necessary for anyType round trip.
-    val scopes = (makeScopes(scopeSchemas.toList) :::
-      List((Some(XSI_PREFIX) -> XSI_URL), (Some(XS_PREFIX) -> XS_URL))).distinct
+    val scopes = makeDistinct((makeScopes(scopeSchemas.toList) :::
+      List((Some(XSI_PREFIX) -> XSI_URL), (Some(XS_PREFIX) -> XS_URL))).distinct, 0)
     val packageString = config.protocolPackageName map { "package " + _ + newline } getOrElse{""}
     val packageValueString = config.protocolPackageName map { x => x } getOrElse {""}
     

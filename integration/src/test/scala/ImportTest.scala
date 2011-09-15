@@ -5,9 +5,10 @@ object ImportTest extends TestBase {
   val ipoxsd    = new File("integration/src/test/resources/ipo.xsd")
   val reportxsd = new File("integration/src/test/resources/report.xsd")
   val circularxsd = new File("integration/src/test/resources/circular.xsd")
-  
+  val conflictxsd = new File("integration/src/test/resources/conflict.xsd")
+
   lazy val generated = module.processFiles(
-    List(ipoxsd, reportxsd, circularxsd),
+    List(ipoxsd, reportxsd, circularxsd, conflictxsd),
     Config(packageNames = Map(None -> Some("ipo"),
       Some("http://www.example.com/Report") -> Some("org.report") ),
       packageDir = true, outdir = tmp) )

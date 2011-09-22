@@ -15,13 +15,9 @@ Install scalaxb using it.
 
     $ cs eed3si9n/scalaxb
 
-Don't use sbaz
-==============
+Install a SNAPSHOT version of scalaxb.
 
-NOTE: If you have previously installed scalaxb using sbaz, remove it
-because it interferes with your code:
-
-    $ sudo sbaz remove scalaxb
+    $ cs eed3si9n/scalaxb/x.x.x-SNAPSHOT
 
 Build from source
 =================================
@@ -30,43 +26,32 @@ If you want to build from source, install git.
 
 - http://git-scm.com/
 
-Download and install simple-build-tool (sbt 0.7).
+Download and install simple-build-tool (sbt 0.10).
 
-- http://code.google.com/p/simple-build-tool/wiki/Build
+- https://github.com/harrah/xsbt/wiki/Setup
   
 Grab scalaxb's source and build:
    
     $ git clone git://github.com/eed3si9n/scalaxb.git scalaxb
     $ cd scalaxb
-    $ sbt update "project scalaxb" update proguard
 
-This downloads the dependent libraries and produces
-- target/scala_2.8.1/scalaxb-x.x.x.min.jar
+Open `project/build.scala` using your favorite editor, and change the version number to `local-SNAPSHOT`.
+This way our Ivy cache won't be confused when the official builds are released.
 
-Manually install the jar file.
+    version := "local-SNAPSHOT",
 
-Unix
-----
+Build, and publish it locally.
 
-Copy the jar in your ~/bin directory, then put the line
+    $ sbt "project scalaxb" "+ publish-local"
 
-    java -Xmx1G -cp "scalaxb-x.x.x.min.jar" scalaxb.compiler.Main "$@"
+Finally, install it using conscript.
 
-in a file called scalaxb in your ~/bin directory and do
+    $ cs eed3si9n/scalaxb/local-SNAPSHOT
 
-    $ chmod u+x ~/bin/scalaxb
-  
-This allows you to launch scalaxb in any directory by typing `scalaxb` at the
-terminal.
+Don't use sbaz
+==============
 
-Windows
--------
+NOTE: If you have previously installed scalaxb using sbaz, remove it
+because it interferes with your code:
 
-Create a batch file scalaxb.bat:
-
-    set SCRIPT_DIR=%~dp0
-    java -Xmx1G -jar "%SCRIPT_DIR%scalaxb-x.x.x.min.jar" %*
-
-and put the jar in the same directory as the batch file. Put scalaxb.bat on your
-path so that you can launch scalaxb in any directory by typing `scalaxb` at the
-command prompt.
+    $ sudo sbaz remove scalaxb

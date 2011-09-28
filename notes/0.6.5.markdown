@@ -1,0 +1,2 @@
+## bug fixes and minor enhancements
+- Fixes `anyType` support in wsdl. [#88](https://github.com/eed3si9n/scalaxb/issues/88) reported by [radirk](https://github.com/radirk)

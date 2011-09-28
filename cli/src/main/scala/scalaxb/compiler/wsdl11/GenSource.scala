@@ -24,6 +24,7 @@ package scalaxb.compiler.wsdl11
 
 import scalaxb.compiler.{Logger, Config, Snippet, ReferenceNotFound, Module}
 import Module.{NL, indent, camelCase}
+import scalaxb.compiler.xsd.AnyType
 
 trait GenSource {
   import wsdl11._
@@ -269,6 +270,9 @@ trait GenSource {
           val param = xsdgenerator.buildParam(p) map {camelCase}
           ParamCache(param.toParamName, param.toScalaCode)
         }
+      case AnyType(symbol) =>
+        val scalaCode = "%s: %s".format(paramName, xsdgenerator.buildTypeName(symbol))
+        List(ParamCache(paramName, scalaCode))
       case x => error("unexpected type: " + x)
     }
   } getOrElse {error("unexpected input: " + input)}

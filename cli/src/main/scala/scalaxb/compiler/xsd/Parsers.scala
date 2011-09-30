@@ -23,8 +23,10 @@
 package scalaxb.compiler.xsd
 import scala.collection.mutable
 import scala.collection.immutable
+import com.weiglewilczek.slf4s.Logger
 
 trait Parsers extends Args with Params {
+  override lazy val logger = Logger("xsd.Parsers")
   // called by makeCaseClassWithType and buildSeqParser
   def buildParser(particle: Particle, mixed: Boolean, wrapInDataRecord: Boolean): String =
     buildParser(particle, buildOccurrence(particle), mixed, wrapInDataRecord)

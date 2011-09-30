@@ -26,9 +26,11 @@ import scalaxb.compiler.{Config, Snippet, CaseClassTooLong}
 import scala.collection.mutable
 import scala.collection.{Map}
 import scala.xml._
+import com.weiglewilczek.slf4s.Logger
 
 abstract class GenSource(val schema: SchemaDecl,
-    val context: XsdContext) extends Parsers with XMLOutput {  
+    val context: XsdContext) extends Parsers with XMLOutput {
+  override lazy val logger = Logger("xsd.GenSource")
   type =>?[A, B] = PartialFunction[A, B]
   
   val topElems = schema.topElems

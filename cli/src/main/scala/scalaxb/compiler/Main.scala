@@ -25,17 +25,21 @@ package scalaxb.compiler
 import scalaxb.{Version}
 import scala.collection.mutable.{ListBuffer, ListMap}
 import java.io.File
+import com.weiglewilczek.slf4s.Logger
 
 object Main extends Version {
+  lazy val logger = Logger("main")
+
   def main(args: Array[String]) {
-    try { start(args) } 
+    // change this change SbtApp too.
+    try { start(args); }
     catch {
       case e: ReferenceNotFound =>
-        println(e.getMessage)
+        logger.error(e.getMessage)
       case e: CaseClassTooLong =>
-        println(e.getMessage)
+        logger.error(e.getMessage)
       case e: Exception =>
-        e.printStackTrace
+        logger.error(e.getStackTraceString)
     }
   }
   

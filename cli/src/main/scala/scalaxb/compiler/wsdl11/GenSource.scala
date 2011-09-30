@@ -24,9 +24,9 @@ package scalaxb.compiler.wsdl11
 
 import scalaxb.compiler.{Config, Snippet, ReferenceNotFound, Module}
 import Module.{NL, indent, camelCase}
-import com.weiglewilczek.slf4s.Logging
+import com.weiglewilczek.slf4s.Logger
 
-trait GenSource extends Logging {
+trait GenSource {
   import wsdl11._
   import scalaxb.{DataRecord}
   import scala.collection.mutable
@@ -38,6 +38,7 @@ trait GenSource extends Logging {
   val SOAP_MEP_REQUEST_RESPONSE = "http://www.w3.org/2003/05/soap/mep/request-response"
   val SOAP_MEP_SOAP_RESPONSE = "http://www.w3.org/2003/05/soap/mep/soap-response"
 
+  lazy val logger = Logger("wsdl.GenSource")
   def context: WsdlContext
   def scope: scala.xml.NamespaceBinding
   def schemas = context.xsdcontext.schemas.toList

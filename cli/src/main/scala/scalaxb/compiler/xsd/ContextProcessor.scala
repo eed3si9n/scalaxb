@@ -24,7 +24,7 @@ package scalaxb.compiler.xsd
 
 import scalaxb.compiler.{ScalaNames, Config, ReferenceNotFound}
 import scala.collection.mutable
-import com.weiglewilczek.slf4s.Logging
+import com.weiglewilczek.slf4s.{Logger}
 
 trait PackageName {
   def packageName(schema: SchemaDecl, context: XsdContext): Option[String] =
@@ -45,7 +45,8 @@ trait PackageName {
     else None
 }
 
-trait ContextProcessor extends ScalaNames with PackageName with Logging {
+trait ContextProcessor extends ScalaNames with PackageName {
+  lazy val logger = Logger("xsd.ContextProcessor")
   def config: Config
   val newline = System.getProperty("line.separator")
   val XSI_URL = "http://www.w3.org/2001/XMLSchema-instance"
@@ -73,7 +74,7 @@ trait ContextProcessor extends ScalaNames with PackageName with Logging {
 
     def registerDuplicatedType(schema: SchemaDecl, decl: Decl, name: String) {
       context.duplicatedTypes += ((schema, decl))
-      // println("Warning: %s is defined more than once." format name)
+      // logger.warn("%s is defined more than once." format name)
     }
 
     def nameEnumSimpleType(schema: SchemaDecl, decl: SimpleTypeDecl,

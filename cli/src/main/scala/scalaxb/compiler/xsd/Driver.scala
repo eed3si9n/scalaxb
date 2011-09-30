@@ -27,8 +27,11 @@ import java.io.{File, Reader}
 import java.net.{URI}
 import collection.mutable
 import scala.xml.{Node, Elem}
+import com.weiglewilczek.slf4s.Logger
 
 class Driver extends Module { driver =>
+  override lazy val logger = Logger("xsd.Driver")
+
   type Schema = SchemaDecl
   type Context = XsdContext
   type RawSchema = scala.xml.Node

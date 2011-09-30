@@ -29,7 +29,7 @@ import scala.xml.{Node, Elem}
 import scala.xml.factory.{XMLLoader}
 import javax.xml.parsers.SAXParser
 import java.io.{File, PrintWriter, Reader, BufferedReader}
-import com.weiglewilczek.slf4s.Logging
+import com.weiglewilczek.slf4s.Logger
 
 case class Config(packageNames: Map[Option[String], Option[String]] = Map(None -> None),
   classPrefix: Option[String] = None,
@@ -104,11 +104,12 @@ object Module {
   }
 }
 
-trait Module extends Logging {
+trait Module {
   type RawSchema
   type Schema
   type Context
 
+  lazy val logger = Logger("module")
   def verbose: Boolean = false
   
   val encoding = "UTF-8"
@@ -152,7 +153,7 @@ trait Module extends Logging {
       error("file not found: " + file.toString))
       
     val outfiles = processReaders(files, config)
-    outfiles map { x => println("generated " + x + ".") }
+    outfiles map { x => logger.info("generated " + x + ".") }
     outfiles
   }
 
@@ -201,11 +202,26 @@ trait Module extends Logging {
   def toFileNamePart[From](file: From)(implicit ev: CanBeRawSchema[From, RawSchema]): String =
     """([.]\w+)$""".r.replaceFirstIn(new File(ev.toURI(file).getPath).getName, "")
 
+  // http://www.slf4j.org/apidocs/index.html
+  // http://logback.qos.ch/apidocs/index.html
+  // http://logback.qos.ch/xref/ch/qos/logback/classic/BasicConfigurator.html
+  def configureLogger(config: Config) {
+    import org.slf4j.{LoggerFactory, Logger}
+    import ch.qos.logback.classic.{Logger => LBLogger, Level => LBLevel}
+
+    LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME) match {
+      case root: LBLogger =>
+        if (verbose) root.setLevel(LBLevel.TRACE)
+        else root.setLevel(LBLevel.INFO)
+    }
+  }
+
   def processReaders[From, To](files: Seq[From], config: Config)
      (implicit ev: CanBeRawSchema[From, RawSchema], evTo: CanBeWriter[To]): List[To] = {
     val snippets = ListBuffer.empty[Snippet]
     val context = buildContext
 
+    configureLogger(config)
     logger.debug("%s" format files.toString())
 
     val importables0 = ListMap[From, Importable](files map { f =>
@@ -233,7 +249,7 @@ trait Module extends Logging {
       }
       var added = false
       additionalImportables ++= (additional map { x =>
-        println("Warning: added " + x + " to compilation.")
+        logger.warn("added " + x + " to compilation.")
         added = true
         val importable = toImportable(implicitly[CanBeRawSchema[File, RawSchema]].toURI(x),
           implicitly[CanBeRawSchema[File, RawSchema]].toRawSchema(x))
@@ -326,7 +342,7 @@ trait Module extends Logging {
     val locationBased = importable.importLocations.toList flatMap { loc =>
       val deps = files filter { f => shorten(f.location) == shorten(new URI(loc)) }
       if (deps.isEmpty && loc != XML_LOCATION) {
-        println("Warning: " + (new File(importable.location.getPath).getName) + " imports " + loc +
+        logger.warn((new File(importable.location.getPath).getName) + " imports " + loc +
         " but no schema with that name was compiled together.")
         List(loc)
       }
@@ -335,7 +351,7 @@ trait Module extends Logging {
     val includes = importable.includeLocations.toList flatMap { loc =>
       val deps = files filter { f => shorten(f.location) == shorten(new URI(loc)) }
       if (deps.isEmpty && loc != XML_LOCATION) {
-        println("Warning: " + (new File(importable.location.getPath).getName) + " includes " + loc +
+        logger.warn("Warning: " + (new File(importable.location.getPath).getName) + " includes " + loc +
           " but no schema with that name was compiled together.")
         List(loc)
       }

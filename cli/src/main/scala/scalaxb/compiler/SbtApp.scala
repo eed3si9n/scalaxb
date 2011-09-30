@@ -1,6 +1,10 @@
 package scalaxb.compiler
 
+import com.weiglewilczek.slf4s.Logger
+
 class SbtApp extends xsbti.AppMain {
+  lazy val logger = Logger("main")
+
   def run(config: xsbti.AppConfiguration) = {
     try {
       Main.start(config.arguments)
@@ -8,10 +12,13 @@ class SbtApp extends xsbti.AppMain {
     }
     catch {
       case e: ReferenceNotFound =>
-        println(e.getMessage)
+        logger.error(e.getMessage)
+        Exit(1)
+      case e: CaseClassTooLong =>
+        logger.error(e.getMessage)
         Exit(1)
       case e: Exception =>
-        e.printStackTrace
+        logger.error(e.getStackTraceString)
         Exit(1)
     }
   }

@@ -30,8 +30,10 @@ import java.io.{Reader}
 import java.net.{URI}
 import scala.xml.{Node}
 import scalaxb.compiler.xsd.{SchemaLite, SchemaDecl, XsdContext}
+import com.weiglewilczek.slf4s.Logger
 
 class Driver extends Module { driver =>
+  override lazy val logger = Logger("wsdl.Driver")
   type Schema = WsdlPair
   type Context = WsdlContext
   type RawSchema = scala.xml.Node
@@ -50,7 +52,7 @@ class Driver extends Module { driver =>
     xsddriver.packageName(namespace, context.xsdcontext)
 
   override def processContext(context: Context, cnfg: Config) {
-    log("wsdl11.Driver#processContext: " + (context.xsdcontext.schemas.toList map {_.targetNamespace}))
+    logger.debug("processContext: " + (context.xsdcontext.schemas.toList map {_.targetNamespace}))
     xsddriver.processContext(context.xsdcontext, cnfg)
     context.definitions foreach {processDefinition(_, context)}
   }
@@ -76,13 +78,11 @@ class Driver extends Module { driver =>
     }
 
     val generator = new GenSource {
-      val logger = driver
       val context = cntxt
       val scope = pair.scope
       val xsdgenerator = new scalaxb.compiler.xsd.GenSource(
         SchemaDecl(targetNamespace = ns, scope = pair.scope),
         cntxt.xsdcontext) {
-        val logger = driver
         val config = cnfg
       }
     }
@@ -103,7 +103,7 @@ class Driver extends Module { driver =>
     import scalaxb.compiler.Module.FileExtension
     import scalaxb.compiler.xsd.{ImportDecl}
 
-    log("wsdl11.Driver#toImportable: " + alocation.toString)
+    logger.debug("toImportable: " + alocation.toString)
     val location = alocation
     val raw = rawschema
     lazy val (wsdl: Option[XDefinitionsType], xsdRawSchema: Seq[Node]) = alocation.toString match {
@@ -146,13 +146,13 @@ class Driver extends Module { driver =>
 
     def toSchema(context: Context): WsdlPair = {
       wsdl foreach { wsdl =>
-        log("wsdl11.Driver: " + wsdl.toString)
+        logger.debug(wsdl.toString)
         context.definitions += wsdl
       }
 
       val xsd = xsdRawSchema map { x =>
         val schema = SchemaDecl.fromXML(x, context.xsdcontext)
-        log("wsdl11.Driver: " + schema.toString)
+        logger.debug(schema.toString)
         context.xsdcontext.schemas += schema
         schema
       }

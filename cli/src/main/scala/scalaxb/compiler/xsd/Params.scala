@@ -22,6 +22,7 @@
  
 package scalaxb.compiler.xsd
 import scala.collection.mutable
+import com.weiglewilczek.slf4s.Logger
 
 sealed abstract class Cardinality
 case object Optional extends Cardinality { override def toString: String = "Optional" }
@@ -29,6 +30,7 @@ case object Single extends Cardinality { override def toString: String = "Single
 case object Multiple extends Cardinality { override def toString: String = "Multiple" }
 
 trait Params extends Lookup {
+  override lazy val logger = Logger("xsd.Params")
   val ATTRS_PARAM = "attributes"
   val anyNumbers: mutable.Map[AnyDecl, Int] = mutable.Map()
   
@@ -110,7 +112,7 @@ trait Params extends Lookup {
       case _ =>
         Param(elem.namespace, elem.name, typeSymbol, toCardinality(elem.minOccurs, elem.maxOccurs), nillable, elem.global, elem.qualified, false)
     }
-    log("Params#buildParam:  " + retval.toString)
+    logger.debug("buildParam:  " + retval.toString)
     retval
   }
   
@@ -119,14 +121,14 @@ trait Params extends Lookup {
       else makePrefix(attr.namespace, context) + attr.name
     
     val retval = Param(attr.namespace, name, attr.typeSymbol, toCardinality(attr), false, false, false, true)
-    log("Params#buildParam:  " + retval.toString)
+    logger.debug("buildParam:  " + retval.toString)
     retval
   }
   
   def buildParam(group: AttributeGroupDecl): Param = {
     val retval = Param(group.namespace, group.name,
       new AttributeGroupSymbol(group.namespace, group.name), Single, false, false, true)
-    log("Params#buildParam:  " + retval.toString)
+    logger.debug("buildParam:  " + retval.toString)
     retval    
   }
   

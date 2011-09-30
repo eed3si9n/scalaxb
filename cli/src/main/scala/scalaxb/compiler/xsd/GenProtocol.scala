@@ -24,8 +24,11 @@ package scalaxb.compiler.xsd
 
 import scalaxb.compiler.{Module, Config, Snippet}
 import scala.xml._
+import com.weiglewilczek.slf4s.Logger
 
 abstract class GenProtocol(val context: XsdContext) extends ContextProcessor {
+  override lazy val logger = Logger("xsd.GenProtocol")
+
   def generateProtocol(snippet: Snippet): Seq[Node] = {
     
     val name = makeTypeName("XMLProtocol")

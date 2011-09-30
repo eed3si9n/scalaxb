@@ -22,8 +22,10 @@
 
 package scalaxb.compiler.xsd
 import scala.collection.mutable
+import com.weiglewilczek.slf4s.Logger
 
-trait XMLOutput extends Args {  
+trait XMLOutput extends Args {
+  override lazy val logger = Logger("xsd.XMLOutput")
   def buildXMLString(param: Param): String = {
     val ns = elementNamespaceString(param.global, param.namespace, param.qualified)
     val name = "__obj." + makeParamName(param.name)

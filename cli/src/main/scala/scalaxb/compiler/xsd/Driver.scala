@@ -27,8 +27,11 @@ import java.io.{File, Reader}
 import java.net.{URI}
 import collection.mutable
 import scala.xml.{Node, Elem}
+import com.weiglewilczek.slf4s.Logger
 
 class Driver extends Module { driver =>
+  override lazy val logger = Logger("xsd.Driver")
+
   type Schema = SchemaDecl
   type Context = XsdContext
   type RawSchema = scala.xml.Node
@@ -37,7 +40,6 @@ class Driver extends Module { driver =>
     
   override def processContext(context: Context, cnfg: Config) =
     (new ContextProcessor {
-      val logger = driver
       val config = cnfg    
     }).processContext(context)
 
@@ -46,14 +48,12 @@ class Driver extends Module { driver =>
 
   override def generate(xsd: Schema, context: Context, cnfg: Config): Snippet =
     (new GenSource(xsd, context) {
-      val logger = driver
       val config = cnfg
     }).run
   
   override def generateProtocol(snippet: Snippet,
       context: Context, cnfg: Config): Seq[Node] =
     (new GenProtocol(context) {
-      val logger = driver
       val config = cnfg
     }).generateProtocol(snippet)
   
@@ -73,7 +73,7 @@ class Driver extends Module { driver =>
     def toSchema(context: Context): Schema = {
       val schema = SchemaDecl.fromXML(raw, context)
       context.schemas += schema
-      log("SchemaParser.parse: " + schema.toString())
+      logger.debug("toSchema: " + schema.toString())
       schema
     }
   }

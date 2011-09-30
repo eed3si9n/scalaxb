@@ -22,7 +22,11 @@
  
 package scalaxb.compiler.xsd
 
+import com.weiglewilczek.slf4s.Logger
+
 trait Args extends Params {
+  override lazy val logger = Logger("xsd.Args")
+
   def buildFromXML(typeName: String): String = "scalaxb.fromXML[" + typeName + "]"
   def buildFromXML(typeName: String, selector: String, stackString: String, formatter: Option[String]): String =
     buildFromXML(typeName) + "(%s, %s)%s".format(selector, stackString,
@@ -278,7 +282,7 @@ trait Args extends Params {
         else "Seq(" + selector + ")"
     }
     
-    log("Args#buildArgForMixed: " + cardinality + ": " + particle + ": " + retval)
+    logger.debug("buildArgForMixed: " + cardinality + ": " + particle + ": " + retval)
     retval
   }
   

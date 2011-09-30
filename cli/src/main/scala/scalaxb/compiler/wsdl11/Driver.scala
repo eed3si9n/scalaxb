@@ -33,7 +33,7 @@ import scalaxb.compiler.xsd.{SchemaLite, SchemaDecl, XsdContext}
 import com.weiglewilczek.slf4s.Logger
 
 class Driver extends Module { driver =>
-  override lazy val logger = Logger("wsdl.Driver")
+  override lazy val logger = Logger("wsdl")
   type Schema = WsdlPair
   type Context = WsdlContext
   type RawSchema = scala.xml.Node

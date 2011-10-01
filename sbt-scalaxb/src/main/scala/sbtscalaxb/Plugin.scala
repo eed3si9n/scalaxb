@@ -5,45 +5,68 @@ import scalaxb.{compiler => sc}
 
 object Plugin extends sbt.Plugin {
   import Keys._
-  import Project.Initialize
+  import ScalaxbKeys._
 
-  val Scalaxb          = config("scalaxb") extend(Compile)
-  val scalaxb          = TaskKey[Seq[File]]("scalaxb")
-  val generate         = TaskKey[Seq[File]]("generate")
-  val xsdSource        = SettingKey[File]("xsd-source")
-  val packageName      = SettingKey[String]("package-name")
-  val packageNames     = SettingKey[Map[URI, String]]("package-names")
-  val classPrefix      = SettingKey[Option[String]]("class-prefix")
-  val paramPrefix      = SettingKey[Option[String]]("param-prefix")
-  val wrapContents     = SettingKey[Seq[String]]("wrap-contents")
-  val chunkSize        = SettingKey[Int]("chunk-size")
-  val packageDir       = SettingKey[Boolean]("package-dir")
-  val generateRuntime  = SettingKey[Boolean]("generate-runtime")
-
-  val scalaxbConfig    = SettingKey[sc.Config]("scalaxb-config")
-  val combinedPackageNames = SettingKey[Map[Option[String], Option[String]]]("combined-package-names")
-
-  def generateTask(base: File, config: sc.Config, sources: Seq[File], ll: Level.Value): Seq[File] =
-    sources.headOption map { src =>
-      import sc._
-      val module = Module.moduleByFileName(src, ll == Level.Debug)
-      module.processFiles(sources, config.copy(outdir = base))
-    } getOrElse {Nil}
-
-  def cleanTask(base: File) {
-    IO.delete((base ** "*").get)
-    IO.createDirectory(base)
+  object ScalaxbKeys {
+    lazy val scalaxb          = TaskKey[Seq[File]]("scalaxb")
+    lazy val generate         = TaskKey[Seq[File]]("scalaxb-generate")
+    lazy val scalaxbConfig    = SettingKey[sc.Config]("scalaxb-config")
+    lazy val xsdSource        = SettingKey[File]("scalaxb-xsd-source")
+    lazy val wsdlSource       = SettingKey[File]("scalaxb-wsdl-source")
+    lazy val packageName      = SettingKey[String]("scalaxb-package-name")
+    lazy val packageNames     = SettingKey[Map[URI, String]]("scalaxb-package-names")
+    lazy val classPrefix      = SettingKey[Option[String]]("scalaxb-class-prefix")
+    lazy val paramPrefix      = SettingKey[Option[String]]("scalaxb-param-prefix")
+    lazy val wrapContents     = SettingKey[Seq[String]]("scalaxb-wrap-contents")
+    lazy val chunkSize        = SettingKey[Int]("scalaxb-chunk-size")
+    lazy val packageDir       = SettingKey[Boolean]("scalaxb-package-dir")
+    lazy val generateRuntime  = SettingKey[Boolean]("scalaxb-generate-runtime")
+    lazy val combinedPackageNames = SettingKey[Map[Option[String], Option[String]]]("scalaxb-combined-package-names")
   }
 
-  def combinedPackageNamesSetting: Initialize[Map[Option[String], Option[String]]] =
-    (packageName, packageNames) { (x, xs) =>
-      (xs map { case (k, v) => ((Some(k.toString): Option[String]), Some(v)) }) updated (None, Some(x))
-    }
+  object ScalaxbCompile {
+    def apply(sources: Seq[File], packageName: String, outdir: File): Seq[File] =
+      apply(sources, sc.Config(packageNames = Map(None -> Some(packageName))), outdir, false)
 
-  def scalaxbConfigSetting: Initialize[sc.Config] =
-    (combinedPackageNames, packageDir, classPrefix, paramPrefix,
-     wrapContents, generateRuntime, chunkSize) {
-      (pkg, pkgdir, cpre, ppre, w, rt, cs) =>
+    def apply(sources: Seq[File], config: sc.Config, outdir: File, verbose: Boolean = false): Seq[File] =
+      sources.headOption map { src =>
+        import sc._
+        val module = Module.moduleByFileName(src, verbose)
+        module.processFiles(sources, config.copy(outdir = outdir))
+      } getOrElse {Nil}
+  }
+
+  lazy val scalaxbSettings: Seq[Project.Setting[_]] = inConfig(Compile)(baseScalaxbSettings)
+  lazy val baseScalaxbSettings: Seq[Project.Setting[_]] = Seq(
+    scalaxb <<= generate in scalaxb,
+    generate in scalaxb <<= (sources in scalaxb, scalaxbConfig in scalaxb,
+        sourceManaged in scalaxb, logLevel in scalaxb) map { (sources, config, outdir, ll) =>
+      ScalaxbCompile(sources, config, outdir, ll == Level.Debug) },
+    sourceManaged in scalaxb <<= sourceManaged,
+    sources in scalaxb <<= (xsdSource in scalaxb, wsdlSource in scalaxb) map { (xsd, wsdl) =>
+      (xsd ** "*.xsd").get ++ (wsdl ** "*.wsdl").get },
+    xsdSource in scalaxb <<= sourceDirectory(_ / "xsd"),
+    wsdlSource in scalaxb <<= sourceDirectory(_ / "wsdl"),
+    clean in scalaxb <<= (sourceManaged in scalaxb) map { (outdir) =>
+      IO.delete((outdir ** "*").get)
+      IO.createDirectory(outdir) },
+    packageName in scalaxb := "generated",
+    packageNames in scalaxb := Map(),
+    classPrefix in scalaxb := None,
+    paramPrefix in scalaxb := None,
+    wrapContents in scalaxb := Nil,
+    chunkSize in scalaxb := 10,
+    packageDir in scalaxb := true,
+    generateRuntime in scalaxb := true,
+    combinedPackageNames in scalaxb <<= (packageName in scalaxb, packageNames in scalaxb) { (x, xs) =>
+      (xs map { case (k, v) => ((Some(k.toString): Option[String]), Some(v)) }) updated (None, Some(x)) },
+    scalaxbConfig in scalaxb <<= (combinedPackageNames in scalaxb,
+        packageDir in scalaxb,
+        classPrefix in scalaxb,
+        paramPrefix in scalaxb,
+        wrapContents in scalaxb,
+        generateRuntime in scalaxb,
+        chunkSize in scalaxb) { (pkg, pkgdir, cpre, ppre, w, rt, cs) =>
       sc.Config(packageNames = pkg,
         packageDir = pkgdir,
         classPrefix = cpre,
@@ -51,29 +74,7 @@ object Plugin extends sbt.Plugin {
         wrappedComplexTypes = w.toList,
         generateRuntime = rt,
         sequenceChunkSize = cs
-      )
-    }
-
-  lazy val scalaxbSettings: Seq[Project.Setting[_]] = inConfig(Scalaxb)(Seq(
-    generate <<= (sourceManaged, scalaxbConfig, sources, logLevel, clean) map { (base, config, sources, ll, _) =>
-      generateTask(base, config, sources, ll) },
-    sourceManaged <<= (sourceManaged in Compile).identity,
-    sources <<= (xsdSource) map { xsd => (xsd ** "*.xsd").get },
-    xsdSource <<= (sourceDirectory) { src => src / "main" / "xsd" },
-    clean <<= (sourceManaged) map { (base) => cleanTask(base) },
-    packageName := "generated",
-    packageNames := Map(),
-    classPrefix := None,
-    paramPrefix := None,
-    wrapContents := Nil,
-    chunkSize := 10,
-    packageDir := true,
-    generateRuntime := true,
-    combinedPackageNames <<= combinedPackageNamesSetting,
-    scalaxbConfig <<= scalaxbConfigSetting,
-    logLevel := Level.Info
-  )) ++
-  Seq(
-    scalaxb <<= (generate in Scalaxb) map { x => x }
+      ) },
+    logLevel in scalaxb <<= logLevel?? Level.Info
   )
 }

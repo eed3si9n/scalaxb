@@ -4,9 +4,11 @@ object Builds extends Build {
   import Keys._
   // import sbtappengine.AppenginePlugin
   
-	lazy val root = Project("root", file(".")) aggregate(cli)
-	lazy val cli = Project("scalaxb", file("cli"))
-	lazy val integration = Project("integration", file("integration")) dependsOn(cli % "test")  
+  lazy val root = Project("root", file(".")) aggregate(cli) settings(
+    name := "scalaxb"
+  )
+  lazy val cli = Project("scalaxb", file("cli"))
+  lazy val integration = Project("integration", file("integration")) dependsOn(cli % "test")  
   lazy val scalaxbPlugin = Project("sbt-scalaxb", file("sbt-scalaxb")) dependsOn(cli)
   // lazy val appengine = Project("web", file("web"),
   //  settings = Defaults.defaultSettings ++ AppenginePlugin.webSettings) dependsOn(cli)

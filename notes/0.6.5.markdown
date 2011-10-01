@@ -1,2 +1,18 @@
+## breaking changes
+In an effort to solve namespace conflicts and to increase consistency among the plugins, [sbt plugins best practices](https://github.com/harrah/xsbt/wiki/Plugins-Best-Practices) was created. Here are the changes based on its recommendations:
+
+### keys are under `ScalaxbKeys` object
+Keys provided by sbt-scalaxb now resides in `ScalaxbKeys` object. Place the following at the top of your `build.sbt`:
+
+    import ScalaxbKeys._
+
+Scala identifiers for the keys remain the same (e.g. `packageName`), but key names accessible from the shell are now prefixed with `scalaxb-` (e.g. `scalaxb-package-name`).
+
+### settings are scoped under `scalaxb` task and `Compile` configuration
+`scalaxb`-specific settings are now scoped under `scalaxb` task and `Compile` configuration, instead of `Scalaxb` configuration.
+
+    packageName in scalaxb in Compile := "ipo"
+
 ## bug fixes and minor enhancements
 - Fixes `anyType` support in wsdl. [#88](https://github.com/eed3si9n/scalaxb/issues/88) reported by [radirk](https://github.com/radirk)
+- Uses Logback internally for logging.

@@ -15,4 +15,4 @@ trait Version { val version = "%s" }
   Seq(file)
 }
 
-seq(sbtassembly.Plugin.assemblySettings: _*)
+// seq(sbtassembly.Plugin.assemblySettings: _*)

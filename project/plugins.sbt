@@ -9,3 +9,6 @@ addSbtPlugin("com.eed3si9n" % "sbt-appengine" % "0.3.0")
 libraryDependencies <+= (sbtVersion) { sv =>
   "org.scala-tools.sbt" %% "scripted-plugin" % sv
 }
+
+// scalaxb
+addSbtPlugin("org.scalaxb" % "sbt-scalaxb" % "0.6.5-SNAPSHOT")

@@ -4,6 +4,8 @@ object Builds extends Build {
   import Keys._
   import ScriptedPlugin._
   import sbtappengine.Plugin._
+  import sbtscalaxb.Plugin._
+  import ScalaxbKeys._
 
   lazy val buildSettings = Defaults.defaultSettings ++ Seq(
     version := "0.6.5-SNAPSHOT",
@@ -40,6 +42,14 @@ object Builds extends Build {
 trait Version { val version = "%s" }
 """.format(version))
       Seq(file)
+    }) ++
+    scalaxbSettings ++ Seq(
+    packageName in scalaxb in Compile := "wsdl11",
+    // protocolFileName in scalaxb in Compile := "wsdl11_xmlprotocol.scala",
+    classPrefix in scalaxb in Compile := Some("X"),
+    TaskKey[Seq[File]]("gen-wsdl11") <<= (baseDirectory,
+        sourceDirectory in Compile, scalaxbConfig in scalaxb in Compile) map { (base, src, config) =>
+      ScalaxbCompile(Seq(src / "xsd" / "wsdl11.xsd"), config, base / "src_generated")
     }
   )
 

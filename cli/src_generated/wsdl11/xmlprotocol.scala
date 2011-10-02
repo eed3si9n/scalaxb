@@ -10,8 +10,8 @@ object `package` extends XXMLProtocol { }
 
 trait XXMLProtocol extends scalaxb.XMLStandardTypes {
   val defaultScope = scalaxb.toScope(Some("wsdl") -> "http://schemas.xmlsoap.org/wsdl/",
-    Some("xsi") -> "http://www.w3.org/2001/XMLSchema-instance",
-    Some("xs") -> "http://www.w3.org/2001/XMLSchema")
+    Some("xs") -> "http://www.w3.org/2001/XMLSchema",
+    Some("xsi") -> "http://www.w3.org/2001/XMLSchema-instance")
   implicit lazy val Wsdl11XDocumentationFormat: scalaxb.XMLFormat[wsdl11.XDocumentation] = new DefaultWsdl11XDocumentationFormat {}
   implicit lazy val Wsdl11XDocumentedFormat: scalaxb.XMLFormat[wsdl11.XDocumented] = new DefaultWsdl11XDocumentedFormat {}
   implicit lazy val Wsdl11XOpenAttsFormat: scalaxb.XMLFormat[wsdl11.XOpenAtts] = new DefaultWsdl11XOpenAttsFormat {}

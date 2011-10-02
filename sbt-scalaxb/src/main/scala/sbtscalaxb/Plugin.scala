@@ -21,6 +21,8 @@ object Plugin extends sbt.Plugin {
     lazy val chunkSize        = SettingKey[Int]("scalaxb-chunk-size")
     lazy val packageDir       = SettingKey[Boolean]("scalaxb-package-dir")
     lazy val generateRuntime  = SettingKey[Boolean]("scalaxb-generate-runtime")
+    lazy val protocolFileName = SettingKey[String]("scalaxb-protocol-file-name")
+    lazy val protocolPackageName  = SettingKey[Option[String]]("scalaxb-protocol-package-name")
     lazy val combinedPackageNames = SettingKey[Map[Option[String], Option[String]]]("scalaxb-combined-package-names")
   }
 
@@ -45,8 +47,12 @@ object Plugin extends sbt.Plugin {
     sourceManaged in scalaxb <<= sourceManaged,
     sources in scalaxb <<= (xsdSource in scalaxb, wsdlSource in scalaxb) map { (xsd, wsdl) =>
       (xsd ** "*.xsd").get ++ (wsdl ** "*.wsdl").get },
-    xsdSource in scalaxb <<= sourceDirectory(_ / "xsd"),
-    wsdlSource in scalaxb <<= sourceDirectory(_ / "wsdl"),
+    xsdSource in scalaxb <<= (sourceDirectory, configuration) { (src, config) =>
+      if (Seq(Compile, Test) contains config) src / "xsd"
+      else src / "main" / "xsd" },
+    wsdlSource in scalaxb <<= (sourceDirectory, configuration) { (src, config) =>
+      if (Seq(Compile, Test) contains config) src / "wsdl"
+      else src / "main" / "wsdl" },
     clean in scalaxb <<= (sourceManaged in scalaxb) map { (outdir) =>
       IO.delete((outdir ** "*").get)
       IO.createDirectory(outdir) },
@@ -58,6 +64,8 @@ object Plugin extends sbt.Plugin {
     chunkSize in scalaxb := 10,
     packageDir in scalaxb := true,
     generateRuntime in scalaxb := true,
+    protocolFileName in scalaxb := sc.Defaults.protocolFileName,
+    protocolPackageName in scalaxb := None,
     combinedPackageNames in scalaxb <<= (packageName in scalaxb, packageNames in scalaxb) { (x, xs) =>
       (xs map { case (k, v) => ((Some(k.toString): Option[String]), Some(v)) }) updated (None, Some(x)) },
     scalaxbConfig in scalaxb <<= (combinedPackageNames in scalaxb,
@@ -66,14 +74,18 @@ object Plugin extends sbt.Plugin {
         paramPrefix in scalaxb,
         wrapContents in scalaxb,
         generateRuntime in scalaxb,
-        chunkSize in scalaxb) { (pkg, pkgdir, cpre, ppre, w, rt, cs) =>
+        chunkSize in scalaxb,
+        protocolFileName in scalaxb,
+        protocolPackageName in scalaxb) { (pkg, pkgdir, cpre, ppre, w, rt, cs, pfn, ppn) =>
       sc.Config(packageNames = pkg,
         packageDir = pkgdir,
         classPrefix = cpre,
         paramPrefix = ppre,
         wrappedComplexTypes = w.toList,
         generateRuntime = rt,
-        sequenceChunkSize = cs
+        sequenceChunkSize = cs,
+        protocolFileName = pfn,
+        protocolPackageName = ppn
       ) },
     logLevel in scalaxb <<= logLevel?? Level.Info
   )

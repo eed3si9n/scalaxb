@@ -27,6 +27,7 @@ object Builds extends Build {
     parallelExecution in Test := false
   )
 
+  val Wsdl = config("wsdl") extend(Compile)
   lazy val cliSettings = buildSettings ++ Seq(
     name := "scalaxb",
     libraryDependencies ++= Seq(
@@ -35,7 +36,7 @@ object Builds extends Build {
         "http://databinder.net/repo/org.scala-tools.sbt/launcher-interface/0.7.4/jars/launcher-interface.jar"),
       "com.weiglewilczek.slf4s" %% "slf4s" % "1.0.7",
       "ch.qos.logback" % "logback-classic" % "0.9.29"),
-    unmanagedSourceDirectories in Compile <+= baseDirectory( _ / "src_generated" ),
+    unmanagedSourceDirectories in Compile <+= baseDirectory( _ / "src_managed" ),
     sourceGenerators in Compile <+= (sourceManaged in Compile, version) map { (dir, version) =>
       val file = dir / "version.scala"
       IO.write(file, """package scalaxb
@@ -43,15 +44,13 @@ trait Version { val version = "%s" }
 """.format(version))
       Seq(file)
     }) ++
-    scalaxbSettings ++ Seq(
-    packageName in scalaxb in Compile := "wsdl11",
-    // protocolFileName in scalaxb in Compile := "wsdl11_xmlprotocol.scala",
-    classPrefix in scalaxb in Compile := Some("X"),
-    TaskKey[Seq[File]]("gen-wsdl11") <<= (baseDirectory,
-        sourceDirectory in Compile, scalaxbConfig in scalaxb in Compile) map { (base, src, config) =>
-      ScalaxbCompile(Seq(src / "xsd" / "wsdl11.xsd"), config, base / "src_generated")
-    }
-  )
+    inConfig(Wsdl)(baseScalaxbSettings ++ inTask(scalaxb)(Seq(
+      sources <<= xsdSource map { xsd => Seq(xsd / "wsdl11.xsd") },
+      sourceManaged <<= baseDirectory / "src_managed",
+      packageName := "wsdl11",
+      protocolFileName := "wsdl11_xmlprotocol.scala",
+      classPrefix := Some("X")
+    )))
 
   lazy val itSettings = buildSettings ++ Seq(
     libraryDependencies <++= scalaVersion { sv =>

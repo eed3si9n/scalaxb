@@ -27,6 +27,10 @@ import scala.collection.mutable.{ListBuffer, ListMap}
 import java.io.File
 import com.weiglewilczek.slf4s.Logger
 
+object Defaults {
+  val protocolFileName = "xmlprotocol.scala"
+}
+
 object Main extends Version {
   lazy val logger = Logger("main")
 
@@ -53,7 +57,7 @@ object Main extends Version {
     var paramPrefix: Option[String] = None
     val files = ListBuffer.empty[File]
     var packageDir = false
-    var protocolFileName = "xmlprotocol.scala"
+    var protocolFileName = Defaults.protocolFileName
     var protocolPackageName: Option[String] = None
     var generateRuntime = true
     var sequenceChunkSize = 10

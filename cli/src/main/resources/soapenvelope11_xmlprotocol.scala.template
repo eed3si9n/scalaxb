@@ -9,10 +9,9 @@ val document = scalaxb.toXML[soapenvelope11.Foo](obj, "foo", soapenvelope11.defa
 object `package` extends XMLProtocol { }
 
 trait XMLProtocol extends scalaxb.XMLStandardTypes {
-  val defaultScope = scalaxb.toScope(Some("unq") -> "http://schemas.xmlsoap.org/soap/envelope/",
-    Some("tns") -> "http://schemas.xmlsoap.org/soap/envelope/",
-    Some("xsi") -> "http://www.w3.org/2001/XMLSchema-instance",
-    Some("xs") -> "http://www.w3.org/2001/XMLSchema")
+  val defaultScope = scalaxb.toScope(Some("tns") -> "http://schemas.xmlsoap.org/soap/envelope/",
+    Some("xs") -> "http://www.w3.org/2001/XMLSchema",
+    Some("xsi") -> "http://www.w3.org/2001/XMLSchema-instance")
   implicit lazy val Soapenvelope11EnvelopeFormat: scalaxb.XMLFormat[soapenvelope11.Envelope] = new DefaultSoapenvelope11EnvelopeFormat {}
   implicit lazy val Soapenvelope11HeaderFormat: scalaxb.XMLFormat[soapenvelope11.Header] = new DefaultSoapenvelope11HeaderFormat {}
   implicit lazy val Soapenvelope11BodyFormat: scalaxb.XMLFormat[soapenvelope11.Body] = new DefaultSoapenvelope11BodyFormat {}

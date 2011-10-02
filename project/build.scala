@@ -28,6 +28,8 @@ object Builds extends Build {
   )
 
   val Wsdl = config("wsdl") extend(Compile)
+  val Soap11 = config("soap11") extend(Compile)
+  val Soap12 = config("soap12") extend(Compile)
   lazy val cliSettings = buildSettings ++ Seq(
     name := "scalaxb",
     libraryDependencies ++= Seq(
@@ -50,7 +52,22 @@ trait Version { val version = "%s" }
       packageName := "wsdl11",
       protocolFileName := "wsdl11_xmlprotocol.scala",
       classPrefix := Some("X")
-    )))
+    ))) ++
+    inConfig(Soap11)(baseScalaxbSettings ++ inTask(scalaxb)(soapSettings("soapenvelope11"))) ++
+    inConfig(Soap12)(baseScalaxbSettings ++ inTask(scalaxb)(soapSettings("soapenvelope12")))
+
+  def soapSettings(base: String): Seq[Project.Setting[_]] = Seq(
+    sources <<= xsdSource map { xsd => Seq(xsd / (base + ".xsd")) },
+    sourceManaged <<= sourceDirectory(_ / "main" / "resources"),
+    packageName := base,
+    protocolFileName := base + "_xmlprotocol.scala",
+    packageDir := false,
+    generate <<= (generate) map { files =>
+      val renamed = files map { file => new File(file.getParentFile, file.getName + ".template") }
+      IO.move(files zip renamed)
+      renamed
+    }
+  )
 
   lazy val itSettings = buildSettings ++ Seq(
     libraryDependencies <++= scalaVersion { sv =>

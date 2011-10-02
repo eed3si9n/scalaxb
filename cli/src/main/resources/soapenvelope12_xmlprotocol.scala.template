@@ -3,19 +3,15 @@ package soapenvelope12
     
 /**
 usage:
-import scalaxb._
-import soapenvelope12._
-
-val obj = fromXML[Foo](node)
-val document = toXML[Foo](obj, "foo", defaultScope)
+val obj = scalaxb.fromXML[soapenvelope12.Foo](node)
+val document = scalaxb.toXML[soapenvelope12.Foo](obj, "foo", soapenvelope12.defaultScope)
 **/
 object `package` extends XMLProtocol { }
 
 trait XMLProtocol extends scalaxb.XMLStandardTypes {
-  val defaultScope = scalaxb.toScope(None -> "http://www.w3.org/2003/05/soap-envelope",
-    Some("tns") -> "http://www.w3.org/2003/05/soap-envelope",
-    Some("xsi") -> "http://www.w3.org/2001/XMLSchema-instance",
-    Some("xs") -> "http://www.w3.org/2001/XMLSchema")
+  val defaultScope = scalaxb.toScope(Some("tns") -> "http://www.w3.org/2003/05/soap-envelope",
+    Some("xs") -> "http://www.w3.org/2001/XMLSchema",
+    Some("xsi") -> "http://www.w3.org/2001/XMLSchema-instance")
   implicit lazy val Soapenvelope12EnvelopeFormat: scalaxb.XMLFormat[soapenvelope12.Envelope] = new DefaultSoapenvelope12EnvelopeFormat {}
   implicit lazy val Soapenvelope12HeaderFormat: scalaxb.XMLFormat[soapenvelope12.Header] = new DefaultSoapenvelope12HeaderFormat {}
   implicit lazy val Soapenvelope12BodyFormat: scalaxb.XMLFormat[soapenvelope12.Body] = new DefaultSoapenvelope12BodyFormat {}
@@ -294,7 +290,7 @@ trait XMLProtocol extends scalaxb.XMLStandardTypes {
     val targetNamespace: Option[String] = Some("http://www.w3.org/2003/05/soap-envelope")
     
     def reads(seq: scala.xml.NodeSeq, stack: List[scalaxb.ElemName]): Either[String, soapenvelope12.NotUnderstoodType] = seq match {
-      case node: scala.xml.Node => Right(soapenvelope12.NotUnderstoodType(scalaxb.fromXML[javax.xml.namespace.QName]((node \ "@qname"), scalaxb.ElemName(node) :: stack)))
+      case node: scala.xml.Node => Right(soapenvelope12.NotUnderstoodType(scalaxb.fromXML[javax.xml.namespace.QName]((node \ "@qname"), scalaxb.ElemName(node) :: stack)(scalaxb.qnameXMLFormat(node.scope))))
       case _ => Left("reads failed: seq must be scala.xml.Node")
     }
     
@@ -314,7 +310,7 @@ trait XMLProtocol extends scalaxb.XMLStandardTypes {
     val targetNamespace: Option[String] = Some("http://www.w3.org/2003/05/soap-envelope")
     
     def reads(seq: scala.xml.NodeSeq, stack: List[scalaxb.ElemName]): Either[String, soapenvelope12.SupportedEnvType] = seq match {
-      case node: scala.xml.Node => Right(soapenvelope12.SupportedEnvType(scalaxb.fromXML[javax.xml.namespace.QName]((node \ "@qname"), scalaxb.ElemName(node) :: stack)))
+      case node: scala.xml.Node => Right(soapenvelope12.SupportedEnvType(scalaxb.fromXML[javax.xml.namespace.QName]((node \ "@qname"), scalaxb.ElemName(node) :: stack)(scalaxb.qnameXMLFormat(node.scope))))
       case _ => Left("reads failed: seq must be scala.xml.Node")
     }
     

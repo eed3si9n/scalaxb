@@ -27,6 +27,7 @@ object Builds extends Build {
     parallelExecution in Test := false
   )
 
+  val Xsd = config("xsd") extend(Compile)
   val Wsdl = config("wsdl") extend(Compile)
   val Soap11 = config("soap11") extend(Compile)
   val Soap12 = config("soap12") extend(Compile)
@@ -46,15 +47,18 @@ trait Version { val version = "%s" }
 """.format(version))
       Seq(file)
     }) ++
-    inConfig(Wsdl)(baseScalaxbSettings ++ inTask(scalaxb)(Seq(
-      sources <<= xsdSource map { xsd => Seq(xsd / "wsdl11.xsd") },
-      sourceManaged <<= baseDirectory / "src_managed",
-      packageName := "wsdl11",
-      protocolFileName := "wsdl11_xmlprotocol.scala",
-      classPrefix := Some("X")
-    ))) ++
+    inConfig(Xsd)(baseScalaxbSettings ++ inTask(scalaxb)(customScalaxbSettings("xmlschema"))) ++
+    inConfig(Wsdl)(baseScalaxbSettings ++ inTask(scalaxb)(customScalaxbSettings("wsdl11"))) ++
     inConfig(Soap11)(baseScalaxbSettings ++ inTask(scalaxb)(soapSettings("soapenvelope11"))) ++
     inConfig(Soap12)(baseScalaxbSettings ++ inTask(scalaxb)(soapSettings("soapenvelope12")))
+
+  def customScalaxbSettings(base: String): Seq[Project.Setting[_]] = Seq(
+    sources <<= xsdSource map { xsd => Seq(xsd / (base + ".xsd")) },
+    sourceManaged <<= baseDirectory / "src_managed",
+    packageName := base,
+    protocolFileName := base + "_xmlprotocol.scala",
+    classPrefix := Some("X")
+  )
 
   def soapSettings(base: String): Seq[Project.Setting[_]] = Seq(
     sources <<= xsdSource map { xsd => Seq(xsd / (base + ".xsd")) },

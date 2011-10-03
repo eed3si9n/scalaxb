@@ -397,7 +397,6 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
         scalaxb.Helper.instanceType(node) match {
           case (targetNamespace, Some("bindingType")) => Right(scalaxb.fromXML[wsdl11.XBindingType](node, stack))
           case (targetNamespace, Some("binding_operationType")) => Right(scalaxb.fromXML[wsdl11.XBinding_operationType](node, stack))
-          // case (targetNamespace, Some("binding_operationType")) => Right(scalaxb.fromXML[wsdl11.XFault](node, stack))
           case _ => Right(scalaxb.fromXML[wsdl11.XStartWithExtensionsType](node, stack))
         }
       case _ => Left("reads failed: seq must be scala.xml.Node")  

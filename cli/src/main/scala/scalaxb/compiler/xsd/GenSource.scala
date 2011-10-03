@@ -136,7 +136,7 @@ abstract class GenSource(val schema: SchemaDecl,
     }def reads(seq: scala.xml.NodeSeq, stack: List[scalaxb.ElemName]): Either[String, {fqn}] = seq match {{
       case node: scala.xml.Node =>     
         scalaxb.Helper.instanceType(node) match {{
-          { val cases = for (sub <- context.baseToSubs(decl))
+          { val cases = for (sub <- context.baseToSubs(decl) if sub.isNamed)
               yield makeCaseEntry(sub)
             cases.mkString(newline + indent(4 + compDepth))        
           }

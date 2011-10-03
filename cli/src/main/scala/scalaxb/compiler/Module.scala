@@ -213,6 +213,7 @@ trait Module {
       case root: LBLogger =>
         if (verbose) root.setLevel(LBLevel.TRACE)
         else root.setLevel(LBLevel.INFO)
+      case _ =>
     }
   }
 

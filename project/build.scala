@@ -11,7 +11,7 @@ object Builds extends Build {
     version := "0.6.5-SNAPSHOT",
     organization := "org.scalaxb",
     scalaVersion := "2.9.1",
-    crossScalaVersions := Seq("2.9.1", "2.8.1"),
+    crossScalaVersions := Seq("2.9.1", "2.9.0-1", "2.8.1"), // Scala interpreter bug in 2.9.1
     publishArtifact in (Compile, packageBin) := true,
     publishArtifact in (Test, packageBin) := false,
     publishArtifact in (Compile, packageDoc) := false,
@@ -70,6 +70,8 @@ trait Version { val version = "%s" }
   )
 
   lazy val itSettings = buildSettings ++ Seq(
+    scalaVersion := "2.9.0-1", // Scala interpreter bug in 2.9.1
+    crossScalaVersions := Seq("2.9.0-1"),
     libraryDependencies <++= scalaVersion { sv =>
       testDeps(sv) ++
       Seq(
@@ -103,17 +105,20 @@ trait Version { val version = "%s" }
     publishLocal := {}
   )
 
-  def testDeps(sv: String) =
-    if (sv == "2.8.1") Seq("org.specs2" %% "specs2" % "1.4" % "test")
-    else Seq("org.specs2" %% "specs2" % "1.6.1" % "test",
-      "org.specs2" %% "specs2-scalaz-core" % "6.0.1" % "test")
+  def testDeps(sv: String) = sv match {
+    case "2.8.1" =>   Seq("org.specs2" %% "specs2" % "1.4" % "test")
+    case "2.9.0-1" => Seq("org.specs2" %% "specs2" % "1.6.1" % "test",
+                          "org.specs2" %% "specs2-scalaz-core" % "6.0.RC2" % "test")
+    case _ => Seq("org.specs2" %% "specs2" % "1.6.1" % "test",
+                  "org.specs2" %% "specs2-scalaz-core" % "6.0.1" % "test")
+  }
 
   lazy val root = Project("root", file("."),
     settings = buildSettings ++ Seq(name := "scalaxb")) aggregate(cli)
   lazy val cli = Project("scalaxb", file("cli"),
     settings = cliSettings)
   lazy val integration = Project("integration", file("integration"),
-    settings = itSettings) dependsOn(cli % "test")
+    settings = itSettings) dependsOn(cli % "test->compile")
   lazy val scalaxbPlugin = Project("sbt-scalaxb", file("sbt-scalaxb"),
     settings = pluginSettings) dependsOn(cli)
   lazy val appengine = Project("web", file("web"),

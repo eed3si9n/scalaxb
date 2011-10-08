@@ -10,5 +10,5 @@ libraryDependencies <+= (sbtVersion) { sv =>
   "org.scala-tools.sbt" %% "scripted-plugin" % sv
 }
 
-// scalaxb
-addSbtPlugin("org.scalaxb" % "sbt-scalaxb" % "0.6.5-SNAPSHOT")
+// uncomment this during development, otherwise chicken-egg will entail.
+// addSbtPlugin("org.scalaxb" % "sbt-scalaxb" % "0.6.5-SNAPSHOT")

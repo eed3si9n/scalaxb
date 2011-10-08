@@ -11,18 +11,20 @@ The latest is 0.6.5. Some things may not work.
 I'd really appreciate if you could run it against your favorite xsd
 file and let me know the result.
 
-sbt-scalaxb for sbt 0.10.1
+sbt-scalaxb for sbt 0.11.0
 --------------------------
 
-To call scalaxb from sbt 0.10.1, put this in your `project/plugins/build.sbt`:
+To call scalaxb from sbt 0.11.0, put this in your `project/plugins.sbt`:
 
     libraryDependencies <+= (sbtVersion) { sv => "org.scalaxb" %% "sbt-scalaxb" % ("sbt" + sv + "_X.X") }
 
 and this in `build.sbt`:
 
-    seq(sbtscalaxb.Plugin.scalaxbSettings: _*)
+    seq(scalaxbSettings: _*)
 
-    sourceGenerators in Compile <+= scalaxb.identity
+    packageName in scalaxb in Compile := "xxx"
+
+    sourceGenerators in Compile <+= scalaxb in Compile
 
 `scalaxb` command line
 ----------------------

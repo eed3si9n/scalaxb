@@ -11,7 +11,7 @@ Scala identifiers for the keys remain the same (e.g. `packageName`), but key nam
 ### settings are scoped under `scalaxb` task
 `scalaxb`-specific settings are now scoped under `scalaxb` task. The default settings `scalaxbSettings` is scoped additionally by `Compile` configuration (no more`Scalaxb` configuration!).
 
-    seq(scalaxbSettings)
+    seq(scalaxbSettings: _*)
 
     packageName in scalaxb in Compile := "ipo"
 

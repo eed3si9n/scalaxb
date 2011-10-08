@@ -24,7 +24,7 @@ package scalaxb.compiler.wsdl11
 
 import scalaxb.compiler.{Config, Snippet, ReferenceNotFound, Module}
 import Module.{NL, indent, camelCase}
-import scalaxb.compiler.xsd.AnyType
+import scalaxb.compiler.xsd.{AnyType, XsTypeSymbol, XsAnyType}
 import com.weiglewilczek.slf4s.Logger
 
 trait GenSource {
@@ -191,7 +191,11 @@ trait GenSource {
   // http://www.w3.org/TR/soap12-part0/#L1185
   def invokeToXML(op: XOperationType, input: XParamType, binding: XBinding_operationType, document: Boolean): String = {
     val b = bodyBinding(binding.input)
-    lazy val entity = "%s(%s)".format(paramTypeName(input), buildIRIStyleArgs(input) map {_.toParamName} mkString(", "))
+    lazy val entity = toTypeSymbol(input) match {
+      case AnyType(_) => (buildIRIStyleArgs(input) map {_.toParamName}).head
+      case _ => "%s(%s)".format(paramTypeName(input), buildIRIStyleArgs(input) map {_.toParamName} mkString(", "))
+    }
+
     lazy val opLabel = "\"%s\"".format(op.name)
     lazy val prefix = "targetNamespace map {defaultScope.getPrefix(_)} getOrElse {\"\"}"
 
@@ -227,7 +231,7 @@ trait GenSource {
     val b = bodyBinding(binding.output)
     singleOutputPart(output) map { p =>
       val v =
-        if (b.literal && p.element.isDefined) "x.head"
+        if (b.literal && p.element.isDefined) "x.headOption getOrElse {x}"
         else if (b.literal) """scala.xml.Elem("", "Body", scala.xml.Null, defaultScope, x.toSeq: _*)"""
         else """x.head \ "%s"""" format (p.name.get)
 
@@ -281,9 +285,15 @@ trait GenSource {
     "%s: %s".format(part.name getOrElse {"in"}, partTypeName(part))
   }).mkString(", ")
 
+
+  def paramTypeName(param: XParamType): String = xsdgenerator.buildTypeName(toTypeSymbol(param), true)
+
   def partTypeName(part: XPartType): String = xsdgenerator.buildTypeName(toTypeSymbol(part), true)
 
-  def toTypeSymbol(part: XPartType) = part.typeValue map { typeValue =>
+  def toTypeSymbol(param: XParamType): XsTypeSymbol =
+      paramMessage(param).part.headOption map { toTypeSymbol(_) } getOrElse {XsAnyType}
+
+  def toTypeSymbol(part: XPartType): XsTypeSymbol = part.typeValue map { typeValue =>
     import scalaxb.compiler.xsd.{TypeSymbolParser, ReferenceTypeSymbol}
     val symbol = TypeSymbolParser.fromString(typeValue.toString, splitTypeName(typeValue))
     symbol match {
@@ -324,9 +334,6 @@ trait GenSource {
       }
     } getOrElse {None}
     else None
-
-  def paramTypeName(param: XParamType): String =
-    paramMessage(param).part.headOption map { part => partTypeName(part) } getOrElse {"Any"}
 
   def faultsToTypeName(faults: Seq[XFaultType]): String = faults.toList match {
     case x :: xs =>

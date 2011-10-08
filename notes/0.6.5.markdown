@@ -31,6 +31,7 @@ If you wish to use `scalaxb` task multiple times in a project, you can do so by 
     )
 
 ## bug fixes and minor enhancements
+- Fixes namespace binding conflict. [#84](https://github.com/eed3si9n/scalaxb/issues/84) reported and fixed by [jxstanford](https://github.com/jxstanford)
 - Fixes `anyType` support in wsdl. [#88](https://github.com/eed3si9n/scalaxb/issues/88) reported by [radirk](https://github.com/radirk)
 - Fixes `SOAPAction` header in wsdl.
 - Fixes `Fault` handling in wsdl.

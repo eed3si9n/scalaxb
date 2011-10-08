@@ -39,8 +39,14 @@ trait SoapClients { this: HttpClients =>
         (action map {"""; action="%s"""" format(_)} getOrElse {""})
       val headers = Map[String, String]("Content-Type" -> contentType)
       val s = httpClient.request(r map {_.toString} getOrElse {""}, address, headers)
-      val response = scala.xml.XML.loadString(s)
-      scalaxb.fromXML[Envelope](response)
+
+      try {
+        val response = scala.xml.XML.loadString(s)
+        scalaxb.fromXML[Envelope](response)
+      }
+      catch {
+        case e: Exception => error(e.toString + ": " + s)
+      }
     }
 
     def requestResponse(in: scala.xml.NodeSeq, scope: scala.xml.NamespaceBinding,

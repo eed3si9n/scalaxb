@@ -27,17 +27,21 @@ import scala.xml.{NamespaceBinding}
 import scalaxb._
 import scalaxb.compiler.xsd.{XsTypeSymbol, XsAnyType}
 import xmlschema._
-import scala.collection.immutable
+import scala.collection.mutable.{Builder, ArrayBuffer}
+import scala.collection.generic.CanBuildFrom
 
 object Defs {
-  implicit def schemaToSchemaOps(schema: XSchema): SchemaOps = new SchemaOps(schema)
-  implicit def complexTypeToComplexTypeOps(tagged: Tagged[XComplexType]): ComplexTypeOps = new ComplexTypeOps(tagged)
+  implicit def schemaToSchemaIteration(schema: XSchema): SchemaIteration = SchemaIteration(schema)
+  implicit def complexTypeToComplexTypeOps(tagged: Tagged[XComplexType]): ComplexTypeOps = ComplexTypeOps(tagged)
+  implicit def complexTypeToComplexTypeIteration(tagged: Tagged[XComplexType]): ComplexTypeIteration =
+    ComplexTypeIteration(tagged)
   implicit def elementToElementOps(tagged: Tagged[XElement]): ElementOps = new ElementOps(tagged)
   val XML_SCHEMA_URI = new URI("http://www.w3.org/2001/XMLSchema")
   val XSI_URL = new URI("http://www.w3.org/2001/XMLSchema-instance")
   val XSI_PREFIX = "xsi"
   val XML_URI = new URI("http://www.w3.org/XML/1998/namespace")
   val XML_PREFIX = "xml"
+  val SCALA_URI = new URI("http://scala-lang.org/")
   val SCALAXB_URI = new URI("http://scalaxb.org/")
   val NL = System.getProperty("line.separator")
 
@@ -76,33 +80,35 @@ case class KeyedGroup(key: String, group: XGroup) {
   import Defs._
 
   // List of TaggedElement, TaggedKeyedGroup, or TaggedAny.
-  def particles(implicit tag: HostTag, lookup: Lookup, splitter: Splitter): List[Tagged[_]] =
+  def particles(implicit tag: HostTag, lookup: Lookup, splitter: Splitter): Seq[Tagged[_]] =
     group.arg1.toList flatMap {
-      case DataRecord(_, _, x: XLocalElementable) => List(Tagged(x, tag))
-      case DataRecord(_, Some(particleKey), x: XGroupRef) => List(Tagged(KeyedGroup(particleKey, x), tag))
+      case DataRecord(_, _, x: XLocalElementable) => Seq(Tagged(x, tag))
+      case DataRecord(_, Some(particleKey), x: XGroupRef) => Seq(Tagged(KeyedGroup(particleKey, x), tag))
       case DataRecord(_, Some(particleKey), x: XExplicitGroupable) =>
         if (particleKey == SequenceTag) KeyedGroup(particleKey, x).innerSequenceToParticles
-        else List(Tagged(KeyedGroup(particleKey, x), tag))
-      case DataRecord(_, _, x: XAny) => List(Tagged(x, tag))
+        else Seq(Tagged(KeyedGroup(particleKey, x), tag))
+      case DataRecord(_, _, x: XAny) => Seq(Tagged(x, tag))
     }
 
-  private def innerSequenceToParticles(implicit tag: HostTag, lookup: Lookup, splitter: Splitter): List[Tagged[_]] =
+  private def innerSequenceToParticles(implicit tag: HostTag, lookup: Lookup, splitter: Splitter): Seq[Tagged[_]] =
     if (group.minOccurs != 1 || group.maxOccurs != "1")
       if (group.arg1.length == 1) group.arg1(0) match {
         case DataRecord(_, Some(particleKey), any: XAny) =>
-          List(Tagged(any.copy(
+          Seq(Tagged(any.copy(
             minOccurs = math.min(any.minOccurs.toInt, group.minOccurs.toInt),
             maxOccurs = Occurrence.max(any.maxOccurs, group.maxOccurs)), tag))
         case DataRecord(_, Some(ChoiceTag), choice: XExplicitGroup) =>
-          List(Tagged(KeyedGroup(ChoiceTag, choice.copy(
+          Seq(Tagged(KeyedGroup(ChoiceTag, choice.copy(
             minOccurs = math.min(choice.minOccurs.toInt, group.minOccurs.toInt),
             maxOccurs = Occurrence.max(choice.maxOccurs, group.maxOccurs)) ), tag))
 
-        case _ => List(Tagged(this, tag))
+        case _ => Seq(Tagged(this, tag))
       }
-      else List(Tagged(this, tag))
+      else Seq(Tagged(this, tag))
     else splitter.splitIfLongSequence(Tagged(this, tag))
 }
+
+case class AttributeParam() {}
 
 sealed trait Tagged[+A] {
   def value: A
@@ -121,6 +127,7 @@ object Tagged {
   def apply(value: XAny, tag: HostTag): Tagged[XAny] = TaggedAny(value, tag)
   def apply(value: XsTypeSymbol, tag: HostTag): Tagged[XsTypeSymbol] = TaggedSymbol(value, tag)
   def apply(value: XNoFixedFacet, tag: HostTag): Tagged[XNoFixedFacet] = TaggedEnum(value, tag)
+  def apply(value: AttributeParam, tag: HostTag): Tagged[AttributeParam] = TaggedAttributeParam(value, tag)
 
   implicit def box(value: XSimpleType)(implicit tag: HostTag) = Tagged(value, tag)
   implicit def box(value: XComplexType)(implicit tag: HostTag) = Tagged(value, tag)
@@ -132,6 +139,7 @@ object Tagged {
   implicit def box(value: XAny)(implicit tag: HostTag) = Tagged(value, tag)
   implicit def box(value: XsTypeSymbol)(implicit tag: HostTag) = Tagged(value, tag)
   implicit def box(value: XNoFixedFacet)(implicit tag: HostTag) = Tagged(value, tag)
+  implicit def box(value: AttributeParam)(implicit tag: HostTag) = Tagged(value, tag)
 
   implicit def unbox[A](tagged: Tagged[A]): A = tagged.value
 
@@ -156,25 +164,36 @@ case class TaggedDataRecordSymbol(value: DataRecordSymbol) extends Tagged[DataRe
   val tag = HostTag(Some(SCALAXB_URI), SimpleTypeHost, "DataRecord")
 }
 object TaggedXsAnyType extends TaggedSymbol(XsAnyType, HostTag(Some(Defs.SCALAXB_URI), SimpleTypeHost, "anyType"))
+case class TaggedAttributeParam(value: AttributeParam, tag: HostTag) extends Tagged[AttributeParam] {}
 
 case class DataRecordSymbol(member: Tagged[Any]) extends XsTypeSymbol {
   val name = "DataRecordSymbol(" + member + ")"
 }
 
-class SchemaOps(val schema: XSchema) extends immutable.LinearSeq[Tagged[_]] {
-  lazy val length: Int = list.length
-  def apply(index: Int): Tagged[_] = list(index)
+class SchemaIteration(underlying: Seq[Tagged[_]]) extends scala.collection.IndexedSeqLike[Tagged[_], SchemaIteration] {
+  lazy val length: Int = underlying.length
+  def apply(index: Int): Tagged[_] = underlying(index)
 
-  override def isEmpty = list.isEmpty
-  override def head = list.head
-  override def tail= list.tail
-  override def toList = list
-
-  private lazy val list: List[Tagged[_]] = SchemaOps.schemaToList(schema)
+  override def isEmpty = underlying.isEmpty
+  override def toSeq = underlying.toSeq
+  override def seq = underlying.seq
+  override def iterator = underlying.iterator
+  override protected[this] def newBuilder: Builder[Tagged[_], SchemaIteration] = SchemaIteration.newBuilder
 }
 
-object SchemaOps {
+object SchemaIteration {
   import Defs._
+
+  def apply(schema: XSchema): SchemaIteration = new SchemaIteration(schemaToSeq(schema))
+  def fromSeq(seq: Seq[Tagged[_]]): SchemaIteration = new SchemaIteration(seq)
+
+  def newBuilder: Builder[Tagged[_], SchemaIteration] = new ArrayBuffer[Tagged[_]] mapResult fromSeq
+
+  implicit def canBuildFrom: CanBuildFrom[SchemaIteration, Tagged[_], SchemaIteration] =
+    new CanBuildFrom[SchemaIteration, Tagged[_], SchemaIteration] {
+      def apply(): Builder[Tagged[_], SchemaIteration] = newBuilder
+      def apply(from: SchemaIteration): Builder[Tagged[_], SchemaIteration] = newBuilder
+    }
 
   def toThat(decl: XSimpleType, tag: HostTag): Option[Tagged[_]] = Some(Tagged(decl, tag))
   def toThat(decl: XComplexType, tag: HostTag): Option[Tagged[_]] = Some(Tagged(decl, tag))
@@ -184,7 +203,7 @@ object SchemaOps {
   def toThat(elem: XLocalElementable, tag: HostTag): Option[Tagged[_]] = Some(Tagged(elem, tag))
   def toThat(attr: XAttributable, tag: HostTag): Option[Tagged[_]] = Some(Tagged(attr, tag))
 
-  def schemaToList(schema: XSchema): List[Tagged[_]] = {
+  def schemaToSeq(schema: XSchema): Seq[Tagged[_]] = {
     val ns = schema.targetNamespace
 
     // <xs:element ref="xs:simpleType"/>
@@ -194,12 +213,12 @@ object SchemaOps {
     // <xs:element ref="xs:element"/>
     // <xs:element ref="xs:attribute"/>
     // <xs:element ref="xs:notation"/>
-    schema.xschemasequence1.toList flatMap {
+    schema.xschemasequence1.toSeq flatMap {
       case XSchemaSequence1(data, _) => data match {
         case DataRecord(_, _, x: XTopLevelSimpleType)  =>
           processSimpleType(x)(HostTag(ns, x))
         case DataRecord(_, _, x: XTopLevelComplexType) =>
-          Tagged(x, HostTag(ns, x)).toList
+          Tagged(x, HostTag(ns, x)).toSeq
         case DataRecord(_, Some(key), x: XNamedGroup)  =>
           processGroup(KeyedGroup(key, x))(HostTag(ns, x))
         case DataRecord(_, _, x: XNamedAttributeGroup) =>
@@ -213,8 +232,8 @@ object SchemaOps {
     }
   }
 
-  def processSimpleType(decl: XSimpleType)(implicit tag: HostTag): List[Tagged[_]] =
-    toThat(decl, tag).toList :::
+  def processSimpleType(decl: XSimpleType)(implicit tag: HostTag): Seq[Tagged[_]] =
+    toThat(decl, tag).toSeq ++
     (decl.arg1 match {
       case DataRecord(_, _, restriction: XRestriction) =>
         restriction.arg1.simpleType map { processSimpleType } getOrElse {Nil}
@@ -223,7 +242,7 @@ object SchemaOps {
       case DataRecord(_, _, x: XUnion) => Nil
     })
 
-  def processGroup(group: KeyedGroup)(implicit tag: HostTag): List[Tagged[_]] = {
+  def processGroup(group: KeyedGroup)(implicit tag: HostTag): Seq[Tagged[_]] = {
     // all, choice, and sequence are XExplicitGroupable, which are XGroup.
     // <xs:element name="element" type="xs:localElement"/>
     // <xs:element name="group" type="xs:groupRef"/>
@@ -239,69 +258,83 @@ object SchemaOps {
         case x: XAny               => Nil
       }
 
-    toThat(group, tag).toList :::
-    (group.group.arg1.toList.flatMap {
+    toThat(group, tag).toSeq ++
+    (group.group.arg1.toSeq.flatMap {
       case DataRecord(_, Some(particleKey), x: XParticleOption) => processParticle(particleKey, x)
       case _ => Nil
     })
   }
 
-  def processAttributeGroup(group: XAttributeGroup)(implicit tag: HostTag): List[Tagged[_]] =
-    toThat(group, tag).toList :::
+  def processAttributeGroup(group: XAttributeGroup)(implicit tag: HostTag): Seq[Tagged[_]] =
+    toThat(group, tag).toSeq ++
     processAttrSeq(group.arg1)
 
-  def processTopLevelElement(elem: XTopLevelElement)(implicit tag: HostTag): List[Tagged[_]] =
-    toThat(elem, tag).toList :::
+  def processTopLevelElement(elem: XTopLevelElement)(implicit tag: HostTag): Seq[Tagged[_]] =
+    toThat(elem, tag).toSeq ++
     (elem.xelementoption map { _.value match {
       case x: XLocalComplexType => Tagged(x, tag).toList
       case x: XLocalSimpleType  => processSimpleType(x)
     }} getOrElse {Nil})
 
-  def processLocalElement(elem: XLocalElementable)(implicit tag: HostTag): List[Tagged[_]] =
-    toThat(elem, tag).toList :::
+  def processLocalElement(elem: XLocalElementable)(implicit tag: HostTag): Seq[Tagged[_]] =
+    toThat(elem, tag).toSeq ++
     (elem.xelementoption map { _.value match {
       case x: XLocalComplexType => Tagged(x, tag).toList
       case x: XLocalSimpleType  => processSimpleType(x)
     }} getOrElse {Nil})
 
-  def processAttribute(attr: XAttributable)(implicit tag: HostTag): List[Tagged[_]] =
-    toThat(attr, tag).toList :::
+  def processAttribute(attr: XAttributable)(implicit tag: HostTag): Seq[Tagged[_]] =
+    toThat(attr, tag).toSeq ++
     (attr.simpleType map { processSimpleType } getOrElse {Nil})
 
-  def processAttrSeq(attrSeq: XAttrDeclsSequence)(implicit tag: HostTag): List[Tagged[_]] =
-    attrSeq.xattrdeclsoption1.toList flatMap {
+  def processAttrSeq(attrSeq: XAttrDeclsSequence)(implicit tag: HostTag): Seq[Tagged[_]] =
+    attrSeq.xattrdeclsoption1.toSeq flatMap {
       case DataRecord(_, _, x: XAttributable)      => processAttribute(x)
       case DataRecord(_, _, x: XAttributeGroupRef) => processAttributeGroup(x)
     }
 }
 
-class ComplexTypeOps(val decl: Tagged[XComplexType]) extends immutable.LinearSeq[Tagged[_]] {
-  lazy val length: Int = list.length
-  def apply(index: Int): Tagged[_] = list(index)
-
-  override def isEmpty = list.isEmpty
-  override def head = list.head
-  override def tail= list.tail
-  override def toList = list
-
-  private lazy val list: List[Tagged[_]] = ComplexTypeOps.complexTypeToList(decl)
+case class ComplexTypeOps(decl: Tagged[XComplexType]) {
   def particles(implicit lookup: Lookup, targetNamespace: Option[URI], scope: NamespaceBinding) =
-    ComplexTypeOps.complexTypeToParticles(decl)
+    ComplexTypeIteration.complexTypeToParticles(decl)
 
   def primaryCompositor: Option[Tagged[KeyedGroup]] =
-    ComplexTypeOps.primaryCompositor(decl)
+    ComplexTypeIteration.primaryCompositor(decl)
 
   def primarySequence: Option[Tagged[KeyedGroup]] =
-    ComplexTypeOps.primarySequence(decl)
+    ComplexTypeIteration.primarySequence(decl)
 
   def compositors(implicit lookup: Lookup, targetNamespace: Option[URI], scope: NamespaceBinding) =
-    ComplexTypeOps.complexTypeToCompositors(decl)
+    ComplexTypeIteration.complexTypeToCompositors(decl)
 }
 
-object ComplexTypeOps {
+class ComplexTypeIteration(underlying: Seq[Tagged[_]]) extends scala.collection.IndexedSeqLike[Tagged[_], ComplexTypeIteration] {
+  lazy val length: Int = seq.length
+  def apply(index: Int): Tagged[_] = seq(index)
+
+  override def isEmpty = underlying.isEmpty
+  override def toSeq = underlying.toSeq
+  override def seq = underlying.seq
+  override def iterator = underlying.iterator
+  override protected[this] def newBuilder: Builder[Tagged[_], ComplexTypeIteration] = ComplexTypeIteration.newBuilder
+}
+
+object ComplexTypeIteration {
   import Defs._
 
-  def complexTypeToList(decl: Tagged[XComplexType]): List[Tagged[_]] = {
+  def apply(decl: Tagged[XComplexType]): ComplexTypeIteration = new ComplexTypeIteration(complexTypeToSeq(decl))
+  def fromSeq(seq: Seq[Tagged[_]]): ComplexTypeIteration = new ComplexTypeIteration(seq)
+
+  def newBuilder: Builder[Tagged[_], ComplexTypeIteration] =
+    new ArrayBuffer[Tagged[_]] mapResult fromSeq
+
+  implicit def canBuildFrom: CanBuildFrom[ComplexTypeIteration, Tagged[_], ComplexTypeIteration] =
+    new CanBuildFrom[ComplexTypeIteration, Tagged[_], ComplexTypeIteration] {
+      def apply(): Builder[Tagged[_], ComplexTypeIteration] = newBuilder
+      def apply(from: ComplexTypeIteration): Builder[Tagged[_], ComplexTypeIteration] = newBuilder
+    }
+
+  def complexTypeToSeq(decl: Tagged[XComplexType]): Seq[Tagged[_]] = {
     implicit val tag = decl.tag
 
     // <xs:group ref="xs:typeDefParticle"/>
@@ -309,22 +342,22 @@ object ComplexTypeOps {
     def processRestriction(restriction: XRestrictionTypable) =
       (restriction.xrestrictiontypableoption map { _ match {
         case DataRecord(_, _, XSimpleRestrictionModelSequence(Some(simpleType), _)) =>
-          SchemaOps.processSimpleType(simpleType)
+          SchemaIteration.processSimpleType(simpleType)
         // XTypeDefParticleOption is either XGroupRef or XExplicitGroupable
-        case DataRecord(_, Some(key), x: XGroupRef)          => SchemaOps.processGroup(KeyedGroup(key, x))
-        case DataRecord(_, Some(key), x: XExplicitGroupable) => SchemaOps.processGroup(KeyedGroup(key, x))
+        case DataRecord(_, Some(key), x: XGroupRef)          => SchemaIteration.processGroup(KeyedGroup(key, x))
+        case DataRecord(_, Some(key), x: XExplicitGroupable) => SchemaIteration.processGroup(KeyedGroup(key, x))
         case _ => Nil
-      }} getOrElse {Nil}) ::: SchemaOps.processAttrSeq(restriction.arg2)
+      }} getOrElse {Nil}) ++ SchemaIteration.processAttrSeq(restriction.arg2)
 
     def processExtension(extension: XExtensionTypable) =
       (extension.arg1 map {
         // XTypeDefParticleOption is either XGroupRef or XExplicitGroupable
-        case DataRecord(_, Some(key), x: XGroupRef)          => SchemaOps.processGroup(KeyedGroup(key, x))
-        case DataRecord(_, Some(key), x: XExplicitGroupable) => SchemaOps.processGroup(KeyedGroup(key, x))
+        case DataRecord(_, Some(key), x: XGroupRef)          => SchemaIteration.processGroup(KeyedGroup(key, x))
+        case DataRecord(_, Some(key), x: XExplicitGroupable) => SchemaIteration.processGroup(KeyedGroup(key, x))
         case _ => Nil
-      } getOrElse {Nil}) ::: SchemaOps.processAttrSeq(extension.arg2)
+      } getOrElse {Nil}) ++ SchemaIteration.processAttrSeq(extension.arg2)
 
-    List(decl) :::
+    Seq(decl) ++
     (decl.value.arg1.value match {
       case XComplexContent(_, DataRecord(_, _, x: XComplexRestrictionType), _, _, _) => processRestriction(x)
       case XComplexContent(_, DataRecord(_, _, x: XExtensionType), _, _, _)          => processExtension(x)
@@ -335,10 +368,10 @@ object ComplexTypeOps {
       case XComplexTypeModelSequence1(arg1, arg2) =>
         (arg1 map {
           // XTypeDefParticleOption is either XGroupRef or XExplicitGroupable
-          case DataRecord(_, Some(key), x: XGroupRef)          => SchemaOps.processGroup(KeyedGroup(key, x))
-          case DataRecord(_, Some(key), x: XExplicitGroupable) => SchemaOps.processGroup(KeyedGroup(key, x))
+          case DataRecord(_, Some(key), x: XGroupRef)          => SchemaIteration.processGroup(KeyedGroup(key, x))
+          case DataRecord(_, Some(key), x: XExplicitGroupable) => SchemaIteration.processGroup(KeyedGroup(key, x))
           case _ => Nil
-        } getOrElse {Nil}) ::: SchemaOps.processAttrSeq(arg2)
+        } getOrElse {Nil}) ++ SchemaIteration.processAttrSeq(arg2)
     })
   }
 
@@ -353,19 +386,19 @@ object ComplexTypeOps {
    * <li>if the base is a simple type, it will always return <code>Tagged[XSimpleType]</code></li>
    */
   def complexTypeToParticles(decl: Tagged[XComplexType])
-    (implicit lookup: Lookup, targetNamespace: Option[URI], scope: NamespaceBinding): List[Tagged[_]] = {
+    (implicit lookup: Lookup, targetNamespace: Option[URI], scope: NamespaceBinding): Seq[Tagged[_]] = {
     import lookup._
     implicit val tag = decl.tag
 
-    def toParticles(group: KeyedGroup): List[Tagged[_]] =
+    def toParticles(group: KeyedGroup): Seq[Tagged[_]] =
       if (group.key == "sequence") group.particles
-      else List(Tagged(group, tag))
+      else Seq(Tagged(group, tag))
 
     def processRestriction(restriction: XRestrictionTypable) = {
       val base: QualifiedName = restriction.base
       base match {
-        case BuiltInType(tagged) => List(tagged)
-        case SimpleType(tagged)  => List(tagged)
+        case BuiltInType(tagged) => Seq(tagged)
+        case SimpleType(tagged)  => Seq(tagged)
 
         // if base is a complex type, keep the same for inheritance, otherwise it should be anyType
         case ComplexType(tagged) => complexTypeToParticles(tagged)
@@ -374,7 +407,7 @@ object ComplexTypeOps {
         case _ => restriction.xrestrictiontypableoption map { _ match {
           // see http://www.w3.org/TR/xmlschema-1/#Complex_Type_Definitions for details.
           case DataRecord(_, _, x@XSimpleRestrictionModelSequence(_, _)) =>
-            x.simpleType map { simpleType => List(Tagged(simpleType, tag)) } getOrElse {Nil}
+            x.simpleType map { simpleType => Seq(Tagged(simpleType, tag)) } getOrElse {Nil}
 
           // XTypeDefParticleOption is either XGroupRef or XExplicitGroupable
           case DataRecord(_, Some(key), x: XGroupRef)          => toParticles(KeyedGroup(key, x))
@@ -387,15 +420,15 @@ object ComplexTypeOps {
     def processExtension(extension: XExtensionTypable) =  {
       val base: QualifiedName = extension.base
       base match {
-        case BuiltInType(tagged) => List(tagged)
-        case SimpleType(tagged)  => List(tagged)
+        case BuiltInType(tagged) => Seq(tagged)
+        case SimpleType(tagged)  => Seq(tagged)
         case ComplexType(tagged) =>
           extension.arg1 map {
             // XTypeDefParticleOption is either XGroupRef or XExplicitGroupable
             case DataRecord(_, Some(key), x: XGroupRef)          =>
-              complexTypeToParticles(tagged) ::: toParticles(KeyedGroup(key, x))
+              complexTypeToParticles(tagged) ++ toParticles(KeyedGroup(key, x))
             case DataRecord(_, Some(key), x: XExplicitGroupable) =>
-              complexTypeToParticles(tagged) ::: toParticles(KeyedGroup(key, x))
+              complexTypeToParticles(tagged) ++ toParticles(KeyedGroup(key, x))
             case _ => complexTypeToParticles(tagged)
           } getOrElse { complexTypeToParticles(tagged) }
 
@@ -454,8 +487,8 @@ object ComplexTypeOps {
 
   def complexTypeToCompositors(decl: Tagged[XComplexType])
                       (implicit lookup: Lookup,
-                       targetNamespace: Option[URI], scope: NamespaceBinding): List[Tagged[KeyedGroup]] =
-    primarySequence(decl).toList ++
+                       targetNamespace: Option[URI], scope: NamespaceBinding): Seq[Tagged[KeyedGroup]] =
+    primarySequence(decl).toSeq ++
     decl.particles collect {
       case Compositor(compositor) => compositor
     }

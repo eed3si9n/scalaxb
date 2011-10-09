@@ -11,4 +11,4 @@ libraryDependencies <+= (sbtVersion) { sv =>
 }
 
 // uncomment this during development, otherwise chicken-egg will entail.
-// addSbtPlugin("org.scalaxb" % "sbt-scalaxb" % "0.6.5-SNAPSHOT")
+addSbtPlugin("org.scalaxb" % "sbt-scalaxb" % "0.6.5")

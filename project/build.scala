@@ -4,11 +4,11 @@ object Builds extends Build {
   import Keys._
   import ScriptedPlugin._
   import sbtappengine.Plugin._
-  // import sbtscalaxb.Plugin._
-  // import ScalaxbKeys._
+  import sbtscalaxb.Plugin._
+  import ScalaxbKeys._
 
   lazy val buildSettings = Defaults.defaultSettings ++ Seq(
-    version := "0.6.5",
+    version := "0.6.6-SNAPSHOT",
     organization := "org.scalaxb",
     scalaVersion := "2.9.1",
     crossScalaVersions := Seq("2.9.1", "2.9.0-1", "2.8.1"), // Scala interpreter bug in 2.9.1
@@ -46,7 +46,7 @@ object Builds extends Build {
 trait Version { val version = "%s" }
 """.format(version))
       Seq(file)
-    }) /* ++
+    })  ++
     inConfig(Xsd)(baseScalaxbSettings ++ inTask(scalaxb)(customScalaxbSettings("xmlschema"))) ++
     inConfig(Wsdl)(baseScalaxbSettings ++ inTask(scalaxb)(customScalaxbSettings("wsdl11"))) ++
     inConfig(Soap11)(baseScalaxbSettings ++ inTask(scalaxb)(soapSettings("soapenvelope11"))) ++
@@ -71,7 +71,7 @@ trait Version { val version = "%s" }
       IO.move(files zip renamed)
       renamed
     }
-  ) */
+  )
 
   lazy val itSettings = buildSettings ++ Seq(
     scalaVersion := "2.9.0-1", // Scala interpreter bug in 2.9.1

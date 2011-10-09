@@ -414,7 +414,7 @@ trait Module {
   }
 
   def buildContext: Context
-  
+
   def processSchema(schema: Schema, context: Context, config: Config): Unit
 
   def processContext(context: Context, schemas: Seq[Schema], config: Config): Unit

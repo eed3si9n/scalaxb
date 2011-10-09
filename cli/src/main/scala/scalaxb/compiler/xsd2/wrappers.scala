@@ -96,24 +96,24 @@ case class WrappedSchema(targetNamespace: Option[String],
 
 object WrappedSchema {
   def typeList(schema: XSchema): Seq[Tagged[XAnnotatedable]] =
-    schema collect {
+    schema.toSeq collect {
       case tagged: TaggedSimpleType  => (tagged: Tagged[XAnnotatedable])
       case tagged: TaggedComplexType => (tagged: Tagged[XAnnotatedable])
     }
 
   def elemList(schema: XSchema): Seq[Tagged[XElement]] =
-    schema collect {
+    schema.toSeq collect {
       case tagged: TaggedTopLevelElement => (tagged: Tagged[XElement])
       case tagged: TaggedLocalElement    => (tagged: Tagged[XElement])
     }
 
   def attrList(schema: XSchema): Seq[TaggedAttribute] =
-    schema collect {
+    schema.toSeq collect {
       case tagged: TaggedAttribute => tagged
     }
 
   def choiceList(schema: XSchema): Seq[TaggedKeyedGroup] =
-    schema collect {
+    schema.toSeq collect {
       case tagged: TaggedKeyedGroup if tagged.value.key == "choice" => tagged
     }
 }

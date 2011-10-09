@@ -11,7 +11,8 @@ import scala.xml.NamespaceBinding
 
 case class QualifiedName(namespace: Option[URI], localPart: String) {
   def toScalaCode(implicit targetNamespace: Option[URI], lookup: Lookup): String =
-    if (namespace == targetNamespace || namespace.isEmpty || namespace == Some(XML_SCHEMA_URI)) localPart
+    if (namespace == targetNamespace || namespace.isEmpty ||
+      Seq(Some(XML_SCHEMA_URI), Some(SCALA_URI)).contains(namespace)) localPart
     else lookup.packageName(namespace) + "." + localPart
 }
 
@@ -58,6 +59,7 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter =>
 
         case _ => QualifiedName(tagged.tag.namespace, names.get(x) getOrElse { "??" })
       }
+    case x: TaggedAttributeParam => QualifiedName(Some(SCALA_URI), "Map[String, scalaxb.DataRecord[Any]]")
 
     //    case XsNillableAny  => "scalaxb.DataRecord[Option[Any]]"
     //    case XsLongAll      => "Map[String, scalaxb.DataRecord[Any]]"

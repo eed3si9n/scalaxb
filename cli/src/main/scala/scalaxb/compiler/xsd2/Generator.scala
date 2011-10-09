@@ -35,20 +35,23 @@ class Generator(val schema: ReferenceSchema,
   
   def generateEntitySource: Snippet =
     Snippet(
-      headerSnippet ::
-      (schema.unbound flatMap {
+      headerSnippet +:
+      (schema.unbound.toSeq flatMap {
         case x: TaggedComplexType => processComplexType(x)
         case x: TaggedSimpleType if containsEnumeration(x) && isRootEnumeration(x) => processSimpleType(x)
         case _ => Nil
-      }).toList: _*)
+      }): _*)
 
   def processComplexType(decl: Tagged[XComplexType]): List[Snippet] =
     List(generateComplexTypeEntity(buildTypeName(decl), decl))
 
   def generateComplexTypeEntity(name: QualifiedName, decl: Tagged[XComplexType]) = {
+    def buildLongAttributeRef: Tagged[AttributeParam] =
+      TaggedAttributeParam(AttributeParam(), decl.tag)
+
     val localName = name.localPart
-    val list = splitParticlesIfLong(decl.particles)(decl.tag)
-    val paramList: Seq[Param] = Param.fromList(list)
+    val list = splitParticlesIfLong(decl.particles)(decl.tag) // :+ buildLongAttributeRef
+    val paramList: Seq[Param] = Param.fromSeq(list)
     val pseq = decl.primarySequence
     val compositors =  decl.compositors flatMap {splitIfLongSequence} filter {Some(_) != pseq}
     val compositorCodes = compositors.toList map {generateCompositor}
@@ -68,7 +71,7 @@ class Generator(val schema: ReferenceSchema,
 //      val superString = if (superNames.isEmpty) ""
 //        else " extends " + superNames.mkString(" with ")
     val list = splitParticlesIfLong(decl.particles)
-    val paramList = Param.fromList(list)
+    val paramList = Param.fromSeq(list)
     Snippet(<source>case class { name }({
       paramList.map(_.toScalaCode).mkString(", " + NL + indent(1))})</source>)
   }

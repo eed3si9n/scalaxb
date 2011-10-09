@@ -41,7 +41,7 @@ trait Params { self: Namer with Lookup =>
   }
 
   object Param {
-    def fromList(particles: List[Tagged[Any]]): List[Param] = {
+    def fromSeq(particles: Seq[Tagged[Any]]): Seq[Param] = {
       var anyNumber: Int = 0
       particles map { tagged => tagged.value match {
         case any: XAny =>
@@ -60,6 +60,7 @@ trait Params { self: Namer with Lookup =>
       case x: TaggedKeyedGroup if x.key == ChoiceTag => buildChoiceParam(x)
       case x: TaggedKeyedGroup         => buildCompositorParam(x)
       case x: TaggedAny                => buildAnyParam(x, postfix)
+      case x: TaggedAttributeParam     => buildAttributeParam(x)
       case _ => error("buildParam: " + tagged)
     }
 
@@ -128,6 +129,13 @@ trait Params { self: Namer with Lookup =>
         else "any" + postfix.toString
       val retval = Param(tagged.tag.namespace, name, tagged, Occurrence(any), false)
       logger.debug("buildAnyParam:  " + retval.toString)
+      retval
+    }
+
+    private def buildAttributeParam(tagged: Tagged[AttributeParam]): Param = {
+      val name = "attributes"
+      val retval = Param(tagged.tag.namespace, name, tagged, SingleNotNillable, false)
+      logger.debug("buildAttributeParam:  " + retval.toString)
       retval
     }
   } // object Param

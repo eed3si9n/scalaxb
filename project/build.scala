@@ -66,6 +66,7 @@ object Builds extends Build {
         case _ => "com.github.scopt" %% "scopt" % "2.1.0"
       },
       "log4j" % "log4j" % "1.2.17") },
+    libraryDependencies <++= scalaVersion(testDeps(_)),
     unmanagedSourceDirectories in Compile <+= baseDirectory( _ / "src_managed" ),
     buildInfoPackage := "scalaxb",
     sourceGenerators in Compile <+= buildInfo,

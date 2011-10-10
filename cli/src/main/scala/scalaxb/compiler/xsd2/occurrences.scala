@@ -45,6 +45,11 @@ object Occurrence {
       Occurrence(keyed.group.minOccurs.toInt, keyed.group.maxOccurs, false)
   }
 
+  def apply(attr: XAttributable): Occurrence = attr.use match {
+    case XRequired => SingleNotNillable
+    case _ => OptionalNotNillable
+  }
+
   val SingleNotNillable = Occurrence(1, 1, false)
   val SingleNillable = Occurrence(1, 1, true)
   val OptionalNotNillable = Occurrence(0, 1, false)

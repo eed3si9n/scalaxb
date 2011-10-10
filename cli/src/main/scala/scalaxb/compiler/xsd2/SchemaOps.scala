@@ -108,7 +108,7 @@ case class KeyedGroup(key: String, group: XGroup) {
     else splitter.splitIfLongSequence(Tagged(this, tag))
 }
 
-case class AttributeParam() {}
+case class AttributeSeqParam() {}
 
 sealed trait Tagged[+A] {
   def value: A
@@ -129,7 +129,7 @@ object Tagged {
   def apply(value: XAny, tag: HostTag): Tagged[XAny] = TaggedAny(value, tag)
   def apply(value: XsTypeSymbol, tag: HostTag): Tagged[XsTypeSymbol] = TaggedSymbol(value, tag)
   def apply(value: XNoFixedFacet, tag: HostTag): Tagged[XNoFixedFacet] = TaggedEnum(value, tag)
-  def apply(value: AttributeParam, tag: HostTag): Tagged[AttributeParam] = TaggedAttributeParam(value, tag)
+  def apply(value: AttributeSeqParam, tag: HostTag): Tagged[AttributeSeqParam] = TaggedAttributeSeqParam(value, tag)
 
   implicit def box(value: XSimpleType)(implicit tag: HostTag) = Tagged(value, tag)
   implicit def box(value: XComplexType)(implicit tag: HostTag) = Tagged(value, tag)
@@ -141,7 +141,7 @@ object Tagged {
   implicit def box(value: XAny)(implicit tag: HostTag) = Tagged(value, tag)
   implicit def box(value: XsTypeSymbol)(implicit tag: HostTag) = Tagged(value, tag)
   implicit def box(value: XNoFixedFacet)(implicit tag: HostTag) = Tagged(value, tag)
-  implicit def box(value: AttributeParam)(implicit tag: HostTag) = Tagged(value, tag)
+  implicit def box(value: AttributeSeqParam)(implicit tag: HostTag) = Tagged(value, tag)
 
   implicit def unbox[A](tagged: Tagged[A]): A = tagged.value
 
@@ -167,7 +167,7 @@ case class TaggedDataRecordSymbol(value: DataRecordSymbol) extends Tagged[DataRe
   val tag = HostTag(Some(SCALAXB_URI), SimpleTypeHost, "DataRecord")
 }
 object TaggedXsAnyType extends TaggedSymbol(XsAnyType, HostTag(Some(Defs.SCALAXB_URI), SimpleTypeHost, "anyType"))
-case class TaggedAttributeParam(value: AttributeParam, tag: HostTag) extends Tagged[AttributeParam] {}
+case class TaggedAttributeSeqParam(value: AttributeSeqParam, tag: HostTag) extends Tagged[AttributeSeqParam] {}
 
 case class DataRecordSymbol(member: Tagged[Any]) extends XsTypeSymbol {
   val name = "DataRecordSymbol(" + member + ")"
@@ -549,7 +549,29 @@ object ComplexTypeIteration {
       mergeAttributeSeqs(qnameAttributes(extension.base),
         SchemaIteration.processAttrSeq(extension.arg2))
 
-    decl.value.arg1.value match {
+    // move anyAttribute to the end.
+    def reorder(xs: Seq[Tagged[_]]): Seq[Tagged[_]] = {
+      val (l, r) = xs partition {
+        case x: TaggedAnyAttribute => true
+        case _ => false
+      }
+      r ++ l
+    }
+
+    def resolve(xs: Seq[Tagged[_]]): Seq[Tagged[_]] = xs map {
+      case x: TaggedAnyAttribute => x
+      case x: TaggedAttribute =>
+        x.value.ref map {
+          case Attribute(attr) => attr
+        } getOrElse {x}
+      case x: TaggedAttributeGroup =>
+        x.value.ref map {
+          case AttributeGroup(group) => group
+        } getOrElse {x}
+      case x => x
+    }
+
+    val retval = decl.value.arg1.value match {
       case XComplexContent(_, DataRecord(_, _, x: XComplexRestrictionType), _, _, _) => processRestriction(x)
       case XComplexContent(_, DataRecord(_, _, x: XExtensionType), _, _, _)          => processExtension(x)
       case XSimpleContent(_, DataRecord(_, _, x: XSimpleRestrictionType), _, _)      => processRestriction(x)
@@ -559,6 +581,7 @@ object ComplexTypeIteration {
       case XComplexTypeModelSequence1(arg1, arg2) =>
         SchemaIteration.processAttrSeq(arg2)
     }
+    reorder(resolve(retval))
   }
 }
 

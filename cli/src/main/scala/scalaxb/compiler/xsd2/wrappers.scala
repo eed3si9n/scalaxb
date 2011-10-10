@@ -31,9 +31,9 @@ import java.net.{URI}
 case class ReferenceSchema(targetNamespace: Option[URI],
                            topElems: immutable.ListMap[String, Tagged[XElement]],
                            topTypes: immutable.ListMap[String, Tagged[XAnnotatedable]],
-                           topAttrs: immutable.ListMap[String, Tagged[XAttributable]],
+                           topAttrs: immutable.ListMap[String, TaggedAttr[XAttributable]],
                            topGroups: immutable.ListMap[String, Tagged[KeyedGroup]],
-                           topAttrGroups: immutable.ListMap[String, Tagged[XAttributeGroup]],
+                           topAttrGroups: immutable.ListMap[String, TaggedAttr[XAttributeGroup]],
                            scope: scala.xml.NamespaceBinding,
                            unbound: XSchema)
 
@@ -51,7 +51,7 @@ object ReferenceSchema {
         case XSchemaSequence1(DataRecord(_, _, x: XTopLevelComplexType), _) =>
           HostTag(ns, x).name -> Tagged(x, HostTag(ns, x))
       }: _*),
-      immutable.ListMap[String, Tagged[XAttributable]](schema.xschemasequence1 collect {
+      immutable.ListMap[String, TaggedAttr[XAttributable]](schema.xschemasequence1 collect {
         case XSchemaSequence1(DataRecord(_, _, x: XTopLevelAttribute), _) =>
           HostTag(ns, x).name -> Tagged(x, HostTag(ns, x))
       }: _*),
@@ -59,7 +59,7 @@ object ReferenceSchema {
         case XSchemaSequence1(DataRecord(_, Some(key), x: XNamedGroup), _) =>
           HostTag(ns, x).name -> Tagged(KeyedGroup(key, x), HostTag(ns, x))
       }: _*),
-      immutable.ListMap[String, Tagged[XAttributeGroup]](schema.xschemasequence1 collect {
+      immutable.ListMap[String, TaggedAttr[XAttributeGroup]](schema.xschemasequence1 collect {
         case XSchemaSequence1(DataRecord(_, _, x: XNamedAttributeGroup), _) =>
           HostTag(ns, x).name -> Tagged(x, HostTag(ns, x))
       }: _*),

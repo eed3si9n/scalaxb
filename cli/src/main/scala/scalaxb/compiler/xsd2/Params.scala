@@ -38,6 +38,27 @@ trait Params { self: Namer with Lookup =>
       toTraitScalaCode + (
         if (occurrence == OptionalNotNillable && attribute) " = None"
         else "")
+
+    def toAttributeAccessor(implicit targetNamespace: Option[URI]): String =
+      "lazy val " + toTraitScalaCode + " = " + (occurrence match {
+        case SingleNotNillable =>
+          """%s(%s).as[%s]""".format(
+            makeParamName(ATTRS_PARAM),
+            quote(buildAttributeNodeName),
+            singleTypeName
+          )
+        case _ =>
+          """%s.get(%s) map {_.as[%s]}""".format(
+            makeParamName(ATTRS_PARAM),
+            quote(buildAttributeNodeName),
+            singleTypeName
+          )
+      })
+
+    def buildAttributeNodeName: String = typeSymbol match {
+      case TaggedAttribute(x: XTopLevelAttribute, _) => "@" + QualifiedName(namespace, name).toString
+      case _ => "@" + QualifiedName(None, name).toString
+    }
   }
 
   object Param {
@@ -51,6 +72,11 @@ trait Params { self: Namer with Lookup =>
       }}
     }
 
+    // called by generateAccessors
+    def fromAttributes(attributes: Seq[Tagged[_]]): Seq[Param] = attributes collect {
+      case x: TaggedAttribute => buildAttributeParam(x)
+    }
+
     // tagged can be Tagged[XSimpleType], Tagged[BuiltInSymbol], Tagged[XLocalElementable], Tagged[KeyedGroup],
     // Tagged[XAny].
     private def buildParam(tagged: Tagged[Any], postfix: Int) = tagged match {
@@ -60,7 +86,7 @@ trait Params { self: Namer with Lookup =>
       case x: TaggedKeyedGroup if x.key == ChoiceTag => buildChoiceParam(x)
       case x: TaggedKeyedGroup         => buildCompositorParam(x)
       case x: TaggedAny                => buildAnyParam(x, postfix)
-      case x: TaggedAttributeParam     => buildAttributeParam(x)
+      case x: TaggedAttributeSeqParam  => buildAttributeSeqParam(x)
       case _ => error("buildParam: " + tagged)
     }
 
@@ -132,9 +158,16 @@ trait Params { self: Namer with Lookup =>
       retval
     }
 
-    private def buildAttributeParam(tagged: Tagged[AttributeParam]): Param = {
-      val name = "attributes"
-      val retval = Param(tagged.tag.namespace, name, tagged, SingleNotNillable, false)
+    private def buildAttributeSeqParam(tagged: Tagged[AttributeSeqParam]): Param = {
+      val retval = Param(tagged.tag.namespace, ATTRS_PARAM, tagged, SingleNotNillable, false)
+      logger.debug("buildAttributeSeqParam:  " + retval.toString)
+      retval
+    }
+
+    private def buildAttributeParam(tagged: TaggedAttr[XAttributable]): Param = {
+      val attr = tagged.value
+      val name = attr.name.get
+      val retval = Param(tagged.tag.namespace, name, tagged, Occurrence(attr), true)
       logger.debug("buildAttributeParam:  " + retval.toString)
       retval
     }

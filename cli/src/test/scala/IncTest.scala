@@ -2,7 +2,7 @@ import org.specs2.mutable._
 import scalaxb.compiler.{Verbose}
 
 object IncTest extends Specification {
-  val module = new scalaxb.compiler.xsd2.Driver
+  val module = new scalaxb.compiler.xsd2.Driver // with Verbose
 
   "the generated entity source" should {
     val entitySource = module.processNode(<xs:schema targetNamespace="http://www.example.com/"
@@ -596,6 +596,45 @@ object IncTest extends Specification {
     "be referenced as A*" >> {
       println(entitySource)
       entitySource must find(exptectedSeqParamTest)
+    }
+  }
+
+  "an attriubte" should {
+    val entitySource = module.processNode(<xs:schema targetNamespace="http://www.example.com/general"
+        xmlns:xs="http://www.w3.org/2001/XMLSchema"
+        xmlns:gen="http://www.example.com/general">
+      <xs:simpleType name="MilkType">
+        <xs:restriction base="xs:NMTOKEN">
+          <xs:enumeration value="WHOLE"/>
+          <xs:enumeration value="SKIM"/>
+        </xs:restriction>
+      </xs:simpleType>
+
+      <xs:element name="attributeTest">
+        <xs:complexType>
+          <xs:attribute name="milk1" type="gen:MilkType"/>
+          <xs:attribute name="string2" type="xs:string"/>
+          <xs:anyAttribute namespace="##any"/>
+        </xs:complexType>
+      </xs:element>
+
+      <xs:complexType name="anySimpleTypeExtension">
+        <xs:simpleContent>
+          <xs:extension base="xs:anySimpleType">
+             <xs:anyAttribute namespace="##any" processContents="lax"/>
+          </xs:extension>
+        </xs:simpleContent>
+      </xs:complexType>
+    </xs:schema>, "example")(0)
+
+    val exptectedAttributeTest =
+      """case class AttributeTest\(attributes: Map\[String, scalaxb\.DataRecord\[Any\]\]\)\s*
+        |\s*case class AnySimpleTypeExtension\(value: scalaxb\.DataRecord\[Any\],\s*
+        |\s*attributes: Map\[String, scalaxb\.DataRecord\[Any\]\]\)""".stripMargin
+
+    "be referenced as Map[String, scalaxb.DataRecord[Any]]" >> {
+      println(entitySource)
+      entitySource must find(exptectedAttributeTest)
     }
   }
 }

@@ -46,11 +46,19 @@ class Generator(val schema: ReferenceSchema,
     List(generateComplexTypeEntity(buildTypeName(decl), decl))
 
   def generateComplexTypeEntity(name: QualifiedName, decl: Tagged[XComplexType]) = {
+    logger.debug("generateComplexTypeEntity: emitting %s" format name.toString)
+
     def buildLongAttributeRef: Tagged[AttributeParam] =
       TaggedAttributeParam(AttributeParam(), decl.tag)
 
+    logger.debug("generateComplexTypeEntity: decl: %s" format decl.toString)
+    logger.debug("generateComplexTypeEntity: attributes: %s" format decl.flattenAttributes.toString)
+
     val localName = name.localPart
-    val list = splitParticlesIfLong(decl.particles)(decl.tag) // :+ buildLongAttributeRef
+    val attributes = decl.flattenAttributes
+    val list = splitParticlesIfLong(decl.particles)(decl.tag) ++
+      (if (attributes.isEmpty) Nil
+      else Seq(buildLongAttributeRef))
     val paramList: Seq[Param] = Param.fromSeq(list)
     val pseq = decl.primarySequence
     val compositors =  decl.compositors flatMap {splitIfLongSequence} filter {Some(_) != pseq}

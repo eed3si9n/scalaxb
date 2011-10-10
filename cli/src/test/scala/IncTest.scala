@@ -627,14 +627,13 @@ object IncTest extends Specification {
       </xs:complexType>
     </xs:schema>, "example")(0)
 
-    val exptectedAttributeTest =
-      """case class AttributeTest\(attributes: Map\[String, scalaxb\.DataRecord\[Any\]\]\)\s*
-        |\s*case class AnySimpleTypeExtension\(value: scalaxb\.DataRecord\[Any\],\s*
-        |\s*attributes: Map\[String, scalaxb\.DataRecord\[Any\]\]\)""".stripMargin
-
     "be referenced as Map[String, scalaxb.DataRecord[Any]]" >> {
       println(entitySource)
-      entitySource must find(exptectedAttributeTest)
+      entitySource must contain("""case class AttributeTest(attributes: Map[String, scalaxb.DataRecord[Any]])""")
+    }
+
+    "generate an accessor" >> {
+      entitySource must contain("""lazy val milk1: Option[MilkType] = attributes.get("@milk1") map {_.as[MilkType]}""")
     }
   }
 }

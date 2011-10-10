@@ -48,7 +48,7 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter =>
       x.value match {
         case XsAnySimpleType => QualifiedName(Some(SCALAXB_URI), "DataRecord[Any]")
         case XsAnyType => QualifiedName(Some(SCALAXB_URI), "DataRecord[Any]")
-        case symbol: BuiltInSimpleTypeSymbol => QualifiedName(None, symbol.name)
+        case symbol: BuiltInSimpleTypeSymbol => QualifiedName(Some(XML_SCHEMA_URI), symbol.name)
       }
     case x: TaggedSimpleType => buildSimpleTypeTypeName(x)
     case x: TaggedComplexType =>
@@ -66,7 +66,10 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter =>
 
         case _ => QualifiedName(tagged.tag.namespace, names.get(x) getOrElse { "??" })
       }
-    case x: TaggedAttributeParam => QualifiedName(Some(SCALA_URI), "Map[String, scalaxb.DataRecord[Any]]")
+    case x: TaggedAttributeSeqParam => QualifiedName(Some(SCALA_URI), "Map[String, scalaxb.DataRecord[Any]]")
+    case x: TaggedAttribute =>
+      x.value.typeValue map { ref => buildTypeName(resolveType(ref)) } getOrElse {
+        buildSimpleTypeTypeName(Tagged(x.value.simpleType.get, x.tag)) }
 
     //    case XsNillableAny  => "scalaxb.DataRecord[Option[Any]]"
     //    case XsLongAll      => "Map[String, scalaxb.DataRecord[Any]]"
@@ -203,7 +206,22 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter =>
         Some(schema.topElems(localPart))
       case _ => None
     }
+  }
 
+  object Attribute {
+    def unapply(qualifiedName: QualifiedName): Option[TaggedAttr[XAttributable]] = qualifiedName match {
+      case QualifiedName(targetNamespace, localPart) if schema.topAttrs contains localPart =>
+        Some(schema.topAttrs(localPart))
+      case _ => None
+    }
+  }
+
+  object AttributeGroup {
+    def unapply(qualifiedName: QualifiedName): Option[TaggedAttr[XAttributeGroup]] = qualifiedName match {
+      case QualifiedName(targetNamespace, localPart) if schema.topAttrGroups contains localPart =>
+        Some(schema.topAttrGroups(localPart))
+      case _ => None
+    }
   }
 
   def isForeignType(tagged: Tagged[_]): Boolean = tagged match {

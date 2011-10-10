@@ -55,7 +55,7 @@ trait Params { self: Namer with Lookup =>
     // Tagged[XAny].
     private def buildParam(tagged: Tagged[Any], postfix: Int) = tagged match {
       case TaggedSimpleType(decl, tag) => Param(tagged.tag.namespace, tagged.tag.name, tagged, SingleNotNillable, false)
-      case TaggedSymbol(symbol, tag)   => Param(tagged.tag.namespace, tagged.tag.name, tagged, SingleNotNillable, false)
+      case TaggedSymbol(symbol, tag)   => Param(tagged.tag.namespace, "value", tagged, SingleNotNillable, false)
       case x: TaggedLocalElement       => buildElementParam(x)
       case x: TaggedKeyedGroup if x.key == ChoiceTag => buildChoiceParam(x)
       case x: TaggedKeyedGroup         => buildCompositorParam(x)

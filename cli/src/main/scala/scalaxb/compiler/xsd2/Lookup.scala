@@ -5,11 +5,13 @@ import javax.xml.namespace.QName
 import xmlschema._
 import scalaxb._
 import scalaxb.compiler.{ScalaNames, Config, Snippet, ReferenceNotFound}
-import scalaxb.compiler.xsd.{XsAnyType, XsString, BuiltInSimpleTypeSymbol, XsTypeSymbol}
+import scalaxb.compiler.xsd.{XsAnyType, XsAnySimpleType, XsString, BuiltInSimpleTypeSymbol, XsTypeSymbol}
 import Defs._
 import scala.xml.NamespaceBinding
 
 case class QualifiedName(namespace: Option[URI], localPart: String) {
+  override def toString: String = namespace map { ns => "{%s}%s".format(ns.toString, localPart) } getOrElse {localPart}
+  
   def toScalaCode(implicit targetNamespace: Option[URI], lookup: Lookup): String =
     if (namespace == targetNamespace || namespace.isEmpty ||
       Seq(Some(XML_SCHEMA_URI), Some(SCALA_URI)).contains(namespace)) localPart
@@ -18,6 +20,10 @@ case class QualifiedName(namespace: Option[URI], localPart: String) {
 
 object QualifiedName {
   def apply(namespace: URI, name: String): QualifiedName = QualifiedName(Some(namespace), name)
+
+  /** returns QualifiedName if ref is present; otherwise, try with namespace and name.  */
+  def apply(namespace: Option[URI], name: Option[String], ref: Option[QName]): QualifiedName =
+    ref map { apply(_) } getOrElse { QualifiedName(namespace, name.get) }
 
   implicit def apply(qname: QName): QualifiedName =
     QualifiedName(Option[String](qname.getNamespaceURI) map {new URI(_)}, qname.getLocalPart)
@@ -40,6 +46,7 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter =>
     case x: TaggedAny => QualifiedName(Some(SCALAXB_URI), "DataRecord[Any]")
     case x: TaggedSymbol =>
       x.value match {
+        case XsAnySimpleType => QualifiedName(Some(SCALAXB_URI), "DataRecord[Any]")
         case XsAnyType => QualifiedName(Some(SCALAXB_URI), "DataRecord[Any]")
         case symbol: BuiltInSimpleTypeSymbol => QualifiedName(None, symbol.name)
       }

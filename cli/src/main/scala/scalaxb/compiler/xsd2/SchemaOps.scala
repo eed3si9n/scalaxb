@@ -116,14 +116,16 @@ sealed trait Tagged[+A] {
   override def toString: String = "Tagged(%s, %s)".format(value.toString, tag.toString)
 }
 
+sealed trait TaggedAttr[+A] extends Tagged[A] {}
+
 object Tagged {
   def apply(value: XSimpleType, tag: HostTag): Tagged[XSimpleType] = TaggedSimpleType(value, tag)
   def apply(value: XComplexType, tag: HostTag): Tagged[XComplexType] = TaggedComplexType(value, tag)
   def apply(value: KeyedGroup, tag: HostTag): Tagged[KeyedGroup] = TaggedKeyedGroup(value, tag)
-  def apply(value: XAttributeGroup, tag: HostTag): Tagged[XAttributeGroup] = TaggedAttributeGroup(value, tag)
+  def apply(value: XAttributeGroup, tag: HostTag): TaggedAttr[XAttributeGroup] = TaggedAttributeGroup(value, tag)
   def apply(value: XTopLevelElement, tag: HostTag): Tagged[XTopLevelElement] = TaggedTopLevelElement(value, tag)
   def apply(value: XLocalElementable, tag: HostTag): Tagged[XLocalElementable] = TaggedLocalElement(value, tag)
-  def apply(value: XAttributable, tag: HostTag): Tagged[XAttributable] = TaggedAttribute(value, tag)
+  def apply(value: XAttributable, tag: HostTag): TaggedAttr[XAttributable] = TaggedAttribute(value, tag)
   def apply(value: XAny, tag: HostTag): Tagged[XAny] = TaggedAny(value, tag)
   def apply(value: XsTypeSymbol, tag: HostTag): Tagged[XsTypeSymbol] = TaggedSymbol(value, tag)
   def apply(value: XNoFixedFacet, tag: HostTag): Tagged[XNoFixedFacet] = TaggedEnum(value, tag)
@@ -152,10 +154,11 @@ object Tagged {
 case class TaggedSimpleType(value: XSimpleType, tag: HostTag) extends Tagged[XSimpleType] {}
 case class TaggedComplexType(value: XComplexType, tag: HostTag) extends Tagged[XComplexType] {}
 case class TaggedKeyedGroup(value: KeyedGroup, tag: HostTag) extends Tagged[KeyedGroup] {}
-case class TaggedAttributeGroup(value: XAttributeGroup, tag: HostTag) extends Tagged[XAttributeGroup] {}
+case class TaggedAttributeGroup(value: XAttributeGroup, tag: HostTag) extends TaggedAttr[XAttributeGroup] {}
 case class TaggedTopLevelElement(value: XTopLevelElement, tag: HostTag) extends Tagged[XTopLevelElement] {}
 case class TaggedLocalElement(value: XLocalElementable, tag: HostTag) extends Tagged[XLocalElementable] {}
-case class TaggedAttribute(value: XAttributable, tag: HostTag) extends Tagged[XAttributable] {}
+case class TaggedAttribute(value: XAttributable, tag: HostTag) extends TaggedAttr[XAttributable] {}
+case class TaggedAnyAttribute(value: XWildcardable, tag: HostTag) extends TaggedAttr[XWildcardable] {}
 case class TaggedAny(value: XAny, tag: HostTag) extends Tagged[XAny] {}
 case class TaggedSymbol(value: XsTypeSymbol, tag: HostTag) extends Tagged[XsTypeSymbol] {}
 case class TaggedEnum(value: XNoFixedFacet, tag: HostTag) extends Tagged[XNoFixedFacet] {}
@@ -272,14 +275,14 @@ object SchemaIteration {
   def processTopLevelElement(elem: XTopLevelElement)(implicit tag: HostTag): Seq[Tagged[_]] =
     toThat(elem, tag).toSeq ++
     (elem.xelementoption map { _.value match {
-      case x: XLocalComplexType => Tagged(x, tag).toList
+      case x: XLocalComplexType => Tagged(x, tag).toSeq
       case x: XLocalSimpleType  => processSimpleType(x)
     }} getOrElse {Nil})
 
   def processLocalElement(elem: XLocalElementable)(implicit tag: HostTag): Seq[Tagged[_]] =
     toThat(elem, tag).toSeq ++
     (elem.xelementoption map { _.value match {
-      case x: XLocalComplexType => Tagged(x, tag).toList
+      case x: XLocalComplexType => Tagged(x, tag).toSeq
       case x: XLocalSimpleType  => processSimpleType(x)
     }} getOrElse {Nil})
 
@@ -287,11 +290,15 @@ object SchemaIteration {
     toThat(attr, tag).toSeq ++
     (attr.simpleType map { processSimpleType } getOrElse {Nil})
 
+  def processAnyAttribute(anyAttribute: XWildcardable)(implicit tag: HostTag): Seq[Tagged[_]] =
+    Seq(TaggedAnyAttribute(anyAttribute, tag))
+
   def processAttrSeq(attrSeq: XAttrDeclsSequence)(implicit tag: HostTag): Seq[Tagged[_]] =
-    attrSeq.xattrdeclsoption1.toSeq flatMap {
+    (attrSeq.xattrdeclsoption1 flatMap {
       case DataRecord(_, _, x: XAttributable)      => processAttribute(x)
       case DataRecord(_, _, x: XAttributeGroupRef) => processAttributeGroup(x)
-    }
+    }) ++
+    (attrSeq.anyAttribute map {processAnyAttribute} getOrElse {Nil})
 }
 
 case class ComplexTypeOps(decl: Tagged[XComplexType]) {
@@ -306,6 +313,9 @@ case class ComplexTypeOps(decl: Tagged[XComplexType]) {
 
   def compositors(implicit lookup: Lookup, targetNamespace: Option[URI], scope: NamespaceBinding) =
     ComplexTypeIteration.complexTypeToCompositors(decl)
+
+  def flattenAttributes(implicit lookup: Lookup, targetNamespace: Option[URI], scope: NamespaceBinding) =
+    ComplexTypeIteration.complexTypeToAttributes(decl)
 }
 
 class ComplexTypeIteration(underlying: Seq[Tagged[_]]) extends scala.collection.IndexedSeqLike[Tagged[_], ComplexTypeIteration] {
@@ -458,7 +468,6 @@ object ComplexTypeIteration {
           case _ => Nil
         } getOrElse {Nil}
     }
-
   }
 
   def primarySequence(decl: Tagged[XComplexType]): Option[Tagged[KeyedGroup]] =
@@ -492,6 +501,65 @@ object ComplexTypeIteration {
     decl.particles collect {
       case Compositor(compositor) => compositor
     }
+
+  /** attributes of the given decl flattened one level.
+   * returns list of Tagged[XAttributable], Tagged[XAttributeGroup], Tagged[XWildCardable].
+   */
+  def complexTypeToAttributes(decl: Tagged[XComplexType])
+                      (implicit lookup: Lookup,
+                       targetNamespace: Option[URI], scope: NamespaceBinding): Seq[Tagged[_]] = {
+    import lookup._
+    implicit val tag = decl.tag
+
+    def qnameAttributes(base: QualifiedName) = base match {
+      case ComplexType(tagged) => complexTypeToAttributes(tagged)
+      case _ => Nil
+    }
+    
+    def isSameAttribute(lhs: Tagged[_], rhs: Tagged[_]): Boolean = {
+      (lhs, rhs) match {
+        case (l: TaggedAnyAttribute, r: TaggedAnyAttribute) => true
+        case (l: TaggedAttribute, r: TaggedAttribute) =>
+          QualifiedName(decl.tag.namespace, l.value.name, l.value.ref) ==
+          QualifiedName(decl.tag.namespace, r.value.name, r.value.ref)
+        case (l: TaggedAttributeGroup, r: TaggedAttributeGroup) =>
+          QualifiedName(decl.tag.namespace, l.value.name, l.value.ref) ==
+          QualifiedName(decl.tag.namespace, r.value.name, r.value.ref)
+        case _ => false
+      }
+    }
+
+    // since OO's hierarchy does not allow base members to be omitted,
+    // child overrides needs to be implemented some other way.
+    def mergeAttribute(base: Seq[Tagged[_]], child: Tagged[_]): Seq[Tagged[_]] =
+      if (base exists { x => isSameAttribute(x, child) }) base
+      else base :+ child
+
+    def mergeAttributeSeqs(base: Seq[Tagged[_]], children: Seq[Tagged[_]]): Seq[Tagged[_]] =
+      children match {
+        case x :: xs => mergeAttributeSeqs(mergeAttribute(base, x), xs)
+        case Nil => base
+      }
+
+    def processRestriction(restriction: XRestrictionTypable) =
+      mergeAttributeSeqs(qnameAttributes(restriction.base),
+        SchemaIteration.processAttrSeq(restriction.arg2))
+
+    def processExtension(extension: XExtensionTypable) =
+      mergeAttributeSeqs(qnameAttributes(extension.base),
+        SchemaIteration.processAttrSeq(extension.arg2))
+
+    decl.value.arg1.value match {
+      case XComplexContent(_, DataRecord(_, _, x: XComplexRestrictionType), _, _, _) => processRestriction(x)
+      case XComplexContent(_, DataRecord(_, _, x: XExtensionType), _, _, _)          => processExtension(x)
+      case XSimpleContent(_, DataRecord(_, _, x: XSimpleRestrictionType), _, _)      => processRestriction(x)
+      case XSimpleContent(_, DataRecord(_, _, x: XSimpleExtensionType), _, _)        => processExtension(x)
+
+      // this is an abbreviated form of xs:anyType restriction.
+      case XComplexTypeModelSequence1(arg1, arg2) =>
+        SchemaIteration.processAttrSeq(arg2)
+    }
+  }
 }
 
 object Compositor {

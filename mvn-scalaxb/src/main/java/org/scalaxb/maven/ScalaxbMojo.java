@@ -120,6 +120,22 @@ public class ScalaxbMojo extends AbstractMojo {
      */
     private Integer chunkSize;
 
+   /**
+    * Determines whether generated Scala files will be written into a directory
+    * corresponding to their package name.  By default, the generated files are
+    * written in the output directory under a sub-directory that corresponds to
+    * the package name. For example, if the generated classes are in package
+    * 'foo', they will be generated in ${scalaxb.outputDirectory}/foo.  Setting
+    * this value to false will cause the generated sources to be written
+    * directly into the output directory, without creating a directory for the
+    * package.
+    *
+    * @parameter
+    *   default-value="true"
+    *   expression="${scalaxb.package-dir}"
+    */
+   private boolean packageDir;
+
     /**
      *
      * @parameter expression="${scalaxb.verbose}"
@@ -187,49 +203,18 @@ public class ScalaxbMojo extends AbstractMojo {
     }
 
     private List<String> arguments() {
-        List<String> args = new ArrayList<String>();
-        if (verbose) {
-            args.add("-v");
-        }
-
-        args.add("-d");
-        args.add(outputDirectory.getPath());
-
-        args.add("-p");
-        args.add(packageName);
-
-        if (packageNames != null) {
-            for (Map.Entry<String, String> e : packageNames.entrySet()) {
-                args.add("-p" + e.getKey() + "=" + e.getValue());
-            }
-        }
-
-        if (classPrefix != null) {
-            args.add("--class-prefix");
-            args.add(classPrefix);
-        }
-
-        if (parameterPrefix != null) {
-            args.add("--param-prefix");
-            args.add(parameterPrefix);
-        }
-
-        if (!generateRuntime) {
-            args.add("--no-runtime");
-        }
-
-        if (chunkSize != null) {
-            args.add("--chunk-size");
-            args.add(chunkSize.toString());
-        }
-
-        if (wrapContents != null) {
-            for (String type : wrapContents) {
-                args.add("--wrap-contents");
-                args.add(type);
-            }
-        }
-
+        List<String> args = new ArgumentsBuilder()
+            .flag("-v", verbose)
+            .flag("--package-dir", packageDir)
+            .param("-d", outputDirectory.getPath())
+            .param("-p", packageName)
+            .map("-p:", packageNames)
+            .param("--class-prefix", classPrefix)
+            .param("--param-prefix", parameterPrefix)
+            .param("--chunk-size", chunkSize)
+            .flag("--no-runtime", !generateRuntime)
+            .intersperse("--wrap-contents", wrapContents)
+            .getArguments();
         return unmodifiableList(args);
     }
 

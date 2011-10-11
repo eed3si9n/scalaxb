@@ -67,7 +67,9 @@ class Generator(val schema: ReferenceSchema,
     val paramsString =
       if (hasSequenceParam) makeParamName(paramList.head.name) + ": " + paramList.head.singleTypeName + "*"
       else paramList.map(_.toScalaCode).mkString(", " + NL + indent(1))
-    val accessors = (if (attributes.isEmpty) Nil else generateAccessors(attributes))
+    val accessors =
+      (splitParticles(decl.particles)(decl.tag) map { generateLongSeqAccessors(_) } getOrElse {Nil}) ++
+      (attributes.headOption map  { _ => generateAccessors(attributes) } getOrElse {Nil})
 
     Snippet(Snippet(<source>case class { localName }({paramsString}){ accessors.headOption map( _ =>
       " {" + NL + indent(1) + accessors.mkString(NL + indent(1)) + NL + "}" + NL
@@ -111,6 +113,14 @@ class Generator(val schema: ReferenceSchema,
     Snippet(<source>trait { localName }
 { enumValues.mkString(NL) }</source>)
   }
+
+  def generateLongSeqAccessors(splits: Seq[TaggedKeyedGroup]): Seq[String] =
+    splits flatMap { sequence =>
+      implicit val tag = sequence.tag
+      val wrapper = Param.fromSeq(Seq(sequence)).head
+      val paramList = Param.fromSeq(sequence.particles)
+      paramList map { _.toLongSeqAccessor(wrapper.paramName) }
+    }
 
   def generateAccessors(attributes: Seq[Tagged[_]]): Seq[String] =
     Param.fromAttributes(attributes).map{_.toAttributeAccessor}

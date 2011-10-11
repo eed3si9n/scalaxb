@@ -41,18 +41,18 @@ trait Params { self: Namer with Lookup =>
         if (occurrence == OptionalNotNillable && attribute) " = None"
         else "")
 
-    def toAttributeAccessor: String =
+    def toDataRecordMapAccessor(wrapper: String): String =
       "lazy val " + toTraitScalaCode + " = " + (occurrence match {
         case SingleNotNillable =>
           """%s(%s).as[%s]""".format(
-            makeParamName(ATTRS_PARAM),
-            quote(buildAttributeNodeName),
+            wrapper,
+            quote(buildNodeName),
             singleTypeName
           )
         case _ =>
           """%s.get(%s) map {_.as[%s]}""".format(
-            makeParamName(ATTRS_PARAM),
-            quote(buildAttributeNodeName),
+            wrapper,
+            quote(buildNodeName),
             singleTypeName
           )
       })
@@ -60,9 +60,10 @@ trait Params { self: Namer with Lookup =>
     def toLongSeqAccessor(wrapper: String): String =
       """lazy val %s = %s.%s""" format(toTraitScalaCode, wrapper, makeParamName(name))
 
-    def buildAttributeNodeName: String = typeSymbol match {
+    def buildNodeName: String = typeSymbol match {
       case TaggedAttribute(x: XTopLevelAttribute, _) => "@" + QualifiedName(namespace, name).toString
-      case _ => "@" + QualifiedName(None, name).toString
+      case TaggedAttribute(_, _) => "@" + QualifiedName(None, name).toString
+      case _ => QualifiedName(None, name).toString
     }
   }
 

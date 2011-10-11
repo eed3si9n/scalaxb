@@ -407,7 +407,7 @@ object ComplexTypeIteration {
     implicit val tag = decl.tag
 
     def toParticles(group: KeyedGroup): Seq[Tagged[_]] =
-      if (group.key == "sequence") group.particles
+      if (group.key == "sequence" && Occurrence(group).isSingle) group.particles
       else Seq(Tagged(group, tag))
 
     def processRestriction(restriction: XRestrictionTypable) = {

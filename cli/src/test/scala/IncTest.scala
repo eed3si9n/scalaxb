@@ -413,6 +413,13 @@ object IncTest extends Specification {
         </xs:sequence>
       </xs:complexType>
 
+      <xs:complexType name="MultipleSequenceComplexTypeTest">
+        <xs:sequence minOccurs="0" maxOccurs="unbounded">
+          <xs:element name="int1" type="xs:int"/>
+          <xs:element name="int2" type="xs:int"/>
+        </xs:sequence>
+      </xs:complexType>
+
       <xs:complexType name="Person">
         <xs:sequence>
           <xs:element name="firstName" type="xs:string"/>
@@ -438,17 +445,22 @@ object IncTest extends Specification {
         |\s*sequencecomplextypetestsequence7: SequenceComplexTypeTestSequence7\)\s*
         |""".stripMargin
 
-    "generate a case class named FooSequence*" >> {
+    "generate a case class named FooSequence* for non-primary sequences" >> {
       println(entitySource)
       entitySource must contain("""case class SequenceComplexTypeTestSequence""")
     }
 
-    "be referenced as FooSequence if it's made of non-nillable complex type element" >> {
+    "be referenced as fooSequence within the type" >> {
       entitySource must find(expectedSequenceTest)
     }
 
     "not generate anything when the primary sequence is empty" >> {
       entitySource must contain("""case class EmptySequenceComplexTypeTest()""")
+    }
+
+    "generate a case class if the primary sequence is either optional or multiple" >> {
+      entitySource must contain("""case class MultipleSequenceComplexTypeTest(""" +
+        """multiplesequencecomplextypetestsequence: MultipleSequenceComplexTypeTestSequence*)""")
     }
 
     "be split into chunks of case classes when it exceeds 20 particles" >> {

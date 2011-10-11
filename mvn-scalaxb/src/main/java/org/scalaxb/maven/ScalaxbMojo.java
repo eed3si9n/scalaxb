@@ -22,6 +22,7 @@ package org.scalaxb.maven;
  * THE SOFTWARE.
  */
 
+import static java.util.Collections.emptyList;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -233,6 +234,10 @@ public class ScalaxbMojo extends AbstractMojo {
     }
 
     private List<String> schemaFiles() {
+        if (!xsdDirectory.exists()) {
+            return emptyList();
+        }
+
         DirectoryScanner ds = new DirectoryScanner();
         String[] includes = {"**\\*.xsd"};
         ds.setIncludes(includes);

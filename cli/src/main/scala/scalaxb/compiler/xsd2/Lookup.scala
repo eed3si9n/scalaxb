@@ -162,6 +162,14 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter =>
     case _ => throw new ReferenceNotFound("type", typeName.namespace map { _.toString }, typeName.localPart)
   }
 
+  def resolveElement(tagged: Tagged[XElement]): Tagged[XElement] =
+    tagged.ref map { resolveElement(_) } getOrElse {tagged}
+
+  def resolveElement(elementRef: QualifiedName): Tagged[XElement] = elementRef match {
+    case Element(elem) => elem
+    case _ => throw new ReferenceNotFound("element", elementRef.namespace map { _.toString }, elementRef.localPart)
+  }
+
   object AnyType {
     def tagged = Tagged(XsAnyType, HostTag(Some(XML_SCHEMA_URI), SimpleTypeHost, "anyType"))
 

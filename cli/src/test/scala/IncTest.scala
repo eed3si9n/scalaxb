@@ -644,7 +644,7 @@ object IncTest extends Specification {
     }
   }
 
-  "an attriubte" should {
+  "attriubtes" should {
     val entitySource = module.processNode(<xs:schema targetNamespace="http://www.example.com/general"
         xmlns:xs="http://www.w3.org/2001/XMLSchema"
         xmlns:gen="http://www.example.com/general">
@@ -679,6 +679,34 @@ object IncTest extends Specification {
 
     "generate an accessor" >> {
       entitySource must contain("""lazy val milk1: Option[MilkType] = attributes.get("@milk1") map {_.as[MilkType]}""")
+    }
+  }
+
+  "substitution groups" should {
+    val entitySource = module.processNode(<xs:schema targetNamespace="http://www.example.com/general"
+        xmlns:xs="http://www.w3.org/2001/XMLSchema"
+        xmlns:gen="http://www.example.com/general">
+      <xs:simpleType name="MilkType">
+        <xs:restriction base="xs:NMTOKEN">
+          <xs:enumeration value="WHOLE"/>
+          <xs:enumeration value="SKIM"/>
+        </xs:restriction>
+      </xs:simpleType>
+
+      <xs:element name="SubstitutionGroup" type="xs:anyType" abstract="true"/>
+      <xs:element name="SubGroupMember" type="gen:MilkType" substitutionGroup="gen:SubstitutionGroup"/>
+      <xs:element name="SubGroupMember2" type="xs:int" substitutionGroup="gen:SubstitutionGroup"/>
+
+      <xs:complexType name="SubstitutionGroupTest">
+        <xs:sequence>
+          <xs:element ref="gen:SubstitutionGroup"/>
+        </xs:sequence>
+      </xs:complexType>
+    </xs:schema>, "example")(0)
+
+    "be referenced as the group head's type" >> {
+      println(entitySource)
+      entitySource must contain("""case class SubstitutionGroupTest(SubstitutionGroup: scalaxb.DataRecord[Any])""")
     }
   }
 }

@@ -98,20 +98,18 @@ trait Params { self: Namer with Lookup =>
     }
 
     private def buildElementParam(tagged: Tagged[XLocalElementable]): Param = {
-      val elem = tagged.value
-      val name = elem.name.getOrElse(elem.ref map {_.toString} getOrElse {"??"})
-      val typesymbol = elem.name map { _ =>
-        elem.typeValue map { typeValue =>
+      val elem = resolveElement(tagged)
+      val name = elem.name
+      val typesymbol = elem.typeValue map { typeValue =>
           resolveType(typeValue)
-        } getOrElse {
-          elem.xelementoption map { _.value match {
-            case x: XLocalComplexType => Tagged(x, tagged.tag)
-            case x: XLocalSimpleType  => Tagged(x, tagged.tag)
-          }} getOrElse {error("type not found for element: " + tagged.value.toString)}
-        }
-      } getOrElse { Tagged(XsInt, HostTag(Some(XML_SCHEMA_URI), SimpleTypeHost, "int")) }
+      } getOrElse {
+        elem.xelementoption map { _.value match {
+          case x: XLocalComplexType => Tagged(x, tagged.tag)
+          case x: XLocalSimpleType  => Tagged(x, tagged.tag)
+        }} getOrElse {error("type not found for element: " + tagged.value.toString)}
+      }
 
-      val retval = Param(tagged.tag.namespace, name, typesymbol, Occurrence(elem), false)
+      val retval = Param(tagged.tag.namespace, name.get, typesymbol, Occurrence(tagged.value), false)
       logger.debug("buildElementParam:  " + retval.toString)
       retval
     }

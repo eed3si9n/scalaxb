@@ -91,7 +91,8 @@ trait Params { self: Namer with Lookup =>
       case x: TaggedKeyedGroup if x.key == ChoiceTag => buildChoiceParam(x)
       case x: TaggedKeyedGroup         => buildCompositorParam(x)
       case x: TaggedAny                => buildAnyParam(x, postfix)
-      case x: TaggedAttributeSeqParam  => buildAttributeSeqParam(x)
+      case x: TaggedAttributeSeqParam  => buildDataRecordMapParam(ATTRS_PARAM, x)
+      case x: TaggedAllParam           => buildDataRecordMapParam(ALL_PARAM, x)
       case _ => error("buildParam: " + tagged)
     }
 
@@ -163,9 +164,9 @@ trait Params { self: Namer with Lookup =>
       retval
     }
 
-    private def buildAttributeSeqParam(tagged: Tagged[AttributeSeqParam]): Param = {
-      val retval = Param(tagged.tag.namespace, ATTRS_PARAM, tagged, SingleNotNillable, false)
-      logger.debug("buildAttributeSeqParam:  " + retval.toString)
+    private def buildDataRecordMapParam(name: String, tagged: Tagged[_]): Param = {
+      val retval = Param(tagged.tag.namespace, name, tagged, SingleNotNillable, false)
+      logger.debug("buildDataRecordMapParam:  " + retval.toString)
       retval
     }
 

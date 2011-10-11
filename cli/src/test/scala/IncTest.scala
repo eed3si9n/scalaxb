@@ -454,6 +454,10 @@ object IncTest extends Specification {
     "be split into chunks of case classes when it exceeds 20 particles" >> {
       entitySource must contain("""case class LongSequenceComplexTypeTestSequence(int1: Int""")
     }
+
+    "generate accessors for elements within the wrapped sequence" >> {
+      entitySource must contain("""lazy val int1: Int = longsequencecomplextypetestsequence.int1""")
+    }
   }
 
   "choices in a complex type" should {

@@ -108,7 +108,11 @@ case class KeyedGroup(key: String, group: XGroup) {
     else splitter.splitIfLongSequence(Tagged(this, tag))
 }
 
+/** represents attributes param */
 case class AttributeSeqParam() {}
+
+/** represents param created for xs:all. */
+case class AllParam() {}
 
 sealed trait Tagged[+A] {
   def value: A
@@ -130,6 +134,7 @@ object Tagged {
   def apply(value: XsTypeSymbol, tag: HostTag): Tagged[XsTypeSymbol] = TaggedSymbol(value, tag)
   def apply(value: XNoFixedFacet, tag: HostTag): Tagged[XNoFixedFacet] = TaggedEnum(value, tag)
   def apply(value: AttributeSeqParam, tag: HostTag): Tagged[AttributeSeqParam] = TaggedAttributeSeqParam(value, tag)
+  def apply(value: AllParam, tag: HostTag): Tagged[AllParam] = TaggedAllParam(value, tag)
 
   implicit def box(value: XSimpleType)(implicit tag: HostTag) = Tagged(value, tag)
   implicit def box(value: XComplexType)(implicit tag: HostTag) = Tagged(value, tag)
@@ -142,6 +147,7 @@ object Tagged {
   implicit def box(value: XsTypeSymbol)(implicit tag: HostTag) = Tagged(value, tag)
   implicit def box(value: XNoFixedFacet)(implicit tag: HostTag) = Tagged(value, tag)
   implicit def box(value: AttributeSeqParam)(implicit tag: HostTag) = Tagged(value, tag)
+  implicit def box(value: AllParam)(implicit tag: HostTag) = Tagged(value, tag)
 
   implicit def unbox[A](tagged: Tagged[A]): A = tagged.value
 
@@ -168,6 +174,7 @@ case class TaggedDataRecordSymbol(value: DataRecordSymbol) extends Tagged[DataRe
 }
 object TaggedXsAnyType extends TaggedSymbol(XsAnyType, HostTag(Some(Defs.SCALAXB_URI), SimpleTypeHost, "anyType"))
 case class TaggedAttributeSeqParam(value: AttributeSeqParam, tag: HostTag) extends Tagged[AttributeSeqParam] {}
+case class TaggedAllParam(value: AllParam, tag: HostTag) extends Tagged[AllParam] {}
 
 case class DataRecordSymbol(member: Tagged[Any]) extends XsTypeSymbol {
   val name = "DataRecordSymbol(" + member + ")"
@@ -305,11 +312,10 @@ case class ComplexTypeOps(decl: Tagged[XComplexType]) {
   def particles(implicit lookup: Lookup, targetNamespace: Option[URI], scope: NamespaceBinding) =
     ComplexTypeIteration.complexTypeToParticles(decl)
 
-  def primaryCompositor: Option[Tagged[KeyedGroup]] =
-    ComplexTypeIteration.primaryCompositor(decl)
-
-  def primarySequence: Option[Tagged[KeyedGroup]] =
-    ComplexTypeIteration.primarySequence(decl)
+  lazy val primaryCompositor: Option[Tagged[KeyedGroup]] = ComplexTypeIteration.primaryCompositor(decl)
+  lazy val primarySequence: Option[Tagged[KeyedGroup]] = ComplexTypeIteration.primarySequence(decl)
+  lazy val primaryChoice: Option[Tagged[KeyedGroup]] = ComplexTypeIteration.primaryChoice(decl)
+  lazy val primaryAll: Option[Tagged[KeyedGroup]] = ComplexTypeIteration.primaryAll(decl)
 
   def compositors(implicit lookup: Lookup, targetNamespace: Option[URI], scope: NamespaceBinding) =
     ComplexTypeIteration.complexTypeToCompositors(decl)
@@ -475,6 +481,18 @@ object ComplexTypeIteration {
       case x@Some(TaggedKeyedGroup(g, tag)) if g.key == SequenceTag => x
       case _ => None
     }
+
+  def primaryChoice(decl: Tagged[XComplexType]): Option[Tagged[KeyedGroup]] =
+      primaryCompositor(decl) match {
+        case x@Some(TaggedKeyedGroup(g, tag)) if g.key == ChoiceTag => x
+        case _ => None
+      }
+
+  def primaryAll(decl: Tagged[XComplexType]): Option[Tagged[KeyedGroup]] =
+      primaryCompositor(decl) match {
+        case x@Some(TaggedKeyedGroup(g, tag)) if g.key == AllTag => x
+        case _ => None
+      }
 
   def primaryCompositor(decl: Tagged[XComplexType]): Option[Tagged[KeyedGroup]] = {
     def extract(model: Option[DataRecord[Any]]) = model match {

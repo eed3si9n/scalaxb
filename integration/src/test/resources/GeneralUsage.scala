@@ -43,6 +43,7 @@ object GeneralUsage {
     testTopLevelMustipleSeqAny
     testSimpleAnyTypeExtension
     testDataRecord
+    testDefaultScope
     true
   }
   
@@ -431,5 +432,10 @@ object GeneralUsage {
     val document = toXML[DataRecord[Person]](obj, "foo", toScope(scopeList: _*))
     println(document)
     check(fromXML[DataRecord[Person]](document))
+  }
+  
+  def testDefaultScope {
+    if (defaultScope.getURI(null) == "http://www.example.com/general") true
+    else error("default scope is missing.")
   }
 }

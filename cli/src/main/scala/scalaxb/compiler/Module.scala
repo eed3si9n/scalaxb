@@ -42,6 +42,7 @@ case class Config(packageNames: Map[Option[String], Option[String]] = Map(None -
   seperateProtocol: Boolean = true,
   protocolFileName: String = "xmlprotocol.scala",
   protocolPackageName: Option[String] = None,
+  defaultNamespace: Option[String] = None,
   generateRuntime: Boolean = true,
   contentsSizeLimit: Int = 20,
   sequenceChunkSize: Int = 10)
@@ -286,11 +287,16 @@ trait Module {
     def processProtocol = {
       val output = implicitly[CanBeWriter[To]].newInstance(packageName(None, context), config.protocolFileName)
       val out = implicitly[CanBeWriter[To]].toWriter(output)
-      val config2 = config.protocolPackageName match {
-        case Some(_) => config
-        case None =>
-          config.copy(protocolPackageName = packageName(importables0(files.head).targetNamespace, context))
-      }
+      val config2 = config.copy(
+        protocolPackageName = config.protocolPackageName match {
+          case Some(_) => config.protocolPackageName
+          case _ => packageName(importables0(files.head).targetNamespace, context)
+        },
+        defaultNamespace = config.defaultNamespace match {
+          case Some(_) => config.defaultNamespace
+          case _ => importables0(files.head).targetNamespace
+        }    
+      )
       val protocolNodes = generateProtocol(Snippet(snippets: _*), context, config2)
       try {
         printNodes(protocolNodes, out)

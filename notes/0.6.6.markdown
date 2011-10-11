@@ -1,0 +1,2 @@
+## bug fixes and minor enhancements
+- Fixes generated default scope by adding back the default namespace. [#91](https://github.com/eed3si9n/scalaxb/issues/91) reported by [martiell](https://github.com/martiell)

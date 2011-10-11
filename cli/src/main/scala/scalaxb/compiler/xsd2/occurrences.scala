@@ -6,6 +6,7 @@ import Defs._
 
 case class Occurrence(minOccurs: Int, maxOccurs: Int, nillable: Boolean) {
   def isMultiple = maxOccurs > 1
+  def isSingle = minOccurs == 1 && maxOccurs == 1
 }
 
 object Occurrence {

@@ -48,19 +48,18 @@ class Generator(val schema: ReferenceSchema,
   def generateComplexTypeEntity(name: QualifiedName, decl: Tagged[XComplexType]) = {
     logger.debug("generateComplexTypeEntity: emitting %s" format name.toString)
 
-    def buildLongAttributeRef: Tagged[AttributeSeqParam] =
-      TaggedAttributeSeqParam(AttributeSeqParam(), decl.tag)
+    lazy val attributeSeqRef: Tagged[AttributeSeqParam] = TaggedAttributeSeqParam(AttributeSeqParam(), decl.tag)
+    lazy val allRef: Tagged[AllParam] = Tagged(AllParam(), decl.tag)
 
     logger.debug("generateComplexTypeEntity: decl: %s" format decl.toString)
 
     val localName = name.localPart
     val attributes = decl.flattenAttributes
-    val list = splitParticlesIfLong(decl.particles)(decl.tag) ++
-      (if (attributes.isEmpty) Nil
-      else Seq(buildLongAttributeRef))
+    val list =
+      (decl.primaryAll map { _ => Seq(allRef) } getOrElse {splitParticlesIfLong(decl.particles)(decl.tag)}) ++
+      (attributes.headOption map { _ => attributeSeqRef }).toSeq
     val paramList: Seq[Param] = Param.fromSeq(list)
-    val pseq = decl.primarySequence
-    val compositors =  decl.compositors flatMap {splitIfLongSequence} filter {Some(_) != pseq}
+    val compositors =  decl.compositors flatMap {splitIfLongSequence} filter {Some(_) != decl.primarySequence}
     val compositorCodes = compositors.toList map {generateCompositor}
     val hasSequenceParam = (paramList.size == 1) && (paramList.head.occurrence.isMultiple) &&
           (!paramList.head.attribute) && (!decl.mixed) // && (!longAll)

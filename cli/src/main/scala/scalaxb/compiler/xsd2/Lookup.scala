@@ -66,7 +66,8 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter =>
 
         case _ => QualifiedName(tagged.tag.namespace, names.get(x) getOrElse { "??" })
       }
-    case x: TaggedAttributeSeqParam => QualifiedName(Some(SCALA_URI), "Map[String, scalaxb.DataRecord[Any]]")
+    case TaggedAttributeSeqParam(_, _) | TaggedAllParam(_, _) =>
+      QualifiedName(Some(SCALA_URI), "Map[String, scalaxb.DataRecord[Any]]")
     case x: TaggedAttribute =>
       x.value.typeValue map { ref => buildTypeName(resolveType(ref)) } getOrElse {
         buildSimpleTypeTypeName(Tagged(x.value.simpleType.get, x.tag)) }

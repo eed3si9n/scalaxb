@@ -81,7 +81,7 @@ case class KeyedGroup(key: String, group: XGroup) {
 
   // List of TaggedElement, TaggedKeyedGroup, or TaggedAny.
   def particles(implicit tag: HostTag, lookup: Lookup, splitter: Splitter): Seq[Tagged[_]] =
-    group.arg1.toList flatMap {
+    group.arg1.toSeq flatMap {
       case DataRecord(_, _, x: XLocalElementable) => Seq(Tagged(x, tag))
       case DataRecord(_, Some(particleKey), x: XGroupRef) => Seq(Tagged(KeyedGroup(particleKey, x), tag))
       case DataRecord(_, Some(particleKey), x: XExplicitGroupable) =>

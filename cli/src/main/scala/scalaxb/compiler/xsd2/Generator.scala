@@ -59,7 +59,9 @@ class Generator(val schema: ReferenceSchema,
       (decl.primaryAll map { _ => Seq(allRef) } getOrElse {splitParticlesIfLong(decl.particles)(decl.tag)}) ++
       (attributes.headOption map { _ => attributeSeqRef }).toSeq
     val paramList: Seq[Param] = Param.fromSeq(list)
-    val compositors =  decl.compositors flatMap {splitIfLongSequence} filter {Some(_) != decl.primarySequence}
+    val compositors =  decl.compositors flatMap {splitIfLongSequence} filterNot {
+      Some(_) == decl.primarySequence &&
+      (decl.primarySequence map { tagged => Occurrence(tagged.value).isSingle } getOrElse {true}) }
     val compositorCodes = compositors.toList map {generateCompositor}
     val hasSequenceParam = (paramList.size == 1) && (paramList.head.occurrence.isMultiple) &&
           (!paramList.head.attribute) && (!decl.mixed) // && (!longAll)

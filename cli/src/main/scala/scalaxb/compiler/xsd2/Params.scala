@@ -31,15 +31,17 @@ trait Params { self: Namer with Lookup =>
       case _ => "Seq[%s]".format(singleTypeName)
     }
 
+    def paramName: String = makeParamName(name)
+
     def toTraitScalaCode: String =
-      makeParamName(name) + ": " + typeName
+      paramName + ": " + typeName
 
     def toScalaCode(implicit targetNamespace: Option[URI]): String =
       toTraitScalaCode + (
         if (occurrence == OptionalNotNillable && attribute) " = None"
         else "")
 
-    def toAttributeAccessor(implicit targetNamespace: Option[URI]): String =
+    def toAttributeAccessor: String =
       "lazy val " + toTraitScalaCode + " = " + (occurrence match {
         case SingleNotNillable =>
           """%s(%s).as[%s]""".format(
@@ -54,6 +56,9 @@ trait Params { self: Namer with Lookup =>
             singleTypeName
           )
       })
+
+    def toLongSeqAccessor(wrapper: String): String =
+      """lazy val %s = %s.%s""" format(toTraitScalaCode, wrapper, makeParamName(name))
 
     def buildAttributeNodeName: String = typeSymbol match {
       case TaggedAttribute(x: XTopLevelAttribute, _) => "@" + QualifiedName(namespace, name).toString

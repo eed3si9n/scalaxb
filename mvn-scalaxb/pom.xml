@@ -140,7 +140,7 @@
               </pomIncludes>
               <settingsFile>src/it/settings.xml</settingsFile>
               <goals>
-                <goal>test</goal>
+                <goal>generate-sources</goal>
               </goals>
             </configuration>
             <executions>

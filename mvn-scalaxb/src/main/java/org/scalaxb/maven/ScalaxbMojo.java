@@ -23,14 +23,7 @@ package org.scalaxb.maven;
  */
 
 import static java.util.Collections.emptyList;
-import org.apache.maven.plugin.AbstractMojo;
-import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.MojoFailureException;
-import org.apache.maven.project.MavenProject;
-import org.codehaus.plexus.util.DirectoryScanner;
-import scala.collection.JavaConversions;
-import scalaxb.compiler.CaseClassTooLong;
-import scalaxb.compiler.ReferenceNotFound;
+import static java.util.Collections.unmodifiableList;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -38,7 +31,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import static java.util.Collections.unmodifiableList;
+import org.apache.maven.plugin.AbstractMojo;
+import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.project.MavenProject;
+import org.codehaus.plexus.util.DirectoryScanner;
+
+import scala.collection.JavaConversions;
+import scalaxb.compiler.CaseClassTooLong;
+import scalaxb.compiler.ReferenceNotFound;
 
 /**
  * @goal generate
@@ -61,6 +62,15 @@ public class ScalaxbMojo extends AbstractMojo {
      * @required
      */
     private File xsdDirectory;
+
+    /**
+     * The directory containing the WSDL files.
+     * @parameter
+     *   expression="${scalaxb.wsdlDirectory}"
+     *   default-value="${project.basedir}/src/main/wsdl"
+     * @required
+     */
+    private File wsdlDirectory;
 
     /**
      * The output directory.
@@ -143,11 +153,15 @@ public class ScalaxbMojo extends AbstractMojo {
     private boolean verbose;
 
     public void execute() throws MojoExecutionException, MojoFailureException {
-        List<String> schemaFiles = schemaFiles();
-        if (schemaFiles.isEmpty()) {
-            getLog().warn("No XSD files found: not running scalaxb");
+        List<String> schemaFiles = inputFiles(xsdDirectory, "xsd");
+        List<String> wsdlFiles = inputFiles(wsdlDirectory, "wsdl");
+        if (schemaFiles.isEmpty() && wsdlFiles.isEmpty()) {
+            getLog().warn("No XSD or WSDL files found: not running scalaxb");
         } else {
-            generateBindings(schemaFiles);
+            List<String> inputFiles = new ArrayList<String>();
+            inputFiles.addAll(schemaFiles);
+            inputFiles.addAll(wsdlFiles);
+            generateBindings(inputFiles);
         }
     }
 
@@ -218,20 +232,20 @@ public class ScalaxbMojo extends AbstractMojo {
         return unmodifiableList(args);
     }
 
-    private List<String> schemaFiles() {
-        if (!xsdDirectory.exists()) {
+    private List<String> inputFiles(File directory, String type) {
+        if (!directory.exists()) {
             return emptyList();
         }
 
         DirectoryScanner ds = new DirectoryScanner();
-        String[] includes = {"**\\*.xsd"};
+        String[] includes = {"**\\*." + type};
         ds.setIncludes(includes);
-        ds.setBasedir(xsdDirectory);
+        ds.setBasedir(directory);
         ds.scan();
 
         List<String> result = new ArrayList<String>();
         for (String xsdFile : ds.getIncludedFiles()) {
-            result.add(new File(xsdDirectory, xsdFile).getAbsolutePath());
+            result.add(new File(directory, xsdFile).getAbsolutePath());
         }
         return result;
     }

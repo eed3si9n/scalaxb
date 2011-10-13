@@ -146,6 +146,26 @@ public class ScalaxbMojo extends AbstractMojo {
     */
    private boolean packageDir;
 
+   /**
+    * The name of the file to generate that includes the protocol
+    * implementation; that is, the code that marshals values to and from XML.
+    * @parameter
+    *   @default-value="xmlprotocol.scala"
+    */
+   private String protocolFile;
+
+   /**
+    * The package in which to generate the 'protocol' code; that is, the code
+    * that marshals values to and from XML. The generated code defines a package
+    * object for the named package. The package object defines implicit values
+    * required for using the <code>scalaxb.toXML</code> and
+    * <code>scalaxb.fromXML</code> functions. If unspecified, the protocol code
+    * is generated in the same package as the generated classes that define the
+    * values marshalled to and from XML.
+    * @parameter
+    */
+   private String protocolPackage;
+
     /**
      *
      * @parameter expression="${scalaxb.verbose}"
@@ -228,6 +248,8 @@ public class ScalaxbMojo extends AbstractMojo {
             .param("--chunk-size", chunkSize)
             .flag("--no-runtime", !generateRuntime)
             .intersperse("--wrap-contents", wrapContents)
+            .param("--protocol-file", protocolFile)
+            .param("--protocol-package", protocolPackage)
             .getArguments();
         return unmodifiableList(args);
     }

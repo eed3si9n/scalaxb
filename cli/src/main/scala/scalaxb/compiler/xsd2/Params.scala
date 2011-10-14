@@ -41,20 +41,24 @@ trait Params { self: Namer with Lookup =>
         if (occurrence == OptionalNotNillable && attribute) " = None"
         else "")
 
-    def toDataRecordMapAccessor(wrapper: String): String =
-      "lazy val " + toTraitScalaCode + " = " + (occurrence match {
-        case SingleNotNillable =>
-          """%s(%s).as[%s]""".format(
-            wrapper,
-            quote(buildNodeName),
-            singleTypeName
-          )
-        case _ =>
-          """%s.get(%s) map {_.as[%s]}""".format(
-            wrapper,
-            quote(buildNodeName),
-            singleTypeName
-          )
+    def toDataRecordMapAccessor(wrapper: String, generateImpl: Boolean): String =
+      "lazy val " + toTraitScalaCode + (generateImpl match {
+        case true =>
+          " = " + (occurrence match {
+            case SingleNotNillable =>
+              """%s(%s).as[%s]""".format(
+                wrapper,
+                quote(buildNodeName),
+                singleTypeName
+              )
+            case _ =>
+              """%s.get(%s) map {_.as[%s]}""".format(
+                wrapper,
+                quote(buildNodeName),
+                singleTypeName
+              )
+          })
+        case _ => ""
       })
 
     def toLongSeqAccessor(wrapper: String): String =

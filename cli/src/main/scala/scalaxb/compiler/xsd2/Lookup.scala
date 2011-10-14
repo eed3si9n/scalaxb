@@ -50,11 +50,11 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter =>
         case XsAnyType => QualifiedName(Some(SCALAXB_URI), "DataRecord[Any]")
         case symbol: BuiltInSimpleTypeSymbol => QualifiedName(Some(XML_SCHEMA_URI), symbol.name)
       }
-    case x: TaggedSimpleType => buildSimpleTypeTypeName(x)
-    case x: TaggedComplexType =>
-      QualifiedName(tagged.tag.namespace, names.get(x) getOrElse { "??" })
-    case x: TaggedEnum =>
-      QualifiedName(tagged.tag.namespace, names.get(x) getOrElse { "??" })
+    case x: TaggedSimpleType => buildSimpleTypeTypeName(x)   
+    case TaggedComplexType(_, _) | TaggedEnum(_, _) =>
+      QualifiedName(tagged.tag.namespace, names.get(tagged) getOrElse {
+        error("unnamed %s" format tagged.toString)
+      })
     case x: TaggedKeyedGroup =>
       x.key match {
         case ChoiceTag =>
@@ -71,10 +71,13 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter =>
     case x: TaggedAttribute =>
       x.value.typeValue map { ref => buildTypeName(resolveType(ref)) } getOrElse {
         buildSimpleTypeTypeName(Tagged(x.value.simpleType.get, x.tag)) }
-
+    case x: TaggedAttributeGroup =>
+      x.value.ref map { ref => buildTypeName(resolveAttributeGroup(ref)) } getOrElse {
+        QualifiedName(tagged.tag.namespace, names.get(tagged) getOrElse {
+          error("unnamed %s" format tagged.toString)
+        })}
+      
     //    case XsNillableAny  => "scalaxb.DataRecord[Option[Any]]"
-    //    case XsLongAll      => "Map[String, scalaxb.DataRecord[Any]]"
-    //    case XsLongAttribute => "Map[String, scalaxb.DataRecord[Any]]"
     //    case XsAnyAttribute  => "Map[String, scalaxb.DataRecord[Any]]"
     //    case XsDataRecord(ReferenceTypeSymbol(decl: ComplexTypeDecl)) if compositorWrapper.contains(decl) =>
     //      compositorWrapper(decl) match {
@@ -85,7 +88,6 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter =>
     //    case XsMixed         => "scalaxb.DataRecord[Any]"
     //    case ReferenceTypeSymbol(decl: SimpleTypeDecl) => buildTypeName(decl, shortLocal)
     //    case ReferenceTypeSymbol(decl: ComplexTypeDecl) => buildTypeName(decl, shortLocal)
-    //    case symbol: AttributeGroupSymbol => buildTypeName(attributeGroups(symbol.namespace, symbol.name), shortLocal)
     //    case XsXMLFormat(decl: ComplexTypeDecl) => "scalaxb.XMLFormat[" + buildTypeName(decl, shortLocal) + "]"
     //    case XsXMLFormat(group: AttributeGroupDecl) => "scalaxb.XMLFormat[" + buildTypeName(group, shortLocal) + "]"
     case _ => error("buildTypeName # unsupported: " + tagged)
@@ -170,8 +172,20 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter =>
     case _ => throw new ReferenceNotFound("element", elementRef.namespace map { _.toString }, elementRef.localPart)
   }
 
+  def resolveAttribute(attrRef: QualifiedName): Tagged[XAttributable] = attrRef match {
+    case Attribute(attr) => attr
+    case _ => throw new ReferenceNotFound("attribute", attrRef.namespace map { _.toString }, attrRef.localPart)
+  }
+
+  def resolveAttributeGroup(groupRef: QualifiedName): TaggedAttr[XAttributeGroup] = groupRef match {
+    case AttributeGroup(group) => group
+    case _ => throw new ReferenceNotFound("attributeGroup", groupRef.namespace map { _.toString }, groupRef.localPart)
+  }
+
   object AnyType {
     def tagged = Tagged(XsAnyType, HostTag(Some(XML_SCHEMA_URI), SimpleTypeHost, "anyType"))
+
+    def unapply(qname: QName): Option[Tagged[XsTypeSymbol]] = unapply(qname: QualifiedName)
 
     def unapply(typeName: QualifiedName): Option[Tagged[XsTypeSymbol]] = typeName match {
       case XS_ANY_TYPE => Some(tagged)
@@ -180,6 +194,8 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter =>
   }
 
   object BuiltInType {
+    def unapply(qname: QName): Option[Tagged[XsTypeSymbol]] = unapply(qname: QualifiedName)
+
     def unapply(typeName: QualifiedName): Option[Tagged[XsTypeSymbol]] = typeName match {
       case QualifiedName(Some(XML_SCHEMA_URI), localPart) =>
         Some(Tagged(XsTypeSymbol.toTypeSymbol(localPart), HostTag(typeName.namespace, SimpleTypeHost, localPart)))
@@ -188,6 +204,8 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter =>
   }
 
   object SimpleType {
+    def unapply(qname: QName): Option[Tagged[XSimpleType]] = unapply(qname: QualifiedName)
+
     def unapply(typeName: QualifiedName): Option[Tagged[XSimpleType]] = typeName match {
       case QualifiedName(targetNamespace, localPart) if schema.topTypes contains localPart =>
         schema.topTypes(localPart) match {
@@ -199,6 +217,8 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter =>
   }
 
   object ComplexType {
+    def unapply(qname: QName): Option[Tagged[XComplexType]] = unapply(qname: QualifiedName)
+
     def unapply(typeName: QualifiedName): Option[Tagged[XComplexType]] = typeName match {
       case QualifiedName(targetNamespace, localPart) if schema.topTypes contains localPart =>
         schema.topTypes(localPart) match {
@@ -210,6 +230,8 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter =>
   }
 
   object Element {
+    def unapply(qname: QName): Option[Tagged[XElement]] = unapply(qname: QualifiedName)
+
     def unapply(qualifiedName: QualifiedName): Option[Tagged[XElement]] = qualifiedName match {
       case QualifiedName(targetNamespace, localPart) if schema.topElems contains localPart =>
         Some(schema.topElems(localPart))
@@ -218,6 +240,8 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter =>
   }
 
   object Attribute {
+    def unapply(qname: QName): Option[TaggedAttr[XAttributable]] = unapply(qname: QualifiedName)
+
     def unapply(qualifiedName: QualifiedName): Option[TaggedAttr[XAttributable]] = qualifiedName match {
       case QualifiedName(targetNamespace, localPart) if schema.topAttrs contains localPart =>
         Some(schema.topAttrs(localPart))
@@ -226,6 +250,8 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter =>
   }
 
   object AttributeGroup {
+    def unapply(qname: QName): Option[TaggedAttr[XAttributeGroup]] = unapply(qname: QualifiedName)
+
     def unapply(qualifiedName: QualifiedName): Option[TaggedAttr[XAttributeGroup]] = qualifiedName match {
       case QualifiedName(targetNamespace, localPart) if schema.topAttrGroups contains localPart =>
         Some(schema.topAttrGroups(localPart))

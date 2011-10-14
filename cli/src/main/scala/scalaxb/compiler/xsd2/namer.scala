@@ -72,6 +72,10 @@ trait Namer extends ScalaNames { self: Lookup with Splitter  =>
     }
   }
 
+  def nameAttributeGroup(tagged: Tagged[XAttributeGroup]) {
+    names(tagged) = makeProtectedAttributeGroupName(tagged)
+  }
+
   def makeProtectedElementTypeName(elem: Tagged[XElement]): String =
     makeProtectedTypeName(elem.name, "", elem.tag, true)
 
@@ -84,6 +88,9 @@ trait Namer extends ScalaNames { self: Lookup with Splitter  =>
   def makeProtectedEnumTypeName(enum: Tagged[XNoFixedFacet]): String =
     makeProtectedTypeName(enum.value.value, "Value", enum.tag, true)
 
+  def makeProtectedAttributeGroupName(tagged: Tagged[XAttributeGroup]): String =
+    makeProtectedTypeName(tagged.name.get, "", tagged.tag, true);
+  
   def makeProtectedTypeName(initialName: Option[String], postfix: String, tag: HostTag, appendHost: Boolean): String =
     makeProtectedTypeName(initialName getOrElse {error("name is required.")}, postfix, tag, appendHost)
 

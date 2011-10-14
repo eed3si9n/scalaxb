@@ -27,6 +27,11 @@ trait ContextProcessor extends ScalaNames { self: Namer =>
           case x: XTopLevelComplexType => nameComplexTypes(tagged)
           case _ =>
         }
+      case tagged: TaggedAttributeGroup =>
+        tagged.value match {
+          case x: XNamedAttributeGroup => nameAttributeGroup(tagged)
+          case _ =>
+        }
       case _ =>
     }
 

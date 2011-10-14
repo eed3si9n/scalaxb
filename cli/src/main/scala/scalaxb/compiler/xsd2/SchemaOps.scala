@@ -29,6 +29,7 @@ import scalaxb.compiler.xsd.{XsTypeSymbol, XsAnyType}
 import xmlschema._
 import scala.collection.mutable.{Builder, ArrayBuffer}
 import scala.collection.generic.CanBuildFrom
+import scala.annotation.tailrec
 
 object Defs {
   implicit def schemaToSchemaIteration(schema: XSchema): SchemaIteration = SchemaIteration(schema)
@@ -36,6 +37,9 @@ object Defs {
   implicit def complexTypeToComplexTypeIteration(tagged: Tagged[XComplexType]): ComplexTypeIteration =
     ComplexTypeIteration(tagged)
   implicit def elementToElementOps(tagged: Tagged[XElement]): ElementOps = new ElementOps(tagged)
+  implicit def attributeGroupToAttributeGroupOps(tagged: Tagged[XAttributeGroup]): AttributeGroupOps =
+    new AttributeGroupOps(tagged)
+  
   val XML_SCHEMA_URI = new URI("http://www.w3.org/2001/XMLSchema")
   val XSI_URL = new URI("http://www.w3.org/2001/XMLSchema-instance")
   val XSI_PREFIX = "xsi"
@@ -320,7 +324,7 @@ case class ComplexTypeOps(decl: Tagged[XComplexType]) {
   def compositors(implicit lookup: Lookup, targetNamespace: Option[URI], scope: NamespaceBinding) =
     ComplexTypeIteration.complexTypeToCompositors(decl)
 
-  def flattenAttributes(implicit lookup: Lookup, targetNamespace: Option[URI], scope: NamespaceBinding) =
+  def flattenedAttributes(implicit lookup: Lookup, targetNamespace: Option[URI], scope: NamespaceBinding) =
     ComplexTypeIteration.complexTypeToAttributes(decl)
 }
 
@@ -549,26 +553,27 @@ object ComplexTypeIteration {
 
     // since OO's hierarchy does not allow base members to be omitted,
     // child overrides needs to be implemented some other way.
-    def mergeAttribute(base: Seq[Tagged[_]], child: Tagged[_]): Seq[Tagged[_]] =
-      if (base exists { x => isSameAttribute(x, child) }) base
-      else base :+ child
+    @tailrec def mergeAttributeSeqs(base: Seq[Tagged[_]], children: Seq[Tagged[_]]): Seq[Tagged[_]] = {
+      def mergeAttribute(base: Seq[Tagged[_]], child: Tagged[_]): Seq[Tagged[_]] =
+        if (base exists { x => isSameAttribute(x, child) }) base
+        else base :+ child
 
-    def mergeAttributeSeqs(base: Seq[Tagged[_]], children: Seq[Tagged[_]]): Seq[Tagged[_]] =
       children match {
         case x :: xs => mergeAttributeSeqs(mergeAttribute(base, x), xs)
         case Nil => base
       }
+    }
 
     def processRestriction(restriction: XRestrictionTypable) =
       mergeAttributeSeqs(qnameAttributes(restriction.base),
-        SchemaIteration.processAttrSeq(restriction.arg2))
+        flattenAttrSeq(restriction.arg2))
 
     def processExtension(extension: XExtensionTypable) =
       mergeAttributeSeqs(qnameAttributes(extension.base),
-        SchemaIteration.processAttrSeq(extension.arg2))
+        flattenAttrSeq(extension.arg2))
 
     // move anyAttribute to the end.
-    def reorder(xs: Seq[Tagged[_]]): Seq[Tagged[_]] = {
+    def reorderAttributes(xs: Seq[Tagged[_]]): Seq[Tagged[_]] = {
       val (l, r) = xs partition {
         case x: TaggedAnyAttribute => true
         case _ => false
@@ -576,18 +581,17 @@ object ComplexTypeIteration {
       r ++ l
     }
 
-    def resolve(xs: Seq[Tagged[_]]): Seq[Tagged[_]] = xs map {
-      case x: TaggedAnyAttribute => x
-      case x: TaggedAttribute =>
-        x.value.ref map {
-          case Attribute(attr) => attr
-        } getOrElse {x}
-      case x: TaggedAttributeGroup =>
-        x.value.ref map {
-          case AttributeGroup(group) => group
-        } getOrElse {x}
-      case x => x
-    }
+    // Resolve references as walking through the attributes.
+    def flattenAttrSeq(attrSeq: XAttrDeclsSequence)(implicit tag: HostTag): Seq[Tagged[_]] =
+      (attrSeq.xattrdeclsoption1 flatMap {
+        case DataRecord(_, _, x: XAttributable)      =>
+          x.ref map { ref => Seq(resolveAttribute(ref))
+          } getOrElse { Seq(Tagged(x, tag)) }
+        case DataRecord(_, _, x: XAttributeGroupRef) =>
+          x.ref map { ref => flattenAttrSeq(resolveAttributeGroup(ref).value.arg1)
+          } getOrElse { flattenAttrSeq(x.arg1) }
+      }) ++
+      (attrSeq.anyAttribute map {SchemaIteration.processAnyAttribute} getOrElse {Nil})
 
     val retval = decl.value.arg1.value match {
       case XComplexContent(_, DataRecord(_, _, x: XComplexRestrictionType), _, _, _) => processRestriction(x)
@@ -597,9 +601,9 @@ object ComplexTypeIteration {
 
       // this is an abbreviated form of xs:anyType restriction.
       case XComplexTypeModelSequence1(arg1, arg2) =>
-        SchemaIteration.processAttrSeq(arg2)
+        flattenAttrSeq(arg2)
     }
-    reorder(resolve(retval))
+    reorderAttributes(retval)
   }
 }
 
@@ -632,3 +636,8 @@ class ElementOps(val tagged: Tagged[XElement]) {
     }
   }
 }
+
+class AttributeGroupOps(val tagged: Tagged[XAttributeGroup]) {
+  def flattenedAttributes: Seq[Tagged[_]] = SchemaIteration.processAttrSeq(tagged.value.arg1)(tagged.tag)
+}
+

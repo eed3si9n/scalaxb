@@ -206,24 +206,23 @@ trait Module {
   // http://www.slf4j.org/apidocs/index.html
   // http://logback.qos.ch/apidocs/index.html
   // http://logback.qos.ch/xref/ch/qos/logback/classic/BasicConfigurator.html
-  def configureLogger(config: Config) {
-    import org.slf4j.{LoggerFactory, Logger}
-    import ch.qos.logback.classic.{Logger => LBLogger, Level => LBLevel}
-
-    LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME) match {
-      case root: LBLogger =>
-        if (verbose) root.setLevel(LBLevel.TRACE)
-        else root.setLevel(LBLevel.INFO)
-      case _ =>
+  def configureLogger {
+    if (verbose) {
+      import org.slf4j.{LoggerFactory, Logger}
+      import ch.qos.logback.classic.{Logger => LBLogger, Level => LBLevel}
+      LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME) match {
+        case root: LBLogger => root.setLevel(LBLevel.TRACE)
+        case _ =>
+      }
     }
   }
-
+  
   def processReaders[From, To](files: Seq[From], config: Config)
      (implicit ev: CanBeRawSchema[From, RawSchema], evTo: CanBeWriter[To]): List[To] = {
     val snippets = ListBuffer.empty[Snippet]
     val context = buildContext
 
-    configureLogger(config)
+    configureLogger
     logger.debug("%s" format files.toString())
 
     val importables0 = ListMap[From, Importable](files map { f =>

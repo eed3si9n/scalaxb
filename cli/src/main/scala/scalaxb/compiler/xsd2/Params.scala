@@ -42,9 +42,10 @@ trait Params { self: Namer with Lookup =>
         else "")
 
     def toDataRecordMapAccessor(wrapper: String, generateImpl: Boolean): String =
-      "lazy val " + toTraitScalaCode + (generateImpl match {
+      generateImpl match {
         case true =>
-          " = " + (occurrence match {
+          "lazy val " + toTraitScalaCode + " = " +
+          (occurrence match {
             case SingleNotNillable =>
               """%s(%s).as[%s]""".format(
                 wrapper,
@@ -58,8 +59,8 @@ trait Params { self: Namer with Lookup =>
                 singleTypeName
               )
           })
-        case _ => ""
-      })
+        case _ => "def " + toTraitScalaCode
+      }
 
     def toLongSeqAccessor(wrapper: String): String =
       """lazy val %s = %s.%s""" format(toTraitScalaCode, wrapper, makeParamName(name))

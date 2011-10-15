@@ -728,8 +728,16 @@ object IncTest extends Specification {
 
     "generate a trait with attribute accessor signatures" >> {
       println(entitySource)
-      entitySource must contain("""trait Coreattrs {""") and
-                        contain("""val id: Option[String]""")
+      entitySource must find("""trait Coreattrs \{\s*
+                               |\s*def id\: Option\[String\]""".stripMargin)
+    }
+
+    "generate accessors in the referencing complex type" >> {
+      entitySource must contain("""lazy val id: Option[String] = attributes.get("@id") map {_.as[String]}""")
+    }
+    
+    "be extended by the referencing complex types" >> {
+      entitySource must contain("""case class AttributeGroupTest(attributes: Map[String, scalaxb.DataRecord[Any]]) extends Coreattrs""")
     }
   }
 }

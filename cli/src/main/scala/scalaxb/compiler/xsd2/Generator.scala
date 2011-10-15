@@ -39,7 +39,7 @@ class Generator(val schema: ReferenceSchema,
       (schema.unbound.toSeq flatMap {
         case x: TaggedComplexType => processComplexType(x)
         case x: TaggedSimpleType if containsEnumeration(x) && isRootEnumeration(x) => processSimpleType(x)
-        case x: TaggedAttributeGroup => processAttributeGroup(x)
+        case x@TaggedAttributeGroup(group: XNamedAttributeGroup, _) => processAttributeGroup(x)
         case _ => Nil
       }): _*)
 
@@ -73,10 +73,19 @@ class Generator(val schema: ReferenceSchema,
       (decl.primaryAll map { generateAllAccessors(_) } getOrElse {
         splitParticles(decl.particles)(decl.tag) map { generateLongSeqAccessors(_) } getOrElse {Nil} }) ++
       (attributes.headOption map  { _ => generateAttributeAccessors(attributes, true) } getOrElse {Nil})
+    val superNames = complexTypeSuperNames(decl)
+    val extendString =
+      superNames.headOption map { _ =>
+        """ extends %s """ format superNames.mkString(" with ")
+      } getOrElse {""}
 
-    Snippet(Snippet(<source>case class { localName }({paramsString}){ accessors.headOption map( _ =>
+    Snippet(Snippet(<source>case class { localName }({paramsString}){extendString}{ accessors.headOption map( _ =>
       " {" + NL + indent(1) + accessors.mkString(NL + indent(1)) + NL + "}" + NL
     ) getOrElse("") }</source>) :: compositorCodes: _*)
+  }
+
+  def complexTypeSuperNames(decl: Tagged[XComplexType]): Seq[String] = {
+    (decl.attributeGroups map {buildTypeName} map {_.localPart})
   }
 
   def generateSequence(tagged: Tagged[KeyedGroup]): Snippet = {

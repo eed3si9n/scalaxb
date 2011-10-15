@@ -325,7 +325,10 @@ case class ComplexTypeOps(decl: Tagged[XComplexType]) {
     ComplexTypeIteration.complexTypeToCompositors(decl)
 
   def flattenedAttributes(implicit lookup: Lookup, targetNamespace: Option[URI], scope: NamespaceBinding) =
-    ComplexTypeIteration.complexTypeToAttributes(decl)
+    ComplexTypeIteration.complexTypeToMergedAttributes(decl)
+
+  def attributeGroups(implicit lookup: Lookup, targetNamespace: Option[URI], scope: NamespaceBinding) =
+    ComplexTypeIteration.complexTypeToAttributeGroups(decl)
 }
 
 class ComplexTypeIteration(underlying: Seq[Tagged[_]]) extends scala.collection.IndexedSeqLike[Tagged[_], ComplexTypeIteration] {
@@ -524,17 +527,26 @@ object ComplexTypeIteration {
       case Compositor(compositor) => compositor
     }
 
+  def complexTypeToAttributeGroups(decl: Tagged[XComplexType])
+                      (implicit lookup: Lookup,
+                       targetNamespace: Option[URI], scope: NamespaceBinding): Seq[Tagged[_]] = {
+    import lookup._
+    (decl collect  {
+      case x: TaggedAttributeGroup => x.ref map { resolveAttributeGroup(_) } getOrElse x
+    }).toSeq
+  }
+
   /** attributes of the given decl flattened one level.
    * returns list of Tagged[XAttributable], Tagged[XAttributeGroup], Tagged[XWildCardable].
    */
-  def complexTypeToAttributes(decl: Tagged[XComplexType])
+  def complexTypeToMergedAttributes(decl: Tagged[XComplexType])
                       (implicit lookup: Lookup,
                        targetNamespace: Option[URI], scope: NamespaceBinding): Seq[Tagged[_]] = {
     import lookup._
     implicit val tag = decl.tag
 
     def qnameAttributes(base: QualifiedName) = base match {
-      case ComplexType(tagged) => complexTypeToAttributes(tagged)
+      case ComplexType(tagged) => complexTypeToMergedAttributes(tagged)
       case _ => Nil
     }
     

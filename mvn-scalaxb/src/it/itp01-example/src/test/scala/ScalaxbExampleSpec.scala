@@ -20,13 +20,15 @@ class ScalaxbExampleSpec extends WordSpec with ShouldMatchers with MustMatchers 
     "be serialized into XML correctly" in {
       val shipTo = example.address
       val document = scalaxb.toXML[ipo.Address](shipTo.copy(name = "Bar"), None, Some("foo"), ipo.defaultScope)
-      document must be === trim(<foo xmlns="http://www.example.com/IPO"
-                                         xmlns:ipo="http://www.example.com/IPO"
-                                         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-        <name>Bar</name>
-        <street>1537 Paper Street</street>
-        <city>Wilmington</city>
-      </foo>)
+      document must be === trim(
+        <foo xmlns="http://www.example.com/IPO"
+             xmlns:xs="http://www.w3.org/2001/XMLSchema"
+             xmlns:ipo="http://www.example.com/IPO"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <name>Bar</name>
+          <street>1537 Paper Street</street>
+          <city>Wilmington</city>
+        </foo>)
     }
   }
 

@@ -4,17 +4,17 @@
 
   <groupId>org.scalaxb</groupId>
   <artifactId>scalaxb-maven-plugin</artifactId>
-  <version>0.6.5</version>
+  <version>0.6.6-SNAPSHOT</version>
   <packaging>maven-plugin</packaging>
 
   <name>scalaxb Maven Plugin</name>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <scala.version>2.9.0-1</scala.version>
+    <scala.version>2.9.1</scala.version>
     <maven.version>2.0.9</maven.version>
     <junit.version>4.8.2</junit.version>
-    <scalatest.version>1.4.1</scalatest.version>
+    <scalatest.version>1.6.1</scalatest.version>
   </properties>
 
   <scm>
@@ -140,7 +140,7 @@
               </pomIncludes>
               <settingsFile>src/it/settings.xml</settingsFile>
               <goals>
-                <goal>test</goal>
+                <goal>generate-sources</goal>
               </goals>
             </configuration>
             <executions>

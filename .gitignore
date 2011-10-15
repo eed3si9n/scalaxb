@@ -10,6 +10,9 @@ tmp/
 .idea
 .idea/workspace.xml
 .idea/tasks.xml
+.classpath
+.project
+.settings
 *.iml
 Version.scala
 project/plugins/project/build.properties

@@ -35,7 +35,7 @@ class Driver extends Module { driver =>
   type Schema = ReferenceSchema
   type Context = SchemaContext
   type RawSchema = scala.xml.Node
-  override lazy val logger = Logger("xsd2.Driver")
+  private lazy val logger = Logger("xsd2.Driver")
   
   def generate(schema: Schema, context: Context, config: Config): Snippet =
     new Generator(schema, context, config).generateEntitySource

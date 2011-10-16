@@ -119,7 +119,7 @@ trait Version { val version = "%s" }
 
   lazy val root = Project("root", file("."),
     settings = buildSettings ++ Seq(name := "scalaxb")) aggregate(cli)
-  lazy val cli = Project("scalaxb", file("cli"),
+  lazy val cli = Project("app", file("cli"),
     settings = cliSettings)
   lazy val integration = Project("integration", file("integration"),
     settings = itSettings) dependsOn(cli % "test->compile")

@@ -110,7 +110,7 @@ trait Module {
   type Schema
   type Context
 
-  lazy val logger = Logger("module")
+  private lazy val logger = Logger("module")
   def verbose: Boolean = false
   
   val encoding = "UTF-8"

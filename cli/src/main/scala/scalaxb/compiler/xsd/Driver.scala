@@ -30,7 +30,7 @@ import scala.xml.{Node, Elem}
 import com.weiglewilczek.slf4s.Logger
 
 class Driver extends Module { driver =>
-  override lazy val logger = Logger("xsd")
+  private lazy val logger = Logger("xsd")
 
   type Schema = SchemaDecl
   type Context = XsdContext

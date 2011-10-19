@@ -221,10 +221,12 @@ trait GenSource {
 
       "scalaxb.toXML(%s, %s, %s, defaultScope)%s".format(v, nsString, label, post)
     }
+    lazy val argsString =
+      args.headOption map { _ => args.mkString("  ++ " + NL + "          ") } getOrElse {"Nil"}
 
     if (document) args.head
     else """scala.xml.Elem(%s, %s, scala.xml.Null, defaultScope,
-          %s: _*)""".format(prefix, opLabel, args.mkString("  ++ " + NL + "          "))
+          %s: _*)""".format(prefix, opLabel, argsString)
   }
 
   def outputString(output: XParamType, binding: XBinding_operationType, document: Boolean): String = {
@@ -316,7 +318,10 @@ trait GenSource {
     singleOutputType(output, document) map { elem =>
       val param = xsdgenerator.buildParam(elem)
       param.typeName
-    } getOrElse {paramTypeName(output)}
+    } getOrElse {
+      if (paramMessage(output).part.isEmpty) "Unit"
+      else paramTypeName(output)
+    }
 
   def singleOutputPart(output: XParamType): Option[XPartType] =
     paramMessage(output).part.headOption

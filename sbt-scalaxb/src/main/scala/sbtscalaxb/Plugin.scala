@@ -46,7 +46,7 @@ object Plugin extends sbt.Plugin {
       ScalaxbCompile(sources, config, outdir, ll == Level.Debug) },
     sourceManaged in scalaxb <<= sourceManaged,
     sources in scalaxb <<= (xsdSource in scalaxb, wsdlSource in scalaxb) map { (xsd, wsdl) =>
-      (xsd ** "*.xsd").get ++ (wsdl ** "*.wsdl").get },
+      (wsdl ** "*.wsdl").get ++ (xsd ** "*.xsd").get },
     xsdSource in scalaxb <<= (sourceDirectory, configuration) { (src, config) =>
       if (Seq(Compile, Test) contains config) src / "xsd"
       else src / "main" / "xsd" },

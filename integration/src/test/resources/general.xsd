@@ -107,7 +107,7 @@
       </xs:choice>
     </xs:sequence>
   </xs:complexType>
-  
+
   <xs:complexType name="SingularSimpleTypeTest">
     <xs:sequence>      
       <xs:element name="number1" type="xs:unsignedInt"/>
@@ -277,6 +277,17 @@
       <xs:element name="city" type="xs:string"/>
       <xs:element name="state" type="xs:string"/>
     </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="USAddress">
+    <xs:complexContent>
+      <xs:extension base="gen:Address">
+        <xs:sequence>
+          <xs:element name="zip"   type="xs:positiveInteger"/>
+        </xs:sequence>
+        <xs:anyAttribute/>
+      </xs:extension>
+    </xs:complexContent>
   </xs:complexType>
 
   <xs:simpleType name="MilkType">

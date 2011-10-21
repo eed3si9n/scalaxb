@@ -229,10 +229,10 @@ trait Lookup extends ContextProcessor {
     elem.global && (elem.namespace map { x =>
       context.substituteGroups.contains((elem.namespace, elem.name))
     } getOrElse { false })
-  
+
+  // don't name targetNamespace as "targetNamespace" since this would cause problem with mixing in groups.
   def quoteNamespace(namespace: Option[String]): String =
-    if (namespace == schema.targetNamespace) "targetNamespace"
-    else quote(namespace)
+    quote(namespace)
 
   def elementNamespace(global: Boolean, namespace: Option[String], qualified: Boolean): Option[String] =
     if (global) namespace

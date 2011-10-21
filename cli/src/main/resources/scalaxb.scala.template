@@ -555,11 +555,9 @@ object DataRecord extends XMLStandardTypes {
           w.writer.asInstanceOf[CanWriteXML[A]].writes(obj.value, namespace, elementLabel, scope, typeAttribute)
         case _ =>
           w.writer.asInstanceOf[CanWriteXML[A]].writes(obj.value, namespace, elementLabel, scope, false) match {
-            case elem: Elem if (w.xstypeNamespace.isDefined && w.xstypeName.isDefined &&
-                scope.getPrefix(w.xstypeNamespace.get) != null &&
-                scope.getPrefix(XSI_URL) != null) =>
-              elem % new PrefixedAttribute(scope.getPrefix(XSI_URL), "type",
-                scope.getPrefix(w.xstypeNamespace.get) + ":" + w.xstypeName.get, scala.xml.Null)
+            case elem: Elem if (w.xstypeName.isDefined && scope.getPrefix(XSI_URL) != null) =>
+              elem % scala.xml.Attribute(scope.getPrefix(Helper.XSI_URL), "type",
+                Helper.prefixedName(w.xstypeNamespace, w.xstypeName.get, scope), scala.xml.Null)
             case x => x
           }
       }
@@ -609,6 +607,7 @@ trait AnyElemNameParser extends scala.util.parsing.combinator.Parsers {
 }
 
 trait CanWriteChildNodes[A] extends CanWriteXML[A] {
+  def targetNamespace: Option[String]
   def typeName: Option[String] = None
   def writesAttribute(obj: A, scope: scala.xml.NamespaceBinding): scala.xml.MetaData = scala.xml.Null
   def writesChildNodes(obj: A, scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node]
@@ -618,8 +617,12 @@ trait CanWriteChildNodes[A] extends CanWriteXML[A] {
     scala.xml.Elem(Helper.getPrefix(namespace, scope).orNull,
       elementLabel getOrElse { error("missing element label.") },
       if (typeAttribute && typeName.isDefined &&
-          scope.getPrefix(Helper.XSI_URL) != null) scala.xml.Attribute(scope.getPrefix(Helper.XSI_URL), "type", typeName.get,
-        writesAttribute(obj, scope))
+          scope.getPrefix(Helper.XSI_URL) != null) {
+        val attrs = writesAttribute(obj, scope)
+        val mod = attrs remove (Helper.XSI_URL, scope, "type")
+        scala.xml.Attribute(scope.getPrefix(Helper.XSI_URL), "type",
+          Helper.prefixedName(targetNamespace, typeName.get, scope), mod)
+      }
       else writesAttribute(obj, scope),
       scope,
       writesChildNodes(obj, scope): _*)
@@ -816,6 +819,10 @@ object Helper {
   def getPrefix(namespace: Option[String], scope: scala.xml.NamespaceBinding) =
     if (Option[String](scope.getURI(null)) == namespace) None
     else Option[String](scope.getPrefix(namespace.orNull))
+
+  def prefixedName(namespace: Option[String], name: String, scope: scala.xml.NamespaceBinding) =
+    getPrefix(namespace, scope) map { """%s:%s""" format(_, name)
+    } getOrElse {name}
 
   def stringToXML(obj: String, namespace: Option[String], elementLabel: Option[String],
        scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq = {

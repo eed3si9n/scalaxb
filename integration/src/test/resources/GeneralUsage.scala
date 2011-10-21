@@ -44,6 +44,7 @@ object GeneralUsage {
     testSimpleAnyTypeExtension
     testDataRecord
     testDefaultScope
+    testUnmarshallBaseComplexType
     true
   }
   
@@ -238,7 +239,7 @@ object GeneralUsage {
     check(fromXML[ChoiceComplexTypeTest](document))
     println(document)
   }
-  
+
   /*
   <xs:complexType name="AnyTest">
     <xs:sequence>
@@ -437,5 +438,26 @@ object GeneralUsage {
   def testDefaultScope {
     if (defaultScope.getURI(null) == "http://www.example.com/general") true
     else error("default scope is missing.")
+  }
+
+  def testUnmarshallBaseComplexType {
+    val subject = <gen:shipTo xmlns:gen="http://www.example.com/general"
+                          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                          xsi:type="gen:USAddress">
+        <gen:street>1537 Paper Street</gen:street>
+        <gen:city>Wilmington</gen:city>
+        <gen:state>DE</gen:state>
+        <gen:zip>19886</gen:zip>
+      </gen:shipTo>
+    val shipTo = scalaxb.fromXML[Addressable](subject)
+
+    def check(obj: Addressable) = obj match {
+      case USAddress(_, _, _, _, _) =>
+      case _ => error("match failed: " + obj.toString)
+    }
+    val document = scalaxb.toXML[Addressable](shipTo, Some("http://www.example.com/general"), Some("shipTo"), subject.scope)
+    println(document)
+    check(fromXML[Addressable](document))
+    if (!document.toString.startsWith("""<gen:shipTo xsi:type="gen:USAddress" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:gen="http://www.example.com/general">""")) error("output is wrong")
   }
 }

@@ -130,7 +130,6 @@ abstract class GenSource(val schema: SchemaDecl,
     
     val compDepth = 1
     val defaultFormats = <source>  trait Default{formatterName} extends scalaxb.XMLFormat[{fqn}] {{
-    val targetNamespace: Option[String] = { quote(schema.targetNamespace) }
     { // if (imports.isEmpty) ""
       //  else imports.mkString(newline + indent(2)) + newline + indent(2) 
     }def reads(seq: scala.xml.NodeSeq, stack: List[scalaxb.ElemName]): Either[String, {fqn}] = seq match {{
@@ -317,7 +316,6 @@ abstract class GenSource(val schema: SchemaDecl,
       }
     
     val childElemParams = paramList.filter(!_.attribute)
-    println("childElemParams: " + childElemParams)
     
     def makeWritesChildNodes = {
       def simpleContentString(base: XsTypeSymbol) = base match {
@@ -453,8 +451,6 @@ abstract class GenSource(val schema: SchemaDecl,
     Snippet(<source>{ buildComment(seq) }case class {localName}({paramsString}){superString}</source>,
       <source/>,
       <source>  trait Default{formatterName} extends scalaxb.XMLFormat[{fqn}] {{
-    val targetNamespace: Option[String] = { quote(schema.targetNamespace) }
-    
     def reads(seq: scala.xml.NodeSeq, stack: List[scalaxb.ElemName]): Either[String, {fqn}] = Left("don't call me.")
     
 {makeWritesXML}
@@ -490,8 +486,6 @@ abstract class GenSource(val schema: SchemaDecl,
     
     val defaultFormats = if (compositor.particles.size == 0) <source></source>
       else <source>{ buildComment(group) }  trait {formatterName} extends {superNames.mkString(" with ")} {{
-    private val targetNamespace: Option[String] = { quote(schema.targetNamespace) }
-    
     def parse{localName}(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[{param.baseTypeName}] =
       {parser}
   

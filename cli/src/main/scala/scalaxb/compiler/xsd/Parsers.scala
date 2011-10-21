@@ -47,9 +47,9 @@ trait Parsers extends Args with Params {
     val parser = "any(%s)".format(namespaceConstraint match {
       case Nil => "_ => true"
       case "##any" :: Nil => "_ => true"
-      case "##other" :: Nil => "_.namespace != targetNamespace"
+      case "##other" :: Nil => "_.namespace != %s" format (quoteNamespace(schema.targetNamespace))
       case _ => (namespaceConstraint.map {
-        case "##targetNamespace" => "targetNamespace"
+        case "##targetNamespace" => quoteNamespace(schema.targetNamespace)
         case "##local" => "None"
         case x => "Some(%s)".format(x)
       }).mkString("List(", ", ", ").contains(_)")

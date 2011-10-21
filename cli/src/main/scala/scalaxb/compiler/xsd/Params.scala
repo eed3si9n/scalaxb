@@ -56,10 +56,10 @@ trait Params extends Lookup {
     name: String,
     typeSymbol: XsTypeSymbol,
     cardinality: Cardinality,
-    nillable: Boolean = false,
-    global: Boolean = false,
-    qualified: Boolean = false,
-    attribute: Boolean = false) {
+    nillable: Boolean,
+    global: Boolean,
+    qualified: Boolean,
+    attribute: Boolean) {
     
     def baseTypeName: String = buildTypeName(typeSymbol)
     
@@ -106,7 +106,7 @@ trait Params extends Lookup {
     val nillable = elem.nillable getOrElse { false }
     val retval = typeSymbol match {
       case AnyType(symbol) if nillable =>
-        Param(elem.namespace, elem.name, XsNillableAny, toCardinality(elem.minOccurs, elem.maxOccurs))
+        Param(elem.namespace, elem.name, XsNillableAny, toCardinality(elem.minOccurs, elem.maxOccurs), false, false, false, false)
       case XsLongAttribute =>
         Param(elem.namespace, elem.name, typeSymbol, toCardinality(elem.minOccurs, elem.maxOccurs), nillable, false, false, true)
       case _ =>
@@ -127,7 +127,7 @@ trait Params extends Lookup {
   
   def buildParam(group: AttributeGroupDecl): Param = {
     val retval = Param(group.namespace, group.name,
-      new AttributeGroupSymbol(group.namespace, group.name), Single, false, false, true)
+      new AttributeGroupSymbol(group.namespace, group.name), Single, false, false, false, true)
     logger.debug("buildParam:  " + retval.toString)
     retval    
   }
@@ -136,7 +136,7 @@ trait Params extends Lookup {
     XsDataRecord(typeSymbol)
   
   def buildParam(any: AnyAttributeDecl): Param =
-    Param(None, ATTRS_PARAM, XsAnyAttribute, Single, false, false, true)
+    Param(None, ATTRS_PARAM, XsAnyAttribute, Single, false, false, false, true)
   
   def buildCompositorSymbol(compositor: HasParticle, typeSymbol: XsTypeSymbol): XsTypeSymbol =
     compositor match {
@@ -153,7 +153,7 @@ trait Params extends Lookup {
   /// called by makeGroup
   def buildParam(compositor: HasParticle): Param =
     Param(None, "arg1", buildCompositorSymbol(compositor, buildCompositorRef(compositor, 0).typeSymbol),
-      toCardinality(compositor.minOccurs, compositor.maxOccurs))
+      toCardinality(compositor.minOccurs, compositor.maxOccurs), false, false, false, false)
   
   def primaryCompositor(group: GroupDecl): HasParticle =
     if (group.particles.size == 1) group.particles(0) match {

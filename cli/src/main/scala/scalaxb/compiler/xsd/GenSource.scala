@@ -317,6 +317,7 @@ abstract class GenSource(val schema: SchemaDecl,
       }
     
     val childElemParams = paramList.filter(!_.attribute)
+    println("childElemParams: " + childElemParams)
     
     def makeWritesChildNodes = {
       def simpleContentString(base: XsTypeSymbol) = base match {

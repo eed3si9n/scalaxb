@@ -235,7 +235,7 @@ trait GenSource {
       val v =
         if (b.literal && p.element.isDefined) "x.headOption getOrElse {x}"
         else if (b.literal) """scala.xml.Elem("", "Body", scala.xml.Null, defaultScope, x.toSeq: _*)"""
-        else """x.head \ "%s"""" format (p.name.get)
+        else """(x.head \ "%s").head""" format (p.name.get)
 
       val post =
         if (document) singleOutputType(output, document) map { elem =>

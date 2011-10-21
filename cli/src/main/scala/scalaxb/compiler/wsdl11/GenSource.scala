@@ -133,7 +133,7 @@ trait GenSource {
       case DataRecord(_, _, XOnewayoperationSequence(input)) =>
         // "def %s(%s): Unit".format(op.name, arg(input))
         """soapClient.requestResponse(%s, defaultScope, %s, %s, %s) match {
-          |          case Left(x)  => error(x)
+          |          case Left(x)  => error(x.toString)
           |          case Right(x) => ()
           |        }""".stripMargin.format(invokeToXML(op, input, binding, document),
           address, quotedMethod, actionString)
@@ -156,7 +156,7 @@ trait GenSource {
       case DataRecord(_, _, XNotificationoperationSequence(output)) =>
         // "def %s: %s".format(op.name, paramTypeName)
         """soapClient.requestResponse(Nil, defaultScope, %s, %s, %s) match {
-          |          case Left(x)  => error(x)
+          |          case Left(x)  => error(x.toString)
           |          case Right(x) => %s
           |        }""".stripMargin.format(address, quotedMethod, actionString, outputString(output, binding, document))
       case _ => error("unsupported.")

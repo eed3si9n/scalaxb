@@ -33,14 +33,12 @@ abstract class GenProtocol(val context: XsdContext) extends ContextProcessor {
     
     val name = makeTypeName("XMLProtocol")
     val scopeSchemas = context.schemas    
-    def makeScopes(ss: List[SchemaDecl]): List[(Option[String], String)] = ss match {
-      case x :: xs => 
-        x.targetNamespace map { ns =>
-          val prefix = makePrefix(x.targetNamespace, context)
-          if (prefix == "") makeScopes(xs)
-          else (Some(prefix), ns) :: makeScopes(xs)
-        } getOrElse { makeScopes(xs) }
-      case _ => Nil
+    def makeScope(x: SchemaDecl): Option[(Option[String], String)] = x.targetNamespace match {
+      case Some(ns) =>
+        val prefix = makePrefix(x.targetNamespace, context)
+        if (prefix == "") Some(Some("tns"), ns)
+        else Some(Some(prefix), ns)
+      case _ => None
     }
 
     def makeDistinct(list: List[(Option[String], String)], counter: Int): List[(Option[String], String)] = {
@@ -62,10 +60,11 @@ abstract class GenProtocol(val context: XsdContext) extends ContextProcessor {
     }
 
     // including XS_URL into the default scope prints out the xsi:type, which is necessary for anyType round trip.
-    val scopes = makeDistinct(((config.defaultNamespace flatMap  {
-      case ns if scopeSchemas.head.elementQualifiedDefault => Some(None -> ns)
-      case _ => None }).toList :::
-      makeScopes(scopeSchemas.toList) :::
+    val scopes = makeDistinct((
+      (config.defaultNamespace match {
+        case Some(ns) if scopeSchemas.toList forall {_.elementQualifiedDefault} => List(None -> ns)
+        case _ => Nil }) :::
+      (scopeSchemas.toList flatMap {makeScope _}) :::
       List((Some(XSI_PREFIX) -> XSI_URL), (Some(XS_PREFIX) -> XS_URL))).distinct, 0)
     val packageString = config.protocolPackageName map { "package " + _ + newline } getOrElse{""}
     val packageValueString = config.protocolPackageName map { x => x } getOrElse {""}

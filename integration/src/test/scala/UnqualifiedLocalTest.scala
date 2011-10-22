@@ -40,6 +40,15 @@ object UnqualifiedLocalTest extends TestBase {
     "</foo>", outdir = "./tmp")
   }
 
+  "unqualified.scala file must compile so that USAddress can roundtrip" in {
+    (List("""val usaddress = unqualified.USAddress("123", "New York", "NY", 10000, Map())""",
+      """val xml = scalaxb.toXML[unqualified.Addressable](usaddress, None, Some("shipTo"), unqualified.defaultScope)""",
+      """val x = scalaxb.fromXML[unqualified.Addressable](xml).toString""",
+      """x"""),
+     generated) must evaluateTo ("""USAddress(123,New York,NY,10000,Map(@{http://www.w3.org/2001/XMLSchema-instance}type -> DataRecord({http://www.w3.org/2001/XMLSchema-instance}type,tns:USAddress)))""",
+      outdir = "./tmp")
+  }
+
   /*
   val inFile2  = new File("integration/src/test/resources/qualified.xsd")
   lazy val generated2 = (new Driver).process(inFile2, "qualified", tmp)

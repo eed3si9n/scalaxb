@@ -62,7 +62,9 @@ abstract class GenProtocol(val context: XsdContext) extends ContextProcessor {
     }
 
     // including XS_URL into the default scope prints out the xsi:type, which is necessary for anyType round trip.
-    val scopes = makeDistinct(((config.defaultNamespace map { ns => None -> ns }).toList :::
+    val scopes = makeDistinct(((config.defaultNamespace flatMap  {
+      case ns if scopeSchemas.head.elementQualifiedDefault => Some(None -> ns)
+      case _ => None }).toList :::
       makeScopes(scopeSchemas.toList) :::
       List((Some(XSI_PREFIX) -> XSI_URL), (Some(XS_PREFIX) -> XS_URL))).distinct, 0)
     val packageString = config.protocolPackageName map { "package " + _ + newline } getOrElse{""}

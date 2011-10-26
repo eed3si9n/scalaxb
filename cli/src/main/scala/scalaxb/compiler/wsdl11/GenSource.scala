@@ -24,8 +24,8 @@ package scalaxb.compiler.wsdl11
 
 import scalaxb.compiler.{Config, Snippet, ReferenceNotFound, Module}
 import Module.{NL, indent, camelCase}
-import scalaxb.compiler.xsd.{AnyType, XsTypeSymbol, XsAnyType}
 import com.weiglewilczek.slf4s.Logger
+import scalaxb.compiler.xsd._
 
 trait GenSource {
   import wsdl11._
@@ -54,17 +54,19 @@ trait GenSource {
 
   def soap12Bindings(definition: XDefinitionsType) =
     definition.binding filter { binding =>
-      binding.any.headOption map {
+      binding.any exists {
         case DataRecord(_, _, node: Node) => node.scope.getURI((node.prefix)) == WSDL_SOAP12
-      } getOrElse {false}
+        case _ => false
+      }
     }
 
   def soap11Bindings(definition: XDefinitionsType) =
     if (!soap12Bindings(definition).isEmpty) Nil
     else definition.binding filter { binding =>
-      binding.any.headOption map {
+      binding.any exists {
         case DataRecord(_, _, node: Node) => node.scope.getURI((node.prefix)) == WSDL_SOAP11
-      } getOrElse {false}
+        case _ => false
+      }
     }
 
   // generate method signature
@@ -193,6 +195,8 @@ trait GenSource {
     val b = bodyBinding(binding.input)
     lazy val entity = toTypeSymbol(input) match {
       case AnyType(_) => (buildIRIStyleArgs(input) map {_.toParamName}).head
+      case symbol: BuiltInSimpleTypeSymbol => (buildIRIStyleArgs(input) map {_.toParamName}).head
+      case ReferenceTypeSymbol(decl: SimpleTypeDecl) => (buildIRIStyleArgs(input) map {_.toParamName}).head
       case _ => "%s(%s)".format(paramTypeName(input), buildIRIStyleArgs(input) map {_.toParamName} mkString(", "))
     }
 

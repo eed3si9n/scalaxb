@@ -262,26 +262,28 @@ object GeneralUsage {
   */
   def testAny {
     println("testAny")
-    val subject = <foo xmlns="http://www.example.com/general"
+    val subject = <gen:foo xmlns:gen="http://www.example.com/general"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xmlns:xs="http://www.w3.org/2001/XMLSchema"
         xmlns:o="http://www.example.com/other">
-      <person1><firstName>John</firstName><lastName>Doe</lastName></person1>
+      <gen:person1><gen:firstName>John</gen:firstName><gen:lastName>Doe</gen:lastName></gen:person1>
       <o:foo xsi:type="xs:int">1</o:foo>
-      <person2 xsi:nil="true"/>
-      <person3><firstName>John</firstName><lastName>Doe</lastName></person3>
+      <local><somethingLocal/></local>
+      <gen:person2 xsi:nil="true"/>
+      <gen:person3><gen:firstName>John</gen:firstName><gen:lastName>Doe</gen:lastName></gen:person3>
       <o:foo xsi:type="xs:int">1</o:foo>
       <o:foo xsi:type="xs:int">1</o:foo>
       <o:foo xsi:type="xs:int">1</o:foo><o:foo xsi:type="xs:int">1</o:foo>
-      <person5><firstName>John</firstName><lastName>Doe</lastName></person5>
-      <person5><firstName>John</firstName><lastName>Doe</lastName></person5>
-    </foo>
+      <gen:person5><gen:firstName>John</gen:firstName><gen:lastName>Doe</gen:lastName></gen:person5>
+      <gen:person5><gen:firstName>John</gen:firstName><gen:lastName>Doe</gen:lastName></gen:person5>
+    </gen:foo>
     val obj = fromXML[AnyTest](subject)
     
     def check(obj: Any) = obj match {
         case AnyTest(
           Person("John", "Doe"),
           DataRecord(O, Some("foo"), 1), // Single
+          DataRecord(None, Some("local"), _), // Local
           DataRecord(NS, Some("person2"), None),
           Some(Person("John", "Doe")),
           Some(DataRecord(O, Some("foo"), 1)), // optional

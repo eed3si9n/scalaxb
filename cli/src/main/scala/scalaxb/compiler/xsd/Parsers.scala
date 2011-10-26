@@ -48,11 +48,12 @@ trait Parsers extends Args with Params {
       case Nil => "_ => true"
       case "##any" :: Nil => "_ => true"
       case "##other" :: Nil => "_.namespace != %s" format (quoteNamespace(schema.targetNamespace))
-      case _ => (namespaceConstraint.map {
-        case "##targetNamespace" => quoteNamespace(schema.targetNamespace)
-        case "##local" => "None"
-        case x => "Some(%s)".format(x)
-      }).mkString("List(", ", ", ").contains(_)")
+      case _ =>
+        """x => %s contains x.namespace""" format (namespaceConstraint.map {
+          case "##targetNamespace" => quoteNamespace(schema.targetNamespace)
+          case "##local" => "None"
+          case x => "Some(%s)".format(x)
+        }).mkString("List(", ", ", ")")
     })
     
     buildParserString(if (mixed) "((" + parser + " ^^ (" + converter + ")) ~ " + newline +

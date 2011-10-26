@@ -156,6 +156,7 @@
     <xs:sequence>
       <xs:element name="person1" type="gen:Person"/>
       <xs:any namespace="##other" processContents="lax"/>
+      <xs:any namespace="##local" processContents="lax"/>
       <xs:choice>
         <xs:element name="person2" nillable="true" type="gen:Person"/>
         <xs:any namespace="##other" processContents="lax"/>

@@ -18,7 +18,7 @@
 -->
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
            xmlns:xmime="http://www.w3.org/2005/05/xmlmime"
-           targetNamespace="http://www.w3.org/2005/05/xmlmime" >
+           targetNamespace="http://www.w3.org/2005/05/xmlmime" elementFormDefault="qualified">
 
   <xs:attribute name="contentType">
     <xs:simpleType>

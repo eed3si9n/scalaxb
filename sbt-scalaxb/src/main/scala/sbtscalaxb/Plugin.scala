@@ -2,6 +2,7 @@ package sbtscalaxb
 
 import sbt._
 import scalaxb.{compiler => sc}
+import scalaxb.compiler.{Config => ScConfig}
 
 object Plugin extends sbt.Plugin {
   import Keys._
@@ -10,7 +11,7 @@ object Plugin extends sbt.Plugin {
   object ScalaxbKeys {
     lazy val scalaxb          = TaskKey[Seq[File]]("scalaxb")
     lazy val generate         = TaskKey[Seq[File]]("scalaxb-generate")
-    lazy val scalaxbConfig    = SettingKey[sc.Config]("scalaxb-config")
+    lazy val scalaxbConfig    = SettingKey[ScConfig]("scalaxb-config")
     lazy val xsdSource        = SettingKey[File]("scalaxb-xsd-source")
     lazy val wsdlSource       = SettingKey[File]("scalaxb-wsdl-source")
     lazy val packageName      = SettingKey[String]("scalaxb-package-name")
@@ -23,6 +24,7 @@ object Plugin extends sbt.Plugin {
     lazy val generateRuntime  = SettingKey[Boolean]("scalaxb-generate-runtime")
     lazy val protocolFileName = SettingKey[String]("scalaxb-protocol-file-name")
     lazy val protocolPackageName  = SettingKey[Option[String]]("scalaxb-protocol-package-name")
+    lazy val laxAny           = SettingKey[Boolean]("scalaxb-lax-any")
     lazy val combinedPackageNames = SettingKey[Map[Option[String], Option[String]]]("scalaxb-combined-package-names")
   }
 
@@ -66,27 +68,32 @@ object Plugin extends sbt.Plugin {
     generateRuntime in scalaxb := true,
     protocolFileName in scalaxb := sc.Defaults.protocolFileName,
     protocolPackageName in scalaxb := None,
+    laxAny in scalaxb := false,
     combinedPackageNames in scalaxb <<= (packageName in scalaxb, packageNames in scalaxb) { (x, xs) =>
       (xs map { case (k, v) => ((Some(k.toString): Option[String]), Some(v)) }) updated (None, Some(x)) },
-    scalaxbConfig in scalaxb <<= (combinedPackageNames in scalaxb,
-        packageDir in scalaxb,
-        classPrefix in scalaxb,
-        paramPrefix in scalaxb,
-        wrapContents in scalaxb,
-        generateRuntime in scalaxb,
-        chunkSize in scalaxb,
-        protocolFileName in scalaxb,
-        protocolPackageName in scalaxb) { (pkg, pkgdir, cpre, ppre, w, rt, cs, pfn, ppn) =>
-      sc.Config(packageNames = pkg,
-        packageDir = pkgdir,
-        classPrefix = cpre,
-        paramPrefix = ppre,
-        wrappedComplexTypes = w.toList,
-        generateRuntime = rt,
-        sequenceChunkSize = cs,
-        protocolFileName = pfn,
-        protocolPackageName = ppn
-      ) },
+    scalaxbConfig in scalaxb <<= Project.app((combinedPackageNames in scalaxb) :^:
+        (packageDir in scalaxb) :^:
+        (classPrefix in scalaxb) :^:
+        (paramPrefix in scalaxb) :^:
+        (wrapContents in scalaxb) :^:
+        (generateRuntime in scalaxb) :^:
+        (chunkSize in scalaxb) :^:
+        (protocolFileName in scalaxb) :^:
+        (protocolPackageName in scalaxb) :^:
+        (laxAny in scalaxb) :^: KNil) {
+          case pkg :+: pkgdir :+: cpre :+: ppre :+: w :+: rt :+: cs :+: pfn :+: ppn :+: la :+: HNil =>
+            ScConfig(packageNames = pkg,
+              packageDir = pkgdir,
+              classPrefix = cpre,
+              paramPrefix = ppre,
+              wrappedComplexTypes = w.toList,
+              generateRuntime = rt,
+              sequenceChunkSize = cs,
+              protocolFileName = pfn,
+              protocolPackageName = ppn,
+              laxAny = la
+            )
+          },
     logLevel in scalaxb <<= logLevel?? Level.Info
   )
 }

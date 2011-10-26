@@ -63,6 +63,7 @@ object Main extends Version {
     var sequenceChunkSize = 10
     var contentsSizeLimit = 20
     var prependFamilyName = false
+    var laxAny = false
 
     packageNames(None) = None
     val paramParser = new scopt.OptionParser("scalaxb", version) {
@@ -94,6 +95,8 @@ object Main extends Version {
         { p: String => protocolPackageName = Some(p)})
       opt("no-runtime", "skips runtime files",
         { generateRuntime = false })
+      opt("lax-any", "relaxes namespace constraints of xs:any",
+        { laxAny = true })
       opt("v", "verbose", "be extra verbose",
         { verbose = true })
       arglist("<schema_file>...", "input schema to be converted",
@@ -115,7 +118,8 @@ object Main extends Version {
           generateRuntime = generateRuntime,
           contentsSizeLimit = contentsSizeLimit,
           sequenceChunkSize = sequenceChunkSize,
-          prependFamilyName = prependFamilyName) )
+          prependFamilyName = prependFamilyName,
+          laxAny = laxAny) )
     }
   }
 }

@@ -267,8 +267,8 @@ object GeneralUsage {
         xmlns:xs="http://www.w3.org/2001/XMLSchema"
         xmlns:o="http://www.example.com/other">
       <gen:person1><gen:firstName>John</gen:firstName><gen:lastName>Doe</gen:lastName></gen:person1>
-      <o:foo xsi:type="xs:int">1</o:foo>
-      <local><somethingLocal/></local>
+      <x:other xmlns:x="http://www.example.com/x"><x:something/></x:other>
+      <local><something/></local>
       <gen:person2 xsi:nil="true"/>
       <gen:person3><gen:firstName>John</gen:firstName><gen:lastName>Doe</gen:lastName></gen:person3>
       <o:foo xsi:type="xs:int">1</o:foo>
@@ -282,7 +282,7 @@ object GeneralUsage {
     def check(obj: Any) = obj match {
         case AnyTest(
           Person("John", "Doe"),
-          DataRecord(O, Some("foo"), 1), // Single
+          DataRecord(Some("http://www.example.com/x"), Some("other"), _), // Single
           DataRecord(None, Some("local"), _), // Local
           DataRecord(NS, Some("person2"), None),
           Some(Person("John", "Doe")),
@@ -295,14 +295,17 @@ object GeneralUsage {
         case _ => error("match failed: " + obj.toString)
       }
     check(obj)
-    val scope = toScope(None -> "http://www.example.com/general",
-      Some("gen") -> "http://www.example.com/general",
+    val scope = toScope(Some("gen") -> "http://www.example.com/general",
       Some("xsi") -> "http://www.w3.org/2001/XMLSchema-instance",
       Some("xs") -> "http://www.w3.org/2001/XMLSchema",
       Some("o") -> "http://www.example.com/other")
     val document = toXML[AnyTest](obj, "foo", scope)
-    println(document)
-    check(fromXML[AnyTest](document))
+    println(document.toString)
+    (document.toString contains """<x:other xmlns:x="http://www.example.com/x"><x:something></x:something></x:other>""") match {
+      case true =>
+      case _ => error("x:other includes outer namespace bindings: " + document.toString)
+    }
+    check(fromXML[AnyTest](scala.xml.XML.loadString(document.toString)))
   }
     
   def testLongAll {

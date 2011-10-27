@@ -68,14 +68,14 @@ trait XMLStandardTypes {
     }
 
     def writes(obj: Node, namespace: Option[String], elementLabel: Option[String],
-      scope: NamespaceBinding, typeAttribute: Boolean): NodeSeq = obj
+      scope: NamespaceBinding, typeAttribute: Boolean): NodeSeq = Helper.mergeNodeScope(obj, scope)
   }
 
   implicit lazy val __NodeSeqXMLFormat: XMLFormat[NodeSeq] = new XMLFormat[NodeSeq] {
     def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, NodeSeq] = Right(seq)
 
     def writes(obj: NodeSeq, namespace: Option[String], elementLabel: Option[String],
-      scope: NamespaceBinding, typeAttribute: Boolean): NodeSeq = obj
+      scope: NamespaceBinding, typeAttribute: Boolean): NodeSeq = Helper.mergeNodeSeqScope(obj, scope)
   }
 
   implicit lazy val __ElemXMLFormat: XMLFormat[Elem] = new XMLFormat[Elem] {
@@ -85,7 +85,7 @@ trait XMLStandardTypes {
     }
 
     def writes(obj: Elem, namespace: Option[String], elementLabel: Option[String],
-      scope: NamespaceBinding, typeAttribute: Boolean): NodeSeq = obj
+      scope: NamespaceBinding, typeAttribute: Boolean): NodeSeq = Helper.mergeNodeScope(obj, scope)
   }
 
   implicit lazy val __StringXMLFormat: XMLFormat[String] = new XMLFormat[String] {
@@ -832,6 +832,33 @@ object Helper {
         scope, scala.xml.Text(obj.toString))
     } getOrElse { scala.xml.Text(obj) }
   }
+
+  // assume outer scope
+  def mergeNodeSeqScope(nodeseq: NodeSeq, outer: NamespaceBinding): NodeSeq =
+    nodeseq.toSeq flatMap { mergeNodeScope(_, outer) }
+
+  // assume outer scope
+  def mergeNodeScope(node: Node, outer: NamespaceBinding): Node =
+    node match {
+      case elem: Elem =>
+        val newScope = subtractOuterScope(elem.scope, outer)
+        elem.copy(scope = newScope, child = mergeNodeSeqScope(mergeNodeSeqScope(elem.child, outer), newScope))
+      case _ => node
+    }
+
+  def subtractOuterScope(scope: NamespaceBinding, outer: NamespaceBinding) = {
+    val outerList = fromScope(outer)
+    def renamePrefix(prefix: Option[String],  n: Int): Option[String] =
+      if (outerList exists { case (p, n) => p == Some((prefix getOrElse {"ns"}) + n.toString)}) renamePrefix(prefix, n + 1)
+      else Some((prefix getOrElse {"ns"}) + n.toString)
+
+    toScope(fromScope(scope) flatMap {
+      case (prefix, ns) if outerList contains (prefix -> ns) => None
+      case (prefix, ns) if outerList exists { case (p, n) => p == prefix } => Some(renamePrefix(prefix, 2) -> ns)
+      case (prefix, ns) => Some(prefix -> ns)
+    }: _*)
+  }
+
 }
 
 class ParserFailure(message: String) extends RuntimeException(message)

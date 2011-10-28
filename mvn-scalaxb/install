@@ -8,7 +8,7 @@ fi
 REPO=$HOME/.m2/repository
 cd $(dirname $0)/..
 sbt <<EOF
-project scalaxb
+project app
 set publishTo := Some(Resolver.file("file",  new File("$REPO")))
 publish
 EOF

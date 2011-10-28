@@ -166,6 +166,23 @@ public class ScalaxbMojo extends AbstractMojo {
     */
    private String protocolPackage;
 
+   /**
+    * Relaxes namespace constraints of <code>xs:any</code>.
+    * <br/>
+    * This option allows <code>xs:any</code> elements declared with a namespace
+    * attribute of <code>##local</code> to contain qualified XML elements.
+    * According to the W3C XML Schema recommendation, an XML element that is
+    * declared to be in a namespace is not permitted content for an
+    * <code>xs:any</code> element with a namespace of <code>##local</code>.
+    * By default, this option is false, thus enforcing this requirement. Setting
+    * this option to true allows namespaced content to be used.
+    *
+    * @parameter
+    *   default-value="false"
+    *   expression="${scalaxb.lax-any}"
+    */
+   private boolean laxAny;
+
     /**
      *
      * @parameter expression="${scalaxb.verbose}"
@@ -250,6 +267,7 @@ public class ScalaxbMojo extends AbstractMojo {
             .intersperse("--wrap-contents", wrapContents)
             .param("--protocol-file", protocolFile)
             .param("--protocol-package", protocolPackage)
+            .flag("--lax-any", laxAny)
             .getArguments();
         return unmodifiableList(args);
     }

@@ -841,22 +841,30 @@ object Helper {
   def mergeNodeScope(node: Node, outer: NamespaceBinding): Node =
     node match {
       case elem: Elem =>
-        val newScope = subtractOuterScope(elem.scope, outer)
-        elem.copy(scope = newScope, child = mergeNodeSeqScope(mergeNodeSeqScope(elem.child, outer), newScope))
+        withInnerScope(elem.scope, outer) { (innerScope, mapping) =>
+          val newPrefix: String = Option[String](elem.prefix) map { p => mapping(Some(p)).toString } orNull
+          val newChild = mergeNodeSeqScope(mergeNodeSeqScope(elem.child, outer), innerScope)
+          elem.copy(scope = innerScope, prefix = newPrefix, child = newChild)
+        }
       case _ => node
     }
 
-  def subtractOuterScope(scope: NamespaceBinding, outer: NamespaceBinding) = {
+  def withInnerScope[A](scope: NamespaceBinding, outer: NamespaceBinding)
+                    (f: (NamespaceBinding, Map[Option[String], Option[String]]) => A): A = {
     val outerList = fromScope(outer)
     def renamePrefix(prefix: Option[String],  n: Int): Option[String] =
       if (outerList exists { case (p, n) => p == Some((prefix getOrElse {"ns"}) + n.toString)}) renamePrefix(prefix, n + 1)
       else Some((prefix getOrElse {"ns"}) + n.toString)
 
-    toScope(fromScope(scope) flatMap {
+    val xs = fromScope(scope) flatMap {
       case (prefix, ns) if outerList contains (prefix -> ns) => None
-      case (prefix, ns) if outerList exists { case (p, n) => p == prefix } => Some(renamePrefix(prefix, 2) -> ns)
-      case (prefix, ns) => Some(prefix -> ns)
-    }: _*)
+      case (prefix, ns) if outerList exists { case (p, n) => p == prefix && p.isDefined } =>
+        val renamed = renamePrefix(prefix, 2)
+        Some((renamed -> ns, prefix -> renamed))
+      case (prefix, ns) => Some((prefix -> ns, prefix -> prefix))
+    }
+
+    f(toScope(xs map {_._1}: _*), Map(xs map {_._2}: _*))
   }
 
 }

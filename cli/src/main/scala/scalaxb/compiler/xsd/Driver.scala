@@ -72,7 +72,6 @@ class Driver extends Module { driver =>
     
     def toSchema(context: Context): Schema = {
       val schema = SchemaDecl.fromXML(raw, context)
-      context.schemas += schema
       logger.debug("toSchema: " + schema.toString())
       schema
     }

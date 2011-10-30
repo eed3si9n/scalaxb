@@ -8,6 +8,7 @@
   <!-- for SKU -->
   <import namespace="http://www.example.com/IPO"/>
   <import namespace="http://www.example.com/circular"/>
+  <include schemaLocation="include.xsd" />
   
   <annotation>
     <documentation xml:lang="en">
@@ -66,20 +67,6 @@
     </sequence>
   </complexType>
 
-  <complexType name="PartsType">
-    <sequence>
-      <element name="part" maxOccurs="unbounded">
-        <complexType>
-          <simpleContent>
-            <extension base="string">
-              <attribute name="number" type="xipo:SKU"/>
-            </extension>
-          </simpleContent>
-        </complexType>
-      </element>
-    </sequence>
-  </complexType>
-  
   <element name="otherCircular">
     <complexType>
       <sequence>

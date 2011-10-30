@@ -25,6 +25,8 @@ package scalaxb.compiler.xsd
 import scala.collection.{Map, Set}
 import scala.collection.mutable
 import scala.collection.immutable
+import scalaxb.compiler.Adder
+import java.net.URI
 
 abstract class Decl
 
@@ -37,7 +39,7 @@ object Incrementor {
 }
 
 case class XsdContext(
-  schemas: mutable.ListBuffer[SchemaDecl] = mutable.ListBuffer(),
+  uriToSchema: mutable.ListMap[URI, SchemaDecl] = mutable.ListMap(),
   typeNames: mutable.ListMap[NameKey, String] = mutable.ListMap(),
   enumValueNames: mutable.ListMap[Option[String],
       mutable.ListMap[(String, EnumerationDecl), String]] = mutable.ListMap(),
@@ -50,7 +52,19 @@ case class XsdContext(
   substituteGroups: mutable.ListBuffer[(Option[String], String)] = mutable.ListBuffer(),
   prefixes: mutable.ListMap[String, String] = mutable.ListMap(),
   duplicatedTypes: mutable.ListBuffer[(SchemaDecl, Decl)] = mutable.ListBuffer()
-    ) {
+    ) extends Adder[SchemaDecl] {
+  def schemas = uriToSchema.valuesIterator.toSeq
+
+  def add(uri: URI, value: SchemaDecl) {
+    uriToSchema(uri) = value
+  }
+  def setOuterNamespace(uri: URI, outer: Option[String]) {
+    val x = uriToSchema(uri)
+    uriToSchema(uri) = x.copy(targetNamespace = x.targetNamespace match {
+      case Some(ns) => Some(ns)
+      case _ => outer
+    })
+  }
 }
 
 class ParserConfig {

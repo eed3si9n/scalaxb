@@ -23,7 +23,7 @@
 package scalaxb.compiler.wsdl11
 
 import scala.collection.mutable
-import scalaxb.compiler.{Module, Config, Snippet, CustomXML, CanBeWriter}
+import scalaxb.compiler.{Module, Config, Snippet, CustomXML, CanBeWriter, Adder}
 import scalaxb.{DataRecord}
 import wsdl11._
 import java.io.{Reader}
@@ -153,7 +153,6 @@ class Driver extends Module { driver =>
       val xsd = xsdRawSchema map { x =>
         val schema = SchemaDecl.fromXML(x, context.xsdcontext)
         logger.debug(schema.toString)
-        context.xsdcontext.schemas += schema
         schema
       }
 
@@ -185,4 +184,11 @@ case class WsdlContext(xsdcontext: XsdContext = XsdContext(),
                        services:    mutable.ListMap[(Option[String], String), XServiceType] = mutable.ListMap(),
                        faults:      mutable.ListMap[(Option[String], String), XFaultType] = mutable.ListMap(),
                        messages:    mutable.ListMap[(Option[String], String), XMessageType] = mutable.ListMap(),
-                       var soap11:  Boolean = false )
+                       var soap11:  Boolean = false ) extends Adder[WsdlPair] {
+  def add(uri: URI, value: WsdlPair) {
+    value.schemas map {xsdcontext.add(uri, _)}
+  }
+  def setOuterNamespace(uri: URI, outer: Option[String]) {
+    xsdcontext.setOuterNamespace(uri, outer)
+  }
+}

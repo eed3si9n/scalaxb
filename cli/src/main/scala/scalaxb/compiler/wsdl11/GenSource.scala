@@ -276,8 +276,10 @@ trait GenSource {
         List(ParamCache(paramName, scalaCode))
       case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
         val flatParticles = xsdgenerator.flattenElements(decl, 0)
-        flatParticles map { p =>
-          val param = xsdgenerator.buildParam(p) map {camelCase}
+        val attributes = xsdgenerator.flattenAttributes(decl)
+        val list = List.concat(flatParticles, attributes)
+        list map { x =>
+          val param = xsdgenerator.buildParam(x) map {camelCase}
           ParamCache(param.toParamName, param.toScalaCode)
         }
       case AnyType(symbol) =>

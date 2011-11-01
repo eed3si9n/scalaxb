@@ -196,8 +196,8 @@ public class ScalaxbMojo extends AbstractMojo {
             getLog().warn("No XSD or WSDL files found: not running scalaxb");
         } else {
             List<String> inputFiles = new ArrayList<String>();
-            inputFiles.addAll(schemaFiles);
             inputFiles.addAll(wsdlFiles);
+            inputFiles.addAll(schemaFiles);
             generateBindings(inputFiles);
         }
     }

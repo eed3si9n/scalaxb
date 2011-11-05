@@ -842,7 +842,7 @@ object Helper {
     node match {
       case elem: Elem =>
         withInnerScope(elem.scope, outer) { (innerScope, mapping) =>
-          val newPrefix: String = Option[String](elem.prefix) map { p => mapping(Some(p)).toString } orNull
+          val newPrefix: String = mapping.get(Option[String](elem.prefix)) map {_.orNull} getOrElse {elem.prefix}
           val newChild = mergeNodeSeqScope(mergeNodeSeqScope(elem.child, outer), innerScope)
           elem.copy(scope = innerScope, prefix = newPrefix, child = newChild)
         }
@@ -856,7 +856,7 @@ object Helper {
       if (outerList exists { case (p, n) => p == Some((prefix getOrElse {"ns"}) + n.toString)}) renamePrefix(prefix, n + 1)
       else Some((prefix getOrElse {"ns"}) + n.toString)
 
-    val xs = fromScope(scope) flatMap {
+    val xs: List[((Option[String], String), (Option[String], Option[String]))] = fromScope(scope) flatMap {
       case (prefix, ns) if outerList contains (prefix -> ns) => None
       case (prefix, ns) if outerList exists { case (p, n) => p == prefix && p.isDefined } =>
         val renamed = renamePrefix(prefix, 2)

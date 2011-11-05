@@ -43,6 +43,7 @@ object GeneralUsage {
     testTopLevelMustipleSeqAny
     testSimpleAnyTypeExtension
     testDataRecord
+    testDataRecordAny
     testDefaultScope
     testUnmarshallBaseComplexType
     true
@@ -438,6 +439,29 @@ object GeneralUsage {
     val document = toXML[DataRecord[Person]](obj, "foo", toScope(scopeList: _*))
     println(document)
     check(fromXML[DataRecord[Person]](document))
+  }
+
+  def testDataRecordAny {
+    println("testDataRecordAny")
+
+    val scope = scalaxb.toScope(Some("xs") -> "http://www.w3.org/2001/XMLSchema",
+      Some("xsi") -> "http://www.w3.org/2001/XMLSchema-instance")
+    val subject = <core:gln xmlns:core="urn:epcglobal:hls:1">0111222123458</core:gln>
+    val r = scalaxb.fromXML[DataRecord[Any]](subject)
+
+    def check(obj: Any) = obj match {
+        case DataRecord(Some("urn:epcglobal:hls:1"), Some("gln"), x) if x == <core:gln xmlns:core="urn:epcglobal:hls:1">0111222123458</core:gln> =>
+        case _ => error("match failed: " + obj.toString)
+      }    
+    
+    check(r)
+    val document = scalaxb.toXML[scalaxb.DataRecord[Any]](r, r.namespace, r.key, scope, true)
+    document.toString match {
+      case """<core:gln xmlns:core="urn:epcglobal:hls:1">0111222123458</core:gln>""" =>
+      case x => error("match failed: " + x)
+    }
+    println(document)
+    check(fromXML[DataRecord[Any]](document))
   }
   
   def testDefaultScope {

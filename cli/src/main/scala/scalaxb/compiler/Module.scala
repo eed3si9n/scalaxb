@@ -309,14 +309,31 @@ trait Module {
     }
 
     def processUnnamedIncludes() {
-      val list = importables.toList ++ additionalImportables.toList
+      logger.debug("processUnnamedIncludes")
+      import scala.collection.mutable.{ListBuffer, ListMap}
+      val all = (importables.toList map {_._1}) ++ (additionalImportables.toList map {_._1})
+      val parents: ListBuffer[Importable] = ListBuffer(all filter { !_.includeLocations.isEmpty}: _*)
+      def children(importable: Importable): List[Importable] = {
+        val uris = importable.includeLocations map { includedLoc => shortenUri(new URI(includedLoc)) }
+        all filter { x => uris contains shortenUri(x.location) }
+      }
+      val mapping: ListMap[Importable, Option[String]] = ListMap()
 
+      val len = parents.size * parents.size
       for {
-        (i, f) <- list
-        loc <- i.includeLocations
-        (i2, f2) <- list if f != f2 && shortenUri(new URI(loc)) == shortenUri(i2.location)
+        i <- 0 to len if parents.size > 0
       } {
-        context.setOuterNamespace(i2.location, i.targetNamespace)
+        val parent = parents(i % parents.size)
+        val xs = children(parent)
+        if (xs forall { x => !(parents contains x) }) {
+          val tns = mapping.get(parent) getOrElse {parent.targetNamespace}
+          xs foreach { x =>
+            logger.debug("processUnnamedIncludes - setting %s's outer namespace to %s" format (x.location, tns))
+            context.setOuterNamespace(x.location, tns)
+            mapping(x) = tns
+          }
+          parents.remove(i % parents.size)
+        }
       }
     }
 

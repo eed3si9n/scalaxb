@@ -8,18 +8,18 @@ trait HttpClients {
   }
 }
 
-case class Fault[+A](original: Any, detail: Option[A]) {
+case class Fault[+A](original: Any, detail: Option[A], headers: scala.xml.NodeSeq) {
   def asFault[B: scalaxb.XMLFormat] = Fault(original, detail map {
     case x: soapenvelope11.Detail => x.any.head.value match {
       case node: scala.xml.Node => scalaxb.fromXML[B](node)
       case _ => error("unsupported fault: " + toString)
     }
     case _ => error("unsupported fault: " + toString)
-  })
+  }, headers)
 }
 
 trait Soap11Clients { this: HttpClients =>
-  import soapenvelope11.{Envelope, Body, Detail}
+  import soapenvelope11.{Envelope, Body, Detail, Header}
 
   lazy val soapClient: Soap11Client = new Soap11Client {}
   val baseAddress: java.net.URI
@@ -49,29 +49,41 @@ trait Soap11Clients { this: HttpClients =>
       }
     }
 
-    def requestResponse(in: scala.xml.NodeSeq, scope: scala.xml.NamespaceBinding,
+    def requestResponse(body: scala.xml.NodeSeq, headers: scala.xml.NodeSeq, scope: scala.xml.NamespaceBinding,
                         address: java.net.URI, webMethod: String, action: Option[java.net.URI]):
-        Either[Fault[Detail], scala.xml.NodeSeq] = {
-      val envelope = Envelope(None, Body(Seq(DataRecord(None, None, in)), Map()), Nil, Map())
+        Either[Fault[Detail], (scala.xml.NodeSeq, scala.xml.NodeSeq)] = {
+      val bodyRecords = body.toSeq map { DataRecord(None, None, _) }
+      val headerOption = headers.toSeq.headOption map { _ =>
+        Header(headers.toSeq map {DataRecord(None, None, _)}, Map())
+      }
+      val envelope = Envelope(headerOption, Body(bodyRecords, Map()), Nil, Map())
       buildResponse(soapRequest(Some(envelope), scope, address, webMethod, action))
     }
 
     def soapResponse(location: Option[String], params: Map[String, Any],
                      address: java.net.URI, webMethod: String, action: Option[java.net.URI]):
-        Either[Fault[Detail], scala.xml.NodeSeq] = {
+        Either[Fault[Detail], (scala.xml.NodeSeq, scala.xml.NodeSeq)] = {
       buildResponse(soapRequest(None, scala.xml.TopScope, address, webMethod, action))
     }
 
     def buildResponse(soapResponse: Envelope):
-        Either[Fault[Detail], scala.xml.NodeSeq] = soapResponse.Body.any.headOption match {
-      case Some(DataRecord(_, _, x: scala.xml.Elem)) if (x.label == "Fault") &&
-          (x.scope.getURI(x.prefix) == SOAP_ENVELOPE11_URI) =>
-        val fault = scalaxb.fromXML[soapenvelope11.Fault](x)
-        Left(Fault(fault, fault.detail))
-      case _ =>
-        Right(soapResponse.Body.any collect {
-          case DataRecord(_, _, x: scala.xml.Node) => x
-        })
+        Either[Fault[Detail], (scala.xml.NodeSeq, scala.xml.NodeSeq)] = {
+      val header: scala.xml.NodeSeq =
+        soapResponse.Header.toSeq flatMap { header =>
+          header.any collect {
+            case DataRecord(_, _, x: scala.xml.Node) => x
+          }
+        }
+      soapResponse.Body.any.headOption match {
+        case Some(DataRecord(_, _, x: scala.xml.Elem)) if (x.label == "Fault") &&
+            (x.scope.getURI(x.prefix) == SOAP_ENVELOPE11_URI) =>
+          val fault = scalaxb.fromXML[soapenvelope11.Fault](x)
+          Left(Fault(fault, fault.detail, header))
+        case _ =>
+          Right(header, soapResponse.Body.any collect {
+            case DataRecord(_, _, x: scala.xml.Node) => x
+          })
+      }
     }
   }
 }

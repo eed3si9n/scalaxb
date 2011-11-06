@@ -93,6 +93,9 @@ object TypeSymbolParser {
   
   def fromString(name: String, config: ParserConfig): XsTypeSymbol = fromString(name, splitTypeName(name, config))
 
+  def fromQName(qname: javax.xml.namespace.QName): XsTypeSymbol =
+    fromString(qname.toString, (Option[String](qname.getNamespaceURI), qname.getLocalPart))
+
   def fromString(name: String, pair: (Option[String], String)): XsTypeSymbol = {
     val (namespace, typeName) = pair
     namespace match {

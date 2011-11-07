@@ -99,6 +99,7 @@ object Main extends Version {
         { laxAny = true })
       opt("v", "verbose", "be extra verbose",
         { verbose = true })
+      help(None, "version", "display this message")
       arglist("<schema_file>...", "input schema to be converted",
         { x: String => files append (new File(x)) })
     }

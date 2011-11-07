@@ -1,2 +1,32 @@
 ## bug fixes and minor enhancements
-- Fixes generated default scope by adding back the default namespace. [#91](https://github.com/eed3si9n/scalaxb/issues/91) reported by [martiell](https://github.com/martiell)
+- Fixes generated default scope by adding back the default namespace. [#91][#91] reported by [@martiell][@martiell]
+- mvn-scalaxb was updated by [@martiell][@martiell]
+- Fixes `toXML` handling of `xs:anyAttribute`. [#95][#95] reported by [@deanhiller][@deanhiller]
+- Fixes generated `defaultScope` when the schema is `unqualified`. [#97][#97] reported by [@deanhiller][@deanhiller]
+- Fixes `xs:any` repeating namespace bindings by merging them. [#98][#98] reported by [@deanhiller][@deanhiller]
+- Fixes handling of `xs:any` with `namespace="##local"`. [#101][#101] reported by [@deanhiller][@deanhiller]
+- Adds `--lax-any` to ignore `xs:any`'s namespace constraint. [#103][#103] requested by [@deanhiller][@deanhiller]
+- Adds handling of `xs:include` without `targetNamespace`. [#102][#102] reported by [@berntan][@berntan]
+- Adds handling of soap messages with attributes. [#99][#99] reported by [@berntan][@berntan]
+- Adds handling of soap messages with soap headers. [#100][#100] reported by [@berntan][@berntan]
+- sbt-scalaxb and mvn-scalaxb processes wsdl first.
+- Fixes handling of wsdl with empty messages. [#93][#93] reported by [@mbroue][@mbroue]
+- Fixes handling of rpc-style return message on soap 1.1. [#94][#94] reported by [@dkhenry][@dkhenry]
+
+  [#91]: https://github.com/eed3si9n/scalaxb/issues/91
+  [#93]: https://github.com/eed3si9n/scalaxb/issues/93
+  [#94]: https://github.com/eed3si9n/scalaxb/issues/94
+  [#95]: https://github.com/eed3si9n/scalaxb/issues/95
+  [#96]: https://github.com/eed3si9n/scalaxb/issues/96
+  [#97]: https://github.com/eed3si9n/scalaxb/issues/97
+  [#98]: https://github.com/eed3si9n/scalaxb/issues/98
+  [#99]: https://github.com/eed3si9n/scalaxb/issues/99
+  [#100]: https://github.com/eed3si9n/scalaxb/issues/100
+  [#101]: https://github.com/eed3si9n/scalaxb/issues/101
+  [#102]: https://github.com/eed3si9n/scalaxb/issues/102
+  [#103]: https://github.com/eed3si9n/scalaxb/issues/103
+  [@martiell]: https://github.com/martiell
+  [@mbroue]: https://github.com/mbroue
+  [@deanhiller]: https://github.com/deanhiller
+  [@dkhenry]: https://github.com/dkhenry
+  [@berntan]: https://github.com/berntan

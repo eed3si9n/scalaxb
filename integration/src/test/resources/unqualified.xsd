@@ -6,10 +6,13 @@
     <xs:complexType>
      <xs:sequence>
        <xs:element name="string1" type="xs:string"/>
+       <xs:element ref="tns:bar"/>
      </xs:sequence>
      <xs:attribute name="attribute1" type="xs:string"/>
     </xs:complexType>
   </xs:element>
+
+  <xs:element name="bar" type="xs:string"/>
 
   <xs:complexType name="Address">
     <xs:sequence>

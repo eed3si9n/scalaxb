@@ -9,35 +9,41 @@ object UnqualifiedLocalTest extends TestBase {
     (List("""scalaxb.toXML[unqualified.Foo](scalaxb.fromXML[unqualified.Foo](""" +
     """<unq:foo xmlns:unq="http://www.example.com/unqualified" attribute1="bar">""" +
     "<string1></string1>" +
+    """<unq:bar>bar</unq:bar>""" +
     """</unq:foo>), """ +
     """Some("http://www.example.com/unqualified"), "foo", """ +
     """scalaxb.toScope(Some("unq") -> "http://www.example.com/unqualified") ).toString"""),
      generated) must evaluateTo("""<unq:foo attribute1="bar" xmlns:unq="http://www.example.com/unqualified">""" +
-    "<string1></string1>" +
-    "</unq:foo>", outdir = "./tmp")
+      "<string1></string1>" +
+      """<unq:bar>bar</unq:bar>""" +
+      "</unq:foo>", outdir = "./tmp")
   }
 
   "unqualified.scala file must compiled with an alternative toXML" in {
     (List("""scalaxb.toXML[unqualified.Foo](scalaxb.fromXML[unqualified.Foo](""" +
     """<unq:foo xmlns:unq="http://www.example.com/unqualified" attribute1="bar">""" +
     "<string1></string1>" +
+    """<unq:bar>bar</unq:bar>""" +
     """</unq:foo>), """ +
     """Some("http://www.example.com/unqualified"), Some("foo"), """ +
     """scalaxb.toScope(Some("unq") -> "http://www.example.com/unqualified") ).toString"""),
      generated) must evaluateTo("""<unq:foo attribute1="bar" xmlns:unq="http://www.example.com/unqualified">""" +
-    "<string1></string1>" +
-    "</unq:foo>", outdir = "./tmp")
+      "<string1></string1>" +
+      """<unq:bar>bar</unq:bar>""" +
+      "</unq:foo>", outdir = "./tmp")
   }
 
   "unqualified.scala file must compile so that Foo can be used without toplevel prefix" in {
     (List("""scalaxb.toXML[unqualified.Foo](scalaxb.fromXML[unqualified.Foo](""" +
     """<unq:foo xmlns:unq="http://www.example.com/unqualified" attribute1="bar">""" +
     "<string1></string1>" +
+    """<unq:bar>bar</unq:bar>""" +
     """</unq:foo>), "foo", """ +
     """scalaxb.toScope(Some("unq") -> "http://www.example.com/unqualified") ).toString"""),
      generated) must evaluateTo("""<foo attribute1="bar" xmlns:unq="http://www.example.com/unqualified">""" +
-    "<string1></string1>" +
-    "</foo>", outdir = "./tmp")
+      "<string1></string1>" +
+      """<unq:bar>bar</unq:bar>""" +
+      "</foo>", outdir = "./tmp")
   }
 
   "unqualified.scala file must compile so that USAddress can roundtrip" in {

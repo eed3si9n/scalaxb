@@ -258,7 +258,7 @@ abstract class GenSource(val schema: SchemaDecl,
     val hasSequenceParam = (paramList.size == 1) && (paramList.head.cardinality == Multiple) &&
       (!paramList.head.attribute) && (!decl.mixed) && (!longAll)
     
-    def paramsString = if (hasSequenceParam) makeParamName(paramList.head.name) + ": " + 
+    def paramsString = if (hasSequenceParam) makeParamName(paramList.head.name, false) + ": " +
         paramList.head.singleTypeName + "*"
       else paramList.map(_.toScalaCode).mkString("," + newline + indent(1))
     
@@ -323,7 +323,7 @@ abstract class GenSource(val schema: SchemaDecl,
         case _ => "Seq(scala.xml.Text(__obj.value.toString))"
       }
 
-      def childString = if (decl.mixed) "__obj." + makeParamName(MIXED_PARAM) +
+      def childString = if (decl.mixed) "__obj." + makeParamName(MIXED_PARAM, false) +
         ".toSeq flatMap { x => " + buildToXML("scalaxb.DataRecord[Any]", "x, x.namespace, x.key, __scope, false") + " }"
       else decl.content.content match {
         case SimpContRestrictionDecl(base: XsTypeSymbol, _, _, _) => simpleContentString(base)
@@ -384,7 +384,7 @@ abstract class GenSource(val schema: SchemaDecl,
           else cases.mkString(newline + indent(4)) + newline + indent(4)
         <source>    override def writesAttribute(__obj: {fqn}, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {{
       var attr: scala.xml.MetaData  = scala.xml.Null
-      __obj.{makeParamName(ATTRS_PARAM)}.toList map {{
+      __obj.{makeParamName(ATTRS_PARAM, false)}.toList map {{
         {caseString}case (key, x) => attr = scala.xml.Attribute((x.namespace map {{ __scope.getPrefix(_) }}).orNull, x.key.orNull, x.value.toString, attr)
       }}
       attr
@@ -435,7 +435,7 @@ abstract class GenSource(val schema: SchemaDecl,
       (paramList.head.cardinality == Multiple) &&
       (!paramList.head.attribute)
     val paramsString = if (hasSequenceParam)
-        makeParamName(paramList.head.name) + ": " + buildTypeName(paramList.head.typeSymbol) + "*"      
+        makeParamName(paramList.head.name, false) + ": " + buildTypeName(paramList.head.typeSymbol) + "*"
       else paramList.map(_.toScalaCode).mkString("," + newline + indent(1))    
     def makeWritesXML = <source>    def writes(__obj: {fqn}, __namespace: Option[String], __elementLabel: Option[String], 
         __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
@@ -800,23 +800,23 @@ object {localName} {{
   } 
   
   def generateAccessors(all: AllDecl): List[String] = {
-    val wrapperName = makeParamName("all")
+    val wrapperName = makeParamName("all", false)
     
     // by spec, there are only elements under <all>
     all.particles collect {
       case elem: ElemDecl => elem
       case ref: ElemRef   => buildElement(ref)
     } map { elem => toCardinality(elem.minOccurs, elem.maxOccurs) match {
-        case Optional => "lazy val " + makeParamName(elem.name) + " = " + 
+        case Optional => "lazy val " + makeParamName(elem.name, false) + " = " +
           wrapperName + ".get(" +  quote(buildNodeName(elem, true)) + ") map { _.as[" + buildTypeName(elem.typeSymbol) + "] }"
-        case _        => "lazy val " + makeParamName(elem.name) + " = " + 
+        case _        => "lazy val " + makeParamName(elem.name, false) + " = " +
           wrapperName + "(" +  quote(buildNodeName(elem, true)) + ").as[" + buildTypeName(elem.typeSymbol) + "]"
       }
     }
   }
   
   def generateAccessors(attributes: List[AttributeLike]): List[String] = {
-    val wrapperName = makeParamName(ATTRS_PARAM)
+    val wrapperName = makeParamName(ATTRS_PARAM, false)
 
     attributes collect {
       case attr: AttributeDecl   => (attr, toCardinality(attr))
@@ -825,9 +825,9 @@ object {localName} {{
         (attr, toCardinality(attr))
       case group: AttributeGroupDecl => (group, Single)
     } collect {
-      case (attr: AttributeDecl, Optional) => "lazy val " + makeParamName(buildParam(attr).name) + " = " +
+      case (attr: AttributeDecl, Optional) => "lazy val " + makeParamName(buildParam(attr).name, true) + " = " +
         wrapperName + ".get(" +  quote(buildNodeName(attr, false)) + ") map { _.as[" + buildTypeName(attr.typeSymbol, true) + "] }"
-      case (attr: AttributeDecl, Single) => "lazy val " + makeParamName(buildParam(attr).name) + " = " +
+      case (attr: AttributeDecl, Single) => "lazy val " + makeParamName(buildParam(attr).name, true) + " = " +
         wrapperName + "(" +  quote(buildNodeName(attr, false)) + ").as[" + buildTypeName(attr.typeSymbol, true) + "]"
     }
   }
@@ -836,7 +836,7 @@ object {localName} {{
     case param@Param(_, _, ReferenceTypeSymbol(decl@ComplexTypeDecl(_, _, _, _, _, _, _, _)), _, _, _, _, _) if
         compositorWrapper.contains(decl) &&
         splits.contains(compositorWrapper(decl)) =>  
-      val wrapperName = makeParamName(param.name)
+      val wrapperName = makeParamName(param.name, false)
       val particles = compositorWrapper(decl).particles.zipWithIndex flatMap {
         case (ref: GroupRef, i: Int)            => List(buildCompositorRef(ref, i))
         case (compositor2: HasParticle, i: Int) => List(buildCompositorRef(compositor2, i))
@@ -847,7 +847,7 @@ object {localName} {{
       
       val paramList = particles map { buildParam }
       paramList map { p =>
-        "lazy val " + makeParamName(p.name) + " = " + wrapperName + "." +  makeParamName(p.name)
+        "lazy val " + makeParamName(p.name, false) + " = " + wrapperName + "." +  makeParamName(p.name, false)
       }
     case _ => Nil
   }

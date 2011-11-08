@@ -28,7 +28,7 @@ trait XMLOutput extends Args {
   override lazy val logger = Logger("xsd.XMLOutput")
   def buildXMLString(param: Param): String = {
     val ns = elementNamespaceString(param.global, param.namespace, param.qualified)
-    val name = "__obj." + makeParamName(param.name)
+    val name = "__obj." + makeParamName(param.name, param.typeSymbol != XsAnyAttribute && param.attribute)
     
     val typeAttribute = param.typeSymbol match {
       case AnyType(symbol) => "true"
@@ -86,13 +86,13 @@ trait XMLOutput extends Args {
   }
   
   def buildAttributeString(any: AnyAttributeDecl): String =
-    "__obj." + makeParamName(ATTRS_PARAM) + ".toList map {" + newline +
+    "__obj." + makeParamName(ATTRS_PARAM, false) + ".toList map {" + newline +
     indent(4) + "case (key, x) => attr = scala.xml.Attribute((x.namespace map { __scope.getPrefix(_) }).orNull, x.key.orNull, x.value.toString, attr) }"
     
   def buildAttributeString(attr: AttributeDecl): String = {
     val namespaceString = if (attr.global || attr.qualified) "__scope.getPrefix(" + quote(attr.namespace.orNull) + ")"
       else "null"
-    val name = "__obj." + makeParamName(buildParam(attr).name)
+    val name = "__obj." + makeParamName(buildParam(attr).name, true)
     
     if (toCardinality(attr) == Optional)
       name + " foreach { x => attr = scala.xml.Attribute(" + namespaceString + ", " + quote(attr.name) +
@@ -109,7 +109,7 @@ trait XMLOutput extends Args {
   }
   
   def buildAttributeString(group: AttributeGroupDecl): String =
-    "attr = " + buildFormatterName(group) + ".toAttribute(__obj." + makeParamName(buildParam(group).name) + ", attr, __scope)"
+    "attr = " + buildFormatterName(group) + ".toAttribute(__obj." + makeParamName(buildParam(group).name, true) + ", attr, __scope)"
     
   def buildToString(selector: String, typeSymbol: XsTypeSymbol): String = typeSymbol match {
     case symbol: BuiltInSimpleTypeSymbol if (buildTypeName(symbol) == "java.util.GregorianCalendar") ||

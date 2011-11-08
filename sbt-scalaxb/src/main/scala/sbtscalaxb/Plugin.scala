@@ -18,6 +18,7 @@ object Plugin extends sbt.Plugin {
     lazy val packageNames     = SettingKey[Map[URI, String]]("scalaxb-package-names")
     lazy val classPrefix      = SettingKey[Option[String]]("scalaxb-class-prefix")
     lazy val paramPrefix      = SettingKey[Option[String]]("scalaxb-param-prefix")
+    lazy val attributePrefix  = SettingKey[Option[String]]("scalaxb-attribute-prefix")
     lazy val wrapContents     = SettingKey[Seq[String]]("scalaxb-wrap-contents")
     lazy val chunkSize        = SettingKey[Int]("scalaxb-chunk-size")
     lazy val packageDir       = SettingKey[Boolean]("scalaxb-package-dir")
@@ -62,6 +63,7 @@ object Plugin extends sbt.Plugin {
     packageNames in scalaxb := Map(),
     classPrefix in scalaxb := None,
     paramPrefix in scalaxb := None,
+    attributePrefix in scalaxb := None,
     wrapContents in scalaxb := Nil,
     chunkSize in scalaxb := 10,
     packageDir in scalaxb := true,
@@ -75,17 +77,19 @@ object Plugin extends sbt.Plugin {
         (packageDir in scalaxb) :^:
         (classPrefix in scalaxb) :^:
         (paramPrefix in scalaxb) :^:
+        (attributePrefix in scalaxb) :^:
         (wrapContents in scalaxb) :^:
         (generateRuntime in scalaxb) :^:
         (chunkSize in scalaxb) :^:
         (protocolFileName in scalaxb) :^:
         (protocolPackageName in scalaxb) :^:
         (laxAny in scalaxb) :^: KNil) {
-          case pkg :+: pkgdir :+: cpre :+: ppre :+: w :+: rt :+: cs :+: pfn :+: ppn :+: la :+: HNil =>
+          case pkg :+: pkgdir :+: cpre :+: ppre :+: apre :+: w :+: rt :+: cs :+: pfn :+: ppn :+: la :+: HNil =>
             ScConfig(packageNames = pkg,
               packageDir = pkgdir,
               classPrefix = cpre,
               paramPrefix = ppre,
+              attributePrefix = apre,
               wrappedComplexTypes = w.toList,
               generateRuntime = rt,
               sequenceChunkSize = cs,

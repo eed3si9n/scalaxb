@@ -35,6 +35,7 @@ case class Config(packageNames: Map[Option[String], Option[String]] = Map(None -
   classPrefix: Option[String] = None,
   classPostfix: Option[String] = None,
   paramPrefix: Option[String] = None,
+  attributePrefix: Option[String] = None,
   outdir: File = new File("."),
   packageDir: Boolean = false,
   wrappedComplexTypes: List[String] = Nil,

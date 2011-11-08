@@ -7,6 +7,7 @@
 - Fixes handling of `xs:any` with `namespace="##local"`. [#101][#101] reported by [@deanhiller][@deanhiller]
 - Adds `--lax-any` to ignore `xs:any`'s namespace constraint. [#103][#103] requested by [@deanhiller][@deanhiller]
 - Adds `--version` to display help message. [#106][#106] requested by [@deanhiller][@deanhiller]
+- Adds `--attribute-prefix` to prefix parameters mapping an attribute. [#92][#92] reported by ido
 - Adds handling of `xs:include` without `targetNamespace`. [#102][#102] reported by [@berntan][@berntan]
 - Adds handling of soap messages with attributes. [#99][#99] reported by [@berntan][@berntan]
 - Adds handling of soap messages with soap headers. [#100][#100] reported by [@berntan][@berntan]
@@ -15,6 +16,7 @@
 - Fixes handling of rpc-style return message on soap 1.1. [#94][#94] reported by [@dkhenry][@dkhenry]
 
   [#91]: https://github.com/eed3si9n/scalaxb/issues/91
+  [#92]: https://github.com/eed3si9n/scalaxb/issues/92
   [#93]: https://github.com/eed3si9n/scalaxb/issues/93
   [#94]: https://github.com/eed3si9n/scalaxb/issues/94
   [#95]: https://github.com/eed3si9n/scalaxb/issues/95

@@ -73,7 +73,11 @@ trait Params extends Lookup {
       case Multiple => "Seq[" + singleTypeName + "]"
     }      
 
-    def toParamName: String = makeParamName(name)
+    def toParamName: String = makeParamName(name, typeSymbol match {
+      case XsLongAttribute | XsAnyAttribute => false
+      case x if attribute => true
+      case _ => false
+    })
 
     def toTraitScalaCode: String = toParamName + ": " + typeName
 

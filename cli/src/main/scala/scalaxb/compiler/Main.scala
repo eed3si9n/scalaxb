@@ -55,6 +55,7 @@ object Main extends Version {
     var outdir: File = new File(".")
     var classPrefix: Option[String] = None
     var paramPrefix: Option[String] = None
+    var attributePrefix: Option[String] = None
     val files = ListBuffer.empty[File]
     var packageDir = false
     var protocolFileName = Defaults.protocolFileName
@@ -78,6 +79,8 @@ object Main extends Version {
         { p: String => classPrefix = Some(p) })
       opt(None, "param-prefix", "<prefix>", "prefixes generated parameter names",
         { p: String => paramPrefix = Some(p) })
+      opt(None, "attribute-prefix", "<prefix>", "prefixes generated attribute parameters",
+        { p: String => attributePrefix = Some(p) })
       opt("prepend-family", "prepends family name to class names",
         { prependFamilyName = true })
       opt(None, "wrap-contents", "<complexType>",
@@ -113,6 +116,7 @@ object Main extends Version {
           packageDir = packageDir,
           classPrefix = classPrefix,
           paramPrefix = paramPrefix,
+          attributePrefix = attributePrefix,
           wrappedComplexTypes = wrappedComplexTypes.toList,
           protocolFileName = protocolFileName,
           protocolPackageName = protocolPackageName,

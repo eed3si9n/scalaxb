@@ -336,7 +336,7 @@ object GeneralUsage {
         xmlns:xs="http://www.w3.org/2001/XMLSchema"
         milk1="SKIM" />
     val obj = fromXML[LongAttributeTest](subject)
-    obj.milk1 match {
+    obj.attr_milk1 match {
       case Some(SKIM) =>
       case _ => error("match failed: " + obj.toString)
     }

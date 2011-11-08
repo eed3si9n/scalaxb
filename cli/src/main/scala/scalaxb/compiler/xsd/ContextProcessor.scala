@@ -494,8 +494,14 @@ trait ContextProcessor extends ScalaNames with PackageName {
       case _ => false
     }
   
-  def makeParamName(name: String) = {
-    val base = config.paramPrefix map { p =>
+  def makeParamName(name: String, attribute: Boolean) = {
+    val prefix = (config.paramPrefix, config.attributePrefix) match {
+      case (p, _) if !attribute => p
+      case (None, None) => None
+      case (p, a) => Some(p.getOrElse("") + a.getOrElse(""))
+    }
+
+    val base = prefix map { p =>
       if (p.endsWith("_"))  p + name
       else p + name.capitalize
     } getOrElse { name }

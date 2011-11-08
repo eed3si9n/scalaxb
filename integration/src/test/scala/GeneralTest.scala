@@ -12,6 +12,7 @@ object GeneralTest extends TestBase {
   lazy val generated = module.processFiles(Seq(inFile, mimeFile),
     Config(packageNames = Map(None -> Some("general"),
         Some("http://www.w3.org/2005/05/xmlmime") -> Some("xmlmime")),
+      attributePrefix = Some("attr_"),
       outdir = tmp))
   copyFileFromResource("GeneralUsage.scala", usageFile)
   copyFileFromResource("CustomizationUsage.scala", custumFile)

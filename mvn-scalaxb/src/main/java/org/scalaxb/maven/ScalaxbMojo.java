@@ -23,10 +23,12 @@ package org.scalaxb.maven;
  */
 
 import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
 import static java.util.Collections.unmodifiableList;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -91,9 +93,18 @@ public class ScalaxbMojo extends AbstractMojo {
 
     /**
      * Map of namespace URIs to package names for generated classes.
+     * <pre>
+     * &lt;packageNames&gt;
+     *   &lt;packageName&gt;
+     *     &lt;uri&gt;http://example.com/myservice&lt;/uri&gt;
+     *     &lt;package&gt;com.example.service&lt;package&gt;
+     *   &lt;/packageName&gt;
+     * &lt;/packageNames&gt;
+     * </pre>
+     *
      * @parameter
      */
-    private Map<String, String> packageNames;
+    private PackageName[] packageNames;
 
     /**
      * The prefix to use on generated classes.
@@ -253,13 +264,25 @@ public class ScalaxbMojo extends AbstractMojo {
         return str.toString();
     }
 
+    Map<String, String> packageNameMap() {
+        if (packageNames == null) {
+            return emptyMap();
+        }
+
+        Map<String, String> names = new LinkedHashMap<String, String>();
+        for (PackageName name : packageNames) {
+            names.put(name.getUri(), name.getPackage());
+        }
+        return names;
+    }
+
     private List<String> arguments() {
         List<String> args = new ArgumentsBuilder()
             .flag("-v", verbose)
             .flag("--package-dir", packageDir)
             .param("-d", outputDirectory.getPath())
             .param("-p", packageName)
-            .map("-p:", packageNames)
+            .map("-p:", packageNameMap())
             .param("--class-prefix", classPrefix)
             .param("--param-prefix", parameterPrefix)
             .param("--chunk-size", chunkSize)

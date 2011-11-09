@@ -1,0 +1,30 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                      http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>test</groupId>
+  <artifactId>packageNames</artifactId>
+  <version>1</version>
+
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>scalaxb-maven-plugin</artifactId>
+        <configuration>
+          <packageNames>
+            <packageName>
+              <uri>http://example.com/namespace1</uri>
+              <package>com.example.namespace1</package>
+            </packageName>
+            <packageName>
+              <uri>http://example.com/namespace2</uri>
+              <package>com.example.namespace2</package>
+            </packageName>
+          </packageNames>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>

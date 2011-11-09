@@ -25,9 +25,9 @@ trait XMLProtocol extends scalaxb.XMLStandardTypes {
     override def typeName: Option[String] = Some("Envelope")
 
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[soapenvelope11.Envelope] =
-      opt(scalaxb.ElemName(targetNamespace, "Header")) ~ 
-      (scalaxb.ElemName(targetNamespace, "Body")) ~ 
-      rep(any(_.namespace != targetNamespace)) ^^
+      opt(scalaxb.ElemName(Some("http://schemas.xmlsoap.org/soap/envelope/"), "Header")) ~ 
+      (scalaxb.ElemName(Some("http://schemas.xmlsoap.org/soap/envelope/"), "Body")) ~ 
+      rep(any(_.namespace != Some("http://schemas.xmlsoap.org/soap/envelope/"))) ^^
       { case p1 ~ p2 ~ p3 =>
       soapenvelope11.Envelope(p1.headOption map { scalaxb.fromXML[soapenvelope11.Header](_, scalaxb.ElemName(node) :: stack) },
         scalaxb.fromXML[soapenvelope11.Body](p2, scalaxb.ElemName(node) :: stack),
@@ -54,10 +54,9 @@ trait XMLProtocol extends scalaxb.XMLStandardTypes {
     }
 
     def writesChildNodes(__obj: soapenvelope11.Envelope, __scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node] =
-      Seq.concat(__obj.Header map { scalaxb.toXML[soapenvelope11.Header](_, targetNamespace, Some("Header"), __scope, false) } getOrElse {Nil},
-        scalaxb.toXML[soapenvelope11.Body](__obj.Body, targetNamespace, Some("Body"), __scope, false),
-        __obj.any flatMap { x => scalaxb.toXML[scalaxb.DataRecord[Any]](x, x.namespace, x.key, __scope, true) },
-        scalaxb.toXML[Map[String, scalaxb.DataRecord[Any]]](__obj.attributes, targetNamespace, Some("attributes"), __scope, false))
+      Seq.concat(__obj.Header map { scalaxb.toXML[soapenvelope11.Header](_, Some("http://schemas.xmlsoap.org/soap/envelope/"), Some("Header"), __scope, false) } getOrElse {Nil},
+        scalaxb.toXML[soapenvelope11.Body](__obj.Body, Some("http://schemas.xmlsoap.org/soap/envelope/"), Some("Body"), __scope, false),
+        __obj.any flatMap { x => scalaxb.toXML[scalaxb.DataRecord[Any]](x, x.namespace, x.key, __scope, true) })
 
   }
 
@@ -67,7 +66,7 @@ trait XMLProtocol extends scalaxb.XMLStandardTypes {
     override def typeName: Option[String] = Some("Header")
 
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[soapenvelope11.Header] =
-      rep(any(_.namespace != targetNamespace)) ^^
+      rep(any(_.namespace != Some("http://schemas.xmlsoap.org/soap/envelope/"))) ^^
       { case p1 =>
       soapenvelope11.Header(p1.toSeq map { scalaxb.fromXML[scalaxb.DataRecord[Any]](_, scalaxb.ElemName(node) :: stack) },
         scala.collection.immutable.ListMap((node match {
@@ -92,8 +91,7 @@ trait XMLProtocol extends scalaxb.XMLStandardTypes {
     }
 
     def writesChildNodes(__obj: soapenvelope11.Header, __scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node] =
-      Seq.concat(__obj.any flatMap { x => scalaxb.toXML[scalaxb.DataRecord[Any]](x, x.namespace, x.key, __scope, true) },
-        scalaxb.toXML[Map[String, scalaxb.DataRecord[Any]]](__obj.attributes, targetNamespace, Some("attributes"), __scope, false))
+      (__obj.any flatMap { x => scalaxb.toXML[scalaxb.DataRecord[Any]](x, x.namespace, x.key, __scope, true) })
 
   }
 
@@ -128,8 +126,7 @@ trait XMLProtocol extends scalaxb.XMLStandardTypes {
     }
 
     def writesChildNodes(__obj: soapenvelope11.Body, __scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node] =
-      Seq.concat(__obj.any flatMap { x => scalaxb.toXML[scalaxb.DataRecord[Any]](x, x.namespace, x.key, __scope, true) },
-        scalaxb.toXML[Map[String, scalaxb.DataRecord[Any]]](__obj.attributes, targetNamespace, Some("attributes"), __scope, false))
+      (__obj.any flatMap { x => scalaxb.toXML[scalaxb.DataRecord[Any]](x, x.namespace, x.key, __scope, true) })
 
   }
 
@@ -188,8 +185,7 @@ trait XMLProtocol extends scalaxb.XMLStandardTypes {
     }
 
     def writesChildNodes(__obj: soapenvelope11.Detail, __scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node] =
-      Seq.concat(__obj.any flatMap { x => scalaxb.toXML[scalaxb.DataRecord[Any]](x, x.namespace, x.key, __scope, true) },
-        scalaxb.toXML[Map[String, scalaxb.DataRecord[Any]]](__obj.attributes, targetNamespace, Some("attributes"), __scope, false))
+      (__obj.any flatMap { x => scalaxb.toXML[scalaxb.DataRecord[Any]](x, x.namespace, x.key, __scope, true) })
 
   }
 

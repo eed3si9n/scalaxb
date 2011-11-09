@@ -68,14 +68,14 @@ trait XMLStandardTypes {
     }
 
     def writes(obj: Node, namespace: Option[String], elementLabel: Option[String],
-      scope: NamespaceBinding, typeAttribute: Boolean): NodeSeq = obj
+      scope: NamespaceBinding, typeAttribute: Boolean): NodeSeq = Helper.mergeNodeScope(obj, scope)
   }
 
   implicit lazy val __NodeSeqXMLFormat: XMLFormat[NodeSeq] = new XMLFormat[NodeSeq] {
     def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, NodeSeq] = Right(seq)
 
     def writes(obj: NodeSeq, namespace: Option[String], elementLabel: Option[String],
-      scope: NamespaceBinding, typeAttribute: Boolean): NodeSeq = obj
+      scope: NamespaceBinding, typeAttribute: Boolean): NodeSeq = Helper.mergeNodeSeqScope(obj, scope)
   }
 
   implicit lazy val __ElemXMLFormat: XMLFormat[Elem] = new XMLFormat[Elem] {
@@ -85,7 +85,7 @@ trait XMLStandardTypes {
     }
 
     def writes(obj: Elem, namespace: Option[String], elementLabel: Option[String],
-      scope: NamespaceBinding, typeAttribute: Boolean): NodeSeq = obj
+      scope: NamespaceBinding, typeAttribute: Boolean): NodeSeq = Helper.mergeNodeScope(obj, scope)
   }
 
   implicit lazy val __StringXMLFormat: XMLFormat[String] = new XMLFormat[String] {
@@ -555,11 +555,9 @@ object DataRecord extends XMLStandardTypes {
           w.writer.asInstanceOf[CanWriteXML[A]].writes(obj.value, namespace, elementLabel, scope, typeAttribute)
         case _ =>
           w.writer.asInstanceOf[CanWriteXML[A]].writes(obj.value, namespace, elementLabel, scope, false) match {
-            case elem: Elem if (w.xstypeNamespace.isDefined && w.xstypeName.isDefined &&
-                scope.getPrefix(w.xstypeNamespace.get) != null &&
-                scope.getPrefix(XSI_URL) != null) =>
-              elem % new PrefixedAttribute(scope.getPrefix(XSI_URL), "type",
-                scope.getPrefix(w.xstypeNamespace.get) + ":" + w.xstypeName.get, scala.xml.Null)
+            case elem: Elem if (w.xstypeName.isDefined && scope.getPrefix(XSI_URL) != null) =>
+              elem % scala.xml.Attribute(scope.getPrefix(Helper.XSI_URL), "type",
+                Helper.prefixedName(w.xstypeNamespace, w.xstypeName.get, scope), scala.xml.Null)
             case x => x
           }
       }
@@ -609,6 +607,7 @@ trait AnyElemNameParser extends scala.util.parsing.combinator.Parsers {
 }
 
 trait CanWriteChildNodes[A] extends CanWriteXML[A] {
+  def targetNamespace: Option[String]
   def typeName: Option[String] = None
   def writesAttribute(obj: A, scope: scala.xml.NamespaceBinding): scala.xml.MetaData = scala.xml.Null
   def writesChildNodes(obj: A, scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node]
@@ -618,8 +617,12 @@ trait CanWriteChildNodes[A] extends CanWriteXML[A] {
     scala.xml.Elem(Helper.getPrefix(namespace, scope).orNull,
       elementLabel getOrElse { error("missing element label.") },
       if (typeAttribute && typeName.isDefined &&
-          scope.getPrefix(Helper.XSI_URL) != null) scala.xml.Attribute(scope.getPrefix(Helper.XSI_URL), "type", typeName.get,
-        writesAttribute(obj, scope))
+          scope.getPrefix(Helper.XSI_URL) != null) {
+        val attrs = writesAttribute(obj, scope)
+        val mod = attrs remove (Helper.XSI_URL, scope, "type")
+        scala.xml.Attribute(scope.getPrefix(Helper.XSI_URL), "type",
+          Helper.prefixedName(targetNamespace, typeName.get, scope), mod)
+      }
       else writesAttribute(obj, scope),
       scope,
       writesChildNodes(obj, scope): _*)
@@ -817,6 +820,10 @@ object Helper {
     if (Option[String](scope.getURI(null)) == namespace) None
     else Option[String](scope.getPrefix(namespace.orNull))
 
+  def prefixedName(namespace: Option[String], name: String, scope: scala.xml.NamespaceBinding) =
+    getPrefix(namespace, scope) map { """%s:%s""" format(_, name)
+    } getOrElse {name}
+
   def stringToXML(obj: String, namespace: Option[String], elementLabel: Option[String],
        scope: scala.xml.NamespaceBinding): scala.xml.NodeSeq = {
     elementLabel map { label =>
@@ -825,6 +832,41 @@ object Helper {
         scope, scala.xml.Text(obj.toString))
     } getOrElse { scala.xml.Text(obj) }
   }
+
+  // assume outer scope
+  def mergeNodeSeqScope(nodeseq: NodeSeq, outer: NamespaceBinding): NodeSeq =
+    nodeseq.toSeq flatMap { mergeNodeScope(_, outer) }
+
+  // assume outer scope
+  def mergeNodeScope(node: Node, outer: NamespaceBinding): Node =
+    node match {
+      case elem: Elem =>
+        withInnerScope(elem.scope, outer) { (innerScope, mapping) =>
+          val newPrefix: String = mapping.get(Option[String](elem.prefix)) map {_.orNull} getOrElse {elem.prefix}
+          val newChild = mergeNodeSeqScope(mergeNodeSeqScope(elem.child, outer), innerScope)
+          elem.copy(scope = innerScope, prefix = newPrefix, child = newChild)
+        }
+      case _ => node
+    }
+
+  def withInnerScope[A](scope: NamespaceBinding, outer: NamespaceBinding)
+                    (f: (NamespaceBinding, Map[Option[String], Option[String]]) => A): A = {
+    val outerList = fromScope(outer)
+    def renamePrefix(prefix: Option[String],  n: Int): Option[String] =
+      if (outerList exists { case (p, n) => p == Some((prefix getOrElse {"ns"}) + n.toString)}) renamePrefix(prefix, n + 1)
+      else Some((prefix getOrElse {"ns"}) + n.toString)
+
+    val xs: List[((Option[String], String), (Option[String], Option[String]))] = fromScope(scope) flatMap {
+      case (prefix, ns) if outerList contains (prefix -> ns) => None
+      case (prefix, ns) if outerList exists { case (p, n) => p == prefix && p.isDefined } =>
+        val renamed = renamePrefix(prefix, 2)
+        Some((renamed -> ns, prefix -> renamed))
+      case (prefix, ns) => Some((prefix -> ns, prefix -> prefix))
+    }
+
+    f(toScope(xs map {_._1}: _*), Map(xs map {_._2}: _*))
+  }
+
 }
 
 class ParserFailure(message: String) extends RuntimeException(message)

@@ -9,7 +9,8 @@ val document = scalaxb.toXML[soapenvelope12.Foo](obj, "foo", soapenvelope12.defa
 object `package` extends XMLProtocol { }
 
 trait XMLProtocol extends scalaxb.XMLStandardTypes {
-  val defaultScope = scalaxb.toScope(Some("tns") -> "http://www.w3.org/2003/05/soap-envelope",
+  val defaultScope = scalaxb.toScope(None -> "http://www.w3.org/2003/05/soap-envelope",
+    Some("tns") -> "http://www.w3.org/2003/05/soap-envelope",
     Some("xs") -> "http://www.w3.org/2001/XMLSchema",
     Some("xsi") -> "http://www.w3.org/2001/XMLSchema-instance")
   implicit lazy val Soapenvelope12EnvelopeFormat: scalaxb.XMLFormat[soapenvelope12.Envelope] = new DefaultSoapenvelope12EnvelopeFormat {}
@@ -32,8 +33,8 @@ trait XMLProtocol extends scalaxb.XMLStandardTypes {
     override def typeName: Option[String] = Some("Envelope")
 
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[soapenvelope12.Envelope] =
-      opt(scalaxb.ElemName(targetNamespace, "Header")) ~ 
-      (scalaxb.ElemName(targetNamespace, "Body")) ^^
+      opt(scalaxb.ElemName(Some("http://www.w3.org/2003/05/soap-envelope"), "Header")) ~ 
+      (scalaxb.ElemName(Some("http://www.w3.org/2003/05/soap-envelope"), "Body")) ^^
       { case p1 ~ p2 =>
       soapenvelope12.Envelope(p1.headOption map { scalaxb.fromXML[soapenvelope12.Header](_, scalaxb.ElemName(node) :: stack) },
         scalaxb.fromXML[soapenvelope12.Body](p2, scalaxb.ElemName(node) :: stack),
@@ -59,9 +60,8 @@ trait XMLProtocol extends scalaxb.XMLStandardTypes {
     }
 
     def writesChildNodes(__obj: soapenvelope12.Envelope, __scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node] =
-      Seq.concat(__obj.Header map { scalaxb.toXML[soapenvelope12.Header](_, targetNamespace, Some("Header"), __scope, false) } getOrElse {Nil},
-        scalaxb.toXML[soapenvelope12.Body](__obj.Body, targetNamespace, Some("Body"), __scope, false),
-        scalaxb.toXML[Map[String, scalaxb.DataRecord[Any]]](__obj.attributes, targetNamespace, Some("attributes"), __scope, false))
+      Seq.concat(__obj.Header map { scalaxb.toXML[soapenvelope12.Header](_, Some("http://www.w3.org/2003/05/soap-envelope"), Some("Header"), __scope, false) } getOrElse {Nil},
+        scalaxb.toXML[soapenvelope12.Body](__obj.Body, Some("http://www.w3.org/2003/05/soap-envelope"), Some("Body"), __scope, false))
 
   }
 
@@ -96,8 +96,7 @@ trait XMLProtocol extends scalaxb.XMLStandardTypes {
     }
 
     def writesChildNodes(__obj: soapenvelope12.Header, __scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node] =
-      Seq.concat(__obj.any flatMap { x => scalaxb.toXML[scalaxb.DataRecord[Any]](x, x.namespace, x.key, __scope, true) },
-        scalaxb.toXML[Map[String, scalaxb.DataRecord[Any]]](__obj.attributes, targetNamespace, Some("attributes"), __scope, false))
+      (__obj.any flatMap { x => scalaxb.toXML[scalaxb.DataRecord[Any]](x, x.namespace, x.key, __scope, true) })
 
   }
 
@@ -132,8 +131,7 @@ trait XMLProtocol extends scalaxb.XMLStandardTypes {
     }
 
     def writesChildNodes(__obj: soapenvelope12.Body, __scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node] =
-      Seq.concat(__obj.any flatMap { x => scalaxb.toXML[scalaxb.DataRecord[Any]](x, x.namespace, x.key, __scope, true) },
-        scalaxb.toXML[Map[String, scalaxb.DataRecord[Any]]](__obj.attributes, targetNamespace, Some("attributes"), __scope, false))
+      (__obj.any flatMap { x => scalaxb.toXML[scalaxb.DataRecord[Any]](x, x.namespace, x.key, __scope, true) })
 
   }
 
@@ -143,11 +141,11 @@ trait XMLProtocol extends scalaxb.XMLStandardTypes {
     override def typeName: Option[String] = Some("Fault")
 
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[soapenvelope12.Fault] =
-      (scalaxb.ElemName(targetNamespace, "Code")) ~ 
-      (scalaxb.ElemName(targetNamespace, "Reason")) ~ 
-      opt(scalaxb.ElemName(targetNamespace, "Node")) ~ 
-      opt(scalaxb.ElemName(targetNamespace, "Role")) ~ 
-      opt(scalaxb.ElemName(targetNamespace, "Detail")) ^^
+      (scalaxb.ElemName(Some("http://www.w3.org/2003/05/soap-envelope"), "Code")) ~ 
+      (scalaxb.ElemName(Some("http://www.w3.org/2003/05/soap-envelope"), "Reason")) ~ 
+      opt(scalaxb.ElemName(Some("http://www.w3.org/2003/05/soap-envelope"), "Node")) ~ 
+      opt(scalaxb.ElemName(Some("http://www.w3.org/2003/05/soap-envelope"), "Role")) ~ 
+      opt(scalaxb.ElemName(Some("http://www.w3.org/2003/05/soap-envelope"), "Detail")) ^^
       { case p1 ~ p2 ~ p3 ~ p4 ~ p5 =>
       soapenvelope12.Fault(scalaxb.fromXML[soapenvelope12.Faultcode](p1, scalaxb.ElemName(node) :: stack),
         scalaxb.fromXML[soapenvelope12.Faultreason](p2, scalaxb.ElemName(node) :: stack),
@@ -156,11 +154,11 @@ trait XMLProtocol extends scalaxb.XMLStandardTypes {
         p5.headOption map { scalaxb.fromXML[soapenvelope12.Detail](_, scalaxb.ElemName(node) :: stack) }) }
     
     def writesChildNodes(__obj: soapenvelope12.Fault, __scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node] =
-      Seq.concat(scalaxb.toXML[soapenvelope12.Faultcode](__obj.Code, targetNamespace, Some("Code"), __scope, false),
-        scalaxb.toXML[soapenvelope12.Faultreason](__obj.Reason, targetNamespace, Some("Reason"), __scope, false),
-        __obj.Node map { scalaxb.toXML[java.net.URI](_, targetNamespace, Some("Node"), __scope, false) } getOrElse {Nil},
-        __obj.Role map { scalaxb.toXML[java.net.URI](_, targetNamespace, Some("Role"), __scope, false) } getOrElse {Nil},
-        __obj.Detail map { scalaxb.toXML[soapenvelope12.Detail](_, targetNamespace, Some("Detail"), __scope, false) } getOrElse {Nil})
+      Seq.concat(scalaxb.toXML[soapenvelope12.Faultcode](__obj.Code, Some("http://www.w3.org/2003/05/soap-envelope"), Some("Code"), __scope, false),
+        scalaxb.toXML[soapenvelope12.Faultreason](__obj.Reason, Some("http://www.w3.org/2003/05/soap-envelope"), Some("Reason"), __scope, false),
+        __obj.Node map { scalaxb.toXML[java.net.URI](_, Some("http://www.w3.org/2003/05/soap-envelope"), Some("Node"), __scope, false) } getOrElse {Nil},
+        __obj.Role map { scalaxb.toXML[java.net.URI](_, Some("http://www.w3.org/2003/05/soap-envelope"), Some("Role"), __scope, false) } getOrElse {Nil},
+        __obj.Detail map { scalaxb.toXML[soapenvelope12.Detail](_, Some("http://www.w3.org/2003/05/soap-envelope"), Some("Detail"), __scope, false) } getOrElse {Nil})
 
   }
 
@@ -170,12 +168,12 @@ trait XMLProtocol extends scalaxb.XMLStandardTypes {
     override def typeName: Option[String] = Some("faultreason")
 
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[soapenvelope12.Faultreason] =
-      rep(scalaxb.ElemName(targetNamespace, "Text")) ^^
+      rep(scalaxb.ElemName(Some("http://www.w3.org/2003/05/soap-envelope"), "Text")) ^^
       { case p1 =>
       soapenvelope12.Faultreason(p1.toSeq map { scalaxb.fromXML[soapenvelope12.Reasontext](_, scalaxb.ElemName(node) :: stack) }: _*) }
     
     def writesChildNodes(__obj: soapenvelope12.Faultreason, __scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node] =
-      (__obj.Text flatMap { scalaxb.toXML[soapenvelope12.Reasontext](_, targetNamespace, Some("Text"), __scope, false) })
+      (__obj.Text flatMap { scalaxb.toXML[soapenvelope12.Reasontext](_, Some("http://www.w3.org/2003/05/soap-envelope"), Some("Text"), __scope, false) })
 
   }
 
@@ -206,15 +204,15 @@ trait XMLProtocol extends scalaxb.XMLStandardTypes {
     override def typeName: Option[String] = Some("faultcode")
 
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[soapenvelope12.Faultcode] =
-      (scalaxb.ElemName(targetNamespace, "Value")) ~ 
-      opt(scalaxb.ElemName(targetNamespace, "Subcode")) ^^
+      (scalaxb.ElemName(Some("http://www.w3.org/2003/05/soap-envelope"), "Value")) ~ 
+      opt(scalaxb.ElemName(Some("http://www.w3.org/2003/05/soap-envelope"), "Subcode")) ^^
       { case p1 ~ p2 =>
       soapenvelope12.Faultcode(scalaxb.fromXML[soapenvelope12.FaultcodeEnum](p1, scalaxb.ElemName(node) :: stack),
         p2.headOption map { scalaxb.fromXML[soapenvelope12.Subcode](_, scalaxb.ElemName(node) :: stack) }) }
     
     def writesChildNodes(__obj: soapenvelope12.Faultcode, __scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node] =
-      Seq.concat(scalaxb.toXML[soapenvelope12.FaultcodeEnum](__obj.Value, targetNamespace, Some("Value"), __scope, false),
-        __obj.Subcode map { scalaxb.toXML[soapenvelope12.Subcode](_, targetNamespace, Some("Subcode"), __scope, false) } getOrElse {Nil})
+      Seq.concat(scalaxb.toXML[soapenvelope12.FaultcodeEnum](__obj.Value, Some("http://www.w3.org/2003/05/soap-envelope"), Some("Value"), __scope, false),
+        __obj.Subcode map { scalaxb.toXML[soapenvelope12.Subcode](_, Some("http://www.w3.org/2003/05/soap-envelope"), Some("Subcode"), __scope, false) } getOrElse {Nil})
 
   }
 
@@ -238,15 +236,15 @@ trait XMLProtocol extends scalaxb.XMLStandardTypes {
     override def typeName: Option[String] = Some("subcode")
 
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[soapenvelope12.Subcode] =
-      (scalaxb.ElemName(targetNamespace, "Value")) ~ 
-      opt(scalaxb.ElemName(targetNamespace, "Subcode")) ^^
+      (scalaxb.ElemName(Some("http://www.w3.org/2003/05/soap-envelope"), "Value")) ~ 
+      opt(scalaxb.ElemName(Some("http://www.w3.org/2003/05/soap-envelope"), "Subcode")) ^^
       { case p1 ~ p2 =>
       soapenvelope12.Subcode(scalaxb.fromXML[javax.xml.namespace.QName](p1, scalaxb.ElemName(node) :: stack),
         p2.headOption map { scalaxb.fromXML[soapenvelope12.Subcode](_, scalaxb.ElemName(node) :: stack) }) }
     
     def writesChildNodes(__obj: soapenvelope12.Subcode, __scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node] =
-      Seq.concat(scalaxb.toXML[javax.xml.namespace.QName](__obj.Value, targetNamespace, Some("Value"), __scope, false),
-        __obj.Subcode map { scalaxb.toXML[soapenvelope12.Subcode](_, targetNamespace, Some("Subcode"), __scope, false) } getOrElse {Nil})
+      Seq.concat(scalaxb.toXML[javax.xml.namespace.QName](__obj.Value, Some("http://www.w3.org/2003/05/soap-envelope"), Some("Value"), __scope, false),
+        __obj.Subcode map { scalaxb.toXML[soapenvelope12.Subcode](_, Some("http://www.w3.org/2003/05/soap-envelope"), Some("Subcode"), __scope, false) } getOrElse {Nil})
 
   }
 
@@ -281,8 +279,7 @@ trait XMLProtocol extends scalaxb.XMLStandardTypes {
     }
 
     def writesChildNodes(__obj: soapenvelope12.Detail, __scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node] =
-      Seq.concat(__obj.any flatMap { x => scalaxb.toXML[scalaxb.DataRecord[Any]](x, x.namespace, x.key, __scope, true) },
-        scalaxb.toXML[Map[String, scalaxb.DataRecord[Any]]](__obj.attributes, targetNamespace, Some("attributes"), __scope, false))
+      (__obj.any flatMap { x => scalaxb.toXML[scalaxb.DataRecord[Any]](x, x.namespace, x.key, __scope, true) })
 
   }
 
@@ -332,12 +329,12 @@ trait XMLProtocol extends scalaxb.XMLStandardTypes {
     override def typeName: Option[String] = Some("UpgradeType")
 
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[soapenvelope12.UpgradeType] =
-      rep(scalaxb.ElemName(targetNamespace, "SupportedEnvelope")) ^^
+      rep(scalaxb.ElemName(Some("http://www.w3.org/2003/05/soap-envelope"), "SupportedEnvelope")) ^^
       { case p1 =>
       soapenvelope12.UpgradeType(p1.toSeq map { scalaxb.fromXML[soapenvelope12.SupportedEnvType](_, scalaxb.ElemName(node) :: stack) }: _*) }
     
     def writesChildNodes(__obj: soapenvelope12.UpgradeType, __scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node] =
-      (__obj.SupportedEnvelope flatMap { scalaxb.toXML[soapenvelope12.SupportedEnvType](_, targetNamespace, Some("SupportedEnvelope"), __scope, false) })
+      (__obj.SupportedEnvelope flatMap { scalaxb.toXML[soapenvelope12.SupportedEnvType](_, Some("http://www.w3.org/2003/05/soap-envelope"), Some("SupportedEnvelope"), __scope, false) })
 
   }
 

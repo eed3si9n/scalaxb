@@ -9,7 +9,8 @@ val document = scalaxb.toXML[wsdl11.Foo](obj, "foo", wsdl11.defaultScope)
 object `package` extends XXMLProtocol { }
 
 trait XXMLProtocol extends scalaxb.XMLStandardTypes {
-  val defaultScope = scalaxb.toScope(Some("wsdl") -> "http://schemas.xmlsoap.org/wsdl/",
+  val defaultScope = scalaxb.toScope(None -> "http://schemas.xmlsoap.org/wsdl/",
+    Some("wsdl") -> "http://schemas.xmlsoap.org/wsdl/",
     Some("xs") -> "http://www.w3.org/2001/XMLSchema",
     Some("xsi") -> "http://www.w3.org/2001/XMLSchema-instance")
   implicit lazy val Wsdl11XDocumentationFormat: scalaxb.XMLFormat[wsdl11.XDocumentation] = new DefaultWsdl11XDocumentationFormat {}
@@ -43,7 +44,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
 
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[wsdl11.XDocumentation] =
       optTextRecord ~ 
-      rep((((any(List(Some()).contains(_)) ^^ (scalaxb.fromXML[scalaxb.DataRecord[Any]](_, scalaxb.ElemName(node) :: stack))) ~ 
+      rep((((any(x => List(Some()) contains x.namespace) ^^ (scalaxb.fromXML[scalaxb.DataRecord[Any]](_, scalaxb.ElemName(node) :: stack))) ~ 
       optTextRecord) ^^ 
       { case p1 ~ p2 => Seq.concat(Seq(p1), p2.toList) })) ~ 
       optTextRecord ^^
@@ -78,21 +79,20 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
   }
 
   trait DefaultWsdl11XDocumentedFormat extends scalaxb.XMLFormat[wsdl11.XDocumented] {
-    val targetNamespace: Option[String] = Some("http://schemas.xmlsoap.org/wsdl/")
     def reads(seq: scala.xml.NodeSeq, stack: List[scalaxb.ElemName]): Either[String, wsdl11.XDocumented] = seq match {
       case node: scala.xml.Node =>     
         scalaxb.Helper.instanceType(node) match {
-          case (targetNamespace, Some("definitionsType")) => Right(scalaxb.fromXML[wsdl11.XDefinitionsType](node, stack))
-          case (targetNamespace, Some("importType")) => Right(scalaxb.fromXML[wsdl11.XImportType](node, stack))
-          case (targetNamespace, Some("typesType")) => Right(scalaxb.fromXML[wsdl11.XTypesType](node, stack))
-          case (targetNamespace, Some("messageType")) => Right(scalaxb.fromXML[wsdl11.XMessageType](node, stack))
-          case (targetNamespace, Some("portTypeType")) => Right(scalaxb.fromXML[wsdl11.XPortTypeType](node, stack))
-          case (targetNamespace, Some("operationType")) => Right(scalaxb.fromXML[wsdl11.XOperationType](node, stack))
-          case (targetNamespace, Some("paramType")) => Right(scalaxb.fromXML[wsdl11.XParamType](node, stack))
-          case (targetNamespace, Some("faultType")) => Right(scalaxb.fromXML[wsdl11.XFaultType](node, stack))
-          case (targetNamespace, Some("startWithExtensionsType")) => Right(scalaxb.fromXML[wsdl11.XStartWithExtensionsTypable](node, stack))
-          case (targetNamespace, Some("serviceType")) => Right(scalaxb.fromXML[wsdl11.XServiceType](node, stack))
-          case (targetNamespace, Some("portType")) => Right(scalaxb.fromXML[wsdl11.XPortType](node, stack))
+          case (Some("http://schemas.xmlsoap.org/wsdl/"), Some("definitionsType")) => Right(scalaxb.fromXML[wsdl11.XDefinitionsType](node, stack))
+          case (Some("http://schemas.xmlsoap.org/wsdl/"), Some("importType")) => Right(scalaxb.fromXML[wsdl11.XImportType](node, stack))
+          case (Some("http://schemas.xmlsoap.org/wsdl/"), Some("typesType")) => Right(scalaxb.fromXML[wsdl11.XTypesType](node, stack))
+          case (Some("http://schemas.xmlsoap.org/wsdl/"), Some("messageType")) => Right(scalaxb.fromXML[wsdl11.XMessageType](node, stack))
+          case (Some("http://schemas.xmlsoap.org/wsdl/"), Some("portTypeType")) => Right(scalaxb.fromXML[wsdl11.XPortTypeType](node, stack))
+          case (Some("http://schemas.xmlsoap.org/wsdl/"), Some("operationType")) => Right(scalaxb.fromXML[wsdl11.XOperationType](node, stack))
+          case (Some("http://schemas.xmlsoap.org/wsdl/"), Some("paramType")) => Right(scalaxb.fromXML[wsdl11.XParamType](node, stack))
+          case (Some("http://schemas.xmlsoap.org/wsdl/"), Some("faultType")) => Right(scalaxb.fromXML[wsdl11.XFaultType](node, stack))
+          case (Some("http://schemas.xmlsoap.org/wsdl/"), Some("startWithExtensionsType")) => Right(scalaxb.fromXML[wsdl11.XStartWithExtensionsTypable](node, stack))
+          case (Some("http://schemas.xmlsoap.org/wsdl/"), Some("serviceType")) => Right(scalaxb.fromXML[wsdl11.XServiceType](node, stack))
+          case (Some("http://schemas.xmlsoap.org/wsdl/"), Some("portType")) => Right(scalaxb.fromXML[wsdl11.XPortType](node, stack))
           case x => Left("Unknown type: " + x)
         }
       case _ => Left("reads failed: seq must be scala.xml.Node")  
@@ -116,11 +116,10 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
   }
 
   trait DefaultWsdl11XOpenAttsFormat extends scalaxb.XMLFormat[wsdl11.XOpenAtts] {
-    val targetNamespace: Option[String] = Some("http://schemas.xmlsoap.org/wsdl/")
     def reads(seq: scala.xml.NodeSeq, stack: List[scalaxb.ElemName]): Either[String, wsdl11.XOpenAtts] = seq match {
       case node: scala.xml.Node =>     
         scalaxb.Helper.instanceType(node) match {
-          case (targetNamespace, Some("partType")) => Right(scalaxb.fromXML[wsdl11.XPartType](node, stack))
+          case (Some("http://schemas.xmlsoap.org/wsdl/"), Some("partType")) => Right(scalaxb.fromXML[wsdl11.XPartType](node, stack))
           case x => Left("Unknown type: " + x)
         }
       case _ => Left("reads failed: seq must be scala.xml.Node")  
@@ -139,14 +138,14 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     override def typeName: Option[String] = Some("definitionsType")
 
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[wsdl11.XDefinitionsType] =
-      opt(scalaxb.ElemName(targetNamespace, "documentation")) ~ 
-      rep(scalaxb.ElemName(targetNamespace, "import")) ~ 
-      opt(scalaxb.ElemName(targetNamespace, "types")) ~ 
-      rep(scalaxb.ElemName(targetNamespace, "message")) ~ 
-      rep(scalaxb.ElemName(targetNamespace, "portType")) ~ 
-      rep(scalaxb.ElemName(targetNamespace, "binding")) ~ 
-      rep(scalaxb.ElemName(targetNamespace, "service")) ~ 
-      rep(any(_.namespace != targetNamespace)) ^^
+      opt(scalaxb.ElemName(Some("http://schemas.xmlsoap.org/wsdl/"), "documentation")) ~ 
+      rep(scalaxb.ElemName(Some("http://schemas.xmlsoap.org/wsdl/"), "import")) ~ 
+      opt(scalaxb.ElemName(Some("http://schemas.xmlsoap.org/wsdl/"), "types")) ~ 
+      rep(scalaxb.ElemName(Some("http://schemas.xmlsoap.org/wsdl/"), "message")) ~ 
+      rep(scalaxb.ElemName(Some("http://schemas.xmlsoap.org/wsdl/"), "portType")) ~ 
+      rep(scalaxb.ElemName(Some("http://schemas.xmlsoap.org/wsdl/"), "binding")) ~ 
+      rep(scalaxb.ElemName(Some("http://schemas.xmlsoap.org/wsdl/"), "service")) ~ 
+      rep(any(_.namespace != Some("http://schemas.xmlsoap.org/wsdl/"))) ^^
       { case p1 ~ p2 ~ p3 ~ p4 ~ p5 ~ p6 ~ p7 ~ p8 =>
       wsdl11.XDefinitionsType(p1.headOption map { scalaxb.fromXML[wsdl11.XDocumentation](_, scalaxb.ElemName(node) :: stack) },
         p2.toSeq map { scalaxb.fromXML[wsdl11.XImportType](_, scalaxb.ElemName(node) :: stack) },
@@ -167,13 +166,13 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     }
 
     def writesChildNodes(__obj: wsdl11.XDefinitionsType, __scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node] =
-      Seq.concat(__obj.documentation map { scalaxb.toXML[wsdl11.XDocumentation](_, targetNamespace, Some("documentation"), __scope, false) } getOrElse {Nil},
-        __obj.importValue flatMap { scalaxb.toXML[wsdl11.XImportType](_, targetNamespace, Some("import"), __scope, false) },
-        __obj.types map { scalaxb.toXML[wsdl11.XTypesType](_, targetNamespace, Some("types"), __scope, false) } getOrElse {Nil},
-        __obj.message flatMap { scalaxb.toXML[wsdl11.XMessageType](_, targetNamespace, Some("message"), __scope, false) },
-        __obj.portType flatMap { scalaxb.toXML[wsdl11.XPortTypeType](_, targetNamespace, Some("portType"), __scope, false) },
-        __obj.binding flatMap { scalaxb.toXML[wsdl11.XBindingType](_, targetNamespace, Some("binding"), __scope, false) },
-        __obj.service flatMap { scalaxb.toXML[wsdl11.XServiceType](_, targetNamespace, Some("service"), __scope, false) },
+      Seq.concat(__obj.documentation map { scalaxb.toXML[wsdl11.XDocumentation](_, Some("http://schemas.xmlsoap.org/wsdl/"), Some("documentation"), __scope, false) } getOrElse {Nil},
+        __obj.importValue flatMap { scalaxb.toXML[wsdl11.XImportType](_, Some("http://schemas.xmlsoap.org/wsdl/"), Some("import"), __scope, false) },
+        __obj.types map { scalaxb.toXML[wsdl11.XTypesType](_, Some("http://schemas.xmlsoap.org/wsdl/"), Some("types"), __scope, false) } getOrElse {Nil},
+        __obj.message flatMap { scalaxb.toXML[wsdl11.XMessageType](_, Some("http://schemas.xmlsoap.org/wsdl/"), Some("message"), __scope, false) },
+        __obj.portType flatMap { scalaxb.toXML[wsdl11.XPortTypeType](_, Some("http://schemas.xmlsoap.org/wsdl/"), Some("portType"), __scope, false) },
+        __obj.binding flatMap { scalaxb.toXML[wsdl11.XBindingType](_, Some("http://schemas.xmlsoap.org/wsdl/"), Some("binding"), __scope, false) },
+        __obj.service flatMap { scalaxb.toXML[wsdl11.XServiceType](_, Some("http://schemas.xmlsoap.org/wsdl/"), Some("service"), __scope, false) },
         __obj.any flatMap { x => scalaxb.toXML[scalaxb.DataRecord[Any]](x, x.namespace, x.key, __scope, true) })
 
   }
@@ -184,7 +183,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     override def typeName: Option[String] = Some("importType")
 
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[wsdl11.XImportType] =
-      opt(scalaxb.ElemName(targetNamespace, "documentation")) ^^
+      opt(scalaxb.ElemName(Some("http://schemas.xmlsoap.org/wsdl/"), "documentation")) ^^
       { case p1 =>
       wsdl11.XImportType(p1.headOption map { scalaxb.fromXML[wsdl11.XDocumentation](_, scalaxb.ElemName(node) :: stack) },
         scalaxb.fromXML[java.net.URI]((node \ "@namespace"), scalaxb.ElemName(node) :: stack),
@@ -198,7 +197,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     }
 
     def writesChildNodes(__obj: wsdl11.XImportType, __scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node] =
-      (__obj.documentation map { scalaxb.toXML[wsdl11.XDocumentation](_, targetNamespace, Some("documentation"), __scope, false) } getOrElse {Nil})
+      (__obj.documentation map { scalaxb.toXML[wsdl11.XDocumentation](_, Some("http://schemas.xmlsoap.org/wsdl/"), Some("documentation"), __scope, false) } getOrElse {Nil})
 
   }
 
@@ -208,14 +207,14 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     override def typeName: Option[String] = Some("typesType")
 
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[wsdl11.XTypesType] =
-      opt(scalaxb.ElemName(targetNamespace, "documentation")) ~ 
-      rep(any(_.namespace != targetNamespace)) ^^
+      opt(scalaxb.ElemName(Some("http://schemas.xmlsoap.org/wsdl/"), "documentation")) ~ 
+      rep(any(_.namespace != Some("http://schemas.xmlsoap.org/wsdl/"))) ^^
       { case p1 ~ p2 =>
       wsdl11.XTypesType(p1.headOption map { scalaxb.fromXML[wsdl11.XDocumentation](_, scalaxb.ElemName(node) :: stack) },
         p2.toSeq map { scalaxb.fromXML[scalaxb.DataRecord[Any]](_, scalaxb.ElemName(node) :: stack) }) }
     
     def writesChildNodes(__obj: wsdl11.XTypesType, __scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node] =
-      Seq.concat(__obj.documentation map { scalaxb.toXML[wsdl11.XDocumentation](_, targetNamespace, Some("documentation"), __scope, false) } getOrElse {Nil},
+      Seq.concat(__obj.documentation map { scalaxb.toXML[wsdl11.XDocumentation](_, Some("http://schemas.xmlsoap.org/wsdl/"), Some("documentation"), __scope, false) } getOrElse {Nil},
         __obj.any flatMap { x => scalaxb.toXML[scalaxb.DataRecord[Any]](x, x.namespace, x.key, __scope, true) })
 
   }
@@ -226,8 +225,8 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     override def typeName: Option[String] = Some("messageType")
 
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[wsdl11.XMessageType] =
-      opt(scalaxb.ElemName(targetNamespace, "documentation")) ~ 
-      rep(scalaxb.ElemName(targetNamespace, "part")) ^^
+      opt(scalaxb.ElemName(Some("http://schemas.xmlsoap.org/wsdl/"), "documentation")) ~ 
+      rep(scalaxb.ElemName(Some("http://schemas.xmlsoap.org/wsdl/"), "part")) ^^
       { case p1 ~ p2 =>
       wsdl11.XMessageType(p1.headOption map { scalaxb.fromXML[wsdl11.XDocumentation](_, scalaxb.ElemName(node) :: stack) },
         p2.toSeq map { scalaxb.fromXML[wsdl11.XPartType](_, scalaxb.ElemName(node) :: stack) },
@@ -240,8 +239,8 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     }
 
     def writesChildNodes(__obj: wsdl11.XMessageType, __scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node] =
-      Seq.concat(__obj.documentation map { scalaxb.toXML[wsdl11.XDocumentation](_, targetNamespace, Some("documentation"), __scope, false) } getOrElse {Nil},
-        __obj.part flatMap { scalaxb.toXML[wsdl11.XPartType](_, targetNamespace, Some("part"), __scope, false) })
+      Seq.concat(__obj.documentation map { scalaxb.toXML[wsdl11.XDocumentation](_, Some("http://schemas.xmlsoap.org/wsdl/"), Some("documentation"), __scope, false) } getOrElse {Nil},
+        __obj.part flatMap { scalaxb.toXML[wsdl11.XPartType](_, Some("http://schemas.xmlsoap.org/wsdl/"), Some("part"), __scope, false) })
 
   }
 
@@ -251,7 +250,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     override def typeName: Option[String] = Some("partType")
 
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[wsdl11.XPartType] =
-      opt(scalaxb.ElemName(targetNamespace, "documentation")) ^^
+      opt(scalaxb.ElemName(Some("http://schemas.xmlsoap.org/wsdl/"), "documentation")) ^^
       { case p1 =>
       wsdl11.XPartType(p1.headOption map { scalaxb.fromXML[wsdl11.XDocumentation](_, scalaxb.ElemName(node) :: stack) },
         (node \ "@name").headOption map { scalaxb.fromXML[String](_, scalaxb.ElemName(node) :: stack) },
@@ -284,8 +283,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     }
 
     def writesChildNodes(__obj: wsdl11.XPartType, __scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node] =
-      Seq.concat(__obj.documentation map { scalaxb.toXML[wsdl11.XDocumentation](_, targetNamespace, Some("documentation"), __scope, false) } getOrElse {Nil},
-        scalaxb.toXML[Map[String, scalaxb.DataRecord[Any]]](__obj.attributes, targetNamespace, Some("attributes"), __scope, false))
+      (__obj.documentation map { scalaxb.toXML[wsdl11.XDocumentation](_, Some("http://schemas.xmlsoap.org/wsdl/"), Some("documentation"), __scope, false) } getOrElse {Nil})
 
   }
 
@@ -295,8 +293,8 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     override def typeName: Option[String] = Some("portTypeType")
 
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[wsdl11.XPortTypeType] =
-      opt(scalaxb.ElemName(targetNamespace, "documentation")) ~ 
-      rep(scalaxb.ElemName(targetNamespace, "operation")) ^^
+      opt(scalaxb.ElemName(Some("http://schemas.xmlsoap.org/wsdl/"), "documentation")) ~ 
+      rep(scalaxb.ElemName(Some("http://schemas.xmlsoap.org/wsdl/"), "operation")) ^^
       { case p1 ~ p2 =>
       wsdl11.XPortTypeType(p1.headOption map { scalaxb.fromXML[wsdl11.XDocumentation](_, scalaxb.ElemName(node) :: stack) },
         p2.toSeq map { scalaxb.fromXML[wsdl11.XOperationType](_, scalaxb.ElemName(node) :: stack) },
@@ -309,8 +307,8 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     }
 
     def writesChildNodes(__obj: wsdl11.XPortTypeType, __scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node] =
-      Seq.concat(__obj.documentation map { scalaxb.toXML[wsdl11.XDocumentation](_, targetNamespace, Some("documentation"), __scope, false) } getOrElse {Nil},
-        __obj.operation flatMap { scalaxb.toXML[wsdl11.XOperationType](_, targetNamespace, Some("operation"), __scope, false) })
+      Seq.concat(__obj.documentation map { scalaxb.toXML[wsdl11.XDocumentation](_, Some("http://schemas.xmlsoap.org/wsdl/"), Some("documentation"), __scope, false) } getOrElse {Nil},
+        __obj.operation flatMap { scalaxb.toXML[wsdl11.XOperationType](_, Some("http://schemas.xmlsoap.org/wsdl/"), Some("operation"), __scope, false) })
 
   }
 
@@ -320,7 +318,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     override def typeName: Option[String] = Some("operationType")
 
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[wsdl11.XOperationType] =
-      opt(scalaxb.ElemName(targetNamespace, "documentation")) ~ 
+      opt(scalaxb.ElemName(Some("http://schemas.xmlsoap.org/wsdl/"), "documentation")) ~ 
       ((parseXOnewayoperationGroup(node, scalaxb.ElemName(node) :: stack, true)) ||| 
       (parseXRequestresponseoperationGroup(node, scalaxb.ElemName(node) :: stack, true)) ||| 
       (parseXSolicitresponseoperationGroup(node, scalaxb.ElemName(node) :: stack, true)) ||| 
@@ -337,7 +335,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     }
 
     def writesChildNodes(__obj: wsdl11.XOperationType, __scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node] =
-      Seq.concat(__obj.documentation map { scalaxb.toXML[wsdl11.XDocumentation](_, targetNamespace, Some("documentation"), __scope, false) } getOrElse {Nil},
+      Seq.concat(__obj.documentation map { scalaxb.toXML[wsdl11.XDocumentation](_, Some("http://schemas.xmlsoap.org/wsdl/"), Some("documentation"), __scope, false) } getOrElse {Nil},
         Some(__obj.xoperationtypeoption) map {x => scalaxb.toXML[scalaxb.DataRecord[Any]](x, x.namespace, x.key, __scope, false)} get)
 
   }
@@ -348,7 +346,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     override def typeName: Option[String] = Some("paramType")
 
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[wsdl11.XParamType] =
-      opt(scalaxb.ElemName(targetNamespace, "documentation")) ^^
+      opt(scalaxb.ElemName(Some("http://schemas.xmlsoap.org/wsdl/"), "documentation")) ^^
       { case p1 =>
       wsdl11.XParamType(p1.headOption map { scalaxb.fromXML[wsdl11.XDocumentation](_, scalaxb.ElemName(node) :: stack) },
         (node \ "@name").headOption map { scalaxb.fromXML[String](_, scalaxb.ElemName(node) :: stack) },
@@ -362,7 +360,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     }
 
     def writesChildNodes(__obj: wsdl11.XParamType, __scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node] =
-      (__obj.documentation map { scalaxb.toXML[wsdl11.XDocumentation](_, targetNamespace, Some("documentation"), __scope, false) } getOrElse {Nil})
+      (__obj.documentation map { scalaxb.toXML[wsdl11.XDocumentation](_, Some("http://schemas.xmlsoap.org/wsdl/"), Some("documentation"), __scope, false) } getOrElse {Nil})
 
   }
 
@@ -372,7 +370,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     override def typeName: Option[String] = Some("faultType")
 
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[wsdl11.XFaultType] =
-      opt(scalaxb.ElemName(targetNamespace, "documentation")) ^^
+      opt(scalaxb.ElemName(Some("http://schemas.xmlsoap.org/wsdl/"), "documentation")) ^^
       { case p1 =>
       wsdl11.XFaultType(p1.headOption map { scalaxb.fromXML[wsdl11.XDocumentation](_, scalaxb.ElemName(node) :: stack) },
         scalaxb.fromXML[String]((node \ "@name"), scalaxb.ElemName(node) :: stack),
@@ -386,17 +384,16 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     }
 
     def writesChildNodes(__obj: wsdl11.XFaultType, __scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node] =
-      (__obj.documentation map { scalaxb.toXML[wsdl11.XDocumentation](_, targetNamespace, Some("documentation"), __scope, false) } getOrElse {Nil})
+      (__obj.documentation map { scalaxb.toXML[wsdl11.XDocumentation](_, Some("http://schemas.xmlsoap.org/wsdl/"), Some("documentation"), __scope, false) } getOrElse {Nil})
 
   }
 
   trait DefaultWsdl11XStartWithExtensionsTypableFormat extends scalaxb.XMLFormat[wsdl11.XStartWithExtensionsTypable] {
-    val targetNamespace: Option[String] = Some("http://schemas.xmlsoap.org/wsdl/")
     def reads(seq: scala.xml.NodeSeq, stack: List[scalaxb.ElemName]): Either[String, wsdl11.XStartWithExtensionsTypable] = seq match {
       case node: scala.xml.Node =>     
         scalaxb.Helper.instanceType(node) match {
-          case (targetNamespace, Some("bindingType")) => Right(scalaxb.fromXML[wsdl11.XBindingType](node, stack))
-          case (targetNamespace, Some("binding_operationType")) => Right(scalaxb.fromXML[wsdl11.XBinding_operationType](node, stack))
+          case (Some("http://schemas.xmlsoap.org/wsdl/"), Some("bindingType")) => Right(scalaxb.fromXML[wsdl11.XBindingType](node, stack))
+          case (Some("http://schemas.xmlsoap.org/wsdl/"), Some("binding_operationType")) => Right(scalaxb.fromXML[wsdl11.XBinding_operationType](node, stack))
           case _ => Right(scalaxb.fromXML[wsdl11.XStartWithExtensionsType](node, stack))
         }
       case _ => Left("reads failed: seq must be scala.xml.Node")  
@@ -417,14 +414,14 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     override def typeName: Option[String] = Some("startWithExtensionsType")
 
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[wsdl11.XStartWithExtensionsType] =
-      opt(scalaxb.ElemName(targetNamespace, "documentation")) ~ 
-      rep(any(_.namespace != targetNamespace)) ^^
+      opt(scalaxb.ElemName(Some("http://schemas.xmlsoap.org/wsdl/"), "documentation")) ~ 
+      rep(any(_.namespace != Some("http://schemas.xmlsoap.org/wsdl/"))) ^^
       { case p1 ~ p2 =>
       wsdl11.XStartWithExtensionsType(p1.headOption map { scalaxb.fromXML[wsdl11.XDocumentation](_, scalaxb.ElemName(node) :: stack) },
         p2.toSeq map { scalaxb.fromXML[scalaxb.DataRecord[Any]](_, scalaxb.ElemName(node) :: stack) }) }
     
     def writesChildNodes(__obj: wsdl11.XStartWithExtensionsType, __scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node] =
-      Seq.concat(__obj.documentation map { scalaxb.toXML[wsdl11.XDocumentation](_, targetNamespace, Some("documentation"), __scope, false) } getOrElse {Nil},
+      Seq.concat(__obj.documentation map { scalaxb.toXML[wsdl11.XDocumentation](_, Some("http://schemas.xmlsoap.org/wsdl/"), Some("documentation"), __scope, false) } getOrElse {Nil},
         __obj.any flatMap { x => scalaxb.toXML[scalaxb.DataRecord[Any]](x, x.namespace, x.key, __scope, true) })
 
   }
@@ -435,9 +432,9 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     override def typeName: Option[String] = Some("bindingType")
 
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[wsdl11.XBindingType] =
-      opt(scalaxb.ElemName(targetNamespace, "documentation")) ~ 
-      rep(any(_.namespace != targetNamespace)) ~ 
-      rep(scalaxb.ElemName(targetNamespace, "operation")) ^^
+      opt(scalaxb.ElemName(Some("http://schemas.xmlsoap.org/wsdl/"), "documentation")) ~ 
+      rep(any(_.namespace != Some("http://schemas.xmlsoap.org/wsdl/"))) ~ 
+      rep(scalaxb.ElemName(Some("http://schemas.xmlsoap.org/wsdl/"), "operation")) ^^
       { case p1 ~ p2 ~ p3 =>
       wsdl11.XBindingType(p1.headOption map { scalaxb.fromXML[wsdl11.XDocumentation](_, scalaxb.ElemName(node) :: stack) },
         p2.toSeq map { scalaxb.fromXML[scalaxb.DataRecord[Any]](_, scalaxb.ElemName(node) :: stack) },
@@ -453,9 +450,9 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     }
 
     def writesChildNodes(__obj: wsdl11.XBindingType, __scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node] =
-      Seq.concat(__obj.documentation map { scalaxb.toXML[wsdl11.XDocumentation](_, targetNamespace, Some("documentation"), __scope, false) } getOrElse {Nil},
+      Seq.concat(__obj.documentation map { scalaxb.toXML[wsdl11.XDocumentation](_, Some("http://schemas.xmlsoap.org/wsdl/"), Some("documentation"), __scope, false) } getOrElse {Nil},
         __obj.any flatMap { x => scalaxb.toXML[scalaxb.DataRecord[Any]](x, x.namespace, x.key, __scope, true) },
-        __obj.operation flatMap { scalaxb.toXML[wsdl11.XBinding_operationType](_, targetNamespace, Some("operation"), __scope, false) })
+        __obj.operation flatMap { scalaxb.toXML[wsdl11.XBinding_operationType](_, Some("http://schemas.xmlsoap.org/wsdl/"), Some("operation"), __scope, false) })
 
   }
 
@@ -463,8 +460,8 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     val targetNamespace: Option[String] = Some("http://schemas.xmlsoap.org/wsdl/")
     
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[wsdl11.XFault] =
-      opt(scalaxb.ElemName(targetNamespace, "documentation")) ~ 
-      rep(any(_.namespace != targetNamespace)) ^^
+      opt(scalaxb.ElemName(Some("http://schemas.xmlsoap.org/wsdl/"), "documentation")) ~ 
+      rep(any(_.namespace != Some("http://schemas.xmlsoap.org/wsdl/"))) ^^
       { case p1 ~ p2 =>
       wsdl11.XFault(p1.headOption map { scalaxb.fromXML[wsdl11.XDocumentation](_, scalaxb.ElemName(node) :: stack) },
         p2.toSeq map { scalaxb.fromXML[scalaxb.DataRecord[Any]](_, scalaxb.ElemName(node) :: stack) },
@@ -477,7 +474,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     }
 
     def writesChildNodes(__obj: wsdl11.XFault, __scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node] =
-      Seq.concat(__obj.documentation map { scalaxb.toXML[wsdl11.XDocumentation](_, targetNamespace, Some("documentation"), __scope, false) } getOrElse {Nil},
+      Seq.concat(__obj.documentation map { scalaxb.toXML[wsdl11.XDocumentation](_, Some("http://schemas.xmlsoap.org/wsdl/"), Some("documentation"), __scope, false) } getOrElse {Nil},
         __obj.any flatMap { x => scalaxb.toXML[scalaxb.DataRecord[Any]](x, x.namespace, x.key, __scope, true) })
 
   }
@@ -488,11 +485,11 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     override def typeName: Option[String] = Some("binding_operationType")
 
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[wsdl11.XBinding_operationType] =
-      opt(scalaxb.ElemName(targetNamespace, "documentation")) ~ 
-      rep(any(_.namespace != targetNamespace)) ~ 
-      opt(scalaxb.ElemName(targetNamespace, "input")) ~ 
-      opt(scalaxb.ElemName(targetNamespace, "output")) ~ 
-      rep(scalaxb.ElemName(targetNamespace, "fault")) ^^
+      opt(scalaxb.ElemName(Some("http://schemas.xmlsoap.org/wsdl/"), "documentation")) ~ 
+      rep(any(_.namespace != Some("http://schemas.xmlsoap.org/wsdl/"))) ~ 
+      opt(scalaxb.ElemName(Some("http://schemas.xmlsoap.org/wsdl/"), "input")) ~ 
+      opt(scalaxb.ElemName(Some("http://schemas.xmlsoap.org/wsdl/"), "output")) ~ 
+      rep(scalaxb.ElemName(Some("http://schemas.xmlsoap.org/wsdl/"), "fault")) ^^
       { case p1 ~ p2 ~ p3 ~ p4 ~ p5 =>
       wsdl11.XBinding_operationType(p1.headOption map { scalaxb.fromXML[wsdl11.XDocumentation](_, scalaxb.ElemName(node) :: stack) },
         p2.toSeq map { scalaxb.fromXML[scalaxb.DataRecord[Any]](_, scalaxb.ElemName(node) :: stack) },
@@ -508,11 +505,11 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     }
 
     def writesChildNodes(__obj: wsdl11.XBinding_operationType, __scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node] =
-      Seq.concat(__obj.documentation map { scalaxb.toXML[wsdl11.XDocumentation](_, targetNamespace, Some("documentation"), __scope, false) } getOrElse {Nil},
+      Seq.concat(__obj.documentation map { scalaxb.toXML[wsdl11.XDocumentation](_, Some("http://schemas.xmlsoap.org/wsdl/"), Some("documentation"), __scope, false) } getOrElse {Nil},
         __obj.any flatMap { x => scalaxb.toXML[scalaxb.DataRecord[Any]](x, x.namespace, x.key, __scope, true) },
-        __obj.input map { scalaxb.toXML[wsdl11.XStartWithExtensionsTypable](_, targetNamespace, Some("input"), __scope, false) } getOrElse {Nil},
-        __obj.output map { scalaxb.toXML[wsdl11.XStartWithExtensionsTypable](_, targetNamespace, Some("output"), __scope, false) } getOrElse {Nil},
-        __obj.fault flatMap { scalaxb.toXML[wsdl11.XFault](_, targetNamespace, Some("fault"), __scope, false) })
+        __obj.input map { scalaxb.toXML[wsdl11.XStartWithExtensionsTypable](_, Some("http://schemas.xmlsoap.org/wsdl/"), Some("input"), __scope, false) } getOrElse {Nil},
+        __obj.output map { scalaxb.toXML[wsdl11.XStartWithExtensionsTypable](_, Some("http://schemas.xmlsoap.org/wsdl/"), Some("output"), __scope, false) } getOrElse {Nil},
+        __obj.fault flatMap { scalaxb.toXML[wsdl11.XFault](_, Some("http://schemas.xmlsoap.org/wsdl/"), Some("fault"), __scope, false) })
 
   }
 
@@ -522,9 +519,9 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     override def typeName: Option[String] = Some("serviceType")
 
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[wsdl11.XServiceType] =
-      opt(scalaxb.ElemName(targetNamespace, "documentation")) ~ 
-      rep(scalaxb.ElemName(targetNamespace, "port")) ~ 
-      opt(any(_.namespace != targetNamespace)) ^^
+      opt(scalaxb.ElemName(Some("http://schemas.xmlsoap.org/wsdl/"), "documentation")) ~ 
+      rep(scalaxb.ElemName(Some("http://schemas.xmlsoap.org/wsdl/"), "port")) ~ 
+      opt(any(_.namespace != Some("http://schemas.xmlsoap.org/wsdl/"))) ^^
       { case p1 ~ p2 ~ p3 =>
       wsdl11.XServiceType(p1.headOption map { scalaxb.fromXML[wsdl11.XDocumentation](_, scalaxb.ElemName(node) :: stack) },
         p2.toSeq map { scalaxb.fromXML[wsdl11.XPortType](_, scalaxb.ElemName(node) :: stack) },
@@ -538,8 +535,8 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     }
 
     def writesChildNodes(__obj: wsdl11.XServiceType, __scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node] =
-      Seq.concat(__obj.documentation map { scalaxb.toXML[wsdl11.XDocumentation](_, targetNamespace, Some("documentation"), __scope, false) } getOrElse {Nil},
-        __obj.port flatMap { scalaxb.toXML[wsdl11.XPortType](_, targetNamespace, Some("port"), __scope, false) },
+      Seq.concat(__obj.documentation map { scalaxb.toXML[wsdl11.XDocumentation](_, Some("http://schemas.xmlsoap.org/wsdl/"), Some("documentation"), __scope, false) } getOrElse {Nil},
+        __obj.port flatMap { scalaxb.toXML[wsdl11.XPortType](_, Some("http://schemas.xmlsoap.org/wsdl/"), Some("port"), __scope, false) },
         __obj.any map { x => scalaxb.toXML[scalaxb.DataRecord[Any]](x, x.namespace, x.key, __scope, true) } getOrElse {Nil})
 
   }
@@ -550,8 +547,8 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     override def typeName: Option[String] = Some("portType")
 
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[wsdl11.XPortType] =
-      opt(scalaxb.ElemName(targetNamespace, "documentation")) ~ 
-      opt(any(_.namespace != targetNamespace)) ^^
+      opt(scalaxb.ElemName(Some("http://schemas.xmlsoap.org/wsdl/"), "documentation")) ~ 
+      opt(any(_.namespace != Some("http://schemas.xmlsoap.org/wsdl/"))) ^^
       { case p1 ~ p2 =>
       wsdl11.XPortType(p1.headOption map { scalaxb.fromXML[wsdl11.XDocumentation](_, scalaxb.ElemName(node) :: stack) },
         p2.headOption map { scalaxb.fromXML[scalaxb.DataRecord[Any]](_, scalaxb.ElemName(node) :: stack) },
@@ -566,25 +563,23 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     }
 
     def writesChildNodes(__obj: wsdl11.XPortType, __scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node] =
-      Seq.concat(__obj.documentation map { scalaxb.toXML[wsdl11.XDocumentation](_, targetNamespace, Some("documentation"), __scope, false) } getOrElse {Nil},
+      Seq.concat(__obj.documentation map { scalaxb.toXML[wsdl11.XDocumentation](_, Some("http://schemas.xmlsoap.org/wsdl/"), Some("documentation"), __scope, false) } getOrElse {Nil},
         __obj.any map { x => scalaxb.toXML[scalaxb.DataRecord[Any]](x, x.namespace, x.key, __scope, true) } getOrElse {Nil})
 
   }
 
 
   trait Wsdl11XNotificationoperationGroupFormat extends scalaxb.AnyElemNameParser {
-    private val targetNamespace: Option[String] = Some("http://schemas.xmlsoap.org/wsdl/")
-    
     def parseXNotificationoperationGroup(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[wsdl11.XNotificationoperationSequence] =
-      (((scalaxb.ElemName(targetNamespace, "output"))) ^^ 
+      (((scalaxb.ElemName(Some("http://schemas.xmlsoap.org/wsdl/"), "output"))) ^^ 
         { case p1 => wsdl11.XNotificationoperationSequence(scalaxb.fromXML[wsdl11.XParamType](p1, scalaxb.ElemName(node) :: stack)) })
   
     def parseXNotificationoperationGroup(node: scala.xml.Node, stack: List[scalaxb.ElemName], wrap: Boolean): Parser[scalaxb.DataRecord[Any]] =
-      (((scalaxb.ElemName(targetNamespace, "output"))) ^^ 
+      (((scalaxb.ElemName(Some("http://schemas.xmlsoap.org/wsdl/"), "output"))) ^^ 
         { case p1 => scalaxb.DataRecord(wsdl11.XNotificationoperationSequence(scalaxb.fromXML[wsdl11.XParamType](p1, scalaxb.ElemName(node) :: stack))) })
     
     def parsemixedXNotificationoperationGroup(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[Seq[scalaxb.DataRecord[Any]]] =
-      ((((scalaxb.ElemName(targetNamespace, "output")) ^^ 
+      ((((scalaxb.ElemName(Some("http://schemas.xmlsoap.org/wsdl/"), "output")) ^^ 
       (x => scalaxb.DataRecord(x.namespace, Some(x.name), scalaxb.fromXML[wsdl11.XParamType](x, scalaxb.ElemName(node) :: stack)))) ~ 
       optTextRecord) ^^ 
         { case p1 ~ p2 => Seq.concat(Seq(p1),
@@ -592,45 +587,41 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
   }
 
   trait DefaultWsdl11XNotificationoperationSequenceFormat extends scalaxb.XMLFormat[wsdl11.XNotificationoperationSequence] {
-    val targetNamespace: Option[String] = Some("http://schemas.xmlsoap.org/wsdl/")
-    
     def reads(seq: scala.xml.NodeSeq, stack: List[scalaxb.ElemName]): Either[String, wsdl11.XNotificationoperationSequence] = Left("don't call me.")
     
     def writes(__obj: wsdl11.XNotificationoperationSequence, __namespace: Option[String], __elementLabel: Option[String], 
         __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
-      scalaxb.toXML[wsdl11.XParamType](__obj.output, targetNamespace, Some("output"), __scope, false)
+      scalaxb.toXML[wsdl11.XParamType](__obj.output, Some("http://schemas.xmlsoap.org/wsdl/"), Some("output"), __scope, false)
 
 
   }
 
 
   trait Wsdl11XSolicitresponseoperationGroupFormat extends scalaxb.AnyElemNameParser {
-    private val targetNamespace: Option[String] = Some("http://schemas.xmlsoap.org/wsdl/")
-    
     def parseXSolicitresponseoperationGroup(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[wsdl11.XSolicitresponseoperationSequence] =
-      (((scalaxb.ElemName(targetNamespace, "output")) ~ 
-      (scalaxb.ElemName(targetNamespace, "input")) ~ 
-      rep(scalaxb.ElemName(targetNamespace, "fault"))) ^^ 
+      (((scalaxb.ElemName(Some("http://schemas.xmlsoap.org/wsdl/"), "output")) ~ 
+      (scalaxb.ElemName(Some("http://schemas.xmlsoap.org/wsdl/"), "input")) ~ 
+      rep(scalaxb.ElemName(Some("http://schemas.xmlsoap.org/wsdl/"), "fault"))) ^^ 
         { case p1 ~ p2 ~ p3 => wsdl11.XSolicitresponseoperationSequence(scalaxb.fromXML[wsdl11.XParamType](p1, scalaxb.ElemName(node) :: stack),
         scalaxb.fromXML[wsdl11.XParamType](p2, scalaxb.ElemName(node) :: stack),
         p3.toSeq map { scalaxb.fromXML[wsdl11.XFaultType](_, scalaxb.ElemName(node) :: stack) }) })
   
     def parseXSolicitresponseoperationGroup(node: scala.xml.Node, stack: List[scalaxb.ElemName], wrap: Boolean): Parser[scalaxb.DataRecord[Any]] =
-      (((scalaxb.ElemName(targetNamespace, "output")) ~ 
-      (scalaxb.ElemName(targetNamespace, "input")) ~ 
-      rep(scalaxb.ElemName(targetNamespace, "fault"))) ^^ 
+      (((scalaxb.ElemName(Some("http://schemas.xmlsoap.org/wsdl/"), "output")) ~ 
+      (scalaxb.ElemName(Some("http://schemas.xmlsoap.org/wsdl/"), "input")) ~ 
+      rep(scalaxb.ElemName(Some("http://schemas.xmlsoap.org/wsdl/"), "fault"))) ^^ 
         { case p1 ~ p2 ~ p3 => scalaxb.DataRecord(wsdl11.XSolicitresponseoperationSequence(scalaxb.fromXML[wsdl11.XParamType](p1, scalaxb.ElemName(node) :: stack),
         scalaxb.fromXML[wsdl11.XParamType](p2, scalaxb.ElemName(node) :: stack),
         p3.toSeq map { scalaxb.fromXML[wsdl11.XFaultType](_, scalaxb.ElemName(node) :: stack) })) })
     
     def parsemixedXSolicitresponseoperationGroup(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[Seq[scalaxb.DataRecord[Any]]] =
-      ((((scalaxb.ElemName(targetNamespace, "output")) ^^ 
+      ((((scalaxb.ElemName(Some("http://schemas.xmlsoap.org/wsdl/"), "output")) ^^ 
       (x => scalaxb.DataRecord(x.namespace, Some(x.name), scalaxb.fromXML[wsdl11.XParamType](x, scalaxb.ElemName(node) :: stack)))) ~ 
       optTextRecord ~ 
-      ((scalaxb.ElemName(targetNamespace, "input")) ^^ 
+      ((scalaxb.ElemName(Some("http://schemas.xmlsoap.org/wsdl/"), "input")) ^^ 
       (x => scalaxb.DataRecord(x.namespace, Some(x.name), scalaxb.fromXML[wsdl11.XParamType](x, scalaxb.ElemName(node) :: stack)))) ~ 
       optTextRecord ~ 
-      (rep(scalaxb.ElemName(targetNamespace, "fault")) ^^ 
+      (rep(scalaxb.ElemName(Some("http://schemas.xmlsoap.org/wsdl/"), "fault")) ^^ 
       (_.toSeq map { x => scalaxb.DataRecord(x.namespace, Some(x.name), scalaxb.fromXML[wsdl11.XFaultType](x, scalaxb.ElemName(node) :: stack)) })) ~ 
       optTextRecord) ^^ 
         { case p1 ~ p2 ~ p3 ~ p4 ~ p5 ~ p6 => Seq.concat(Seq(p1),
@@ -642,47 +633,43 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
   }
 
   trait DefaultWsdl11XSolicitresponseoperationSequenceFormat extends scalaxb.XMLFormat[wsdl11.XSolicitresponseoperationSequence] {
-    val targetNamespace: Option[String] = Some("http://schemas.xmlsoap.org/wsdl/")
-    
     def reads(seq: scala.xml.NodeSeq, stack: List[scalaxb.ElemName]): Either[String, wsdl11.XSolicitresponseoperationSequence] = Left("don't call me.")
     
     def writes(__obj: wsdl11.XSolicitresponseoperationSequence, __namespace: Option[String], __elementLabel: Option[String], 
         __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
-      Seq.concat(scalaxb.toXML[wsdl11.XParamType](__obj.output, targetNamespace, Some("output"), __scope, false),
-        scalaxb.toXML[wsdl11.XParamType](__obj.input, targetNamespace, Some("input"), __scope, false),
-        __obj.fault flatMap { scalaxb.toXML[wsdl11.XFaultType](_, targetNamespace, Some("fault"), __scope, false) })
+      Seq.concat(scalaxb.toXML[wsdl11.XParamType](__obj.output, Some("http://schemas.xmlsoap.org/wsdl/"), Some("output"), __scope, false),
+        scalaxb.toXML[wsdl11.XParamType](__obj.input, Some("http://schemas.xmlsoap.org/wsdl/"), Some("input"), __scope, false),
+        __obj.fault flatMap { scalaxb.toXML[wsdl11.XFaultType](_, Some("http://schemas.xmlsoap.org/wsdl/"), Some("fault"), __scope, false) })
 
 
   }
 
 
   trait Wsdl11XRequestresponseoperationGroupFormat extends scalaxb.AnyElemNameParser {
-    private val targetNamespace: Option[String] = Some("http://schemas.xmlsoap.org/wsdl/")
-    
     def parseXRequestresponseoperationGroup(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[wsdl11.XRequestresponseoperationSequence] =
-      (((scalaxb.ElemName(targetNamespace, "input")) ~ 
-      (scalaxb.ElemName(targetNamespace, "output")) ~ 
-      rep(scalaxb.ElemName(targetNamespace, "fault"))) ^^ 
+      (((scalaxb.ElemName(Some("http://schemas.xmlsoap.org/wsdl/"), "input")) ~ 
+      (scalaxb.ElemName(Some("http://schemas.xmlsoap.org/wsdl/"), "output")) ~ 
+      rep(scalaxb.ElemName(Some("http://schemas.xmlsoap.org/wsdl/"), "fault"))) ^^ 
         { case p1 ~ p2 ~ p3 => wsdl11.XRequestresponseoperationSequence(scalaxb.fromXML[wsdl11.XParamType](p1, scalaxb.ElemName(node) :: stack),
         scalaxb.fromXML[wsdl11.XParamType](p2, scalaxb.ElemName(node) :: stack),
         p3.toSeq map { scalaxb.fromXML[wsdl11.XFaultType](_, scalaxb.ElemName(node) :: stack) }) })
   
     def parseXRequestresponseoperationGroup(node: scala.xml.Node, stack: List[scalaxb.ElemName], wrap: Boolean): Parser[scalaxb.DataRecord[Any]] =
-      (((scalaxb.ElemName(targetNamespace, "input")) ~ 
-      (scalaxb.ElemName(targetNamespace, "output")) ~ 
-      rep(scalaxb.ElemName(targetNamespace, "fault"))) ^^ 
+      (((scalaxb.ElemName(Some("http://schemas.xmlsoap.org/wsdl/"), "input")) ~ 
+      (scalaxb.ElemName(Some("http://schemas.xmlsoap.org/wsdl/"), "output")) ~ 
+      rep(scalaxb.ElemName(Some("http://schemas.xmlsoap.org/wsdl/"), "fault"))) ^^ 
         { case p1 ~ p2 ~ p3 => scalaxb.DataRecord(wsdl11.XRequestresponseoperationSequence(scalaxb.fromXML[wsdl11.XParamType](p1, scalaxb.ElemName(node) :: stack),
         scalaxb.fromXML[wsdl11.XParamType](p2, scalaxb.ElemName(node) :: stack),
         p3.toSeq map { scalaxb.fromXML[wsdl11.XFaultType](_, scalaxb.ElemName(node) :: stack) })) })
     
     def parsemixedXRequestresponseoperationGroup(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[Seq[scalaxb.DataRecord[Any]]] =
-      ((((scalaxb.ElemName(targetNamespace, "input")) ^^ 
+      ((((scalaxb.ElemName(Some("http://schemas.xmlsoap.org/wsdl/"), "input")) ^^ 
       (x => scalaxb.DataRecord(x.namespace, Some(x.name), scalaxb.fromXML[wsdl11.XParamType](x, scalaxb.ElemName(node) :: stack)))) ~ 
       optTextRecord ~ 
-      ((scalaxb.ElemName(targetNamespace, "output")) ^^ 
+      ((scalaxb.ElemName(Some("http://schemas.xmlsoap.org/wsdl/"), "output")) ^^ 
       (x => scalaxb.DataRecord(x.namespace, Some(x.name), scalaxb.fromXML[wsdl11.XParamType](x, scalaxb.ElemName(node) :: stack)))) ~ 
       optTextRecord ~ 
-      (rep(scalaxb.ElemName(targetNamespace, "fault")) ^^ 
+      (rep(scalaxb.ElemName(Some("http://schemas.xmlsoap.org/wsdl/"), "fault")) ^^ 
       (_.toSeq map { x => scalaxb.DataRecord(x.namespace, Some(x.name), scalaxb.fromXML[wsdl11.XFaultType](x, scalaxb.ElemName(node) :: stack)) })) ~ 
       optTextRecord) ^^ 
         { case p1 ~ p2 ~ p3 ~ p4 ~ p5 ~ p6 => Seq.concat(Seq(p1),
@@ -694,33 +681,29 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
   }
 
   trait DefaultWsdl11XRequestresponseoperationSequenceFormat extends scalaxb.XMLFormat[wsdl11.XRequestresponseoperationSequence] {
-    val targetNamespace: Option[String] = Some("http://schemas.xmlsoap.org/wsdl/")
-    
     def reads(seq: scala.xml.NodeSeq, stack: List[scalaxb.ElemName]): Either[String, wsdl11.XRequestresponseoperationSequence] = Left("don't call me.")
     
     def writes(__obj: wsdl11.XRequestresponseoperationSequence, __namespace: Option[String], __elementLabel: Option[String], 
         __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
-      Seq.concat(scalaxb.toXML[wsdl11.XParamType](__obj.input, targetNamespace, Some("input"), __scope, false),
-        scalaxb.toXML[wsdl11.XParamType](__obj.output, targetNamespace, Some("output"), __scope, false),
-        __obj.fault flatMap { scalaxb.toXML[wsdl11.XFaultType](_, targetNamespace, Some("fault"), __scope, false) })
+      Seq.concat(scalaxb.toXML[wsdl11.XParamType](__obj.input, Some("http://schemas.xmlsoap.org/wsdl/"), Some("input"), __scope, false),
+        scalaxb.toXML[wsdl11.XParamType](__obj.output, Some("http://schemas.xmlsoap.org/wsdl/"), Some("output"), __scope, false),
+        __obj.fault flatMap { scalaxb.toXML[wsdl11.XFaultType](_, Some("http://schemas.xmlsoap.org/wsdl/"), Some("fault"), __scope, false) })
 
 
   }
 
 
   trait Wsdl11XOnewayoperationGroupFormat extends scalaxb.AnyElemNameParser {
-    private val targetNamespace: Option[String] = Some("http://schemas.xmlsoap.org/wsdl/")
-    
     def parseXOnewayoperationGroup(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[wsdl11.XOnewayoperationSequence] =
-      (((scalaxb.ElemName(targetNamespace, "input"))) ^^ 
+      (((scalaxb.ElemName(Some("http://schemas.xmlsoap.org/wsdl/"), "input"))) ^^ 
         { case p1 => wsdl11.XOnewayoperationSequence(scalaxb.fromXML[wsdl11.XParamType](p1, scalaxb.ElemName(node) :: stack)) })
   
     def parseXOnewayoperationGroup(node: scala.xml.Node, stack: List[scalaxb.ElemName], wrap: Boolean): Parser[scalaxb.DataRecord[Any]] =
-      (((scalaxb.ElemName(targetNamespace, "input"))) ^^ 
+      (((scalaxb.ElemName(Some("http://schemas.xmlsoap.org/wsdl/"), "input"))) ^^ 
         { case p1 => scalaxb.DataRecord(wsdl11.XOnewayoperationSequence(scalaxb.fromXML[wsdl11.XParamType](p1, scalaxb.ElemName(node) :: stack))) })
     
     def parsemixedXOnewayoperationGroup(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[Seq[scalaxb.DataRecord[Any]]] =
-      ((((scalaxb.ElemName(targetNamespace, "input")) ^^ 
+      ((((scalaxb.ElemName(Some("http://schemas.xmlsoap.org/wsdl/"), "input")) ^^ 
       (x => scalaxb.DataRecord(x.namespace, Some(x.name), scalaxb.fromXML[wsdl11.XParamType](x, scalaxb.ElemName(node) :: stack)))) ~ 
       optTextRecord) ^^ 
         { case p1 ~ p2 => Seq.concat(Seq(p1),
@@ -728,13 +711,11 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
   }
 
   trait DefaultWsdl11XOnewayoperationSequenceFormat extends scalaxb.XMLFormat[wsdl11.XOnewayoperationSequence] {
-    val targetNamespace: Option[String] = Some("http://schemas.xmlsoap.org/wsdl/")
-    
     def reads(seq: scala.xml.NodeSeq, stack: List[scalaxb.ElemName]): Either[String, wsdl11.XOnewayoperationSequence] = Left("don't call me.")
     
     def writes(__obj: wsdl11.XOnewayoperationSequence, __namespace: Option[String], __elementLabel: Option[String], 
         __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
-      scalaxb.toXML[wsdl11.XParamType](__obj.input, targetNamespace, Some("input"), __scope, false)
+      scalaxb.toXML[wsdl11.XParamType](__obj.input, Some("http://schemas.xmlsoap.org/wsdl/"), Some("input"), __scope, false)
 
 
   }

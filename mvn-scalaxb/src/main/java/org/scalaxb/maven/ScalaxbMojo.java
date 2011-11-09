@@ -24,6 +24,7 @@ package org.scalaxb.maven;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
+import static java.util.Collections.sort;
 import static java.util.Collections.unmodifiableList;
 
 import java.io.File;
@@ -310,6 +311,7 @@ public class ScalaxbMojo extends AbstractMojo {
         for (String xsdFile : ds.getIncludedFiles()) {
             result.add(new File(directory, xsdFile).getAbsolutePath());
         }
+        sort(result);
         return result;
     }
 

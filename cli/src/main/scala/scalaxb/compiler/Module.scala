@@ -89,12 +89,7 @@ object Module {
       else new scalaxb.compiler.xsd.Driver
   }
 
-  def splitTypeName(name: String, scope: scala.xml.NamespaceBinding): (Option[String], String) =
-    if (name.contains(':')) {
-      val prefix = name.dropRight(name.length - name.indexOf(':'))
-      val value = name.drop(name.indexOf(':') + 1)
-      Option[String](scope.getURI(prefix)) -> value
-    } else (Option[String](scope.getURI(null)), name)
+  def splitTypeName(value: String, scope: scala.xml.NamespaceBinding) = scalaxb.Helper.splitQName(value, scope)
 
   def indent(n: Int) = "  " * n
 
@@ -503,7 +498,7 @@ trait Verbose extends Module {
 
 class ReferenceNotFound(kind: String, namespace: Option[String], name: String) extends RuntimeException(
   "Error: Referenced " + kind + " " +
-    (namespace map { "{" + _ + "}" } getOrElse {""}) + name + " was not found.")
+    (namespace map { "{" + _ + "}" } getOrElse {"(unqualified) "}) + name + " was not found.")
 
 class CaseClassTooLong(fqn: String, xmlname: String) extends RuntimeException(
   """Error: A case class with > 22 parameters cannot be created for %s. Consider using --wrap-contents "%s" option.""".format(

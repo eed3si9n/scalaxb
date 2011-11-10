@@ -2,6 +2,7 @@ package scalaxb
 
 import scala.xml.{Node, NodeSeq, NamespaceBinding, Elem, UnprefixedAttribute, PrefixedAttribute}
 import javax.xml.datatype.{XMLGregorianCalendar}
+import javax.xml.namespace.QName
 
 object `package` extends XMLStandardTypes {
   import annotation.implicitNotFound
@@ -37,7 +38,7 @@ object `package` extends XMLStandardTypes {
     def doFromScope(s: NamespaceBinding): List[(Option[String], String)] = {
       lazy val parentMap: List[(Option[String], String)] = Option[NamespaceBinding](s.parent) map { doFromScope
         } getOrElse { Nil }
-      Option[String](s.uri) map { uri => (Option[String](s.prefix) -> uri) :: parentMap } getOrElse {parentMap}
+      scalaxb.Helper.nullOrEmpty(s.uri) map { uri => (scalaxb.Helper.nullOrEmpty(s.prefix) -> uri) :: parentMap } getOrElse {parentMap}
     }
     doFromScope(scope).reverse
   }
@@ -206,14 +207,8 @@ trait XMLStandardTypes {
     def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, javax.xml.namespace.QName] =
       seq match {
         case node: scala.xml.Node =>
-          if (node.text startsWith "{") Right(javax.xml.namespace.QName.valueOf(node.text))
-          else if (node.text contains ':') {
-            val s = node.text
-            val prefix = s.dropRight(s.length - s.indexOf(':'))
-            val value = s.drop(s.indexOf(':') + 1)
-            Right(new javax.xml.namespace.QName(scope.getURI(prefix), value, prefix))
-          }
-          else Right(new javax.xml.namespace.QName(node.scope.getURI(null), node.text))
+          val (namespace, localPart) = Helper.splitQName(node.text, scope)
+          Right(new QName(namespace orNull, localPart))
         case _ => Left("scala.xml.Node is required")
       }
 
@@ -379,7 +374,7 @@ object DataRecord extends XMLStandardTypes {
 
   def apply[A:CanWriteXML](node: Node, value: A): DataRecord[A] = node match {
     case elem: Elem =>
-      val ns = Option[String](elem.scope.getURI(elem.prefix))
+      val ns = scalaxb.Helper.nullOrEmpty(elem.scope.getURI(elem.prefix))
       val key = Some(elem.label)
       DataRecord(ns, key, value)
     case _ => DataRecord(value)
@@ -391,7 +386,7 @@ object DataRecord extends XMLStandardTypes {
       val key = Some(attr.key)
       DataRecord(None, key, value)
     case attr: PrefixedAttribute =>
-      val ns = Option[String](attr.getNamespace(node))
+      val ns = scalaxb.Helper.nullOrEmpty(attr.getNamespace(node))
       val key = Some(attr.key)
       DataRecord(ns, key, value)
     case _ => DataRecord(value)
@@ -415,7 +410,7 @@ object DataRecord extends XMLStandardTypes {
   }
 
   def fromAny(elem: Elem): DataRecord[Any] = {
-    val ns = Option[String](elem.scope.getURI(elem.prefix))
+    val ns = scalaxb.Helper.nullOrEmpty(elem.scope.getURI(elem.prefix))
     val key = Some(elem.label)
     val XS = Some(XML_SCHEMA_URI)
 
@@ -484,7 +479,7 @@ object DataRecord extends XMLStandardTypes {
 
   // this is for any.
   def fromNillableAny(elem: Elem): DataRecord[Option[Any]] = {
-    val ns = Option[String](elem.scope.getURI(elem.prefix))
+    val ns = scalaxb.Helper.nullOrEmpty(elem.scope.getURI(elem.prefix))
     val key = Some(elem.label)
     val XS = Some(XML_SCHEMA_URI)
 
@@ -580,7 +575,7 @@ case class ElemName(namespace: Option[String], name: String) {
 object ElemName {
   implicit def apply(node: scala.xml.Node): ElemName = node match {
     case x: scala.xml.Elem =>
-      val elemName = ElemName(Option[String](x.scope.getURI(x.prefix)), x.label)
+      val elemName = ElemName(scalaxb.Helper.nullOrEmpty(x.scope.getURI(x.prefix)), x.label)
       elemName.node = x
       elemName
     case _ =>
@@ -810,15 +805,33 @@ object Helper {
     val typeName = (node \ ("@{" + XSI_URL + "}type")).text
     val prefix = if (typeName.contains(':')) Some(typeName.dropRight(typeName.length - typeName.indexOf(':')))
       else None
-    val namespace = Option[String](node.scope.getURI(prefix.orNull))
+    val namespace = scalaxb.Helper.nullOrEmpty(node.scope.getURI(prefix.orNull))
     val value = if (typeName.contains(':')) typeName.drop(typeName.indexOf(':') + 1)
       else typeName
     (namespace, if (value == "") None else Some(value))
   }
 
+  def splitQName(value: String, scope: scala.xml.NamespaceBinding): (Option[String], String) =
+    if (value startsWith "{") {
+      val qname = javax.xml.namespace.QName.valueOf(value)
+      (nullOrEmpty(qname.getNamespaceURI), qname.getLocalPart)
+    }
+    else if (value contains ':') {
+      val prefix = value.dropRight(value.length - value.indexOf(':'))
+      val localPart = value.drop(value.indexOf(':') + 1)
+      (nullOrEmpty(scope.getURI(prefix)), localPart)
+    }
+    else (nullOrEmpty(scope.getURI(null)), value)
+
+  def nullOrEmpty(value: String): Option[String] =
+    value match {
+      case null | "" => None
+      case x => Some(x)
+    }
+
   def getPrefix(namespace: Option[String], scope: scala.xml.NamespaceBinding) =
-    if (Option[String](scope.getURI(null)) == namespace) None
-    else Option[String](scope.getPrefix(namespace.orNull))
+    if (nullOrEmpty(scope.getURI(null)) == namespace) None
+    else nullOrEmpty(scope.getPrefix(namespace.orNull))
 
   def prefixedName(namespace: Option[String], name: String, scope: scala.xml.NamespaceBinding) =
     getPrefix(namespace, scope) map { """%s:%s""" format(_, name)
@@ -842,7 +855,7 @@ object Helper {
     node match {
       case elem: Elem =>
         withInnerScope(elem.scope, outer) { (innerScope, mapping) =>
-          val newPrefix: String = mapping.get(Option[String](elem.prefix)) map {_.orNull} getOrElse {elem.prefix}
+          val newPrefix: String = mapping.get(scalaxb.Helper.nullOrEmpty(elem.prefix)) map {_.orNull} getOrElse {elem.prefix}
           val newChild = mergeNodeSeqScope(mergeNodeSeqScope(elem.child, outer), innerScope)
           elem.copy(scope = innerScope, prefix = newPrefix, child = newChild)
         }

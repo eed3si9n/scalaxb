@@ -260,8 +260,8 @@ trait Params extends Lookup {
       case _ => typeName.toLowerCase 
     }
     
-    val symbol = new ReferenceTypeSymbol(typeName)
-    val decl = ComplexTypeDecl(schema.targetNamespace, symbol.name, List(symbol.name),
+    val symbol = ReferenceTypeSymbol(schema.targetNamespace, typeName)
+    val decl = ComplexTypeDecl(symbol.namespace, symbol.localPart, List(symbol.name),
       false, false, ComplexContentDecl.empty, Nil, None)
 
     compositorWrapper(decl) = compositor

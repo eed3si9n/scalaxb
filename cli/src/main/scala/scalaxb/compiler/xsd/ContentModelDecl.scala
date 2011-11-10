@@ -38,13 +38,13 @@ object SimpContRestrictionDecl {
     val simpleType = (node \ "simpleType").headOption map { x =>
       val decl = SimpleTypeDecl.fromXML(x, family, config)
       config.typeList += decl
-      val symbol = new ReferenceTypeSymbol(decl.name)
+      val symbol = ReferenceTypeSymbol(config.targetNamespace, decl.name)
       symbol.decl = decl
       symbol
     }
     
     val base = (node \ "@base").headOption match {
-      case Some(x) => TypeSymbolParser.fromString(x.text, config)
+      case Some(x) => TypeSymbolParser.fromString(x.text, node.scope, config.targetNamespace)
       case None    =>
         simpleType getOrElse {
           error("SimpContRestrictionDecl#fromXML: restriction must have either base attribute or simpleType.")
@@ -63,13 +63,13 @@ case class SimpContExtensionDecl(base: XsTypeSymbol,
 object SimpContExtensionDecl {
   def fromXML(node: scala.xml.Node, family: List[String], config: ParserConfig) = {
     val base = (node \ "@base").headOption match {
-      case Some(x) => TypeSymbolParser.fromString(x.text, config)
+      case Some(x) => TypeSymbolParser.fromString(x.text, node.scope, config.targetNamespace)
       case None    =>
         (node \ "simpleType").headOption match {
           case Some(x) => Some(x.text)
             val decl = SimpleTypeDecl.fromXML(x, family, config)
             config.typeList += decl
-            val symbol = new ReferenceTypeSymbol(decl.name)
+            val symbol = ReferenceTypeSymbol(config.targetNamespace, decl.name)
             symbol.decl = decl
             symbol
           
@@ -96,7 +96,7 @@ object CompContRestrictionDecl {
   
   def fromXML(node: scala.xml.Node, family: List[String], config: ParserConfig) = {
     val baseName = (node \ "@base").text
-    val base = TypeSymbolParser.fromString(baseName, config)
+    val base = TypeSymbolParser.fromString(baseName, node.scope, config.targetNamespace)
     var compositor: Option[HasParticle] = None
     
     for (child <- node.child) child match {
@@ -124,7 +124,7 @@ case class CompContExtensionDecl(base: XsTypeSymbol,
 object CompContExtensionDecl {
   def fromXML(node: scala.xml.Node, family: List[String], config: ParserConfig) = {
     val baseName = (node \ "@base").text
-    val base = TypeSymbolParser.fromString(baseName, config)
+    val base = TypeSymbolParser.fromString(baseName, node.scope, config.targetNamespace)
     var compositor: Option[HasParticle] = None
     
     for (child <- node.child) child match {
@@ -149,13 +149,13 @@ case class SimpTypRestrictionDecl(base: XsTypeSymbol, facets: List[Facetable]) e
 object SimpTypRestrictionDecl {  
   def fromXML(node: scala.xml.Node, family: List[String], config: ParserConfig) = {
     val base = (node \ "@base").headOption match {
-      case Some(x) => TypeSymbolParser.fromString(x.text, config)
+      case Some(x) => TypeSymbolParser.fromString(x.text, node.scope, config.targetNamespace)
       case None    =>
         (node \ "simpleType").headOption match {
           case Some(x) => Some(x.text)
             val decl = SimpleTypeDecl.fromXML(x, family, config)
             config.typeList += decl
-            val symbol = new ReferenceTypeSymbol(decl.name)
+            val symbol = ReferenceTypeSymbol(config.targetNamespace, decl.name)
             symbol.decl = decl
             symbol
           
@@ -173,13 +173,13 @@ case class SimpTypListDecl(itemType: XsTypeSymbol) extends ContentTypeDecl
 object SimpTypListDecl {
   def fromXML(node: scala.xml.Node, family: List[String], config: ParserConfig) = {
     val itemType = (node \ "@itemType").headOption match {
-      case Some(x) => TypeSymbolParser.fromString(x.text, config)
+      case Some(x) => TypeSymbolParser.fromString(x.text, node.scope, config.targetNamespace)
       case None    =>
         (node \ "simpleType").headOption match {
           case Some(x) => Some(x.text)
             val decl = SimpleTypeDecl.fromXML(x, family, config)
             config.typeList += decl
-            val symbol = new ReferenceTypeSymbol(decl.name)
+            val symbol = ReferenceTypeSymbol(config.targetNamespace, decl.name)
             symbol.decl = decl
             symbol
           

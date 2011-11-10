@@ -22,6 +22,8 @@
  
 package scalaxb.compiler.xsd
 
+import javax.xml.namespace.QName
+
 trait XsTypeSymbol extends scala.xml.TypeSymbol {
   val name: String
   
@@ -64,18 +66,22 @@ case class XsDataRecord(member: XsTypeSymbol) extends XsTypeSymbol {
   val name = "XsDataRecord(" + member + ")"
 }
 
-class ReferenceTypeSymbol(val name: String) extends XsTypeSymbol {
-  if (name == "") error("ReferenceTypeSymbol#: name cannot be blank.");
-  
-  var decl: TypeDecl = null
-  override def toString(): String = {
-    if (decl == null) "ReferenceTypeSymbol(" + name + ",null)"
-    else "ReferenceTypeSymbol(" + name + ")"
-  }
-}
-
 object ReferenceTypeSymbol {
   def unapply(value: ReferenceTypeSymbol): Option[TypeDecl] = Some(value.decl)
+  def apply(namespace: Option[String], localpart: String) =
+    new ReferenceTypeSymbol(new QName(namespace.orNull, localpart))
+}
+
+class ReferenceTypeSymbol(val qname: QName) extends XsTypeSymbol {
+  val namespace = scalaxb.Helper.nullOrEmpty(qname.getNamespaceURI)
+  val localPart = qname.getLocalPart
+  val name: String = (namespace map {"{%s}" format _} getOrElse("")) + localPart
+
+  var decl: TypeDecl = null
+  override def toString(): String = {
+    if (decl == null) "ReferenceTypeSymbol(" + qname.toString + ",null)"
+    else "ReferenceTypeSymbol(" + qname.toString + ")"
+  }
 }
 
 object AnyType {

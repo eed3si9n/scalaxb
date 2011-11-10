@@ -15,30 +15,30 @@ object XmlSchemaTest extends TestBase {
   "XMLSchema.scala file must compile so that Schema can be used" in {
     (List("import scalaxb._",
       "import org.w3.xmlschema._",
-      """val document = <schema targetNamespace="http://www.example.com/IPO"
-              xmlns="http://www.w3.org/2001/XMLSchema"
+      """val document = <xs:schema targetNamespace="http://www.example.com/IPO"
+              xmlns:xs="http://www.w3.org/2001/XMLSchema"
               xmlns:ipo="http://www.example.com/IPO">
-        <complexType name="Address">
-          <sequence>
-            <element name="name"   type="string"/>
-            <element name="street" type="string"/>
-            <element name="city"   type="string"/>
-          </sequence>
-          <attribute name="attr" type="string"/>
-        </complexType>
-      </schema>""", // " 
+        <xs:complexType name="Address">
+          <xs:sequence>
+            <xs:element name="name"   type="xs:string"/>
+            <xs:element name="street" type="xs:string"/>
+            <xs:element name="city"   type="xs:string"/>
+          </xs:sequence>
+          <xs:attribute name="attr" type="xs:string"/>
+        </xs:complexType>
+      </xs:schema>""", // "
       """toXML[XSchema](fromXML[XSchema](document),
         Some("http://www.w3.org/2001/XMLSchema"), Some("schema"), document.scope).toString""" // "
      ),
-     generated) must evaluateTo("""<schema targetNamespace="http://www.example.com/IPO" """ +
+     generated) must evaluateTo("""<xs:schema targetNamespace="http://www.example.com/IPO" """ +
        """xmlns="http://www.w3.org/2001/XMLSchema" xmlns:ipo="http://www.example.com/IPO">""" +
-       """<complexType name="Address">""" +
-       """<sequence><element type="string" name="name"></element>""" +
-       """<element type="string" name="street"></element>""" +
-       """<element type="string" name="city"></element>""" +
-       """</sequence>""" +
-       """<attribute type="string" name="attr"></attribute>""" +
-       """</complexType></schema>""", // "
+       """<xs:complexType name="Address">""" +
+       """<xs:sequence><xs:element type="xs:string" name="name"></xs:element>""" +
+       """<xs:element type="string" name="street"></xs:element>""" +
+       """<xs:element type="string" name="city"></xs:element>""" +
+       """</xs:sequence>""" +
+       """<xs:attribute type="xs:string" name="attr"></xs:attribute>""" +
+       """</xs:complexType></xs:schema>""", // "
      outdir = "./tmp")
   }
 }

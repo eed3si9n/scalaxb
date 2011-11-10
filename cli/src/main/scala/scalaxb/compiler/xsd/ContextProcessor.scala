@@ -120,7 +120,11 @@ trait ContextProcessor extends ScalaNames with PackageName {
       case (_, decl: ComplexTypeDecl) =>
         namedTypes += ((schema, decl))
         if (context.typeNames.contains(decl)) registerDuplicatedType(schema, decl, decl.name)
-        else context.typeNames.getOrElseUpdate(decl, makeProtectedTypeName(schema.targetNamespace, decl, context))
+        else {
+          val name = makeProtectedTypeName(schema.targetNamespace, decl, context)
+          logger.debug("processContext: type %s is named %s" format (decl.name, name))
+          context.typeNames.getOrElseUpdate(decl, name)
+        }
       case (_, decl@SimpleTypeDecl(_, _, _, _, _)) if containsEnumeration(decl) =>
         nameEnumSimpleType(schema, decl, decl.name)
       case _ =>      
@@ -205,9 +209,8 @@ trait ContextProcessor extends ScalaNames with PackageName {
         case symbol: ReferenceTypeSymbol =>
           if (symbol.decl != null) symbol.decl
           else {
-            val (namespace, typeName) = TypeSymbolParser.splitTypeName(symbol.name, schema)
-            if (containsTypeLocally(namespace, typeName)) symbol.decl = schema.topTypes(typeName)
-            else symbol.decl = getTypeGlobally(namespace, typeName, context)
+            if (containsTypeLocally(symbol.namespace, symbol.localPart)) symbol.decl = schema.topTypes(symbol.localPart)
+            else symbol.decl = getTypeGlobally(symbol.namespace, symbol.localPart, context)
           }
         case _ =>
       }

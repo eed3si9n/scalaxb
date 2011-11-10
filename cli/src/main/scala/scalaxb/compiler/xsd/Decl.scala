@@ -27,6 +27,7 @@ import scala.collection.mutable
 import scala.collection.immutable
 import scalaxb.compiler.Adder
 import java.net.URI
+import scala.xml.NamespaceBinding
 
 abstract class Decl
 
@@ -91,28 +92,25 @@ object TypeSymbolParser {
   val XML_SCHEMA_URI = "http://www.w3.org/2001/XMLSchema"
   val XML_URI = "http://www.w3.org/XML/1998/namespace"
   
-  def fromString(name: String, config: ParserConfig): XsTypeSymbol = fromString(name, splitTypeName(name, config))
+  def fromString(name: String, scope: NamespaceBinding, targetNamespace: Option[String]): XsTypeSymbol =
+    fromString(splitTypeName(name, scope, targetNamespace))
 
   def fromQName(qname: javax.xml.namespace.QName): XsTypeSymbol =
-    fromString(qname.toString, (Option[String](qname.getNamespaceURI), qname.getLocalPart))
+    fromString((scalaxb.Helper.nullOrEmpty(qname.getNamespaceURI), qname.getLocalPart))
 
-  def fromString(name: String, pair: (Option[String], String)): XsTypeSymbol = {
-    val (namespace, typeName) = pair
+  def fromString(pair: (Option[String], String)): XsTypeSymbol = {
+    val (namespace, localPart) = pair
     namespace match {
       case Some(XML_SCHEMA_URI) =>
-        if (XsTypeSymbol.toTypeSymbol.isDefinedAt(typeName)) XsTypeSymbol.toTypeSymbol(typeName)
-        else new ReferenceTypeSymbol(name)
-      case _ => new ReferenceTypeSymbol(name)
+        if (XsTypeSymbol.toTypeSymbol.isDefinedAt(localPart)) XsTypeSymbol.toTypeSymbol(localPart)
+        else ReferenceTypeSymbol(namespace, localPart)
+      case _ => ReferenceTypeSymbol(namespace, localPart)
     }
   }
 
-  def splitTypeName(name: String, config: ParserConfig): (Option[String], String) =
-    if (name.contains('@')) (config.targetNamespace, name)
-    else Module.splitTypeName(name, config.scope)
-
-  def splitTypeName(name: String, schema: SchemaDecl): (Option[String], String) =
-    if (name.contains('@')) (schema.targetNamespace, name)
-    else Module.splitTypeName(name, schema.scope)
+  def splitTypeName(name: String, scope: NamespaceBinding, targetNamespace: Option[String]): (Option[String], String) =
+    if (name.contains('@')) (targetNamespace, name)
+    else Module.splitTypeName(name, scope)
 }
 
 trait Particle {
@@ -297,7 +295,7 @@ case class AttributeRef(namespace: Option[String],
 object AttributeRef {
   def fromXML(node: scala.xml.Node, config: ParserConfig) = {
     val ref = (node \ "@ref").text
-    val (namespace, typeName) = TypeSymbolParser.splitTypeName(ref, config)
+    val (namespace, typeName) = TypeSymbolParser.splitTypeName(ref, node.scope, config.targetNamespace)
     val defaultValue = (node \ "@default").headOption map { _.text }
     val fixedValue = (node \ "@fixed").headOption map { _.text }
     val use = (node \ "@use").text match {
@@ -329,13 +327,13 @@ object AttributeDecl {
     val typeName = (node \ "@type").text
     
     if (typeName != "") {
-      typeSymbol = TypeSymbolParser.fromString(typeName, config)
+      typeSymbol = TypeSymbolParser.fromString(typeName, node.scope, config.targetNamespace)
     } else {
       for (child <- node.child) child match {
         case <simpleType>{ _* }</simpleType> =>
           val decl = SimpleTypeDecl.fromXML(child, List(name), config)
           config.typeList += decl
-          val symbol = new ReferenceTypeSymbol(decl.name)
+          val symbol = ReferenceTypeSymbol(config.targetNamespace, decl.name)
           symbol.decl = decl
           typeSymbol = symbol
           
@@ -370,7 +368,7 @@ object AttributeGroupRef {
   def fromXML(node: scala.xml.Node,
       config: ParserConfig) = {
     val ref = (node \ "@ref").text
-    val (namespace, typeName) = TypeSymbolParser.splitTypeName(ref, config)
+    val (namespace, typeName) = TypeSymbolParser.splitTypeName(ref, node.scope, config.targetNamespace)
     
     AttributeGroupRef(namespace, typeName)
   }    
@@ -405,7 +403,7 @@ object ElemRef {
     val ref = (node \ "@ref").text   
     val minOccurs = CompositorDecl.buildOccurrence((node \ "@minOccurs").text)
     val maxOccurs = CompositorDecl.buildOccurrence((node \ "@maxOccurs").text)
-    val (namespace, typeName) = TypeSymbolParser.splitTypeName(ref, config)
+    val (namespace, typeName) = TypeSymbolParser.splitTypeName(ref, node.scope, config.targetNamespace)
     val nillable = (node \ "@nillable").headOption map { _.text == "true" }
     
     ElemRef(namespace, typeName, minOccurs, maxOccurs, nillable)
@@ -429,23 +427,22 @@ object ElemDecl {
   def fromXML(node: scala.xml.Node, family: List[String], global: Boolean, config: ParserConfig) = {
     val name = (node \ "@name").text
     var typeSymbol: XsTypeSymbol = XsAnyType
-    val typeName = (node \ "@type").text
-    
-    if (typeName != "") {
-      typeSymbol = TypeSymbolParser.fromString(typeName, config)
-    } else {
+
+    (node \ "@type").headOption map { typeName =>
+      typeSymbol = TypeSymbolParser.fromString(typeName.text, node.scope, config.targetNamespace)
+    } getOrElse {
       for (child <- node.child) child match {
         case <complexType>{ _* }</complexType> =>
           val decl = ComplexTypeDecl.fromXML(child, "@%s" format (family :+ name).mkString("/"), family :+ name, config)
           config.typeList += decl
-          val symbol = new ReferenceTypeSymbol(decl.name)
+          val symbol = ReferenceTypeSymbol(config.targetNamespace, decl.name)
           symbol.decl = decl
           typeSymbol = symbol
           
         case <simpleType>{ _* }</simpleType> =>
           val decl = SimpleTypeDecl.fromXML(child, family :+ name, config)
           config.typeList += decl
-          val symbol = new ReferenceTypeSymbol(decl.name)
+          val symbol = ReferenceTypeSymbol(config.targetNamespace, decl.name)
           symbol.decl = decl
           typeSymbol = symbol
         
@@ -461,7 +458,7 @@ object ElemDecl {
     val maxOccurs = CompositorDecl.buildOccurrence((node \ "@maxOccurs").text)
     val nillable = (node \ "@nillable").headOption map { _.text == "true" }
     val substitutionGroup = (node \ "@substitutionGroup").headOption map { x =>
-      TypeSymbolParser.splitTypeName(x.text, config) }
+      TypeSymbolParser.splitTypeName(x.text, node.scope, config.targetNamespace) }
     val annotation = (node \ "annotation").headOption map { x =>
       AnnotationDecl.fromXML(x, config) }
     
@@ -469,14 +466,17 @@ object ElemDecl {
       name, typeSymbol, defaultValue, fixedValue, minOccurs, maxOccurs, nillable, global, qualified,
       substitutionGroup, annotation)
     config.elemList += elem
-    if (typeName == "") typeSymbol match {
-      case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
-        config.typeToAnnotatable += (decl -> elem)
-      case ReferenceTypeSymbol(decl: SimpleTypeDecl) =>
-        config.typeToAnnotatable += (decl -> elem)
-      case _ =>
+
+    (node \ "@type").headOption foreach  { _ =>
+      typeSymbol match {
+        case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
+          config.typeToAnnotatable += (decl -> elem)
+        case ReferenceTypeSymbol(decl: SimpleTypeDecl) =>
+          config.typeToAnnotatable += (decl -> elem)
+        case _ =>
+      }
     }
-    
+
     elem
   }
 }
@@ -746,7 +746,7 @@ object GroupRef {
     val ref = (node \ "@ref").text   
     val minOccurs = CompositorDecl.buildOccurrence((node \ "@minOccurs").text)
     val maxOccurs = CompositorDecl.buildOccurrence((node \ "@maxOccurs").text)
-    val (namespace, typeName) = TypeSymbolParser.splitTypeName(ref, config)
+    val (namespace, typeName) = TypeSymbolParser.splitTypeName(ref, node.scope, config.targetNamespace)
     
     GroupRef(namespace, typeName, Nil, minOccurs, maxOccurs)
   }

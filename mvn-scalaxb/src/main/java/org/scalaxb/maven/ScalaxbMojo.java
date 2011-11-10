@@ -58,7 +58,8 @@ public class ScalaxbMojo extends AbstractMojo {
     private MavenProject project;
 
     /**
-     * The directory containing the XSD files.
+     * The directory containing the XSD files. If the specified directory does
+     * not exist or is empty, then it is ignored.
      * @parameter
      *   expression="${scalaxb.xsdDirectory}"
      *   default-value="${project.basedir}/src/main/xsd"
@@ -67,7 +68,8 @@ public class ScalaxbMojo extends AbstractMojo {
     private File xsdDirectory;
 
     /**
-     * The directory containing the WSDL files.
+     * The directory containing the WSDL files. If the specified directory does
+     * not exist or is empty, then it is ignored.
      * @parameter
      *   expression="${scalaxb.wsdlDirectory}"
      *   default-value="${project.basedir}/src/main/wsdl"
@@ -85,7 +87,9 @@ public class ScalaxbMojo extends AbstractMojo {
     private File outputDirectory;
 
     /**
-     * The package in which to generate classes.
+     * The package in which to generate classes. Classes are generated in the
+     * package specified, unless the <code>packageNames</code> parameter is used
+     * to override this value.
      * @parameter
      *   expression="${scalaxb.packageName}"
      *   default-value="generated"
@@ -94,15 +98,24 @@ public class ScalaxbMojo extends AbstractMojo {
 
     /**
      * Map of namespace URIs to package names for generated classes.
+     * <br/>
+     * This option can be used to override the <code>packageName</code>
+     * parameter (see above) for elements in specific namespaces. The mapping
+     * between namespace URIs and package names can be specifying any number of
+     * <code>packageName</code> elements within the <code>packageNames</code>
+     * element. For example:
      * <pre>
      * &lt;packageNames&gt;
      *   &lt;packageName&gt;
-     *     &lt;uri&gt;http://example.com/myservice&lt;/uri&gt;
-     *     &lt;package&gt;com.example.service&lt;package&gt;
+     *     &lt;uri&gt;http://example.com/service1&lt;/uri&gt;
+     *     &lt;package&gt;com.example.service1&lt;package&gt;
+     *   &lt;/packageName&gt;
+     *   &lt;packageName&gt;
+     *     &lt;uri&gt;http://example.com/service2&lt;/uri&gt;
+     *     &lt;package&gt;com.example.service2&lt;package&gt;
      *   &lt;/packageName&gt;
      * &lt;/packageNames&gt;
      * </pre>
-     *
      * @parameter
      */
     private PackageName[] packageNames;

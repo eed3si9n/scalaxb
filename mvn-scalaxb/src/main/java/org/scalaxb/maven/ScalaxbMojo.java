@@ -296,7 +296,7 @@ public class ScalaxbMojo extends AbstractMojo {
         return unmodifiableList(args);
     }
 
-    private List<String> inputFiles(File directory, String type) {
+    List<String> inputFiles(File directory, String type) {
         if (!directory.exists()) {
             return emptyList();
         }

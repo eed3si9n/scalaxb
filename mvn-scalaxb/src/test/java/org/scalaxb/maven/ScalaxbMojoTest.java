@@ -23,40 +23,68 @@ package org.scalaxb.maven;
  */
 
 import java.io.File;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Map.Entry;
+import java.net.URISyntaxException;
+import java.util.List;
 
-import org.apache.maven.plugin.testing.AbstractMojoTestCase;
+import junit.framework.TestCase;
 
-public class ScalaxbMojoTest extends AbstractMojoTestCase {
+/**
+ * ScalaxbMojo unit tests.
+ */
+public class ScalaxbMojoTest extends TestCase {
 
-    public void testPackageNameMapIsConfigured() throws Exception {
-        ScalaxbMojo mojo = getMojo("packageNames");
-        Map<String, String> map = mojo.packageNameMap();
+    private static final char SEP = File.separatorChar;
 
-        Iterator<Entry<String, String>> it = map.entrySet().iterator();
-        Entry<String, String> maplet1 = it.next();
-        assertEquals("http://example.com/namespace1", maplet1.getKey());
-        assertEquals("com.example.namespace1", maplet1.getValue());
-        Entry<String, String> maplet2 = it.next();
-        assertEquals("http://example.com/namespace2", maplet2.getKey());
-        assertEquals("com.example.namespace2", maplet2.getValue());
+    /**
+     * The files returned by inputFiles must be returned in alphabetical order,
+     * for consistency with sbt-scalaxb.
+     * See https://github.com/eed3si9n/scalaxb/issues/110
+     */
+    public void testInputFilesAreInAlphabeticalOrder() throws Exception {
+        File tmp = File.createTempFile("test", "", targetDirectory());
+        tmp.delete();
+        tmp.mkdir();
+
+        // Create files in non-alphabetical order
+        String[] names = {"test2", "test1", "test4", "test3"};
+        for (String name : names) {
+            new File(tmp, name + ".xsd").createNewFile();
+        }
+
+        // Check that they're returned in alphabetical order
+        try {
+            List<String> files = new ScalaxbMojo().inputFiles(tmp, "xsd");
+            assertEquals(4, files.size());
+            assertEquals(files.get(0), tmp.getAbsolutePath() + SEP + "test1.xsd");
+            assertEquals(files.get(1), tmp.getAbsolutePath() + SEP + "test2.xsd");
+            assertEquals(files.get(2), tmp.getAbsolutePath() + SEP + "test3.xsd");
+            assertEquals(files.get(3), tmp.getAbsolutePath() + SEP + "test4.xsd");
+        } finally {
+            // Clean up
+            for (String name : names) {
+                new File(tmp, name + ".xsd").delete();
+            }
+            tmp.delete();
+        }
     }
 
-    private ScalaxbMojo getMojo(String project) throws Exception {
-        String pomFile = new StringBuilder("src/test/resources/")
-            .append(getClass().getPackage().getName().replace('.', '/'))
-            .append('/')
-            .append(project)
-            .append(".xml")
-            .toString();
-        File pom = getTestFile(pomFile);
-        assertNotNull(pom);
-        assertTrue(pom.exists());
+    //////////////////////////////////////////////////////////////////////
+    // Test utilities
 
-        ScalaxbMojo mojo = (ScalaxbMojo) lookupMojo("generate", pom);
-        assertNotNull(mojo);
-        return mojo;
+    private static File targetDirectory() {
+        return testClassesDirectory().getParentFile();
     }
+
+    private static File testClassesDirectory() {
+        try {
+            return new File(ScalaxbMojoTest.class
+                    .getProtectionDomain()
+                    .getCodeSource()
+                    .getLocation()
+                    .toURI());
+        } catch (URISyntaxException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
 }

@@ -208,6 +208,17 @@ public class ScalaxbMojo extends AbstractMojo {
     */
    private boolean laxAny;
 
+   /**
+    * Prefix to prepend to the names of generated parameters for XML attributes.
+    * <br/>
+    * This option sets a prefix to be used in the names of parameters for XML
+    * attributes. It is useful when a schema defines both an element and an
+    * attribute of the same name within a complex type.
+    * @parameter
+    *   expression="${scalaxb.attributePrefix}"
+    */
+   private String attributePrefix;
+
     /**
      *
      * @parameter expression="${scalaxb.verbose}"
@@ -304,6 +315,7 @@ public class ScalaxbMojo extends AbstractMojo {
             .intersperse("--wrap-contents", wrapContents)
             .param("--protocol-file", protocolFile)
             .param("--protocol-package", protocolPackage)
+            .param("--attribute-prefix", attributePrefix)
             .flag("--lax-any", laxAny)
             .getArguments();
         return unmodifiableList(args);

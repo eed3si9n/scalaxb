@@ -273,15 +273,15 @@ public class ScalaxbMojo extends AbstractMojo {
     /**
      * Formats arguments into a form that can be copied and pasted into the command line.
      */
-    private static String argumentsToString(List<String> arguments) {
-        Pattern safe = Pattern.compile("[\\p{Alnum}/\\.-]*");
+    static String argumentsToString(List<String> arguments) {
+        Pattern safe = Pattern.compile("[\\p{Alnum}:/=\\.-]*");
         StringBuilder str = new StringBuilder();
         for (String arg : arguments) {
             if (safe.matcher(arg).matches()) {
                 str.append(arg);
             } else {
-                String escapedArg = arg.replaceAll("$", "\\$");
-                str.append('"').append(escapedArg).append('"');
+                String escapedArg = arg.replaceAll("'", "'\\\\''");
+                str.append('\'').append(escapedArg).append('\'');
             }
             str.append(' ');
         }

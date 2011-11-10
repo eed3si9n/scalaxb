@@ -24,6 +24,7 @@ package org.scalaxb.maven;
 
 import java.io.File;
 import java.net.URISyntaxException;
+import static java.util.Arrays.asList;
 import java.util.List;
 
 import junit.framework.TestCase;
@@ -34,6 +35,20 @@ import junit.framework.TestCase;
 public class ScalaxbMojoTest extends TestCase {
 
     private static final char SEP = File.separatorChar;
+
+    /**
+     * Arguments that don't need to be escaped should be returned as-is.
+     * Arguments that do need to be
+     */
+    public void testArgumentsToString() {
+        expect("-p:http://example.com/S1=f", "-p:http://example.com/S1=f");
+        expect("'-pfoo$bar'", "-pfoo$bar");
+        expect("'a'\\''x'", "a'x");
+    }
+
+    private void expect(String expect, String... arguments) {
+        assertEquals(expect, ScalaxbMojo.argumentsToString(asList(arguments)));
+    }
 
     /**
      * The files returned by inputFiles must be returned in alphabetical order,

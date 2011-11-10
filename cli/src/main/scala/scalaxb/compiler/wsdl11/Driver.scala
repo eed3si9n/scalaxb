@@ -185,8 +185,12 @@ case class WsdlContext(xsdcontext: XsdContext = XsdContext(),
                        faults:      mutable.ListMap[(Option[String], String), XFaultType] = mutable.ListMap(),
                        messages:    mutable.ListMap[(Option[String], String), XMessageType] = mutable.ListMap(),
                        var soap11:  Boolean = false ) extends Adder[WsdlPair] {
+  private lazy val logger = Logger("wsdl.WsdlContext")
+
   def add(uri: URI, value: WsdlPair) {
-    value.schemas map {xsdcontext.add(uri, _)}
+    logger.debug("add: %s" format (value.schemas map {_.targetNamespace.toString}))
+    value.schemas.zipWithIndex map { case (schema: SchemaDecl, i) =>
+      xsdcontext.add(new URI(uri.toString + "#" + i.toString), schema) }
   }
   def setOuterNamespace(uri: URI, outer: Option[String]) {
     xsdcontext.setOuterNamespace(uri, outer)

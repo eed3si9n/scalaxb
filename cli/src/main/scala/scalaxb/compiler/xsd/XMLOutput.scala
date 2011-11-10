@@ -112,10 +112,11 @@ trait XMLOutput extends Args {
     "attr = " + buildFormatterName(group) + ".toAttribute(__obj." + makeParamName(buildParam(group).name, true) + ", attr, __scope)"
     
   def buildToString(selector: String, typeSymbol: XsTypeSymbol): String = typeSymbol match {
-    case symbol: BuiltInSimpleTypeSymbol if (buildTypeName(symbol) == "java.util.GregorianCalendar") ||
-      (buildTypeName(symbol) == "Array[Byte]")  =>
-      "scalaxb.Helper.toString(" + selector + ")"
-    case symbol: BuiltInSimpleTypeSymbol => selector + ".toString"
+    case symbol: BuiltInSimpleTypeSymbol =>
+      buildTypeName(symbol) match {
+        case "javax.xml.namespace.QName" => "scalaxb.Helper.toString(%s, __scope)" format  selector
+        case _ => selector + ".toString"
+      }
     case ReferenceTypeSymbol(decl: SimpleTypeDecl) =>       
       decl.content match {
         case x: SimpTypListDecl => selector + ".map(x => " + buildToString("x", baseType(decl)) + ").mkString(\" \")"

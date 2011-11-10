@@ -753,6 +753,10 @@ object Helper {
   val XSI_URL = "http://www.w3.org/2001/XMLSchema-instance"
   val XSI_PREFIX = "xsi"
 
+  def toString(value: QName, scope: NamespaceBinding): String =
+    Option[String](scope.getPrefix(value.getNamespaceURI)) map {
+      "%s:%s" format (_, value.getLocalPart)} getOrElse {value.getLocalPart}
+
   def toCalendar(value: String): XMLGregorianCalendar = {
     import javax.xml.datatype._
     val typeFactory = javax.xml.datatype.DatatypeFactory.newInstance()

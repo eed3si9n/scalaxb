@@ -2,17 +2,17 @@
 package soapenvelope11
 
 
-case class Envelope(Header: Option[soapenvelope11.Header],
+case class Envelope(Header: Option[soapenvelope11.Header] = None,
   Body: soapenvelope11.Body,
-  any: Seq[scalaxb.DataRecord[Any]],
+  any: Seq[scalaxb.DataRecord[Any]] = Nil,
   attributes: Map[String, scalaxb.DataRecord[Any]])
 
 
-case class Header(any: Seq[scalaxb.DataRecord[Any]],
+case class Header(any: Seq[scalaxb.DataRecord[Any]] = Nil,
   attributes: Map[String, scalaxb.DataRecord[Any]])
 
 
-case class Body(any: Seq[scalaxb.DataRecord[Any]],
+case class Body(any: Seq[scalaxb.DataRecord[Any]] = Nil,
   attributes: Map[String, scalaxb.DataRecord[Any]])
 
 
@@ -22,11 +22,11 @@ case class Body(any: Seq[scalaxb.DataRecord[Any]],
 */
 case class Fault(faultcode: javax.xml.namespace.QName,
   faultstring: String,
-  faultactor: Option[java.net.URI],
-  detail: Option[soapenvelope11.Detail])
+  faultactor: Option[java.net.URI] = None,
+  detail: Option[soapenvelope11.Detail] = None)
 
 
-case class Detail(any: Seq[scalaxb.DataRecord[Any]],
+case class Detail(any: Seq[scalaxb.DataRecord[Any]] = Nil,
   attributes: Map[String, scalaxb.DataRecord[Any]])
 
 

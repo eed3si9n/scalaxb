@@ -275,8 +275,8 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     override def writesAttribute(__obj: wsdl11.XPartType, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {
       var attr: scala.xml.MetaData  = scala.xml.Null
       __obj.name foreach { x => attr = scala.xml.Attribute(null, "name", x.toString, attr) }
-      __obj.typeValue foreach { x => attr = scala.xml.Attribute(null, "type", x.toString, attr) }
-      __obj.element foreach { x => attr = scala.xml.Attribute(null, "element", x.toString, attr) }
+      __obj.typeValue foreach { x => attr = scala.xml.Attribute(null, "type", scalaxb.Helper.toString(x, __scope), attr) }
+      __obj.element foreach { x => attr = scala.xml.Attribute(null, "element", scalaxb.Helper.toString(x, __scope), attr) }
       __obj.attributes.toList map {
         case (key, x) => attr = scala.xml.Attribute((x.namespace map { __scope.getPrefix(_) }).orNull, x.key.orNull, x.value.toString, attr) }
       attr
@@ -355,7 +355,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     override def writesAttribute(__obj: wsdl11.XParamType, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {
       var attr: scala.xml.MetaData  = scala.xml.Null
       __obj.name foreach { x => attr = scala.xml.Attribute(null, "name", x.toString, attr) }
-      attr = scala.xml.Attribute(null, "message", __obj.message.toString, attr)
+      attr = scala.xml.Attribute(null, "message", scalaxb.Helper.toString(__obj.message, __scope), attr)
       attr
     }
 
@@ -379,7 +379,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     override def writesAttribute(__obj: wsdl11.XFaultType, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {
       var attr: scala.xml.MetaData  = scala.xml.Null
       attr = scala.xml.Attribute(null, "name", __obj.name.toString, attr)
-      attr = scala.xml.Attribute(null, "message", __obj.message.toString, attr)
+      attr = scala.xml.Attribute(null, "message", scalaxb.Helper.toString(__obj.message, __scope), attr)
       attr
     }
 
@@ -445,7 +445,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     override def writesAttribute(__obj: wsdl11.XBindingType, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {
       var attr: scala.xml.MetaData  = scala.xml.Null
       attr = scala.xml.Attribute(null, "name", __obj.name.toString, attr)
-      attr = scala.xml.Attribute(null, "type", __obj.typeValue.toString, attr)
+      attr = scala.xml.Attribute(null, "type", scalaxb.Helper.toString(__obj.typeValue, __scope), attr)
       attr
     }
 
@@ -558,7 +558,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     override def writesAttribute(__obj: wsdl11.XPortType, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {
       var attr: scala.xml.MetaData  = scala.xml.Null
       attr = scala.xml.Attribute(null, "name", __obj.name.toString, attr)
-      attr = scala.xml.Attribute(null, "binding", __obj.binding.toString, attr)
+      attr = scala.xml.Attribute(null, "binding", scalaxb.Helper.toString(__obj.binding, __scope), attr)
       attr
     }
 

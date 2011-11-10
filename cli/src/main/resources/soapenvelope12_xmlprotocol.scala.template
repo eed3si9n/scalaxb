@@ -293,7 +293,7 @@ trait XMLProtocol extends scalaxb.XMLStandardTypes {
     
     override def writesAttribute(__obj: soapenvelope12.NotUnderstoodType, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {
       var attr: scala.xml.MetaData  = scala.xml.Null
-      attr = scala.xml.Attribute(null, "qname", __obj.qname.toString, attr)
+      attr = scala.xml.Attribute(null, "qname", scalaxb.Helper.toString(__obj.qname, __scope), attr)
       attr
     }
 
@@ -313,7 +313,7 @@ trait XMLProtocol extends scalaxb.XMLStandardTypes {
     
     override def writesAttribute(__obj: soapenvelope12.SupportedEnvType, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {
       var attr: scala.xml.MetaData  = scala.xml.Null
-      attr = scala.xml.Attribute(null, "qname", __obj.qname.toString, attr)
+      attr = scala.xml.Attribute(null, "qname", scalaxb.Helper.toString(__obj.qname, __scope), attr)
       attr
     }
 

@@ -2,7 +2,7 @@
 package wsdl11
 
 
-case class XDocumentation(mixed: Seq[scalaxb.DataRecord[Any]],
+case class XDocumentation(mixed: Seq[scalaxb.DataRecord[Any]] = Nil,
   attributes: Map[String, scalaxb.DataRecord[Any]])
 
 trait XDocumentationOption
@@ -23,56 +23,56 @@ trait XOpenAtts {
 }
 
 
-case class XDefinitionsType(documentation: Option[wsdl11.XDocumentation],
-  importValue: Seq[wsdl11.XImportType],
-  types: Option[wsdl11.XTypesType],
-  message: Seq[wsdl11.XMessageType],
-  portType: Seq[wsdl11.XPortTypeType],
-  binding: Seq[wsdl11.XBindingType],
-  service: Seq[wsdl11.XServiceType],
-  any: Seq[scalaxb.DataRecord[Any]],
+case class XDefinitionsType(documentation: Option[wsdl11.XDocumentation] = None,
+  importValue: Seq[wsdl11.XImportType] = Nil,
+  types: Option[wsdl11.XTypesType] = None,
+  message: Seq[wsdl11.XMessageType] = Nil,
+  portType: Seq[wsdl11.XPortTypeType] = Nil,
+  binding: Seq[wsdl11.XBindingType] = Nil,
+  service: Seq[wsdl11.XServiceType] = Nil,
+  any: Seq[scalaxb.DataRecord[Any]] = Nil,
   targetNamespace: Option[java.net.URI] = None,
   name: Option[String] = None) extends XDocumented
 
 
-case class XImportType(documentation: Option[wsdl11.XDocumentation],
+case class XImportType(documentation: Option[wsdl11.XDocumentation] = None,
   namespace: java.net.URI,
   location: java.net.URI) extends XDocumented
 
 
-case class XTypesType(documentation: Option[wsdl11.XDocumentation],
-  any: Seq[scalaxb.DataRecord[Any]]) extends XDocumented
+case class XTypesType(documentation: Option[wsdl11.XDocumentation] = None,
+  any: Seq[scalaxb.DataRecord[Any]] = Nil) extends XDocumented
 
 
-case class XMessageType(documentation: Option[wsdl11.XDocumentation],
-  part: Seq[wsdl11.XPartType],
+case class XMessageType(documentation: Option[wsdl11.XDocumentation] = None,
+  part: Seq[wsdl11.XPartType] = Nil,
   name: String) extends XDocumented
 
 
-case class XPartType(documentation: Option[wsdl11.XDocumentation],
+case class XPartType(documentation: Option[wsdl11.XDocumentation] = None,
   name: Option[String] = None,
   typeValue: Option[javax.xml.namespace.QName] = None,
   element: Option[javax.xml.namespace.QName] = None,
   attributes: Map[String, scalaxb.DataRecord[Any]]) extends XOpenAtts
 
 
-case class XPortTypeType(documentation: Option[wsdl11.XDocumentation],
-  operation: Seq[wsdl11.XOperationType],
+case class XPortTypeType(documentation: Option[wsdl11.XDocumentation] = None,
+  operation: Seq[wsdl11.XOperationType] = Nil,
   name: String) extends XDocumented
 
 
-case class XOperationType(documentation: Option[wsdl11.XDocumentation],
+case class XOperationType(documentation: Option[wsdl11.XDocumentation] = None,
   xoperationtypeoption: scalaxb.DataRecord[Any],
   name: String) extends XDocumented
 
 trait XOperationTypeOption
 
-case class XParamType(documentation: Option[wsdl11.XDocumentation],
+case class XParamType(documentation: Option[wsdl11.XDocumentation] = None,
   name: Option[String] = None,
   message: javax.xml.namespace.QName) extends XDocumented
 
 
-case class XFaultType(documentation: Option[wsdl11.XDocumentation],
+case class XFaultType(documentation: Option[wsdl11.XDocumentation] = None,
   name: String,
   message: javax.xml.namespace.QName) extends XDocumented
 
@@ -83,48 +83,48 @@ trait XStartWithExtensionsTypable extends XDocumented {
 }
 
 
-case class XStartWithExtensionsType(documentation: Option[wsdl11.XDocumentation],
-  any: Seq[scalaxb.DataRecord[Any]]) extends XStartWithExtensionsTypable
+case class XStartWithExtensionsType(documentation: Option[wsdl11.XDocumentation] = None,
+  any: Seq[scalaxb.DataRecord[Any]] = Nil) extends XStartWithExtensionsTypable
 
 
-case class XBindingType(documentation: Option[wsdl11.XDocumentation],
-  any: Seq[scalaxb.DataRecord[Any]],
-  operation: Seq[wsdl11.XBinding_operationType],
+case class XBindingType(documentation: Option[wsdl11.XDocumentation] = None,
+  any: Seq[scalaxb.DataRecord[Any]] = Nil,
+  operation: Seq[wsdl11.XBinding_operationType] = Nil,
   name: String,
   typeValue: javax.xml.namespace.QName) extends XStartWithExtensionsTypable
 
 
-case class XFault(documentation: Option[wsdl11.XDocumentation],
-  any: Seq[scalaxb.DataRecord[Any]],
+case class XFault(documentation: Option[wsdl11.XDocumentation] = None,
+  any: Seq[scalaxb.DataRecord[Any]] = Nil,
   name: String) extends XStartWithExtensionsTypable
 
 
-case class XBinding_operationType(documentation: Option[wsdl11.XDocumentation],
-  any: Seq[scalaxb.DataRecord[Any]],
-  input: Option[wsdl11.XStartWithExtensionsTypable],
-  output: Option[wsdl11.XStartWithExtensionsTypable],
-  fault: Seq[wsdl11.XFault],
+case class XBinding_operationType(documentation: Option[wsdl11.XDocumentation] = None,
+  any: Seq[scalaxb.DataRecord[Any]] = Nil,
+  input: Option[wsdl11.XStartWithExtensionsTypable] = None,
+  output: Option[wsdl11.XStartWithExtensionsTypable] = None,
+  fault: Seq[wsdl11.XFault] = Nil,
   name: String) extends XStartWithExtensionsTypable
 
 
-case class XServiceType(documentation: Option[wsdl11.XDocumentation],
-  port: Seq[wsdl11.XPortType],
-  any: Option[scalaxb.DataRecord[Any]],
+case class XServiceType(documentation: Option[wsdl11.XDocumentation] = None,
+  port: Seq[wsdl11.XPortType] = Nil,
+  any: Option[scalaxb.DataRecord[Any]] = None,
   name: String) extends XDocumented
 
 
-case class XPortType(documentation: Option[wsdl11.XDocumentation],
-  any: Option[scalaxb.DataRecord[Any]],
+case class XPortType(documentation: Option[wsdl11.XDocumentation] = None,
+  any: Option[scalaxb.DataRecord[Any]] = None,
   name: String,
   binding: javax.xml.namespace.QName) extends XDocumented
 
 case class XNotificationoperationSequence(output: wsdl11.XParamType)
 case class XSolicitresponseoperationSequence(output: wsdl11.XParamType,
   input: wsdl11.XParamType,
-  fault: Seq[wsdl11.XFaultType])
+  fault: Seq[wsdl11.XFaultType] = Nil)
 
 case class XRequestresponseoperationSequence(input: wsdl11.XParamType,
   output: wsdl11.XParamType,
-  fault: Seq[wsdl11.XFaultType])
+  fault: Seq[wsdl11.XFaultType] = Nil)
 
 case class XOnewayoperationSequence(input: wsdl11.XParamType)

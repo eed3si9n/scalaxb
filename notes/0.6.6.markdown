@@ -11,6 +11,7 @@
 - Adds handling of `xs:include` without `targetNamespace`. [#102][#102] reported by [@berntan][@berntan]
 - Adds handling of locally declared namespace binding. [#105][#105] reporetd by gerri
 - Fixes round trip of parsed QName. [#114][#114]
+- Adds default argument to optional, multiple, and nillable params. [#113][#113] requested by [@OlegYch]
 - Fixes handling of wsdl when soap bindings is not the first element. [#104][#104]
 - Adds handling of soap messages with attributes. [#99][#99] reported by [@berntan][@berntan]
 - Adds handling of soap messages with soap headers. [#100][#100] reported by [@berntan][@berntan]
@@ -34,9 +35,11 @@
   [#104]: https://github.com/eed3si9n/scalaxb/issues/104
   [#105]: https://github.com/eed3si9n/scalaxb/issues/105
   [#106]: https://github.com/eed3si9n/scalaxb/issues/106
+  [#113]: https://github.com/eed3si9n/scalaxb/issues/113
   [#114]: https://github.com/eed3si9n/scalaxb/issues/114
   [@martiell]: https://github.com/martiell
   [@mbroue]: https://github.com/mbroue
   [@deanhiller]: https://github.com/deanhiller
   [@dkhenry]: https://github.com/dkhenry
   [@berntan]: https://github.com/berntan
+  [@OlegYch]: https://github.com/OlegYch

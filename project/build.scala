@@ -2,10 +2,6 @@ import sbt._
 
 object Builds extends Build {
   import Keys._
-  import ScriptedPlugin._
-  import sbtappengine.Plugin._
-  import sbtscalaxb.Plugin._
-  import ScalaxbKeys._
 
   lazy val buildSettings = Defaults.defaultSettings ++ Seq(
     version := "0.6.6-SNAPSHOT",
@@ -27,6 +23,8 @@ object Builds extends Build {
     parallelExecution in Test := false
   )
 
+  import sbtscalaxb.Plugin._
+  import ScalaxbKeys._
   val Xsd = config("xsd") extend(Compile)
   val Wsdl = config("wsdl") extend(Compile)
   val Soap11 = config("soap11") extend(Compile)
@@ -46,7 +44,7 @@ object Builds extends Build {
 trait Version { val version = "%s" }
 """.format(version))
       Seq(file)
-    })  ++
+    }) ++
     inConfig(Xsd)(baseScalaxbSettings ++ inTask(scalaxb)(customScalaxbSettings("xmlschema"))) ++
     inConfig(Wsdl)(baseScalaxbSettings ++ inTask(scalaxb)(customScalaxbSettings("wsdl11"))) ++
     inConfig(Soap11)(baseScalaxbSettings ++ inTask(scalaxb)(soapSettings("soapenvelope11"))) ++
@@ -85,24 +83,14 @@ trait Version { val version = "%s" }
     }
   ) ++ noPublish
 
+//  import ScriptedPlugin._
   lazy val pluginSettings = buildSettings ++ Seq(
     sbtPlugin := true,
     crossScalaVersions := Seq("2.9.1"),
-    publishMavenStyle := true) ++
-    ScriptedPlugin.scriptedSettings ++ Seq(
-    scriptedBufferLog := false
-  )
-
-  lazy val webSettings = buildSettings ++
-    appengineSettings ++ Seq(
-    scalaVersion := "2.9.0-1",
-    crossScalaVersions := Seq("2.9.0-1", "2.8.1"),
-    libraryDependencies ++= Seq(
-      "net.databinder" %% "unfiltered-filter" % "0.4.0",
-      "net.databinder" %% "unfiltered-uploads" % "0.4.0",
-      "javax.servlet" % "servlet-api" % "2.3" % "provided"
-    )
-  ) ++ noPublish
+    publishMavenStyle := true) // ++
+//    ScriptedPlugin.scriptedSettings ++ Seq(
+//    scriptedBufferLog := false
+//  )
 
   lazy val noPublish: Seq[Project.Setting[_]] = Seq(
     publish := {},
@@ -125,6 +113,17 @@ trait Version { val version = "%s" }
     settings = itSettings) dependsOn(cli % "test->compile")
   lazy val scalaxbPlugin = Project("sbt-scalaxb", file("sbt-scalaxb"),
     settings = pluginSettings) dependsOn(cli)
-  lazy val appengine = Project("web", file("web"),
-    settings = webSettings) dependsOn(cli)
+//  lazy val appengine = Project("web", file("web"),
+//    settings = webSettings) dependsOn(cli)
+
+//  lazy val webSettings = buildSettings ++
+//    appengineSettings ++ Seq(
+//    scalaVersion := "2.9.0-1",
+//    crossScalaVersions := Seq("2.9.0-1", "2.8.1"),
+//    libraryDependencies ++= Seq(
+//      "net.databinder" %% "unfiltered-filter" % "0.4.0",
+//      "net.databinder" %% "unfiltered-uploads" % "0.4.0",
+//      "javax.servlet" % "servlet-api" % "2.3" % "provided"
+//    )
+//  ) ++ noPublish
 }

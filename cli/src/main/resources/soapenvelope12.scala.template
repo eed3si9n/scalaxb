@@ -2,7 +2,7 @@
 package soapenvelope12
 
 
-case class Envelope(Header: Option[soapenvelope12.Header],
+case class Envelope(Header: Option[soapenvelope12.Header] = None,
   Body: soapenvelope12.Body,
   attributes: Map[String, scalaxb.DataRecord[Any]])
 
@@ -11,11 +11,11 @@ case class Envelope(Header: Option[soapenvelope12.Header],
 	  Elements replacing the wildcard MUST be namespace qualified, but can be in the targetNamespace
 	  
 */
-case class Header(any: Seq[scalaxb.DataRecord[Any]],
+case class Header(any: Seq[scalaxb.DataRecord[Any]] = Nil,
   attributes: Map[String, scalaxb.DataRecord[Any]])
 
 
-case class Body(any: Seq[scalaxb.DataRecord[Any]],
+case class Body(any: Seq[scalaxb.DataRecord[Any]] = Nil,
   attributes: Map[String, scalaxb.DataRecord[Any]])
 
 
@@ -25,9 +25,9 @@ case class Body(any: Seq[scalaxb.DataRecord[Any]],
 */
 case class Fault(Code: soapenvelope12.Faultcode,
   Reason: soapenvelope12.Faultreason,
-  Node: Option[java.net.URI],
-  Role: Option[java.net.URI],
-  Detail: Option[soapenvelope12.Detail])
+  Node: Option[java.net.URI] = None,
+  Role: Option[java.net.URI] = None,
+  Detail: Option[soapenvelope12.Detail] = None)
 
 
 case class Faultreason(Text: soapenvelope12.Reasontext*)
@@ -38,7 +38,7 @@ case class Reasontext(value: String,
 
 
 case class Faultcode(Value: soapenvelope12.FaultcodeEnum,
-  Subcode: Option[soapenvelope12.Subcode])
+  Subcode: Option[soapenvelope12.Subcode] = None)
 
 trait FaultcodeEnum
 
@@ -61,10 +61,10 @@ case object TnsVersionMismatch extends FaultcodeEnum { override def toString = "
 
 
 case class Subcode(Value: javax.xml.namespace.QName,
-  Subcode: Option[soapenvelope12.Subcode])
+  Subcode: Option[soapenvelope12.Subcode] = None)
 
 
-case class Detail(any: Seq[scalaxb.DataRecord[Any]],
+case class Detail(any: Seq[scalaxb.DataRecord[Any]] = Nil,
   attributes: Map[String, scalaxb.DataRecord[Any]])
 
 

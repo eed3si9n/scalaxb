@@ -40,6 +40,7 @@ public class ArgumentsBuilder {
                 String arg = new StringBuilder()
                     .append(param)
                     .append(e.getKey())
+                    .append('=')
                     .append(e.getValue())
                     .toString();
                 args.add(arg);

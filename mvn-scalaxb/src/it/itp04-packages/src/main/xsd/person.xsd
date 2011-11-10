@@ -1,0 +1,13 @@
+<xs:schema targetNamespace="http://www.example.com/Person"
+        elementFormDefault="qualified"
+        xmlns="http://www.example.com/Person"
+        xmlns:xs="http://www.w3.org/2001/XMLSchema"
+        xmlns:person="http://www.example.com/Person">
+
+  <xs:complexType name="Person">
+    <xs:sequence>
+      <xs:element name="name" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+
+</xs:schema>

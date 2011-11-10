@@ -1,12 +1,8 @@
 package org.scalaxb.maven.it;
 
-import static org.junit.Assert.assertTrue;
-
-import java.io.File;
-
 import org.junit.Test;
 
-public class ITP03WSDL {
+public class ITP03WSDL extends AbstractIT {
 
     private String[] expected = new String[] {
             "generated/stockquote.scala",
@@ -20,12 +16,7 @@ public class ITP03WSDL {
 
     @Test
     public void filesAreGeneratedInCorrectLocation() {
-        File basedir = IntegrationTests.projectDir("itp03-wsdl");
-        File generated = new File(basedir, "target/generated-sources/scalaxb");
-        for (String f : expected) {
-            File file = new File(generated, f);
-            assertTrue("File was not generated: " + file, file.exists());
-        }
+        assertFilesGenerated("itp03-wsdl", expected);
     }
     
 }

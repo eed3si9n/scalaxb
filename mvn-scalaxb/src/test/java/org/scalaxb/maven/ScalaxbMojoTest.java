@@ -38,7 +38,8 @@ public class ScalaxbMojoTest extends TestCase {
 
     /**
      * Arguments that don't need to be escaped should be returned as-is.
-     * Arguments that do need to be
+     * Other arguments should be enclosed in single quotes, which must be
+     * escaped.
      */
     public void testArgumentsToString() {
         expect("-p:http://example.com/S1=f", "-p:http://example.com/S1=f");

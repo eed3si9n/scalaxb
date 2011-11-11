@@ -1,14 +1,14 @@
 resolvers += ("ScalaTools Nexus Snapshots" at "http://nexus.scala-tools.org/content/repositories/snapshots/")
 
+// comment this out for production otherwise chicken-egg will entail.
+//addSbtPlugin("org.scalaxb" % "sbt-scalaxb" % "0.6.6-SNAPSHOT")
+
 // addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "0.6")
 
 // libraryDependencies <++= (sbtVersion) { sv =>
 //  Seq("org.scala-tools.sbt" %% "scripted-plugin" % sv,
 //      "org.scala-tools.sbt" %% "scripted-sbt" % sv)
 // }
-
-// comment this out for production otherwise chicken-egg will entail.
-addSbtPlugin("org.scalaxb" % "sbt-scalaxb" % "0.6.6-SNAPSHOT")
 
 // resolvers += "Web plugin repo" at "http://siasia.github.com/maven2"
 //

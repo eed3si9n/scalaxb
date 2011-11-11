@@ -23,8 +23,6 @@ object Builds extends Build {
     parallelExecution in Test := false
   )
 
-  import sbtscalaxb.Plugin._
-  import ScalaxbKeys._
   val Xsd = config("xsd") extend(Compile)
   val Wsdl = config("wsdl") extend(Compile)
   val Soap11 = config("soap11") extend(Compile)
@@ -44,32 +42,37 @@ object Builds extends Build {
 trait Version { val version = "%s" }
 """.format(version))
       Seq(file)
-    }) ++
-    inConfig(Xsd)(baseScalaxbSettings ++ inTask(scalaxb)(customScalaxbSettings("xmlschema"))) ++
-    inConfig(Wsdl)(baseScalaxbSettings ++ inTask(scalaxb)(customScalaxbSettings("wsdl11"))) ++
-    inConfig(Soap11)(baseScalaxbSettings ++ inTask(scalaxb)(soapSettings("soapenvelope11"))) ++
-    inConfig(Soap12)(baseScalaxbSettings ++ inTask(scalaxb)(soapSettings("soapenvelope12")))
+    }) ++ codeGenSettings
 
-  def customScalaxbSettings(base: String): Seq[Project.Setting[_]] = Seq(
-    sources <<= xsdSource map { xsd => Seq(xsd / (base + ".xsd")) },
-    sourceManaged <<= baseDirectory / "src_managed",
-    packageName := base,
-    protocolFileName := base + "_xmlprotocol.scala",
-    classPrefix := Some("X")
-  )
-
-  def soapSettings(base: String): Seq[Project.Setting[_]] = Seq(
-    sources <<= xsdSource map { xsd => Seq(xsd / (base + ".xsd")) },
-    sourceManaged <<= sourceDirectory(_ / "main" / "resources"),
-    packageName := base,
-    protocolFileName := base + "_xmlprotocol.scala",
-    packageDir := false,
-    generate <<= (generate) map { files =>
-      val renamed = files map { file => new File(file.getParentFile, file.getName + ".template") }
-      IO.move(files zip renamed)
-      renamed
-    }
-  )
+  def codeGenSettings: Seq[Project.Setting[_]] = Nil
+//  def codeGenSettings: Seq[Project.Setting[_]] = {
+//    import sbtscalaxb.Plugin._
+//    import ScalaxbKeys._
+//    def customScalaxbSettings(base: String): Seq[Project.Setting[_]] = Seq(
+//      sources <<= xsdSource map { xsd => Seq(xsd / (base + ".xsd")) },
+//      sourceManaged <<= baseDirectory / "src_managed",
+//      packageName := base,
+//      protocolFileName := base + "_xmlprotocol.scala",
+//      classPrefix := Some("X")
+//    )
+//
+//    def soapSettings(base: String): Seq[Project.Setting[_]] = Seq(
+//      sources <<= xsdSource map { xsd => Seq(xsd / (base + ".xsd")) },
+//      sourceManaged <<= sourceDirectory(_ / "main" / "resources"),
+//      packageName := base,
+//      protocolFileName := base + "_xmlprotocol.scala",
+//      packageDir := false,
+//      generate <<= (generate) map { files =>
+//        val renamed = files map { file => new File(file.getParentFile, file.getName + ".template") }
+//        IO.move(files zip renamed)
+//        renamed
+//      })
+//
+//    inConfig(Xsd)(baseScalaxbSettings ++ inTask(scalaxb)(customScalaxbSettings("xmlschema"))) ++
+//    inConfig(Wsdl)(baseScalaxbSettings ++ inTask(scalaxb)(customScalaxbSettings("wsdl11"))) ++
+//    inConfig(Soap11)(baseScalaxbSettings ++ inTask(scalaxb)(soapSettings("soapenvelope11"))) ++
+//    inConfig(Soap12)(baseScalaxbSettings ++ inTask(scalaxb)(soapSettings("soapenvelope12")))
+//  }
 
   lazy val itSettings = buildSettings ++ Seq(
     scalaVersion := "2.9.0-1", // Scala interpreter bug in 2.9.1

@@ -42,7 +42,7 @@ This way our Ivy cache won't be confused when the official builds are released.
 
 Build, and publish it locally.
 
-    $ sbt "project scalaxb" "+ publish-local"
+    $ sbt "project app" "+ publish-local"
 
 Finally, install it using conscript.
 

@@ -7,14 +7,14 @@ Schema (xsd) as the input file.
 Status
 ------
 
-The latest is 0.6.5. Some things may not work.
+The latest is 0.6.6. Some things may not work.
 I'd really appreciate if you could run it against your favorite xsd
 file and let me know the result.
 
-sbt-scalaxb for sbt 0.11.0
+sbt-scalaxb for sbt 0.11.1
 --------------------------
 
-To call scalaxb from sbt 0.11.0, put this in your `project/plugins.sbt`:
+To call scalaxb from sbt 0.11.1, put this in your `project/plugins.sbt`:
 
     addSbtPlugin("org.scalaxb" % "sbt-scalaxb" % "X.X")
     

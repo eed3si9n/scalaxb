@@ -1,13 +1,11 @@
 [app]
-  version: 0.6.5
+  version: 0.6.6
   org: org.scalaxb
   name: scalaxb
   class: scalaxb.compiler.SbtApp
 [scala]
   version: 2.9.1
 [repositories]
-  local
-  maven-local
   scala-tools-nexus-releases: http://nexus.scala-tools.org/content/repositories/releases/
   scala-tools-nexus-snapshots: http://nexus.scala-tools.org/content/repositories/snapshots/
   maven-central

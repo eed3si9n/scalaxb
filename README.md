@@ -4,7 +4,7 @@ scalaxb
 scalaxb is an XML data-binding tool for Scala that supports W3C XML Schema (xsd) and
 Web Services Description Language (wsdl) as the input file.
 
-From the schema document scalaxb will generate Scala source files containing
+From schema documents scalaxb will generate Scala source files containing
 case classes to represent the data and typeclass instances to turn XML documents into an object,
 and the object back to XML.
 
@@ -45,7 +45,7 @@ To call scalaxb from sbt 0.10.1, put this in your `project/plugins/build.sbt`:
 
     libraryDependencies <+= (sbtVersion) { sv => "org.scalaxb" %% "sbt-scalaxb" % ("sbt" + sv + "_X.X") }
 
-### `scalaxb` command line
+### command line app scalaxb
 
 See [INSTALL.md][1].
 

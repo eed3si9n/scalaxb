@@ -46,8 +46,7 @@ Further info is available at [scalaxb.org](http://scalaxb.org/).
 Bug Reporting
 -------------
 
-You can send bug reports to [Issues](http://github.com/eed3si9n/scalaxb/issues),
-send me a [tweet to @scalaxb](http://twitter.com/scalaxb), or email.
+If you're having problem with scalaxb, please take a moment and read [issue reporting guideline](http://scalaxb.org/issue-reporting-guideline).
 
 Licensing
 ---------

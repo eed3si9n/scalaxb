@@ -4,7 +4,7 @@ object Builds extends Build {
   import Keys._
 
   lazy val buildSettings = Defaults.defaultSettings ++ Seq(
-    version := "0.6.6-SNAPSHOT",
+    version := "0.6.7-SNAPSHOT",
     organization := "org.scalaxb",
     scalaVersion := "2.9.1",
     crossScalaVersions := Seq("2.9.1", "2.9.0-1", "2.8.1"), // Scala interpreter bug in 2.9.1

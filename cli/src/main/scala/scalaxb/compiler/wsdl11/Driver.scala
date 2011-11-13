@@ -70,7 +70,8 @@ class Driver extends Module { driver =>
       context: Context, cnfg: Config): Seq[Node] =
     xsddriver.generateProtocol(snippet, context.xsdcontext, cnfg)
 
-  override def generate(pair: WsdlPair, cntxt: Context, cnfg: Config): Snippet = {
+  override def generate(pair: WsdlPair, part: String, cntxt: Context, cnfg: Config):
+      Seq[(Option[String], Snippet, String)] = {
     val ns = (pair.definition, pair.schemas) match {
       case (Some(wsdl), _) => wsdl.targetNamespace map {_.toString}
       case (_, x :: xs) => x.targetNamespace
@@ -87,16 +88,17 @@ class Driver extends Module { driver =>
       }
     }
 
-    val xsdgenerated = pair.schemas map {
-      xsddriver.generate(_, cntxt.xsdcontext, cnfg)
+    val xsdgenerated: Seq[(Option[String], Snippet, String)] = pair.schemas.zipWithIndex flatMap { case (xsd, i) =>
+      xsddriver.generate(xsd, part + "_type" + (i + 1).toString, cntxt.xsdcontext, cnfg)
     }
 
-    val wsdlgenerated = pair.definition map { wsdl =>
+    val wsdlgenerated: Seq[(Option[String], Snippet, String)] = pair.definition.toList map { wsdl =>
+      val pkg = packageName(wsdl.targetNamespace map {_.toString}, cntxt)
       cntxt.soap11 = !generator.soap11Bindings(wsdl).isEmpty
-      generator.generate(wsdl)
-    } getOrElse { Snippet(<source></source>) }
+      (pkg, Snippet(headerSnippet(pkg), generator.generate(wsdl)), part)
+    }
 
-    mergeSnippets(xsdgenerated ++ (wsdlgenerated :: Nil))
+    xsdgenerated ++ wsdlgenerated
   }
 
   override def toImportable(alocation: URI, rawschema: RawSchema): Importable = new Importable {

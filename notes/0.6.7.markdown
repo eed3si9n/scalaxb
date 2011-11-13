@@ -1,0 +1,6 @@
+## bug fixes and minor enhancements
+- Fixes package name of wsdl generated file. [#117][#117] requested by [@hedefalk][@hedefalk] and [@OlegYch][@OlegYch]
+
+  [#117]: https://github.com/eed3si9n/scalaxb/issues/117
+  [@OlegYch]: https://github.com/OlegYch
+  [@hedefalk]: https://github.com/hedefalk

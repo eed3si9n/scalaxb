@@ -74,7 +74,7 @@ trait ContextProcessor extends ScalaNames with PackageName {
 
     def registerDuplicatedType(schema: SchemaDecl, decl: Decl, name: String) {
       context.duplicatedTypes += ((schema, decl))
-      // logger.warn("%s is defined more than once." format name)
+      logger.warn("%s is defined more than once." format name)
     }
 
     def nameEnumSimpleType(schema: SchemaDecl, decl: SimpleTypeDecl,
@@ -176,8 +176,10 @@ trait ContextProcessor extends ScalaNames with PackageName {
       }
     }
     
-    for (schema <- context.schemas;
-        typ <- schema.typeList) typ match {
+    for {
+      schema <- context.schemas
+      typ <- schema.typeList if !(schema.topTypes.valuesIterator contains typ)
+    } typ match {
       case decl: SimpleTypeDecl if containsEnumeration(decl) => nameEnumSimpleType(schema, decl, decl.family.head)
       case _ =>      
     }

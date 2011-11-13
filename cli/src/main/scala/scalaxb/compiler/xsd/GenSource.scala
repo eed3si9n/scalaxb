@@ -50,7 +50,7 @@ abstract class GenSource(val schema: SchemaDecl,
           if (!decl.abstractValue) snippets += makeSuperType(decl)
         }
         else snippets += makeType(decl)
-      case decl: SimpleTypeDecl =>
+      case decl: SimpleTypeDecl if !context.duplicatedTypes.contains((schema, decl)) =>
         if (containsEnumeration(decl)) snippets += makeEnumType(decl)
       case _ =>
     }

@@ -46,6 +46,7 @@ object GeneralUsage {
     testDataRecordAny
     testDefaultScope
     testUnmarshallBaseComplexType
+    testSubstitutionGroup
     true
   }
   
@@ -470,6 +471,8 @@ object GeneralUsage {
   }
 
   def testUnmarshallBaseComplexType {
+    println("testUnmarshallBaseComplexType")
+
     val subject = <gen:shipTo xmlns:gen="http://www.example.com/general"
                           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                           xsi:type="gen:USAddress">
@@ -488,5 +491,24 @@ object GeneralUsage {
     println(document)
     check(fromXML[Addressable](document))
     if (!document.toString.startsWith("""<gen:shipTo xsi:type="gen:USAddress" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:gen="http://www.example.com/general">""")) error("output is wrong")
+  }
+
+  def testSubstitutionGroup {
+    println("testSubstitutionGroup")
+
+    val subject = <gen:subgroupTop xmlns:gen="http://www.example.com/general"
+                          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+        <gen:subgroupHead>foo</gen:subgroupHead>
+      </gen:subgroupTop>
+    val x = scalaxb.fromXML[SubstitutionGroupTest](subject)
+
+    def check(obj: SubstitutionGroupTest) = obj match {
+      case SubstitutionGroupTest(DataRecord(_, _, "foo")) =>
+      case _ => error("match failed: " + obj.toString)
+    }
+    val document = scalaxb.toXML[SubstitutionGroupTest](x, Some("http://www.example.com/general"), Some("subgroupTop"), subject.scope)
+    println(document)
+    check(fromXML[SubstitutionGroupTest](document))
+
   }
 }

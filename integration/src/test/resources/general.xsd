@@ -362,12 +362,13 @@
     </xs:sequence>
   </xs:complexType>
 
-  <xs:element name="SubstitutionGroup" type="xs:anyType" abstract="true"/>
-  <xs:element name="SubGroupMember" type="gen:MilkType" substitutionGroup="gen:SubstitutionGroup"/>
-  <xs:element name="SubGroupMember2" type="gen:Person" substitutionGroup="gen:SubstitutionGroup"/>
+  <xs:element name="subgroupHead" type="xs:string"/>
+  <xs:element name="SubGroupMember" type="gen:MilkType" substitutionGroup="gen:subgroupHead"/>
+  <xs:element name="SubGroupMember2" type="gen:Person" substitutionGroup="gen:subgroupHead"/>
+  <xs:element name="subgroupTop" type="gen:SubstitutionGroupTest"/>
   <xs:complexType name="SubstitutionGroupTest">
     <xs:sequence>
-      <xs:element ref="gen:SubstitutionGroup"/>
+      <xs:element ref="gen:subgroupHead"/>
     </xs:sequence>
   </xs:complexType>
 

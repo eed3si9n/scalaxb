@@ -81,8 +81,39 @@ class Generator(val schema: ReferenceSchema,
 
     Snippet(Snippet(<source>case class { localName }({paramsString}){extendString}{ accessors.headOption map( _ =>
       " {" + NL + indent(1) + accessors.mkString(NL + indent(1)) + NL + "}" + NL
-    ) getOrElse("") }</source>) :: compositorCodes: _*)
+    ) getOrElse("") }</source>, <source/>, generateDefaultFormat(name, decl),
+      makeImplicitValue(name)) :: compositorCodes: _*)
   }
+
+  private def generateDefaultFormat(name: QualifiedName, decl: Tagged[XComplexType]): Node = {
+    val parserVariableList = Nil
+    val parserList = Nil
+    val argsString = ""
+    val makeWritesAttribute = ""
+    val makeWritesChildNodes = ""
+
+    val groups = decl.flattenedGroups filter { case tagged: TaggedKeyedGroup =>
+      implicit val tag = tagged.tag
+      tagged.particles.size > 0 }
+    val defaultFormatSuperNames: Seq[String] = ("scalaxb.ElemNameParser[" + name.fullyQualifiedName + "]") ::
+      (groups.toList map { case tagged: TaggedKeyedGroup => QualifiedName(tagged.tag.namespace, names.get(tagged).get).formatterName })
+
+    <source>  trait Default{name.formatterName} extends {defaultFormatSuperNames.mkString(" with ")} {{
+    val targetNamespace: Option[String] = { quoteUri(schema.targetNamespace) }
+
+    { if (decl.name.isDefined) "override def typeName: Option[String] = " + quote(decl.name) + NL + NL + indent(2)
+      else ""
+    }{ if (decl.mixed) "override def isMixed: Boolean = true" + NL + NL + indent(2)
+       else "" }def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[{name.fullyQualifiedName}] =
+      { parserList.mkString(" ~ " + NL + indent(3)) } ^^
+      {{ case { parserVariableList.mkString(" ~ ") } =>
+      {name.fullyQualifiedName}({argsString}) }}
+
+{makeWritesAttribute}{makeWritesChildNodes}  }}</source>
+  }
+
+  private def makeImplicitValue(name: QualifiedName): Node =
+    <source>  implicit lazy val {name.formatterName}: scalaxb.XMLFormat[{name.fullyQualifiedName}] = new Default{name.formatterName} {{}}</source>
 
   def complexTypeSuperNames(decl: Tagged[XComplexType]): Seq[String] = {
     (decl.attributeGroups map {buildTypeName} map {_.localPart})

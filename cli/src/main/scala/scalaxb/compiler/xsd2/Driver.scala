@@ -37,8 +37,11 @@ class Driver extends Module { driver =>
   type RawSchema = scala.xml.Node
   private lazy val logger = Logger("xsd2.Driver")
   
-  def generate(schema: Schema, context: Context, config: Config): Snippet =
-    new Generator(schema, context, config).generateEntitySource
+  def generate(schema: Schema, part: String, context: Context, config: Config) = {
+    val pkg = packageName(schema.targetNamespace map {_.toString}, context)
+    Seq((pkg, Snippet(headerSnippet(pkg),
+        new Generator(schema, context, config).generateEntitySource), part))
+  }
 
   def generateProtocol(snippet: Snippet,
     context: Context, config: Config): Seq[Node] = Seq(<source/>)
@@ -77,9 +80,12 @@ class Driver extends Module { driver =>
       val schema = s
     }).processSchema(s)
 
-  def processContext(context: Context, config: Config) {
+  def processContext(context: Context, schemas: Seq[Schema], config: Config) {
     context.packageNames ++= config.packageNames
   }
+
+  def replaceTargetNamespace(schema: Schema, tns: Option[String]): Schema =
+    schema.copy(targetNamespace = tns map {new URI(_)})
 
   def readerToRawSchema(reader: Reader): RawSchema = CustomXML.load(reader)
 

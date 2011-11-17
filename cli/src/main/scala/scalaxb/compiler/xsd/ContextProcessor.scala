@@ -56,8 +56,10 @@ trait ContextProcessor extends ScalaNames with PackageName {
   val XS_URL = "http://www.w3.org/2001/XMLSchema"
   val XS_PREFIX = "xs"
   
-  def processContext(context: XsdContext) {
+  def processContext(context: XsdContext, schemas: Seq[SchemaDecl]) {
     logger.debug("processContext")
+
+    context.schemas ++= schemas
     context.packageNames ++= config.packageNames
     
     (None :: (config.packageNames.valuesIterator.toList.distinct)) map {
@@ -67,7 +69,7 @@ trait ContextProcessor extends ScalaNames with PackageName {
     
     val anonymousTypes = mutable.ListBuffer.empty[(SchemaDecl, ComplexTypeDecl)]
     
-    for (schema <- context.schemas) {
+    for (schema <- schemas) {
       context.typeNames(schema) =  makeProtectedTypeName(schema, context)
       resolveType(schema, context)
     }
@@ -87,7 +89,7 @@ trait ContextProcessor extends ScalaNames with PackageName {
     }
 
     for {
-      schema <- context.schemas
+      schema <- schemas
       elem <- schema.elemList
       val typeSymbol = elem.typeSymbol
       if typeSymbol.name.contains("@")
@@ -114,7 +116,7 @@ trait ContextProcessor extends ScalaNames with PackageName {
 
     val namedTypes = mutable.ListBuffer.empty[(SchemaDecl, ComplexTypeDecl)]
     for {
-      schema <- context.schemas
+      schema <- schemas
       typ <- schema.topTypes
     } typ match {
       case (_, decl: ComplexTypeDecl) =>
@@ -159,14 +161,14 @@ trait ContextProcessor extends ScalaNames with PackageName {
       logger.debug("processContext: naming trait %s" format context.typeNames(base))
     }
       
-    for (schema <- context.schemas;
+    for (schema <- schemas;
         group <- schema.topGroups.valuesIterator.toList) {
       val pair = (schema, group)
       context.groups += pair
       logger.debug("processContext: added group " + group.name)
     }
     
-    for (schema <- context.schemas;
+    for (schema <- schemas;
         elem <- schema.topElems.valuesIterator.toList) {
       elem.substitutionGroup foreach { sub =>
         if (!context.substituteGroups.contains(sub)) {
@@ -177,14 +179,14 @@ trait ContextProcessor extends ScalaNames with PackageName {
     }
     
     for {
-      schema <- context.schemas
+      schema <- schemas
       typ <- schema.typeList if !(schema.topTypes.valuesIterator contains typ)
     } typ match {
       case decl: SimpleTypeDecl if containsEnumeration(decl) => nameEnumSimpleType(schema, decl, decl.family.head)
       case _ =>      
     }
     
-    for (schema <- context.schemas;
+    for (schema <- schemas;
         group <- schema.topAttrGroups.valuesIterator.toList) {
       if (context.typeNames.contains(group)) registerDuplicatedType(schema, group, group.name)
       else context.typeNames(group) = makeProtectedTypeName(schema.targetNamespace, group, context)

@@ -23,7 +23,7 @@
 package scalaxb.compiler.wsdl11
 
 import scala.collection.mutable
-import scalaxb.compiler.{Module, Config, Snippet, CustomXML, CanBeWriter, Adder}
+import scalaxb.compiler.{Module, Config, Snippet, CustomXML, CanBeWriter}
 import scalaxb.{DataRecord}
 import wsdl11._
 import java.io.{Reader}
@@ -51,9 +51,10 @@ class Driver extends Module { driver =>
   override def packageName(namespace: Option[String], context: Context): Option[String] =
     xsddriver.packageName(namespace, context.xsdcontext)
 
-  override def processContext(context: Context, cnfg: Config) {
-    logger.debug("processContext: " + (context.xsdcontext.schemas.toList map {_.targetNamespace}))
-    xsddriver.processContext(context.xsdcontext, cnfg)
+  override def processContext(context: Context, schemas: Seq[WsdlPair], cnfg: Config) {
+    val xsds = schemas flatMap { _.schemas }
+    logger.debug("processContext: " + (xsds map {_.targetNamespace}))
+    xsddriver.processContext(context.xsdcontext, xsds, cnfg)
     context.definitions foreach {processDefinition(_, context)}
   }
 
@@ -119,9 +120,9 @@ class Driver extends Module { driver =>
         (None, List(rawschema))
     }
     lazy val schemaLite = xsdRawSchema map { SchemaLite.fromXML }
-    lazy val targetNamespace = (wsdl, schemaLite) match {
+    lazy val targetNamespace = (wsdl, schemaLite.toList) match {
       case (Some(wsdl), _) => wsdl.targetNamespace map {_.toString}
-      case (_, x :: xs) => x.targetNamespace
+      case (_, x :: Nil) => x.targetNamespace
       case _ => None
     }
 
@@ -162,6 +163,12 @@ class Driver extends Module { driver =>
     }
   }
 
+  def replaceTargetNamespace(schema: WsdlPair, tns: Option[String]): WsdlPair = schema match {
+    case WsdlPair(Some(wsdl), _, _) => schema.copy(definition = Some(wsdl.copy(targetNamespace = tns map {new URI(_)})))
+    case WsdlPair(_, Seq(x), _) => schema.copy(schemas = x.copy(targetNamespace = tns) :: Nil)
+    case _ => schema
+  }
+
   def generateRuntimeFiles[To](cntxt: Context)(implicit evTo: CanBeWriter[To]): List[To] =
     List(generateFromResource[To](Some("scalaxb"), "scalaxb.scala", "/scalaxb.scala.template"),
       generateFromResource[To](Some("scalaxb"), "httpclients_dispatch.scala",
@@ -186,15 +193,4 @@ case class WsdlContext(xsdcontext: XsdContext = XsdContext(),
                        services:    mutable.ListMap[(Option[String], String), XServiceType] = mutable.ListMap(),
                        faults:      mutable.ListMap[(Option[String], String), XFaultType] = mutable.ListMap(),
                        messages:    mutable.ListMap[(Option[String], String), XMessageType] = mutable.ListMap(),
-                       var soap11:  Boolean = false ) extends Adder[WsdlPair] {
-  private lazy val logger = Logger("wsdl.WsdlContext")
-
-  def add(uri: URI, value: WsdlPair) {
-    logger.debug("add: %s" format (value.schemas map {_.targetNamespace.toString}))
-    value.schemas.zipWithIndex map { case (schema: SchemaDecl, i) =>
-      xsdcontext.add(new URI(uri.toString + "#" + i.toString), schema) }
-  }
-  def setOuterNamespace(uri: URI, outer: Option[String]) {
-    xsdcontext.setOuterNamespace(uri, outer)
-  }
-}
+                       var soap11:  Boolean = false )

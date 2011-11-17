@@ -38,10 +38,10 @@ class Driver extends Module { driver =>
   
   override def buildContext = XsdContext()
     
-  override def processContext(context: Context, cnfg: Config) =
+  override def processContext(context: Context, schemas: Seq[SchemaDecl], cnfg: Config) =
     (new ContextProcessor {
       val config = cnfg    
-    }).processContext(context)
+    }).processContext(context, schemas)
 
   override def packageName(namespace: Option[String], context: Context): Option[String] =
     (new PackageName {}).packageName(namespace, context)
@@ -79,6 +79,8 @@ class Driver extends Module { driver =>
       schema
     }
   }
+
+  def replaceTargetNamespace(schema: SchemaDecl, tns: Option[String]): SchemaDecl = schema.copy(targetNamespace =  tns)
 
   def generateRuntimeFiles[To](cntxt: Context)(implicit evTo: CanBeWriter[To]): List[To] =
     List(generateFromResource[To](Some("scalaxb"), "scalaxb.scala", "/scalaxb.scala.template"))

@@ -22,7 +22,6 @@
  
 package scalaxb.compiler
 
-import scala.collection.{Map, Set}
 import scala.collection.mutable.{ListBuffer, ListMap}
 import java.net.{URI}
 import scala.xml.{Node, Elem}
@@ -30,6 +29,7 @@ import scala.xml.factory.{XMLLoader}
 import javax.xml.parsers.SAXParser
 import java.io.{File, PrintWriter, Reader, BufferedReader}
 import com.weiglewilczek.slf4s.Logger
+import collection.{mutable, Map, Set}
 
 case class Config(packageNames: Map[Option[String], Option[String]] = Map(None -> None),
   classPrefix: Option[String] = None,
@@ -105,7 +105,7 @@ object Module {
 trait Module {
   type RawSchema
   type Schema
-  type Context <: Adder[Schema]
+  type Context
 
   private lazy val logger = Logger("module")
   def verbose: Boolean = false
@@ -222,10 +222,8 @@ trait Module {
     val importables0 = ListMap[From, Importable](files map { f =>
       f -> toImportable(ev.toURI(f), ev.toRawSchema(f))}: _*)
     val importables = Seq[(Importable, From)](files map { f => importables0(f) -> f }: _*)
-    
     val schemas = ListMap[Importable, Schema](importables map { case (importable, file) =>
       val s = parse(importable, context)
-      context.add(importable.location, s)
       (importable, s) }: _*)
 
     val additionalImportables = ListMap.empty[Importable, File]
@@ -251,12 +249,10 @@ trait Module {
         val importable = toImportable(implicitly[CanBeRawSchema[File, RawSchema]].toURI(x),
           implicitly[CanBeRawSchema[File, RawSchema]].toRawSchema(x))
         val s = parse(importable, context)
-        context.add(importable.location, s)
         schemas(importable) = s
         (importable, x) })
       if (added) addMissingFiles()
     }
-
 
     def toFileNamePart[From](file: From)(implicit ev: CanBeRawSchema[From, RawSchema]): String =
       """([.]\w+)$""".r.replaceFirstIn(new File(ev.toURI(file).getPath).getName, "")
@@ -319,11 +315,15 @@ trait Module {
         val xs = children(parent)
         if (xs forall { x => !(parents contains x) }) {
           val tns = mapping.get(parent) getOrElse {parent.targetNamespace}
-          xs foreach { x =>
-            logger.debug("processUnnamedIncludes - setting %s's outer namespace to %s" format (x.location, tns))
-            context.setOuterNamespace(x.location, tns)
+          tns foreach { tnsstr => xs foreach { x =>
+            x.targetNamespace match {
+              case Some(ns) =>
+              case None =>
+                logger.debug("processUnnamedIncludes - setting %s's outer namespace to %s" format (x.location, tnsstr))
+                schemas(x) = replaceTargetNamespace(schemas(x), tns)
+            }
             mapping(x) = tns
-          }
+          }}
           parents.remove(i % parents.size)
         }
       }
@@ -331,7 +331,7 @@ trait Module {
 
     addMissingFiles()
     processUnnamedIncludes()
-    processContext(context, config)
+    processContext(context, schemas.valuesIterator.toSeq, config)
     processImportables(importables.toList) :::
     processImportables(additionalImportables.toList) :::
     List(processProtocol) :::
@@ -394,10 +394,12 @@ trait Module {
     (locationBased ::: includes).distinct
     // (nsBased ::: locationBased ::: includes).distinct
   }
-    
+
+  def replaceTargetNamespace(schema: Schema, tns: Option[String]): Schema
+
   def buildContext: Context
   
-  def processContext(context: Context, config: Config): Unit
+  def processContext(context: Context, schemas: Seq[Schema], config: Config): Unit
 
   def packageName(namespace: Option[String], context: Context): Option[String]
 
@@ -502,9 +504,3 @@ class CaseClassTooLong(fqn: String, xmlname: String) extends RuntimeException(
     fqn, xmlname
   )
 )
-
-// this is a mechanism to implement http://www.w3.org/TR/xmlschema-1/#compound-schema
-trait Adder[A] {
-  def add(uri: URI, value: A)
-  def setOuterNamespace(uri: URI, outer: Option[String])
-}

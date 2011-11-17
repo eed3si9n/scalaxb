@@ -15,7 +15,15 @@ case class QualifiedName(namespace: Option[URI], localPart: String) {
   def toScalaCode(implicit targetNamespace: Option[URI], lookup: Lookup): String =
     if (namespace == targetNamespace || namespace.isEmpty ||
       Seq(Some(XML_SCHEMA_URI), Some(SCALA_URI)).contains(namespace)) localPart
-    else lookup.packageName(namespace) + "." + localPart
+    else fullyQualifiedName
+
+  def fullyQualifiedName(implicit lookup: Lookup): String = lookup.packageName(namespace) + "." + localPart
+
+  def formatterName(implicit lookup: Lookup): String = {
+    val pkg = lookup.packageName(namespace)
+    val lastPart = pkg.split('.').reverse.head
+    lastPart.capitalize + localPart + "Format"
+  }
 }
 
 object QualifiedName {
@@ -282,6 +290,6 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter =>
   def packageName(namespace: Option[URI]): String =
     namespace map { ns =>
       if (ns == SCALAXB_URI) "scalaxb"
-      else "packagename"
-    } getOrElse { "packagename" }
+      else "example"
+    } getOrElse { "example" }
 }

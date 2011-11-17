@@ -152,4 +152,6 @@ trait Namer extends ScalaNames { self: Lookup with Splitter  =>
     else "\"" + value + "\""
 
   def indent(indent: Int) = "  " * indent
+
+  def quoteUri(value: Option[URI]): String = quote(value map {_.toString})
 }

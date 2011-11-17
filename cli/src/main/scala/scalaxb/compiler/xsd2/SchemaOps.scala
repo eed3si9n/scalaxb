@@ -324,6 +324,12 @@ case class ComplexTypeOps(decl: Tagged[XComplexType]) {
   def compositors(implicit lookup: Lookup, targetNamespace: Option[URI], scope: NamespaceBinding) =
     ComplexTypeIteration.complexTypeToCompositors(decl)
 
+  def flattenedCompositors(implicit lookup: Lookup, targetNamespace: Option[URI], scope: NamespaceBinding) =
+    ComplexTypeIteration.complexTypeToFlattenedCompositors(decl)
+
+  def flattenedGroups(implicit lookup: Lookup, targetNamespace: Option[URI], scope: NamespaceBinding) =
+    ComplexTypeIteration.complexTypeToFlattenedGroups(decl)
+
   def flattenedAttributes(implicit lookup: Lookup, targetNamespace: Option[URI], scope: NamespaceBinding) =
     ComplexTypeIteration.complexTypeToMergedAttributes(decl)
 
@@ -483,6 +489,48 @@ object ComplexTypeIteration {
     }
   }
 
+  def complexTypeToFlattenedGroups(decl: Tagged[XComplexType])
+        (implicit lookup: Lookup, targetNamespace: Option[URI], scope: NamespaceBinding): Seq[Tagged[KeyedGroup]] =
+    complexTypeToFlattenedCompositors(decl) collect {
+      case x@TaggedKeyedGroup(g, tag) if g.key == GroupTag => x
+    }
+
+  def complexTypeToFlattenedCompositors(decl: Tagged[XComplexType])
+      (implicit lookup: Lookup, targetNamespace: Option[URI], scope: NamespaceBinding): Seq[Tagged[KeyedGroup]] = {
+    import lookup._
+    def extract(model: Option[DataRecord[Any]]) = model match {
+      // XTypeDefParticleOption is either XGroupRef or XExplicitGroupable
+      case Some(DataRecord(_, Some(key), x: XGroupRef))          =>
+        implicit val tag = decl.tag
+        val compositor = Tagged(KeyedGroup(key, x), decl.tag)
+        Seq(compositor) ++ (compositor.particles collect  {
+          case Compositor(c) => c
+        })
+      case Some(DataRecord(_, Some(key), x: XExplicitGroupable)) =>
+        implicit val tag = decl.tag
+        val compositor = Tagged(KeyedGroup(key, x), decl.tag)
+        Seq(compositor) ++ (compositor.particles collect  {
+          case Compositor(c) => c
+        })
+      case _ => Nil
+    }
+
+    def qnameCompositors(base: QualifiedName): Seq[Tagged[KeyedGroup]] = base match {
+      case ComplexType(tagged) => complexTypeToFlattenedCompositors(tagged)
+      case _ => Nil
+    }
+
+    decl.value.arg1.value match {
+      case XComplexContent(_, DataRecord(_, _, x: XComplexRestrictionType), _, _, _) =>
+        qnameCompositors(x.base) ++ extract(x.xrestrictiontypableoption)
+      case XComplexContent(_, DataRecord(_, _, x: XExtensionType), _, _, _)          =>
+        qnameCompositors(x.base) ++ extract(x.arg1)
+      case XSimpleContent(_, _, _, _)                                                => Nil
+      // this is an abbreviated form of xs:anyType restriction.
+      case XComplexTypeModelSequence1(arg1, arg2)                                    => extract(arg1)
+    }
+  }
+
   def primarySequence(decl: Tagged[XComplexType]): Option[Tagged[KeyedGroup]] =
     primaryCompositor(decl) match {
       case x@Some(TaggedKeyedGroup(g, tag)) if g.key == SequenceTag => x
@@ -512,7 +560,9 @@ object ComplexTypeIteration {
     decl.value.arg1.value match {
       case XComplexContent(_, DataRecord(_, _, x: XComplexRestrictionType), _, _, _) =>
         extract(x.xrestrictiontypableoption)
-      case XComplexContent(_, DataRecord(_, _, x: XExtensionType), _, _, _)          => extract(x.arg1)
+      case XComplexContent(_, DataRecord(_, _, x: XExtensionType), _, _, _)          =>
+        extract(x.arg1)
+
       case XSimpleContent(_, _, _, _)                                                => None
       // this is an abbreviated form of xs:anyType restriction.
       case XComplexTypeModelSequence1(arg1, arg2)                                    => extract(arg1)

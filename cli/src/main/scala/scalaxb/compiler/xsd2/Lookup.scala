@@ -46,7 +46,8 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter =>
   implicit def scope: NamespaceBinding = schema.scope
   implicit def targetNamespace = schema.targetNamespace
 
-  val wildCardTypeName = QualifiedName(Some(SCALAXB_URI), "DataRecord[Any]")
+  val dataRecordAnyTypeName = QualifiedName(Some(SCALAXB_URI), "DataRecord[Any]")
+  val wildCardTypeName = dataRecordAnyTypeName
   val nillableAnyTypeName = QualifiedName(Some(SCALAXB_URI), "DataRecord[Option[Any]]")
 
   def buildTypeName(tagged: Tagged[Any]): QualifiedName = tagged match {
@@ -167,7 +168,7 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter =>
   }
 
   def resolveType(typeName: QualifiedName): Tagged[Any] = typeName match {
-    case AnyType(tagged) => tagged
+    case BuiltInAnyType(tagged) => tagged
     case BuiltInType(tagged) => tagged
     case SimpleType(tagged) => tagged
     case ComplexType(tagged) => tagged
@@ -199,9 +200,16 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter =>
       else None
   }
 
-  def elementNamespaceString(tagged: Tagged[XElement]): String = quoteUri(elementNamespace(tagged))
+  def elementNamespace(topLevelElement: Boolean, namespace: Option[URI], qualified: Boolean): Option[URI] =
+    if (topLevelElement) namespace
+    else if (qualified) namespace
+    else None
 
-  object AnyType {
+  def elementNamespaceString(tagged: Tagged[XElement]): String = quoteUri(elementNamespace(tagged))
+  def elementNamespaceString(topLevelElement: Boolean, namespace: Option[URI], qualified: Boolean) =
+    quoteUri(elementNamespace(topLevelElement, namespace, qualified))
+
+  object BuiltInAnyType {
     // called by ElementOps
     val tagged = Tagged(XsAnyType, HostTag(Some(XML_SCHEMA_URI), SimpleTypeHost, XS_ANY_TYPE.localPart))
 
@@ -209,6 +217,7 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter =>
 
     def unapply(typeName: QualifiedName): Option[Tagged[XsTypeSymbol]] = typeName match {
       case XS_ANY_TYPE => Some(tagged)
+      case XS_ANY_SIMPLE_TYPE => Some(tagged)
       case _ => None
     }
   }
@@ -276,6 +285,17 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter =>
       case QualifiedName(targetNamespace, localPart) if schema.topAttrGroups contains localPart =>
         Some(schema.topAttrGroups(localPart))
       case _ => None
+    }
+  }
+
+  object AnyLike {
+    def unapply(tagged: Tagged[_]): Option[Tagged[_]] = tagged match {
+      case x: TaggedWildCard => Some(tagged)
+      case x: TaggedSymbol =>
+        x.value match {
+          case XsAnySimpleType | XsAnyType => Some(tagged)
+          case symbol: BuiltInSimpleTypeSymbol => None
+        }
     }
   }
 

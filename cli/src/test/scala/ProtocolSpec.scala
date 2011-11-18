@@ -9,6 +9,7 @@ object ProtocolSpec extends Specification { def is =
   "top-level complex types should"                                            ^
     "generate a format typeclass instance"                                    ! complexType1^
     "generate a combinator parser"                                            ! parser1^
+    "generate an XML writer"                                                  ! output1^
                                                                               end
 
   lazy val module = new scalaxb.compiler.xsd2.Driver
@@ -49,5 +50,12 @@ object ProtocolSpec extends Specification { def is =
       """{ case p1 ~ p2 =>""")) and
     (addressProtocolSource must contain(
       """example.Address(scalaxb.fromXML[String](p1, scalaxb.ElemName(node) :: stack),"""))
+  }
+
+  def output1 = {
+    (addressProtocolSource must contain(
+      """def writesChildNodes(__obj: example.Address, __scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node] =""")) and
+    (addressProtocolSource must contain(
+      """Seq.concat(scalaxb.toXML[String](__obj.street, Some("http://www.example.com/general"), Some("street"), __scope, false),"""))
   }
 }

@@ -7,6 +7,7 @@
   [#116]: https://github.com/eed3si9n/scalaxb/issues/116
   [#117]: https://github.com/eed3si9n/scalaxb/issues/117
   [#119]: https://github.com/eed3si9n/scalaxb/issues/119
+  [#120]: https://github.com/eed3si9n/scalaxb/issues/120
   [@OlegYch]: https://github.com/OlegYch
   [@hedefalk]: https://github.com/hedefalk
   [@bmjsmith]: https://github.com/bmjsmith

@@ -1,10 +1,12 @@
 import java.io.{File}
 import scalaxb.compiler._
-import scalaxb.compiler.xsd.Driver
 
 object GeneralTest extends TestBase {
+  import scalaxb.compiler.xsd.Driver
+  import scalaxb.compiler.xsd2.{Driver => Driver2}
+
   Log.configureLogger(true)
-  override val module: Module = new Driver
+  override val module: Module = new Driver2 with Verbose
   val inFile    = new File("integration/src/test/resources/general.xsd")
   val importFile = new File("integration/src/test/resources/general_import.xsd")
   val mimeFile  = new File("integration/src/test/resources/xmlmime.xsd")

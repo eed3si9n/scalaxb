@@ -8,6 +8,7 @@ import Occurrence._
 import java.net.URI
 
 trait Params { self: Namer with Lookup =>
+  import Predef.{any2stringadd => _}
   import com.weiglewilczek.slf4s.Logger
   private lazy val logger: Logger = Logger("xsd2.Params")
 
@@ -24,10 +25,10 @@ trait Params { self: Namer with Lookup =>
       else baseTypeName.toScalaCode
 
     def typeName(implicit targetNamespace: Option[URI]): String = occurrence match {
-      case SingleNotNillable   => singleTypeName
-      case SingleNillable      => singleTypeName
-      case OptionalNotNillable => "Option[%s]".format(singleTypeName)
-      case OptionalNillable    => "Option[%s]".format(singleTypeName)
+      case SingleNotNillable(_)   => singleTypeName
+      case SingleNillable(_)      => singleTypeName
+      case OptionalNotNillable(_) => "Option[%s]".format(singleTypeName)
+      case OptionalNillable(_)    => "Option[%s]".format(singleTypeName)
       case _ => "Seq[%s]".format(singleTypeName)
     }
 
@@ -46,7 +47,7 @@ trait Params { self: Namer with Lookup =>
         case true =>
           "lazy val " + toTraitScalaCode + " = " +
           (occurrence match {
-            case SingleNotNillable =>
+            case SingleNotNillable(_) =>
               """%s(%s).as[%s]""".format(
                 wrapper,
                 quote(buildNodeName),
@@ -73,6 +74,8 @@ trait Params { self: Namer with Lookup =>
   }
 
   object Param {
+    def apply(tagged: Tagged[Any]): Param = buildParam(tagged, 0)
+
     def fromSeq(particles: Seq[Tagged[Any]]): Seq[Param] = {
       var anyNumber: Int = 0
       particles map { tagged => tagged.value match {
@@ -91,12 +94,12 @@ trait Params { self: Namer with Lookup =>
     // tagged can be Tagged[XSimpleType], Tagged[BuiltInSymbol], Tagged[XLocalElementable], Tagged[KeyedGroup],
     // Tagged[XAny].
     private def buildParam(tagged: Tagged[Any], postfix: Int) = tagged match {
-      case TaggedSimpleType(decl, tag) => Param(tagged.tag.namespace, tagged.tag.name, tagged, SingleNotNillable, false)
-      case TaggedSymbol(symbol, tag)   => Param(tagged.tag.namespace, "value", tagged, SingleNotNillable, false)
+      case TaggedSimpleType(decl, tag) => Param(tagged.tag.namespace, tagged.tag.name, tagged, SingleNotNillable(), false)
+      case TaggedSymbol(symbol, tag)   => Param(tagged.tag.namespace, "value", tagged, SingleNotNillable(), false)
       case x: TaggedLocalElement       => buildElementParam(x)
       case x: TaggedKeyedGroup if x.key == ChoiceTag => buildChoiceParam(x)
       case x: TaggedKeyedGroup         => buildCompositorParam(x)
-      case x: TaggedAny                => buildAnyParam(x, postfix)
+      case x: TaggedWildCard           => buildWildCardParam(x, postfix)
       case x: TaggedAttributeSeqParam  => buildDataRecordMapParam(ATTRS_PARAM, x)
       case x: TaggedAllParam           => buildDataRecordMapParam(ALL_PARAM, x)
       case _ => error("buildParam: " + tagged)
@@ -159,17 +162,17 @@ trait Params { self: Namer with Lookup =>
       Param(tagged.tag.namespace, name, typeSymbol, Occurrence(compositor), false)
     }
 
-    private def buildAnyParam(tagged: Tagged[XAny], postfix: Int): Param = {
+    private def buildWildCardParam(tagged: Tagged[XAny], postfix: Int): Param = {
       val any = tagged.value
       val name = if (postfix <= 1) "any"
         else "any" + postfix.toString
       val retval = Param(tagged.tag.namespace, name, tagged, Occurrence(any), false)
-      logger.debug("buildAnyParam:  " + retval.toString)
+      logger.debug("buildWildCardParam:  " + retval.toString)
       retval
     }
 
     private def buildDataRecordMapParam(name: String, tagged: Tagged[_]): Param = {
-      val retval = Param(tagged.tag.namespace, name, tagged, SingleNotNillable, false)
+      val retval = Param(tagged.tag.namespace, name, tagged, SingleNotNillable(), false)
       logger.debug("buildDataRecordMapParam:  " + retval.toString)
       retval
     }

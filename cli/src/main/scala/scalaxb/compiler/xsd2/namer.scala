@@ -42,6 +42,7 @@ trait Namer extends ScalaNames { self: Lookup with Splitter  =>
   def nameComplexTypes(decl: Tagged[XComplexType]) {
     names(decl) = makeProtectedComplexTypeName(decl)
     val primarySequence = decl.primarySequence
+    implicit val s = schema.unbound
     decl collect {
       case Compositor(compositor) => nameCompositor(compositor, Some(compositor) == primarySequence)
     }

@@ -5,7 +5,7 @@ import javax.xml.namespace.QName
 import xmlschema._
 import scalaxb._
 import scalaxb.compiler.{ScalaNames, Config, Snippet, ReferenceNotFound}
-import scalaxb.compiler.xsd.{XsAnyType, XsAnySimpleType, XsString, BuiltInSimpleTypeSymbol, XsTypeSymbol}
+import scalaxb.compiler.xsd.{XsAnyType, XsAnySimpleType, XsString, BuiltInSimpleTypeSymbol, XsTypeSymbol, XsWildcard}
 import Defs._
 import scala.xml.NamespaceBinding
 
@@ -46,16 +46,17 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter =>
   implicit def scope: NamespaceBinding = schema.scope
   implicit def targetNamespace = schema.targetNamespace
 
+  val wildCardTypeName = QualifiedName(Some(SCALAXB_URI), "DataRecord[Any]")
+
   def buildTypeName(tagged: Tagged[Any]): QualifiedName = tagged match {
     case x: TaggedDataRecordSymbol =>
       val member = buildTypeName(x.value.member)
       QualifiedName(Some(SCALAXB_URI), "DataRecord[%s]".format(member.toScalaCode))
 
-    case x: TaggedAny => QualifiedName(Some(SCALAXB_URI), "DataRecord[Any]")
+    case x: TaggedWildCard => wildCardTypeName
     case x: TaggedSymbol =>
       x.value match {
-        case XsAnySimpleType => QualifiedName(Some(SCALAXB_URI), "DataRecord[Any]")
-        case XsAnyType => QualifiedName(Some(SCALAXB_URI), "DataRecord[Any]")
+        case XsAnySimpleType | XsAnyType => QualifiedName(Some(SCALAXB_URI), "DataRecord[Any]")
         case symbol: BuiltInSimpleTypeSymbol => QualifiedName(Some(XML_SCHEMA_URI), symbol.name)
       }
     case x: TaggedSimpleType => buildSimpleTypeTypeName(x)   
@@ -190,8 +191,18 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter =>
     case _ => throw new ReferenceNotFound("attributeGroup", groupRef.namespace map { _.toString }, groupRef.localPart)
   }
 
+  def elementNamespace(tagged: Tagged[XElement]): Option[URI] = tagged.value match {
+    case elem: XTopLevelElement => tagged.tag.namespace
+    case _ =>
+      if (tagged.qualified) tagged.tag.namespace
+      else None
+  }
+
+  def elementNamespaceString(tagged: Tagged[XElement]): String = quoteUri(elementNamespace(tagged))
+
   object AnyType {
-    def tagged = Tagged(XsAnyType, HostTag(Some(XML_SCHEMA_URI), SimpleTypeHost, "anyType"))
+    // called by ElementOps
+    val tagged = Tagged(XsAnyType, HostTag(Some(XML_SCHEMA_URI), SimpleTypeHost, XS_ANY_TYPE.localPart))
 
     def unapply(qname: QName): Option[Tagged[XsTypeSymbol]] = unapply(qname: QualifiedName)
 

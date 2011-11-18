@@ -3,10 +3,12 @@ package scalaxb.compiler.xsd2
 import scalaxb.DataRecord
 import xmlschema._
 import Defs._
+import Predef.{any2stringadd => _, _}
 
 case class Occurrence(minOccurs: Int, maxOccurs: Int, nillable: Boolean) {
   def isMultiple = maxOccurs > 1
-  def isSingle = minOccurs == 1 && maxOccurs == 1
+  def isSingle = minOccurs == 1 && maxOccurs <= 1
+  def isOptional = minOccurs < 1 && maxOccurs <= 1
 }
 
 object Occurrence {
@@ -47,19 +49,45 @@ object Occurrence {
   }
 
   def apply(attr: XAttributable): Occurrence = attr.use match {
-    case XRequired => SingleNotNillable
-    case _ => OptionalNotNillable
+    case XRequired => SingleNotNillable()
+    case _ => OptionalNotNillable()
   }
-
-  val SingleNotNillable = Occurrence(1, 1, false)
-  val SingleNillable = Occurrence(1, 1, true)
-  val OptionalNotNillable = Occurrence(0, 1, false)
-  val OptionalNillable = Occurrence(0, 1, true)
-  val UnboundedNotNillable = Occurrence(0, Int.MaxValue, false)
-  val UnboundedNillable = Occurrence(0, Int.MaxValue, true)
 
   def max(lhs: String, rhs: String): String =
     if (lhs == "unbounded" || rhs == "unbounded") "unbounded"
     else math.max(lhs.toInt, rhs.toInt).toString
+
+  object SingleNotNillable {
+    def apply() = Occurrence(1, 1, false)
+    def unapply(o: Occurrence): Option[Occurrence] = if (o.isSingle && !o.nillable) Some(o) else None
+  }
+
+  object SingleNillable {
+    def apply() = Occurrence(1, 1, true)
+    def unapply(o: Occurrence): Option[Occurrence] = if (o.isSingle && o.nillable) Some(o) else None
+  }
+
+  object OptionalNotNillable {
+    def apply() = Occurrence(0, 1, false)
+    def unapply(o: Occurrence): Option[Occurrence] = if (o.isOptional && !o.nillable) Some(o) else None
+  }
+
+  object OptionalNillable {
+    def apply() = Occurrence(0, 1, true)
+    def unapply(o: Occurrence): Option[Occurrence] = if (o.isOptional && o.nillable) Some(o) else None
+  }
+
+  object UnboundedNotNillable {
+    def apply() = Occurrence(0, Int.MaxValue, false)
+    def unapply(o: Occurrence): Option[Occurrence] = if (o.isMultiple && !o.nillable) Some(o) else None
+  }
+  
+  object UnboundedNillable {
+    def apply() = Occurrence(0, Int.MaxValue, true)
+    def unapply(o: Occurrence): Option[Occurrence] = if (o.isMultiple && o.nillable) Some(o) else None
+  }
 }
+
+
+
 

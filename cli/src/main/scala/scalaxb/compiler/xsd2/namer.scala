@@ -18,6 +18,7 @@ trait PackageNamer {
 trait Namer extends ScalaNames { self: Lookup with Splitter  =>
   val ATTRS_PARAM = "attributes"
   val ALL_PARAM = "all"
+  val MIXED_PARAM = "mixed"
 
   def nameElementTypes(elem: Tagged[XElement]) {
     implicit val tag = elem.tag

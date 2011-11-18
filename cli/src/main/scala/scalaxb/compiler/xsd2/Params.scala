@@ -16,7 +16,9 @@ trait Params { self: Namer with Lookup =>
     name: String,
     typeSymbol: Tagged[Any],
     occurrence: Occurrence,
-    attribute: Boolean) {
+    attribute: Boolean,
+    topLevelElement: Boolean,
+    qualified: Boolean) {
 
     def baseTypeName: QualifiedName = buildTypeName(typeSymbol)
 
@@ -94,8 +96,8 @@ trait Params { self: Namer with Lookup =>
     // tagged can be Tagged[XSimpleType], Tagged[BuiltInSymbol], Tagged[XLocalElementable], Tagged[KeyedGroup],
     // Tagged[XAny].
     private def buildParam(tagged: Tagged[Any], postfix: Int) = tagged match {
-      case TaggedSimpleType(decl, tag) => Param(tagged.tag.namespace, tagged.tag.name, tagged, SingleNotNillable(), false)
-      case TaggedSymbol(symbol, tag)   => Param(tagged.tag.namespace, "value", tagged, SingleNotNillable(), false)
+      case TaggedSimpleType(decl, tag) => Param(tagged.tag.namespace, tagged.tag.name, tagged, SingleNotNillable(), false, false, false)
+      case TaggedSymbol(symbol, tag)   => Param(tagged.tag.namespace, "value", tagged, SingleNotNillable(), false, false, false)
       case x: TaggedLocalElement       => buildElementParam(x)
       case x: TaggedKeyedGroup if x.key == ChoiceTag => buildChoiceParam(x)
       case x: TaggedKeyedGroup         => buildCompositorParam(x)
@@ -106,7 +108,7 @@ trait Params { self: Namer with Lookup =>
     }
 
     private def buildElementParam(tagged: Tagged[XLocalElementable]): Param = {
-      val elem = resolveElement(tagged)
+      val elem = tagged.resolve
       val name = elem.name
       val typesymbol = elem.typeValue map { typeValue =>
           resolveType(typeValue)
@@ -117,7 +119,12 @@ trait Params { self: Namer with Lookup =>
         }} getOrElse {error("type not found for element: " + tagged.value.toString)}
       }
 
-      val retval = Param(tagged.tag.namespace, name.get, typesymbol, Occurrence(tagged.value), false)
+      val retval = Param(tagged.tag.namespace, name.get, typesymbol,
+        Occurrence(tagged.value), false,
+        elem match {
+          case TaggedTopLevelElement(_, _) => true
+          case _ => false
+        }, elem.qualified)
       logger.debug("buildElementParam:  " + retval.toString)
       retval
     }
@@ -147,7 +154,7 @@ trait Params { self: Namer with Lookup =>
       }
       val typeSymbol = TaggedDataRecordSymbol(DataRecordSymbol(memberType))
       Param(tagged.tag.namespace, name, typeSymbol,
-        Occurrence(choice).copy(nillable = false), false)
+        Occurrence(choice).copy(nillable = false), false, false, false)
     }
 
     private def particleType(particle: Tagged[_]) = particle match {
@@ -159,20 +166,20 @@ trait Params { self: Namer with Lookup =>
       val compositor = tagged.value
       val name = names.get(tagged) map {_.toLowerCase} getOrElse {"??"}
       val typeSymbol = tagged
-      Param(tagged.tag.namespace, name, typeSymbol, Occurrence(compositor), false)
+      Param(tagged.tag.namespace, name, typeSymbol, Occurrence(compositor), false, false, false)
     }
 
     private def buildWildCardParam(tagged: Tagged[XAny], postfix: Int): Param = {
       val any = tagged.value
       val name = if (postfix <= 1) "any"
         else "any" + postfix.toString
-      val retval = Param(tagged.tag.namespace, name, tagged, Occurrence(any), false)
+      val retval = Param(tagged.tag.namespace, name, tagged, Occurrence(any), false, false, false)
       logger.debug("buildWildCardParam:  " + retval.toString)
       retval
     }
 
     private def buildDataRecordMapParam(name: String, tagged: Tagged[_]): Param = {
-      val retval = Param(tagged.tag.namespace, name, tagged, SingleNotNillable(), false)
+      val retval = Param(tagged.tag.namespace, name, tagged, SingleNotNillable(), false, false, false)
       logger.debug("buildDataRecordMapParam:  " + retval.toString)
       retval
     }
@@ -180,7 +187,7 @@ trait Params { self: Namer with Lookup =>
     private def buildAttributeParam(tagged: TaggedAttr[XAttributable]): Param = {
       val attr = tagged.value
       val name = attr.name.get
-      val retval = Param(tagged.tag.namespace, name, tagged, Occurrence(attr), true)
+      val retval = Param(tagged.tag.namespace, name, tagged, Occurrence(attr), true, false, false)
       logger.debug("buildAttributeParam:  " + retval.toString)
       retval
     }

@@ -296,6 +296,7 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter =>
           case XsAnySimpleType | XsAnyType => Some(tagged)
           case symbol: BuiltInSimpleTypeSymbol => None
         }
+      case _ => None
     }
   }
 

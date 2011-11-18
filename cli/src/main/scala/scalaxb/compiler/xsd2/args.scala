@@ -69,6 +69,8 @@ trait Args { self: Namer with Lookup with Params =>
   def buildArg(tagged: Tagged[Any], selector: String, wrapForLongAll: Boolean): String =
     // if ((isSubstitionGroup(elem))) selector
     tagged match {
+      case x: TaggedSimpleType =>
+        buildTypeSymbolArg(buildTypeName(x), selector, SingleNotNillable(), None, None, wrapForLongAll)
       case elem: Tagged[XElement] if elem.isSubstitutionGroup => selector
       case tagged: Tagged[XElement] =>
         val o = Occurrence(tagged)
@@ -84,11 +86,11 @@ trait Args { self: Namer with Lookup with Params =>
                   elem.default, elem.fixed, wrapForLongAll)
               case symbol: BuiltInSimpleTypeSymbol =>
                 buildTypeSymbolArg(buildTypeName(symbol), selector, o, elem.default, elem.fixed, wrapForLongAll)
-              case tagged: TaggedSimpleType =>
-                buildTypeSymbolArg(buildTypeName(tagged), selector, o, elem.default, elem.fixed, wrapForLongAll)
-              case tagged: TaggedComplexType =>
-                buildTypeSymbolArg(buildTypeName(tagged), selector, o, elem.default, elem.fixed, wrapForLongAll)
             }
+          case tagged: TaggedSimpleType =>
+            buildTypeSymbolArg(buildTypeName(tagged), selector, o, elem.default, elem.fixed, wrapForLongAll)
+          case tagged: TaggedComplexType =>
+            buildTypeSymbolArg(buildTypeName(tagged), selector, o, elem.default, elem.fixed, wrapForLongAll)
         }
 
 //      case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>

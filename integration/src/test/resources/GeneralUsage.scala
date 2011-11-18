@@ -44,6 +44,7 @@ object GeneralUsage {
     testSimpleAnyTypeExtension
     testDataRecord
     testDataRecordAny
+    testDataRecordEquality
     testDefaultScope
     testUnmarshallBaseComplexType
     testSubstitutionGroup
@@ -463,6 +464,28 @@ object GeneralUsage {
     }
     println(document)
     check(fromXML[DataRecord[Any]](document))
+  }
+
+  def testDataRecordEquality {
+    println("testDataRecordEquality")
+
+    val subject = <foo xmlns="http://www.example.com/general"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+      <person1><firstName>John</firstName><lastName>Doe</lastName></person1>
+      <person2 xsi:nil="true"/>
+      <person3><firstName>John</firstName><lastName>Doe</lastName></person3>
+      <person5><firstName>John</firstName><lastName>Doe</lastName></person5>
+        <person5><firstName>John</firstName><lastName>Doe</lastName></person5>
+      <person6 xsi:nil="true"/>
+    </foo>
+    val r1 = scalaxb.fromXML[ChoiceComplexTypeTest](subject)
+    val document = toXML(r1, "foo", subject.scope)
+    val r2 = scalaxb.fromXML[ChoiceComplexTypeTest](document)
+
+    (r1 == r2) match {
+      case true =>
+      case _ => error("r1 and r2 are not equal: " + r1.toString + " and " + r2.toString)
+    }
   }
   
   def testDefaultScope {

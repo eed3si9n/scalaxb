@@ -71,8 +71,8 @@ trait Args { self: Namer with Lookup with Params =>
     tagged match {
       case x: TaggedSimpleType =>
         buildTypeSymbolArg(buildTypeName(x), selector, SingleNotNillable(), None, None, wrapForLongAll)
-      case elem: Tagged[XElement] if elem.isSubstitutionGroup => selector
-      case tagged: Tagged[XElement] =>
+      case elem: TaggedLocalElement if elem.isSubstitutionGroup => selector
+      case tagged: TaggedLocalElement =>
         val o = Occurrence(tagged)
         val elem = tagged.resolve
         elem.typeStructure match {
@@ -92,23 +92,16 @@ trait Args { self: Namer with Lookup with Params =>
           case tagged: TaggedComplexType =>
             buildTypeSymbolArg(buildTypeName(tagged), selector, o, elem.default, elem.fixed, wrapForLongAll)
         }
-
-//      case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
-//        if (compositorWrapper.contains(decl))
-//          (toCardinality(elem.minOccurs, elem.maxOccurs), elem.nillable getOrElse {false}) match {
-//            case (Multiple, _)    => selector + ".toSeq"
-//            case (Optional, true) => selector + " getOrElse { None }"
-//            case _ => selector
-//          }
-//        else buildArg(buildTypeName(decl, false), selector,
-//          toCardinality(elem.minOccurs, elem.maxOccurs), elem.nillable getOrElse(false), elem.defaultValue, elem.fixedValue, wrapForLongAll)
-//
-//
-//      case symbol: ReferenceTypeSymbol =>
-//        if (symbol.decl == null) error("GenSource#buildArg: " + elem.toString + " Invalid type " + symbol.getClass.toString + ": " +
-//            symbol.toString + " with null decl")
-//        else error("GenSource#buildArg: " + elem.toString + " Invalid type " + symbol.getClass.toString + ": " +
-//            symbol.toString + " with " + symbol.decl.toString)
+      case x: TaggedKeyedGroup =>
+        val param = Param(x)
+        param.occurrence match {
+          case Multiple(_)         => selector + ".toSeq"
+          case OptionalNillable(_) => selector + " getOrElse {None}"
+          case _ => selector
+        }
+      case AnyLike(x) =>
+        val param = Param(x)
+        buildTypeSymbolArg(buildTypeName(x), selector, param.occurrence, None, None, wrapForLongAll)
       case _ => error("Args#buildArg: " + tagged.toString)
     }
 

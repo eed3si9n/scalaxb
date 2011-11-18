@@ -29,9 +29,11 @@ import Defs._
 
 class Generator(val schema: ReferenceSchema, 
     val context: SchemaContext, val config: Config) extends Params with PackageNamer
-    with Namer with Lookup with Splitter with Parsers with Args {
+    with Namer with Lookup with Splitter with Parsers with Args with XMLOutputs {
   import Predef.{any2stringadd => _}
   import com.weiglewilczek.slf4s.Logger
+  import scalaxb.DataRecord
+
   private lazy val logger = Logger("xsd2.Generator")
   
   def generateEntitySource: Snippet =
@@ -103,8 +105,29 @@ class Generator(val schema: ReferenceSchema,
       }
     val argsString = particleArgs.mkString("," + NL + indent(4))
 
+    def makeWritesChildNodes = {
+      def simpleContentString(base: QualifiedName) = base match {
+        case BuiltInAnyType(_) => "Seq(scala.xml.Text(__obj.value.value.toString))"
+        case _ => "Seq(scala.xml.Text(__obj.value.toString))"
+      }
+
+      def childString = if (decl.mixed) "__obj." + makeParamName(MIXED_PARAM) +
+        ".toSeq flatMap { x => " + buildToXML(dataRecordAnyTypeName, "x, x.namespace, x.key, __scope, false") + " }"
+      else decl.value.arg1.value match {
+        case XSimpleContent(_, DataRecord(_, _, x: XSimpleRestrictionType), _, _)      => simpleContentString(x.base)
+        case XSimpleContent(_, DataRecord(_, _, x: XSimpleExtensionType), _, _)        => simpleContentString(x.base)
+        case _ =>
+          if (particles.isEmpty) "Nil"
+          else if (particles.size == 1) "(" + buildXMLString(Param(particles(0))) + ")"
+          else (Param.fromSeq(particles) map { x => buildXMLString(x) }).mkString("Seq.concat(", "," + NL + indent(4), ")")
+      }
+
+      <source>    def writesChildNodes(__obj: {name.fullyQualifiedName}, __scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node] =
+            {childString}</source>
+    }
+
     val makeWritesAttribute = ""
-    val makeWritesChildNodes = ""
+
 
     val groups = decl.flattenedGroups filter { case tagged: TaggedKeyedGroup =>
       implicit val tag = tagged.tag

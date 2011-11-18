@@ -50,6 +50,7 @@ object Defs {
   val NL = System.getProperty("line.separator")
 
   val XS_ANY_TYPE = QualifiedName(XML_SCHEMA_URI, "anyType")
+  val XS_ANY_SIMPLE_TYPE = QualifiedName(XML_SCHEMA_URI, "anySimpleType")
 
   val GroupTag = "group"
   val ChoiceTag = "choice"
@@ -706,7 +707,7 @@ class ElementOps(val tagged: Tagged[XElement]) {
       case DataRecord(_, _, x: XLocalComplexType) => Tagged(x, tagged.tag)
     }}
     typeValue getOrElse {
-      localType getOrElse { AnyType.tagged }
+      localType getOrElse { BuiltInAnyType.tagged }
     }
   }
 

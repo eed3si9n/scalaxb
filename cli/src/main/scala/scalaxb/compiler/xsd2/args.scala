@@ -15,6 +15,9 @@ trait Args { self: Namer with Lookup with Params =>
     buildFromXML(typeName) + "(%s, %s)%s".format(selector, stackString,
       formatter map {"(" + _ + ")"} getOrElse {""})
 
+  def buildToXML(typeName: QualifiedName, args: String): String =
+    "scalaxb.toXML[" + typeName.toScalaCode + "](" + args + ")"
+
   // called by buildConverter
   def buildTypeSymbolArg(selector: String, typeSymbol: Tagged[Any]): String = typeSymbol match {
     case x: TaggedWildCard => selector

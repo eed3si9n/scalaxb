@@ -42,8 +42,8 @@ trait Parsers { self: Namer with Lookup with Args with Params =>
     import Occurrence._
 
     def buildConverter(typeSymbol: Tagged[Any], occurrence: Occurrence): String = {
-      val record = "scalaxb.DataRecord(x.namespace, Some(x.name), " + buildArg("x", typeSymbol) + ")"
-      val nillableRecord = "scalaxb.DataRecord(x.namespace, Some(x.name), x.nilOption map {" + buildArg("_", typeSymbol) + "})"
+      val record = "scalaxb.DataRecord(x.namespace, Some(x.name), " + buildTypeSymbolArg("x", typeSymbol) + ")"
+      val nillableRecord = "scalaxb.DataRecord(x.namespace, Some(x.name), x.nilOption map {" + buildTypeSymbolArg("_", typeSymbol) + "})"
 
       (occurrence) match {
         case UnboundedNillable(_)    => "(_.toSeq map { x => " + nillableRecord + " })"

@@ -57,6 +57,10 @@ object Occurrence {
     if (lhs == "unbounded" || rhs == "unbounded") "unbounded"
     else math.max(lhs.toInt, rhs.toInt).toString
 
+  object Single {
+    def unapply(o: Occurrence): Option[Occurrence] = if (o.isSingle) Some(o) else None
+  }
+
   object SingleNotNillable {
     def apply() = Occurrence(1, 1, false)
     def unapply(o: Occurrence): Option[Occurrence] = if (o.isSingle && !o.nillable) Some(o) else None
@@ -67,6 +71,10 @@ object Occurrence {
     def unapply(o: Occurrence): Option[Occurrence] = if (o.isSingle && o.nillable) Some(o) else None
   }
 
+  object Optional {
+    def unapply(o: Occurrence): Option[Occurrence] = if (o.isOptional) Some(o) else None
+  }
+
   object OptionalNotNillable {
     def apply() = Occurrence(0, 1, false)
     def unapply(o: Occurrence): Option[Occurrence] = if (o.isOptional && !o.nillable) Some(o) else None
@@ -75,6 +83,10 @@ object Occurrence {
   object OptionalNillable {
     def apply() = Occurrence(0, 1, true)
     def unapply(o: Occurrence): Option[Occurrence] = if (o.isOptional && o.nillable) Some(o) else None
+  }
+
+  object Multiple {
+    def unapply(o: Occurrence): Option[Occurrence] = if (o.isMultiple) Some(o) else None
   }
 
   object UnboundedNotNillable {

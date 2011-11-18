@@ -87,11 +87,22 @@ class Generator(val schema: ReferenceSchema,
   }
 
   private def generateDefaultFormat(name: QualifiedName, decl: Tagged[XComplexType]): Node = {
-    val parserVariableList = Nil
-    val unmixedParserList = decl.particles map { buildParser(_, decl.mixed, decl.mixed) }
+    val particles = decl.particles
+    val unmixedParserList = particles map { buildParser(_, decl.mixed, decl.mixed) }
     val parserList = if (decl.mixed) buildTextParser +: (unmixedParserList flatMap { Seq(_, buildTextParser) })
       else unmixedParserList
-    val argsString = ""
+    val parserVariableList = ( 0 to parserList.size - 1) map { buildSelector }
+
+    val particleArgs = if (decl.mixed) (0 to parserList.size - 1).toList map { i =>
+        if (i % 2 == 1) buildArgForMixed(particles((i - 1) / 2), i)
+        else buildArgForOptTextRecord(i) }
+      else decl.primaryAll map { all => 
+        implicit val tag = all.tag
+        all.particles map { buildArgForAll(_) } } getOrElse {
+        particles.zipWithIndex map { case (i, x) => buildArg(i, x) }
+      }
+    val argsString = particleArgs.mkString("," + NL + indent(4))
+
     val makeWritesAttribute = ""
     val makeWritesChildNodes = ""
 

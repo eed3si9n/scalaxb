@@ -44,6 +44,10 @@ object ProtocolSpec extends Specification { def is =
     (addressProtocolSource must contain(
       """(scalaxb.ElemName(Some("http://www.example.com/general"), "street")) ~""")) and
     (addressProtocolSource must contain(
-      """(scalaxb.ElemName(Some("http://www.example.com/general"), "city"))"""))
+      """(scalaxb.ElemName(Some("http://www.example.com/general"), "city"))""")) and
+    (addressProtocolSource must contain(
+      """{ case p1 ~ p2 =>""")) and
+    (addressProtocolSource must contain(
+      """example.Address(scalaxb.fromXML[String](p1, scalaxb.ElemName(node) :: stack),"""))
   }
 }

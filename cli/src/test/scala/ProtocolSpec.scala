@@ -8,6 +8,7 @@ object ProtocolSpec extends Specification { def is =
                                                                               end^
   "top-level complex types should"                                            ^
     "generate a format typeclass instance"                                    ! complexType1^
+    "generate a combinator parser"                                            ! parser1^
                                                                               end
 
   lazy val module = new scalaxb.compiler.xsd2.Driver
@@ -21,7 +22,8 @@ object ProtocolSpec extends Specification { def is =
 
   lazy val addressProtocolSource = module.processNode(<xs:schema targetNamespace="http://www.example.com/general"
       xmlns:xs="http://www.w3.org/2001/XMLSchema"
-      xmlns:gen="http://www.example.com/general">
+      xmlns:gen="http://www.example.com/general"
+      elementFormDefault="qualified">
     <xs:complexType name="Address">
       <xs:sequence>
         <xs:element name="street" type="xs:string"/>
@@ -36,5 +38,12 @@ object ProtocolSpec extends Specification { def is =
       """implicit lazy val ExampleAddressFormat: scalaxb.XMLFormat[example.Address] = new DefaultExampleAddressFormat {}""")) and
     (addressProtocolSource must contain(
       """trait DefaultExampleAddressFormat extends scalaxb.ElemNameParser[example.Address] {"""))
+  }
+
+  def parser1 = {
+    (addressProtocolSource must contain(
+      """(scalaxb.ElemName(Some("http://www.example.com/general"), "street")) ~""")) and
+    (addressProtocolSource must contain(
+      """(scalaxb.ElemName(Some("http://www.example.com/general"), "city"))"""))
   }
 }

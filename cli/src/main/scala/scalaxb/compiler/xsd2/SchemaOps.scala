@@ -34,7 +34,7 @@ import scala.annotation.tailrec
 object Defs {
   implicit def schemaToSchemaIteration(schema: XSchema): SchemaIteration = SchemaIteration(schema)
   implicit def complexTypeToComplexTypeOps(tagged: Tagged[XComplexType]): ComplexTypeOps = ComplexTypeOps(tagged)
-  implicit def complexTypeToComplexTypeIteration(tagged: Tagged[XComplexType]): ComplexTypeIteration =
+  implicit def complexTypeToComplexTypeIteration(tagged: Tagged[XComplexType])(implicit schema: XSchema): ComplexTypeIteration =
     ComplexTypeIteration(tagged)
   implicit def elementToElementOps(tagged: Tagged[XElement]): ElementOps = new ElementOps(tagged)
   implicit def attributeGroupToAttributeGroupOps(tagged: Tagged[XAttributeGroup]): AttributeGroupOps =
@@ -86,7 +86,8 @@ case class KeyedGroup(key: String, group: XGroup) {
   // List of TaggedElement, TaggedKeyedGroup, or TaggedAny.
   def particles(implicit tag: HostTag, lookup: Lookup, splitter: Splitter): Seq[Tagged[_]] =
     group.arg1.toSeq flatMap {
-      case DataRecord(_, _, x: XLocalElementable) => Seq(Tagged(x, tag))
+      case DataRecord(_, _, x: XLocalElementable) =>
+        Seq(TaggedLocalElement(x, lookup.schema.unbound.elementFormDefault, tag))
       case DataRecord(_, Some(particleKey), x: XGroupRef) => Seq(Tagged(KeyedGroup(particleKey, x), tag))
       case DataRecord(_, Some(particleKey), x: XExplicitGroupable) =>
         if (particleKey == SequenceTag) KeyedGroup(particleKey, x).innerSequenceToParticles
@@ -132,9 +133,10 @@ object Tagged {
   def apply(value: KeyedGroup, tag: HostTag): Tagged[KeyedGroup] = TaggedKeyedGroup(value, tag)
   def apply(value: XAttributeGroup, tag: HostTag): TaggedAttr[XAttributeGroup] = TaggedAttributeGroup(value, tag)
   def apply(value: XTopLevelElement, tag: HostTag): Tagged[XTopLevelElement] = TaggedTopLevelElement(value, tag)
-  def apply(value: XLocalElementable, tag: HostTag): Tagged[XLocalElementable] = TaggedLocalElement(value, tag)
+  def apply(value: XLocalElementable, elementFormDefault: XFormChoice, tag: HostTag): Tagged[XLocalElementable] =
+    TaggedLocalElement(value, elementFormDefault, tag)
   def apply(value: XAttributable, tag: HostTag): TaggedAttr[XAttributable] = TaggedAttribute(value, tag)
-  def apply(value: XAny, tag: HostTag): Tagged[XAny] = TaggedAny(value, tag)
+  def apply(value: XAny, tag: HostTag): Tagged[XAny] = TaggedWildCard(value, tag)
   def apply(value: XsTypeSymbol, tag: HostTag): Tagged[XsTypeSymbol] = TaggedSymbol(value, tag)
   def apply(value: XNoFixedFacet, tag: HostTag): Tagged[XNoFixedFacet] = TaggedEnum(value, tag)
   def apply(value: AttributeSeqParam, tag: HostTag): Tagged[AttributeSeqParam] = TaggedAttributeSeqParam(value, tag)
@@ -145,7 +147,7 @@ object Tagged {
   implicit def box(value: KeyedGroup)(implicit tag: HostTag) = Tagged(value, tag)
   implicit def box(value: XAttributeGroup)(implicit tag: HostTag) = Tagged(value, tag)
   implicit def box(value: XTopLevelElement)(implicit tag: HostTag) = Tagged(value, tag)
-  implicit def box(value: XLocalElementable)(implicit tag: HostTag) = Tagged(value, tag)
+  // implicit def box(value: XLocalElementable)(implicit tag: HostTag) = Tagged(value, tag)
   implicit def box(value: XAttributable)(implicit tag: HostTag) = Tagged(value, tag)
   implicit def box(value: XAny)(implicit tag: HostTag) = Tagged(value, tag)
   implicit def box(value: XsTypeSymbol)(implicit tag: HostTag) = Tagged(value, tag)
@@ -156,7 +158,7 @@ object Tagged {
   implicit def unbox[A](tagged: Tagged[A]): A = tagged.value
 
   def toParticleDataRecord(tagged: Tagged[_]): DataRecord[XParticleOption] = tagged match {
-    case TaggedLocalElement(value, tag) => DataRecord(tag.namespace map {_.toString}, Some(tag.name), value)
+    case TaggedLocalElement(value, _, tag) => DataRecord(tag.namespace map {_.toString}, Some(tag.name), value)
     case _ => error("unknown particle: " + tagged)
   }
 }
@@ -166,10 +168,11 @@ case class TaggedComplexType(value: XComplexType, tag: HostTag) extends Tagged[X
 case class TaggedKeyedGroup(value: KeyedGroup, tag: HostTag) extends Tagged[KeyedGroup] {}
 case class TaggedAttributeGroup(value: XAttributeGroup, tag: HostTag) extends TaggedAttr[XAttributeGroup] {}
 case class TaggedTopLevelElement(value: XTopLevelElement, tag: HostTag) extends Tagged[XTopLevelElement] {}
-case class TaggedLocalElement(value: XLocalElementable, tag: HostTag) extends Tagged[XLocalElementable] {}
+case class TaggedLocalElement(value: XLocalElementable, elementFormDefault: XFormChoice,
+                              tag: HostTag) extends Tagged[XLocalElementable] {}
 case class TaggedAttribute(value: XAttributable, tag: HostTag) extends TaggedAttr[XAttributable] {}
 case class TaggedAnyAttribute(value: XWildcardable, tag: HostTag) extends TaggedAttr[XWildcardable] {}
-case class TaggedAny(value: XAny, tag: HostTag) extends Tagged[XAny] {}
+case class TaggedWildCard(value: XAny, tag: HostTag) extends Tagged[XAny] {}
 case class TaggedSymbol(value: XsTypeSymbol, tag: HostTag) extends Tagged[XsTypeSymbol] {}
 case class TaggedEnum(value: XNoFixedFacet, tag: HostTag) extends Tagged[XNoFixedFacet] {}
 case class TaggedDataRecordSymbol(value: DataRecordSymbol) extends Tagged[DataRecordSymbol] {
@@ -214,10 +217,12 @@ object SchemaIteration {
   def toThat(group: KeyedGroup, tag: HostTag): Option[Tagged[_]] = Some(Tagged(group, tag))
   def toThat(group: XAttributeGroup, tag: HostTag): Option[Tagged[_]] = Some(Tagged(group, tag))
   def toThat(elem: XTopLevelElement, tag: HostTag): Option[Tagged[_]] = Some(Tagged(elem, tag))
-  def toThat(elem: XLocalElementable, tag: HostTag): Option[Tagged[_]] = Some(Tagged(elem, tag))
+  def toThat(elem: XLocalElementable, elementFormDefault: XFormChoice, tag: HostTag): Option[Tagged[_]] =
+    Some(Tagged(elem, elementFormDefault, tag))
   def toThat(attr: XAttributable, tag: HostTag): Option[Tagged[_]] = Some(Tagged(attr, tag))
 
   def schemaToSeq(schema: XSchema): Seq[Tagged[_]] = {
+    implicit val s = schema
     val ns = schema.targetNamespace
 
     // <xs:element ref="xs:simpleType"/>
@@ -234,11 +239,11 @@ object SchemaIteration {
         case DataRecord(_, _, x: XTopLevelComplexType) =>
           Tagged(x, HostTag(ns, x)).toSeq
         case DataRecord(_, Some(key), x: XNamedGroup)  =>
-          processGroup(KeyedGroup(key, x))(HostTag(ns, x))
+          processGroup(KeyedGroup(key, x))(HostTag(ns, x), s)
         case DataRecord(_, _, x: XNamedAttributeGroup) =>
           processAttributeGroup(x)(HostTag(ns, x))
         case DataRecord(_, _, x: XTopLevelElement)     =>
-          processTopLevelElement(x)(HostTag(ns, x))
+          processTopLevelElement(x)(HostTag(ns, x), s)
         case DataRecord(_, _, x: XTopLevelAttribute)   =>
           processAttribute(x)(HostTag(ns, x))
         case DataRecord(_, _, x: XNotation)            => Nil
@@ -256,7 +261,7 @@ object SchemaIteration {
       case DataRecord(_, _, x: XUnion) => Nil
     })
 
-  def processGroup(group: KeyedGroup)(implicit tag: HostTag): Seq[Tagged[_]] = {
+  def processGroup(group: KeyedGroup)(implicit tag: HostTag, schema: XSchema): Seq[Tagged[_]] = {
     // all, choice, and sequence are XExplicitGroupable, which are XGroup.
     // <xs:element name="element" type="xs:localElement"/>
     // <xs:element name="group" type="xs:groupRef"/>
@@ -283,15 +288,15 @@ object SchemaIteration {
     toThat(group, tag).toSeq ++
     processAttrSeq(group.arg1)
 
-  def processTopLevelElement(elem: XTopLevelElement)(implicit tag: HostTag): Seq[Tagged[_]] =
+  def processTopLevelElement(elem: XTopLevelElement)(implicit tag: HostTag, schema: XSchema): Seq[Tagged[_]] =
     toThat(elem, tag).toSeq ++
     (elem.xelementoption map { _.value match {
       case x: XLocalComplexType => Tagged(x, tag).toSeq
       case x: XLocalSimpleType  => processSimpleType(x)
     }} getOrElse {Nil})
 
-  def processLocalElement(elem: XLocalElementable)(implicit tag: HostTag): Seq[Tagged[_]] =
-    toThat(elem, tag).toSeq ++
+  private def processLocalElement(elem: XLocalElementable)(implicit tag: HostTag, schema: XSchema): Seq[Tagged[_]] =
+    toThat(elem, schema.elementFormDefault, tag).toSeq ++
     (elem.xelementoption map { _.value match {
       case x: XLocalComplexType => Tagged(x, tag).toSeq
       case x: XLocalSimpleType  => processSimpleType(x)
@@ -351,7 +356,8 @@ class ComplexTypeIteration(underlying: Seq[Tagged[_]]) extends scala.collection.
 object ComplexTypeIteration {
   import Defs._
 
-  def apply(decl: Tagged[XComplexType]): ComplexTypeIteration = new ComplexTypeIteration(complexTypeToSeq(decl))
+  def apply(decl: Tagged[XComplexType])(implicit schema: XSchema): ComplexTypeIteration =
+    new ComplexTypeIteration(complexTypeToSeq(decl))
   def fromSeq(seq: Seq[Tagged[_]]): ComplexTypeIteration = new ComplexTypeIteration(seq)
 
   def newBuilder: Builder[Tagged[_], ComplexTypeIteration] =
@@ -363,7 +369,7 @@ object ComplexTypeIteration {
       def apply(from: ComplexTypeIteration): Builder[Tagged[_], ComplexTypeIteration] = newBuilder
     }
 
-  def complexTypeToSeq(decl: Tagged[XComplexType]): Seq[Tagged[_]] = {
+  def complexTypeToSeq(decl: Tagged[XComplexType])(implicit schema: XSchema): Seq[Tagged[_]] = {
     implicit val tag = decl.tag
 
     // <xs:group ref="xs:typeDefParticle"/>
@@ -580,6 +586,7 @@ object ComplexTypeIteration {
   def complexTypeToAttributeGroups(decl: Tagged[XComplexType])
                       (implicit lookup: Lookup,
                        targetNamespace: Option[URI], scope: NamespaceBinding): Seq[Tagged[_]] = {
+    implicit val s = lookup.schema.unbound
     import lookup._
     (decl collect  {
       case x: TaggedAttributeGroup => x.ref map { resolveAttributeGroup(_) } getOrElse x
@@ -677,12 +684,17 @@ object Compositor {
 }
 
 class ElementOps(val tagged: Tagged[XElement]) {
+  def resolve(implicit lookup: Lookup): Tagged[XElement] = {
+    import lookup._
+    tagged.value.ref match {
+      case Some(Element(x)) => x
+      case _ => tagged
+    }
+  }
+
   def typeStructure(implicit lookup: Lookup): Tagged[_] = {
     import lookup._
-    val elem = tagged.value.ref match {
-      case Some(Element(x)) => x.value
-      case _ => tagged.value
-    }
+    val elem = resolve.value
 
     // http://www.w3.org/TR/xmlschema-1/#declare-element
     // An <element> with no referenced or included type definition will correspond to an element declaration which
@@ -696,6 +708,12 @@ class ElementOps(val tagged: Tagged[XElement]) {
     typeValue getOrElse {
       localType getOrElse { AnyType.tagged }
     }
+  }
+
+  def qualified: Boolean = tagged match {
+    case TaggedTopLevelElement(_, _) => true
+    case elem: TaggedLocalElement =>
+      elem.value.form map {_ == XQualified} getOrElse {elem.elementFormDefault == XQualified}
   }
 }
 

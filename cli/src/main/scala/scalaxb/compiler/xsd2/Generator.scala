@@ -29,8 +29,9 @@ import Defs._
 
 class Generator(val schema: ReferenceSchema, 
     val context: SchemaContext, val config: Config) extends Params with PackageNamer
-    with Namer with Lookup with Splitter {
-  import com.weiglewilczek.slf4s.{Logger}
+    with Namer with Lookup with Splitter with Parsers with Args {
+  import Predef.{any2stringadd => _}
+  import com.weiglewilczek.slf4s.Logger
   private lazy val logger = Logger("xsd2.Generator")
   
   def generateEntitySource: Snippet =
@@ -87,7 +88,9 @@ class Generator(val schema: ReferenceSchema,
 
   private def generateDefaultFormat(name: QualifiedName, decl: Tagged[XComplexType]): Node = {
     val parserVariableList = Nil
-    val parserList = Nil
+    val unmixedParserList = decl.particles map { buildParser(_, decl.mixed, decl.mixed) }
+    val parserList = if (decl.mixed) buildTextParser +: (unmixedParserList flatMap { Seq(_, buildTextParser) })
+      else unmixedParserList
     val argsString = ""
     val makeWritesAttribute = ""
     val makeWritesChildNodes = ""

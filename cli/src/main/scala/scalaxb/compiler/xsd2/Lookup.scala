@@ -47,6 +47,7 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter =>
   implicit def targetNamespace = schema.targetNamespace
 
   val wildCardTypeName = QualifiedName(Some(SCALAXB_URI), "DataRecord[Any]")
+  val nillableAnyTypeName = QualifiedName(Some(SCALAXB_URI), "DataRecord[Option[Any]]")
 
   def buildTypeName(tagged: Tagged[Any]): QualifiedName = tagged match {
     case x: TaggedDataRecordSymbol =>
@@ -86,7 +87,7 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter =>
           error("unnamed %s" format tagged.toString)
         })}
       
-    //    case XsNillableAny  => "scalaxb.DataRecord[Option[Any]]"
+    //    case XsNillableAny  => nillableAnyTypeName
     //    case XsAnyAttribute  => "Map[String, scalaxb.DataRecord[Any]]"
     //    case XsDataRecord(ReferenceTypeSymbol(decl: ComplexTypeDecl)) if compositorWrapper.contains(decl) =>
     //      compositorWrapper(decl) match {

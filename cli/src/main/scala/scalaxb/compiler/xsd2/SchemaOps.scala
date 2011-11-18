@@ -715,6 +715,9 @@ class ElementOps(val tagged: Tagged[XElement]) {
     case elem: TaggedLocalElement =>
       elem.value.form map {_ == XQualified} getOrElse {elem.elementFormDefault == XQualified}
   }
+
+  // @todo implement this
+  def isSubstitutionGroup: Boolean = false
 }
 
 class AttributeGroupOps(val tagged: Tagged[XAttributeGroup]) {

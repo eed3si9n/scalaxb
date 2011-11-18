@@ -1,12 +1,14 @@
 import java.io.{File}
 import scala.collection.immutable.{ Map, Set, Seq }
 import scalaxb.compiler._
-import scalaxb.compiler.xsd.Driver
 import scalaxb.compiler.ConfigEntry._
 
 object GeneralTest extends TestBase {
-  // Log.configureLogger(true)
-  override val module: Module = new Driver
+  import scalaxb.compiler.xsd.Driver
+  import scalaxb.compiler.xsd2.{Driver => Driver2}
+
+  Log.configureLogger(true)
+  override val module: Module = new Driver2 with Verbose
   val inFile    = new File("integration/src/test/resources/general.xsd")
   val importFile = new File("integration/src/test/resources/general_import.xsd")
   val mimeFile  = new File("integration/src/test/resources/xmlmime.xsd")

@@ -3,7 +3,7 @@
  "organization":"org.scalaxb",
  "name":"scalaxb",
  "version":"0.6.6",
- "description":"scalaxb is an XML data-binding tool for Scala that supports W3C XML Schema (xsd) and wsdl.",
+ "description":"An XML data-binding tool for Scala that supports W3C XML Schema (xsd) and wsdl.",
  "site":"http://scalaxb.org",
  "tags":["xml","soap","wsdl","code-generation"],
  "docs":"",

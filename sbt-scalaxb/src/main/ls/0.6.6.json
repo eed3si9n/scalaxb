@@ -8,8 +8,8 @@
  "tags":["xml","soap","wsdl","code-generation"],
  "docs":"",
  "licenses": [{
-    "name": "MIT License",
-    "url":"https://github.com/eed3si9n/scalaxb/blob/master/LICENSE"
+   "name": "MIT License",
+   "url": "https://github.com/eed3si9n/scalaxb/blob/master/LICENSE"
   }],
  "resolvers": ["http://scala-tools.org/repo-releases"],
  "dependencies": [],

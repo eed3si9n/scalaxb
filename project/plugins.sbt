@@ -15,3 +15,9 @@ resolvers += ("ScalaTools Nexus Snapshots" at "http://nexus.scala-tools.org/cont
 // addSbtPlugin("com.github.siasia" % "xsbt-web-plugin" % "0.1.2")
 //
 // addSbtPlugin("com.eed3si9n" % "sbt-appengine" % "0.3.0")
+
+resolvers ++= Seq(
+  "less is" at "http://repo.lessis.me",
+  "coda" at "http://repo.codahale.com")
+
+addSbtPlugin("me.lessis" % "ls-sbt" % "0.1.0")

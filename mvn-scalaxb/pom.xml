@@ -179,6 +179,7 @@
           <artifactId>maven-site-plugin</artifactId>
           <version>3.0</version>
           <configuration>
+            <relativizeDecorationLinks>false</relativizeDecorationLinks>
             <reportPlugins>
               <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

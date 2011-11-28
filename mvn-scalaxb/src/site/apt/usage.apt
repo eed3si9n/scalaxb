@@ -1,0 +1,75 @@
+Getting started
+
+ The scalaxb-maven-plugin is provided to allow scalaxb to be run as
+part of a maven build.  These steps describe how to use scalaxb in an
+existing Maven project.
+
+* Step 1: Add the plugin to the pom.xml
+ 
+ Add the following plugin definition to your <<<pom.xml>>> file, and
+change the packageName from 'ipo' to something more suitable for your
+project.
+
++----+
+      <plugin>
+        <groupId>org.scalaxb</groupId>
+        <artifactId>scalaxb-maven-plugin</artifactId>
+        <configuration>
+          <packageName>ipo</packageName>
+        </configuration>
+        <executions>
+          <execution>
+            <id>scalaxb</id>
+            <goals>
+              <goal>generate</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
++----+
+
+ For more information about the available configuration parameters, see:
+
+   * the {{{./generate-mojo.html}generate}} goal documentation; or
+
+   * run: <<<mvn scalaxb:help -Dgoal=generate -Ddetail>>>
+
+ <Note: The plugin is called scalaxb-maven-plugin, and not
+maven-scalaxb-plugin. This is consistent with the Maven convention
+that only plugins from Apache are named maven-*xxx*-plugin, but can
+seem inconsistent to those accustomed to just using the standard set
+of plugins.>
+
+* Step 2: Add XSD files in src/main/xsd
+
+ By default, the scalaxb maven plugin looks for XSD files in
+<<src/main/xsd>>, so the simplest thing is to put your XSD files in
+there.
+
+ If that's not where your XSD files are, then the plugin can be
+configured using the <<xsdDirectory>> configuration parameter:
+
++----+
+        <configuration>
+          ...
+          <xsdDirectory>${basedir}/path/to/xsd</xsdDirectory>
+        </configuration>
++----+
+
+* Step 3: Run scalaxb to generate Scala code from the XSD files
+
+ To generate the Scala sources from the XSD files, run:
+
+----
+    mvn generate-sources
+----
+
+ The Scala sources will be generated in
+<<target/generated-sources/scalaxb>> when Maven runs the
+generate-sources phase of the lifecycle.  This might be done
+automatically by your IDE.
+
+ There's no need to do this step if you're running a later phase in
+the Maven lifecycle anyway. For example, if you run <<mvn compile>>,
+there's no need to invoke <<mvn generate-sources>> beforehand.
+

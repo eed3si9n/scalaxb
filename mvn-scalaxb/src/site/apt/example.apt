@@ -1,0 +1,98 @@
+Example project
+
+  A full example of using the scalaxb maven plugin is included below.
+
+* pom.xml
+
+--------------------------------------------------------------------------------
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>org.scalaxb</groupId>
+  <artifactId>scalaxb-example</artifactId>
+  <version>0.1-SNAPSHOT</version>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <scala.version>2.9.1</scala.version>
+  </properties>
+
+  <dependencies>
+
+    <dependency>
+      <groupId>org.scala-lang</groupId>
+      <artifactId>scala-library</artifactId>
+      <version>${scala.version}</version>
+    </dependency>
+
+  </dependencies>
+
+  <build>
+    <plugins>
+
+      <plugin>
+        <groupId>org.scala-tools</groupId>
+        <artifactId>maven-scala-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals>
+              <goal>compile</goal>
+              <goal>testCompile</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.scalaxb</groupId>
+        <artifactId>scalaxb-maven-plugin</artifactId>
+        <configuration>
+          <packageName>ipo</packageName>
+        </configuration>
+        <executions>
+          <execution>
+            <id>scalaxb</id>
+            <goals>
+              <goal>generate</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+    </plugins>
+  </build>
+
+</project>
+--------------------------------------------------------------------------------
+
+
+* src/main/xsd/ipo.xsd
+
+--------------------------------------------------------------------------------
+<xs:schema targetNamespace="http://www.example.com/IPO"
+        elementFormDefault="qualified"
+        xmlns="http://www.example.com/IPO"
+        xmlns:xs="http://www.w3.org/2001/XMLSchema"
+        xmlns:ipo="http://www.example.com/IPO">
+  <xs:complexType name="Address">
+    <xs:sequence>
+      <xs:element name="name"   type="xs:string"/>
+      <xs:element name="street" type="xs:string"/>
+      <xs:element name="city"   type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="USAddress">
+    <xs:complexContent>
+      <xs:extension base="ipo:Address">
+        <xs:sequence>
+          <xs:element name="state" type="xs:string"/>
+          <xs:element name="zip"   type="xs:positiveInteger"/>
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+</xs:schema>
+--------------------------------------------------------------------------------
+

@@ -122,7 +122,7 @@ trait GenSource {
 
   def makeOperationWrapperParams(op: XOperationType, headers: Seq[HeaderBinding],
                                  symbol: XsTypeSymbol): Seq[ParamCache] = {
-    val param = ParamCache("value", xsdgenerator.buildTypeName(symbol))
+    val param = ParamCache("value", xsdgenerator.buildTypeName(symbol), false)
     val headerParams = headers flatMap { header =>
       val message = context.messages(splitTypeName(header.message))
       message.part find {_.name == Some(header.part)} map {toParamCache}
@@ -317,7 +317,8 @@ trait GenSource {
       case AnyType(_) => (buildIRIStyleArgs(input) map {_.toParamName}).head
       case symbol: BuiltInSimpleTypeSymbol => (buildIRIStyleArgs(input) map {_.toParamName}).head
       case ReferenceTypeSymbol(decl: SimpleTypeDecl) => (buildIRIStyleArgs(input) map {_.toParamName}).head
-      case _ => "%s(%s)".format(paramTypeName(input), buildIRIStyleArgs(input) map {_.toParamName} mkString(", "))
+      case _ =>
+        "%s(%s)".format(paramTypeName(input), buildIRIStyleArgs(input) map {_.toVarg} mkString(", "))
     }
 
     lazy val opLabel = "\"%s\"".format(op.name)
@@ -394,12 +395,15 @@ trait GenSource {
 
   def paramMessage(input: XParamType): XMessageType = context.messages(splitTypeName(input.message))
 
-  case class ParamCache(toParamName: String, typeName: String) {
+  case class ParamCache(toParamName: String, typeName: String, seqParam: Boolean) {
     def toScalaCode: String = "%s: %s" format(toParamName, typeName)
+    def toVarg: String =
+      if (seqParam) toParamName + ": _*"
+      else toParamName
   }
 
   def buildRPCStyleArg(part: XPartType): ParamCache =
-    ParamCache(part.name getOrElse {"in"}, xsdgenerator.buildTypeName(toTypeSymbol(part)))
+    ParamCache(part.name getOrElse {"in"}, xsdgenerator.buildTypeName(toTypeSymbol(part)), false)
 
   def buildRPCStyleArgs(input: XParamType): List[ParamCache] = paramMessage(input).part.toList map {buildRPCStyleArg}
 
@@ -407,19 +411,32 @@ trait GenSource {
     val paramName = part.name getOrElse {"in"}
     toTypeSymbol(part) match {
       case symbol: BuiltInSimpleTypeSymbol =>
-        List(ParamCache(paramName, xsdgenerator.buildTypeName(symbol)))
+        List(ParamCache(paramName, xsdgenerator.buildTypeName(symbol), false))
       case symbol@ReferenceTypeSymbol(decl: SimpleTypeDecl) =>
-        List(ParamCache(paramName, xsdgenerator.buildTypeName(symbol)))
+        List(ParamCache(paramName, xsdgenerator.buildTypeName(symbol), false))
       case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
+        import scalaxb.compiler.xsd.{Multiple, AllDecl, ComplexContentDecl, CompContRestrictionDecl, CompContExtensionDecl}
         val flatParticles = xsdgenerator.flattenElements(decl, 0)
         val attributes = xsdgenerator.flattenAttributes(decl)
         val list = List.concat(flatParticles, attributes)
+        val primary = decl.content match {
+          case ComplexContentDecl(CompContRestrictionDecl(_, x, _)) => x
+          case ComplexContentDecl(CompContExtensionDecl(_, x, _)) => x
+          case _ => None
+        }
+        val longAll: Boolean = primary match {
+          case Some(all: AllDecl) if  xsdgenerator.isLongAll(all, decl.namespace, decl.family) => true
+          case _ => false
+        }
+
         list map { x =>
           val param = xsdgenerator.buildParam(x) map {camelCase}
-          ParamCache(param.toParamName, param.typeName)
+          val seqParam = (list.size == 1) && (param.cardinality == Multiple) &
+            (attributes.size == 0) && (!decl.mixed) && (!longAll)
+          ParamCache(param.toParamName, param.typeName, seqParam)
         }
       case AnyType(symbol) =>
-        List(ParamCache(paramName, xsdgenerator.buildTypeName(symbol)))
+        List(ParamCache(paramName, xsdgenerator.buildTypeName(symbol), false))
       case x => error("unexpected type: " + x)
     }
   } getOrElse {error("unexpected input: " + input)}
@@ -438,11 +455,11 @@ trait GenSource {
   def toParamCache(part: XPartType): ParamCache =
     part.typeValue map { typeValue =>
       val name = camelCase(part.name.get)
-      ParamCache(name, xsdgenerator.buildTypeName(toTypeSymbol(typeValue)))
+      ParamCache(name, xsdgenerator.buildTypeName(toTypeSymbol(typeValue)), false)
     } getOrElse {
       part.element map { element =>
         val param = xsdgenerator.buildParam(xsdgenerator.elements(splitTypeName(element))) map {camelCase}
-        ParamCache(param.toParamName, param.typeName)
+        ParamCache(param.toParamName, param.typeName, false)
       } getOrElse {error("part does not have either type or element: " + part.toString)}
     }
 

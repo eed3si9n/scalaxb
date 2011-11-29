@@ -3,12 +3,14 @@
 - Fixes substitution group parsing. [#119][#119] reported by [@bmjsmith][@bmjsmith]
 - Fixes `DataRecord` equality. [#120][#120] reported by [@deanhiller][@deanhiller]
 - Fixes package name of wsdl generated file. [#117][#117] reported by [@hedefalk][@hedefalk] and [@OlegYch][@OlegYch]
-- Fixes varg parameters in wsdl generated file. [#125][#125] reported by [@hedefalk][@hedefalk]
+- Fixes handling of empty input messages in wsdl. [#122][#122] reported by [@hedefalk][@hedefalk]
+- Fixes handling of varg parameters in wsdl generated file. [#125][#125] reported by [@hedefalk][@hedefalk]
 
   [#116]: https://github.com/eed3si9n/scalaxb/issues/116
   [#117]: https://github.com/eed3si9n/scalaxb/issues/117
   [#119]: https://github.com/eed3si9n/scalaxb/issues/119
   [#120]: https://github.com/eed3si9n/scalaxb/issues/120
+  [#122]: https://github.com/eed3si9n/scalaxb/issues/122
   [#125]: https://github.com/eed3si9n/scalaxb/issues/125
   [@OlegYch]: https://github.com/OlegYch
   [@hedefalk]: https://github.com/hedefalk

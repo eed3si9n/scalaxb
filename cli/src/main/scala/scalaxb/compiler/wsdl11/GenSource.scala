@@ -72,6 +72,9 @@ trait GenSource {
     (paramMessage(param).part.size > 1) ||
     (!headerBindings(bindingOption).isEmpty)
 
+  def isEmptyPart(param: XParamType, bindingOption: Option[XStartWithExtensionsTypable]): Boolean =
+    paramMessage(param).part.isEmpty && headerBindings(bindingOption).isEmpty
+
   // generate method signature
   def makeOperation(binding: XBinding_operationType, intf: XPortTypeType, defaultDocument: Boolean): String = {
     val op = boundOperation(binding, intf)
@@ -79,7 +82,8 @@ trait GenSource {
 
     def arg(input: XParamType): String =
       if (document) {
-        if (!isMultiPart(input, binding.input)) buildIRIStyleArgs(input) map {_.toScalaCode} mkString(", ")
+        if (isEmptyPart(input, binding.input)) ""
+        else if (!isMultiPart(input, binding.input)) buildIRIStyleArgs(input) map {_.toScalaCode} mkString(", ")
         else makeOperationInputArgs(binding, intf) map {_.toScalaCode} mkString(", ")
       }
       else buildRPCStyleArgs(input) map {_.toScalaCode} mkString(", ")
@@ -352,7 +356,10 @@ trait GenSource {
     lazy val argsString =
       args.headOption map { _ => args.mkString("  ++ " + NL + "          ") } getOrElse {"Nil"}
 
-    if (document) args.head
+    if (document) args match {
+      case x :: xs => x
+      case _ => "Nil"
+    }
     else """scala.xml.Elem(%s, %s, scala.xml.Null, defaultScope,
           %s: _*)""".format(prefix, opLabel, argsString)
   }

@@ -43,8 +43,8 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter =>
 
   implicit val lookup = this;
   def schema: ReferenceSchema
-  implicit def scope: NamespaceBinding = schema.scope
-  implicit def targetNamespace = schema.targetNamespace
+  implicit lazy val scope: NamespaceBinding = schema.scope
+  implicit lazy val targetNamespace = schema.targetNamespace
 
   val dataRecordAnyTypeName = QualifiedName(Some(SCALAXB_URI), "DataRecord[Any]")
   val wildCardTypeName = dataRecordAnyTypeName
@@ -236,12 +236,16 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter =>
     def unapply(qname: QName): Option[Tagged[XSimpleType]] = unapply(qname: QualifiedName)
 
     def unapply(typeName: QualifiedName): Option[Tagged[XSimpleType]] = typeName match {
-      case QualifiedName(targetNamespace, localPart) if schema.topTypes contains localPart =>
+      case QualifiedName(`targetNamespace`, localPart) if schema.topTypes contains localPart =>
         schema.topTypes(localPart) match {
           case x: TaggedSimpleType => Some(x)
           case _ => None
         }
-      case _ => None
+      case QualifiedName(ns, localPart) =>
+        (schemasByNamespace(ns) flatMap { _.topTypes.get(localPart) match {
+          case Some(x: TaggedSimpleType) => Some(x)
+          case _ => None
+        }}).headOption
     }
   }
 
@@ -249,12 +253,16 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter =>
     def unapply(qname: QName): Option[Tagged[XComplexType]] = unapply(qname: QualifiedName)
 
     def unapply(typeName: QualifiedName): Option[Tagged[XComplexType]] = typeName match {
-      case QualifiedName(targetNamespace, localPart) if schema.topTypes contains localPart =>
+      case QualifiedName(`targetNamespace`, localPart) if schema.topTypes contains localPart =>
         schema.topTypes(localPart) match {
           case x: TaggedComplexType => Some(x)
           case _ => None
         }
-      case _ => None
+      case QualifiedName(ns, localPart) =>
+        (schemasByNamespace(ns) flatMap { _.topTypes.get(localPart) match {
+          case Some(x: TaggedComplexType) => Some(x)
+          case _ => None
+        }}).headOption
     }
   }
 
@@ -262,9 +270,10 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter =>
     def unapply(qname: QName): Option[Tagged[XElement]] = unapply(qname: QualifiedName)
 
     def unapply(qualifiedName: QualifiedName): Option[Tagged[XElement]] = qualifiedName match {
-      case QualifiedName(targetNamespace, localPart) if schema.topElems contains localPart =>
+      case QualifiedName(`targetNamespace`, localPart) if schema.topElems contains localPart =>
         Some(schema.topElems(localPart))
-      case _ => None
+      case QualifiedName(ns, localPart) =>
+        (schemasByNamespace(ns) flatMap { _.topElems.get(localPart) }).headOption
     }
   }
 
@@ -272,9 +281,10 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter =>
     def unapply(qname: QName): Option[TaggedAttr[XAttributable]] = unapply(qname: QualifiedName)
 
     def unapply(qualifiedName: QualifiedName): Option[TaggedAttr[XAttributable]] = qualifiedName match {
-      case QualifiedName(targetNamespace, localPart) if schema.topAttrs contains localPart =>
+      case QualifiedName(`targetNamespace`, localPart) if schema.topAttrs contains localPart =>
         Some(schema.topAttrs(localPart))
-      case _ => None
+      case QualifiedName(ns, localPart) =>
+        (schemasByNamespace(ns) flatMap { _.topAttrs.get(localPart) }).headOption
     }
   }
 
@@ -282,9 +292,10 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter =>
     def unapply(qname: QName): Option[TaggedAttr[XAttributeGroup]] = unapply(qname: QualifiedName)
 
     def unapply(qualifiedName: QualifiedName): Option[TaggedAttr[XAttributeGroup]] = qualifiedName match {
-      case QualifiedName(targetNamespace, localPart) if schema.topAttrGroups contains localPart =>
+      case QualifiedName(`targetNamespace`, localPart) if schema.topAttrGroups contains localPart =>
         Some(schema.topAttrGroups(localPart))
-      case _ => None
+      case QualifiedName(ns, localPart) =>
+        (schemasByNamespace(ns) flatMap { _.topAttrGroups.get(localPart) }).headOption
     }
   }
 
@@ -299,6 +310,9 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter =>
       case _ => None
     }
   }
+
+  def schemasByNamespace(namespace: Option[URI]): Seq[ReferenceSchema] =
+    context.schemas filter {_.targetNamespace == namespace}
 
   def isForeignType(tagged: Tagged[_]): Boolean = tagged match {
     case x: TaggedLocalElement => x.value.ref map { QualifiedName(_).namespace != targetNamespace } getOrElse { false }

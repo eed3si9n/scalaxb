@@ -69,6 +69,8 @@ trait Args { self: Namer with Lookup with Params =>
   def buildArg(tagged: Tagged[Any], selector: String, wrapForLongAll: Boolean): String =
     // if ((isSubstitionGroup(elem))) selector
     tagged match {
+      case x: TaggedSymbol =>
+        buildTypeSymbolArg(buildTypeName(x), selector, SingleNotNillable(), None, None, wrapForLongAll)
       case x: TaggedSimpleType =>
         buildTypeSymbolArg(buildTypeName(x), selector, SingleNotNillable(), None, None, wrapForLongAll)
       case elem: TaggedLocalElement if elem.isSubstitutionGroup => selector

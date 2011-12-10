@@ -24,5 +24,6 @@ package scalaxb.compiler.xsd2
 
 import scala.collection.mutable
 
-case class SchemaContext(names: mutable.ListMap[Tagged[_], String] = mutable.ListMap(),
+case class SchemaContext(schemas: mutable.ListBuffer[ReferenceSchema] = mutable.ListBuffer(),
+                         names: mutable.ListMap[Tagged[_], String] = mutable.ListMap(),
                          packageNames: mutable.ListMap[Option[String], Option[String]] = mutable.ListMap())

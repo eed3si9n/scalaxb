@@ -83,6 +83,7 @@ class Driver extends Module { driver =>
 
   def processContext(context: Context, schemas: Seq[Schema], config: Config) {
     context.packageNames ++= config.packageNames
+    context.schemas ++= schemas
   }
 
   def replaceTargetNamespace(schema: Schema, tns: Option[String]): Schema =

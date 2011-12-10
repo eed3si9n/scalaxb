@@ -509,12 +509,16 @@ trait GenSource {
 
   def singleOutputType(output: XParamType, document: Boolean): Option[scalaxb.compiler.xsd.ElemDecl] =
     if (document) paramMessage(output).part.headOption map { part =>
-      import scalaxb.compiler.xsd.{ReferenceTypeSymbol, ComplexTypeDecl}
+      import scalaxb.compiler.xsd.{ReferenceTypeSymbol, ComplexTypeDecl, Single}
       toTypeSymbol(part) match {
         case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
           val flatParticles = xsdgenerator.flattenElements(decl, 0)
           val attributes = xsdgenerator.flattenAttributes(decl)
-          if (flatParticles.size == 1 && attributes.size == 0) Some(flatParticles.head)
+          if (flatParticles.size == 1 && attributes.size == 0) {
+            val head = flatParticles.head
+            if (xsdgenerator.buildParam(head).cardinality == Single) Some(head)
+            else None
+          } 
           else None
         case x => None
       }

@@ -17,7 +17,7 @@ object Wsdl11Soap11Test extends TestBase {
        """val service = (new BarCodeSoapBindings with scalaxb.Soap11Clients with scalaxb.DispatchHttpClients {}).service
        val data = BarCodeData(120, 120, 0, 1, 1, 20, 20, true, None, None, None, 10.0f, Both, CodeEAN128B, NoneType, BottomCenter, PNG)
        println(scalaxb.toXML(data, "BarCodeParam", defaultScope))
-       val response = service.generateBarCode(data, Some("1234")).right.get.get
+       val response = service.generateBarCode(data, Some("1234")).right.get
        println(response)""",
        """response.toString.contains("iVB")"""), generated) must evaluateTo(true,
       outdir = "./tmp", usecurrentcp = true)

@@ -95,7 +95,8 @@ class Driver extends Module { driver =>
 
     val wsdlgenerated: Seq[(Option[String], Snippet, String)] = pair.definition.toList map { wsdl =>
       val pkg = packageName(wsdl.targetNamespace map {_.toString}, cntxt)
-      cntxt.soap11 = !generator.soap11Bindings(wsdl).isEmpty
+      generator.soap11Bindings(wsdl) foreach { _ => cntxt.soap11 = true }
+      generator.soap12Bindings(wsdl) foreach { _ => cntxt.soap12 = true }
       (pkg, Snippet(headerSnippet(pkg), generator.generate(wsdl)), part)
     }
 
@@ -171,6 +172,7 @@ class Driver extends Module { driver =>
 
   def generateRuntimeFiles[To](cntxt: Context)(implicit evTo: CanBeWriter[To]): List[To] =
     List(generateFromResource[To](Some("scalaxb"), "scalaxb.scala", "/scalaxb.scala.template"),
+      generateFromResource[To](Some("scalaxb"), "httpclients.scala", "/httpclients.scala.template"),
       generateFromResource[To](Some("scalaxb"), "httpclients_dispatch.scala",
         "/httpclients_dispatch.scala.template")) ++
     (if (cntxt.soap11) List(generateFromResource[To](Some("scalaxb"), "soap11.scala", "/soap11.scala.template"),
@@ -178,10 +180,12 @@ class Driver extends Module { driver =>
         "/soapenvelope11.scala.template"),
       generateFromResource[To](Some("soapenvelope11"), "soapenvelope11_xmlprotocol.scala",
         "/soapenvelope11_xmlprotocol.scala.template"))
-    else List(generateFromResource[To](Some("scalaxb"), "soap.scala", "/soap.scala.template"),
+    else Nil) ++
+    (if (cntxt.soap12) List(generateFromResource[To](Some("scalaxb"), "soap12.scala", "/soap12.scala.template"),
       generateFromResource[To](Some("soapenvelope12"), "soapenvelope12.scala", "/soapenvelope12.scala.template"),
       generateFromResource[To](Some("soapenvelope12"), "soapenvelope12_xmlprotocol.scala",
-        "/soapenvelope12_xmlprotocol.scala.template")))
+        "/soapenvelope12_xmlprotocol.scala.template"))
+    else Nil)
 }
 
 case class WsdlPair(definition: Option[XDefinitionsType], schemas: Seq[SchemaDecl], scope: scala.xml.NamespaceBinding)
@@ -193,4 +197,5 @@ case class WsdlContext(xsdcontext: XsdContext = XsdContext(),
                        services:    mutable.ListMap[(Option[String], String), XServiceType] = mutable.ListMap(),
                        faults:      mutable.ListMap[(Option[String], String), XFaultType] = mutable.ListMap(),
                        messages:    mutable.ListMap[(Option[String], String), XMessageType] = mutable.ListMap(),
-                       var soap11:  Boolean = false )
+                       var soap11:  Boolean = false,
+                       var soap12:  Boolean = false)

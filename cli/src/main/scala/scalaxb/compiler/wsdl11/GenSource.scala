@@ -76,7 +76,8 @@ trait GenSource {
     paramMessage(param).part.isEmpty && headerBindings(bindingOption).isEmpty
 
   // generate method signature
-  def makeOperation(binding: XBinding_operationType, intf: XPortTypeType, defaultDocument: Boolean): String = {
+  def makeOperation(binding: XBinding_operationType, intf: XPortTypeType,
+                    defaultDocument: Boolean, soap12: Boolean): String = {
     val op = boundOperation(binding, intf)
     val document = isDocument(binding, defaultDocument)
 
@@ -95,11 +96,11 @@ trait GenSource {
       case DataRecord(_, _, XOnewayoperationSequence(input)) =>
         "def %s(%s): Unit".format(name, arg(input))
       case DataRecord(_, _, XRequestresponseoperationSequence(input, output, faults)) =>
-        "def %s(%s): Either[scalaxb.Fault[%s], %s]".format(name, arg(input),
-          faultsToTypeName(faults), outputTypeName(binding, op, output, document))
+        "def %s(%s): Either[%s, %s]".format(name, arg(input),
+          faultsToTypeName(faults, soap12), outputTypeName(binding, op, output, document))
       case DataRecord(_, _, XSolicitresponseoperationSequence(output, input, faults)) =>
-        "def %s(%s): Either[scalaxb.Fault[%s], %s]".format(name, arg(input),
-          faultsToTypeName(faults), outputTypeName(binding, op, output, document))
+        "def %s(%s): Either[%s, %s]".format(name, arg(input),
+          faultsToTypeName(faults, soap12), outputTypeName(binding, op, output, document))
       case DataRecord(_, _, XNotificationoperationSequence(output)) =>
         "def %s: %s".format(name, outputTypeName(binding, op, output, document))
       case _ => error("unsupported.")
@@ -181,8 +182,8 @@ trait GenSource {
     }
 
   // generate method impl
-  def makeSoap12OpBinding(binding: XBinding_operationType, intf: XPortTypeType,
-                           defaultDocument: Boolean): String = {
+  def makeSoapOpBinding(binding: XBinding_operationType, intf: XPortTypeType,
+                           defaultDocument: Boolean, soap12: Boolean): String = {
     val op = boundOperation(binding, intf)
     logger.debug("makeSoap12OpBinding: " + op.name)
 
@@ -195,9 +196,9 @@ trait GenSource {
     val document = isDocument(binding, defaultDocument)
     val actionString = action map {"Some(new java.net.URI(\"%s\"))".format(_)} getOrElse {"None"}
 
-    def faultString(faults: Seq[XFaultType]): String = faultsToTypeName(faults) match {
+    def faultString(faults: Seq[XFaultType]): String = faultsToFaultParamTypeName(faults) match {
       case "Any" => "x"
-      case x     => "x.asFault[%s]".format(x)
+      case x => "x.asFault[%s]".format(x)
     }
 
     val opImpl = op.xoperationtypeoption match {
@@ -241,7 +242,7 @@ trait GenSource {
       case _ => error("unsupported.")
     }
 
-    val retval = makeOperation(binding, intf, defaultDocument) + " = " + NL +
+    val retval = makeOperation(binding, intf, defaultDocument, soap12) + " = " + NL +
       "        " + opImpl
     logger.debug(retval)
     retval
@@ -525,15 +526,21 @@ trait GenSource {
     } getOrElse {None}
     else None
 
-  def faultsToTypeName(faults: Seq[XFaultType]): String = faults.toList match {
-    case x :: xs =>
-      val msg = context.messages(splitTypeName(x.message))
-      msg.part.headOption map { part =>
-        val symbol = toTypeSymbol(part)
-        xsdgenerator.buildTypeName(symbol, true)
-      } getOrElse {"Any"}
-    case _ => "Any"
-  }
+  def faultsToTypeName(faults: Seq[XFaultType], soap12: Boolean): String =
+    "%s[%s]" format (if (soap12) "scalaxb.Fault"
+      else "scalaxb.Soap11Fault",
+    faultsToFaultParamTypeName(faults))
+
+  def faultsToFaultParamTypeName(faults: Seq[XFaultType]): String =
+    faults.toList match {
+      case x :: xs =>
+        val msg = context.messages(splitTypeName(x.message))
+        msg.part.headOption map { part =>
+          val symbol = toTypeSymbol(part)
+          xsdgenerator.buildTypeName(symbol, true)
+        } getOrElse {"Any"}
+      case _ => "Any"
+    }
 
   def makeBindingName(binding: XBindingType): String = {
     val name = xsdgenerator.makeTypeName(binding.name)
@@ -563,8 +570,8 @@ trait GenSource {
     val addressString = address map {"""lazy val baseAddress = new java.net.URI("%s")""".format(_)} getOrElse {""}
 
     val operationOutputs = binding.operation flatMap { makeOperationOutput(_, interfaceType) }
-    val operations = binding.operation map { opBinding => makeOperation(opBinding, interfaceType, document) }
-    val bindingOps = binding.operation map { opBinding => makeSoap12OpBinding(opBinding, interfaceType, document) }
+    val operations = binding.operation map { opBinding => makeOperation(opBinding, interfaceType, document, false) }
+    val bindingOps = binding.operation map { opBinding => makeSoapOpBinding(opBinding, interfaceType, document, false) }
 
     val interfaceTrait = <source>
 trait {interfaceTypeName} {{
@@ -609,8 +616,8 @@ trait {interfaceTypeName} {{
 
     val addressString = address map {"""lazy val baseAddress = new java.net.URI("%s")""".format(_)} getOrElse {""}
 
-    val operations = binding.operation map { opBinding => makeOperation(opBinding, interfaceType, document) }
-    val bindingOps = binding.operation map { opBinding => makeSoap12OpBinding(opBinding, interfaceType, document) }
+    val operations = binding.operation map { opBinding => makeOperation(opBinding, interfaceType, document, true) }
+    val bindingOps = binding.operation map { opBinding => makeSoapOpBinding(opBinding, interfaceType, document, true) }
 
     val interfaceTrait = <source>
 trait {interfaceTypeName} {{

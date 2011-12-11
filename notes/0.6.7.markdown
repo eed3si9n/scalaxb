@@ -5,6 +5,8 @@
 - Fixes package name of wsdl generated file. [#117][#117] reported by [@hedefalk][@hedefalk] and [@OlegYch][@OlegYch]
 - Fixes handling of empty input messages in wsdl. [#122][#122] reported by [@hedefalk][@hedefalk]
 - Fixes handling of varg parameters in wsdl generated file. [#125][#125] reported by [@hedefalk][@hedefalk]
+- Fixes simultaneous use of soap 1.1 and soap 1.2. [#130][#130] reported by [@ben-manes][@ben-manes]
+- Fixes wsdl procotol package name.
 
   [#116]: https://github.com/eed3si9n/scalaxb/issues/116
   [#117]: https://github.com/eed3si9n/scalaxb/issues/117
@@ -12,7 +14,9 @@
   [#120]: https://github.com/eed3si9n/scalaxb/issues/120
   [#122]: https://github.com/eed3si9n/scalaxb/issues/122
   [#125]: https://github.com/eed3si9n/scalaxb/issues/125
+  [#130]: https://github.com/eed3si9n/scalaxb/issues/130
   [@OlegYch]: https://github.com/OlegYch
   [@hedefalk]: https://github.com/hedefalk
   [@bmjsmith]: https://github.com/bmjsmith
   [@deanhiller]: https://github.com/deanhiller
+  [@ben-manes]: https://github.com/ben-manes

@@ -43,6 +43,8 @@ trait GenSource {
   def scope: scala.xml.NamespaceBinding
   def schemas = context.xsdcontext.schemas.toList
   def xsdgenerator: scalaxb.compiler.xsd.GenSource
+  lazy val targetNamespace: Option[String] = xsdgenerator.schema.targetNamespace
+  lazy val pkg = xsdgenerator.packageName(targetNamespace, xsdgenerator.context)
 
   def generate(definition: XDefinitionsType): Snippet = {
     logger.debug("generate")
@@ -397,7 +399,8 @@ trait GenSource {
       })
 
       if (!multipart) fromXmls.head
-      else "%s(%s)" format (makeOperationOutputWrapperName(op), fromXmls.mkString("," + NL + "              "))
+      else "%s(%s)" format (xsdgenerator.buildFullyQualifiedName(pkg, makeOperationOutputWrapperName(op)),
+        fromXmls.mkString("," + NL + "              "))
     }
   }
 
@@ -453,9 +456,9 @@ trait GenSource {
     "%s: %s".format(part.name getOrElse {"in"}, partTypeName(part))
   }).mkString(", ")
 
-  def paramTypeName(param: XParamType): String = xsdgenerator.buildTypeName(toTypeSymbol(param), true)
+  def paramTypeName(param: XParamType): String = xsdgenerator.buildTypeName(toTypeSymbol(param), false)
 
-  def partTypeName(part: XPartType): String = xsdgenerator.buildTypeName(toTypeSymbol(part), true)
+  def partTypeName(part: XPartType): String = xsdgenerator.buildTypeName(toTypeSymbol(part), false)
 
   def toTypeSymbol(param: XParamType): XsTypeSymbol =
     paramMessage(param).part.headOption map { toTypeSymbol(_) } getOrElse {XsAnyType}
@@ -503,7 +506,7 @@ trait GenSource {
         if (paramMessage(output).part.isEmpty) "Unit"
         else paramTypeName(output)
       }}
-    else makeOperationOutputWrapperName(op)
+    else xsdgenerator.buildFullyQualifiedName(pkg, makeOperationOutputWrapperName(op))
 
   def singleOutputPart(output: XParamType): Option[XPartType] =
     paramMessage(output).part.headOption
@@ -537,7 +540,7 @@ trait GenSource {
         val msg = context.messages(splitTypeName(x.message))
         msg.part.headOption map { part =>
           val symbol = toTypeSymbol(part)
-          xsdgenerator.buildTypeName(symbol, true)
+          xsdgenerator.buildTypeName(symbol, false)
         } getOrElse {"Any"}
       case _ => "Any"
     }
@@ -554,6 +557,7 @@ trait GenSource {
 
     val interfaceType = context.interfaces(splitTypeName(binding.typeValue))
     val interfaceTypeName = interfaceType.name.capitalize
+    val interfaceTypeFQN = xsdgenerator.buildFullyQualifiedName(pkg, interfaceTypeName)
     val port = findPort(binding).headOption
     val address = port flatMap {_.any flatMap {
       case DataRecord(_, _, node: Node) if node.scope.getURI((node.prefix)) == WSDL_SOAP11 =>
@@ -583,11 +587,11 @@ trait {interfaceTypeName} {{
 
     val bindingTrait = <source>
   trait {name}s {{ this: scalaxb.Soap11Clients =>
-    lazy val targetNamespace: Option[String] = { xsdgenerator.quote(xsdgenerator.schema.targetNamespace) }
-    lazy val service: {interfaceTypeName} = new {name} {{}}
+    lazy val targetNamespace: Option[String] = { xsdgenerator.quote(targetNamespace) }
+    lazy val service: {interfaceTypeFQN} = new {name} {{}}
     {addressString}
 
-    trait {name} extends {interfaceTypeName} {{
+    trait {name} extends {interfaceTypeFQN} {{
       {bindingOps.mkString(NL + "      ")}
     }}
   }}
@@ -601,6 +605,7 @@ trait {interfaceTypeName} {{
     val name = makeBindingName(binding)
     val interfaceType = context.interfaces(splitTypeName(binding.typeValue))
     val interfaceTypeName = interfaceType.name.capitalize
+    val interfaceTypeFQN = xsdgenerator.buildFullyQualifiedName(pkg, interfaceTypeName)
     val port = findPort(binding).headOption
     val address = port flatMap {_.any flatMap {
       case DataRecord(_, _, node: Node) if node.scope.getURI((node.prefix)) == WSDL_SOAP12 =>
@@ -627,11 +632,11 @@ trait {interfaceTypeName} {{
 
     val bindingTrait = <source>
   trait {name}s {{ this: scalaxb.SoapClients =>
-    lazy val targetNamespace: Option[String] = { xsdgenerator.quote(xsdgenerator.schema.targetNamespace) }
-    lazy val service: {interfaceTypeName} = new {name} {{}}
+    lazy val targetNamespace: Option[String] = { xsdgenerator.quote(targetNamespace) }
+    lazy val service: {interfaceTypeFQN} = new {name} {{}}
     {addressString}
 
-    trait {name} extends {interfaceTypeName} {{
+    trait {name} extends {interfaceTypeFQN} {{
       {bindingOps.mkString(NL + "      ")}
     }}
   }}

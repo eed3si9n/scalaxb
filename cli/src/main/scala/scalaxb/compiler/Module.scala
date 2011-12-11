@@ -274,13 +274,14 @@ trait Module {
     }
 
     def processProtocol = {
-      val output = implicitly[CanBeWriter[To]].newInstance(packageName(None, context), config.protocolFileName)
+      val pkg = config.protocolPackageName match {
+        case Some(_) => config.protocolPackageName
+        case _ => packageName(importables0(files.head).targetNamespace, context)
+      }
+      val output = implicitly[CanBeWriter[To]].newInstance(pkg, config.protocolFileName)
       val out = implicitly[CanBeWriter[To]].toWriter(output)
       val config2 = config.copy(
-        protocolPackageName = config.protocolPackageName match {
-          case Some(_) => config.protocolPackageName
-          case _ => packageName(importables0(files.head).targetNamespace, context)
-        },
+        protocolPackageName = pkg,
         defaultNamespace = config.defaultNamespace match {
           case Some(_) => config.defaultNamespace
           case _ => importables0(files.head).targetNamespace

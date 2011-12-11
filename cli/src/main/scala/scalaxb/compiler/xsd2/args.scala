@@ -10,13 +10,13 @@ trait Args { self: Namer with Lookup with Params =>
   
   private lazy val logger = Logger("xsd2.Args")
 
-  def buildFromXML(typeName: QualifiedName): String = "scalaxb.fromXML[" + typeName.toScalaCode + "]"
+  def buildFromXML(typeName: QualifiedName): String = "scalaxb.fromXML[" + typeName.fullyQualifiedName + "]"
   def buildFromXML(typeName: QualifiedName, selector: String, stackString: String, formatter: Option[String]): String =
     buildFromXML(typeName) + "(%s, %s)%s".format(selector, stackString,
       formatter map {"(" + _ + ")"} getOrElse {""})
 
   def buildToXML(typeName: QualifiedName, args: String): String =
-    "scalaxb.toXML[" + typeName.toScalaCode + "](" + args + ")"
+    "scalaxb.toXML[" + typeName.fullyQualifiedName + "](" + args + ")"
 
   // called by buildConverter
   def buildTypeSymbolArg(selector: String, typeSymbol: Tagged[Any]): String = typeSymbol match {
@@ -83,7 +83,7 @@ trait Args { self: Namer with Lookup with Params =>
             x.value match {
               case XsAnySimpleType | XsAnyType =>
                 buildTypeSymbolArg(
-                  if (o.nillable) nillableAnyTypeName
+                  if (o.nillable) QualifiedName.DataRecordOptionAnyTypeName
                   else buildTypeName(x), selector, o.copy (nillable = false),
                   elem.default, elem.fixed, wrapForLongAll)
               case symbol: BuiltInSimpleTypeSymbol =>

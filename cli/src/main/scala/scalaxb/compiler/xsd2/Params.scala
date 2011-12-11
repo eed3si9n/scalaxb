@@ -22,16 +22,16 @@ trait Params { self: Namer with Lookup =>
 
     def baseTypeName: QualifiedName = buildTypeName(typeSymbol)
 
-    def singleTypeName: String =
-      if (occurrence.nillable) "Option[%s]".format(baseTypeName.toScalaCode)
-      else baseTypeName.toScalaCode
+    def singleTypeName: QualifiedName =
+      if (occurrence.nillable) baseTypeName.nillable
+      else baseTypeName
 
-    def typeName(implicit targetNamespace: Option[URI]): String = occurrence match {
+    def typeName: QualifiedName = occurrence match {
       case SingleNotNillable(_)   => singleTypeName
       case SingleNillable(_)      => singleTypeName
-      case OptionalNotNillable(_) => "Option[%s]".format(singleTypeName)
-      case OptionalNillable(_)    => "Option[%s]".format(singleTypeName)
-      case _ => "Seq[%s]".format(singleTypeName)
+      case OptionalNotNillable(_) => singleTypeName.option
+      case OptionalNillable(_)    => singleTypeName.option
+      case _ => singleTypeName.seq
     }
 
     def paramName: String = makeParamName(name)

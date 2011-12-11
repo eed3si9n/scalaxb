@@ -2,7 +2,8 @@ package scalaxb.compiler.xsd2
 
 trait XMLOutputs { self: Args with Params with Lookup with Namer =>
   import com.weiglewilczek.slf4s.Logger
-
+  import Predef.{any2stringadd => _, _}
+  
   private lazy val logger = Logger("xsd.XMLOutput")
 
   def buildXMLString(param: Param): String = {
@@ -24,7 +25,7 @@ trait XMLOutputs { self: Args with Params with Lookup with Namer =>
         ", __scope, " + typeAttribute)
     }
 
-    lazy val optionalType = QualifiedName(None, "Option[" + param.baseTypeName + "]")
+    lazy val optionalType = param.baseTypeName.option
     lazy val xOptionalToXMLCode = "x => " + buildToXML(optionalType, "x, x.namespace, x.key, __scope, " + typeAttribute)
     lazy val optionalToXMLCode = param.typeSymbol match {
       case AnyLike(_)                => xOptionalToXMLCode

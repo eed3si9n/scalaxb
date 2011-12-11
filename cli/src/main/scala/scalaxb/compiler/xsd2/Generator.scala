@@ -70,7 +70,7 @@ class Generator(val schema: ReferenceSchema,
     val hasSequenceParam = (paramList.size == 1) && (paramList.head.occurrence.isMultiple) &&
           (!paramList.head.attribute) && (!decl.mixed) // && (!longAll)
     val paramsString =
-      if (hasSequenceParam) makeParamName(paramList.head.name) + ": " + paramList.head.singleTypeName + "*"
+      if (hasSequenceParam) makeParamName(paramList.head.name) + ": " + paramList.head.singleTypeName.localName + "*"
       else paramList.map(_.toScalaCode).mkString(", " + NL + indent(1))
     val accessors =
       (decl.primaryAll map { generateAllAccessors(_) } getOrElse {
@@ -112,7 +112,7 @@ class Generator(val schema: ReferenceSchema,
       }
 
       def childString = if (decl.mixed) "__obj." + makeParamName(MIXED_PARAM) +
-        ".toSeq flatMap { x => " + buildToXML(dataRecordAnyTypeName, "x, x.namespace, x.key, __scope, false") + " }"
+        ".toSeq flatMap { x => " + buildToXML(QualifiedName.DataRecordAnyTypeName, "x, x.namespace, x.key, __scope, false") + " }"
       else decl.value.arg1.value match {
         case XSimpleContent(_, DataRecord(_, _, x: XSimpleRestrictionType), _, _)      => simpleContentString(x.base)
         case XSimpleContent(_, DataRecord(_, _, x: XSimpleExtensionType), _, _)        => simpleContentString(x.base)

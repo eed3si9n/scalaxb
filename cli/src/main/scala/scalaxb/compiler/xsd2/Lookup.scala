@@ -9,21 +9,41 @@ import scalaxb.compiler.xsd.{XsAnyType, XsAnySimpleType, XsString, BuiltInSimple
 import Defs._
 import scala.xml.NamespaceBinding
 
-case class QualifiedName(namespace: Option[URI], localPart: String) {
+case class QualifiedName(namespace: Option[URI], localPart: String, parameters: QualifiedName*) {
   override def toString: String = namespace map { ns => "{%s}%s".format(ns.toString, localPart) } getOrElse {localPart}
   
-  def toScalaCode(implicit targetNamespace: Option[URI], lookup: Lookup): String =
-    if (namespace == targetNamespace || namespace.isEmpty ||
-      Seq(Some(XML_SCHEMA_URI), Some(SCALA_URI)).contains(namespace)) localPart
+//  def toScalaCode(implicit targetNamespace: Option[URI], lookup: Lookup): String =
+//    if (namespace == targetNamespace || namespace.isEmpty ||
+//      Seq(Some(XML_SCHEMA_URI), Some(SCALA_URI)).contains(namespace)) localPart
+//    else fullyQualifiedName
+
+  def localName(implicit targetNamespace: Option[URI], lookup: Lookup): String =
+    if (namespace == targetNamespace)
+      if (parameters.isEmpty) localPart
+      else "%s[%s]" format (localPart, parameters.toSeq map {_.localName} mkString(", "))
     else fullyQualifiedName
 
-  def fullyQualifiedName(implicit lookup: Lookup): String = lookup.packageName(namespace) + "." + localPart
+  def fullyQualifiedName(implicit lookup: Lookup): String = {
+    val s = namespace match {
+      case Some(XML_SCHEMA_URI) | Some(SCALA_URI) => localPart
+      case _ => lookup.packageName(namespace) + "." + localPart
+    }
+
+    if (parameters.isEmpty) s
+    else "%s[%s]" format (s, parameters.toSeq map {_.fullyQualifiedName} mkString(", "))
+  }
 
   def formatterName(implicit lookup: Lookup): String = {
     val pkg = lookup.packageName(namespace)
     val lastPart = pkg.split('.').reverse.head
     lastPart.capitalize + localPart + "Format"
   }
+
+  def option: QualifiedName = QualifiedName(Some(SCALA_URI), "Option", this)
+  def nillable: QualifiedName = option
+  def dataRecord: QualifiedName = QualifiedName(Some(SCALAXB_URI), "DataRecord", this)
+  def seq: QualifiedName = QualifiedName(Some(SCALA_URI), "Seq", this)
+  def map(valueType: QualifiedName) = QualifiedName(Some(SCALA_URI), "Map", this, valueType)
 }
 
 object QualifiedName {
@@ -35,6 +55,12 @@ object QualifiedName {
 
   implicit def apply(qname: QName): QualifiedName =
     QualifiedName(Option[String](qname.getNamespaceURI) map {new URI(_)}, qname.getLocalPart)
+
+  val AnyTypeName = QualifiedName(Some(SCALA_URI), "Any")
+  val StringTypeName = QualifiedName(Some(SCALA_URI), "String")
+  val DataRecordAnyTypeName = AnyTypeName.dataRecord
+  val DataRecordOptionAnyTypeName = AnyTypeName.option.dataRecord
+  val MapStringDataRecordAnyTypeName = StringTypeName.map(DataRecordAnyTypeName)
 }
 
 trait Lookup extends ContextProcessor { self: Namer with Splitter =>
@@ -46,19 +72,14 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter =>
   implicit lazy val scope: NamespaceBinding = schema.scope
   implicit lazy val targetNamespace = schema.targetNamespace
 
-  val dataRecordAnyTypeName = QualifiedName(Some(SCALAXB_URI), "DataRecord[Any]")
-  val wildCardTypeName = dataRecordAnyTypeName
-  val nillableAnyTypeName = QualifiedName(Some(SCALAXB_URI), "DataRecord[Option[Any]]")
+  val wildCardTypeName = QualifiedName.DataRecordAnyTypeName
 
   def buildTypeName(tagged: Tagged[Any]): QualifiedName = tagged match {
-    case x: TaggedDataRecordSymbol =>
-      val member = buildTypeName(x.value.member)
-      QualifiedName(Some(SCALAXB_URI), "DataRecord[%s]".format(member.toScalaCode))
-
+    case x: TaggedDataRecordSymbol => buildTypeName(x.value.member).dataRecord
     case x: TaggedWildCard => wildCardTypeName
     case x: TaggedSymbol =>
       x.value match {
-        case XsAnySimpleType | XsAnyType => QualifiedName(Some(SCALAXB_URI), "DataRecord[Any]")
+        case XsAnySimpleType | XsAnyType => QualifiedName.DataRecordAnyTypeName
         case symbol: BuiltInSimpleTypeSymbol => QualifiedName(Some(XML_SCHEMA_URI), symbol.name)
       }
     case x: TaggedSimpleType => buildSimpleTypeTypeName(x)   
@@ -70,15 +91,12 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter =>
       x.key match {
         case ChoiceTag =>
           val particleOs = x.group.arg1.toList map { Occurrence(_) }
-          if (particleOs exists { _.nillable }) {
-            val member = QualifiedName(tagged.tag.namespace, names.get(x) getOrElse { "??" })
-            QualifiedName(None, "Option[%s]".format(member.toScalaCode))
-          } else QualifiedName(tagged.tag.namespace, names.get(x) getOrElse { "??" })
-
+          if (particleOs exists { _.nillable }) QualifiedName(tagged.tag.namespace, names.get(x) getOrElse { "??" }).nillable
+          else QualifiedName(tagged.tag.namespace, names.get(x) getOrElse { "??" })
         case _ => QualifiedName(tagged.tag.namespace, names.get(x) getOrElse { "??" })
       }
     case TaggedAttributeSeqParam(_, _) | TaggedAllParam(_, _) =>
-      QualifiedName(Some(SCALA_URI), "Map[String, scalaxb.DataRecord[Any]]")
+      QualifiedName.MapStringDataRecordAnyTypeName
     case x: TaggedAttribute =>
       x.value.typeValue map { ref => buildTypeName(resolveType(ref)) } getOrElse {
         buildSimpleTypeTypeName(Tagged(x.value.simpleType.get, x.tag)) }
@@ -118,7 +136,7 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter =>
           case symbol: BuiltInSimpleTypeSymbol => symbol.name
           case decl: XSimpleType => names.get(base) getOrElse { "??" }
         }
-        QualifiedName(None, "Seq[%s]".format(QualifiedName(base.tag.namespace, baseName).toScalaCode))
+        QualifiedName(base.tag.namespace, baseName).seq
       // union baseType is hardcoded to xs:string.
       case union: XUnion =>
         buildTypeName(baseType(decl))

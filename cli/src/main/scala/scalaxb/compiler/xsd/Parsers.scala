@@ -203,14 +203,17 @@ trait Parsers extends Args with Params {
     
   def buildSubstitionGroupParser(elem: ElemDecl, occurrence: Occurrence, mixed: Boolean): String = {
     logger.debug("buildSubstitionGroupParser")
-    
-    val particles = schema.topElems.valuesIterator.toList collect {
-      case e: ElemDecl if e.name == elem.name && e.namespace == elem.namespace => e
-      case e: ElemDecl if e.substitutionGroup == Some(elem.namespace, elem.name) => e
-    } filter { e: ElemDecl =>
-      e.typeSymbol match {
-        case ReferenceTypeSymbol(decl: ComplexTypeDecl) => !decl.abstractValue
-        case _ => true
+   
+    // these are the known members of the sub group.
+    val particles = schemas flatMap {
+      _.topElems.valuesIterator.toSeq collect {
+        case e: ElemDecl if e.name == elem.name && e.namespace == elem.namespace => e
+        case e: ElemDecl if e.substitutionGroup == Some(elem.namespace, elem.name) => e
+      } filter { e: ElemDecl =>
+        e.typeSymbol match {
+          case ReferenceTypeSymbol(decl: ComplexTypeDecl) => !decl.abstractValue
+          case _ => true
+        }
       }
     }
 

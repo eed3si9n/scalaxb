@@ -520,8 +520,9 @@ object GeneralUsage {
     println("testSubstitutionGroup")
 
     val subject = <gen:subgroupTop xmlns:gen="http://www.example.com/general"
-                          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-        <gen:subgroupHead>foo</gen:subgroupHead>
+                          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                          xmlns:im="http://www.example.com/general_import">
+        <im:SubGroupMember3>foo</im:SubGroupMember3>
       </gen:subgroupTop>
     val x = scalaxb.fromXML[SubstitutionGroupTest](subject)
 

@@ -25,9 +25,9 @@ There are currently four ways of running scalaxb:
 - maven plugin mvn-scalaxb
 - web API scalaxb-heroku hosted on heroku
 
-### sbt-scalaxb for sbt 0.11.1
+### sbt-scalaxb for sbt 0.11.2
 
-To call scalaxb from sbt 0.11.1, put this in your `project/plugins.sbt`:
+To call scalaxb from sbt 0.11.2, put this in your `project/plugins.sbt`:
 
     addSbtPlugin("org.scalaxb" % "sbt-scalaxb" % "X.X")
     

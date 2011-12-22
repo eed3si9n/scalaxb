@@ -9,7 +9,7 @@ public class ITP03WSDL extends AbstractIT {
             "generated/xmlprotocol.scala",
             "scalaxb/httpclients_dispatch.scala",
             "scalaxb/scalaxb.scala",
-            "scalaxb/soap.scala",
+            "scalaxb/soap12.scala",
             "soapenvelope12/soapenvelope12.scala",
             "soapenvelope12/soapenvelope12_xmlprotocol.scala"
     };

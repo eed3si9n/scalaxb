@@ -73,14 +73,12 @@ class Driver extends Module { driver =>
     }
     val includeLocations: Seq[String] = schemaLite.includes map { _.schemaLocation }
     
-    def toSchema(context: Context): Schema = {
-      val schema = SchemaDecl.fromXML(raw, context)
+    def toSchema(context: Context, outerNamespace: Option[String]): Schema = {
+      val schema = SchemaDecl.fromXML(raw, context, outerNamespace)
       logger.debug("toSchema: " + schema.toString())
       schema
     }
   }
-
-  def replaceTargetNamespace(schema: SchemaDecl, tns: Option[String]): SchemaDecl = schema.copy(targetNamespace =  tns)
 
   def generateRuntimeFiles[To](cntxt: Context)(implicit evTo: CanBeWriter[To]): List[To] =
     List(generateFromResource[To](Some("scalaxb"), "scalaxb.scala", "/scalaxb.scala.template"))

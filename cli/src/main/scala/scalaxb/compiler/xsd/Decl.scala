@@ -144,13 +144,14 @@ case class SchemaDecl(targetNamespace: Option[String],
 
 object SchemaDecl {
   def fromXML(node: scala.xml.Node,
-      context: XsdContext = XsdContext(),
+      context: XsdContext,
+      outerNamespace: Option[String],
       config: ParserConfig = new ParserConfig) = {
     val schema = (node \\ "schema").headOption.getOrElse {
       error("xsd: schema element not found: " + node.toString) }
     
     config.scope = schema.scope
-    config.targetNamespace = schema.attribute("targetNamespace").headOption map { _.text }
+    config.targetNamespace = schema.attribute("targetNamespace").headOption map { _.text } orElse {outerNamespace}
     config.elementQualifiedDefault = schema.attribute("elementFormDefault").headOption map {
       _.text == "qualified"} getOrElse {false}
     config.attributeQualifiedDefault = schema.attribute("attributeFormDefault").headOption map {

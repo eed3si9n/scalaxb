@@ -120,7 +120,7 @@ trait Module {
     def includeLocations: Seq[String]
     def raw: RawSchema
     def location: URI
-    def toSchema(context: Context): Schema
+    def toSchema(context: Context, outerNamespace: Option[String]): Schema
   }
 
   implicit val fileReader = new CanBeRawSchema[File, RawSchema] {
@@ -223,7 +223,7 @@ trait Module {
       f -> toImportable(ev.toURI(f), ev.toRawSchema(f))}: _*)
     val importables = Seq[(Importable, From)](files map { f => importables0(f) -> f }: _*)
     val schemas = ListMap[Importable, Schema](importables map { case (importable, file) =>
-      val s = parse(importable, context)
+      val s = parse(importable, context, None)
       (importable, s) }: _*)
 
     val additionalImportables = ListMap.empty[Importable, File]
@@ -248,7 +248,7 @@ trait Module {
         added = true
         val importable = toImportable(implicitly[CanBeRawSchema[File, RawSchema]].toURI(x),
           implicitly[CanBeRawSchema[File, RawSchema]].toRawSchema(x))
-        val s = parse(importable, context)
+        val s = parse(importable, context, None)
         schemas(importable) = s
         (importable, x) })
       if (added) addMissingFiles()
@@ -321,7 +321,7 @@ trait Module {
               case Some(ns) =>
               case None =>
                 logger.debug("processUnnamedIncludes - setting %s's outer namespace to %s" format (x.location, tnsstr))
-                schemas(x) = replaceTargetNamespace(schemas(x), tns)
+                schemas(x) = parse(x, context, tns)
             }
             mapping(x) = tns
           }}
@@ -396,8 +396,6 @@ trait Module {
     // (nsBased ::: locationBased ::: includes).distinct
   }
 
-  def replaceTargetNamespace(schema: Schema, tns: Option[String]): Schema
-
   def buildContext: Context
   
   def processContext(context: Context, schemas: Seq[Schema], config: Config): Unit
@@ -408,11 +406,11 @@ trait Module {
 
   def nodeToRawSchema(node: Node): RawSchema
 
-  def parse(importable: Importable, context: Context): Schema
-    = importable.toSchema(context)
+  def parse(importable: Importable, context: Context, outerNamespace: Option[String]): Schema
+    = importable.toSchema(context, outerNamespace)
     
-  def parse(location: URI, in: Reader): Schema
-    = parse(toImportable(location, readerToRawSchema(in)), buildContext)
+  def parse(location: URI, in: Reader, outerNamespace: Option[String]): Schema
+    = parse(toImportable(location, readerToRawSchema(in)), buildContext, outerNamespace)
     
   def printNodes(nodes: Seq[Node], out: PrintWriter) {
     import scala.xml._

@@ -148,26 +148,20 @@ class Driver extends Module { driver =>
       schemaLite.includes map { _.schemaLocation }
     }
 
-    def toSchema(context: Context): WsdlPair = {
+    def toSchema(context: Context, outerNamespace: Option[String]): WsdlPair = {
       wsdl foreach { wsdl =>
         logger.debug(wsdl.toString)
         context.definitions += wsdl
       }
 
       val xsd = xsdRawSchema map { x =>
-        val schema = SchemaDecl.fromXML(x, context.xsdcontext)
+        val schema = SchemaDecl.fromXML(x, context.xsdcontext, outerNamespace)
         logger.debug(schema.toString)
         schema
       }
 
       WsdlPair(wsdl, xsd, rawschema.scope)
     }
-  }
-
-  def replaceTargetNamespace(schema: WsdlPair, tns: Option[String]): WsdlPair = schema match {
-    case WsdlPair(Some(wsdl), _, _) => schema.copy(definition = Some(wsdl.copy(targetNamespace = tns map {new URI(_)})))
-    case WsdlPair(_, Seq(x), _) => schema.copy(schemas = x.copy(targetNamespace = tns) :: Nil)
-    case _ => schema
   }
 
   def generateRuntimeFiles[To](cntxt: Context)(implicit evTo: CanBeWriter[To]): List[To] =

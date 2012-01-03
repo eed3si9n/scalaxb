@@ -361,7 +361,24 @@ object DataRecord extends XMLStandardTypes {
     xstypeNamespace: Option[String],
     xstypeName: Option[String],
     value: A,
-    writer: CanWriteXML[_]) extends DataRecord[A]
+    writer: CanWriteXML[_]) extends DataRecord[A] {
+    override def equals(o: Any): Boolean =
+      o match {
+        case that: DataWriter[_] =>
+          namespace == that.namespace &&
+          key == that.key &&
+          value == that.value
+        case _ => false
+      }
+
+    override def hashCode: Int = {
+      var result = 17
+      result = result + 31 * namespace.hashCode
+      result = result + 31 * key.hashCode
+      result = result + 31 * value.hashCode
+      result
+    }
+  }
   import Helper._
 
   // this is for nil element.

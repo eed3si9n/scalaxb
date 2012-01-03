@@ -478,13 +478,15 @@ object GeneralUsage {
         <person5><firstName>John</firstName><lastName>Doe</lastName></person5>
       <person6 xsi:nil="true"/>
     </foo>
-    val r1 = scalaxb.fromXML[ChoiceComplexTypeTest](subject)
-    val document = toXML(r1, "foo", subject.scope)
+    val obj = scalaxb.fromXML[ChoiceComplexTypeTest](subject)
+    val r1 = obj
+    val document = toXML(obj, "foo", subject.scope)
     val r2 = scalaxb.fromXML[ChoiceComplexTypeTest](document)
 
     (r1 == r2) match {
       case true =>
-      case _ => error("r1 and r2 are not equal: " + r1.toString + " and " + r2.toString)
+      case _ => error("r1 and r2 are not equal: \n" + "hashCode: " + r1.hashCode.toString + "\n" + r1.toString +
+        "\nhashCode: " + r2.hashCode.toString + "\n" + r2.toString)
     }
   }
   

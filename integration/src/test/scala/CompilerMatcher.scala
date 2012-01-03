@@ -61,7 +61,8 @@ trait CompilerMatcher {
 
     def apply[A <: (Seq[String], Seq[File])](pair: Expectable[A]) = {
       import scala.tools.nsc.interpreter.{IMain, Results => IR}
-      
+      import scala.util.control.Exception._
+
       val code = pair.value._1
       val files = pair.value._2
         
@@ -69,16 +70,19 @@ trait CompilerMatcher {
         error("At least one line of code is required.")
       
       val s = settings(outdir, classpath, usecurrentcp, unchecked)
-      val main = new IMain(s)
+      val main = new IMain(s) {
+        def lastRequest = prevRequestList.last
+      }
       main.compileSources(files.map(toSourceFile(_)): _*)
       code map { c => main.interpret(c) match {
         case IR.Error => error("Error interpreting %s" format (c))
         case _ => 
       }}
-      val recent = main.mostRecentVar
-      val holder = main.valueOfTerm(recent)
+      val holder = allCatch opt {
+        main.lastRequest.lineRep.call("$result")
+      }
       if (holder != Some(expected))
-        println("actual(%s): %s" format(recent, holder.map(_.toString).getOrElse{"None"}))
+        println("actual: %s" format(holder.map(_.toString).getOrElse{"None"}))
       
       result(holder == Some(expected),
         code + " evaluates as expected",

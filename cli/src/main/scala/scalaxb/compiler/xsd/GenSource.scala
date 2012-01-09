@@ -365,9 +365,9 @@ abstract class GenSource(val schema: SchemaDecl,
       else ""
     }{ if (decl.mixed) "override def isMixed: Boolean = true" + newline + newline + indent(2)
        else "" }def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[{fqn}] =
-      { parserList.mkString(" ~ " + newline + indent(3)) } ^^
+      phrase({ parserList.mkString(" ~ " + newline + indent(3)) } ^^
       {{ case { parserVariableList.mkString(" ~ ") } =>
-      {fqn}({argsString}) }}
+      {fqn}({argsString}) }})
     
 {makeWritesAttribute}{makeWritesChildNodes}  }}</source>
     

@@ -18,12 +18,10 @@ object MixedUsage {
   def testMixed {
     val subject = <foo xmlns="http://www.example.com/mixed"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">foo<name>Jane</name><name>Doe</name><city>New York</city>bar
-          <billTo xsi:type="ipo:USAddress">
+          <billTo>
             <name>Foo</name>
             <street>1537 Paper Street</street>
             <city>Wilmington</city>
-            <state>DE</state>
-            <zip>19808</zip>
           </billTo>
           <itemname/><itemcode/><option1/></foo>
     val obj = fromXML[MixedTest](subject)

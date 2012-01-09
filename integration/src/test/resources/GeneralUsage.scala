@@ -48,6 +48,7 @@ object GeneralUsage {
     testDefaultScope
     testUnmarshallBaseComplexType
     testSubstitutionGroup
+    testExtraElement
     true
   }
   
@@ -536,5 +537,20 @@ object GeneralUsage {
     println(document)
     check(fromXML[SubstitutionGroupTest](document))
 
+  }
+  
+  def testExtraElement {
+    println("testExtraElement")
+
+    val subject = <person xmlns="http://www.example.com/general">
+        <firstName>John</firstName><lastName>Doe</lastName><extra>something</extra>
+      </person>
+    try {
+      val x = scalaxb.fromXML[Person](subject)
+    }
+    catch {
+      case _ => return
+    }
+    error("extra element did not raise error")
   }
 }

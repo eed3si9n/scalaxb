@@ -25,7 +25,7 @@ trait XMLProtocol extends scalaxb.XMLStandardTypes {
     override def typeName: Option[String] = Some("Envelope")
 
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[soapenvelope11.Envelope] =
-      opt(scalaxb.ElemName(Some("http://schemas.xmlsoap.org/soap/envelope/"), "Header")) ~ 
+      phrase(opt(scalaxb.ElemName(Some("http://schemas.xmlsoap.org/soap/envelope/"), "Header")) ~ 
       (scalaxb.ElemName(Some("http://schemas.xmlsoap.org/soap/envelope/"), "Body")) ~ 
       rep(any(_.namespace != Some("http://schemas.xmlsoap.org/soap/envelope/"))) ^^
       { case p1 ~ p2 ~ p3 =>
@@ -44,7 +44,7 @@ trait XMLProtocol extends scalaxb.XMLStandardTypes {
               case _ => Nil
             }
           case _ => Nil
-        }): _*)) }
+        }): _*)) })
     
     override def writesAttribute(__obj: soapenvelope11.Envelope, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {
       var attr: scala.xml.MetaData  = scala.xml.Null
@@ -66,7 +66,7 @@ trait XMLProtocol extends scalaxb.XMLStandardTypes {
     override def typeName: Option[String] = Some("Header")
 
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[soapenvelope11.Header] =
-      rep(any(_.namespace != Some("http://schemas.xmlsoap.org/soap/envelope/"))) ^^
+      phrase(rep(any(_.namespace != Some("http://schemas.xmlsoap.org/soap/envelope/"))) ^^
       { case p1 =>
       soapenvelope11.Header(p1.toSeq map { scalaxb.fromXML[scalaxb.DataRecord[Any]](_, scalaxb.ElemName(node) :: stack) },
         scala.collection.immutable.ListMap((node match {
@@ -81,7 +81,7 @@ trait XMLProtocol extends scalaxb.XMLStandardTypes {
               case _ => Nil
             }
           case _ => Nil
-        }): _*)) }
+        }): _*)) })
     
     override def writesAttribute(__obj: soapenvelope11.Header, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {
       var attr: scala.xml.MetaData  = scala.xml.Null
@@ -101,7 +101,7 @@ trait XMLProtocol extends scalaxb.XMLStandardTypes {
     override def typeName: Option[String] = Some("Body")
 
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[soapenvelope11.Body] =
-      rep(any(_ => true)) ^^
+      phrase(rep(any(_ => true)) ^^
       { case p1 =>
       soapenvelope11.Body(p1.toSeq map { scalaxb.fromXML[scalaxb.DataRecord[Any]](_, scalaxb.ElemName(node) :: stack) },
         scala.collection.immutable.ListMap((node match {
@@ -116,7 +116,7 @@ trait XMLProtocol extends scalaxb.XMLStandardTypes {
               case _ => Nil
             }
           case _ => Nil
-        }): _*)) }
+        }): _*)) })
     
     override def writesAttribute(__obj: soapenvelope11.Body, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {
       var attr: scala.xml.MetaData  = scala.xml.Null
@@ -136,7 +136,7 @@ trait XMLProtocol extends scalaxb.XMLStandardTypes {
     override def typeName: Option[String] = Some("Fault")
 
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[soapenvelope11.Fault] =
-      (scalaxb.ElemName(None, "faultcode")) ~ 
+      phrase((scalaxb.ElemName(None, "faultcode")) ~ 
       (scalaxb.ElemName(None, "faultstring")) ~ 
       opt(scalaxb.ElemName(None, "faultactor")) ~ 
       opt(scalaxb.ElemName(None, "detail")) ^^
@@ -144,7 +144,7 @@ trait XMLProtocol extends scalaxb.XMLStandardTypes {
       soapenvelope11.Fault(scalaxb.fromXML[javax.xml.namespace.QName](p1, scalaxb.ElemName(node) :: stack),
         scalaxb.fromXML[String](p2, scalaxb.ElemName(node) :: stack),
         p3.headOption map { scalaxb.fromXML[java.net.URI](_, scalaxb.ElemName(node) :: stack) },
-        p4.headOption map { scalaxb.fromXML[soapenvelope11.Detail](_, scalaxb.ElemName(node) :: stack) }) }
+        p4.headOption map { scalaxb.fromXML[soapenvelope11.Detail](_, scalaxb.ElemName(node) :: stack) }) })
     
     def writesChildNodes(__obj: soapenvelope11.Fault, __scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node] =
       Seq.concat(scalaxb.toXML[javax.xml.namespace.QName](__obj.faultcode, None, Some("faultcode"), __scope, false),
@@ -160,7 +160,7 @@ trait XMLProtocol extends scalaxb.XMLStandardTypes {
     override def typeName: Option[String] = Some("detail")
 
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[soapenvelope11.Detail] =
-      rep(any(_ => true)) ^^
+      phrase(rep(any(_ => true)) ^^
       { case p1 =>
       soapenvelope11.Detail(p1.toSeq map { scalaxb.fromXML[scalaxb.DataRecord[Any]](_, scalaxb.ElemName(node) :: stack) },
         scala.collection.immutable.ListMap((node match {
@@ -175,7 +175,7 @@ trait XMLProtocol extends scalaxb.XMLStandardTypes {
               case _ => Nil
             }
           case _ => Nil
-        }): _*)) }
+        }): _*)) })
     
     override def writesAttribute(__obj: soapenvelope11.Detail, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {
       var attr: scala.xml.MetaData  = scala.xml.Null

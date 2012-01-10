@@ -46,24 +46,24 @@ trait GenSource {
   lazy val targetNamespace: Option[String] = xsdgenerator.schema.targetNamespace
   lazy val pkg = xsdgenerator.packageName(targetNamespace, xsdgenerator.context)
 
-  def generate(definition: XDefinitionsType): Snippet = {
+  def generate(definition: XDefinitionsType, bindings: Seq[XBindingType]): Snippet = {
     logger.debug("generate")
     Snippet(
-      (soap11Bindings(definition) map {makeSoap11Binding}) ++
-      (soap12Bindings(definition) map {makeSoap12Binding}): _*)
+      (soap11Bindings(bindings) map {makeSoap11Binding}) ++
+      (soap12Bindings(bindings) map {makeSoap12Binding}): _*)
   }
 
-  def soap12Bindings(definition: XDefinitionsType) =
-    definition.binding filter { binding =>
+  def soap12Bindings(bindings: Seq[XBindingType]) =
+    bindings filter { binding =>
       binding.any exists {
         case DataRecord(_, _, node: Node) => node.scope.getURI((node.prefix)) == WSDL_SOAP12
         case _ => false
       }
     }
 
-  def soap11Bindings(definition: XDefinitionsType) =
-    if (!soap12Bindings(definition).isEmpty) Nil
-    else definition.binding filter { binding =>
+  def soap11Bindings(bindings: Seq[XBindingType]) =
+    if (!soap12Bindings(bindings).isEmpty) Nil
+    else bindings filter { binding =>
       binding.any exists {
         case DataRecord(_, _, node: Node) => node.scope.getURI((node.prefix)) == WSDL_SOAP11
         case _ => false

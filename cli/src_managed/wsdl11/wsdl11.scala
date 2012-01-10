@@ -24,29 +24,24 @@ trait XOpenAtts {
 
 
 case class XDefinitionsType(documentation: Option[wsdl11.XDocumentation] = None,
-  importValue: Seq[wsdl11.XImportType] = Nil,
-  types: Option[wsdl11.XTypesType] = None,
-  message: Seq[wsdl11.XMessageType] = Nil,
-  portType: Seq[wsdl11.XPortTypeType] = Nil,
-  binding: Seq[wsdl11.XBindingType] = Nil,
-  service: Seq[wsdl11.XServiceType] = Nil,
-  any: Seq[scalaxb.DataRecord[Any]] = Nil,
+  xdefinitionstypeoption: Seq[scalaxb.DataRecord[Any]] = Nil,
   targetNamespace: Option[java.net.URI] = None,
   name: Option[String] = None) extends XDocumented
 
+trait XDefinitionsTypeOption
 
 case class XImportType(documentation: Option[wsdl11.XDocumentation] = None,
   namespace: java.net.URI,
-  location: java.net.URI) extends XDocumented
+  location: java.net.URI) extends XDocumented with XDefinitionsTypeOption
 
 
 case class XTypesType(documentation: Option[wsdl11.XDocumentation] = None,
-  any: Seq[scalaxb.DataRecord[Any]] = Nil) extends XDocumented
+  any: Seq[scalaxb.DataRecord[Any]] = Nil) extends XDocumented with XDefinitionsTypeOption
 
 
 case class XMessageType(documentation: Option[wsdl11.XDocumentation] = None,
   part: Seq[wsdl11.XPartType] = Nil,
-  name: String) extends XDocumented
+  name: String) extends XDocumented with XDefinitionsTypeOption
 
 
 case class XPartType(documentation: Option[wsdl11.XDocumentation] = None,
@@ -58,7 +53,7 @@ case class XPartType(documentation: Option[wsdl11.XDocumentation] = None,
 
 case class XPortTypeType(documentation: Option[wsdl11.XDocumentation] = None,
   operation: Seq[wsdl11.XOperationType] = Nil,
-  name: String) extends XDocumented
+  name: String) extends XDocumented with XDefinitionsTypeOption
 
 
 case class XOperationType(documentation: Option[wsdl11.XDocumentation] = None,
@@ -91,7 +86,7 @@ case class XBindingType(documentation: Option[wsdl11.XDocumentation] = None,
   any: Seq[scalaxb.DataRecord[Any]] = Nil,
   operation: Seq[wsdl11.XBinding_operationType] = Nil,
   name: String,
-  typeValue: javax.xml.namespace.QName) extends XStartWithExtensionsTypable
+  typeValue: javax.xml.namespace.QName) extends XStartWithExtensionsTypable with XDefinitionsTypeOption
 
 
 case class XFault(documentation: Option[wsdl11.XDocumentation] = None,
@@ -110,7 +105,7 @@ case class XBinding_operationType(documentation: Option[wsdl11.XDocumentation] =
 case class XServiceType(documentation: Option[wsdl11.XDocumentation] = None,
   port: Seq[wsdl11.XPortType] = Nil,
   any: Option[scalaxb.DataRecord[Any]] = None,
-  name: String) extends XDocumented
+  name: String) extends XDocumented with XDefinitionsTypeOption
 
 
 case class XPortType(documentation: Option[wsdl11.XDocumentation] = None,

@@ -207,7 +207,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     override def typeName: Option[String] = Some("annotated")
 
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[xmlschema.XAnnotated] =
-      opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ^^
+      phrase(opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ^^
       { case p1 =>
       xmlschema.XAnnotated(p1.headOption map { scalaxb.fromXML[xmlschema.XAnnotation](_, scalaxb.ElemName(node) :: stack) },
         (node \ "@id").headOption map { scalaxb.fromXML[String](_, scalaxb.ElemName(node) :: stack) },
@@ -223,7 +223,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
               case _ => Nil
             }
           case _ => Nil
-        }): _*)) }
+        }): _*)) })
     
     override def writesAttribute(__obj: xmlschema.XAnnotated, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {
       var attr: scala.xml.MetaData  = scala.xml.Null
@@ -284,7 +284,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     val targetNamespace: Option[String] = Some("http://www.w3.org/2001/XMLSchema")
     
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[xmlschema.XSchema] =
-      rep(((scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "include")) ^^ 
+      phrase(rep(((scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "include")) ^^ 
       (x => scalaxb.DataRecord(x.namespace, Some(x.name), scalaxb.fromXML[xmlschema.XInclude](x, scalaxb.ElemName(node) :: stack)))) | 
       ((scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "import")) ^^ 
       (x => scalaxb.DataRecord(x.namespace, Some(x.name), scalaxb.fromXML[xmlschema.XImport](x, scalaxb.ElemName(node) :: stack)))) | 
@@ -327,7 +327,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
               case _ => Nil
             }
           case _ => Nil
-        }): _*)) }
+        }): _*)) })
     
     override def writesAttribute(__obj: xmlschema.XSchema, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {
       var attr: scala.xml.MetaData  = scala.xml.Null
@@ -398,7 +398,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     override def typeName: Option[String] = Some("attribute")
 
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[xmlschema.XAttribute] =
-      opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ~ 
+      phrase(opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ~ 
       opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "simpleType")) ^^
       { case p1 ~ p2 =>
       xmlschema.XAttribute(p1.headOption map { scalaxb.fromXML[xmlschema.XAnnotation](_, scalaxb.ElemName(node) :: stack) },
@@ -430,14 +430,14 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
               case _ => Nil
             }
           case _ => Nil
-        }): _*)) }
+        }): _*)) })
     
     override def writesAttribute(__obj: xmlschema.XAttribute, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {
       var attr: scala.xml.MetaData  = scala.xml.Null
       __obj.id foreach { x => attr = scala.xml.Attribute(null, "id", x.toString, attr) }
       __obj.name foreach { x => attr = scala.xml.Attribute(null, "name", x.toString, attr) }
-      __obj.ref foreach { x => attr = scala.xml.Attribute(null, "ref", x.toString, attr) }
-      __obj.typeValue foreach { x => attr = scala.xml.Attribute(null, "type", x.toString, attr) }
+      __obj.ref foreach { x => attr = scala.xml.Attribute(null, "ref", scalaxb.Helper.toString(x, __scope), attr) }
+      __obj.typeValue foreach { x => attr = scala.xml.Attribute(null, "type", scalaxb.Helper.toString(x, __scope), attr) }
       if (__obj.use.toString != "optional") attr = scala.xml.Attribute(null, "use", __obj.use.toString, attr)
       __obj.default foreach { x => attr = scala.xml.Attribute(null, "default", x.toString, attr) }
       __obj.fixed foreach { x => attr = scala.xml.Attribute(null, "fixed", x.toString, attr) }
@@ -459,7 +459,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     override def typeName: Option[String] = Some("topLevelAttribute")
 
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[xmlschema.XTopLevelAttribute] =
-      opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ~ 
+      phrase(opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ~ 
       opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "simpleType")) ^^
       { case p1 ~ p2 =>
       xmlschema.XTopLevelAttribute(p1.headOption map { scalaxb.fromXML[xmlschema.XAnnotation](_, scalaxb.ElemName(node) :: stack) },
@@ -491,14 +491,14 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
               case _ => Nil
             }
           case _ => Nil
-        }): _*)) }
+        }): _*)) })
     
     override def writesAttribute(__obj: xmlschema.XTopLevelAttribute, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {
       var attr: scala.xml.MetaData  = scala.xml.Null
       __obj.id foreach { x => attr = scala.xml.Attribute(null, "id", x.toString, attr) }
       __obj.name foreach { x => attr = scala.xml.Attribute(null, "name", x.toString, attr) }
-      __obj.ref foreach { x => attr = scala.xml.Attribute(null, "ref", x.toString, attr) }
-      __obj.typeValue foreach { x => attr = scala.xml.Attribute(null, "type", x.toString, attr) }
+      __obj.ref foreach { x => attr = scala.xml.Attribute(null, "ref", scalaxb.Helper.toString(x, __scope), attr) }
+      __obj.typeValue foreach { x => attr = scala.xml.Attribute(null, "type", scalaxb.Helper.toString(x, __scope), attr) }
       if (__obj.use.toString != "optional") attr = scala.xml.Attribute(null, "use", __obj.use.toString, attr)
       __obj.default foreach { x => attr = scala.xml.Attribute(null, "default", x.toString, attr) }
       __obj.fixed foreach { x => attr = scala.xml.Attribute(null, "fixed", x.toString, attr) }
@@ -539,7 +539,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     override def typeName: Option[String] = Some("topLevelComplexType")
 
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[xmlschema.XTopLevelComplexType] =
-      opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ~ 
+      phrase(opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ~ 
       (parseXComplexTypeModelGroup(node, scalaxb.ElemName(node) :: stack)) ^^
       { case p1 ~ p2 =>
       xmlschema.XTopLevelComplexType(p1.headOption map { scalaxb.fromXML[xmlschema.XAnnotation](_, scalaxb.ElemName(node) :: stack) },
@@ -567,7 +567,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
               case _ => Nil
             }
           case _ => Nil
-        }): _*)) }
+        }): _*)) })
     
     override def writesAttribute(__obj: xmlschema.XTopLevelComplexType, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {
       var attr: scala.xml.MetaData  = scala.xml.Null
@@ -594,7 +594,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     override def typeName: Option[String] = Some("localComplexType")
 
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[xmlschema.XLocalComplexType] =
-      opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ~ 
+      phrase(opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ~ 
       (parseXComplexTypeModelGroup(node, scalaxb.ElemName(node) :: stack)) ^^
       { case p1 ~ p2 =>
       xmlschema.XLocalComplexType(p1.headOption map { scalaxb.fromXML[xmlschema.XAnnotation](_, scalaxb.ElemName(node) :: stack) },
@@ -622,7 +622,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
               case _ => Nil
             }
           case _ => Nil
-        }): _*)) }
+        }): _*)) })
     
     override def writesAttribute(__obj: xmlschema.XLocalComplexType, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {
       var attr: scala.xml.MetaData  = scala.xml.Null
@@ -668,7 +668,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     override def typeName: Option[String] = Some("restrictionType")
 
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[xmlschema.XRestrictionType] =
-      opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ~ 
+      phrase(opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ~ 
       opt((parseXTypeDefParticleGroup(node, scalaxb.ElemName(node) :: stack, true)) ||| 
       (parseXSimpleRestrictionModelGroup(node, scalaxb.ElemName(node) :: stack, true))) ~ 
       (parseXAttrDeclsGroup(node, scalaxb.ElemName(node) :: stack)) ^^
@@ -691,12 +691,12 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
               case _ => Nil
             }
           case _ => Nil
-        }): _*)) }
+        }): _*)) })
     
     override def writesAttribute(__obj: xmlschema.XRestrictionType, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {
       var attr: scala.xml.MetaData  = scala.xml.Null
       __obj.id foreach { x => attr = scala.xml.Attribute(null, "id", x.toString, attr) }
-      attr = scala.xml.Attribute(null, "base", __obj.base.toString, attr)
+      attr = scala.xml.Attribute(null, "base", scalaxb.Helper.toString(__obj.base, __scope), attr)
       __obj.attributes.toList map {
         case (key, x) => attr = scala.xml.Attribute((x.namespace map { __scope.getPrefix(_) }).orNull, x.key.orNull, x.value.toString, attr) }
       attr
@@ -715,7 +715,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     override def typeName: Option[String] = Some("complexRestrictionType")
 
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[xmlschema.XComplexRestrictionType] =
-      opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ~ 
+      phrase(opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ~ 
       opt((parseXTypeDefParticleGroup(node, scalaxb.ElemName(node) :: stack, true)) ||| 
       (parseXSimpleRestrictionModelGroup(node, scalaxb.ElemName(node) :: stack, true))) ~ 
       (parseXAttrDeclsGroup(node, scalaxb.ElemName(node) :: stack)) ^^
@@ -738,12 +738,12 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
               case _ => Nil
             }
           case _ => Nil
-        }): _*)) }
+        }): _*)) })
     
     override def writesAttribute(__obj: xmlschema.XComplexRestrictionType, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {
       var attr: scala.xml.MetaData  = scala.xml.Null
       __obj.id foreach { x => attr = scala.xml.Attribute(null, "id", x.toString, attr) }
-      attr = scala.xml.Attribute(null, "base", __obj.base.toString, attr)
+      attr = scala.xml.Attribute(null, "base", scalaxb.Helper.toString(__obj.base, __scope), attr)
       __obj.attributes.toList map {
         case (key, x) => attr = scala.xml.Attribute((x.namespace map { __scope.getPrefix(_) }).orNull, x.key.orNull, x.value.toString, attr) }
       attr
@@ -779,7 +779,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     override def typeName: Option[String] = Some("extensionType")
 
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[xmlschema.XExtensionType] =
-      opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ~ 
+      phrase(opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ~ 
       opt(parseXTypeDefParticleGroup(node, scalaxb.ElemName(node) :: stack)) ~ 
       (parseXAttrDeclsGroup(node, scalaxb.ElemName(node) :: stack)) ^^
       { case p1 ~ p2 ~ p3 =>
@@ -801,12 +801,12 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
               case _ => Nil
             }
           case _ => Nil
-        }): _*)) }
+        }): _*)) })
     
     override def writesAttribute(__obj: xmlschema.XExtensionType, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {
       var attr: scala.xml.MetaData  = scala.xml.Null
       __obj.id foreach { x => attr = scala.xml.Attribute(null, "id", x.toString, attr) }
-      attr = scala.xml.Attribute(null, "base", __obj.base.toString, attr)
+      attr = scala.xml.Attribute(null, "base", scalaxb.Helper.toString(__obj.base, __scope), attr)
       __obj.attributes.toList map {
         case (key, x) => attr = scala.xml.Attribute((x.namespace map { __scope.getPrefix(_) }).orNull, x.key.orNull, x.value.toString, attr) }
       attr
@@ -823,7 +823,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     val targetNamespace: Option[String] = Some("http://www.w3.org/2001/XMLSchema")
     
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[xmlschema.XComplexContent] =
-      opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ~ 
+      phrase(opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ~ 
       (((scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "restriction")) ^^ 
       (x => scalaxb.DataRecord(x.namespace, Some(x.name), scalaxb.fromXML[xmlschema.XComplexRestrictionType](x, scalaxb.ElemName(node) :: stack)))) | 
       ((scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "extension")) ^^ 
@@ -846,7 +846,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
               case _ => Nil
             }
           case _ => Nil
-        }): _*)) }
+        }): _*)) })
     
     override def writesAttribute(__obj: xmlschema.XComplexContent, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {
       var attr: scala.xml.MetaData  = scala.xml.Null
@@ -869,7 +869,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     override def typeName: Option[String] = Some("simpleRestrictionType")
 
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[xmlschema.XSimpleRestrictionType] =
-      opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ~ 
+      phrase(opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ~ 
       opt((parseXTypeDefParticleGroup(node, scalaxb.ElemName(node) :: stack, true)) ||| 
       (parseXSimpleRestrictionModelGroup(node, scalaxb.ElemName(node) :: stack, true))) ~ 
       (parseXAttrDeclsGroup(node, scalaxb.ElemName(node) :: stack)) ^^
@@ -892,12 +892,12 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
               case _ => Nil
             }
           case _ => Nil
-        }): _*)) }
+        }): _*)) })
     
     override def writesAttribute(__obj: xmlschema.XSimpleRestrictionType, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {
       var attr: scala.xml.MetaData  = scala.xml.Null
       __obj.id foreach { x => attr = scala.xml.Attribute(null, "id", x.toString, attr) }
-      attr = scala.xml.Attribute(null, "base", __obj.base.toString, attr)
+      attr = scala.xml.Attribute(null, "base", scalaxb.Helper.toString(__obj.base, __scope), attr)
       __obj.attributes.toList map {
         case (key, x) => attr = scala.xml.Attribute((x.namespace map { __scope.getPrefix(_) }).orNull, x.key.orNull, x.value.toString, attr) }
       attr
@@ -916,7 +916,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     override def typeName: Option[String] = Some("simpleExtensionType")
 
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[xmlschema.XSimpleExtensionType] =
-      opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ~ 
+      phrase(opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ~ 
       opt(parseXTypeDefParticleGroup(node, scalaxb.ElemName(node) :: stack)) ~ 
       (parseXAttrDeclsGroup(node, scalaxb.ElemName(node) :: stack)) ^^
       { case p1 ~ p2 ~ p3 =>
@@ -938,12 +938,12 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
               case _ => Nil
             }
           case _ => Nil
-        }): _*)) }
+        }): _*)) })
     
     override def writesAttribute(__obj: xmlschema.XSimpleExtensionType, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {
       var attr: scala.xml.MetaData  = scala.xml.Null
       __obj.id foreach { x => attr = scala.xml.Attribute(null, "id", x.toString, attr) }
-      attr = scala.xml.Attribute(null, "base", __obj.base.toString, attr)
+      attr = scala.xml.Attribute(null, "base", scalaxb.Helper.toString(__obj.base, __scope), attr)
       __obj.attributes.toList map {
         case (key, x) => attr = scala.xml.Attribute((x.namespace map { __scope.getPrefix(_) }).orNull, x.key.orNull, x.value.toString, attr) }
       attr
@@ -960,7 +960,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     val targetNamespace: Option[String] = Some("http://www.w3.org/2001/XMLSchema")
     
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[xmlschema.XSimpleContent] =
-      opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ~ 
+      phrase(opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ~ 
       (((scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "restriction")) ^^ 
       (x => scalaxb.DataRecord(x.namespace, Some(x.name), scalaxb.fromXML[xmlschema.XSimpleRestrictionType](x, scalaxb.ElemName(node) :: stack)))) | 
       ((scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "extension")) ^^ 
@@ -981,7 +981,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
               case _ => Nil
             }
           case _ => Nil
-        }): _*)) }
+        }): _*)) })
     
     override def writesAttribute(__obj: xmlschema.XSimpleContent, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {
       var attr: scala.xml.MetaData  = scala.xml.Null
@@ -1022,7 +1022,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     override def typeName: Option[String] = Some("topLevelElement")
 
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[xmlschema.XTopLevelElement] =
-      opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ~ 
+      phrase(opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ~ 
       opt(((scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "simpleType")) ^^ 
       (x => scalaxb.DataRecord(x.namespace, Some(x.name), scalaxb.fromXML[xmlschema.XLocalSimpleType](x, scalaxb.ElemName(node) :: stack)))) | 
       ((scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "complexType")) ^^ 
@@ -1071,15 +1071,15 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
               case _ => Nil
             }
           case _ => Nil
-        }): _*)) }
+        }): _*)) })
     
     override def writesAttribute(__obj: xmlschema.XTopLevelElement, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {
       var attr: scala.xml.MetaData  = scala.xml.Null
       __obj.id foreach { x => attr = scala.xml.Attribute(null, "id", x.toString, attr) }
       __obj.name foreach { x => attr = scala.xml.Attribute(null, "name", x.toString, attr) }
-      __obj.ref foreach { x => attr = scala.xml.Attribute(null, "ref", x.toString, attr) }
-      __obj.typeValue foreach { x => attr = scala.xml.Attribute(null, "type", x.toString, attr) }
-      __obj.substitutionGroup foreach { x => attr = scala.xml.Attribute(null, "substitutionGroup", x.toString, attr) }
+      __obj.ref foreach { x => attr = scala.xml.Attribute(null, "ref", scalaxb.Helper.toString(x, __scope), attr) }
+      __obj.typeValue foreach { x => attr = scala.xml.Attribute(null, "type", scalaxb.Helper.toString(x, __scope), attr) }
+      __obj.substitutionGroup foreach { x => attr = scala.xml.Attribute(null, "substitutionGroup", scalaxb.Helper.toString(x, __scope), attr) }
       if (__obj.minOccurs.toString != "1") attr = scala.xml.Attribute(null, "minOccurs", __obj.minOccurs.toString, attr)
       if (__obj.maxOccurs.toString != "1") attr = scala.xml.Attribute(null, "maxOccurs", __obj.maxOccurs.toString, attr)
       __obj.default foreach { x => attr = scala.xml.Attribute(null, "default", x.toString, attr) }
@@ -1124,7 +1124,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     override def typeName: Option[String] = Some("localElement")
 
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[xmlschema.XLocalElement] =
-      opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ~ 
+      phrase(opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ~ 
       opt(((scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "simpleType")) ^^ 
       (x => scalaxb.DataRecord(x.namespace, Some(x.name), scalaxb.fromXML[xmlschema.XLocalSimpleType](x, scalaxb.ElemName(node) :: stack)))) | 
       ((scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "complexType")) ^^ 
@@ -1173,15 +1173,15 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
               case _ => Nil
             }
           case _ => Nil
-        }): _*)) }
+        }): _*)) })
     
     override def writesAttribute(__obj: xmlschema.XLocalElement, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {
       var attr: scala.xml.MetaData  = scala.xml.Null
       __obj.id foreach { x => attr = scala.xml.Attribute(null, "id", x.toString, attr) }
       __obj.name foreach { x => attr = scala.xml.Attribute(null, "name", x.toString, attr) }
-      __obj.ref foreach { x => attr = scala.xml.Attribute(null, "ref", x.toString, attr) }
-      __obj.typeValue foreach { x => attr = scala.xml.Attribute(null, "type", x.toString, attr) }
-      __obj.substitutionGroup foreach { x => attr = scala.xml.Attribute(null, "substitutionGroup", x.toString, attr) }
+      __obj.ref foreach { x => attr = scala.xml.Attribute(null, "ref", scalaxb.Helper.toString(x, __scope), attr) }
+      __obj.typeValue foreach { x => attr = scala.xml.Attribute(null, "type", scalaxb.Helper.toString(x, __scope), attr) }
+      __obj.substitutionGroup foreach { x => attr = scala.xml.Attribute(null, "substitutionGroup", scalaxb.Helper.toString(x, __scope), attr) }
       if (__obj.minOccurs.toString != "1") attr = scala.xml.Attribute(null, "minOccurs", __obj.minOccurs.toString, attr)
       if (__obj.maxOccurs.toString != "1") attr = scala.xml.Attribute(null, "maxOccurs", __obj.maxOccurs.toString, attr)
       __obj.default foreach { x => attr = scala.xml.Attribute(null, "default", x.toString, attr) }
@@ -1247,7 +1247,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     override def typeName: Option[String] = Some("realGroup")
 
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[xmlschema.XRealGroup] =
-      opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ~ 
+      phrase(opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ~ 
       rep(parseXParticleGroup(node, scalaxb.ElemName(node) :: stack)) ^^
       { case p1 ~ p2 =>
       xmlschema.XRealGroup(p1.headOption map { scalaxb.fromXML[xmlschema.XAnnotation](_, scalaxb.ElemName(node) :: stack) },
@@ -1273,13 +1273,13 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
               case _ => Nil
             }
           case _ => Nil
-        }): _*)) }
+        }): _*)) })
     
     override def writesAttribute(__obj: xmlschema.XRealGroup, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {
       var attr: scala.xml.MetaData  = scala.xml.Null
       __obj.id foreach { x => attr = scala.xml.Attribute(null, "id", x.toString, attr) }
       __obj.name foreach { x => attr = scala.xml.Attribute(null, "name", x.toString, attr) }
-      __obj.ref foreach { x => attr = scala.xml.Attribute(null, "ref", x.toString, attr) }
+      __obj.ref foreach { x => attr = scala.xml.Attribute(null, "ref", scalaxb.Helper.toString(x, __scope), attr) }
       if (__obj.minOccurs.toString != "1") attr = scala.xml.Attribute(null, "minOccurs", __obj.minOccurs.toString, attr)
       if (__obj.maxOccurs.toString != "1") attr = scala.xml.Attribute(null, "maxOccurs", __obj.maxOccurs.toString, attr)
       __obj.attributes.toList map {
@@ -1297,7 +1297,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     val targetNamespace: Option[String] = Some("http://www.w3.org/2001/XMLSchema")
     
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[xmlschema.XAll] =
-      opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ~ 
+      phrase(opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ~ 
       rep(parseXParticleGroup(node, scalaxb.ElemName(node) :: stack)) ^^
       { case p1 ~ p2 =>
       xmlschema.XAll(p1.headOption map { scalaxb.fromXML[xmlschema.XAnnotation](_, scalaxb.ElemName(node) :: stack) },
@@ -1323,13 +1323,13 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
               case _ => Nil
             }
           case _ => Nil
-        }): _*)) }
+        }): _*)) })
     
     override def writesAttribute(__obj: xmlschema.XAll, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {
       var attr: scala.xml.MetaData  = scala.xml.Null
       __obj.id foreach { x => attr = scala.xml.Attribute(null, "id", x.toString, attr) }
       __obj.name foreach { x => attr = scala.xml.Attribute(null, "name", x.toString, attr) }
-      __obj.ref foreach { x => attr = scala.xml.Attribute(null, "ref", x.toString, attr) }
+      __obj.ref foreach { x => attr = scala.xml.Attribute(null, "ref", scalaxb.Helper.toString(x, __scope), attr) }
       if (__obj.minOccurs.toString != "1") attr = scala.xml.Attribute(null, "minOccurs", __obj.minOccurs.toString, attr)
       if (__obj.maxOccurs.toString != "1") attr = scala.xml.Attribute(null, "maxOccurs", __obj.maxOccurs.toString, attr)
       __obj.attributes.toList map {
@@ -1349,7 +1349,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     override def typeName: Option[String] = Some("namedGroup")
 
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[xmlschema.XNamedGroup] =
-      opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ~ 
+      phrase(opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ~ 
       rep(parseXParticleGroup(node, scalaxb.ElemName(node) :: stack)) ^^
       { case p1 ~ p2 =>
       xmlschema.XNamedGroup(p1.headOption map { scalaxb.fromXML[xmlschema.XAnnotation](_, scalaxb.ElemName(node) :: stack) },
@@ -1375,13 +1375,13 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
               case _ => Nil
             }
           case _ => Nil
-        }): _*)) }
+        }): _*)) })
     
     override def writesAttribute(__obj: xmlschema.XNamedGroup, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {
       var attr: scala.xml.MetaData  = scala.xml.Null
       __obj.id foreach { x => attr = scala.xml.Attribute(null, "id", x.toString, attr) }
       __obj.name foreach { x => attr = scala.xml.Attribute(null, "name", x.toString, attr) }
-      __obj.ref foreach { x => attr = scala.xml.Attribute(null, "ref", x.toString, attr) }
+      __obj.ref foreach { x => attr = scala.xml.Attribute(null, "ref", scalaxb.Helper.toString(x, __scope), attr) }
       if (__obj.minOccurs.toString != "1") attr = scala.xml.Attribute(null, "minOccurs", __obj.minOccurs.toString, attr)
       if (__obj.maxOccurs.toString != "1") attr = scala.xml.Attribute(null, "maxOccurs", __obj.maxOccurs.toString, attr)
       __obj.attributes.toList map {
@@ -1401,7 +1401,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     override def typeName: Option[String] = Some("groupRef")
 
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[xmlschema.XGroupRef] =
-      opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ~ 
+      phrase(opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ~ 
       rep(parseXParticleGroup(node, scalaxb.ElemName(node) :: stack)) ^^
       { case p1 ~ p2 =>
       xmlschema.XGroupRef(p1.headOption map { scalaxb.fromXML[xmlschema.XAnnotation](_, scalaxb.ElemName(node) :: stack) },
@@ -1427,13 +1427,13 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
               case _ => Nil
             }
           case _ => Nil
-        }): _*)) }
+        }): _*)) })
     
     override def writesAttribute(__obj: xmlschema.XGroupRef, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {
       var attr: scala.xml.MetaData  = scala.xml.Null
       __obj.id foreach { x => attr = scala.xml.Attribute(null, "id", x.toString, attr) }
       __obj.name foreach { x => attr = scala.xml.Attribute(null, "name", x.toString, attr) }
-      __obj.ref foreach { x => attr = scala.xml.Attribute(null, "ref", x.toString, attr) }
+      __obj.ref foreach { x => attr = scala.xml.Attribute(null, "ref", scalaxb.Helper.toString(x, __scope), attr) }
       if (__obj.minOccurs.toString != "1") attr = scala.xml.Attribute(null, "minOccurs", __obj.minOccurs.toString, attr)
       if (__obj.maxOccurs.toString != "1") attr = scala.xml.Attribute(null, "maxOccurs", __obj.maxOccurs.toString, attr)
       __obj.attributes.toList map {
@@ -1472,7 +1472,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     override def typeName: Option[String] = Some("explicitGroup")
 
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[xmlschema.XExplicitGroup] =
-      opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ~ 
+      phrase(opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ~ 
       rep(parseXParticleGroup(node, scalaxb.ElemName(node) :: stack)) ^^
       { case p1 ~ p2 =>
       xmlschema.XExplicitGroup(p1.headOption map { scalaxb.fromXML[xmlschema.XAnnotation](_, scalaxb.ElemName(node) :: stack) },
@@ -1498,13 +1498,13 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
               case _ => Nil
             }
           case _ => Nil
-        }): _*)) }
+        }): _*)) })
     
     override def writesAttribute(__obj: xmlschema.XExplicitGroup, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {
       var attr: scala.xml.MetaData  = scala.xml.Null
       __obj.id foreach { x => attr = scala.xml.Attribute(null, "id", x.toString, attr) }
       __obj.name foreach { x => attr = scala.xml.Attribute(null, "name", x.toString, attr) }
-      __obj.ref foreach { x => attr = scala.xml.Attribute(null, "ref", x.toString, attr) }
+      __obj.ref foreach { x => attr = scala.xml.Attribute(null, "ref", scalaxb.Helper.toString(x, __scope), attr) }
       if (__obj.minOccurs.toString != "1") attr = scala.xml.Attribute(null, "minOccurs", __obj.minOccurs.toString, attr)
       if (__obj.maxOccurs.toString != "1") attr = scala.xml.Attribute(null, "maxOccurs", __obj.maxOccurs.toString, attr)
       __obj.attributes.toList map {
@@ -1524,7 +1524,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     override def typeName: Option[String] = Some("simpleExplicitGroup")
 
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[xmlschema.XSimpleExplicitGroup] =
-      opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ~ 
+      phrase(opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ~ 
       rep(parseXParticleGroup(node, scalaxb.ElemName(node) :: stack)) ^^
       { case p1 ~ p2 =>
       xmlschema.XSimpleExplicitGroup(p1.headOption map { scalaxb.fromXML[xmlschema.XAnnotation](_, scalaxb.ElemName(node) :: stack) },
@@ -1550,13 +1550,13 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
               case _ => Nil
             }
           case _ => Nil
-        }): _*)) }
+        }): _*)) })
     
     override def writesAttribute(__obj: xmlschema.XSimpleExplicitGroup, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {
       var attr: scala.xml.MetaData  = scala.xml.Null
       __obj.id foreach { x => attr = scala.xml.Attribute(null, "id", x.toString, attr) }
       __obj.name foreach { x => attr = scala.xml.Attribute(null, "name", x.toString, attr) }
-      __obj.ref foreach { x => attr = scala.xml.Attribute(null, "ref", x.toString, attr) }
+      __obj.ref foreach { x => attr = scala.xml.Attribute(null, "ref", scalaxb.Helper.toString(x, __scope), attr) }
       if (__obj.minOccurs.toString != "1") attr = scala.xml.Attribute(null, "minOccurs", __obj.minOccurs.toString, attr)
       if (__obj.maxOccurs.toString != "1") attr = scala.xml.Attribute(null, "maxOccurs", __obj.maxOccurs.toString, attr)
       __obj.attributes.toList map {
@@ -1604,7 +1604,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     override def typeName: Option[String] = Some("narrowMaxMin")
 
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[xmlschema.XNarrowMaxMin] =
-      opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ~ 
+      phrase(opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ~ 
       opt(((scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "simpleType")) ^^ 
       (x => scalaxb.DataRecord(x.namespace, Some(x.name), scalaxb.fromXML[xmlschema.XLocalSimpleType](x, scalaxb.ElemName(node) :: stack)))) | 
       ((scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "complexType")) ^^ 
@@ -1653,15 +1653,15 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
               case _ => Nil
             }
           case _ => Nil
-        }): _*)) }
+        }): _*)) })
     
     override def writesAttribute(__obj: xmlschema.XNarrowMaxMin, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {
       var attr: scala.xml.MetaData  = scala.xml.Null
       __obj.id foreach { x => attr = scala.xml.Attribute(null, "id", x.toString, attr) }
       __obj.name foreach { x => attr = scala.xml.Attribute(null, "name", x.toString, attr) }
-      __obj.ref foreach { x => attr = scala.xml.Attribute(null, "ref", x.toString, attr) }
-      __obj.typeValue foreach { x => attr = scala.xml.Attribute(null, "type", x.toString, attr) }
-      __obj.substitutionGroup foreach { x => attr = scala.xml.Attribute(null, "substitutionGroup", x.toString, attr) }
+      __obj.ref foreach { x => attr = scala.xml.Attribute(null, "ref", scalaxb.Helper.toString(x, __scope), attr) }
+      __obj.typeValue foreach { x => attr = scala.xml.Attribute(null, "type", scalaxb.Helper.toString(x, __scope), attr) }
+      __obj.substitutionGroup foreach { x => attr = scala.xml.Attribute(null, "substitutionGroup", scalaxb.Helper.toString(x, __scope), attr) }
       if (__obj.minOccurs.toString != "1") attr = scala.xml.Attribute(null, "minOccurs", __obj.minOccurs.toString, attr)
       if (__obj.maxOccurs.toString != "1") attr = scala.xml.Attribute(null, "maxOccurs", __obj.maxOccurs.toString, attr)
       __obj.default foreach { x => attr = scala.xml.Attribute(null, "default", x.toString, attr) }
@@ -1734,7 +1734,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     override def typeName: Option[String] = Some("all")
 
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[xmlschema.XAllType] =
-      opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ~ 
+      phrase(opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ~ 
       rep(parseXParticleGroup(node, scalaxb.ElemName(node) :: stack)) ^^
       { case p1 ~ p2 =>
       xmlschema.XAllType(p1.headOption map { scalaxb.fromXML[xmlschema.XAnnotation](_, scalaxb.ElemName(node) :: stack) },
@@ -1760,13 +1760,13 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
               case _ => Nil
             }
           case _ => Nil
-        }): _*)) }
+        }): _*)) })
     
     override def writesAttribute(__obj: xmlschema.XAllType, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {
       var attr: scala.xml.MetaData  = scala.xml.Null
       __obj.id foreach { x => attr = scala.xml.Attribute(null, "id", x.toString, attr) }
       __obj.name foreach { x => attr = scala.xml.Attribute(null, "name", x.toString, attr) }
-      __obj.ref foreach { x => attr = scala.xml.Attribute(null, "ref", x.toString, attr) }
+      __obj.ref foreach { x => attr = scala.xml.Attribute(null, "ref", scalaxb.Helper.toString(x, __scope), attr) }
       if (__obj.minOccurs.toString != "1") attr = scala.xml.Attribute(null, "minOccurs", __obj.minOccurs.toString, attr)
       if (__obj.maxOccurs.toString != "1") attr = scala.xml.Attribute(null, "maxOccurs", __obj.maxOccurs.toString, attr)
       __obj.attributes.toList map {
@@ -1817,7 +1817,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     override def typeName: Option[String] = Some("wildcard")
 
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[xmlschema.XWildcard] =
-      opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ^^
+      phrase(opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ^^
       { case p1 =>
       xmlschema.XWildcard(p1.headOption map { scalaxb.fromXML[xmlschema.XAnnotation](_, scalaxb.ElemName(node) :: stack) },
         (node \ "@id").headOption map { scalaxb.fromXML[String](_, scalaxb.ElemName(node) :: stack) },
@@ -1837,7 +1837,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
               case _ => Nil
             }
           case _ => Nil
-        }): _*)) }
+        }): _*)) })
     
     override def writesAttribute(__obj: xmlschema.XWildcard, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {
       var attr: scala.xml.MetaData  = scala.xml.Null
@@ -1858,7 +1858,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     val targetNamespace: Option[String] = Some("http://www.w3.org/2001/XMLSchema")
     
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[xmlschema.XAny] =
-      opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ^^
+      phrase(opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ^^
       { case p1 =>
       xmlschema.XAny(p1.headOption map { scalaxb.fromXML[xmlschema.XAnnotation](_, scalaxb.ElemName(node) :: stack) },
         (node \ "@id").headOption map { scalaxb.fromXML[String](_, scalaxb.ElemName(node) :: stack) },
@@ -1882,7 +1882,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
               case _ => Nil
             }
           case _ => Nil
-        }): _*)) }
+        }): _*)) })
     
     override def writesAttribute(__obj: xmlschema.XAny, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {
       var attr: scala.xml.MetaData  = scala.xml.Null
@@ -1926,7 +1926,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     override def typeName: Option[String] = Some("namedAttributeGroup")
 
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[xmlschema.XNamedAttributeGroup] =
-      opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ~ 
+      phrase(opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ~ 
       (parseXAttrDeclsGroup(node, scalaxb.ElemName(node) :: stack)) ^^
       { case p1 ~ p2 =>
       xmlschema.XNamedAttributeGroup(p1.headOption map { scalaxb.fromXML[xmlschema.XAnnotation](_, scalaxb.ElemName(node) :: stack) },
@@ -1948,13 +1948,13 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
               case _ => Nil
             }
           case _ => Nil
-        }): _*)) }
+        }): _*)) })
     
     override def writesAttribute(__obj: xmlschema.XNamedAttributeGroup, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {
       var attr: scala.xml.MetaData  = scala.xml.Null
       __obj.id foreach { x => attr = scala.xml.Attribute(null, "id", x.toString, attr) }
       __obj.name foreach { x => attr = scala.xml.Attribute(null, "name", x.toString, attr) }
-      __obj.ref foreach { x => attr = scala.xml.Attribute(null, "ref", x.toString, attr) }
+      __obj.ref foreach { x => attr = scala.xml.Attribute(null, "ref", scalaxb.Helper.toString(x, __scope), attr) }
       __obj.attributes.toList map {
         case (key, x) => attr = scala.xml.Attribute((x.namespace map { __scope.getPrefix(_) }).orNull, x.key.orNull, x.value.toString, attr) }
       attr
@@ -1972,7 +1972,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     override def typeName: Option[String] = Some("attributeGroupRef")
 
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[xmlschema.XAttributeGroupRef] =
-      opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ~ 
+      phrase(opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ~ 
       (parseXAttrDeclsGroup(node, scalaxb.ElemName(node) :: stack)) ^^
       { case p1 ~ p2 =>
       xmlschema.XAttributeGroupRef(p1.headOption map { scalaxb.fromXML[xmlschema.XAnnotation](_, scalaxb.ElemName(node) :: stack) },
@@ -1994,13 +1994,13 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
               case _ => Nil
             }
           case _ => Nil
-        }): _*)) }
+        }): _*)) })
     
     override def writesAttribute(__obj: xmlschema.XAttributeGroupRef, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {
       var attr: scala.xml.MetaData  = scala.xml.Null
       __obj.id foreach { x => attr = scala.xml.Attribute(null, "id", x.toString, attr) }
       __obj.name foreach { x => attr = scala.xml.Attribute(null, "name", x.toString, attr) }
-      __obj.ref foreach { x => attr = scala.xml.Attribute(null, "ref", x.toString, attr) }
+      __obj.ref foreach { x => attr = scala.xml.Attribute(null, "ref", scalaxb.Helper.toString(x, __scope), attr) }
       __obj.attributes.toList map {
         case (key, x) => attr = scala.xml.Attribute((x.namespace map { __scope.getPrefix(_) }).orNull, x.key.orNull, x.value.toString, attr) }
       attr
@@ -2016,7 +2016,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     val targetNamespace: Option[String] = Some("http://www.w3.org/2001/XMLSchema")
     
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[xmlschema.XInclude] =
-      opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ^^
+      phrase(opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ^^
       { case p1 =>
       xmlschema.XInclude(p1.headOption map { scalaxb.fromXML[xmlschema.XAnnotation](_, scalaxb.ElemName(node) :: stack) },
         (node \ "@id").headOption map { scalaxb.fromXML[String](_, scalaxb.ElemName(node) :: stack) },
@@ -2034,7 +2034,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
               case _ => Nil
             }
           case _ => Nil
-        }): _*)) }
+        }): _*)) })
     
     override def writesAttribute(__obj: xmlschema.XInclude, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {
       var attr: scala.xml.MetaData  = scala.xml.Null
@@ -2054,7 +2054,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     val targetNamespace: Option[String] = Some("http://www.w3.org/2001/XMLSchema")
     
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[xmlschema.XRedefine] =
-      rep(((scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ^^ 
+      phrase(rep(((scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ^^ 
       (x => scalaxb.DataRecord(x.namespace, Some(x.name), scalaxb.fromXML[xmlschema.XAnnotation](x, scalaxb.ElemName(node) :: stack)))) ||| 
       (parseXRedefinableGroup(node, scalaxb.ElemName(node) :: stack, true))) ^^
       { case p1 =>
@@ -2074,7 +2074,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
               case _ => Nil
             }
           case _ => Nil
-        }): _*)) }
+        }): _*)) })
     
     override def writesAttribute(__obj: xmlschema.XRedefine, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {
       var attr: scala.xml.MetaData  = scala.xml.Null
@@ -2094,7 +2094,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     val targetNamespace: Option[String] = Some("http://www.w3.org/2001/XMLSchema")
     
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[xmlschema.XImport] =
-      opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ^^
+      phrase(opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ^^
       { case p1 =>
       xmlschema.XImport(p1.headOption map { scalaxb.fromXML[xmlschema.XAnnotation](_, scalaxb.ElemName(node) :: stack) },
         (node \ "@id").headOption map { scalaxb.fromXML[String](_, scalaxb.ElemName(node) :: stack) },
@@ -2114,7 +2114,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
               case _ => Nil
             }
           case _ => Nil
-        }): _*)) }
+        }): _*)) })
     
     override def writesAttribute(__obj: xmlschema.XImport, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {
       var attr: scala.xml.MetaData  = scala.xml.Null
@@ -2135,7 +2135,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     val targetNamespace: Option[String] = Some("http://www.w3.org/2001/XMLSchema")
     
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[xmlschema.XSelector] =
-      opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ^^
+      phrase(opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ^^
       { case p1 =>
       xmlschema.XSelector(p1.headOption map { scalaxb.fromXML[xmlschema.XAnnotation](_, scalaxb.ElemName(node) :: stack) },
         (node \ "@id").headOption map { scalaxb.fromXML[String](_, scalaxb.ElemName(node) :: stack) },
@@ -2153,7 +2153,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
               case _ => Nil
             }
           case _ => Nil
-        }): _*)) }
+        }): _*)) })
     
     override def writesAttribute(__obj: xmlschema.XSelector, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {
       var attr: scala.xml.MetaData  = scala.xml.Null
@@ -2173,7 +2173,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     val targetNamespace: Option[String] = Some("http://www.w3.org/2001/XMLSchema")
     
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[xmlschema.XField] =
-      opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ^^
+      phrase(opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ^^
       { case p1 =>
       xmlschema.XField(p1.headOption map { scalaxb.fromXML[xmlschema.XAnnotation](_, scalaxb.ElemName(node) :: stack) },
         (node \ "@id").headOption map { scalaxb.fromXML[String](_, scalaxb.ElemName(node) :: stack) },
@@ -2191,7 +2191,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
               case _ => Nil
             }
           case _ => Nil
-        }): _*)) }
+        }): _*)) })
     
     override def writesAttribute(__obj: xmlschema.XField, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {
       var attr: scala.xml.MetaData  = scala.xml.Null
@@ -2230,7 +2230,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     override def typeName: Option[String] = Some("keybase")
 
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[xmlschema.XKeybase] =
-      opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ~ 
+      phrase(opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ~ 
       (scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "selector")) ~ 
       rep(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "field")) ^^
       { case p1 ~ p2 ~ p3 =>
@@ -2252,7 +2252,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
               case _ => Nil
             }
           case _ => Nil
-        }): _*)) }
+        }): _*)) })
     
     override def writesAttribute(__obj: xmlschema.XKeybase, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {
       var attr: scala.xml.MetaData  = scala.xml.Null
@@ -2274,7 +2274,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     val targetNamespace: Option[String] = Some("http://www.w3.org/2001/XMLSchema")
     
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[xmlschema.XKeyref] =
-      opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ~ 
+      phrase(opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ~ 
       (scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "selector")) ~ 
       rep(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "field")) ^^
       { case p1 ~ p2 ~ p3 =>
@@ -2298,13 +2298,13 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
               case _ => Nil
             }
           case _ => Nil
-        }): _*)) }
+        }): _*)) })
     
     override def writesAttribute(__obj: xmlschema.XKeyref, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {
       var attr: scala.xml.MetaData  = scala.xml.Null
       __obj.id foreach { x => attr = scala.xml.Attribute(null, "id", x.toString, attr) }
       attr = scala.xml.Attribute(null, "name", __obj.name.toString, attr)
-      attr = scala.xml.Attribute(null, "refer", __obj.refer.toString, attr)
+      attr = scala.xml.Attribute(null, "refer", scalaxb.Helper.toString(__obj.refer, __scope), attr)
       __obj.attributes.toList map {
         case (key, x) => attr = scala.xml.Attribute((x.namespace map { __scope.getPrefix(_) }).orNull, x.key.orNull, x.value.toString, attr) }
       attr
@@ -2321,7 +2321,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     val targetNamespace: Option[String] = Some("http://www.w3.org/2001/XMLSchema")
     
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[xmlschema.XNotation] =
-      opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ^^
+      phrase(opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ^^
       { case p1 =>
       xmlschema.XNotation(p1.headOption map { scalaxb.fromXML[xmlschema.XAnnotation](_, scalaxb.ElemName(node) :: stack) },
         (node \ "@id").headOption map { scalaxb.fromXML[String](_, scalaxb.ElemName(node) :: stack) },
@@ -2343,7 +2343,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
               case _ => Nil
             }
           case _ => Nil
-        }): _*)) }
+        }): _*)) })
     
     override def writesAttribute(__obj: xmlschema.XNotation, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {
       var attr: scala.xml.MetaData  = scala.xml.Null
@@ -2367,7 +2367,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     override def isMixed: Boolean = true
 
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[xmlschema.XAppinfo] =
-      optTextRecord ~ 
+      phrase(optTextRecord ~ 
       rep(((any(x => List(Some()) contains x.namespace) ^^ (scalaxb.fromXML[scalaxb.DataRecord[Any]](_, scalaxb.ElemName(node) :: stack))) ~ 
       optTextRecord) ^^ 
       { case p1 ~ p2 => Seq.concat(Seq(p1), p2.toList) }) ~ 
@@ -2389,7 +2389,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
               case _ => Nil
             }
           case _ => Nil
-        }): _*)) }
+        }): _*)) })
     
     override def writesAttribute(__obj: xmlschema.XAppinfo, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {
       var attr: scala.xml.MetaData  = scala.xml.Null
@@ -2410,7 +2410,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     override def isMixed: Boolean = true
 
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[xmlschema.XDocumentation] =
-      optTextRecord ~ 
+      phrase(optTextRecord ~ 
       rep(((any(x => List(Some()) contains x.namespace) ^^ (scalaxb.fromXML[scalaxb.DataRecord[Any]](_, scalaxb.ElemName(node) :: stack))) ~ 
       optTextRecord) ^^ 
       { case p1 ~ p2 => Seq.concat(Seq(p1), p2.toList) }) ~ 
@@ -2435,7 +2435,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
               case _ => Nil
             }
           case _ => Nil
-        }): _*)) }
+        }): _*)) })
     
     override def writesAttribute(__obj: xmlschema.XDocumentation, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {
       var attr: scala.xml.MetaData  = scala.xml.Null
@@ -2455,7 +2455,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     val targetNamespace: Option[String] = Some("http://www.w3.org/2001/XMLSchema")
     
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[xmlschema.XAnnotation] =
-      rep(((scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "appinfo")) ^^ 
+      phrase(rep(((scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "appinfo")) ^^ 
       (x => scalaxb.DataRecord(x.namespace, Some(x.name), scalaxb.fromXML[xmlschema.XAppinfo](x, scalaxb.ElemName(node) :: stack)))) | 
       ((scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "documentation")) ^^ 
       (x => scalaxb.DataRecord(x.namespace, Some(x.name), scalaxb.fromXML[xmlschema.XDocumentation](x, scalaxb.ElemName(node) :: stack))))) ^^
@@ -2474,7 +2474,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
               case _ => Nil
             }
           case _ => Nil
-        }): _*)) }
+        }): _*)) })
     
     override def writesAttribute(__obj: xmlschema.XAnnotation, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {
       var attr: scala.xml.MetaData  = scala.xml.Null
@@ -2497,7 +2497,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     override def isMixed: Boolean = true
 
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[xmlschema.XAnyType] =
-      optTextRecord ~ 
+      phrase(optTextRecord ~ 
       rep(((any(x => List(Some()) contains x.namespace) ^^ (scalaxb.fromXML[scalaxb.DataRecord[Any]](_, scalaxb.ElemName(node) :: stack))) ~ 
       optTextRecord) ^^ 
       { case p1 ~ p2 => Seq.concat(Seq(p1), p2.toList) }) ~ 
@@ -2518,7 +2518,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
               case _ => Nil
             }
           case _ => Nil
-        }): _*)) }
+        }): _*)) })
     
     override def writesAttribute(__obj: xmlschema.XAnyType, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {
       var attr: scala.xml.MetaData  = scala.xml.Null
@@ -2571,7 +2571,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     override def typeName: Option[String] = Some("topLevelSimpleType")
 
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[xmlschema.XTopLevelSimpleType] =
-      opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ~ 
+      phrase(opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ~ 
       (parseXSimpleDerivationGroup(node, scalaxb.ElemName(node) :: stack)) ^^
       { case p1 ~ p2 =>
       xmlschema.XTopLevelSimpleType(p1.headOption map { scalaxb.fromXML[xmlschema.XAnnotation](_, scalaxb.ElemName(node) :: stack) },
@@ -2593,7 +2593,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
               case _ => Nil
             }
           case _ => Nil
-        }): _*)) }
+        }): _*)) })
     
     override def writesAttribute(__obj: xmlschema.XTopLevelSimpleType, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {
       var attr: scala.xml.MetaData  = scala.xml.Null
@@ -2617,7 +2617,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     override def typeName: Option[String] = Some("localSimpleType")
 
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[xmlschema.XLocalSimpleType] =
-      opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ~ 
+      phrase(opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ~ 
       (parseXSimpleDerivationGroup(node, scalaxb.ElemName(node) :: stack)) ^^
       { case p1 ~ p2 =>
       xmlschema.XLocalSimpleType(p1.headOption map { scalaxb.fromXML[xmlschema.XAnnotation](_, scalaxb.ElemName(node) :: stack) },
@@ -2639,7 +2639,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
               case _ => Nil
             }
           case _ => Nil
-        }): _*)) }
+        }): _*)) })
     
     override def writesAttribute(__obj: xmlschema.XLocalSimpleType, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {
       var attr: scala.xml.MetaData  = scala.xml.Null
@@ -2661,7 +2661,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     val targetNamespace: Option[String] = Some("http://www.w3.org/2001/XMLSchema")
     
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[xmlschema.XRestriction] =
-      opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ~ 
+      phrase(opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ~ 
       (parseXSimpleRestrictionModelGroup(node, scalaxb.ElemName(node) :: stack)) ^^
       { case p1 ~ p2 =>
       xmlschema.XRestriction(p1.headOption map { scalaxb.fromXML[xmlschema.XAnnotation](_, scalaxb.ElemName(node) :: stack) },
@@ -2681,12 +2681,12 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
               case _ => Nil
             }
           case _ => Nil
-        }): _*)) }
+        }): _*)) })
     
     override def writesAttribute(__obj: xmlschema.XRestriction, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {
       var attr: scala.xml.MetaData  = scala.xml.Null
       __obj.id foreach { x => attr = scala.xml.Attribute(null, "id", x.toString, attr) }
-      __obj.base foreach { x => attr = scala.xml.Attribute(null, "base", x.toString, attr) }
+      __obj.base foreach { x => attr = scala.xml.Attribute(null, "base", scalaxb.Helper.toString(x, __scope), attr) }
       __obj.attributes.toList map {
         case (key, x) => attr = scala.xml.Attribute((x.namespace map { __scope.getPrefix(_) }).orNull, x.key.orNull, x.value.toString, attr) }
       attr
@@ -2702,7 +2702,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     val targetNamespace: Option[String] = Some("http://www.w3.org/2001/XMLSchema")
     
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[xmlschema.XList] =
-      opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ~ 
+      phrase(opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ~ 
       opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "simpleType")) ^^
       { case p1 ~ p2 =>
       xmlschema.XList(p1.headOption map { scalaxb.fromXML[xmlschema.XAnnotation](_, scalaxb.ElemName(node) :: stack) },
@@ -2722,12 +2722,12 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
               case _ => Nil
             }
           case _ => Nil
-        }): _*)) }
+        }): _*)) })
     
     override def writesAttribute(__obj: xmlschema.XList, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {
       var attr: scala.xml.MetaData  = scala.xml.Null
       __obj.id foreach { x => attr = scala.xml.Attribute(null, "id", x.toString, attr) }
-      __obj.itemType foreach { x => attr = scala.xml.Attribute(null, "itemType", x.toString, attr) }
+      __obj.itemType foreach { x => attr = scala.xml.Attribute(null, "itemType", scalaxb.Helper.toString(x, __scope), attr) }
       __obj.attributes.toList map {
         case (key, x) => attr = scala.xml.Attribute((x.namespace map { __scope.getPrefix(_) }).orNull, x.key.orNull, x.value.toString, attr) }
       attr
@@ -2743,7 +2743,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     val targetNamespace: Option[String] = Some("http://www.w3.org/2001/XMLSchema")
     
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[xmlschema.XUnion] =
-      opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ~ 
+      phrase(opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ~ 
       rep(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "simpleType")) ^^
       { case p1 ~ p2 =>
       xmlschema.XUnion(p1.headOption map { scalaxb.fromXML[xmlschema.XAnnotation](_, scalaxb.ElemName(node) :: stack) },
@@ -2763,12 +2763,12 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
               case _ => Nil
             }
           case _ => Nil
-        }): _*)) }
+        }): _*)) })
     
     override def writesAttribute(__obj: xmlschema.XUnion, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {
       var attr: scala.xml.MetaData  = scala.xml.Null
       __obj.id foreach { x => attr = scala.xml.Attribute(null, "id", x.toString, attr) }
-      __obj.memberTypes foreach { x => attr = scala.xml.Attribute(null, "memberTypes", x.map(x => x.toString).mkString(" "), attr) }
+      __obj.memberTypes foreach { x => attr = scala.xml.Attribute(null, "memberTypes", x.map(x => scalaxb.Helper.toString(x, __scope)).mkString(" "), attr) }
       __obj.attributes.toList map {
         case (key, x) => attr = scala.xml.Attribute((x.namespace map { __scope.getPrefix(_) }).orNull, x.key.orNull, x.value.toString, attr) }
       attr
@@ -2806,7 +2806,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     override def typeName: Option[String] = Some("facet")
 
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[xmlschema.XFacet] =
-      opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ^^
+      phrase(opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ^^
       { case p1 =>
       xmlschema.XFacet(p1.headOption map { scalaxb.fromXML[xmlschema.XAnnotation](_, scalaxb.ElemName(node) :: stack) },
         (node \ "@id").headOption map { scalaxb.fromXML[String](_, scalaxb.ElemName(node) :: stack) },
@@ -2826,7 +2826,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
               case _ => Nil
             }
           case _ => Nil
-        }): _*)) }
+        }): _*)) })
     
     override def writesAttribute(__obj: xmlschema.XFacet, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {
       var attr: scala.xml.MetaData  = scala.xml.Null
@@ -2866,7 +2866,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     override def typeName: Option[String] = Some("noFixedFacet")
 
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[xmlschema.XNoFixedFacet] =
-      opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ^^
+      phrase(opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ^^
       { case p1 =>
       xmlschema.XNoFixedFacet(p1.headOption map { scalaxb.fromXML[xmlschema.XAnnotation](_, scalaxb.ElemName(node) :: stack) },
         (node \ "@id").headOption map { scalaxb.fromXML[String](_, scalaxb.ElemName(node) :: stack) },
@@ -2886,7 +2886,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
               case _ => Nil
             }
           case _ => Nil
-        }): _*)) }
+        }): _*)) })
     
     override def writesAttribute(__obj: xmlschema.XNoFixedFacet, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {
       var attr: scala.xml.MetaData  = scala.xml.Null
@@ -2926,7 +2926,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     override def typeName: Option[String] = Some("numFacet")
 
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[xmlschema.XNumFacet] =
-      opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ^^
+      phrase(opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ^^
       { case p1 =>
       xmlschema.XNumFacet(p1.headOption map { scalaxb.fromXML[xmlschema.XAnnotation](_, scalaxb.ElemName(node) :: stack) },
         (node \ "@id").headOption map { scalaxb.fromXML[String](_, scalaxb.ElemName(node) :: stack) },
@@ -2946,7 +2946,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
               case _ => Nil
             }
           case _ => Nil
-        }): _*)) }
+        }): _*)) })
     
     override def writesAttribute(__obj: xmlschema.XNumFacet, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {
       var attr: scala.xml.MetaData  = scala.xml.Null
@@ -2967,7 +2967,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     val targetNamespace: Option[String] = Some("http://www.w3.org/2001/XMLSchema")
     
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[xmlschema.XTotalDigits] =
-      opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ^^
+      phrase(opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ^^
       { case p1 =>
       xmlschema.XTotalDigits(p1.headOption map { scalaxb.fromXML[xmlschema.XAnnotation](_, scalaxb.ElemName(node) :: stack) },
         (node \ "@id").headOption map { scalaxb.fromXML[String](_, scalaxb.ElemName(node) :: stack) },
@@ -2987,7 +2987,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
               case _ => Nil
             }
           case _ => Nil
-        }): _*)) }
+        }): _*)) })
     
     override def writesAttribute(__obj: xmlschema.XTotalDigits, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {
       var attr: scala.xml.MetaData  = scala.xml.Null
@@ -3022,7 +3022,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     val targetNamespace: Option[String] = Some("http://www.w3.org/2001/XMLSchema")
     
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[xmlschema.XWhiteSpace] =
-      opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ^^
+      phrase(opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ^^
       { case p1 =>
       xmlschema.XWhiteSpace(p1.headOption map { scalaxb.fromXML[xmlschema.XAnnotation](_, scalaxb.ElemName(node) :: stack) },
         (node \ "@id").headOption map { scalaxb.fromXML[String](_, scalaxb.ElemName(node) :: stack) },
@@ -3042,7 +3042,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
               case _ => Nil
             }
           case _ => Nil
-        }): _*)) }
+        }): _*)) })
     
     override def writesAttribute(__obj: xmlschema.XWhiteSpace, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {
       var attr: scala.xml.MetaData  = scala.xml.Null
@@ -3063,7 +3063,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     val targetNamespace: Option[String] = Some("http://www.w3.org/2001/XMLSchema")
     
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[xmlschema.XPattern] =
-      opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ^^
+      phrase(opt(scalaxb.ElemName(Some("http://www.w3.org/2001/XMLSchema"), "annotation")) ^^
       { case p1 =>
       xmlschema.XPattern(p1.headOption map { scalaxb.fromXML[xmlschema.XAnnotation](_, scalaxb.ElemName(node) :: stack) },
         (node \ "@id").headOption map { scalaxb.fromXML[String](_, scalaxb.ElemName(node) :: stack) },
@@ -3083,7 +3083,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
               case _ => Nil
             }
           case _ => Nil
-        }): _*)) }
+        }): _*)) })
     
     override def writesAttribute(__obj: xmlschema.XPattern, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {
       var attr: scala.xml.MetaData  = scala.xml.Null
@@ -3755,7 +3755,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     def toAttribute(__obj: xmlschema.XDefRef, __attr: scala.xml.MetaData, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {
       var attr: scala.xml.MetaData  = __attr
       __obj.name foreach { x => attr = scala.xml.Attribute(null, "name", x.toString, attr) }
-    __obj.ref foreach { x => attr = scala.xml.Attribute(null, "ref", x.toString, attr) }
+    __obj.ref foreach { x => attr = scala.xml.Attribute(null, "ref", scalaxb.Helper.toString(x, __scope), attr) }
       attr
     }
   }

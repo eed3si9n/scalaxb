@@ -56,19 +56,19 @@
    <complexType name="definitionsType">
       <complexContent>
          <extension base="wsdl:documented">
-            <sequence>
-               <element ref="wsdl:import" minOccurs="0" maxOccurs="unbounded"/>
-               <element ref="wsdl:types" minOccurs="0"/>
-               <element ref="wsdl:message" minOccurs="0" maxOccurs="unbounded"/>
-               <element ref="wsdl:portType" minOccurs="0" maxOccurs="unbounded"/>
-               <element ref="wsdl:binding" minOccurs="0" maxOccurs="unbounded"/>
-               <element ref="wsdl:service" minOccurs="0" maxOccurs="unbounded"/>
-               <any namespace="##other" minOccurs="0" maxOccurs="unbounded">
+            <choice minOccurs="0" maxOccurs="unbounded">
+               <element ref="wsdl:import"/>
+               <element ref="wsdl:types"/>
+               <element ref="wsdl:message"/>
+               <element ref="wsdl:portType"/>
+               <element ref="wsdl:binding"/>
+               <element ref="wsdl:service"/>
+               <any namespace="##other">
                   <annotation>
                      <documentation>to support extensibility elements </documentation>
                   </annotation>
                </any>
-            </sequence>
+            </choice>
             <attribute name="targetNamespace" type="anyURI" use="optional"/>
             <attribute name="name" type="NMTOKEN" use="optional"/>
          </extension>

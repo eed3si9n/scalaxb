@@ -37,6 +37,7 @@ class Driver extends Module { driver =>
   type Schema = WsdlPair
   type Context = WsdlContext
   type RawSchema = scala.xml.Node
+  val WSDL_NS = Some("http://schemas.xmlsoap.org/wsdl/")
 
   val xsddriver = new scalaxb.compiler.xsd.Driver {
     override def verbose = driver.verbose
@@ -58,13 +59,18 @@ class Driver extends Module { driver =>
     context.definitions foreach {processDefinition(_, context)}
   }
 
+  def extractChildren[A, B](definition: XDefinitionsType, elementName: String)(f: A => B): Seq[B] =
+    definition.xdefinitionstypeoption collect {
+      case DataRecord(WSDL_NS, Some(`elementName`), x: A) => f(x)
+    }
+
   def processDefinition(definition: XDefinitionsType, context: Context) {
     val ns = definition.targetNamespace map {_.toString}
 
-    definition.message map { x => context.messages((ns, x.name)) = x }
-    definition.portType map { x => context.interfaces((ns, x.name)) = x }
-    definition.binding map { x => context.bindings((ns, x.name)) = x }
-    definition.service map { x => context.services((ns, x.name)) = x }
+    extractChildren(definition, "message") { x: XMessageType => context.messages((ns, x.name)) = x }
+    extractChildren(definition, "portType") { x: XPortTypeType => context.interfaces((ns, x.name)) = x }
+    extractChildren(definition, "binding") { x: XBindingType => context.bindings((ns, x.name)) = x }
+    extractChildren(definition, "service") { x: XServiceType => context.services((ns, x.name)) = x }
   }
 
   override def generateProtocol(snippet: Snippet,
@@ -95,9 +101,10 @@ class Driver extends Module { driver =>
 
     val wsdlgenerated: Seq[(Option[String], Snippet, String)] = pair.definition.toList map { wsdl =>
       val pkg = packageName(wsdl.targetNamespace map {_.toString}, cntxt)
-      generator.soap11Bindings(wsdl) foreach { _ => cntxt.soap11 = true }
-      generator.soap12Bindings(wsdl) foreach { _ => cntxt.soap12 = true }
-      (pkg, Snippet(headerSnippet(pkg), generator.generate(wsdl)), part)
+      val bindings = extractChildren(wsdl, "binding") { x: XBindingType => x }
+      generator.soap11Bindings(bindings) foreach { _ => cntxt.soap11 = true }
+      generator.soap12Bindings(bindings) foreach { _ => cntxt.soap12 = true }
+      (pkg, Snippet(headerSnippet(pkg), generator.generate(wsdl, bindings)), part)
     }
 
     xsdgenerated ++ wsdlgenerated
@@ -113,9 +120,9 @@ class Driver extends Module { driver =>
     lazy val (wsdl: Option[XDefinitionsType], xsdRawSchema: Seq[Node]) = alocation.toString match {
       case FileExtension(".wsdl") =>
         val w = scalaxb.fromXML[XDefinitionsType](rawschema)
-        val x: Seq[Node] = w.types map { _.any collect {
+        val x: Seq[Node] = extractChildren(w, "types") { t: XTypesType => t } flatMap { _.any collect {
           case DataRecord(_, _, node: Node) => node
-        }} getOrElse {Nil}
+        }}
         (Some(w), x)
       case FileExtension(".xsd")  =>
         (None, List(rawschema))
@@ -129,7 +136,7 @@ class Driver extends Module { driver =>
 
     lazy val importNamespaces: Seq[String] =
       (wsdl map { wsdl =>
-        wsdl.importValue map {_.namespace.toString}
+        extractChildren(wsdl, "import") { x: XImportType => x.namespace.toString }
       } getOrElse {Nil}) ++
       (schemaLite flatMap { schemaLite =>
         schemaLite.imports collect {
@@ -138,7 +145,7 @@ class Driver extends Module { driver =>
 
     val importLocations: Seq[String] =
       (wsdl map { wsdl =>
-        wsdl.importValue map {_.location.toString}
+        extractChildren(wsdl, "import") { x: XImportType => x.location.toString }
       } getOrElse {Nil}) ++
       (schemaLite flatMap { schemaLite =>
         schemaLite.imports collect {

@@ -49,6 +49,7 @@ object GeneralUsage {
     testUnmarshallBaseComplexType
     testSubstitutionGroup
     testExtraElement
+    testTypeAttribute
     true
   }
   
@@ -444,40 +445,17 @@ object GeneralUsage {
     check(fromXML[DataRecord[Person]](document))
   }
 
-  def testDataRecordAny {
-    println("testDataRecordAny")
-
-    val scope = scalaxb.toScope(Some("xs") -> "http://www.w3.org/2001/XMLSchema",
-      Some("xsi") -> "http://www.w3.org/2001/XMLSchema-instance")
-    val subject = <core:gln xmlns:core="urn:epcglobal:hls:1">0111222123458</core:gln>
-    val r = scalaxb.fromXML[DataRecord[Any]](subject)
-
-    def check(obj: Any) = obj match {
-        case DataRecord(Some("urn:epcglobal:hls:1"), Some("gln"), x) if x == <core:gln xmlns:core="urn:epcglobal:hls:1">0111222123458</core:gln> =>
-        case _ => error("match failed: " + obj.toString)
-      }    
-    
-    check(r)
-    val document = scalaxb.toXML[scalaxb.DataRecord[Any]](r, r.namespace, r.key, scope, true)
-    document.toString match {
-      case """<core:gln xmlns:core="urn:epcglobal:hls:1">0111222123458</core:gln>""" =>
-      case x => error("match failed: " + x)
-    }
-    println(document)
-    check(fromXML[DataRecord[Any]](document))
-  }
-
   def testDataRecordEquality {
     println("testDataRecordEquality")
 
     val subject = <foo xmlns="http://www.example.com/general"
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
       <person1><firstName>John</firstName><lastName>Doe</lastName></person1>
-      <person2 xsi:nil="true"/>
+        <person2 xsi:nil="true"/>
       <person3><firstName>John</firstName><lastName>Doe</lastName></person3>
       <person5><firstName>John</firstName><lastName>Doe</lastName></person5>
-        <person5><firstName>John</firstName><lastName>Doe</lastName></person5>
-      <person6 xsi:nil="true"/>
+      <person5><firstName>John</firstName><lastName>Doe</lastName></person5>
+        <person6 xsi:nil="true"/>
     </foo>
     val obj = scalaxb.fromXML[ChoiceComplexTypeTest](subject)
     val r1 = obj
@@ -490,7 +468,30 @@ object GeneralUsage {
         "\nhashCode: " + r2.hashCode.toString + "\n" + r2.toString)
     }
   }
-  
+
+  def testDataRecordAny {
+    println("testDataRecordAny")
+
+    val scope = scalaxb.toScope(Some("xs") -> "http://www.w3.org/2001/XMLSchema",
+      Some("xsi") -> "http://www.w3.org/2001/XMLSchema-instance")
+    val subject = <core:gln xmlns:core="urn:epcglobal:hls:1">0111222123458</core:gln>
+    val r = scalaxb.fromXML[DataRecord[Any]](subject)
+
+    def check(obj: Any) = obj match {
+        case DataRecord(Some("urn:epcglobal:hls:1"), Some("gln"), x) if x == <core:gln xmlns:core="urn:epcglobal:hls:1">0111222123458</core:gln> =>
+        case _ => error("match failed: " + obj.toString)
+      }
+
+    check(r)
+    val document = scalaxb.toXML[scalaxb.DataRecord[Any]](r, r.namespace, r.key, scope, true)
+    document.toString match {
+      case """<core:gln xmlns:core="urn:epcglobal:hls:1">0111222123458</core:gln>""" =>
+      case x => error("match failed: " + x)
+    }
+    println(document)
+    check(fromXML[DataRecord[Any]](document))
+  }
+
   def testDefaultScope {
     if (defaultScope.getURI(null) == "http://www.example.com/general") true
     else error("default scope is missing.")
@@ -552,5 +553,27 @@ object GeneralUsage {
       case _ => return
     }
     error("extra element did not raise error")
+  }
+
+  def testTypeAttribute {
+    println("testTypeAttribute")
+
+    val scope = scalaxb.toScope(Some("gen") -> "http://www.example.com/general",
+      Some("foo") -> "http://www.example.com/foo",
+      Some("xs") -> "http://www.w3.org/2001/XMLSchema",
+      Some("xsi") -> "http://www.w3.org/2001/XMLSchema-instance")
+    val subject = <foo:billTo xmlns:gen="http://www.example.com/general" xmlns:foo="http://www.example.com/foo">
+        <gen:street>1537 Paper Street</gen:street>
+        <gen:city>Wilmington</gen:city>
+        <gen:state>DE</gen:state>
+        <gen:zip>19886</gen:zip>
+      </foo:billTo>
+    val obj: Addressable = scalaxb.fromXML[USAddress](subject)
+    val document = scalaxb.toXML(obj, Some("http://www.example.com/foo"), Some("billTo"), scope, true)
+    document.toString match {
+      case """<foo:billTo xsi:type="gen:USAddress" xmlns:gen="http://www.example.com/general" xmlns:foo="http://www.example.com/foo" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><gen:street>1537 Paper Street</gen:street><gen:city>Wilmington</gen:city><gen:state>DE</gen:state><gen:zip>19886</gen:zip></foo:billTo>""" =>
+      case x => error("match failed: " + x)
+    }
+    println(document)
   }
 }

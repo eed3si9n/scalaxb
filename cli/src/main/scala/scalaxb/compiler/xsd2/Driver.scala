@@ -57,7 +57,7 @@ class Driver extends Module { driver =>
       def importLocations: Seq[String] = Nil
       def includeLocations: Seq[String] = Nil
 
-      def toSchema(context: Context): Schema = {
+      def toSchema(context: Context, outerNamespace: Option[String]): Schema = {
         val unbound = fromXML[XSchema](raw)
         // logger.debug("Driver.toSchema: " + unbound.toString())
         val wrapped = ReferenceSchema.fromSchema(unbound, raw.scope)

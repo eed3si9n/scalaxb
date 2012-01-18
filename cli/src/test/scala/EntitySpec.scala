@@ -171,17 +171,17 @@ object EntitySpec extends Specification { def is =
   }
 
   def derivation1 = {
-    val entitySource = module.processNode(<xs:schema targetNamespace="http://www.example.com/general"
+    val entitySource = module.processNode(<xs:schema targetNamespace="http://www.example.com"
         xmlns:xs="http://www.w3.org/2001/XMLSchema"
-        xmlns:gen="http://www.example.com/general">
+        xmlns:tns="http://www.example.com">
       <xs:complexType name="SimpleTypeTest">
         <xs:sequence>
-          <xs:element name="milklist1" type="gen:ListOfMilk"/>
+          <xs:element name="milklist1" type="tns:ListOfMilk"/>
         </xs:sequence>
       </xs:complexType>
 
       <xs:simpleType name="ListOfMilk">
-        <xs:list itemType="gen:MilkType"/>
+        <xs:list itemType="tns:MilkType"/>
       </xs:simpleType>
 
       <xs:simpleType name="MilkType">
@@ -193,7 +193,7 @@ object EntitySpec extends Specification { def is =
     </xs:schema>, "example")(0)
 
     println(entitySource)
-    entitySource must contain("""milklist1: Seq[MilkType]""")
+    entitySource must contain("""milklist1: Seq[example.MilkType]""")
   }
 
   def union1 = {
@@ -216,6 +216,7 @@ object EntitySpec extends Specification { def is =
   }
 
   lazy val enumEntitySource = module.processNode(<xs:schema targetNamespace="http://www.example.com/"
+      xmlns:tns="http://www.example.com/"
       xmlns:xs="http://www.w3.org/2001/XMLSchema">
     <xs:simpleType name="MilkType">
       <xs:restriction base="xs:NMTOKEN">
@@ -225,7 +226,7 @@ object EntitySpec extends Specification { def is =
     </xs:simpleType>
     <xs:complexType name="SimpleTypeTest">
       <xs:sequence>
-        <xs:element name="milk1" type="gen:MilkType"/>
+        <xs:element name="milk1" type="tns:MilkType"/>
       </xs:sequence>
     </xs:complexType>
   </xs:schema>, "example")(0)
@@ -247,11 +248,11 @@ object EntitySpec extends Specification { def is =
 
   lazy val expectedComplexTypeTest =
     """case class SingularComplexTypeTest\(person1: Person,\s*
-      |\s*person2: Option\[Person\],\s*
-      |\s*person3: Option\[Person\],\s*
-      |\s*person4: Option\[Option\[Person\]\],\s*
-      |\s*person5: Seq\[Person\],\s*
-      |\s*person6: Seq\[Option\[Person\]\]\)""".stripMargin
+      |\s*person2: Option\[example.Person\],\s*
+      |\s*person3: Option\[example.Person\],\s*
+      |\s*person4: Option\[Option\[example.Person\]\],\s*
+      |\s*person5: Seq\[example.Person\],\s*
+      |\s*person6: Seq\[Option\[example.Person\]\]\)""".stripMargin
 
   def complexType1 = {
     println(complexTypeEntitySource)
@@ -414,10 +415,10 @@ object EntitySpec extends Specification { def is =
   val seqExpectedSequenceTest =
     """case class SequenceComplexTypeTest\(sequencecomplextypetestsequence: SequenceComplexTypeTestSequence,\s*
       |\s*sequencecomplextypetestsequence2: SequenceComplexTypeTestSequence2,\s*
-      |\s*sequencecomplextypetestsequence3: Option\[SequenceComplexTypeTestSequence3\],\s*
-      |\s*sequencecomplextypetestsequence4: Option\[SequenceComplexTypeTestSequence4\],\s*
-      |\s*sequencecomplextypetestsequence5: Seq\[SequenceComplexTypeTestSequence5\],\s*
-      |\s*sequencecomplextypetestsequence6: Seq\[SequenceComplexTypeTestSequence6\],\s*
+      |\s*sequencecomplextypetestsequence3: Option\[example\.SequenceComplexTypeTestSequence3\],\s*
+      |\s*sequencecomplextypetestsequence4: Option\[example\.SequenceComplexTypeTestSequence4\],\s*
+      |\s*sequencecomplextypetestsequence5: Seq\[example\.SequenceComplexTypeTestSequence5\],\s*
+      |\s*sequencecomplextypetestsequence6: Seq\[example\.SequenceComplexTypeTestSequence6\],\s*
       |\s*sequencecomplextypetestsequence7: SequenceComplexTypeTestSequence7\)\s*
       |""".stripMargin
 
@@ -499,12 +500,12 @@ object EntitySpec extends Specification { def is =
     </xs:schema>, "example")(0)
 
   val expectedChoiceTest =
-    """case class ChoiceComplexTypeTest\(choicecomplextypetestoption: scalaxb.DataRecord\[ChoiceComplexTypeTestOption\],\s*
-      |\s*choicecomplextypetestoption2: scalaxb.DataRecord\[Option\[ChoiceComplexTypeTestOption2\]\],\s*
-      |\s*choicecomplextypetestoption3: Option\[scalaxb.DataRecord\[ChoiceComplexTypeTestOption3\]\],\s*
-      |\s*choicecomplextypetestoption4: Option\[scalaxb.DataRecord\[Option\[ChoiceComplexTypeTestOption4\]\]\],\s*
-      |\s*choicecomplextypetestoption5: Seq\[scalaxb.DataRecord\[ChoiceComplexTypeTestOption5\]\],\s*
-      |\s*choicecomplextypetestoption6: Seq\[scalaxb.DataRecord\[Option\[ChoiceComplexTypeTestOption6\]\]\],\s*
+    """case class ChoiceComplexTypeTest\(choicecomplextypetestoption: scalaxb.DataRecord\[example\.ChoiceComplexTypeTestOption\],\s*
+      |\s*choicecomplextypetestoption2: scalaxb.DataRecord\[Option\[example\.ChoiceComplexTypeTestOption2\]\],\s*
+      |\s*choicecomplextypetestoption3: Option\[scalaxb.DataRecord\[example\.ChoiceComplexTypeTestOption3\]\],\s*
+      |\s*choicecomplextypetestoption4: Option\[scalaxb.DataRecord\[Option\[example\.ChoiceComplexTypeTestOption4\]\]\],\s*
+      |\s*choicecomplextypetestoption5: Seq\[scalaxb.DataRecord\[example\.ChoiceComplexTypeTestOption5\]\],\s*
+      |\s*choicecomplextypetestoption6: Seq\[scalaxb.DataRecord\[Option\[example\.ChoiceComplexTypeTestOption6\]\]\],\s*
       |\s*choicecomplextypetestoption7: scalaxb.DataRecord\[Int\]\)\s*
       |""".stripMargin
 
@@ -658,7 +659,7 @@ object EntitySpec extends Specification { def is =
   }
 
   def attr2 = {
-    attrEntitySource must contain("""lazy val milk1: Option[MilkType] = attributes.get("@milk1") map {_.as[MilkType]}""")
+    attrEntitySource must contain("""lazy val milk1: Option[example.MilkType] = attributes.get("@milk1") map {_.as[MilkType]}""")
   }
 
   lazy val attributeGroupEntitySource = module.processNode(<xs:schema targetNamespace="http://www.example.com/general"

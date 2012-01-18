@@ -36,15 +36,16 @@ trait Params { self: Namer with Lookup =>
 
     def paramName: String = makeParamName(name)
 
-    def toTraitScalaCode: String =
-      paramName + ": " + typeName
+    def toTraitScalaCode(implicit targetNamespace: Option[URI], lookup: Lookup): String =
+      paramName + ": " + typeName.localName
 
-    def toScalaCode(implicit targetNamespace: Option[URI]): String =
+    def toScalaCode(implicit targetNamespace: Option[URI], lookup: Lookup): String =
       toTraitScalaCode + (
         if (occurrence == OptionalNotNillable && attribute) " = None"
         else "")
 
-    def toDataRecordMapAccessor(wrapper: String, generateImpl: Boolean): String =
+    def toDataRecordMapAccessor(wrapper: String, generateImpl: Boolean)
+                               (implicit targetNamespace: Option[URI], lookup: Lookup): String =
       generateImpl match {
         case true =>
           "lazy val " + toTraitScalaCode + " = " +
@@ -53,13 +54,13 @@ trait Params { self: Namer with Lookup =>
               """%s(%s).as[%s]""".format(
                 wrapper,
                 quote(buildNodeName),
-                singleTypeName
+                singleTypeName.localName
               )
             case _ =>
               """%s.get(%s) map {_.as[%s]}""".format(
                 wrapper,
                 quote(buildNodeName),
-                singleTypeName
+                singleTypeName.localName
               )
           })
         case _ => "def " + toTraitScalaCode

@@ -31,6 +31,29 @@ import java.io.{File, PrintWriter, Reader, BufferedReader}
 import scala.collection.mutable
 import scala.collection.mutable.{ListBuffer, ListMap}
 import ConfigEntry._
+import collection.{mutable, Map, Set}
+import treehugger.{Tree, treesToString}
+
+case class Config(packageNames: Map[Option[String], Option[String]] = Map(None -> None),
+  classPrefix: Option[String] = None,
+  classPostfix: Option[String] = None,
+  paramPrefix: Option[String] = None,
+  attributePrefix: Option[String] = None,
+  outdir: File = new File("."),
+  packageDir: Boolean = false,
+  wrappedComplexTypes: List[String] = Nil,
+  prependFamilyName: Boolean = false,
+  seperateProtocol: Boolean = true,
+  protocolFileName: String = "xmlprotocol.scala",
+  protocolPackageName: Option[String] = None,
+  defaultNamespace: Option[String] = None,
+  generateRuntime: Boolean = true,
+  contentsSizeLimit: Int = Int.MaxValue,
+  sequenceChunkSize: Int = 10,
+  namedAttributes: Boolean = false,
+  laxAny: Boolean = false,
+  async: Boolean = true,
+  dispatchVersion: String = scalaxb.BuildInfo.defaultDispatchVersion)
 
 object Snippet {
   def apply(definition: Node): Snippet = Snippet(definition, Nil, Nil, Nil)
@@ -46,6 +69,27 @@ case class Snippet(definition: Seq[Node],
   companion: Seq[Node],
   defaultFormats: Seq[Node],
   implicitValue: Seq[Node])
+
+object Trippet {
+  def apply(definition: Tree): Trippet = Trippet(definition :: Nil, Nil, Nil, Nil)
+
+  def apply(trippets: Trippet*): Trippet =
+    Trippet(trippets flatMap { s => s.companion ++ s.definition},
+      Nil,
+      trippets flatMap {_.defaultFormats},
+      trippets flatMap {_.implicitValue})
+}
+
+case class Trippet(definition: Seq[Tree],
+  companion: Seq[Tree],
+  defaultFormats: Seq[Tree],
+  implicitValue: Seq[Tree]) {
+  def toSnippet: Snippet =
+    Snippet(<source>{treesToString(definition.toList)}</source>,
+      <source>{treesToString(companion.toList)}</source>,
+      <source>{treesToString(defaultFormats.toList)}</source>,
+      <source>{treesToString(implicitValue.toList)}</source>)
+}
 
 trait CanBeWriter[A] {
  def toWriter(value: A): PrintWriter

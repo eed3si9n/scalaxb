@@ -17,6 +17,10 @@ object Dependencies {
   val cxfTransportsHttp = "org.apache.cxf" % "cxf-rt-transports-http" % cxfVersion
   val cxfTrapsportsHttpJetty = "org.apache.cxf" % "cxf-rt-transports-http-jetty" % cxfVersion
 
+  val treehuggerVersion = "0.0.1-SNAPSHOT"
+  val treehugger = "com.eed3si9n" %% "treehugger" % treehuggerVersion
+
+
   def scalaCompiler(sv: String) = "org.scala-lang" % "scala-compiler" % sv
 
   val specs2Version = "2.4.11"
@@ -29,6 +33,7 @@ object Dependencies {
   def appDependencies(sv: String) = Seq(
     launcherInterface % "provided",
     scopt,
+    treehugger,
     log4j
   ) ++ (sv match {
     case x if sv startsWith "2.10." => Nil

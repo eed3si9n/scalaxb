@@ -23,7 +23,7 @@
 package scalaxb.compiler.xsd2
 
 import scala.xml.Node
-import scalaxb.compiler.{Config, Snippet}
+import scalaxb.compiler.{Config, Snippet, Trippet}
 import xmlschema._
 import Defs._
 
@@ -33,6 +33,9 @@ class Generator(val schema: ReferenceSchema,
   import Predef.{any2stringadd => _}
   import com.weiglewilczek.slf4s.Logger
   import scalaxb.DataRecord
+  import treehugger._
+  import definitions._
+  import treehuggerDSL._
 
   private lazy val logger = Logger("xsd2.Generator")
   
@@ -40,16 +43,16 @@ class Generator(val schema: ReferenceSchema,
     Snippet(
       headerSnippet +:
       (schema.unbound.toSeq flatMap {
-        case x: TaggedComplexType => processComplexType(x)
+        case x: TaggedComplexType => processComplexType(x) map {_.toSnippet}
         case x: TaggedSimpleType if containsEnumeration(x) && isRootEnumeration(x) => processSimpleType(x)
         case x@TaggedAttributeGroup(group: XNamedAttributeGroup, _) => processAttributeGroup(x)
         case _ => Nil
       }): _*)
 
-  def processComplexType(decl: Tagged[XComplexType]): Seq[Snippet] =
+  def processComplexType(decl: Tagged[XComplexType]): Seq[Trippet] =
     Seq(generateComplexTypeEntity(buildTypeName(decl), decl))
 
-  def generateComplexTypeEntity(name: QualifiedName, decl: Tagged[XComplexType]) = {
+  def generateComplexTypeEntity(name: QualifiedName, decl: Tagged[XComplexType]): Trippet = {
     logger.debug("generateComplexTypeEntity: emitting %s" format name.toString)
 
     lazy val attributeSeqRef: Tagged[AttributeSeqParam] = TaggedAttributeSeqParam(AttributeSeqParam(), decl.tag)
@@ -72,6 +75,9 @@ class Generator(val schema: ReferenceSchema,
     val paramsString =
       if (hasSequenceParam) makeParamName(paramList.head.name) + ": " + paramList.head.singleTypeName.localName + "*"
       else paramList.map(_.toScalaCode).mkString(", " + NL + indent(1))
+    val paramsTrees =
+      paramList map {_.tree}
+
     val accessors =
       (decl.primaryAll map { generateAllAccessors(_) } getOrElse {
         splitParticles(decl.particles)(decl.tag) map { generateLongSeqAccessors(_) } getOrElse {Nil} }) ++
@@ -82,10 +88,13 @@ class Generator(val schema: ReferenceSchema,
         """ extends %s """ format superNames.mkString(" with ")
       } getOrElse {""}
 
-    Snippet(Snippet(<source>case class { localName }({paramsString}){extendString}{ accessors.headOption map( _ =>
-      " {" + NL + indent(1) + accessors.mkString(NL + indent(1)) + NL + "}" + NL
-    ) getOrElse("") }</source>, <source/>, generateDefaultFormat(name, decl),
-      makeImplicitValue(name)) :: compositorCodes: _*)
+//    Snippet(Snippet(<source>case class { localName }({paramsString}){extendString}{ accessors.headOption map( _ =>
+//      " {" + NL + indent(1) + accessors.mkString(NL + indent(1)) + NL + "}" + NL
+//    ) getOrElse("") }</source>, <source/>, generateDefaultFormat(name, decl),
+//      makeImplicitValue(name)) :: compositorCodes: _*)
+
+    Trippet(CASECLASSDEF(localName.toTypeName) withParams(paramsTrees: _*))
+
   }
 
   private def generateDefaultFormat(name: QualifiedName, decl: Tagged[XComplexType]): Node = {

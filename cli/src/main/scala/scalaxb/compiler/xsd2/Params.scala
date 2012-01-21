@@ -10,6 +10,10 @@ import java.net.URI
 trait Params { self: Namer with Lookup =>
   import Predef.{any2stringadd => _}
   import com.weiglewilczek.slf4s.Logger
+  import treehugger._
+  import definitions._
+  import treehuggerDSL._
+
   private lazy val logger: Logger = Logger("xsd2.Params")
 
   case class Param(namespace: Option[URI],
@@ -38,6 +42,9 @@ trait Params { self: Namer with Lookup =>
 
     def toTraitScalaCode(implicit targetNamespace: Option[URI], lookup: Lookup): String =
       paramName + ": " + typeName.localName
+
+    def tree(implicit targetNamespace: Option[URI], lookup: Lookup): ValDef =
+      VAL(paramName, RootClass.newClass(typeName.localName.toTypeName).toType)
 
     def toScalaCode(implicit targetNamespace: Option[URI], lookup: Lookup): String =
       toTraitScalaCode + (

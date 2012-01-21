@@ -107,9 +107,8 @@ object EntitySpec extends Specification { def is =
 
   def builtin1 = {
     println(builtInEntitySource)
-    builtInEntitySource must find(
-      """case class Address\(street: String,\s*
-        |\s*city: String\)""".stripMargin)
+    builtInEntitySource must contain(
+      """case class Address(street: String, city: String)""")
   }
 
   def restriction1 = {
@@ -247,12 +246,9 @@ object EntitySpec extends Specification { def is =
   lazy val complexTypeEntitySource = module.processNode(complexTypeCardinalityXML, "example")(0)
 
   lazy val expectedComplexTypeTest =
-    """case class SingularComplexTypeTest\(person1: Person,\s*
-      |\s*person2: Option\[example.Person\],\s*
-      |\s*person3: Option\[example.Person\],\s*
-      |\s*person4: Option\[Option\[example.Person\]\],\s*
-      |\s*person5: Seq\[example.Person\],\s*
-      |\s*person6: Seq\[Option\[example.Person\]\]\)""".stripMargin
+    """case class SingularComplexTypeTest(person1: Person, person2: Option[example.Person], """ +
+      """person3: Option[example.Person], person4: Option[Option[example.Person]], """ +
+      """person5: Seq[example.Person], person6: Seq[Option[example.Person]])"""
 
   def complexType1 = {
     println(complexTypeEntitySource)
@@ -264,7 +260,7 @@ object EntitySpec extends Specification { def is =
   }
 
   def complexType3 = {
-    complexTypeEntitySource must find(expectedComplexTypeTest)
+    complexTypeEntitySource must contain(expectedComplexTypeTest)
   }
 
   def element1 = {
@@ -413,14 +409,13 @@ object EntitySpec extends Specification { def is =
     </xs:schema>, "example")(0)
 
   val seqExpectedSequenceTest =
-    """case class SequenceComplexTypeTest\(sequencecomplextypetestsequence: SequenceComplexTypeTestSequence,\s*
-      |\s*sequencecomplextypetestsequence2: SequenceComplexTypeTestSequence2,\s*
-      |\s*sequencecomplextypetestsequence3: Option\[example\.SequenceComplexTypeTestSequence3\],\s*
-      |\s*sequencecomplextypetestsequence4: Option\[example\.SequenceComplexTypeTestSequence4\],\s*
-      |\s*sequencecomplextypetestsequence5: Seq\[example\.SequenceComplexTypeTestSequence5\],\s*
-      |\s*sequencecomplextypetestsequence6: Seq\[example\.SequenceComplexTypeTestSequence6\],\s*
-      |\s*sequencecomplextypetestsequence7: SequenceComplexTypeTestSequence7\)\s*
-      |""".stripMargin
+    """case class SequenceComplexTypeTest(sequencecomplextypetestsequence: SequenceComplexTypeTestSequence, """ +
+      """sequencecomplextypetestsequence2: SequenceComplexTypeTestSequence2, """ +
+      """sequencecomplextypetestsequence3: Option[example.SequenceComplexTypeTestSequence3], """ +
+      """sequencecomplextypetestsequence4: Option[example.SequenceComplexTypeTestSequence4], """ +
+      """sequencecomplextypetestsequence5: Seq[example.SequenceComplexTypeTestSequence5], """ +
+      """sequencecomplextypetestsequence6: Seq[example.SequenceComplexTypeTestSequence6], """ +
+      """sequencecomplextypetestsequence7: SequenceComplexTypeTestSequence7)"""
 
   def seq1 = {
     println(seqEntitySource)
@@ -437,7 +432,7 @@ object EntitySpec extends Specification { def is =
 
   def seq4 = {
     seqEntitySource must contain("""case class MultipleSequenceComplexTypeTest(""" +
-      """multiplesequencecomplextypetestsequence: MultipleSequenceComplexTypeTestSequence*)""")
+      """multiplesequencecomplextypetestsequence: MultipleSequenceComplexTypeTestSequence)""")
   }
 
   def seq5 = {
@@ -500,14 +495,13 @@ object EntitySpec extends Specification { def is =
     </xs:schema>, "example")(0)
 
   val expectedChoiceTest =
-    """case class ChoiceComplexTypeTest\(choicecomplextypetestoption: scalaxb.DataRecord\[example\.ChoiceComplexTypeTestOption\],\s*
-      |\s*choicecomplextypetestoption2: scalaxb.DataRecord\[Option\[example\.ChoiceComplexTypeTestOption2\]\],\s*
-      |\s*choicecomplextypetestoption3: Option\[scalaxb.DataRecord\[example\.ChoiceComplexTypeTestOption3\]\],\s*
-      |\s*choicecomplextypetestoption4: Option\[scalaxb.DataRecord\[Option\[example\.ChoiceComplexTypeTestOption4\]\]\],\s*
-      |\s*choicecomplextypetestoption5: Seq\[scalaxb.DataRecord\[example\.ChoiceComplexTypeTestOption5\]\],\s*
-      |\s*choicecomplextypetestoption6: Seq\[scalaxb.DataRecord\[Option\[example\.ChoiceComplexTypeTestOption6\]\]\],\s*
-      |\s*choicecomplextypetestoption7: scalaxb.DataRecord\[Int\]\)\s*
-      |""".stripMargin
+    """case class ChoiceComplexTypeTest(choicecomplextypetestoption: scalaxb.DataRecord[example.ChoiceComplexTypeTestOption], """ +
+      """choicecomplextypetestoption2: scalaxb.DataRecord[Option[example.ChoiceComplexTypeTestOption2]], """ +
+      """choicecomplextypetestoption3: Option[scalaxb.DataRecord[example.ChoiceComplexTypeTestOption3]], """ +
+      """choicecomplextypetestoption4: Option[scalaxb.DataRecord[Option[example.ChoiceComplexTypeTestOption4]]], """ +
+      """choicecomplextypetestoption5: Seq[scalaxb.DataRecord[example.ChoiceComplexTypeTestOption5]], """ +
+      """choicecomplextypetestoption6: Seq[scalaxb.DataRecord[Option[example.ChoiceComplexTypeTestOption6]]], """ +
+      """choicecomplextypetestoption7: scalaxb.DataRecord[Int])"""
 
   def choice1 = {
     println(choiceEntitySource)
@@ -560,11 +554,11 @@ object EntitySpec extends Specification { def is =
   </xs:schema>, "example")(0)
 
   val exptectedAnyTest =
-    """case class AnyTest2\(any: Option\[scalaxb\.DataRecord\[Any\]\],\s*
-      |\s*foo: String,\s*
-      |\s*any2: scalaxb\.DataRecord\[Any\],\s*
-      |\s*foo2: String,\s*
-      |\s*any3: Seq\[scalaxb\.DataRecord\[Any\]\]\)""".stripMargin
+    """case class AnyTest2(any: Option[scalaxb.DataRecord[Any]], """ +
+      """foo: String, """ +
+      """any2: scalaxb.DataRecord[Any], """ +
+      """foo2: String, """ +
+      """any3: Seq[scalaxb.DataRecord[Any]])"""
 
   def wildcard1 = {
     println(wildcardEntitySource)
@@ -593,8 +587,8 @@ object EntitySpec extends Specification { def is =
     </xs:schema>, "example")(0)
 
     val exptectedSeqParamTest =
-      """case class SeqParamTest\(foo: String\*\)\s*
-        |\s*case class NillableSeqParamTest\(foo: Option\[String\]\*\)""".stripMargin
+      """case class SeqParamTest\(foo: String\\)\s
+        |\scase class NillableSeqParamTest\(foo: Option\[String\]\\)""".stripMargin
 
     println(entitySource)
     entitySource must find(exptectedSeqParamTest)
@@ -679,8 +673,8 @@ object EntitySpec extends Specification { def is =
 
   def attributegroup1 = {
     println(attributeGroupEntitySource)
-    attributeGroupEntitySource must find("""trait Coreattrs \{\s*
-                             |\s*def id\: Option\[String\]""".stripMargin)
+    attributeGroupEntitySource must find("""trait Coreattrs \{\s
+                             |\sdef id\: Option\[String\]""".stripMargin)
   }
 
   def attributegroup2 = {

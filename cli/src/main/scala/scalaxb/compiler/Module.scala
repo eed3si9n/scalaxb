@@ -30,6 +30,7 @@ import scala.xml.factory.{XMLLoader}
 import javax.xml.parsers.SAXParser
 import java.io.{File, PrintWriter, Reader, BufferedReader}
 import collection.{mutable, Map, Set}
+import treehugger.{Tree, treesToString}
 
 case class Config(packageNames: Map[Option[String], Option[String]] = Map(None -> None),
   classPrefix: Option[String] = None,
@@ -64,6 +65,27 @@ case class Snippet(definition: Seq[Node],
   companion: Seq[Node],
   defaultFormats: Seq[Node],
   implicitValue: Seq[Node])
+
+object Trippet {
+  def apply(definition: Tree): Trippet = Trippet(definition :: Nil, Nil, Nil, Nil)
+
+  def apply(trippets: Trippet*): Trippet =
+    Trippet(trippets flatMap { s => s.companion ++ s.definition},
+      Nil,
+      trippets flatMap {_.defaultFormats},
+      trippets flatMap {_.implicitValue})
+}
+
+case class Trippet(definition: Seq[Tree],
+  companion: Seq[Tree],
+  defaultFormats: Seq[Tree],
+  implicitValue: Seq[Tree]) {
+  def toSnippet: Snippet =
+    Snippet(<source>{treesToString(definition.toList)}</source>,
+      <source>{treesToString(companion.toList)}</source>,
+      <source>{treesToString(defaultFormats.toList)}</source>,
+      <source>{treesToString(implicitValue.toList)}</source>)
+}
 
 trait CanBeWriter[A] {
  def toWriter(value: A): PrintWriter

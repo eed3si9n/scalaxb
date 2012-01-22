@@ -8,6 +8,8 @@ import scalaxb.compiler.{ScalaNames, Config, Snippet, ReferenceNotFound}
 import scalaxb.compiler.xsd.{XsAnyType, XsAnySimpleType, XsString, BuiltInSimpleTypeSymbol, XsTypeSymbol, XsWildcard}
 import Defs._
 import scala.xml.NamespaceBinding
+import treehugger._
+import definitions._
 
 case class QualifiedName(namespace: Option[URI], localPart: String, parameters: QualifiedName*) {
   override def toString: String = namespace map { ns => "{%s}%s".format(ns.toString, localPart) } getOrElse {localPart}
@@ -17,6 +19,9 @@ case class QualifiedName(namespace: Option[URI], localPart: String, parameters: 
 //      Seq(Some(XML_SCHEMA_URI), Some(SCALA_URI)).contains(namespace)) localPart
 //    else fullyQualifiedName
 
+  def localNameType(implicit targetNamepsace: Option[URI], lookup: Lookup): Type =
+    RootClass.newClass(localName.toTypeName).toType
+  
   def localName(implicit targetNamespace: Option[URI], lookup: Lookup): String =
     if (namespace == targetNamespace)
       if (parameters.isEmpty) localPart

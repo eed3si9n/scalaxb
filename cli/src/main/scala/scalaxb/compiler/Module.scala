@@ -84,11 +84,17 @@ case class Trippet(definition: Seq[Tree],
   companion: Seq[Tree],
   defaultFormats: Seq[Tree],
   implicitValue: Seq[Tree]) {
+  import Module.NL
+
   def toSnippet: Snippet =
     Snippet(<source>{treesToString(definition.toList)}</source>,
-      <source>{treesToString(companion.toList)}</source>,
-      <source>{treesToString(defaultFormats.toList)}</source>,
-      <source>{treesToString(implicitValue.toList)}</source>)
+      <source>{addNL(treesToString(companion.toList))}</source>,
+      <source>{addNL(treesToString(defaultFormats.toList))}</source>,
+      <source>{addNL(treesToString(implicitValue.toList))}</source>)
+
+  private def addNL(s: String) =
+    if (s != "") s + NL
+    else s
 }
 
 trait CanBeWriter[A] {

@@ -44,7 +44,10 @@ trait Params { self: Namer with Lookup =>
       paramName + ": " + typeName.localName
 
     def tree(implicit targetNamespace: Option[URI], lookup: Lookup): ValDef =
-      VAL(paramName, RootClass.newClass(typeName.localName.toTypeName).toType)
+      VAL(paramName, typeName.localNameType)
+
+    def varargTree(implicit targetNamespace: Option[URI], lookup: Lookup): ValDef =
+      VAL(paramName, STAR(singleTypeName.localNameType))
 
     def toScalaCode(implicit targetNamespace: Option[URI], lookup: Lookup): String =
       toTraitScalaCode + (
@@ -52,29 +55,23 @@ trait Params { self: Namer with Lookup =>
         else "")
 
     def toDataRecordMapAccessor(wrapper: String, generateImpl: Boolean)
-                               (implicit targetNamespace: Option[URI], lookup: Lookup): String =
+                               (implicit targetNamespace: Option[URI], lookup: Lookup): Tree =
       generateImpl match {
         case true =>
-          "lazy val " + toTraitScalaCode + " = " +
-          (occurrence match {
+          LAZYVAL(toTraitScalaCode) := (occurrence match {
             case SingleNotNillable(_) =>
-              """%s(%s).as[%s]""".format(
-                wrapper,
-                quote(buildNodeName),
-                singleTypeName.localName
-              )
+              REF(wrapper) APPLY(LIT(buildNodeName)) DOT "as" TYPEAPPLY singleTypeName.localNameType
             case _ =>
-              """%s.get(%s) map {_.as[%s]}""".format(
-                wrapper,
-                quote(buildNodeName),
-                singleTypeName.localName
+              (REF(wrapper) DOT "get" APPLY(LIT(buildNodeName))) MAP (
+                UNDERSCORE DOT "as" TYPEAPPLY singleTypeName.localNameType
               )
           })
-        case _ => "def " + toTraitScalaCode
+        case _ => DEF(toTraitScalaCode)
       }
 
-    def toLongSeqAccessor(wrapper: String): String =
-      """lazy val %s = %s.%s""" format(toTraitScalaCode, wrapper, makeParamName(name))
+    def toLongSeqAccessor(wrapper: String): Tree =
+      LAZYVAL(toTraitScalaCode) := REF(wrapper) DOT makeParamName(name)
+      // """lazy val %s = %s.%s""" format(toTraitScalaCode, wrapper, makeParamName(name))
 
     def buildNodeName: String = typeSymbol match {
       case TaggedAttribute(x: XTopLevelAttribute, _) => "@" + QualifiedName(namespace, name).toString

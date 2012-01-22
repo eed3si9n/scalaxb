@@ -45,7 +45,7 @@ class Generator(val schema: ReferenceSchema,
       (schema.unbound.toSeq flatMap {
         case x: TaggedComplexType => processComplexType(x) map {_.toSnippet}
         case x: TaggedSimpleType if containsEnumeration(x) && isRootEnumeration(x) => processSimpleType(x)
-        case x@TaggedAttributeGroup(group: XNamedAttributeGroup, _) => processAttributeGroup(x)
+        case x@TaggedAttributeGroup(group: XNamedAttributeGroup, _) => processAttributeGroup(x) map {_.toSnippet}
         case _ => Nil
       }): _*)
 
@@ -72,29 +72,28 @@ class Generator(val schema: ReferenceSchema,
     val compositorCodes = compositors.toList map {generateCompositor}
     val hasSequenceParam = (paramList.size == 1) && (paramList.head.occurrence.isMultiple) &&
           (!paramList.head.attribute) && (!decl.mixed) // && (!longAll)
-    val paramsString =
-      if (hasSequenceParam) makeParamName(paramList.head.name) + ": " + paramList.head.singleTypeName.localName + "*"
-      else paramList.map(_.toScalaCode).mkString(", " + NL + indent(1))
     val paramsTrees =
-      paramList map {_.tree}
+      if (hasSequenceParam) paramList.head.varargTree :: Nil
+      else paramList map {_.tree}
 
-    val accessors =
+    val accessors: Seq[Tree] =
       (decl.primaryAll map { generateAllAccessors(_) } getOrElse {
         splitParticles(decl.particles)(decl.tag) map { generateLongSeqAccessors(_) } getOrElse {Nil} }) ++
       (attributes.headOption map  { _ => generateAttributeAccessors(attributes, true) } getOrElse {Nil})
     val superNames = complexTypeSuperNames(decl)
-    val extendString =
-      superNames.headOption map { _ =>
-        """ extends %s """ format superNames.mkString(" with ")
-      } getOrElse {""}
+    val parents = superNames map { x => RootClass.newClass(x.toTypeName).toType}
 
 //    Snippet(Snippet(<source>case class { localName }({paramsString}){extendString}{ accessors.headOption map( _ =>
 //      " {" + NL + indent(1) + accessors.mkString(NL + indent(1)) + NL + "}" + NL
 //    ) getOrElse("") }</source>, <source/>, generateDefaultFormat(name, decl),
 //      makeImplicitValue(name)) :: compositorCodes: _*)
 
-    Trippet(CASECLASSDEF(localName.toTypeName) withParams(paramsTrees: _*))
-
+    Trippet(
+      Trippet(CASECLASSDEF(localName.toTypeName) withParams(paramsTrees: _*) withParents(parents: _*) :=
+        (if (accessors.isEmpty) forest.EmptyTree
+        else BLOCK(accessors: _*))
+      ) ::
+      compositorCodes: _*)
   }
 
   private def generateDefaultFormat(name: QualifiedName, decl: Tagged[XComplexType]): Node = {
@@ -165,7 +164,7 @@ class Generator(val schema: ReferenceSchema,
     (decl.attributeGroups map {buildTypeName} map {_.localPart})
   }
 
-  def generateSequence(tagged: Tagged[KeyedGroup]): Snippet = {
+  def generateSequence(tagged: Tagged[KeyedGroup]): Trippet = {
     implicit val tag = tagged.tag
     val name = names.get(tagged) getOrElse {"??"}
 //      val superNames: List[String] = buildOptions(compositor)
@@ -173,11 +172,12 @@ class Generator(val schema: ReferenceSchema,
 //        else " extends " + superNames.mkString(" with ")
     val list = splitParticlesIfLong(tagged.particles)
     val paramList = Param.fromSeq(list)
-    Snippet(<source>case class { name }({
-      paramList.map(_.toScalaCode).mkString(", " + NL + indent(1))})</source>)
+    // Snippet(<source>case class { name }({
+    //  paramList.map(_.toScalaCode).mkString(", " + NL + indent(1))})</source>)
+    Trippet(CASECLASSDEF(name.toTypeName) withParams(paramList map {_.tree}: _*))
   }
 
-  def generateCompositor(decl: Tagged[KeyedGroup]): Snippet = decl.key match {
+  def generateCompositor(decl: Tagged[KeyedGroup]): Trippet = decl.key match {
     case "sequence" => generateSequence(decl)
     case _ =>
 //      val superNames: List[String] = buildOptions(compositor)
@@ -185,7 +185,8 @@ class Generator(val schema: ReferenceSchema,
 //        else " extends " + superNames.mkString(" with ")
       val superString = ""
       val name = names.get(decl) getOrElse {"??"}
-      Snippet(<source>trait {name}{superString}</source>)
+      // Snippet(<source>trait {name}{superString}</source>)
+      Trippet(TRAITDEF(name.toTypeName))
   }
 
   def processSimpleType(decl: Tagged[XSimpleType]): Seq[Snippet] =
@@ -203,24 +204,22 @@ class Generator(val schema: ReferenceSchema,
 { enumValues.mkString(NL) }</source>)
   }
   
-  def processAttributeGroup(tagged: Tagged[XAttributeGroup]): Seq[Snippet] =
+  def processAttributeGroup(tagged: Tagged[XAttributeGroup]): Seq[Trippet] =
     Seq(generateAttributeGroup(buildTypeName(tagged), tagged))
 
-  def generateAttributeGroup(name: QualifiedName, tagged: Tagged[XAttributeGroup]): Snippet = {
+  def generateAttributeGroup(name: QualifiedName, tagged: Tagged[XAttributeGroup]): Trippet = {
     val localName = name.localPart
     val accessors = generateAttributeAccessors(tagged.flattenedAttributes, false)
-    Snippet(<source>trait { localName }{ accessors.headOption map( _ =>
-      " {" + NL + indent(1) + accessors.mkString(NL + indent(1)) + NL + "}" + NL
-      ) getOrElse("") }</source>)
+    Trippet(TRAITDEF(localName) := BLOCK(accessors: _*))
   }
 
-  def generateAllAccessors(tagged: Tagged[KeyedGroup]): Seq[String] = {
+  def generateAllAccessors(tagged: Tagged[KeyedGroup]): Seq[Tree] = {
     implicit val tag = tagged.tag
     val paramList = Param.fromSeq(tagged.particles)
     paramList map {_.toDataRecordMapAccessor(makeParamName(ALL_PARAM), true)}
   }
 
-  def generateLongSeqAccessors(splits: Seq[TaggedKeyedGroup]): Seq[String] =
+  def generateLongSeqAccessors(splits: Seq[TaggedKeyedGroup]): Seq[Tree] =
     splits flatMap { sequence =>
       implicit val tag = sequence.tag
       val wrapper = Param.fromSeq(Seq(sequence)).head
@@ -228,7 +227,7 @@ class Generator(val schema: ReferenceSchema,
       paramList map { _.toLongSeqAccessor(wrapper.paramName) }
     }
 
-  def generateAttributeAccessors(attributes: Seq[Tagged[_]], generateImpl: Boolean): Seq[String] =
+  def generateAttributeAccessors(attributes: Seq[Tagged[_]], generateImpl: Boolean): Seq[Tree] =
     Param.fromAttributes(attributes) map {_.toDataRecordMapAccessor(makeParamName(ATTRS_PARAM), generateImpl)}
 
   def headerSnippet: Snippet =

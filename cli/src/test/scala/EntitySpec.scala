@@ -81,6 +81,8 @@ object EntitySpec extends Specification { def is =
     "be extended by the referencing complex types"                            ! attributegroup3^
                                                                               end
 
+  sequential
+
   import Example._
   lazy val module = new scalaxb.compiler.xsd2.Driver
   lazy val emptyEntitySource = module.processNode(<xs:schema targetNamespace="http://www.example.com/"
@@ -423,16 +425,16 @@ object EntitySpec extends Specification { def is =
   }
 
   def seq2 = {
-    seqEntitySource must find(seqExpectedSequenceTest)
+    seqEntitySource must contain(seqExpectedSequenceTest)
   }
 
   def seq3 = {
-    seqEntitySource must contain("""case class EmptySequenceComplexTypeTest()""")
+    seqEntitySource must contain("""case class EmptySequenceComplexTypeTest""")
   }
 
   def seq4 = {
     seqEntitySource must contain("""case class MultipleSequenceComplexTypeTest(""" +
-      """multiplesequencecomplextypetestsequence: MultipleSequenceComplexTypeTestSequence)""")
+      """multiplesequencecomplextypetestsequence: MultipleSequenceComplexTypeTestSequence*)""")
   }
 
   def seq5 = {
@@ -509,7 +511,7 @@ object EntitySpec extends Specification { def is =
   }
 
   def choice2 = {
-    choiceEntitySource must find(expectedChoiceTest)
+    choiceEntitySource must contain(expectedChoiceTest)
   }
 
   def all1 = {
@@ -562,11 +564,11 @@ object EntitySpec extends Specification { def is =
 
   def wildcard1 = {
     println(wildcardEntitySource)
-    wildcardEntitySource must find(exptectedAnyTest)
+    wildcardEntitySource must contain(exptectedAnyTest)
   }
 
   def wildcard2 = {
-    wildcardEntitySource must find(exptectedAnyTest)
+    wildcardEntitySource must contain(exptectedAnyTest)
   }
 
   def param1 = {
@@ -586,12 +588,11 @@ object EntitySpec extends Specification { def is =
       </xs:complexType>
     </xs:schema>, "example")(0)
 
-    val exptectedSeqParamTest =
-      """case class SeqParamTest\(foo: String\\)\s
-        |\scase class NillableSeqParamTest\(foo: Option\[String\]\\)""".stripMargin
-
     println(entitySource)
-    entitySource must find(exptectedSeqParamTest)
+    entitySource.lines.toList must contain(
+      """case class SeqParamTest(foo: String*)""",
+      """case class NillableSeqParamTest(foo: Option[String]*)"""
+    )
   }
 
   def sub1 = {
@@ -653,7 +654,7 @@ object EntitySpec extends Specification { def is =
   }
 
   def attr2 = {
-    attrEntitySource must contain("""lazy val milk1: Option[example.MilkType] = attributes.get("@milk1") map {_.as[MilkType]}""")
+    attrEntitySource must contain("""lazy val milk1: Option[example.MilkType] = attributes.get("@milk1").map(_.as[MilkType])""")
   }
 
   lazy val attributeGroupEntitySource = module.processNode(<xs:schema targetNamespace="http://www.example.com/general"
@@ -673,12 +674,13 @@ object EntitySpec extends Specification { def is =
 
   def attributegroup1 = {
     println(attributeGroupEntitySource)
-    attributeGroupEntitySource must find("""trait Coreattrs \{\s
-                             |\sdef id\: Option\[String\]""".stripMargin)
+    attributeGroupEntitySource.lines.toList must contain(
+      """trait Coreattrs {""",
+      """  def id: Option[String]""").inOrder
   }
 
   def attributegroup2 = {
-    attributeGroupEntitySource must contain("""lazy val id: Option[String] = attributes.get("@id") map {_.as[String]}""")
+    attributeGroupEntitySource must contain("""lazy val id: Option[String] = attributes.get("@id").map(_.as[String])""")
   }
 
   def attributegroup3 = {

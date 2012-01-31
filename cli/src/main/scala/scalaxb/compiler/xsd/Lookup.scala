@@ -235,8 +235,8 @@ trait Lookup extends ContextProcessor {
     quote(namespace)
 
   def elementNamespace(global: Boolean, namespace: Option[String], qualified: Boolean): Option[String] =
-    if (global) namespace
-    else if (qualified) schema.targetNamespace
+    if (global || qualified) namespace
+
     else None
 
   def elementNamespaceString(global: Boolean, namespace: Option[String], qualified: Boolean): String =

@@ -50,6 +50,7 @@ object GeneralUsage {
     testSubstitutionGroup
     testExtraElement
     testTypeAttribute
+    testCrossNamespaceExtension
     true
   }
   
@@ -575,5 +576,30 @@ object GeneralUsage {
       case x => error("match failed: " + x)
     }
     println(document)
+  }
+
+  def testCrossNamespaceExtension {
+    println("testCrossNamespaceExtension")
+
+    import gimport.IntlAddress
+
+    val subject = <imp:shipTo xmlns:gen="http://www.example.com/general"
+                              xmlns:imp="http://www.example.com/general_import"
+                              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+        <gen:street>1537 Paper Street</gen:street>
+        <gen:city>Wilmington</gen:city>
+        <gen:state>DE</gen:state>
+        <imp:postalCode>19886</imp:postalCode>
+        <imp:country>USA</imp:country>
+      </imp:shipTo>
+    val shipTo = scalaxb.fromXML[IntlAddress](subject)
+
+    def check(obj: IntlAddress) = obj match {
+      case IntlAddress(_, _, _, _, _) =>
+      case _ => error("match failed: " + obj.toString)
+    }
+    val document = scalaxb.toXML[IntlAddress](shipTo, Some("http://www.example.com/general_import"), Some("shipTo"), subject.scope)
+    println(document)
+    check(fromXML[IntlAddress](document))
   }
 }

@@ -1,0 +1,5 @@
+## bug fixes and minor enhancements
+- Fixes handling of cross-namespace extension. [#135][#135] reported by [@psnively][@psnively]
+
+  [#135]: https://github.com/eed3si9n/scalaxb/issues/135
+  [@psnively]: https://github.com/psnively

@@ -7,4 +7,15 @@
   <xs:import namespace="http://www.example.com/general"
         schemaLocation="http://www.example.com/general"/>
   <xs:element name="SubGroupMember3" type="xs:string" substitutionGroup="gen:subgroupHead"/>
+
+  <xs:complexType name="IntlAddress">
+    <xs:complexContent>
+      <xs:extension base="gen:Address">
+        <xs:sequence>
+          <xs:element name="postalCode"   type="xs:positiveInteger"/>
+          <xs:element name="country"   type="xs:string"/>
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
 </xs:schema>

@@ -12,7 +12,7 @@ case class Fault[+A](original: Any, detail: Option[A], headers: scala.xml.NodeSe
 
 trait SoapClients { this: HttpClients =>
   lazy val soapClient: SoapClient = new SoapClient {}
-  val baseAddress: java.net.URI
+  def baseAddress: java.net.URI
 
   trait SoapClient {
     import soapenvelope12.{Fault => _, _}

@@ -571,7 +571,7 @@ trait GenSource {
         style == "" || style == "document"
     } getOrElse {true}
 
-    val addressString = address map {"""lazy val baseAddress = new java.net.URI("%s")""".format(_)} getOrElse {""}
+    val addressString = address map {"""def baseAddress = new java.net.URI("%s")""".format(_)} getOrElse {""}
 
     val operationOutputs = binding.operation flatMap { makeOperationOutput(_, interfaceType) }
     val operations = binding.operation map { opBinding => makeOperation(opBinding, interfaceType, document, false) }
@@ -619,7 +619,7 @@ trait {interfaceTypeName} {{
         style == "" || style == "document"
     } getOrElse {true}
 
-    val addressString = address map {"""lazy val baseAddress = new java.net.URI("%s")""".format(_)} getOrElse {""}
+    val addressString = address map {"""def baseAddress = new java.net.URI("%s")""".format(_)} getOrElse {""}
 
     val operations = binding.operation map { opBinding => makeOperation(opBinding, interfaceType, document, true) }
     val bindingOps = binding.operation map { opBinding => makeSoapOpBinding(opBinding, interfaceType, document, true) }

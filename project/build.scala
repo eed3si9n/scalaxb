@@ -5,7 +5,7 @@ object Builds extends Build {
   import ls.Plugin.LsKeys._
 
   lazy val buildSettings = Defaults.defaultSettings ++ customLsSettings ++ Seq(
-    version := "0.6.8-SNAPSHOT",
+    version := "0.6.8",
     organization := "org.scalaxb",
     homepage := Some(url("http://scalaxb.org")),
     licenses := Seq("MIT License" -> url("https://github.com/eed3si9n/scalaxb/blob/master/LICENSE")),

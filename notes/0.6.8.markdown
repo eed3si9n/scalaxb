@@ -1,8 +1,12 @@
 ## bug fixes and minor enhancements
 - Fixes handling of cross-namespace extension. [#135][#135] reported by [@psnively][@psnively]
-- Changed wsdl-generated code's `baseAddress` to a def. [#134][#134] by [@hedefalk][@hedefalk]
+- Fixes parsing to reject extra elements at the end. [#124][#124]
+- Relaxes wsdl parsing to handle out-of-order wsdls. [#87][#87]
+- wsdl generates `baseAddress` as a def. [#134][#134] by [@hedefalk][@hedefalk]
 
+  [#124]: https://github.com/eed3si9n/scalaxb/issues/124
   [#134]: https://github.com/eed3si9n/scalaxb/issues/134
   [#135]: https://github.com/eed3si9n/scalaxb/issues/135
+  [#87]: https://github.com/eed3si9n/scalaxb/issues/87
   [@psnively]: https://github.com/psnively
   [@hedefalk]: https://github.com/hedefalk

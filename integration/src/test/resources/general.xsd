@@ -475,4 +475,16 @@
       </xs:sequence>
     </xs:complexType>
   </xs:element>
+
+  <xs:complexType name="InnerSimpleTypeTest">
+    <xs:sequence>
+      <xs:element name="billingAccountType">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:enumeration value="MOBILE" />
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:element>
+    </xs:sequence>
+  </xs:complexType>
 </xs:schema>

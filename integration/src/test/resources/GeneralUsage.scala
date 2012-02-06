@@ -51,6 +51,7 @@ object GeneralUsage {
     testExtraElement
     testTypeAttribute
     testCrossNamespaceExtension
+    testInnerSimpleType
     true
   }
   
@@ -601,5 +602,22 @@ object GeneralUsage {
     val document = scalaxb.toXML[IntlAddress](shipTo, Some("http://www.example.com/general_import"), Some("shipTo"), subject.scope)
     println(document)
     check(fromXML[IntlAddress](document))
+  }
+  
+  def testInnerSimpleType {
+    println("testInnerSimpleType")
+    val subject = <gen:billing xmlns:gen="http://www.example.com/general"
+                          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+        <gen:billingAccountType>MOBILE</gen:billingAccountType>
+      </gen:billing>
+    val billing = scalaxb.fromXML[InnerSimpleTypeTest](subject)
+    def check(obj: InnerSimpleTypeTest) = obj match {
+      case InnerSimpleTypeTest(MOBILE) =>
+      case _ => error("match failed: " + obj.toString)
+    }
+    check(billing)
+    val document = scalaxb.toXML[InnerSimpleTypeTest](billing, Some("http://www.example.com/general"), Some("billing"), subject.scope)
+    println(document)
+    check(fromXML[InnerSimpleTypeTest](document))
   }
 }

@@ -84,6 +84,7 @@ trait ContextProcessor extends ScalaNames with PackageName {
       if (context.typeNames.contains(decl)) registerDuplicatedType(schema, decl, decl.name)
       else {
         context.typeNames(decl) = makeProtectedTypeName(schema.targetNamespace, initialName, postfix, context)
+        logger.debug("processContent: enum %s is named %s" format(decl.name, context.typeNames(decl)))
         makeEnumValues(decl, context)
       } // if-else
     }
@@ -98,7 +99,7 @@ trait ContextProcessor extends ScalaNames with PackageName {
     } ref.decl match {
       case decl: ComplexTypeDecl =>
         anonymousTypes += ((schema, decl))
-
+        logger.debug("processContent: %s's %s" format(elem.name, decl.name))
         if (context.typeNames.contains(decl)) registerDuplicatedType(schema, decl, elem.name)
 
         context.typeNames.getOrElseUpdate(decl, {
@@ -109,8 +110,11 @@ trait ContextProcessor extends ScalaNames with PackageName {
           logger.debug("processContent: %s's %s is named %s" format(elem.name, decl.name, name))
           name
         })
-      case decl: SimpleTypeDecl if containsEnumeration(decl) =>
-        nameEnumSimpleType(schema, decl, elem.name, "")
+
+// simple types are handled later.
+//      case decl: SimpleTypeDecl if containsEnumeration(decl) =>
+//        logger.debug("processContent: %s's %s" format(elem.name, decl.name))
+//        nameEnumSimpleType(schema, decl, elem.name, "")
       case _ =>
     }
 
@@ -120,14 +124,16 @@ trait ContextProcessor extends ScalaNames with PackageName {
       typ <- schema.topTypes
     } typ match {
       case (_, decl: ComplexTypeDecl) =>
+        logger.debug("processContext: top-level type %s" format (decl.name))
         namedTypes += ((schema, decl))
         if (context.typeNames.contains(decl)) registerDuplicatedType(schema, decl, decl.name)
         else {
           val name = makeProtectedTypeName(schema.targetNamespace, decl, context)
-          logger.debug("processContext: type %s is named %s" format (decl.name, name))
+          logger.debug("processContext: top-level type %s is named %s" format (decl.name, name))
           context.typeNames.getOrElseUpdate(decl, name)
         }
       case (_, decl@SimpleTypeDecl(_, _, _, _, _)) if containsEnumeration(decl) =>
+        logger.debug("processContext: top-level type %s" format (decl.name))
         nameEnumSimpleType(schema, decl, decl.name)
       case _ =>      
     }
@@ -182,7 +188,9 @@ trait ContextProcessor extends ScalaNames with PackageName {
       schema <- schemas
       typ <- schema.typeList if !(schema.topTypes.valuesIterator contains typ)
     } typ match {
-      case decl: SimpleTypeDecl if containsEnumeration(decl) => nameEnumSimpleType(schema, decl, decl.family.head)
+      case decl: SimpleTypeDecl if containsEnumeration(decl) =>
+        logger.debug("processContext: inner simple type %s" format (decl.name))
+        nameEnumSimpleType(schema, decl, decl.family.last)
       case _ =>      
     }
     

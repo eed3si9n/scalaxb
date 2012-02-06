@@ -137,7 +137,8 @@ case class SchemaDecl(targetNamespace: Option[String],
     "topTypes(" + topTypes.valuesIterator.mkString("," + newline)  + ")," + newline + 
     "topAttrs(" + topAttrs.valuesIterator.mkString("," + newline)  + ")," + newline + 
     "topGroups(" + topGroups.valuesIterator.mkString("," + newline)  + ")," + newline + 
-    "topAttrGroups(" + topAttrGroups.valuesIterator.mkString("," + newline)  + ")" + newline + 
+    "topAttrGroups(" + topAttrGroups.valuesIterator.mkString("," + newline)  + ")" + newline +
+    "typeList(" + typeList.map(_.name).mkString("," + newline) + ")" + newline +
     ")"
   }
 }
@@ -467,7 +468,10 @@ object ElemDecl {
 }
 
 
-trait TypeDecl extends Decl with Annotatable
+trait TypeDecl extends Decl with Annotatable {
+  def namespace: Option[String]
+  def name: String
+}
 
 /** simple types cannot have element children or attributes.
  */

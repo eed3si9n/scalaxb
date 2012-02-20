@@ -32,7 +32,7 @@ import scala.collection.mutable
 import scala.collection.mutable.{ListBuffer, ListMap}
 import ConfigEntry._
 import collection.{mutable, Map, Set}
-import treehugger.{Tree, treesToString}
+import treehugger.forest.{Tree, treeToString}
 
 case class Config(packageNames: Map[Option[String], Option[String]] = Map(None -> None),
   classPrefix: Option[String] = None,
@@ -71,6 +71,9 @@ case class Snippet(definition: Seq[Node],
   implicitValue: Seq[Node])
 
 object Trippet {
+  def apply(definition: Tree, companion: Tree, defaultFormats: Tree, implicitValue: Tree): Trippet =
+    Trippet(definition :: Nil, companion :: Nil, defaultFormats :: Nil, implicitValue :: Nil)
+  
   def apply(definition: Tree): Trippet = Trippet(definition :: Nil, Nil, Nil, Nil)
 
   def apply(trippets: Trippet*): Trippet =
@@ -87,10 +90,10 @@ case class Trippet(definition: Seq[Tree],
   import Module.NL
 
   def toSnippet: Snippet =
-    Snippet(<source>{treesToString(definition.toList)}</source>,
-      <source>{addNL(treesToString(companion.toList))}</source>,
-      <source>{addNL(treesToString(defaultFormats.toList))}</source>,
-      <source>{addNL(treesToString(implicitValue.toList))}</source>)
+    Snippet(<source>{treeToString(definition.toList: _*)}</source>,
+      <source>{addNL(treeToString(companion.toList: _*))}</source>,
+      <source>{addNL(treeToString(defaultFormats.toList: _*))}</source>,
+      <source>{addNL(treeToString(implicitValue.toList: _*))}</source>)
 
   private def addNL(s: String) =
     if (s != "") s + NL

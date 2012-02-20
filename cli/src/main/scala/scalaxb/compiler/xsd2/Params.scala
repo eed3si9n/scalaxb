@@ -10,7 +10,7 @@ import java.net.URI
 trait Params { self: Namer with Lookup =>
   import Predef.{any2stringadd => _}
   import com.weiglewilczek.slf4s.Logger
-  import treehugger._
+  import treehugger.forest._
   import definitions._
   import treehuggerDSL._
 
@@ -47,7 +47,7 @@ trait Params { self: Namer with Lookup =>
       VAL(paramName, typeName.localNameType)
 
     def varargTree(implicit targetNamespace: Option[URI], lookup: Lookup): ValDef =
-      VAL(paramName, STAR(singleTypeName.localNameType))
+      VAL(paramName, TYPE_*(singleTypeName.localNameType))
 
     def toScalaCode(implicit targetNamespace: Option[URI], lookup: Lookup): String =
       toTraitScalaCode + (
@@ -60,10 +60,10 @@ trait Params { self: Namer with Lookup =>
         case true =>
           LAZYVAL(toTraitScalaCode) := (occurrence match {
             case SingleNotNillable(_) =>
-              REF(wrapper) APPLY(LIT(buildNodeName)) DOT "as" TYPEAPPLY singleTypeName.localNameType
+              REF(wrapper) APPLY(LIT(buildNodeName)) DOT "as" APPLYTYPE singleTypeName.localNameType
             case _ =>
               (REF(wrapper) DOT "get" APPLY(LIT(buildNodeName))) MAP (
-                UNDERSCORE DOT "as" TYPEAPPLY singleTypeName.localNameType
+                WILDCARD DOT "as" APPLYTYPE singleTypeName.localNameType
               )
           })
         case _ => DEF(toTraitScalaCode)

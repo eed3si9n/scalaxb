@@ -8,7 +8,7 @@ import scalaxb.compiler.{ScalaNames, Config, Snippet, ReferenceNotFound}
 import scalaxb.compiler.xsd.{XsAnyType, XsAnySimpleType, XsString, BuiltInSimpleTypeSymbol, XsTypeSymbol, XsWildcard}
 import Defs._
 import scala.xml.NamespaceBinding
-import treehugger._
+import treehugger.forest._
 import definitions._
 
 case class QualifiedName(namespace: Option[URI], localPart: String, parameters: QualifiedName*) {
@@ -20,13 +20,16 @@ case class QualifiedName(namespace: Option[URI], localPart: String, parameters: 
 //    else fullyQualifiedName
 
   def localNameType(implicit targetNamepsace: Option[URI], lookup: Lookup): Type =
-    RootClass.newClass(localName.toTypeName).toType
+    RootClass.newClass(localName).toType
   
   def localName(implicit targetNamespace: Option[URI], lookup: Lookup): String =
     if (namespace == targetNamespace)
       if (parameters.isEmpty) localPart
       else "%s[%s]" format (localPart, parameters.toSeq map {_.localName} mkString(", "))
     else fullyQualifiedName
+
+  def toType(implicit lookup: Lookup): Type =
+    RootClass.newClass(fullyQualifiedName).toType
 
   def fullyQualifiedName(implicit lookup: Lookup): String = {
     val s = namespace match {
@@ -228,9 +231,9 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter =>
     else if (qualified) namespace
     else None
 
-  def elementNamespaceString(tagged: Tagged[XElement]): String = quoteUri(elementNamespace(tagged))
-  def elementNamespaceString(topLevelElement: Boolean, namespace: Option[URI], qualified: Boolean) =
-    quoteUri(elementNamespace(topLevelElement, namespace, qualified))
+  def elementNamespaceTree(tagged: Tagged[XElement]): Tree = optionUriTree(elementNamespace(tagged))
+  def elementNamespaceTree(topLevelElement: Boolean, namespace: Option[URI], qualified: Boolean) =
+    optionUriTree(elementNamespace(topLevelElement, namespace, qualified))
 
   object BuiltInAnyType {
     // called by ElementOps

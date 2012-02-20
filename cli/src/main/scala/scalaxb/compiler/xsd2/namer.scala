@@ -4,6 +4,9 @@ import java.net.URI
 import xmlschema._
 import scalaxb.compiler.{ScalaNames}
 import Defs._
+import treehugger.forest._
+import definitions._
+import treehuggerDSL._
 
 trait PackageNamer {
   def packageNameByURI(namespace: Option[URI], context: SchemaContext): Option[String] =
@@ -156,4 +159,16 @@ trait Namer extends ScalaNames { self: Lookup with Splitter  =>
   def indent(indent: Int) = "  " * indent
 
   def quoteUri(value: Option[URI]): String = quote(value map {_.toString})
+
+  def optionTree(value: Option[String]): Tree =
+    value map { x => SOME(LIT(x)) } getOrElse {NONE}
+
+  def optionUriTree(value: Option[URI]): Tree = optionTree(value map {_.toString})
+
+  def INFIX_CHAIN(op: String, seq: Iterable[Tree]): Tree =
+    seq.toList match {
+      case Nil => EmptyTree
+      case List(x) => x
+      case xs => xs reduceLeft { (x, y) => x INFIX(op) APPLY y }
+    }
 }

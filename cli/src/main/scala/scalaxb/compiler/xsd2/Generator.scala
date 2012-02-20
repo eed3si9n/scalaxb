@@ -29,11 +29,11 @@ import Defs._
 
 class Generator(val schema: ReferenceSchema, 
     val context: SchemaContext, val config: Config) extends Params with PackageNamer
-    with Namer with Lookup with Splitter with Parsers with Args with XMLOutputs {
+    with Namer with Lookup with Splitter with Parsers with Args with XMLOutputs with Symbols {
   import Predef.{any2stringadd => _}
   import com.weiglewilczek.slf4s.Logger
   import scalaxb.DataRecord
-  import treehugger._
+  import treehugger.forest._
   import definitions._
   import treehuggerDSL._
 
@@ -81,7 +81,7 @@ class Generator(val schema: ReferenceSchema,
         splitParticles(decl.particles)(decl.tag) map { generateLongSeqAccessors(_) } getOrElse {Nil} }) ++
       (attributes.headOption map  { _ => generateAttributeAccessors(attributes, true) } getOrElse {Nil})
     val superNames = complexTypeSuperNames(decl)
-    val parents = superNames map { x => RootClass.newClass(x.toTypeName).toType}
+    val parents = superNames map { x => RootClass.newClass(x) }
 
 //    Snippet(Snippet(<source>case class { localName }({paramsString}){extendString}{ accessors.headOption map( _ =>
 //      " {" + NL + indent(1) + accessors.mkString(NL + indent(1)) + NL + "}" + NL
@@ -89,21 +89,23 @@ class Generator(val schema: ReferenceSchema,
 //      makeImplicitValue(name)) :: compositorCodes: _*)
 
     Trippet(
-      Trippet(CASECLASSDEF(localName.toTypeName) withParams(paramsTrees: _*) withParents(parents: _*) :=
-        (if (accessors.isEmpty) forest.EmptyTree
-        else BLOCK(accessors: _*))
-      ) ::
+      Trippet(CASECLASSDEF(localName) withParams(paramsTrees) withParents(parents) :=
+        (if (accessors.isEmpty) EmptyTree
+        else BLOCK(accessors: _*)),
+        EmptyTree,
+        generateDefaultFormat(name, decl),
+        makeImplicitValue(name)) ::
       compositorCodes: _*)
   }
 
-  private def generateDefaultFormat(name: QualifiedName, decl: Tagged[XComplexType]): Node = {
+  private def generateDefaultFormat(name: QualifiedName, decl: Tagged[XComplexType]): Tree = {
     val particles = decl.particles
     val unmixedParserList = particles map { buildParser(_, decl.mixed, decl.mixed) }
     val parserList = if (decl.mixed) buildTextParser +: (unmixedParserList flatMap { Seq(_, buildTextParser) })
       else unmixedParserList
-    val parserVariableList = ( 0 to parserList.size - 1) map { buildSelector }
+    val parserVariableList: Seq[Tree] = ( 0 to parserList.size - 1) map { i => buildSelector(i) }
 
-    val particleArgs = if (decl.mixed) (0 to parserList.size - 1).toList map { i =>
+    val particleArgs: Seq[Tree] = if (decl.mixed) (0 to parserList.size - 1).toList map { i =>
         if (i % 2 == 1) buildArgForMixed(particles((i - 1) / 2), i)
         else buildArgForOptTextRecord(i) }
       else decl.primaryAll map { all => 
@@ -111,7 +113,6 @@ class Generator(val schema: ReferenceSchema,
         all.particles map { buildArgForAll(_) } } getOrElse {
         particles.zipWithIndex map { case (i, x) => buildArg(i, x) }
       }
-    val argsString = particleArgs.mkString("," + NL + indent(4))
 
     def makeWritesChildNodes = {
       def simpleContentString(base: QualifiedName) = base match {
@@ -119,8 +120,9 @@ class Generator(val schema: ReferenceSchema,
         case _ => "Seq(scala.xml.Text(__obj.value.toString))"
       }
 
+      def toXMLArgs: List[Tree] = REF("x") :: (REF("x") DOT "namespace").tree :: (REF("x") DOT "key").tree :: REF("__scope") :: FALSE :: Nil
       def childString = if (decl.mixed) "__obj." + makeParamName(MIXED_PARAM) +
-        ".toSeq flatMap { x => " + buildToXML(QualifiedName.DataRecordAnyTypeName, "x, x.namespace, x.key, __scope, false") + " }"
+        ".toSeq flatMap { x => " + buildToXML(QualifiedName.DataRecordAnyTypeName, toXMLArgs) + " }"
       else decl.value.arg1.value match {
         case XSimpleContent(_, DataRecord(_, _, x: XSimpleRestrictionType), _, _)      => simpleContentString(x.base)
         case XSimpleContent(_, DataRecord(_, _, x: XSimpleExtensionType), _, _)        => simpleContentString(x.base)
@@ -143,22 +145,40 @@ class Generator(val schema: ReferenceSchema,
     val defaultFormatSuperNames: Seq[String] = ("scalaxb.ElemNameParser[" + name.fullyQualifiedName + "]") ::
       (groups.toList map { case tagged: TaggedKeyedGroup => QualifiedName(tagged.tag.namespace, names.get(tagged).get).formatterName })
 
-    <source>  trait Default{name.formatterName} extends {defaultFormatSuperNames.mkString(" with ")} {{
-    val targetNamespace: Option[String] = { quoteUri(schema.targetNamespace) }
-
-    { if (decl.name.isDefined) "override def typeName: Option[String] = " + quote(decl.name) + NL + NL + indent(2)
-      else ""
-    }{ if (decl.mixed) "override def isMixed: Boolean = true" + NL + NL + indent(2)
-       else "" }def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[{name.fullyQualifiedName}] =
-      { parserList.mkString(" ~ " + NL + indent(3)) } ^^
-      {{ case { parserVariableList.mkString(" ~ ") } =>
-      {name.fullyQualifiedName}({argsString}) }}
-
-{makeWritesAttribute}{makeWritesChildNodes}  }}</source>
+//    <source>  trait Default{name.formatterName} extends {defaultFormatSuperNames.mkString(" with ")} {{
+//    val targetNamespace: Option[String] = { quoteUri(schema.targetNamespace) }
+//
+//    { if (decl.name.isDefined) "override def typeName: Option[String] = " + quote(decl.name) + NL + NL + indent(2)
+//      else ""
+//    }{ if (decl.mixed) "override def isMixed: Boolean = true" + NL + NL + indent(2)
+//       else "" }def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[{name.fullyQualifiedName}] =
+//      { parserList.mkString(" ~ " + NL + indent(3)) } ^^
+//      {{ case { parserVariableList.mkString(" ~ ") } =>
+//      {name.fullyQualifiedName}({argsString}) }}
+//
+//{makeWritesAttribute}{makeWritesChildNodes}  }}</source>
+    
+    TRAITDEF(name.formatterName) withParents(defaultFormatSuperNames) := BLOCK(List(
+      Some(VAL("targetNamespace", TYPE_OPTION(StringClass)) := optionUriTree(schema.targetNamespace)),
+      decl.name map { typeName =>
+        DEF("typeName", TYPE_OPTION(StringClass)) := LIT(typeName)
+      },
+      if (decl.mixed) Some(DEF("isMixed", BooleanClass) withFlags(Flags.OVERRIDE) := TRUE)
+      else None,
+      Some(DEF("parser", ParserClass TYPE_OF name.fullyQualifiedName) withParams(
+          PARAM("node", "scala.xml.Node"), PARAM("stack", TYPE_LIST("scalaxb.ElemName"))) :=
+        INFIX_CHAIN("~", parserList) INFIX("^^") APPLY BLOCK(
+          CASE(parserVariableList reduceLeft  { (x, y) => x INFIX("~") UNAPPLY y }) ==>
+            REF(name.fullyQualifiedName) APPLY particleArgs
+        )
+      )
+    ).flatten)
   }
 
-  private def makeImplicitValue(name: QualifiedName): Node =
-    <source>  implicit lazy val {name.formatterName}: scalaxb.XMLFormat[{name.fullyQualifiedName}] = new Default{name.formatterName} {{}}</source>
+  private def makeImplicitValue(name: QualifiedName): Tree =
+    LAZYVAL(name.formatterName) withFlags(Flags.IMPLICIT) withType(xmlFormatType(name.toType)) :=
+      NEW("Default" + name.formatterName)
+    // <source>  implicit lazy val {name.formatterName}: scalaxb.XMLFormat[{name.fullyQualifiedName}] = new Default{name.formatterName} {{}}</source>
 
   def complexTypeSuperNames(decl: Tagged[XComplexType]): Seq[String] = {
     (decl.attributeGroups map {buildTypeName} map {_.localPart})
@@ -174,7 +194,7 @@ class Generator(val schema: ReferenceSchema,
     val paramList = Param.fromSeq(list)
     // Snippet(<source>case class { name }({
     //  paramList.map(_.toScalaCode).mkString(", " + NL + indent(1))})</source>)
-    Trippet(CASECLASSDEF(name.toTypeName) withParams(paramList map {_.tree}: _*))
+    Trippet(CASECLASSDEF(name) withParams(paramList map {_.tree}: _*))
   }
 
   def generateCompositor(decl: Tagged[KeyedGroup]): Trippet = decl.key match {
@@ -186,7 +206,7 @@ class Generator(val schema: ReferenceSchema,
       val superString = ""
       val name = names.get(decl) getOrElse {"??"}
       // Snippet(<source>trait {name}{superString}</source>)
-      Trippet(TRAITDEF(name.toTypeName))
+      Trippet(TRAITDEF(name))
   }
 
   def processSimpleType(decl: Tagged[XSimpleType]): Seq[Snippet] =

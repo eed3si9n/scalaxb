@@ -1,63 +1,69 @@
 package scalaxb.compiler.xsd2
 
-trait Parsers { self: Namer with Lookup with Args with Params =>
+trait Parsers { self: Namer with Lookup with Args with Params with Symbols =>
   import Predef.{any2stringadd => _, _}
   import com.weiglewilczek.slf4s.Logger
   import scalaxb.compiler.xsd.{XsAnyType, BuiltInSimpleTypeSymbol, XsAnySimpleType, XsTypeSymbol, XsInt}
   import Defs._
+  import treehugger.forest._
+  import definitions._
+  import treehuggerDSL._
 
   private lazy val logger: Logger = Logger("xsd2.Parsers")
 
-  def buildTextParser: String = "optTextRecord"
+  def buildTextParser: Tree = REF("optTextRecord")
 
   // called by makeCaseClassWithType and buildSeqParser
-  def buildParser(tagged: Tagged[_], mixed: Boolean, wrapInDataRecord: Boolean): String =
+  def buildParser(tagged: Tagged[_], mixed: Boolean, wrapInDataRecord: Boolean): Tree =
     buildParser(tagged, Param(tagged).occurrence, mixed, wrapInDataRecord)
 
   def buildParser(particle: Tagged[_], occurrence: Occurrence,
-      mixed: Boolean, wrapInDataRecord: Boolean): String = particle match {
+      mixed: Boolean, wrapInDataRecord: Boolean): Tree = particle match {
     case tagged: TaggedLocalElement  => buildElemParser(tagged, occurrence, mixed, wrapInDataRecord, false)
     // case ref: ElemRef             => buildElemParser(buildElement(ref), occurrence, mixed, wrapInDataRecord, false)
     // case ref: GroupRef            => buildGroupParser(buildGroup(ref), occurrence, mixed, wrapInDataRecord)
     // case compositor: HasParticle  => buildCompositorParser(compositor, occurrence, mixed, wrapInDataRecord)
     // case any: AnyDecl             => buildAnyParser(any.namespaceConstraint, occurrence, mixed, wrapInDataRecord, config.laxAny)
-    case _ => ""
+    case _ => EmptyTree
   }
 
-  def buildParserString(tagged: TaggedLocalElement, occurrence: Occurrence): String = {
+  def buildParserTree(tagged: TaggedLocalElement, occurrence: Occurrence): Tree = {
     val elem = tagged.resolve
-    buildParserString("scalaxb.ElemName(" +
-      elementNamespaceString(elem) + ", " +
-      quote(elem.name.get) + ")",
-      occurrence)
+    buildParserTree(ElemNameClass APPLY (elementNamespaceTree(elem), LIT(elem.name.get)), occurrence)
   }
 
-  def buildParserString(base: String, occurrence: Occurrence) =
-    if (occurrence.isMultiple) "rep(" + base + ")"
-    else if (occurrence.isOptional) "opt(" + base + ")"
-    else "(" + base + ")"
+  def buildParserTree(base: Tree, occurrence: Occurrence): Tree =
+    if (occurrence.isMultiple) REF("rep") APPLY base
+    else if (occurrence.isOptional) REF("opt") APPLY base
+    else PAREN(base)
 
   def buildElemParser(tagged: TaggedLocalElement, occurrence: Occurrence, mixed: Boolean, wrapInDataRecord: Boolean,
-                      ignoreSubGroup: Boolean): String = {
+                      ignoreSubGroup: Boolean): Tree = {
     import Occurrence._
 
-    def buildConverter(typeSymbol: Tagged[Any], occurrence: Occurrence): String = {
-      val record = "scalaxb.DataRecord(x.namespace, Some(x.name), " + buildTypeSymbolArg("x", typeSymbol) + ")"
-      val nillableRecord = "scalaxb.DataRecord(x.namespace, Some(x.name), x.nilOption map {" + buildTypeSymbolArg("_", typeSymbol) + "})"
+    def buildConverter(typeSymbol: Tagged[Any], occurrence: Occurrence): Tree = {
+      // val record = "scalaxb.DataRecord(x.namespace, Some(x.name), " + buildTypeSymbolArg("x", typeSymbol) + ")"
+      val record = DataRecordClass APPLY(REF("x") DOT "namespace",
+        SOME(REF("x") DOT "name"),
+        buildTypeSymbolArg(REF("x"), typeSymbol))
+
+      // val nillableRecord = "scalaxb.DataRecord(x.namespace, Some(x.name), x.nilOption map {" + buildTypeSymbolArg("_", typeSymbol) + "})"
+      val nillableRecord = DataRecordClass APPLY(REF("x") DOT "namespace",
+        SOME(REF("x") DOT "name"),
+        REF("x") DOT "nilOption" MAP buildTypeSymbolArg(WILDCARD, typeSymbol))
 
       (occurrence) match {
-        case UnboundedNillable(_)    => "(_.toSeq map { x => " + nillableRecord + " })"
-        case UnboundedNotNillable(_) => "(_.toSeq map { x => " + record + " })"
-        case OptionalNillable(_)     => "(_ map { x => " + nillableRecord + " })"
-        case OptionalNotNillable(_)  => "(_ map { x => " + record + " })"
-        case SingleNillable(_)       => "(x => " + nillableRecord + ")"
-        case SingleNotNillable(_)    => "(x => " + record + ")"
+        case UnboundedNillable(_)    => PAREN((WILDCARD DOT "toSeq") MAP LAMBDA(PARAM("x")) ==> BLOCK(nillableRecord))
+        case UnboundedNotNillable(_) => PAREN((WILDCARD DOT "toSeq") MAP LAMBDA(PARAM("x")) ==> BLOCK(record))
+        case OptionalNillable(_)     => PAREN(WILDCARD MAP LAMBDA(PARAM("x")) ==> BLOCK(nillableRecord))
+        case OptionalNotNillable(_)  => PAREN(WILDCARD MAP LAMBDA(PARAM("x")) ==> BLOCK(record))
+        case SingleNillable(_)       => PAREN(LAMBDA(PARAM("x")) ==> BLOCK(nillableRecord))
+        case SingleNotNillable(_)    => PAREN(LAMBDA(PARAM("x")) ==> BLOCK(record))
       }
     }
 
-    def addConverter(p: String): String =
-      if (wrapInDataRecord) "(" + p + " ^^ " + NL +
-        indent(3) + buildConverter(tagged.typeStructure, occurrence) + ")"
+    def addConverter(p: Tree): Tree =
+      if (wrapInDataRecord) PAREN(p INFIX("^^") APPLY buildConverter(tagged.typeStructure, occurrence))
       else p
 
     // if (isSubstitionGroup(elem) && !ignoreSubGroup) addConverter(buildSubstitionGroupParser(elem, occurrence, mixed))
@@ -67,10 +73,10 @@ trait Parsers { self: Namer with Lookup with Args with Params =>
       case x: TaggedSymbol =>
         x.value match {
           case XsAnySimpleType | XsAnyType => buildAnyParser(Nil, occurrence, mixed, wrapInDataRecord, true)
-          case symbol: BuiltInSimpleTypeSymbol => addConverter(buildParserString(tagged, occurrence))
+          case symbol: BuiltInSimpleTypeSymbol => addConverter(buildParserTree(tagged, occurrence))
         }
 
-      case TaggedSimpleType(_, _) | TaggedComplexType(_, _) =>  addConverter(buildParserString(tagged, occurrence))
+      case TaggedSimpleType(_, _) | TaggedComplexType(_, _) =>  addConverter(buildParserTree(tagged, occurrence))
 
 //      case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
 //        if (compositorWrapper.contains(decl)) {
@@ -98,29 +104,42 @@ trait Parsers { self: Namer with Lookup with Args with Params =>
   }
 
   def buildAnyParser(namespaceConstraint: List[String], occurrence: Occurrence, mixed: Boolean,
-                     wrapInDataRecord: Boolean, laxAny: Boolean): String = {
-    val converter =
-      if (occurrence.nillable) buildFromXML(QualifiedName(Some(SCALAXB_URI), "DataRecord[Option[Any]]"), "_",
-        "scalaxb.ElemName(node) :: stack", None)
-      else buildFromXML(wildCardTypeName, "_", "scalaxb.ElemName(node) :: stack", None)
-    val parser = "any(%s)".format(
-      if (laxAny) "_ => true"
-      else namespaceConstraint match {
-        case Nil => "_ => true"
-        case "##any" :: Nil => "_ => true"
-        case "##other" :: Nil => "_.namespace != %s" format (quoteUri(schema.targetNamespace))
-        case _ =>
-          """x => %s contains x.namespace""" format (namespaceConstraint.map {
-            case "##targetNamespace" => quoteUri(schema.targetNamespace)
-            case "##local" => "None"
-            case x => "Some(%s)".format(x)
-          }).mkString("List(", ", ", ")")
-      })
+                     wrapInDataRecord: Boolean, laxAny: Boolean): Tree = {
+    def stack = (ElemNameClass APPLY(REF("node"))) LIST_:: REF("stack")
+    def converter: Tree =
+      if (occurrence.nillable) buildFromXML(QualifiedName(Some(SCALAXB_URI), "DataRecord[Option[Any]]"), WILDCARD,
+        stack, None)
+      else buildFromXML(wildCardTypeName, WILDCARD, stack, None)
 
-    buildParserString(if (mixed) "((" + parser + " ^^ (" + converter + ")) ~ " + NL +
-        indent(3) + buildTextParser + ") ^^ " + NL +
-        indent(3) + "{ case p1 ~ p2 => Seq.concat(Seq(p1), p2.toList) }"
-      else if (wrapInDataRecord) "(" + parser + " ^^ (" + converter + "))"
+    def parser: Tree =
+      REF("any") APPLY(
+        if (laxAny) LAMBDA(PARAM(WILDCARD)) ==> TRUE
+        else namespaceConstraint match {
+          case Nil =>               LAMBDA(PARAM(WILDCARD)) ==> TRUE
+          case "##any" :: Nil =>    LAMBDA(PARAM(WILDCARD)) ==> TRUE
+          case "##other" :: Nil =>  (WILDCARD DOT "namespace") ANY_!= optionUriTree(schema.targetNamespace)
+          case _ =>
+            val list = LIST(namespaceConstraint map {
+              case "##targetNamespace" => optionUriTree(schema.targetNamespace)
+              case "##local" => NONE
+              case x => SOME(LIT(x))
+            })
+
+            LAMBDA(PARAM("x")) ==> list INFIX("contains") APPLY(REF("x") DOT "namespace")
+        }
+      )
+
+    def mixedParser: Tree =
+      PAREN(
+        PAREN(parser INFIX("^^") APPLY PAREN(converter)) INFIX("~") APPLY buildTextParser
+      ) INFIX("^^") APPLY BLOCK (
+        CASE(ID("p1") INFIX("~") UNAPPLY ID("p2")) ==> (SeqClass DOT "concat")(SEQ(REF("p1")), REF("p2") DOT "toList")
+      )
+
+    def wrappedParser: Tree = PAREN(parser INFIX("^^") APPLY PAREN(converter))
+
+    buildParserTree(if (mixed) mixedParser
+      else if (wrapInDataRecord) wrappedParser
       else parser,
       occurrence)
   }

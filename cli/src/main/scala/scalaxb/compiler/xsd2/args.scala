@@ -1,25 +1,30 @@
 package scalaxb.compiler.xsd2
 
-trait Args { self: Namer with Lookup with Params =>
+trait Args { self: Namer with Lookup with Params with Symbols =>
   import com.weiglewilczek.slf4s.Logger
   import scalaxb.compiler.xsd.{XsAnyType, BuiltInSimpleTypeSymbol, XsTypeSymbol, XsInt, XsAnySimpleType}
   import Defs._
   import Occurrence._
   import Predef.{any2stringadd => _, _}
   import xmlschema._
+  import treehugger.forest._
+  import definitions._
+  import treehuggerDSL._
   
   private lazy val logger = Logger("xsd2.Args")
 
-  def buildFromXML(typeName: QualifiedName): String = "scalaxb.fromXML[" + typeName.fullyQualifiedName + "]"
-  def buildFromXML(typeName: QualifiedName, selector: String, stackString: String, formatter: Option[String]): String =
-    buildFromXML(typeName) + "(%s, %s)%s".format(selector, stackString,
-      formatter map {"(" + _ + ")"} getOrElse {""})
+  def stackTree = (ElemNameClass APPLY(REF("node"))) LIST_:: REF("stack")
 
-  def buildToXML(typeName: QualifiedName, args: String): String =
-    "scalaxb.toXML[" + typeName.fullyQualifiedName + "](" + args + ")"
+  def buildFromXML(typeName: QualifiedName): Tree = Scalaxb_fromXML APPLYTYPE typeName.fullyQualifiedName
+  def buildFromXML(typeName: QualifiedName, selector: Tree, stackTree: Tree, formatter: Option[Tree]): Tree = {
+    val tree = buildFromXML(typeName) APPLY(selector, stackTree)
+    formatter map {tree APPLY _} getOrElse {tree}
+  }
+  def buildToXML(typeName: QualifiedName, args: List[Tree]): Tree =
+    Scalaxb_toXML APPLYTYPE typeName.fullyQualifiedName APPLY(args)
 
   // called by buildConverter
-  def buildTypeSymbolArg(selector: String, typeSymbol: Tagged[Any]): String = typeSymbol match {
+  def buildTypeSymbolArg(selector: Tree, typeSymbol: Tagged[Any]): Tree = typeSymbol match {
     case x: TaggedWildCard => selector
     case x: TaggedSymbol =>
       x.value match {
@@ -28,35 +33,37 @@ trait Args { self: Namer with Lookup with Params =>
       }
     case x: TaggedSimpleType => buildTypeSymbolArg(buildTypeName(baseType(x)), selector, SingleNotNillable())
     case x: TaggedComplexType =>
-      buildFromXML(buildTypeName(x), selector, "scalaxb.ElemName(node) :: stack", None)
+      buildFromXML(buildTypeName(x), selector, stackTree, None)
   }
 
-  def buildTypeSymbolArg(typeName: QualifiedName, selector: String, occurrence: Occurrence,
+  def buildTypeSymbolArg(typeName: QualifiedName, selector: Tree, occurrence: Occurrence,
       defaultValue: Option[String] = None, fixedValue: Option[String] = None,
-      wrapForLongAll: Boolean = false, formatter: Option[String] = None): String = {
+      wrapForLongAll: Boolean = false, formatter: Option[Tree] = None): Tree = {
     import Occurrence._
 
-    val stack = "scalaxb.ElemName(node) :: stack"
-    def fromSelector = buildFromXML(typeName, selector, stack, formatter)
-    def fromU = buildFromXML(typeName, "_", stack, formatter)
-    def fromValue(x: String) = buildFromXML(typeName, "scala.xml.Text(" + quote(x) + ")", stack, formatter)
+    def fromSelector = buildFromXML(typeName, selector, stackTree, formatter)
+    def fromX = buildFromXML(typeName, REF("x"), stackTree, formatter)
+    def lambdaX = LAMBDA(PARAM("x")) ==> BLOCK(fromX)
+    def fromValue(x: String) = buildFromXML(typeName, TextClass APPLY LIT(x), stackTree, formatter)
 
-    val retval = if (wrapForLongAll) {
+    val retval: Tree = if (wrapForLongAll) {
       // PrefixedAttribute only contains pre, so you need to pass in node to get the namespace.
-      if (selector.contains("@")) selector + ".headOption map { x => scalaxb.DataRecord(x, node, " +
-        buildFromXML(typeName, "x", stack, formatter) + ") }"
-      else selector + ".headOption map { x => scalaxb.DataRecord(x, " +
-        buildFromXML(typeName, "x", stack, formatter) + ") }"
+      if (treeToString(selector).contains("@")) (selector DOT "headOption") MAP LAMBDA(PARAM("x")) ==> BLOCK(
+          DataRecordClass APPLY(REF("x"), REF("node"), buildFromXML(typeName, REF("x"), stackTree, formatter))
+        )
+      else (selector DOT "headOption") MAP LAMBDA(PARAM("x")) ==> BLOCK(
+            DataRecordClass APPLY(REF("x"), buildFromXML(typeName, REF("x"), stackTree, formatter))
+        )
     } else occurrence match {
-      case UnboundedNillable(_)    => selector + ".toSeq map { _.nilOption map { " + fromU + " }}"
-      case UnboundedNotNillable(_) => selector + ".toSeq map { " + fromU + " }"
-      case OptionalNillable(_)     => selector + ".headOption map { _.nilOption map { " + fromU + " }}"
-      case OptionalNotNillable(_)  => selector + ".headOption map { " + fromU + " }"
+      case UnboundedNillable(_)    => (selector DOT "toSeq") MAP BLOCK((WILDCARD DOT "nilOption") MAP lambdaX)
+      case UnboundedNotNillable(_) => (selector DOT "toSeq") MAP lambdaX
+      case OptionalNillable(_)     => (selector DOT "headOption") MAP BLOCK((WILDCARD DOT "nilOption") MAP lambdaX)
+      case OptionalNotNillable(_)  => (selector DOT "headOption") MAP lambdaX
       case SingleNillable(_) | SingleNotNillable(_) =>
         (occurrence.nillable, defaultValue, fixedValue) match {
           case ( _, _, Some(x)) => fromValue(x)
-          case (_, Some(x), _)  => selector + ".headOption map { " + fromU + " } getOrElse { " + fromValue(x) + " }"
-          case (true, _, _)     => selector + ".nilOption map { " + fromU + " }"
+          case (_, Some(x), _)  => (selector DOT "headOption") MAP lambdaX INFIX("getOrElse") APPLY BLOCK(fromValue(x))
+          case (true, _, _)     => (selector DOT "nilOption") MAP lambdaX
           case (false, _, _)    => fromSelector
         }
     }
@@ -64,9 +71,9 @@ trait Args { self: Namer with Lookup with Params =>
     retval
   }
 
-  def buildArg(tagged: Tagged[Any], pos: Int): String = buildArg(tagged, buildSelector(pos), false)
+  def buildArg(tagged: Tagged[Any], pos: Int): Tree = buildArg(tagged, buildSelector(pos), false)
 
-  def buildArg(tagged: Tagged[Any], selector: String, wrapForLongAll: Boolean): String =
+  def buildArg(tagged: Tagged[Any], selector: Tree, wrapForLongAll: Boolean): Tree =
     // if ((isSubstitionGroup(elem))) selector
     tagged match {
       case x: TaggedSymbol =>
@@ -97,8 +104,8 @@ trait Args { self: Namer with Lookup with Params =>
       case x: TaggedKeyedGroup =>
         val param = Param(x)
         param.occurrence match {
-          case Multiple(_)         => selector + ".toSeq"
-          case OptionalNillable(_) => selector + " getOrElse {None}"
+          case Multiple(_)         => selector DOT "toSeq"
+          case OptionalNillable(_) => selector INFIX("getOrElse") APPLY BLOCK(NONE)
           case _ => selector
         }
       case AnyLike(x) =>
@@ -108,12 +115,13 @@ trait Args { self: Namer with Lookup with Params =>
     }
 
   // called by generateDefaultFormat. By spec, <all> contains only elements.
-  def buildArgForAll(tagged: Tagged[Any]): String = {
+  def buildArgForAll(tagged: Tagged[Any]): Tree = {
     val o = tagged match {
       case elem: TaggedLocalElement => elemToOptional(elem)
       case _ => error("buildArgForAll unsupported type: " + tagged.toString)
     }
-    "%s map { %s -> _ }" format(buildArg(o, buildSelector(o), true), quote(buildNodeName(o, true)))
+    // "%s map { %s -> _ }" format(buildArg(o, buildSelector(o), true), quote(buildNodeName(o, true)))
+    buildArg(o, buildSelector(o), true) MAP BLOCK( LIT(buildNodeName(o, true)) ANY_-> WILDCARD )
   }
 
   def elemToOptional(tagged: TaggedLocalElement): TaggedLocalElement =
@@ -121,10 +129,10 @@ trait Args { self: Namer with Lookup with Params =>
       case elem: XLocalElement => elem.copy(minOccurs = 0, maxOccurs = "1")
     })
 
-  def buildArgForMixed(tagged: Tagged[Any], pos: Int): String =
+  def buildArgForMixed(tagged: Tagged[Any], pos: Int): Tree =
     buildArgForMixed(tagged, buildSelector(pos))
 
-  def buildArgForMixed(tagged: Tagged[Any], selector: String): String = {
+  def buildArgForMixed(tagged: Tagged[Any], selector: Tree): Tree = {
     import Occurrence._
 
     val occcurrence = Param(tagged).occurrence
@@ -143,28 +151,28 @@ trait Args { self: Namer with Lookup with Params =>
       case _ => false
     }
 
-    val retval = occcurrence match {
+    val retval: Tree = occcurrence match {
       case Multiple(o) =>
-        if (isCompositor) selector + ".flatten"
+        if (isCompositor) selector DOT "flatten"
         else selector
       case Optional(o) =>
-        if (isCompositor) selector + " getOrElse {Nil}"
-        else selector + ".toList"
+        if (isCompositor) selector INFIX("getOrElse") APPLY BLOCK(NIL)
+        else selector DOT "toList"
       case Single(o) =>
         if (isCompositor) selector
-        else "Seq(" + selector + ")"
+        else SEQ(selector)
     }
 
     logger.debug("buildArgForMixed: " + occcurrence.toString + ": " + tagged.toString + ": " + retval)
     retval
   }
 
-  def buildArgForOptTextRecord(pos: Int): String =
-    buildSelector(pos) + ".toList"
+  def buildArgForOptTextRecord(pos: Int): Tree =
+    buildSelector(pos) DOT "toList"
 
-  def buildSelector(pos: Int): String = "p" + (pos + 1)
-  def buildSelector(nodeName: String): String = "(node \\ \"" + nodeName + "\")"
-  def buildSelector(tagged: Tagged[XElement]): String = buildSelector(buildNodeName(tagged, false))
+  def buildSelector(pos: Int): Tree = REF("p" + (pos + 1))
+  def buildSelector(nodeName: String): Tree = PAREN(REF("node") INFIX("\\") APPLY LIT(nodeName))
+  def buildSelector(tagged: Tagged[XElement]): Tree = buildSelector(buildNodeName(tagged, false))
 
   // scala's <foo/> \ "foo" syntax is not namespace aware, but {ns}foo is useful for long all.
   def buildNodeName(tagged: Tagged[XElement], prependNamespace: Boolean): String =

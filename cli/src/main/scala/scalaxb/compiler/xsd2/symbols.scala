@@ -7,6 +7,8 @@ trait Symbols {
   lazy val XMLPackage          = ScalaPackageClass.newPackage("xml")
   lazy val XMLPackageClass     = ScalaxbPackage.moduleClass
   lazy val TextClass           = XMLPackageClass.newClass("Text")
+  lazy val NodeClass           = XMLPackageClass.newClass("Node")
+  lazy val NamespaceBindingClass = XMLPackageClass.newClass("NamespaceBinding")
 
   lazy val ScalaxbPackage      = RootClass.newPackage("scalaxb")
   lazy val ScalaxbPackageClass = ScalaxbPackage.moduleClass

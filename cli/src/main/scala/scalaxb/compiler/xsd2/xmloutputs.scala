@@ -9,7 +9,7 @@ trait XMLOutputs { self: Args with Params with Lookup with Namer =>
 
   private lazy val logger = Logger("xsd.XMLOutput")
 
-  def buildXMLString(param: Param): Tree = {
+  def buildXMLTree(param: Param): Tree = {
     import Occurrence._
 
     val ns = elementNamespaceTree(param.topLevelElement, param.namespace, param.qualified)
@@ -22,20 +22,24 @@ trait XMLOutputs { self: Args with Params with Lookup with Namer =>
 
     val toXMLArgs: List[Tree] = REF("x") :: (REF("x") DOT "namespace").tree ::
       (REF("x") DOT "key").tree :: REF("__scope") :: typeAttribute :: Nil
+    val uToXMLArgs = REF("x") :: ns :: optionTree(Some(param.name)) :: REF("__scope") :: typeAttribute :: Nil
+
     lazy val xToXMLCode = LAMBDA(PARAM("x")) ==> BLOCK(buildToXML(param.baseTypeName, toXMLArgs))
-    val optionalToXMLArgs = WILDCARD :: ns :: optionTree(Some(param.name)) :: REF("__scope") :: typeAttribute :: Nil
+    lazy val xOptionalToXMLCode: Tree = LAMBDA(PARAM("x"))  ==> BLOCK(buildToXML(optionalType, toXMLArgs))
+
+
     lazy val toXMLCode: Tree = param.typeSymbol match {
       case AnyLike(_)                => xToXMLCode
       case x: TaggedDataRecordSymbol => xToXMLCode
-      case _ => BLOCK(buildToXML(param.baseTypeName, optionalToXMLArgs))
+      case _ => LAMBDA(PARAM("x")) ==> BLOCK(buildToXML(param.baseTypeName, uToXMLArgs))
     }
 
     lazy val optionalType = param.baseTypeName.option
-    lazy val xOptionalToXMLCode: Tree = LAMBDA(PARAM("x"))  ==> BLOCK(buildToXML(optionalType, toXMLArgs))
+
     lazy val optionalToXMLCode: Tree = param.typeSymbol match {
       case AnyLike(_)                => xOptionalToXMLCode
       case x: TaggedDataRecordSymbol => xOptionalToXMLCode
-      case _ => BLOCK(buildToXML(optionalType, optionalToXMLArgs))
+      case _ => LAMBDA(PARAM("x")) ==> BLOCK(buildToXML(optionalType, uToXMLArgs))
     }
 
     lazy val singleToXMLCode: Tree = param.typeSymbol match {

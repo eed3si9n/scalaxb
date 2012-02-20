@@ -44,10 +44,10 @@ trait Params { self: Namer with Lookup =>
       paramName + ": " + typeName.localName
 
     def tree(implicit targetNamespace: Option[URI], lookup: Lookup): ValDef =
-      VAL(paramName, typeName.localNameType)
+      PARAM(paramName, typeName.localNameType)
 
     def varargTree(implicit targetNamespace: Option[URI], lookup: Lookup): ValDef =
-      VAL(paramName, TYPE_*(singleTypeName.localNameType))
+      PARAM(paramName, TYPE_*(singleTypeName.localNameType))
 
     def toScalaCode(implicit targetNamespace: Option[URI], lookup: Lookup): String =
       toTraitScalaCode + (

@@ -152,7 +152,7 @@ class Generator(val schema: ReferenceSchema,
 //
 //{makeWritesAttribute}{makeWritesChildNodes}  }}</source>
     
-    Seq(TRAITDEF(name.formatterName) withParents(defaultFormatSuperNames) := BLOCK(List(
+    Seq(TRAITDEF("Default" + name.formatterName) withParents(defaultFormatSuperNames) := BLOCK(List(
       Some(VAL("targetNamespace", TYPE_OPTION(StringClass)) := optionUriTree(schema.targetNamespace)),
       decl.name map { typeName =>
         DEF("typeName", TYPE_OPTION(StringClass)) := LIT(typeName)

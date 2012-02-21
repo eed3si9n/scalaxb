@@ -9,8 +9,10 @@ object Dependencies {
   val defaultDispatchVersion = "0.11.2"
   val dispatch = "net.databinder.dispatch" %% "dispatch-core" % defaultDispatchVersion
   val launcherInterface = "org.scala-sbt" % "launcher-interface" % "0.12.0"
-  val treehuggerVersion = "0.1.1"
+  
+  val treehuggerVersion = "0.1.2-SNAPSHOT"
   val treehugger = "com.eed3si9n" %% "treehugger" % treehuggerVersion
+  
   val scalaXml = "org.scala-lang.modules" %% "scala-xml" % "1.0.2"
   val scalaParser = "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.4"
   val cxfVersion = "3.0.2"

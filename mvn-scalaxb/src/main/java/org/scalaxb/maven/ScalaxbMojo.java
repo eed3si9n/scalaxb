@@ -1,7 +1,7 @@
 package org.scalaxb.maven;
 
 /*
- * Copyright (c) 2011 Martin Ellis
+ * Copyright (c) 2011-2012 Martin Ellis
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,18 +23,13 @@ package org.scalaxb.maven;
  */
 
 import static java.util.Collections.emptyList;
-import static java.util.Collections.emptyMap;
 import static java.util.Collections.sort;
-import static java.util.Collections.unmodifiableList;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.regex.Pattern;
 
-import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.project.MavenProject;
@@ -48,7 +43,7 @@ import scalaxb.compiler.ReferenceNotFound;
  * @goal generate
  * @phase generate-sources
  */
-public class ScalaxbMojo extends AbstractMojo {
+public class ScalaxbMojo extends AbstractScalaxbMojo {
 
     /**
      * @parameter expression="${project}"
@@ -57,177 +52,9 @@ public class ScalaxbMojo extends AbstractMojo {
      */
     private MavenProject project;
 
-    /**
-     * The directory containing the XSD files. If the specified directory does
-     * not exist or is empty, then it is ignored.
-     * @parameter
-     *   expression="${scalaxb.xsdDirectory}"
-     *   default-value="${project.basedir}/src/main/xsd"
-     * @required
-     */
-    private File xsdDirectory;
-
-    /**
-     * The directory containing the WSDL files. If the specified directory does
-     * not exist or is empty, then it is ignored.
-     * @parameter
-     *   expression="${scalaxb.wsdlDirectory}"
-     *   default-value="${project.basedir}/src/main/wsdl"
-     * @required
-     */
-    private File wsdlDirectory;
-
-    /**
-     * The output directory.
-     * @parameter
-     *   expression="${scalaxb.outputDirectory}"
-     *   default-value="${project.build.directory}/generated-sources/scalaxb"
-     * @required
-     */
-    private File outputDirectory;
-
-    /**
-     * The package in which to generate classes. Classes are generated in the
-     * package specified, unless the <code>packageNames</code> parameter is used
-     * to override this value.
-     * @parameter
-     *   expression="${scalaxb.packageName}"
-     *   default-value="generated"
-     */
-    private String packageName;
-
-    /**
-     * Map of namespace URIs to package names for generated classes.
-     * <br/>
-     * This option can be used to override the <code>packageName</code>
-     * parameter (see above) for elements in specific namespaces. The mapping
-     * between namespace URIs and package names can be specifying any number of
-     * <code>packageName</code> elements within the <code>packageNames</code>
-     * element. For example:
-     * <pre>
-     * &lt;packageNames&gt;
-     *   &lt;packageName&gt;
-     *     &lt;uri&gt;http://example.com/service1&lt;/uri&gt;
-     *     &lt;package&gt;com.example.service1&lt;package&gt;
-     *   &lt;/packageName&gt;
-     *   &lt;packageName&gt;
-     *     &lt;uri&gt;http://example.com/service2&lt;/uri&gt;
-     *     &lt;package&gt;com.example.service2&lt;package&gt;
-     *   &lt;/packageName&gt;
-     * &lt;/packageNames&gt;
-     * </pre>
-     * @parameter
-     */
-    private PackageName[] packageNames;
-
-    /**
-     * The prefix to use on generated classes.
-     * @parameter expression="${scalaxb.classPrefix}"
-     */
-    private String classPrefix;
-
-    /**
-     * The prefix to use on generated parameter names.
-     * @parameter expression="${scalaxb.parameterPrefix}"
-     */
-    private String parameterPrefix;
-
-    /**
-     * @parameter
-     */
-    private List<String> wrapContents;
-
-    /**
-     * Generate the scalaxb classes required to use the generated bindings.
-     * This option is useful for preventing duplicate copies of the scalaxb
-     * runtime being present on the classpath when more than one jar contains
-     * scalaxb bindings.  To prevent the scalaxb runtime sources being
-     * generated, this option should be set to false.
-     * @parameter default-value="true"
-     */
-    private boolean generateRuntime;
-
-    /**
-     * Maximum number of parameters to use in generated case class constructors.
-     * This allows parameters sequences to be separated into chunks of the given
-     * size.
-     * @parameter
-     */
-    private Integer chunkSize;
-
-   /**
-    * Determines whether generated Scala files will be written into a directory
-    * corresponding to their package name.  By default, the generated files are
-    * written in the output directory under a sub-directory that corresponds to
-    * the package name. For example, if the generated classes are in package
-    * 'foo', they will be generated in ${scalaxb.outputDirectory}/foo.  Setting
-    * this value to false will cause the generated sources to be written
-    * directly into the output directory, without creating a directory for the
-    * package.
-    *
-    * @parameter
-    *   default-value="true"
-    *   expression="${scalaxb.package-dir}"
-    */
-   private boolean packageDir;
-
-   /**
-    * The name of the file to generate that includes the protocol
-    * implementation; that is, the code that marshals values to and from XML.
-    * @parameter
-    *   @default-value="xmlprotocol.scala"
-    */
-   private String protocolFile;
-
-   /**
-    * The package in which to generate the 'protocol' code; that is, the code
-    * that marshals values to and from XML. The generated code defines a package
-    * object for the named package. The package object defines implicit values
-    * required for using the <code>scalaxb.toXML</code> and
-    * <code>scalaxb.fromXML</code> functions. If unspecified, the protocol code
-    * is generated in the same package as the generated classes that define the
-    * values marshalled to and from XML.
-    * @parameter
-    */
-   private String protocolPackage;
-
-   /**
-    * Relaxes namespace constraints of <code>xs:any</code>.
-    * <br/>
-    * This option allows <code>xs:any</code> elements declared with a namespace
-    * attribute of <code>##local</code> to contain qualified XML elements.
-    * According to the W3C XML Schema recommendation, an XML element that is
-    * declared to be in a namespace is not permitted content for an
-    * <code>xs:any</code> element with a namespace of <code>##local</code>.
-    * By default, this option is false, thus enforcing this requirement. Setting
-    * this option to true allows namespaced content to be used.
-    *
-    * @parameter
-    *   default-value="false"
-    *   expression="${scalaxb.lax-any}"
-    */
-   private boolean laxAny;
-
-   /**
-    * Prefix to prepend to the names of generated parameters for XML attributes.
-    * <br/>
-    * This option sets a prefix to be used in the names of parameters for XML
-    * attributes. It is useful when a schema defines both an element and an
-    * attribute of the same name within a complex type.
-    * @parameter
-    *   expression="${scalaxb.attributePrefix}"
-    */
-   private String attributePrefix;
-
-    /**
-     *
-     * @parameter expression="${scalaxb.verbose}"
-     */
-    private boolean verbose;
-
     public void execute() throws MojoExecutionException, MojoFailureException {
-        List<String> schemaFiles = inputFiles(xsdDirectory, "xsd");
-        List<String> wsdlFiles = inputFiles(wsdlDirectory, "wsdl");
+        List<String> schemaFiles = inputFiles(getXsdDirectory(), "xsd");
+        List<String> wsdlFiles = inputFiles(getWsdlDirectory(), "wsdl");
         if (schemaFiles.isEmpty() && wsdlFiles.isEmpty()) {
             getLog().warn("No XSD or WSDL files found: not running scalaxb");
         } else {
@@ -241,15 +68,16 @@ public class ScalaxbMojo extends AbstractMojo {
     private void generateBindings(List<String> schemaFiles)
             throws MojoExecutionException, MojoFailureException {
 
-        outputDirectory.mkdirs();
+        getOutputDirectory().mkdirs();
         List<String> arguments = new ArrayList<String>();
         arguments.addAll(arguments());
         arguments.addAll(schemaFiles);
 
         invokeCompiler(arguments);
 
-        getLog().debug("Adding source root: " + outputDirectory.getAbsolutePath());
-        project.addCompileSourceRoot(outputDirectory.getAbsolutePath());
+        String outputPath = getOutputDirectory().getAbsolutePath();
+        getLog().debug("Adding source root: " + outputPath);
+        project.addCompileSourceRoot(outputPath);
     }
 
     private void invokeCompiler(List<String> arguments)
@@ -287,38 +115,6 @@ public class ScalaxbMojo extends AbstractMojo {
         }
         str.deleteCharAt(str.length() - 1);
         return str.toString();
-    }
-
-    Map<String, String> packageNameMap() {
-        if (packageNames == null) {
-            return emptyMap();
-        }
-
-        Map<String, String> names = new LinkedHashMap<String, String>();
-        for (PackageName name : packageNames) {
-            names.put(name.getUri(), name.getPackage());
-        }
-        return names;
-    }
-
-    private List<String> arguments() {
-        List<String> args = new ArgumentsBuilder()
-            .flag("-v", verbose)
-            .flag("--package-dir", packageDir)
-            .param("-d", outputDirectory.getPath())
-            .param("-p", packageName)
-            .map("-p:", packageNameMap())
-            .param("--class-prefix", classPrefix)
-            .param("--param-prefix", parameterPrefix)
-            .param("--chunk-size", chunkSize)
-            .flag("--no-runtime", !generateRuntime)
-            .intersperse("--wrap-contents", wrapContents)
-            .param("--protocol-file", protocolFile)
-            .param("--protocol-package", protocolPackage)
-            .param("--attribute-prefix", attributePrefix)
-            .flag("--lax-any", laxAny)
-            .getArguments();
-        return unmodifiableList(args);
     }
 
     List<String> inputFiles(File directory, String type) {

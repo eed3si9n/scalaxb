@@ -198,9 +198,9 @@ object EntitySpec extends Specification { def is =
   }
 
   def union1 = {
-    val entitySource = module.processNode(<xs:schema targetNamespace="http://www.example.com/general"
+    val entitySource = module.processNode(<xs:schema targetNamespace="http://www.example.com/"
         xmlns:xs="http://www.w3.org/2001/XMLSchema"
-        xmlns:gen="http://www.example.com/general">
+        xmlns:tns="http://www.example.com/">
       <xs:complexType name="SimpleTypeTest">
         <xs:sequence>
           <xs:element name="union">
@@ -242,13 +242,13 @@ object EntitySpec extends Specification { def is =
   }
 
   def enum3 = {
-    enumEntitySource must contain("""milk1: MilkType""")
+    enumEntitySource must contain("""milk1: example.MilkType""")
   }
 
   lazy val complexTypeEntitySource = module.processNode(complexTypeCardinalityXML, "example")(0)
 
   lazy val expectedComplexTypeTest =
-    """case class SingularComplexTypeTest(person1: Person, person2: Option[example.Person], """ +
+    """case class SingularComplexTypeTest(person1: example.Person, person2: Option[example.Person], """ +
       """person3: Option[example.Person], person4: Option[Option[example.Person]], """ +
       """person5: Seq[example.Person], person6: Seq[Option[example.Person]])"""
 
@@ -411,13 +411,13 @@ object EntitySpec extends Specification { def is =
     </xs:schema>, "example")(0)
 
   val seqExpectedSequenceTest =
-    """case class SequenceComplexTypeTest(sequencecomplextypetestsequence: SequenceComplexTypeTestSequence, """ +
-      """sequencecomplextypetestsequence2: SequenceComplexTypeTestSequence2, """ +
+    """case class SequenceComplexTypeTest(sequencecomplextypetestsequence: example.SequenceComplexTypeTestSequence, """ +
+      """sequencecomplextypetestsequence2: example.SequenceComplexTypeTestSequence2, """ +
       """sequencecomplextypetestsequence3: Option[example.SequenceComplexTypeTestSequence3], """ +
       """sequencecomplextypetestsequence4: Option[example.SequenceComplexTypeTestSequence4], """ +
       """sequencecomplextypetestsequence5: Seq[example.SequenceComplexTypeTestSequence5], """ +
       """sequencecomplextypetestsequence6: Seq[example.SequenceComplexTypeTestSequence6], """ +
-      """sequencecomplextypetestsequence7: SequenceComplexTypeTestSequence7)"""
+      """sequencecomplextypetestsequence7: example.SequenceComplexTypeTestSequence7)"""
 
   def seq1 = {
     println(seqEntitySource)
@@ -434,7 +434,7 @@ object EntitySpec extends Specification { def is =
 
   def seq4 = {
     seqEntitySource must contain("""case class MultipleSequenceComplexTypeTest(""" +
-      """multiplesequencecomplextypetestsequence: MultipleSequenceComplexTypeTestSequence*)""")
+      """multiplesequencecomplextypetestsequence: example.MultipleSequenceComplexTypeTestSequence*)""")
   }
 
   def seq5 = {
@@ -654,7 +654,7 @@ object EntitySpec extends Specification { def is =
   }
 
   def attr2 = {
-    attrEntitySource must contain("""lazy val milk1: Option[example.MilkType] = attributes.get("@milk1").map(_.as[MilkType])""")
+    attrEntitySource must contain("""lazy val milk1: Option[example.MilkType] = attributes.get("@milk1").map(_.as[example.MilkType])""")
   }
 
   lazy val attributeGroupEntitySource = module.processNode(<xs:schema targetNamespace="http://www.example.com/general"
@@ -684,6 +684,6 @@ object EntitySpec extends Specification { def is =
   }
 
   def attributegroup3 = {
-    attributeGroupEntitySource must contain("""case class AttributeGroupTest(attributes: Map[String, scalaxb.DataRecord[Any]]) extends Coreattrs""")
+    attributeGroupEntitySource must contain("""case class AttributeGroupTest(attributes: Map[String, scalaxb.DataRecord[Any]]) extends example.Coreattrs""")
   }
 }

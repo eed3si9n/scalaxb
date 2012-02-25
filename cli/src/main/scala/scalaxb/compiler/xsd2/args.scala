@@ -15,13 +15,14 @@ trait Args { self: Namer with Lookup with Params with Symbols =>
 
   def stackTree = (ElemNameClass APPLY(REF("node"))) LIST_:: REF("stack")
 
-  def buildFromXML(typeName: QualifiedName): Tree = Scalaxb_fromXML APPLYTYPE typeName.fullyQualifiedName
-  def buildFromXML(typeName: QualifiedName, selector: Tree, stackTree: Tree, formatter: Option[Tree]): Tree = {
-    val tree = buildFromXML(typeName) APPLY(selector, stackTree)
+  def buildFromXML(typ: Type): Tree =
+    Scalaxb_fromXML APPLYTYPE typ
+  def buildFromXML(typ: Type, selector: Tree, stackTree: Tree, formatter: Option[Tree]): Tree = {
+    val tree = buildFromXML(typ) APPLY(selector, stackTree)
     formatter map {tree APPLY _} getOrElse {tree}
   }
-  def buildToXML(typeName: QualifiedName, args: List[Tree]): Tree =
-    Scalaxb_toXML APPLYTYPE typeName.fullyQualifiedName APPLY(args)
+  def buildToXML(typ: Type, args: List[Tree]): Tree =
+    Scalaxb_toXML APPLYTYPE typ APPLY(args)
 
   // called by buildConverter
   def buildTypeSymbolArg(selector: Tree, typeSymbol: Tagged[Any]): Tree = typeSymbol match {
@@ -29,30 +30,30 @@ trait Args { self: Namer with Lookup with Params with Symbols =>
     case x: TaggedSymbol =>
       x.value match {
         case XsAnySimpleType | XsAnyType => selector
-        case symbol: BuiltInSimpleTypeSymbol => buildTypeSymbolArg(buildTypeName(x), selector, SingleNotNillable())
+        case symbol: BuiltInSimpleTypeSymbol => buildTypeSymbolArg(buildType(x), selector, SingleNotNillable())
       }
-    case x: TaggedSimpleType => buildTypeSymbolArg(buildTypeName(baseType(x)), selector, SingleNotNillable())
+    case x: TaggedSimpleType => buildTypeSymbolArg(buildType(baseType(x)), selector, SingleNotNillable())
     case x: TaggedComplexType =>
-      buildFromXML(buildTypeName(x), selector, stackTree, None)
+      buildFromXML(buildType(x), selector, stackTree, None)
   }
 
-  def buildTypeSymbolArg(typeName: QualifiedName, selector: Tree, occurrence: Occurrence,
+  def buildTypeSymbolArg(typ: Type, selector: Tree, occurrence: Occurrence,
       defaultValue: Option[String] = None, fixedValue: Option[String] = None,
       wrapForLongAll: Boolean = false, formatter: Option[Tree] = None): Tree = {
     import Occurrence._
 
-    def fromSelector = buildFromXML(typeName, selector, stackTree, formatter)
-    def fromX = buildFromXML(typeName, REF("x"), stackTree, formatter)
+    def fromSelector = buildFromXML(typ, selector, stackTree, formatter)
+    def fromX = buildFromXML(typ, REF("x"), stackTree, formatter)
     def lambdaX = LAMBDA(PARAM("x")) ==> BLOCK(fromX)
-    def fromValue(x: String) = buildFromXML(typeName, TextClass APPLY LIT(x), stackTree, formatter)
+    def fromValue(x: String) = buildFromXML(typ, TextClass APPLY LIT(x), stackTree, formatter)
 
     val retval: Tree = if (wrapForLongAll) {
       // PrefixedAttribute only contains pre, so you need to pass in node to get the namespace.
       if (treeToString(selector).contains("@")) (selector DOT "headOption") MAP LAMBDA(PARAM("x")) ==> BLOCK(
-          DataRecordClass APPLY(REF("x"), REF("node"), buildFromXML(typeName, REF("x"), stackTree, formatter))
+          DataRecordClass APPLY(REF("x"), REF("node"), buildFromXML(typ, REF("x"), stackTree, formatter))
         )
       else (selector DOT "headOption") MAP LAMBDA(PARAM("x")) ==> BLOCK(
-            DataRecordClass APPLY(REF("x"), buildFromXML(typeName, REF("x"), stackTree, formatter))
+            DataRecordClass APPLY(REF("x"), buildFromXML(typ, REF("x"), stackTree, formatter))
         )
     } else occurrence match {
       case UnboundedNillable(_)    => (selector DOT "toSeq") MAP BLOCK((WILDCARD DOT "nilOption") MAP lambdaX)
@@ -77,9 +78,9 @@ trait Args { self: Namer with Lookup with Params with Symbols =>
     // if ((isSubstitionGroup(elem))) selector
     tagged match {
       case x: TaggedSymbol =>
-        buildTypeSymbolArg(buildTypeName(x), selector, SingleNotNillable(), None, None, wrapForLongAll)
+        buildTypeSymbolArg(buildType(x), selector, SingleNotNillable(), None, None, wrapForLongAll)
       case x: TaggedSimpleType =>
-        buildTypeSymbolArg(buildTypeName(x), selector, SingleNotNillable(), None, None, wrapForLongAll)
+        buildTypeSymbolArg(buildType(x), selector, SingleNotNillable(), None, None, wrapForLongAll)
       case elem: TaggedLocalElement if elem.isSubstitutionGroup => selector
       case tagged: TaggedLocalElement =>
         val o = Occurrence(tagged)
@@ -90,16 +91,16 @@ trait Args { self: Namer with Lookup with Params with Symbols =>
             x.value match {
               case XsAnySimpleType | XsAnyType =>
                 buildTypeSymbolArg(
-                  if (o.nillable) QualifiedName.DataRecordOptionAnyTypeName
-                  else buildTypeName(x), selector, o.copy (nillable = false),
+                  if (o.nillable) DataRecordOptionAnyClass
+                  else buildType(x), selector, o.copy (nillable = false),
                   elem.default, elem.fixed, wrapForLongAll)
               case symbol: BuiltInSimpleTypeSymbol =>
-                buildTypeSymbolArg(buildTypeName(symbol), selector, o, elem.default, elem.fixed, wrapForLongAll)
+                buildTypeSymbolArg(buildType(symbol), selector, o, elem.default, elem.fixed, wrapForLongAll)
             }
           case tagged: TaggedSimpleType =>
-            buildTypeSymbolArg(buildTypeName(tagged), selector, o, elem.default, elem.fixed, wrapForLongAll)
+            buildTypeSymbolArg(buildType(tagged), selector, o, elem.default, elem.fixed, wrapForLongAll)
           case tagged: TaggedComplexType =>
-            buildTypeSymbolArg(buildTypeName(tagged), selector, o, elem.default, elem.fixed, wrapForLongAll)
+            buildTypeSymbolArg(buildType(tagged), selector, o, elem.default, elem.fixed, wrapForLongAll)
         }
       case x: TaggedKeyedGroup =>
         val param = Param(x)
@@ -110,7 +111,7 @@ trait Args { self: Namer with Lookup with Params with Symbols =>
         }
       case AnyLike(x) =>
         val param = Param(x)
-        buildTypeSymbolArg(buildTypeName(x), selector, param.occurrence, None, None, wrapForLongAll)
+        buildTypeSymbolArg(buildType(x), selector, param.occurrence, None, None, wrapForLongAll)
       case _ => error("Args#buildArg: " + tagged.toString)
     }
 

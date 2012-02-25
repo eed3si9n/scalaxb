@@ -24,17 +24,17 @@ trait XMLOutputs { self: Args with Params with Lookup with Namer =>
       (REF("x") DOT "key").tree :: REF("__scope") :: typeAttribute :: Nil
     val uToXMLArgs = REF("x") :: ns :: optionTree(Some(param.name)) :: REF("__scope") :: typeAttribute :: Nil
 
-    lazy val xToXMLCode = LAMBDA(PARAM("x")) ==> BLOCK(buildToXML(param.baseTypeName, toXMLArgs))
+    lazy val xToXMLCode = LAMBDA(PARAM("x")) ==> BLOCK(buildToXML(param.baseType, toXMLArgs))
     lazy val xOptionalToXMLCode: Tree = LAMBDA(PARAM("x"))  ==> BLOCK(buildToXML(optionalType, toXMLArgs))
 
 
     lazy val toXMLCode: Tree = param.typeSymbol match {
       case AnyLike(_)                => xToXMLCode
       case x: TaggedDataRecordSymbol => xToXMLCode
-      case _ => LAMBDA(PARAM("x")) ==> BLOCK(buildToXML(param.baseTypeName, uToXMLArgs))
+      case _ => LAMBDA(PARAM("x")) ==> BLOCK(buildToXML(param.baseType, uToXMLArgs))
     }
 
-    lazy val optionalType = param.baseTypeName.option
+    lazy val optionalType = TYPE_OPTION(param.baseType)
 
     lazy val optionalToXMLCode: Tree = param.typeSymbol match {
       case AnyLike(_)                => xOptionalToXMLCode
@@ -45,7 +45,7 @@ trait XMLOutputs { self: Args with Params with Lookup with Namer =>
     lazy val singleToXMLCode: Tree = param.typeSymbol match {
       case AnyLike(_)                => SOME(name) MAP xToXMLCode POSTFIX("get")
       case x: TaggedDataRecordSymbol => SOME(name) MAP xToXMLCode POSTFIX("get")
-      case _ => buildToXML(param.baseTypeName, name :: ns :: optionTree(Some(param.name)) :: REF("__scope") :: typeAttribute :: Nil)
+      case _ => buildToXML(param.baseType, name :: ns :: optionTree(Some(param.name)) :: REF("__scope") :: typeAttribute :: Nil)
     }
 
     lazy val singleOptionalToXMLCode: Tree = param.typeSymbol match {

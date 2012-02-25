@@ -6,6 +6,27 @@
   <artifactId>itp03-wsdl</artifactId>
   <version>0.1-SNAPSHOT</version>
 
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <scala.version>@scala.version@</scala.version>
+  </properties>
+
+  <dependencies>
+
+    <dependency>
+      <groupId>org.scala-lang</groupId>
+      <artifactId>scala-library</artifactId>
+      <version>${scala.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>net.databinder</groupId>
+      <artifactId>dispatch-http_${scala.version}</artifactId>
+      <version>0.8.7</version>
+    </dependency>
+
+  </dependencies>
+
   <build>
     <plugins>
 
@@ -18,6 +39,19 @@
             <id>scalaxb</id>
             <goals>
               <goal>generate</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.scala-tools</groupId>
+        <artifactId>maven-scala-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals>
+              <goal>compile</goal>
+              <goal>testCompile</goal>
             </goals>
           </execution>
         </executions>

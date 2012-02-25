@@ -44,23 +44,23 @@ class Generator(val schema: ReferenceSchema,
       headerSnippet +:
       (schema.unbound.toSeq flatMap {
         case x: TaggedComplexType => processComplexType(x) map {_.toSnippet}
-        case x: TaggedSimpleType if containsEnumeration(x) && isRootEnumeration(x) => processSimpleType(x)
+        case x: TaggedSimpleType if containsEnumeration(x) && isRootEnumeration(x) => processSimpleType(x) map {_.toSnippet}
         case x@TaggedAttributeGroup(group: XNamedAttributeGroup, _) => processAttributeGroup(x) map {_.toSnippet}
         case _ => Nil
       }): _*)
 
   def processComplexType(decl: Tagged[XComplexType]): Seq[Trippet] =
-    Seq(generateComplexTypeEntity(buildTypeName(decl), decl))
+    Seq(generateComplexTypeEntity(buildComplexTypeSymbol(decl), decl))
 
-  def generateComplexTypeEntity(name: QualifiedName, decl: Tagged[XComplexType]): Trippet = {
-    logger.debug("generateComplexTypeEntity: emitting %s" format name.toString)
+  def generateComplexTypeEntity(sym: ClassSymbol, decl: Tagged[XComplexType]): Trippet = {
+    logger.debug("generateComplexTypeEntity: emitting %s" format sym.toString)
 
     lazy val attributeSeqRef: Tagged[AttributeSeqParam] = TaggedAttributeSeqParam(AttributeSeqParam(), decl.tag)
     lazy val allRef: Tagged[AllParam] = Tagged(AllParam(), decl.tag)
 
     logger.debug("generateComplexTypeEntity: decl: %s" format decl.toString)
 
-    val localName = name.localPart
+    // val localName = sym.decodedName
     val attributes = decl.flattenedAttributes
     val list =
       (decl.primaryAll map { _ => Seq(allRef) } getOrElse {splitParticlesIfLong(decl.particles)(decl.tag)}) ++
@@ -80,20 +80,19 @@ class Generator(val schema: ReferenceSchema,
       (decl.primaryAll map { generateAllAccessors(_) } getOrElse {
         splitParticles(decl.particles)(decl.tag) map { generateLongSeqAccessors(_) } getOrElse {Nil} }) ++
       (attributes.headOption map  { _ => generateAttributeAccessors(attributes, true) } getOrElse {Nil})
-    val superNames = complexTypeSuperNames(decl)
-    val parents = superNames map { x => RootClass.newClass(x) }
+    val parents = complexTypeSuperTypes(decl)
 
     Trippet(
-      Trippet((CASECLASSDEF(localName) withParams(paramsTrees) withParents(parents) :=
+      Trippet(CASECLASSDEF(sym) withParams(paramsTrees) withParents(parents) :=
         (if (accessors.isEmpty) EmptyTree
-        else BLOCK(accessors: _*))) :: Nil,
-        Nil,
-        generateDefaultFormat(name, decl),
-        makeImplicitValue(name)) ::
+        else BLOCK(accessors: _*)),
+        EmptyTree,
+        generateDefaultFormat(sym, decl),
+        makeImplicitValue(sym)) ::
       compositorCodes: _*)
   }
 
-  private def generateDefaultFormat(name: QualifiedName, decl: Tagged[XComplexType]): Seq[Tree] = {
+  private def generateDefaultFormat(sym: ClassSymbol, decl: Tagged[XComplexType]): Tree = {
     val particles = decl.particles
     val unmixedParserList = particles map { buildParser(_, decl.mixed, decl.mixed) }
     val parserList = if (decl.mixed) buildTextParser +: (unmixedParserList flatMap { Seq(_, buildTextParser) })
@@ -109,14 +108,14 @@ class Generator(val schema: ReferenceSchema,
         particles.zipWithIndex map { case (i, x) => buildArg(i, x) }
       }
 
-    def makeWritesChildNodes: Seq[Tree] = {
+    def makeWritesChildNodes: Option[Tree] = {
       def simpleContentTree(base: QualifiedName): Tree = base match {
         case BuiltInAnyType(_) => SEQ(TextClass APPLY(REF("__obj") DOT "value" DOT "value" DOT "toString"))
         case _ => SEQ(TextClass APPLY(REF("__obj") DOT "value" DOT "toString"))
       }
       def toXMLArgs: List[Tree] = REF("x") :: (REF("x") DOT "namespace").tree :: (REF("x") DOT "key").tree :: REF("__scope") :: FALSE :: Nil
       def childTree: Tree = if (decl.mixed) (REF("__obj") DOT makeParamName(MIXED_PARAM) DOT "toSeq") FLATMAP LAMBDA(PARAM("x")) ==> BLOCK(
-          buildToXML(QualifiedName.DataRecordAnyTypeName, toXMLArgs)
+          buildToXML(DataRecordAnyClass, toXMLArgs)
         )
       else decl.value.arg1.value match {
         case XSimpleContent(_, DataRecord(_, _, x: XSimpleRestrictionType), _, _)      => simpleContentTree(x.base)
@@ -127,17 +126,19 @@ class Generator(val schema: ReferenceSchema,
           else (SeqClass DOT "concat")(Param.fromSeq(particles) map { x => buildXMLTree(x) })
       }
 
-      Seq(DEF("writesChildNodes", TYPE_SEQ(NodeClass)) withParams(PARAM("__obj", name.fullyQualifiedName),
+      Some(DEF("writesChildNodes", TYPE_SEQ(NodeClass)) withParams(PARAM("__obj", sym),
         PARAM("__scope", NamespaceBindingClass)) := childTree)
     }
 
-    val makeWritesAttribute = Nil
+    val makeWritesAttribute = None
 
     val groups = decl.flattenedGroups filter { case tagged: TaggedKeyedGroup =>
       implicit val tag = tagged.tag
       tagged.particles.size > 0 }
-    val defaultFormatSuperNames: Seq[String] = ("scalaxb.ElemNameParser[" + name.fullyQualifiedName + "]") ::
-      (groups.toList map { case tagged: TaggedKeyedGroup => QualifiedName(tagged.tag.namespace, names.get(tagged).get).formatterName })
+    val defaultFormatSuperNames: Seq[Type] =
+      (ElemNameParserClass TYPE_OF sym) ::
+      (groups.toList map { case tagged: TaggedKeyedGroup =>
+        formatterSymbol(userDefinedClassSymbol(tagged)): Type })
 
 //    <source>  trait Default{name.formatterName} extends {defaultFormatSuperNames.mkString(" with ")} {{
 //    val targetNamespace: Option[String] = { quoteUri(schema.targetNamespace) }
@@ -152,30 +153,34 @@ class Generator(val schema: ReferenceSchema,
 //
 //{makeWritesAttribute}{makeWritesChildNodes}  }}</source>
     
-    Seq(TRAITDEF("Default" + name.formatterName) withParents(defaultFormatSuperNames) := BLOCK(List(
+    val fmt = formatterSymbol(sym)
+
+    TRAITDEF("Default" + fmt.decodedName) withParents(defaultFormatSuperNames) := BLOCK(List(
       Some(VAL("targetNamespace", TYPE_OPTION(StringClass)) := optionUriTree(schema.targetNamespace)),
       decl.name map { typeName =>
-        DEF("typeName", TYPE_OPTION(StringClass)) := LIT(typeName)
+        DEF("typeName", TYPE_OPTION(StringClass)) withFlags(Flags.OVERRIDE) := optionTree(decl.name)
       },
       if (decl.mixed) Some(DEF("isMixed", BooleanClass) withFlags(Flags.OVERRIDE) := TRUE)
       else None,
-      Some(DEF("parser", ParserClass TYPE_OF name.fullyQualifiedName) withParams(
+      Some(DEF("parser", ParserClass TYPE_OF sym) withParams(
           PARAM("node", "scala.xml.Node"), PARAM("stack", TYPE_LIST("scalaxb.ElemName"))) :=
         INFIX_CHAIN("~", parserList) INFIX("^^") APPLY BLOCK(
-          CASE(INFIX_CHAIN("~", parserVariableList)) ==>
-            REF(name.fullyQualifiedName) APPLY particleArgs
+          CASE(INFIX_CHAIN("~", parserVariableList)) ==> REF(sym) APPLY particleArgs
         )
-      )
-    ).flatten)) ++ makeWritesAttribute ++ makeWritesChildNodes
+      ),
+      makeWritesAttribute,
+      makeWritesChildNodes
+    ).flatten)
   }
 
-  private def makeImplicitValue(name: QualifiedName): Seq[Tree] =
-    Seq(LAZYVAL(name.formatterName) withFlags(Flags.IMPLICIT) withType(xmlFormatType(name.toType)) :=
-      NEW("Default" + name.formatterName))
-    // <source>  implicit lazy val {name.formatterName}: scalaxb.XMLFormat[{name.fullyQualifiedName}] = new Default{name.formatterName} {{}}</source>
+  private def makeImplicitValue(sym: ClassSymbol): Tree = {
+    val fmt = formatterSymbol(sym)
+    LAZYVAL(fmt) withFlags(Flags.IMPLICIT) withType(xmlFormatType(sym)) :=
+      NEW("Default" + fmt.decodedName)    
+  }
 
-  def complexTypeSuperNames(decl: Tagged[XComplexType]): Seq[String] = {
-    (decl.attributeGroups map {buildTypeName} map {_.localPart})
+  def complexTypeSuperTypes(decl: Tagged[XComplexType]): Seq[Type] = {
+    decl.attributeGroups map {buildType}
   }
 
   def generateSequence(tagged: Tagged[KeyedGroup]): Trippet = {
@@ -203,28 +208,25 @@ class Generator(val schema: ReferenceSchema,
       Trippet(TRAITDEF(name))
   }
 
-  def processSimpleType(decl: Tagged[XSimpleType]): Seq[Snippet] =
-    Seq(generateSimpleType(buildTypeName(decl), decl))
+  def processSimpleType(decl: Tagged[XSimpleType]): Seq[Trippet] =
+    Seq(generateSimpleType(userDefinedClassSymbol(decl), decl))
 
-  def generateSimpleType(name: QualifiedName, decl: Tagged[XSimpleType]) = {
-    val localName = name.localPart
+  def generateSimpleType(sym: ClassSymbol, decl: Tagged[XSimpleType]) = {
     val enumValues = filterEnumeration(decl) map { enum =>
-      val name = buildTypeName(enum)
-      """case object %s extends %s { override def toString = "%s" }""".format(
-        name.localPart, localName, enum.value.value)
+      CASEOBJECTDEF(userDefinedClassSymbol(enum)) withParents(sym) := BLOCK(
+        DEF(Any_toString) withFlags(Flags.OVERRIDE) := LIT(enum.value.value)
+      )
     }
 
-    Snippet(<source>trait { localName }
-{ enumValues.mkString(NL) }</source>)
+    Trippet(TRAITDEF(sym).tree :: enumValues.toList, Nil, Nil, Nil)
   }
   
   def processAttributeGroup(tagged: Tagged[XAttributeGroup]): Seq[Trippet] =
-    Seq(generateAttributeGroup(buildTypeName(tagged), tagged))
+    Seq(generateAttributeGroup(buildAttributeGroupTypeSymbol(tagged), tagged))
 
-  def generateAttributeGroup(name: QualifiedName, tagged: Tagged[XAttributeGroup]): Trippet = {
-    val localName = name.localPart
+  def generateAttributeGroup(sym: ClassSymbol, tagged: Tagged[XAttributeGroup]): Trippet = {
     val accessors = generateAttributeAccessors(tagged.flattenedAttributes, false)
-    Trippet(TRAITDEF(localName) := BLOCK(accessors: _*))
+    Trippet(TRAITDEF(sym) := BLOCK(accessors: _*))
   }
 
   def generateAllAccessors(tagged: Tagged[KeyedGroup]): Seq[Tree] = {

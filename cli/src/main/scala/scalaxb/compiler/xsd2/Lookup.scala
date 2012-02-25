@@ -10,48 +10,10 @@ import Defs._
 import scala.xml.NamespaceBinding
 import treehugger.forest._
 import definitions._
+import treehuggerDSL._
 
 case class QualifiedName(namespace: Option[URI], localPart: String, parameters: QualifiedName*) {
   override def toString: String = namespace map { ns => "{%s}%s".format(ns.toString, localPart) } getOrElse {localPart}
-  
-//  def toScalaCode(implicit targetNamespace: Option[URI], lookup: Lookup): String =
-//    if (namespace == targetNamespace || namespace.isEmpty ||
-//      Seq(Some(XML_SCHEMA_URI), Some(SCALA_URI)).contains(namespace)) localPart
-//    else fullyQualifiedName
-
-  def localNameType(implicit targetNamepsace: Option[URI], lookup: Lookup): Type =
-    RootClass.newClass(localName).toType
-  
-  def localName(implicit targetNamespace: Option[URI], lookup: Lookup): String =
-    if (namespace == targetNamespace)
-      if (parameters.isEmpty) localPart
-      else "%s[%s]" format (localPart, parameters.toSeq map {_.localName} mkString(", "))
-    else fullyQualifiedName
-
-  def toType(implicit lookup: Lookup): Type =
-    RootClass.newClass(fullyQualifiedName).toType
-
-  def fullyQualifiedName(implicit lookup: Lookup): String = {
-    val s = namespace match {
-      case Some(XML_SCHEMA_URI) | Some(SCALA_URI) => localPart
-      case _ => lookup.packageName(namespace) + "." + localPart
-    }
-
-    if (parameters.isEmpty) s
-    else "%s[%s]" format (s, parameters.toSeq map {_.fullyQualifiedName} mkString(", "))
-  }
-
-  def formatterName(implicit lookup: Lookup): String = {
-    val pkg = lookup.packageName(namespace)
-    val lastPart = pkg.split('.').reverse.head
-    lastPart.capitalize + localPart + "Format"
-  }
-
-  def option: QualifiedName = QualifiedName(Some(SCALA_URI), "Option", this)
-  def nillable: QualifiedName = option
-  def dataRecord: QualifiedName = QualifiedName(Some(SCALAXB_URI), "DataRecord", this)
-  def seq: QualifiedName = QualifiedName(Some(SCALA_URI), "Seq", this)
-  def map(valueType: QualifiedName) = QualifiedName(Some(SCALA_URI), "Map", this, valueType)
 }
 
 object QualifiedName {
@@ -63,15 +25,9 @@ object QualifiedName {
 
   implicit def apply(qname: QName): QualifiedName =
     QualifiedName(Option[String](qname.getNamespaceURI) map {new URI(_)}, qname.getLocalPart)
-
-  val AnyTypeName = QualifiedName(Some(SCALA_URI), "Any")
-  val StringTypeName = QualifiedName(Some(SCALA_URI), "String")
-  val DataRecordAnyTypeName = AnyTypeName.dataRecord
-  val DataRecordOptionAnyTypeName = AnyTypeName.option.dataRecord
-  val MapStringDataRecordAnyTypeName = StringTypeName.map(DataRecordAnyTypeName)
 }
 
-trait Lookup extends ContextProcessor { self: Namer with Splitter =>
+trait Lookup extends ContextProcessor { self: Namer with Splitter with Symbols =>
   import com.weiglewilczek.slf4s.{ Logger }
   private lazy val logger = Logger("xsd2.Lookup")
 
@@ -80,40 +36,59 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter =>
   implicit lazy val scope: NamespaceBinding = schema.scope
   implicit lazy val targetNamespace = schema.targetNamespace
 
-  val wildCardTypeName = QualifiedName.DataRecordAnyTypeName
+  val wildCardType = DataRecordAnyClass
+  val nillableWildCardType = DataRecordOptionAnyClass
 
-  def buildTypeName(tagged: Tagged[Any]): QualifiedName = tagged match {
-    case x: TaggedDataRecordSymbol => buildTypeName(x.value.member).dataRecord
-    case x: TaggedWildCard => wildCardTypeName
+  def buildNillableType(typ: Type): Type = TYPE_OPTION(typ)
+
+  def buildBuiltinType(symbol: BuiltInSimpleTypeSymbol): Type = symbol.name match {
+    case "XsAnySimpleType"      => wildCardType
+    case "Int"                  => IntClass
+    case "String"               => StringClass
+    case "javax.xml.datatype.Duration" => DurationClass
+    case "javax.xml.datatype.XMLGregorianCalendar" => XMLGregorianCalendarClass
+    case "Boolean"              => BooleanClass
+    case "Float"                => FloatClass
+    case "scalaxb.Base64Binary" => Base64BinaryClass
+    case "scalaxb.HexBinary"    => HexBinaryClass
+    case "Double"               => DoubleClass
+    case "java.net.URI"         => URIClass
+    case "javax.xml.namespace.QName" => QNameClass
+    case "Seq[String]"          => TYPE_SEQ(StringClass)
+    case "BigDecimal"           => BigDecimalClass
+    case "BigInt"               => BigIntClass
+    case "Long"                 => LongClass
+    case "Short"                => ShortClass
+    case _ => StringClass
+  }
+
+  def buildType(tagged: Tagged[Any]): Type = tagged match {
+    case x: TaggedDataRecordSymbol => DataRecordClass TYPE_OF buildType(x.value.member)
+    case x: TaggedWildCard => wildCardType
     case x: TaggedSymbol =>
       x.value match {
-        case XsAnySimpleType | XsAnyType => QualifiedName.DataRecordAnyTypeName
-        case symbol: BuiltInSimpleTypeSymbol => QualifiedName(Some(XML_SCHEMA_URI), symbol.name)
+        case XsAnySimpleType | XsAnyType => DataRecordAnyClass
+        case symbol: BuiltInSimpleTypeSymbol => buildBuiltinType(symbol)
+          //QualifiedName(Some(XML_SCHEMA_URI), symbol.name)
       }
-    case x: TaggedSimpleType => buildSimpleTypeTypeName(x)   
-    case TaggedComplexType(_, _) | TaggedEnum(_, _) =>
-      QualifiedName(tagged.tag.namespace, names.get(tagged) getOrElse {
-        error("unnamed %s" format tagged.toString)
-      })
+    case x: TaggedSimpleType  => buildSimpleTypeType(x)   
+    case x: TaggedComplexType => buildComplexTypeSymbol(x)
+    case x: TaggedEnum        => buildEnumTypeSymbol(x)
     case x: TaggedKeyedGroup =>
       x.key match {
         case ChoiceTag =>
           val particleOs = x.group.arg1.toList map { Occurrence(_) }
-          if (particleOs exists { _.nillable }) QualifiedName(tagged.tag.namespace, names.get(x) getOrElse { "??" }).nillable
-          else QualifiedName(tagged.tag.namespace, names.get(x) getOrElse { "??" })
-        case _ => QualifiedName(tagged.tag.namespace, names.get(x) getOrElse { "??" })
+          if (particleOs exists { _.nillable }) buildNillableType(userDefinedClassSymbol(tagged))
+          else userDefinedClassSymbol(tagged)
+        case _ => userDefinedClassSymbol(tagged)
       }
     case TaggedAttributeSeqParam(_, _) | TaggedAllParam(_, _) =>
-      QualifiedName.MapStringDataRecordAnyTypeName
+      MapStringDataRecordAnyClass
     case x: TaggedAttribute =>
-      x.value.typeValue map { ref => buildTypeName(resolveType(ref)) } getOrElse {
-        buildSimpleTypeTypeName(Tagged(x.value.simpleType.get, x.tag)) }
-    case x: TaggedAttributeGroup =>
-      x.value.ref map { ref => buildTypeName(resolveAttributeGroup(ref)) } getOrElse {
-        QualifiedName(tagged.tag.namespace, names.get(tagged) getOrElse {
-          error("unnamed %s" format tagged.toString)
-        })}
-      
+      x.value.typeValue map { ref => buildType(resolveType(ref)) } getOrElse {
+        buildSimpleTypeType(Tagged(x.value.simpleType.get, x.tag)) }
+    case x: TaggedAttributeGroup => buildAttributeGroupTypeSymbol(x)
+    
     //    case XsNillableAny  => nillableAnyTypeName
     //    case XsAnyAttribute  => "Map[String, scalaxb.DataRecord[Any]]"
     //    case XsDataRecord(ReferenceTypeSymbol(decl: ComplexTypeDecl)) if compositorWrapper.contains(decl) =>
@@ -130,25 +105,56 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter =>
     case _ => error("buildTypeName # unsupported: " + tagged)
   }
 
-  def buildSimpleTypeTypeName(decl: Tagged[XSimpleType]): QualifiedName = {
+  def buildAttributeGroupTypeSymbol(tagged: Tagged[XAttributeGroup]): ClassSymbol =
+    tagged.value.ref map { ref => buildAttributeGroupTypeSymbol(resolveAttributeGroup(ref)) } getOrElse {
+      userDefinedClassSymbol(tagged) }    
+
+  def buildComplexTypeSymbol(tagged: Tagged[XComplexType]): ClassSymbol =
+    userDefinedClassSymbol(tagged.tag.namespace, names.get(tagged) getOrElse {
+      error("unnamed %s" format tagged.toString)
+    })
+
+  def buildEnumTypeSymbol(tagged: Tagged[XNoFixedFacet]): ClassSymbol =
+    userDefinedClassSymbol(tagged.tag.namespace, names.get(tagged) getOrElse {
+      error("unnamed %s" format tagged.toString)
+    })
+
+  def buildSimpleTypeType(decl: Tagged[XSimpleType]): Type = {
     decl.arg1.value match {
       case restriction: XRestriction if containsEnumeration(decl) =>
         // trace type hierarchy to the top most type that implements enumeration.
         val base = baseType(decl)
-        QualifiedName(base.tag.namespace, names.get(base) getOrElse { "??" })
+        userDefinedClassSymbol(base.tag.namespace, names.get(base) getOrElse { "??" })
       case restriction: XRestriction =>
-        buildTypeName(baseType(decl))
+        buildType(baseType(decl))
       case list: XList =>
         val base = baseType(decl)
         val baseName = base.value match {
           case symbol: BuiltInSimpleTypeSymbol => symbol.name
           case decl: XSimpleType => names.get(base) getOrElse { "??" }
         }
-        QualifiedName(base.tag.namespace, baseName).seq
+        TYPE_SEQ(userDefinedClassSymbol(base.tag.namespace, baseName))
       // union baseType is hardcoded to xs:string.
       case union: XUnion =>
-        buildTypeName(baseType(decl))
+        buildType(baseType(decl))
     }
+  }
+
+  def userDefinedClassSymbol(tagged: Tagged[Any]): ClassSymbol =
+    userDefinedClassSymbol(tagged.tag.namespace, names.get(tagged) getOrElse { "??" })
+
+  def userDefinedClassSymbol(namespace: Option[URI], localPart: String): ClassSymbol = {
+    val pkg = packageSymbol(namespace).moduleClass
+    pkg.newClass(localPart)
+  }
+
+  def packageSymbol(namespace: Option[URI]): Symbol =
+    RootClass.newPackage(packageName(namespace))
+
+  def formatterSymbol(sym: ClassSymbol): ClassSymbol = {
+    val pkg = sym.owner
+    val lastPart = pkg.decodedName.split('.').reverse.head
+    pkg.newClass(lastPart.capitalize + sym.decodedName + "Format")
   }
 
   def isRootEnumeration(tagged: Tagged[XSimpleType]): Boolean =

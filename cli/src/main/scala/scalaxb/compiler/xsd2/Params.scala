@@ -24,30 +24,30 @@ trait Params { self: Namer with Lookup =>
     topLevelElement: Boolean,
     qualified: Boolean) {
 
-    def baseTypeName: QualifiedName = buildTypeName(typeSymbol)
+    def baseType: Type = buildType(typeSymbol)
 
-    def singleTypeName: QualifiedName =
-      if (occurrence.nillable) baseTypeName.nillable
-      else baseTypeName
+    def singleType: Type =
+      if (occurrence.nillable) buildNillableType(baseType)
+      else baseType
 
-    def typeName: QualifiedName = occurrence match {
-      case SingleNotNillable(_)   => singleTypeName
-      case SingleNillable(_)      => singleTypeName
-      case OptionalNotNillable(_) => singleTypeName.option
-      case OptionalNillable(_)    => singleTypeName.option
-      case _ => singleTypeName.seq
+    def typ: Type = occurrence match {
+      case SingleNotNillable(_)   => singleType
+      case SingleNillable(_)      => singleType
+      case OptionalNotNillable(_) => TYPE_OPTION(singleType)
+      case OptionalNillable(_)    => TYPE_OPTION(singleType)
+      case _ => TYPE_SEQ(singleType)
     }
 
     def paramName: String = makeParamName(name)
 
     def toTraitScalaCode(implicit targetNamespace: Option[URI], lookup: Lookup): String =
-      paramName + ": " + typeName.localName
+      paramName + ": " + typ
 
     def tree(implicit targetNamespace: Option[URI], lookup: Lookup): ValDef =
-      PARAM(paramName, typeName.localNameType)
+      PARAM(paramName, typ)
 
     def varargTree(implicit targetNamespace: Option[URI], lookup: Lookup): ValDef =
-      PARAM(paramName, TYPE_*(singleTypeName.localNameType))
+      PARAM(paramName, TYPE_*(singleType))
 
     def toScalaCode(implicit targetNamespace: Option[URI], lookup: Lookup): String =
       toTraitScalaCode + (
@@ -60,10 +60,10 @@ trait Params { self: Namer with Lookup =>
         case true =>
           LAZYVAL(toTraitScalaCode) := (occurrence match {
             case SingleNotNillable(_) =>
-              REF(wrapper) APPLY(LIT(buildNodeName)) DOT "as" APPLYTYPE singleTypeName.localNameType
+              REF(wrapper) APPLY(LIT(buildNodeName)) DOT "as" APPLYTYPE singleType
             case _ =>
               (REF(wrapper) DOT "get" APPLY(LIT(buildNodeName))) MAP (
-                WILDCARD DOT "as" APPLYTYPE singleTypeName.localNameType
+                WILDCARD DOT "as" APPLYTYPE singleType
               )
           })
         case _ => DEF(toTraitScalaCode)

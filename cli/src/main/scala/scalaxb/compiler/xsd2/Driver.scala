@@ -75,7 +75,7 @@ class Driver extends Module { driver =>
     new PackageNamer {}.packageName(namespace, context)
 
   def processSchema(s: Schema, cntxt: Context, cnfg: Config) =
-    (new ContextProcessor() with Namer with Lookup with Splitter {
+    (new ContextProcessor() with Namer with Lookup with Splitter with Symbols {
       val config = cnfg
       val context = cntxt
       val schema = s

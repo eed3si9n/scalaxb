@@ -107,9 +107,9 @@ trait Parsers { self: Namer with Lookup with Args with Params with Symbols =>
                      wrapInDataRecord: Boolean, laxAny: Boolean): Tree = {
     def stack = (ElemNameClass APPLY(REF("node"))) LIST_:: REF("stack")
     def converter: Tree =
-      if (occurrence.nillable) buildFromXML(QualifiedName(Some(SCALAXB_URI), "DataRecord[Option[Any]]"), WILDCARD,
+      if (occurrence.nillable) buildFromXML(nillableWildCardType, WILDCARD,
         stack, None)
-      else buildFromXML(wildCardTypeName, WILDCARD, stack, None)
+      else buildFromXML(wildCardType, WILDCARD, stack, None)
 
     def parser: Tree =
       REF("any") APPLY(

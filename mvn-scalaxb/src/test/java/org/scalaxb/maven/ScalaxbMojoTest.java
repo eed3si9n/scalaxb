@@ -22,12 +22,29 @@ package org.scalaxb.maven;
  * THE SOFTWARE.
  */
 
-import java.io.File;
-import java.net.URISyntaxException;
 import static java.util.Arrays.asList;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.net.URISyntaxException;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import junit.framework.TestCase;
+
+import org.codehaus.classworlds.ClassRealm;
+import org.codehaus.classworlds.ClassWorld;
+import org.codehaus.plexus.component.configurator.BasicComponentConfigurator;
+import org.codehaus.plexus.component.configurator.ComponentConfigurator;
+import org.codehaus.plexus.component.configurator.expression.DefaultExpressionEvaluator;
+import org.codehaus.plexus.component.configurator.expression.ExpressionEvaluator;
+import org.codehaus.plexus.configuration.PlexusConfiguration;
+import org.codehaus.plexus.configuration.xml.XmlPlexusConfiguration;
+import org.codehaus.plexus.util.xml.Xpp3Dom;
+import org.codehaus.plexus.util.xml.Xpp3DomBuilder;
 
 /**
  * ScalaxbMojo unit tests.
@@ -49,6 +66,23 @@ public class ScalaxbMojoTest extends TestCase {
 
     private void expect(String expect, String... arguments) {
         assertEquals(expect, ScalaxbMojo.argumentsToString(asList(arguments)));
+    }
+
+    /**
+     * Test URI to package name mapping is read from configuration correctly.
+     * See https://github.com/eed3si9n/scalaxb/issues/111
+     */
+    public void testPackageNameMapIsConfigured() throws Exception {
+        ScalaxbMojo mojo = getMojo("packageNames");
+        Map<String, String> map = mojo.packageNameMap();
+
+        Iterator<Entry<String, String>> it = map.entrySet().iterator();
+        Entry<String, String> maplet1 = it.next();
+        assertEquals("http://example.com/namespace1", maplet1.getKey());
+        assertEquals("com.example.namespace1", maplet1.getValue());
+        Entry<String, String> maplet2 = it.next();
+        assertEquals("http://example.com/namespace2", maplet2.getKey());
+        assertEquals("com.example.namespace2", maplet2.getValue());
     }
 
     /**
@@ -101,6 +135,28 @@ public class ScalaxbMojoTest extends TestCase {
         } catch (URISyntaxException ex) {
             throw new RuntimeException(ex);
         }
+    }
+
+    private ScalaxbMojo getMojo(String project) throws Exception {
+        File pom = new File(getClass().getResource(project + ".xml").toURI());
+        assertTrue("Couldn't find " + pom, pom.exists());
+        ScalaxbMojo mojo = new ScalaxbMojo();
+        configureMojo(mojo, new FileInputStream(pom));
+        return mojo;
+    }
+
+    private void configureMojo(Object mojo, InputStream is) throws Exception {
+        ComponentConfigurator configurator = new BasicComponentConfigurator();
+        ExpressionEvaluator evaluator = new DefaultExpressionEvaluator();
+        Xpp3Dom dom = Xpp3DomBuilder.build(is, "UTF-8")
+                .getChild("build")
+                .getChild("plugins")
+                .getChild("plugin")
+                .getChild("configuration");
+        PlexusConfiguration config = new XmlPlexusConfiguration(dom);
+        ClassRealm realm = new ClassWorld()
+                .newRealm(null, getClass().getClassLoader());
+        configurator.configureComponent(mojo, config, evaluator, realm);
     }
 
 }

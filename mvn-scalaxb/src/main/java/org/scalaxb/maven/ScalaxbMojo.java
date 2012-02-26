@@ -34,6 +34,7 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.util.DirectoryScanner;
+import org.slf4j.impl.MavenLoggerFactory;
 
 import scala.collection.JavaConversions;
 import scalaxb.compiler.CaseClassTooLong;
@@ -54,6 +55,8 @@ public class ScalaxbMojo extends AbstractScalaxbMojo {
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
+        MavenLoggerFactory.setLog(getLog());
+
         List<String> schemaFiles = inputFiles(getXsdDirectory(), "xsd");
         List<String> wsdlFiles = inputFiles(getWsdlDirectory(), "wsdl");
         if (schemaFiles.isEmpty() && wsdlFiles.isEmpty()) {

@@ -27,6 +27,7 @@ import static java.util.Arrays.asList;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.lang.reflect.Field;
 import java.net.URISyntaxException;
 import java.util.Iterator;
 import java.util.List;
@@ -45,6 +46,7 @@ import org.codehaus.plexus.configuration.PlexusConfiguration;
 import org.codehaus.plexus.configuration.xml.XmlPlexusConfiguration;
 import org.codehaus.plexus.util.xml.Xpp3Dom;
 import org.codehaus.plexus.util.xml.Xpp3DomBuilder;
+import org.sonatype.plexus.build.incremental.DefaultBuildContext;
 
 /**
  * ScalaxbMojo unit tests.
@@ -103,7 +105,8 @@ public class ScalaxbMojoTest extends TestCase {
 
         // Check that they're returned in alphabetical order
         try {
-            List<String> files = new ScalaxbMojo().inputFiles(tmp, "xsd");
+            ScalaxbMojo mojo = getMojo();
+            List<String> files = mojo.inputFiles(tmp, "xsd");
             assertEquals(4, files.size());
             assertEquals(files.get(0), tmp.getAbsolutePath() + SEP + "test1.xsd");
             assertEquals(files.get(1), tmp.getAbsolutePath() + SEP + "test2.xsd");
@@ -137,10 +140,18 @@ public class ScalaxbMojoTest extends TestCase {
         }
     }
 
+    private ScalaxbMojo getMojo() throws Exception {
+        ScalaxbMojo mojo = new ScalaxbMojo();
+        Field ctxtField = ScalaxbMojo.class.getDeclaredField("context");
+        ctxtField.setAccessible(true);
+        ctxtField.set(mojo, new DefaultBuildContext());
+        return mojo;
+    }
+
     private ScalaxbMojo getMojo(String project) throws Exception {
         File pom = new File(getClass().getResource(project + ".xml").toURI());
         assertTrue("Couldn't find " + pom, pom.exists());
-        ScalaxbMojo mojo = new ScalaxbMojo();
+        ScalaxbMojo mojo = getMojo();
         configureMojo(mojo, new FileInputStream(pom));
         return mojo;
     }

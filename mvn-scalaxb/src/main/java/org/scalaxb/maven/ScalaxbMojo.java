@@ -33,10 +33,12 @@ import java.util.regex.Pattern;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.project.MavenProject;
-import org.codehaus.plexus.util.DirectoryScanner;
+import org.codehaus.plexus.util.Scanner;
 import org.slf4j.impl.MavenLoggerFactory;
+import org.sonatype.plexus.build.incremental.BuildContext;
 
 import scala.collection.JavaConversions;
+import scala.collection.mutable.Buffer;
 import scalaxb.compiler.CaseClassTooLong;
 import scalaxb.compiler.ReferenceNotFound;
 
@@ -53,35 +55,76 @@ public class ScalaxbMojo extends AbstractScalaxbMojo {
      */
     private MavenProject project;
 
+    /**
+     * @component
+     */
+    private BuildContext context;
+
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
         MavenLoggerFactory.setLog(getLog());
 
-        List<String> schemaFiles = inputFiles(getXsdDirectory(), "xsd");
-        List<String> wsdlFiles = inputFiles(getWsdlDirectory(), "wsdl");
-        if (schemaFiles.isEmpty() && wsdlFiles.isEmpty()) {
-            getLog().warn("No XSD or WSDL files found: not running scalaxb");
-        } else {
-            List<String> inputFiles = new ArrayList<String>();
-            inputFiles.addAll(wsdlFiles);
-            inputFiles.addAll(schemaFiles);
+        getOutputDirectory().mkdirs();
+        String outputPath = getOutputDirectory().getAbsolutePath();
+        getLog().debug("Adding source root: " + outputPath);
+        project.addCompileSourceRoot(outputPath);
+
+        List<String> inputFiles = inputFiles();
+        if (!inputFiles.isEmpty() && buildRequired(inputFiles)) {
             generateBindings(inputFiles);
         }
     }
 
+    public List<String> inputFiles() {
+        List<String> schemaFiles = inputFiles(getXsdDirectory(), "xsd");
+        List<String> wsdlFiles = inputFiles(getWsdlDirectory(), "wsdl");
+        if (schemaFiles.isEmpty() && wsdlFiles.isEmpty()) {
+            if (!context.isIncremental()) {
+                getLog().warn("No XSD or WSDL files found: not running scalaxb");
+            }
+            return emptyList();
+        }
+
+        List<String> inputFiles = new ArrayList<String>();
+        inputFiles.addAll(wsdlFiles);
+        inputFiles.addAll(schemaFiles);
+        return inputFiles;
+    }
+
+    /**
+     * Returns true if scalaxb should be run. This method returns true for CLI
+     * builds, or full builds in the IDE. It also returns true for IDE builds
+     * where any of the input files are outside the project directory.
+     * This method returns false if this is an incremental build, and none of
+     * the input files have changed.
+     * <p>
+     * @param inputFiles The XSD and WSDL files.
+     * @return True if a build is required, and false otherwise.
+     */
+    public boolean buildRequired(List<String> inputFiles) {
+        if (!context.isIncremental()) {
+            return true;
+        }
+        String basedir = project.getBasedir().toString() + File.separatorChar;
+        boolean changes = false;
+        for (String file : inputFiles) {
+            if (file.startsWith(basedir)) {
+                String relPath = file.substring(basedir.length());
+                if (context.hasDelta(relPath)) {
+                    changes = true;
+                    break;
+                }
+            }
+        }
+        return changes;
+    }
+
     private void generateBindings(List<String> schemaFiles)
             throws MojoExecutionException, MojoFailureException {
-
-        getOutputDirectory().mkdirs();
         List<String> arguments = new ArrayList<String>();
         arguments.addAll(arguments());
         arguments.addAll(schemaFiles);
-
         invokeCompiler(arguments);
-
-        String outputPath = getOutputDirectory().getAbsolutePath();
-        getLog().debug("Adding source root: " + outputPath);
-        project.addCompileSourceRoot(outputPath);
     }
 
     private void invokeCompiler(List<String> arguments)
@@ -92,7 +135,9 @@ public class ScalaxbMojo extends AbstractScalaxbMojo {
         }
 
         try {
-            scalaxb.compiler.Main.start(JavaConversions.asScalaBuffer(arguments));
+            Buffer<String> args = JavaConversions.asScalaBuffer(arguments);
+            scalaxb.compiler.Main.start(args);
+            context.refresh(getOutputDirectory());
         } catch (ReferenceNotFound ex) {
             throw new MojoFailureException(ex.getMessage(), ex);
         } catch (CaseClassTooLong ex) {
@@ -121,21 +166,31 @@ public class ScalaxbMojo extends AbstractScalaxbMojo {
         return str.toString();
     }
 
+    /**
+     * Returns the path of all files in a directory (or its subdirectories) with
+     * a given extension. The returned File objects are prefixed with the given
+     * directory.
+     * <p>
+     * @param directory The directory in which to search.
+     * @param type The required file extension.
+     * @return A list of all files contained in the directory with the specified
+     *         extension.
+     */
     List<String> inputFiles(File directory, String type) {
         if (!directory.exists()) {
             return emptyList();
         }
 
-        DirectoryScanner ds = new DirectoryScanner();
+        Scanner ds = context.newScanner(directory, true);
         String[] includes = {"**\\*." + type};
         ds.setIncludes(includes);
-        ds.setBasedir(directory);
         ds.scan();
 
         List<String> result = new ArrayList<String>();
-        for (String xsdFile : ds.getIncludedFiles()) {
-            result.add(new File(directory, xsdFile).getAbsolutePath());
+        for (String file : ds.getIncludedFiles()) {
+            result.add(new File(directory, file).getPath());
         }
+
         sort(result);
         return result;
     }

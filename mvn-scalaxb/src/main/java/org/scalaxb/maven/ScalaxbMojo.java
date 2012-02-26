@@ -52,6 +52,7 @@ public class ScalaxbMojo extends AbstractScalaxbMojo {
      */
     private MavenProject project;
 
+    @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
         List<String> schemaFiles = inputFiles(getXsdDirectory(), "xsd");
         List<String> wsdlFiles = inputFiles(getWsdlDirectory(), "wsdl");

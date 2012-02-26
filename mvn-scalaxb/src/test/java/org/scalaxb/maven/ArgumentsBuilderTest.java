@@ -34,6 +34,7 @@ public class ArgumentsBuilderTest extends TestCase {
 
     private ArgumentsBuilder builder;
 
+    @Override
     public void setUp() {
         builder = new ArgumentsBuilder();
     }

@@ -94,9 +94,9 @@ public class ScalaxbMojo extends AbstractScalaxbMojo {
         try {
             scalaxb.compiler.Main.start(JavaConversions.asScalaBuffer(arguments));
         } catch (ReferenceNotFound ex) {
-            throw new MojoFailureException(ex.getMessage());
+            throw new MojoFailureException(ex.getMessage(), ex);
         } catch (CaseClassTooLong ex) {
-            throw new MojoFailureException(ex.getMessage());
+            throw new MojoFailureException(ex.getMessage(), ex);
         } catch (Exception ex) {
             throw new MojoExecutionException("Error running scalaxb", ex);
         }

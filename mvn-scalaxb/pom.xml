@@ -8,6 +8,36 @@
   <packaging>maven-plugin</packaging>
 
   <name>scalaxb Maven Plugin</name>
+  <description>Maven plugin for scalaxb, an XML data-binding tool for Scala.</description>
+  <url>http://scalaxb.org/mvn-scalaxb</url>
+
+  <licenses>
+    <license>
+      <name>The MIT License</name>
+      <url>https://raw.github.com/eed3si9n/scalaxb/master/mvn-scalaxb/LICENSE</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
+  <developers>
+
+    <developer>
+      <id>martiell</id>
+      <name>Martin Ellis</name>
+      <roles>
+        <role>scalaxb-maven-plugin developer</role>
+      </roles>
+    </developer>
+
+    <developer>
+      <id>eed3si9n</id>
+      <name>Eugene Yokota</name>
+      <roles>
+        <role>scalaxb developer</role>
+      </roles>
+    </developer>
+
+  </developers>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

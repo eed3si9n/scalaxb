@@ -139,7 +139,6 @@ sealed trait Tagged[+A] {
 }
 
 sealed trait TaggedAttr[+A] extends Tagged[A] {}
-sealed trait TaggedParticle[+A] extends Tagged[A] {}
 
 object Tagged {
   def apply(value: XSimpleType, tag: HostTag): Tagged[XSimpleType] = TaggedSimpleType(value, tag)
@@ -178,22 +177,26 @@ object Tagged {
   def toParticleDataRecord(tagged: TaggedParticle[_]): DataRecord[XParticleOption] = tagged match {
     case TaggedLocalElement(value, _, tag) => DataRecord(tag.namespace map {_.toString}, Some(tag.name), value)
     case TaggedKeyedGroup(value, tag)      => DataRecord(tag.namespace map {_.toString}, Some(tag.name), value.value)
-    // case _ => error("unknown particle: " + tagged)
+    case TaggedGroupRef(value, tag)        => DataRecord(tag.namespace map {_.toString}, Some(tag.name), value)
+    case TaggedWildCard(value, tag)        => DataRecord(tag.namespace map {_.toString}, Some(tag.name), value)
   }
 }
+
+// Tagged Particle
+sealed trait TaggedParticle[+A] extends Tagged[A] {}
+case class TaggedLocalElement(value: XLocalElementable, elementFormDefault: XFormChoice,
+                              tag: HostTag) extends TaggedParticle[XLocalElementable] {}
+case class TaggedGroupRef(value: XGroupRef, tag: HostTag) extends TaggedParticle[XGroupRef] {}
+case class TaggedKeyedGroup(value: KeyedGroup, tag: HostTag) extends TaggedParticle[KeyedGroup] {}
+case class TaggedWildCard(value: XAny, tag: HostTag) extends TaggedParticle[XAny] {}
 
 case class TaggedSimpleType(value: XSimpleType, tag: HostTag) extends Tagged[XSimpleType] {}
 case class TaggedComplexType(value: XComplexType, tag: HostTag) extends Tagged[XComplexType] {}
 case class TaggedNamedGroup(value: XNamedGroup, tag: HostTag) extends Tagged[XNamedGroup] {}
-case class TaggedGroupRef(value: XGroupRef, tag: HostTag) extends TaggedParticle[XGroupRef] {}
-case class TaggedKeyedGroup(value: KeyedGroup, tag: HostTag) extends TaggedParticle[KeyedGroup] {}
 case class TaggedAttributeGroup(value: XAttributeGroup, tag: HostTag) extends TaggedAttr[XAttributeGroup] {}
 case class TaggedTopLevelElement(value: XTopLevelElement, tag: HostTag) extends Tagged[XTopLevelElement] {}
-case class TaggedLocalElement(value: XLocalElementable, elementFormDefault: XFormChoice,
-                              tag: HostTag) extends TaggedParticle[XLocalElementable] {}
 case class TaggedAttribute(value: XAttributable, tag: HostTag) extends TaggedAttr[XAttributable] {}
 case class TaggedAnyAttribute(value: XWildcardable, tag: HostTag) extends TaggedAttr[XWildcardable] {}
-case class TaggedWildCard(value: XAny, tag: HostTag) extends TaggedParticle[XAny] {}
 case class TaggedSymbol(value: XsTypeSymbol, tag: HostTag) extends Tagged[XsTypeSymbol] {}
 case class TaggedEnum(value: XNoFixedFacet, tag: HostTag) extends Tagged[XNoFixedFacet] {}
 case class TaggedDataRecordSymbol(value: DataRecordSymbol) extends Tagged[DataRecordSymbol] {

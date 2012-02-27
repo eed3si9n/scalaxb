@@ -132,12 +132,12 @@ class Generator(val schema: ReferenceSchema,
 
     val makeWritesAttribute = None
 
-    val groups = decl.flattenedGroups filter { case tagged: TaggedKeyedGroup =>
+    val groups = decl.flattenedGroups filter { case tagged: TaggedGroupRef =>
       implicit val tag = tagged.tag
-      tagged.particles.size > 0 }
+      resolveNamedGroup(tagged.ref.get).particles.size > 0 }
     val defaultFormatSuperNames: Seq[Type] =
       (ElemNameParserClass TYPE_OF sym) ::
-      (groups.toList map { case tagged: TaggedKeyedGroup =>
+      (groups.toList map { case tagged: TaggedGroupRef =>
         formatterSymbol(userDefinedClassSymbol(tagged)): Type })
 
 //    <source>  trait Default{name.formatterName} extends {defaultFormatSuperNames.mkString(" with ")} {{
@@ -183,7 +183,7 @@ class Generator(val schema: ReferenceSchema,
     decl.attributeGroups map {buildType}
   }
 
-  def generateSequence(tagged: Tagged[KeyedGroup]): Trippet = {
+  def generateSequence(tagged: TaggedParticle[KeyedGroup]): Trippet = {
     implicit val tag = tagged.tag
     val name = names.get(tagged) getOrElse {"??"}
 //      val superNames: List[String] = buildOptions(compositor)
@@ -196,7 +196,7 @@ class Generator(val schema: ReferenceSchema,
     Trippet(CASECLASSDEF(name) withParams(paramList map {_.tree}: _*))
   }
 
-  def generateCompositor(decl: Tagged[KeyedGroup]): Trippet = decl.key match {
+  def generateCompositor(decl: TaggedParticle[KeyedGroup]): Trippet = decl.key match {
     case "sequence" => generateSequence(decl)
     case _ =>
 //      val superNames: List[String] = buildOptions(compositor)
@@ -229,13 +229,13 @@ class Generator(val schema: ReferenceSchema,
     Trippet(TRAITDEF(sym) := BLOCK(accessors: _*))
   }
 
-  def generateAllAccessors(tagged: Tagged[KeyedGroup]): Seq[Tree] = {
+  def generateAllAccessors(tagged: TaggedParticle[KeyedGroup]): Seq[Tree] = {
     implicit val tag = tagged.tag
     val paramList = Param.fromSeq(tagged.particles)
     paramList map {_.toDataRecordMapAccessor(makeParamName(ALL_PARAM), true)}
   }
 
-  def generateLongSeqAccessors(splits: Seq[TaggedKeyedGroup]): Seq[Tree] =
+  def generateLongSeqAccessors(splits: Seq[TaggedParticle[KeyedGroup]]): Seq[Tree] =
     splits flatMap { sequence =>
       implicit val tag = sequence.tag
       val wrapper = Param.fromSeq(Seq(sequence)).head

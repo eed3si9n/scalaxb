@@ -77,7 +77,7 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter with Symbols =
     case x: TaggedKeyedGroup =>
       x.key match {
         case ChoiceTag =>
-          val particleOs = x.group.arg1.toList map { Occurrence(_) }
+          val particleOs = x.value.value.arg1.toList map { Occurrence(_) }
           if (particleOs exists { _.nillable }) buildNillableType(userDefinedClassSymbol(tagged))
           else userDefinedClassSymbol(tagged)
         case _ => userDefinedClassSymbol(tagged)
@@ -225,6 +225,11 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter with Symbols =
     case _ => throw new ReferenceNotFound("attributeGroup", groupRef.namespace map { _.toString }, groupRef.localPart)
   }
 
+  def resolveNamedGroup(groupRef: QualifiedName): Tagged[XNamedGroup] = groupRef match {
+    case NamedGroup(group) => group
+    case _ => throw new ReferenceNotFound("attributeGroup", groupRef.namespace map { _.toString }, groupRef.localPart)    
+  }
+
   def elementNamespace(tagged: Tagged[XElement]): Option[URI] = tagged.value match {
     case elem: XTopLevelElement => tagged.tag.namespace
     case _ =>
@@ -320,6 +325,17 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter with Symbols =
     }
   }
 
+  object NamedGroup {
+    def unapply(qname: QName): Option[Tagged[XNamedGroup]] = unapply(qname: QualifiedName)
+
+    def unapply(qualifiedName: QualifiedName): Option[Tagged[XNamedGroup]] = qualifiedName match {
+      case QualifiedName(`targetNamespace`, localPart) if schema.topGroups contains localPart =>
+        Some(schema.topGroups(localPart))
+      case QualifiedName(ns, localPart) =>
+        (schemasByNamespace(ns) flatMap { _.topGroups.get(localPart) }).headOption
+    }    
+  }
+
   object AttributeGroup {
     def unapply(qname: QName): Option[TaggedAttr[XAttributeGroup]] = unapply(qname: QualifiedName)
 
@@ -348,8 +364,8 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter with Symbols =
 
   def isForeignType(tagged: Tagged[_]): Boolean = tagged match {
     case x: TaggedLocalElement => x.value.ref map { QualifiedName(_).namespace != targetNamespace } getOrElse { false }
-    case x: TaggedKeyedGroup if x.value.key == GroupTag =>
-      x.value.group.ref map { QualifiedName(_).namespace != targetNamespace } getOrElse { false }
+    case x: TaggedGroupRef =>
+      x.value.ref map { QualifiedName(_).namespace != targetNamespace } getOrElse { false }
     case _ => false
   }
 

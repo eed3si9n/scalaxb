@@ -128,7 +128,7 @@ trait Params { self: Namer with Lookup =>
     private def buildChoiceParam(tagged: Tagged[KeyedGroup]): Param = {
       implicit val tag = tagged.tag
       val choice = tagged.value
-      val name = names.get(tagged) map {_.toLowerCase} getOrElse {"??"}
+      val name = getName(tagged).toLowerCase
       val particles = choice.particles
 
       val memberType = choice.particles match {
@@ -160,7 +160,7 @@ trait Params { self: Namer with Lookup =>
 
     private def buildCompositorParam(tagged: Tagged[KeyedGroup]): Param = {
       val compositor = tagged.value
-      val name = names.get(tagged) map {_.toLowerCase} getOrElse {"??"}
+      val name = getName(tagged).toLowerCase
       val typeSymbol = tagged
       Param(tagged.tag.namespace, name, typeSymbol, Occurrence(compositor), false, false, false)
     }

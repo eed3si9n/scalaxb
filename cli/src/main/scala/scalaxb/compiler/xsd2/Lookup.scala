@@ -110,28 +110,24 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter with Symbols =
       userDefinedClassSymbol(tagged) }    
 
   def buildComplexTypeSymbol(tagged: Tagged[XComplexType]): ClassSymbol =
-    userDefinedClassSymbol(tagged.tag.namespace, names.get(tagged) getOrElse {
-      error("unnamed %s" format tagged.toString)
-    })
+    userDefinedClassSymbol(tagged.tag.namespace, getName(tagged))
 
   def buildEnumTypeSymbol(tagged: Tagged[XNoFixedFacet]): ClassSymbol =
-    userDefinedClassSymbol(tagged.tag.namespace, names.get(tagged) getOrElse {
-      error("unnamed %s" format tagged.toString)
-    })
+    userDefinedClassSymbol(tagged.tag.namespace, getName(tagged))
 
   def buildSimpleTypeType(decl: Tagged[XSimpleType]): Type = {
     decl.arg1.value match {
       case restriction: XRestriction if containsEnumeration(decl) =>
         // trace type hierarchy to the top most type that implements enumeration.
         val base = baseType(decl)
-        userDefinedClassSymbol(base.tag.namespace, names.get(base) getOrElse { "??" })
+        userDefinedClassSymbol(base.tag.namespace, getName(base))
       case restriction: XRestriction =>
         buildType(baseType(decl))
       case list: XList =>
         val base = baseType(decl)
         val baseName = base.value match {
           case symbol: BuiltInSimpleTypeSymbol => symbol.name
-          case decl: XSimpleType => names.get(base) getOrElse { "??" }
+          case decl: XSimpleType => getName(base)
         }
         TYPE_SEQ(userDefinedClassSymbol(base.tag.namespace, baseName))
       // union baseType is hardcoded to xs:string.
@@ -141,7 +137,7 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter with Symbols =
   }
 
   def userDefinedClassSymbol(tagged: Tagged[Any]): ClassSymbol =
-    userDefinedClassSymbol(tagged.tag.namespace, names.get(tagged) getOrElse { "??" })
+    userDefinedClassSymbol(tagged.tag.namespace, getName(tagged))
 
   def userDefinedClassSymbol(namespace: Option[URI], localPart: String): ClassSymbol = {
     val pkg = packageSymbol(namespace).moduleClass

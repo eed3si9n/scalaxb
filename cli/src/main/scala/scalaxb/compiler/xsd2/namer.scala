@@ -52,7 +52,7 @@ trait Namer extends ScalaNames { self: Lookup with Splitter  =>
     }
   }
 
-  def nameCompositor(tagged: Tagged[KeyedGroup], isPrimarySequence: Boolean) {
+  def nameCompositor(tagged: TaggedParticle[KeyedGroup], isPrimarySequence: Boolean) {
     tagged.value.key match {
       case ChoiceTag   => names(tagged) = makeProtectedTypeName(tagged.tag.name + "Option", "", tagged.tag, false)
       case SequenceTag =>

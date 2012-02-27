@@ -32,7 +32,7 @@ case class ReferenceSchema(targetNamespace: Option[URI],
                            topElems: immutable.ListMap[String, Tagged[XElement]],
                            topTypes: immutable.ListMap[String, Tagged[XAnnotatedable]],
                            topAttrs: immutable.ListMap[String, TaggedAttr[XAttributable]],
-                           topGroups: immutable.ListMap[String, Tagged[KeyedGroup]],
+                           topGroups: immutable.ListMap[String, Tagged[XNamedGroup]],
                            topAttrGroups: immutable.ListMap[String, TaggedAttr[XAttributeGroup]],
                            scope: scala.xml.NamespaceBinding,
                            unbound: XSchema)
@@ -55,9 +55,9 @@ object ReferenceSchema {
         case XSchemaSequence1(DataRecord(_, _, x: XTopLevelAttribute), _) =>
           HostTag(ns, x).name -> Tagged(x, HostTag(ns, x))
       }: _*),
-      immutable.ListMap[String, Tagged[KeyedGroup]](schema.xschemasequence1 collect {
-        case XSchemaSequence1(DataRecord(_, Some(key), x: XNamedGroup), _) =>
-          HostTag(ns, x).name -> Tagged(KeyedGroup(key, x), HostTag(ns, x))
+      immutable.ListMap[String, Tagged[XNamedGroup]](schema.xschemasequence1 collect {
+        case XSchemaSequence1(DataRecord(_, _, x: XNamedGroup), _) =>
+          HostTag(ns, x).name -> Tagged(x, HostTag(ns, x))
       }: _*),
       immutable.ListMap[String, TaggedAttr[XAttributeGroup]](schema.xschemasequence1 collect {
         case XSchemaSequence1(DataRecord(_, _, x: XNamedAttributeGroup), _) =>

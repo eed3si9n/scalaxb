@@ -25,27 +25,27 @@ object Occurrence {
     Occurrence(any.minOccurs.toInt, any.maxOccurs, false)
 
   def apply(particle: DataRecord[XParticleOption]): Occurrence = particle match {
-    case DataRecord(_, _, x: XElement)               => Occurrence(x)
-    case DataRecord(_, _, x: XAny)                   => Occurrence(x)
-    case DataRecord(_, Some("group"), x: XGroup)     => Occurrence(KeyedGroup("group", x))
-    case DataRecord(_, Some("all"), x: XGroup)       => Occurrence(KeyedGroup("all", x))
-    case DataRecord(_, Some("choice"), x: XGroup)    => Occurrence(KeyedGroup("choice", x))
-    case DataRecord(_, Some("sequence"), x: XGroup)  => Occurrence(KeyedGroup("sequence", x))
+    case DataRecord(_, _, x: XElement)                       => Occurrence(x)
+    case DataRecord(_, _, x: XAny)                           => Occurrence(x)
+    case DataRecord(_, Some("group"), x: XGroupRef)          => Occurrence(x)
+    case DataRecord(_, Some("all"), x: XExplicitGroup)       => Occurrence(KeyedGroup("all", x))
+    case DataRecord(_, Some("choice"), x: XExplicitGroup)    => Occurrence(KeyedGroup("choice", x))
+    case DataRecord(_, Some("sequence"), x: XExplicitGroup)  => Occurrence(KeyedGroup("sequence", x))
   }
 
+  def apply(ref: XGroupRef): Occurrence =
+    Occurrence(ref.minOccurs.toInt, ref.maxOccurs, false)
+
   def apply(keyed: KeyedGroup): Occurrence = keyed.key match {
-    case GroupTag =>
-      // TODO: fix this
-      Occurrence(keyed.group.minOccurs.toInt, keyed.group.maxOccurs, false)
     case ChoiceTag =>
-      val choice = keyed.group
+      val choice = keyed.value
       val o = Occurrence(choice.minOccurs.toInt, choice.maxOccurs, false)
       val particleOs = choice.arg1.toList map {Occurrence(_)}
       Occurrence((o.minOccurs :: (particleOs map { _.minOccurs})).min,
         (o.maxOccurs :: (particleOs map { _.maxOccurs})).max,
         particleOs exists {_.nillable})
     case _ =>
-      Occurrence(keyed.group.minOccurs.toInt, keyed.group.maxOccurs, false)
+      Occurrence(keyed.value.minOccurs.toInt, keyed.value.maxOccurs, false)
   }
 
   def apply(attr: XAttributable): Occurrence = attr.use match {

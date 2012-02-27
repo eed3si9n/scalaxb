@@ -11,7 +11,13 @@ trait ContextProcessor extends ScalaNames { self: Namer =>
   private lazy val logger: Logger = Logger("xsd2.ContextProcessor")
   def config: Config
   def context: SchemaContext
-  lazy val names = context.names
+
+  // lazy val names = context.names
+
+  def getName(tagged: Tagged[_]): String =
+    context.names.get(tagged) getOrElse {
+      tagged.tag.toString + "??"
+    }
 
   def processSchema(schema: ReferenceSchema) {
     logger.debug("processSchema")

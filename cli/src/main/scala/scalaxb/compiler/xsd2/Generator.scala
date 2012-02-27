@@ -184,7 +184,7 @@ class Generator(val schema: ReferenceSchema,
 
   def generateSequence(tagged: TaggedParticle[KeyedGroup]): Trippet = {
     implicit val tag = tagged.tag
-    val name = names.get(tagged) getOrElse {"??"}
+    val name = getName(tagged)
 //      val superNames: List[String] = buildOptions(compositor)
 //      val superString = if (superNames.isEmpty) ""
 //        else " extends " + superNames.mkString(" with ")
@@ -202,7 +202,7 @@ class Generator(val schema: ReferenceSchema,
 //      val superString = if (superNames.isEmpty) ""
 //        else " extends " + superNames.mkString(" with ")
       val superString = ""
-      val name = names.get(decl) getOrElse {"??"}
+      val name = getName(decl)
       // Snippet(<source>trait {name}{superString}</source>)
       Trippet(TRAITDEF(name))
   }

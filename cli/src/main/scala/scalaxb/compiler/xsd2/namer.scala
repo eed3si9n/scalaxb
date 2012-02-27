@@ -23,6 +23,8 @@ trait Namer extends ScalaNames { self: Lookup with Splitter  =>
   val ALL_PARAM = "all"
   val MIXED_PARAM = "mixed"
 
+  private def names = context.names
+
   def nameElementTypes(elem: Tagged[XElement]) {
     implicit val tag = elem.tag
 

@@ -1,4 +1,4 @@
-resolvers += ("ScalaTools Nexus Snapshots" at "http://nexus.scala-tools.org/content/repositories/snapshots/")
+resolvers += ("ScalaTools Snapshots" at "http://scala-tools.org/repo-snapshots/")
 
 // comment this out for production otherwise chicken-egg will entail.
 // addSbtPlugin("org.scalaxb" % "sbt-scalaxb" % "0.6.8-SNAPSHOT")

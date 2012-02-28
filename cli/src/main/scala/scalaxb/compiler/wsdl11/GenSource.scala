@@ -340,7 +340,7 @@ trait GenSource {
         else p.name.getOrElse {"in"}
       val label =
         if (b.literal && p.element.isDefined) "\"%s\"".format(toElement(p).name)
-        else if (b.literal && document) """"Body""""
+        else if (b.literal && document) """"Body""""  // """
         else "\"%s\"".format(p.name.getOrElse {"in"})
       val namespace =
         if (b.literal && p.element.isDefined) toElement(p).namespace
@@ -621,6 +621,7 @@ trait {interfaceTypeName} {{
 
     val addressString = address map {"""def baseAddress = new java.net.URI("%s")""".format(_)} getOrElse {""}
 
+    val operationOutputs = binding.operation flatMap { makeOperationOutput(_, interfaceType) }
     val operations = binding.operation map { opBinding => makeOperation(opBinding, interfaceType, document, true) }
     val bindingOps = binding.operation map { opBinding => makeSoapOpBinding(opBinding, interfaceType, document, true) }
 
@@ -628,6 +629,8 @@ trait {interfaceTypeName} {{
 trait {interfaceTypeName} {{
   {operations.mkString(NL + "  ")}
 }}
+
+{operationOutputs.mkString(NL + NL)}
 </source>
 
     val bindingTrait = <source>

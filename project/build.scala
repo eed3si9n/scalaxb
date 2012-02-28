@@ -12,18 +12,27 @@ object Builds extends Build {
     description := """scalaxb is an XML data-binding tool for Scala that supports W3C XML Schema (xsd) and wsdl.""",
     scalaVersion := "2.9.1",
     crossScalaVersions := Seq("2.9.1", "2.8.1"), // Scala interpreter bug in 2.9.1
-    publishArtifact in (Compile, packageBin) := true,
-    publishArtifact in (Test, packageBin) := false,
-    publishArtifact in (Compile, packageDoc) := false,
-    publishArtifact in (Compile, packageSrc) := false,
+    pomExtra := (<scm>
+        <url>git@github.com:eed3si9n/scalaxb.git</url>
+        <connection>scm:git:git@github.com:eed3si9n/scalaxb.git</connection>
+      </scm>
+      <developers>
+        <developer>
+          <id>eed3si9n</id>
+          <name>Eugene Yokota</name>
+          <url>http://eed3si9n.com</url>
+        </developer>
+      </developers>),
+    publishArtifact in Test := false,
     resolvers += ScalaToolsSnapshots,
     publishTo <<= version { (v: String) =>
-      val nexus = "http://nexus.scala-tools.org/content/repositories/"
-      if(v endsWith "-SNAPSHOT") Some("Scala Tools Nexus" at nexus + "snapshots/")
-      else Some("Scala Tools Nexus" at nexus + "releases/")
+      val nexus = "https://oss.sonatype.org/"
+      if (v.trim.endsWith("SNAPSHOT")) Some("snapshots" at nexus + "content/repositories/snapshots") 
+      else Some("releases"  at nexus + "service/local/staging/deploy/maven2")
     },
     credentials += Credentials(Path.userHome / ".ivy2" / ".credentials"),
     publishMavenStyle := true,
+    pomIncludeRepository := { x => false },
     parallelExecution in Test := false
   )
 

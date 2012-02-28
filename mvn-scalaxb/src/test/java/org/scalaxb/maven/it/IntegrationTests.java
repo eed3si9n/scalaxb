@@ -31,6 +31,7 @@ public class IntegrationTests {
         final AtomicReference<Exception> ex =
                 new AtomicReference<Exception>();
         Thread t = new Thread(new Runnable() {
+            @Override
             public void run() {
                 ex.set(runTest(test));
             }

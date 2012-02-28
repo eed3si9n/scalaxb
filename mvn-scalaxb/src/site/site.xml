@@ -3,16 +3,21 @@
   xsi:schemaLocation="http://maven.apache.org/DECORATION/1.0.0 http://maven.apache.org/xsd/decoration-1.0.0.xsd">
 
   <bannerLeft>
-    <name></name>
+    <name>mvn-scalaxb: Scalaxb Maven plugin</name>
   </bannerLeft>
 
   <bannerRight>
     <name></name>
   </bannerRight>
 
-  <publishDate position="navigation-bottom" format="MMMM yyyy"/>
+  <publishDate position="bottom" format="MMMM yyyy"/>
+  <version position="navigation-bottom"/>
 
   <body>
+    <menu name="Usage">
+      <item name="Getting started" href="usage.html"/>
+      <item name="Example project" href="example.html"/>
+    </menu>
     <menu name="Goals">
       <item name="generate" href="generate-mojo.html"/>
       <item name="help" href="help-mojo.html"/>
@@ -26,7 +31,7 @@
   <skin>
     <groupId>org.apache.maven.skins</groupId>
     <artifactId>maven-fluido-skin</artifactId>
-    <version>1.0</version>
+    <version>1.1</version>
   </skin>
 
   <poweredBy>

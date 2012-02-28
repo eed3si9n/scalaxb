@@ -1,15 +1,7 @@
-package org.scalaxb.maven;
-
-import static java.util.Arrays.asList;
-import static java.util.Collections.singletonMap;
-
-import java.util.LinkedHashMap;
-import java.util.Map;
-
-import junit.framework.TestCase;
+package org.slf4j.impl;
 
 /*
- * Copyright (c) 2011 Martin Ellis
+ * Copyright (c) 2012 Martin Ellis
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -30,27 +22,35 @@ import junit.framework.TestCase;
  * THE SOFTWARE.
  */
 
-public class ArgumentsBuilderTest extends TestCase {
+import org.apache.maven.plugin.logging.Log;
+import org.slf4j.ILoggerFactory;
+import org.slf4j.Logger;
 
-    private ArgumentsBuilder builder;
+/**
+ * Provides Logger instances which delegate to an instance of the Log interface
+ * in the Maven plugin API.
+ */
+public class MavenLoggerFactory implements ILoggerFactory {
+
+    private static volatile Log log;
+
+    private final MavenLoggerAdapter logger;
+
+    MavenLoggerFactory(Log log) {
+        this.logger = new MavenLoggerAdapter(log);
+    }
 
     @Override
-    public void setUp() {
-        builder = new ArgumentsBuilder();
+    public Logger getLogger(String name) {
+        return logger;
     }
 
-    public void testSingletonMap() {
-        builder.map("-p:", singletonMap("key", "value"));
-        assertEquals(asList("-p:key=value"), builder.getArguments());
+    public static void setLog(Log log) {
+        MavenLoggerFactory.log = log;
     }
 
-    public void testMapWithTwoEntries() {
-        Map<String, String> map = new LinkedHashMap<String, String>();
-        map.put("key1", "value1");
-        map.put("key2", "value2");
-        builder.map("-p:", map);
-        assertEquals(asList("-p:key1=value1", "-p:key2=value2"),
-                builder.getArguments());
+    static Log getLog() {
+        return log;
     }
 
 }

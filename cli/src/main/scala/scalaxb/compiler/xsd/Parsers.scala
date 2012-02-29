@@ -43,7 +43,7 @@ trait Parsers extends Args with Params {
   def buildAnyParser(namespaceConstraint: List[String], occurrence: Occurrence, mixed: Boolean,
                      wrapInDataRecord: Boolean, laxAny: Boolean): String = {
     val converter = if (occurrence.nillable) buildFromXML("scalaxb.DataRecord[Option[Any]]", "_",
-        "scalaxb.ElemName(node) :: stack", None)
+        "scalaxb.ElemName(node) :: stack", Some("__DataRecordOptionAnyXMLFormat"))
       else buildFromXML(buildTypeName(XsWildcard(namespaceConstraint)), "_", "scalaxb.ElemName(node) :: stack", None)
     val parser = "any(%s)".format(
       if (laxAny) "_ => true"
@@ -248,7 +248,8 @@ trait Parsers extends Args with Params {
     if (isSubstitionGroup(elem) && !ignoreSubGroup) addConverter(buildSubstitionGroupParser(elem, occurrence, mixed))
     else elem.typeSymbol match {
       case symbol: BuiltInSimpleTypeSymbol => addConverter(buildParserString(elem, occurrence))
-      case ReferenceTypeSymbol(decl: SimpleTypeDecl) =>  addConverter(buildParserString(elem, occurrence))
+      case ReferenceTypeSymbol(decl: SimpleTypeDecl) => 
+        addConverter(buildParserString(elem, occurrence))
       case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
         if (compositorWrapper.contains(decl)) {
           val compositor = compositorWrapper(decl)

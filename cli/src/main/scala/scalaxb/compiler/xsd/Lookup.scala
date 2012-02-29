@@ -124,7 +124,40 @@ trait Lookup extends ContextProcessor {
       
   def buildAttributeGroup(ref: AttributeGroupRef) =
     attributeGroups(ref.namespace, ref.name)
-  
+
+
+  def buildFormatterFromSymbol(typeSymbol: XsTypeSymbol): Option[String] = typeSymbol match {
+    case AnyType(symbol) => Some("__DataRecordAnyXMLFormat")
+    case XsNillableAny   => Some("__DataRecordOptionAnyXMLFormat")
+    case XsLongAll | XsLongAttribute | XsAnyAttribute => Some("__DataRecordMapWriter")
+
+    case XsDataRecord(ReferenceTypeSymbol(decl: ComplexTypeDecl)) if compositorWrapper.contains(decl) =>
+      compositorWrapper(decl) match {
+        case choice: ChoiceDecl => None // buildChoiceTypeName(decl, choice, shortLocal)
+        case _ => None // Some("__DataRecordAnyXMLFormat")
+      }
+    case r: XsDataRecord => None // Some("__DataRecordAnyXMLFormat")
+    case XsMixed         => Some("__DataRecordAnyXMLFormat")
+    case symbol: BuiltInSimpleTypeSymbol =>
+      symbol.name match {
+        case "Int" | "String" | "Byte" | "Long" | "Short" | "BigDecimal" | "BigInt" |
+          "Float" | "Double" | "Boolean" => Some("__" + symbol.name + "XMLFormat")
+        case "javax.xml.datatype.Duration" => Some("__DurationXMLFormat")
+        case "javax.xml.datatype.XMLGregorianCalendar" => Some("__CalendarXMLFormat")
+        case "javax.xml.namespace.QName" => Some("__QNameXMLFormat")
+        case "scalaxb.Base64Binary" => Some("__Base64BinaryXMLFormat")
+        case "scalaxb.HexBinary" => Some("__HexBinaryXMLFormat")
+        case "java.net.URI" => Some("__URIXMLFormat")
+        case "Seq[String]" => Some("seqXMLFormat[String]")
+        case _ => None
+      }
+    case ReferenceTypeSymbol(decl: SimpleTypeDecl) =>  buildFormatterOption(decl)
+    case ReferenceTypeSymbol(decl: ComplexTypeDecl) => buildFormatterOption(decl)
+    case symbol: AttributeGroupSymbol => 
+      buildFormatterOption(attributeGroups(symbol.namespace, symbol.name))
+    case _ => None
+  }
+
   def buildTypeName(typeSymbol: XsTypeSymbol, shortLocal: Boolean = false): String = typeSymbol match {
     case AnyType(symbol) => "scalaxb.DataRecord[Any]"
     case XsNillableAny   => "scalaxb.DataRecord[Option[Any]]"
@@ -190,9 +223,20 @@ trait Lookup extends ContextProcessor {
   
   def buildFullyQualifiedName(pkg: Option[String], localName: String): String =
     pkg.map(_ + ".").getOrElse("") + localName
-  
-  def buildFormatterName(group: AttributeGroupDecl): String =
-    buildFormatterName(group.namespace, buildTypeName(group, true))
+
+  def buildFormatterOption(decl: ComplexTypeDecl): Option[String] =
+    Some(buildFormatterName(decl.namespace, context.typeNames(decl)))
+
+  def buildFormatterOption(decl: SimpleTypeDecl): Option[String] = decl.content match {
+    case x@SimpTypRestrictionDecl(_, _) if containsEnumeration(decl)  =>
+      Some(buildFormatterName(decl.namespace, context.typeNames(decl)))
+    case x: SimpTypRestrictionDecl                                    => buildFormatterFromSymbol(baseType(decl))
+    case x: SimpTypListDecl =>  None // @TODO "Seq[" + buildTypeName(baseType(decl), shortLocal) + "]"
+    case x: SimpTypUnionDecl => buildFormatterFromSymbol(baseType(decl))
+  }
+
+  def buildFormatterOption(group: AttributeGroupDecl): Option[String] =
+    Some(buildFormatterName(group.namespace, context.typeNames(group)))
   
   def buildFormatterName(namespace: Option[String], name: String): String = {
     val pkg = packageName(namespace, context) getOrElse {""}

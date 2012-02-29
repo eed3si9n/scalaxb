@@ -62,6 +62,8 @@ trait Params extends Lookup {
     attribute: Boolean) {
     
     def baseTypeName: String = buildTypeName(typeSymbol)
+
+    def baseFormatterName: Option[String] = buildFormatterFromSymbol(typeSymbol)
     
     def singleTypeName: String =
       if (nillable) "Option[" + baseTypeName + "]"

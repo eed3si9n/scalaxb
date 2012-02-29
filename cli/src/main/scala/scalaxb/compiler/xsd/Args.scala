@@ -32,8 +32,8 @@ trait Args extends Params {
     buildFromXML(typeName) + "(%s, %s)%s".format(selector, stackString,
       formatter map {"(" + _ + ")"} getOrElse {""})
   
-  def buildToXML(typeName: String, args: String): String =
-    "scalaxb.toXML[" + typeName + "](" + args + ")"
+  def buildToXML(typeName: String, args: String, formatter: Option[String]): String =
+    "scalaxb.toXML[" + typeName + "](" + args + ")" + (formatter map { "(" + _ + ")" } getOrElse "")
         
   def buildFromString(typeName: String, selector: String): String =
     typeName + ".fromString(" + selector + ")"
@@ -41,15 +41,18 @@ trait Args extends Params {
   // called by buildConverter
   def buildArg(selector: String, typeSymbol: XsTypeSymbol): String = typeSymbol match {
     case AnyType(symbol)                            => selector
-    case symbol: BuiltInSimpleTypeSymbol            => buildArg(buildTypeName(symbol), selector, Single)
-    case ReferenceTypeSymbol(decl: SimpleTypeDecl)  => buildArg(buildTypeName(baseType(decl)), selector, Single)
+    case symbol: BuiltInSimpleTypeSymbol            =>
+      buildArg(buildTypeName(symbol), selector, Single, buildFormatterFromSymbol(symbol))
+    case ReferenceTypeSymbol(decl: SimpleTypeDecl)  =>
+      buildArg(buildTypeName(typeSymbol), selector, Single, buildFormatterOption(decl))
     case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
-      buildFromXML(buildTypeName(typeSymbol), selector, "scalaxb.ElemName(node) :: stack", None)
+      buildFromXML(buildTypeName(typeSymbol), selector, "scalaxb.ElemName(node) :: stack",
+        buildFormatterOption(decl))
   }
   
-  def buildArg(typeName: String, selector: String, cardinality: Cardinality,
+  def buildArg(typeName: String, selector: String, cardinality: Cardinality, formatter: Option[String],
       nillable: Boolean = false, defaultValue: Option[String] = None, fixedValue: Option[String] = None,
-      wrapForLongAll: Boolean = false, formatter: Option[String] = None): String = {
+      wrapForLongAll: Boolean = false): String = {
     val stack = "scalaxb.ElemName(node) :: stack"
     def fromSelector = buildFromXML(typeName, selector, stack, formatter)
     def fromU = buildFromXML(typeName, "_", stack, formatter)
@@ -120,10 +123,12 @@ trait Args extends Params {
     if ((isSubstitionGroup(elem))) selector
     else elem.typeSymbol match {
       case symbol: BuiltInSimpleTypeSymbol => buildArg(buildTypeName(symbol), selector, 
-        toCardinality(elem.minOccurs, elem.maxOccurs), elem.nillable getOrElse(false), elem.defaultValue, elem.fixedValue, wrapForLongAll)
+        toCardinality(elem.minOccurs, elem.maxOccurs), buildFormatterFromSymbol(symbol),
+        elem.nillable getOrElse(false), elem.defaultValue, elem.fixedValue, wrapForLongAll)
       case ReferenceTypeSymbol(decl: SimpleTypeDecl) =>
         buildArg(buildTypeName(decl, false), selector,
-          toCardinality(elem.minOccurs, elem.maxOccurs), elem.nillable getOrElse(false), elem.defaultValue, elem.fixedValue, wrapForLongAll)
+          toCardinality(elem.minOccurs, elem.maxOccurs), buildFormatterOption(decl),
+          elem.nillable getOrElse(false), elem.defaultValue, elem.fixedValue, wrapForLongAll)
       case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
         if (compositorWrapper.contains(decl))
           (toCardinality(elem.minOccurs, elem.maxOccurs), elem.nillable getOrElse {false}) match {
@@ -132,11 +137,15 @@ trait Args extends Params {
             case _ => selector
           }
         else buildArg(buildTypeName(decl, false), selector,
-          toCardinality(elem.minOccurs, elem.maxOccurs), elem.nillable getOrElse(false), elem.defaultValue, elem.fixedValue, wrapForLongAll)
+          toCardinality(elem.minOccurs, elem.maxOccurs), buildFormatterOption(decl),
+          elem.nillable getOrElse(false), elem.defaultValue, elem.fixedValue, wrapForLongAll)
       case AnyType(symbol) => buildArg(
           if (elem.nillable getOrElse(false)) buildTypeName(XsNillableAny)
           else buildTypeName(symbol), selector,
-        toCardinality(elem.minOccurs, elem.maxOccurs), false, elem.defaultValue, elem.fixedValue, wrapForLongAll)
+        toCardinality(elem.minOccurs, elem.maxOccurs),
+          if (elem.nillable getOrElse(false)) buildFormatterFromSymbol(XsNillableAny)
+          else buildFormatterFromSymbol(elem.typeSymbol),
+        false, elem.defaultValue, elem.fixedValue, wrapForLongAll)
       
       case symbol: ReferenceTypeSymbol =>
         if (symbol.decl == null) error("GenSource#buildArg: " + elem.toString + " Invalid type " + symbol.getClass.toString + ": " +
@@ -150,18 +159,18 @@ trait Args extends Params {
     attr.typeSymbol match {
       // special treatment for QName attributes
       case XsQName =>
-        buildArg(buildTypeName(XsQName), selector, toCardinality(attr), false,
-          attr.defaultValue, attr.fixedValue, wrapForLong, Some("scalaxb.qnameXMLFormat(node.scope)"))
+        buildArg(buildTypeName(XsQName), selector, toCardinality(attr), Some("scalaxb.qnameXMLFormat(node.scope)"), false,
+          attr.defaultValue, attr.fixedValue, wrapForLong)
       case symbol: BuiltInSimpleTypeSymbol =>
-        buildArg(buildTypeName(symbol), selector, toCardinality(attr), false,
+        buildArg(buildTypeName(symbol), selector, toCardinality(attr), buildFormatterFromSymbol(symbol), false,
           attr.defaultValue, attr.fixedValue, wrapForLong)
 
       // special treatment for QName attributes
       case ReferenceTypeSymbol(decl: SimpleTypeDecl) if buildTypeName(decl, false) == buildTypeName(XsQName) =>
-        buildArg(buildTypeName(decl, false), selector, toCardinality(attr), false,
-          attr.defaultValue, attr.fixedValue, wrapForLong, Some("scalaxb.qnameXMLFormat(node.scope)"))
+        buildArg(buildTypeName(decl, false), selector, toCardinality(attr), Some("scalaxb.qnameXMLFormat(node.scope)"), false, 
+          attr.defaultValue, attr.fixedValue, wrapForLong)
       case ReferenceTypeSymbol(decl: SimpleTypeDecl) =>
-        buildArg(buildTypeName(decl, false), selector, toCardinality(attr), false,
+        buildArg(buildTypeName(decl, false), selector, toCardinality(attr), buildFormatterOption(decl), false, 
           attr.defaultValue, attr.fixedValue, wrapForLong)
       case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
         error("Args: Attribute with complex type " + decl.toString)
@@ -171,8 +180,8 @@ trait Args extends Params {
 
   // called by makeCaseClassWithType
   def buildArg(content: SimpleContentDecl, typeSymbol: XsTypeSymbol): String = typeSymbol match {
-    case AnyType(symbol) => buildArg(buildTypeName(symbol), "node", Single)
-    case base: BuiltInSimpleTypeSymbol => buildArg(buildTypeName(base), "node", Single)
+    case AnyType(symbol) => buildArg(buildTypeName(symbol), "node", Single, buildFormatterFromSymbol(symbol))
+    case base: BuiltInSimpleTypeSymbol => buildArg(buildTypeName(base), "node", Single, buildFormatterFromSymbol(base))
     case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
       decl.content match {
         case simp@SimpleContentDecl(SimpContRestrictionDecl(base: XsTypeSymbol, _, _, _)) => buildArg(simp, base)      
@@ -187,7 +196,7 @@ trait Args extends Params {
         case _ => error("Args: Unsupported content " + content.toString)
       }
     case ReferenceTypeSymbol(decl: SimpleTypeDecl) =>
-      buildArg(buildTypeName(decl, false), "node", Single, false, None, None, false)
+      buildArg(buildTypeName(decl, false), "node", Single, buildFormatterOption(decl), false, None, None, false)
         
     case _ => error("Args: Unsupported type " + typeSymbol.toString)    
   }
@@ -290,7 +299,7 @@ trait Args extends Params {
     buildSelector(pos) + ".toList"
     
   def buildAttributeGroupArg(group: AttributeGroupDecl, longAttribute: Boolean): String = {
-    val formatterName = buildFormatterName(group)
+    val formatterName = buildFormatterOption(group).get
     val arg = formatterName + ".reads(node).right"
     if (longAttribute) arg + ".toOption map { x => " + 
       quote(buildNodeName(group)) + " -> scalaxb.DataRecord(None, None, x) }"

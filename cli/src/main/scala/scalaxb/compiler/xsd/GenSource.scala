@@ -103,12 +103,15 @@ abstract class GenSource(val schema: SchemaDecl,
     
     def makeCaseEntry(decl: ComplexTypeDecl) =
       "case (" + quoteNamespace(decl.namespace) + ", " + quote(Some(decl.family.head)) + ") => " +
-        "Right(" + buildFromXML(buildTypeName(decl, false), "node", "stack", None) + ")"
+        "Right(" + buildFromXML(buildTypeName(decl, false), "node", "stack", buildFormatterOption(decl)) + ")"
     
-    def makeToXmlCaseEntry(decl: ComplexTypeDecl) =
-      "case x: " + buildTypeName(decl, false) + " => " + 
-        buildToXML(buildTypeName(decl, false), "x, __namespace, __elementLabel, __scope, true")
-        
+    def makeToXmlCaseEntry(decl: ComplexTypeDecl) = {
+      val localName = buildTypeName(decl, false)
+      "case x: " + localName + " => " + 
+        buildToXML(localName, "x, __namespace, __elementLabel, __scope, true",
+          buildFormatterOption(decl))
+    }
+
     val compositors = context.compositorParents.filter(_._2 == decl).keysIterator.toList
     // val extendedSubtypes = context.baseToSubs(decl) filter { sub =>
     //   !schema.typeList.contains(sub) && !dependentSchemas.exists(_.typeList.contains(sub)) }
@@ -139,7 +142,7 @@ abstract class GenSource(val schema: SchemaDecl,
               yield makeCaseEntry(sub)
             cases.mkString(newline + indent(4 + compDepth))        
           }
-          { if (!decl.abstractValue) "case _ => Right(" + buildFromXML(defaultType, "node", "stack", None) + ")"
+          { if (!decl.abstractValue) "case _ => Right(" + buildFromXML(defaultType, "node", "stack", None) + ")" // @TODO formatter
             else """case x => Left("Unknown type: " + x)""" }
         }}
       case _ => Left("reads failed: seq must be scala.xml.Node")  
@@ -152,7 +155,7 @@ abstract class GenSource(val schema: SchemaDecl,
         cases.mkString(newline + indent(2 + compDepth))        
       }
       { if (!decl.abstractValue) "case x: " + defaultType + " => " +
-          buildToXML(defaultType, "x, __namespace, __elementLabel, __scope, false")
+          buildToXML(defaultType, "x, __namespace, __elementLabel, __scope, false", None) // @TODO formatter
         else """case _ => error("Unknown type: " + __obj)"""
       }
     }}
@@ -169,7 +172,7 @@ abstract class GenSource(val schema: SchemaDecl,
     <source>  implicit lazy val {formatterName}: scalaxb.XMLFormat[{fqn}] = new Default{formatterName} {{}}</source>
   
   def makeImplicitValue(group: AttributeGroupDecl): Node = {
-    val formatterName = buildFormatterName(group)
+    val formatterName = buildFormatterOption(group).get
     val fqn = buildTypeName(group, false)
     <source>  implicit lazy val {formatterName}: scalaxb.AttributeGroupFormat[{fqn}] = new Default{formatterName} {{}}</source>
   }
@@ -324,7 +327,8 @@ abstract class GenSource(val schema: SchemaDecl,
       }
 
       def childString = if (decl.mixed) "__obj." + makeParamName(MIXED_PARAM, false) +
-        ".toSeq flatMap { x => " + buildToXML("scalaxb.DataRecord[Any]", "x, x.namespace, x.key, __scope, false") + " }"
+        ".toSeq flatMap { x => " + buildToXML("scalaxb.DataRecord[Any]", "x, x.namespace, x.key, __scope, false",
+          Some("__DataRecordAnyXMLFormat")) + " }"
       else decl.content.content match {
         case SimpContRestrictionDecl(base: XsTypeSymbol, _, _, _) => simpleContentString(base)
         case SimpContExtensionDecl(base: XsTypeSymbol, _)         => simpleContentString(base)

@@ -11,48 +11,26 @@ Building
 
 To build with integration tests:
 
-    mvn install -s settings.xml -Pit
+    mvn install -Pit
 
 To build without integration tests, simply:
 
-    mvn install -s settings.xml
+    mvn install
 
-The `-s` option can be omitted when using a repository manager,
-or if your existing user settings already specify the scala-tools
-repository.
+Publishing
+----------
 
-Releasing
----------
+To deploy to Sonatype OSS repository hosting, run the publish
+script.
 
-From the `mvn-scalaxb` directory:
+* Check the version in the pom.xml.
+* Run `./publish'.
+* Enter credentials for Sonatype Nexus instance.
+* Update the version in the pom.xml to the next snapshot version
+  after publishing a release.
 
-  * Copy the settings file to somewhere outside the repository, and
-    edit it to set the username and password used to deploy to the
-    scala-tools repository:
-
-        cp settings.xml ~/.m2/scala-tools.xml
-        vi ~/.m2/scala-tools.xml
-
-  * Create an alias that will invoke Maven using the new settings file:
-
-        alias mvnst="mvn -s ~/.m2/scala-tools.xml"
-
-  * Use the `maven-release-plugin` to update the version in the `pom.xml`,
-    tag, and verify the build:
-
-        mvnst release:prepare
-
-  * Use the release plugin again to checkout the tag, build the
-    release, and deploy to scala-tools.org
-
-        mvnst release:perform
-
-The above process will leave a tag in the local repository called
-'scalaxb-maven-plugin-*version*'. It won't be pushed to github
-automatically.  Since scalaxb releases are already tagged, there
-doesn't seem to be any benefit to having the tag created by the
-release plugin in the github repo. It can be deleted with `git tag
--d`.
+Further documentation is included at the top of the `publish`
+script.
 
 Examples
 --------

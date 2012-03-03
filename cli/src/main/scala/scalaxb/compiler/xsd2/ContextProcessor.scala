@@ -16,7 +16,7 @@ trait ContextProcessor extends ScalaNames { self: Namer =>
 
   def getName(tagged: Tagged[_]): String =
     context.names.get(tagged) getOrElse {
-      tagged.tag.toString + "??"
+      error(tagged.tag.toString + "??")
     }
 
   def processSchema(schema: ReferenceSchema) {

@@ -62,7 +62,8 @@ class Generator(val schema: ReferenceSchema,
     // val localName = sym.decodedName
     val attributes = decl.flattenedAttributes
     val list =
-      (decl.primaryAll map { _ => Seq(allRef) } getOrElse {splitParticlesIfLong(decl.particles)(decl.tag)}) ++
+      (decl.primaryAll map { _ => Seq(allRef) } getOrElse {
+        splitParticlesIfLong(decl.particles)(decl.tag)}) ++
       (attributes.headOption map { _ => attributeSeqRef }).toSeq
     val paramList: Seq[Param] = Param.fromSeq(list)
     val compositors =  decl.compositors flatMap {splitIfLongSequence} filterNot {
@@ -196,7 +197,7 @@ class Generator(val schema: ReferenceSchema,
   }
 
   def generateCompositor(decl: TaggedParticle[KeyedGroup]): Trippet = decl.key match {
-    case "sequence" => generateSequence(decl)
+    case SequenceTag => generateSequence(decl)
     case _ =>
 //      val superNames: List[String] = buildOptions(compositor)
 //      val superString = if (superNames.isEmpty) ""

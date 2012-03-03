@@ -1,6 +1,7 @@
 package scalaxb.compiler.xsd2
 
 import java.net.URI
+import com.weiglewilczek.slf4s.Logger
 import xmlschema._
 import scalaxb.compiler.{ScalaNames}
 import Defs._
@@ -46,7 +47,9 @@ trait Namer extends ScalaNames { self: Lookup with Splitter  =>
   }
 
   def nameComplexTypes(decl: Tagged[XComplexType]) {
-    names(decl) = makeProtectedComplexTypeName(decl)
+    val name = makeProtectedComplexTypeName(decl)
+    names(decl) = name
+
     val primarySequence = decl.primarySequence
     implicit val s = schema.unbound
     decl collect {
@@ -65,6 +68,7 @@ trait Namer extends ScalaNames { self: Lookup with Splitter  =>
           }
         }
         else names(tagged) = makeProtectedTypeName(tagged.tag.name + "Sequence", "", tagged.tag, false)
+        
         self.splitLongSequence(tagged) map { _ map { seq =>
           names(seq) = makeProtectedTypeName(seq.tag.name + "Sequence", "", seq.tag, false)
         }}

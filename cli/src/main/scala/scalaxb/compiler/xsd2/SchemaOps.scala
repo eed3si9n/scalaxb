@@ -470,7 +470,7 @@ object ComplexTypeIteration {
     def refToParticles(ref: XGroupRef): Seq[TaggedParticle[_]] = Seq(Tagged(ref, tag))
 
     def toParticles(group: KeyedGroup): Seq[TaggedParticle[_]] =
-      if (group.key == "sequence" && Occurrence(group).isSingle) group.particles
+      if (group.key == SequenceTag && Occurrence(group).isSingle) group.particles
       else Seq(Tagged(group, tag))
 
     def processRestriction(restriction: XRestrictionTypable): Seq[TaggedParticle[_]] = {
@@ -722,8 +722,9 @@ object ComplexTypeIteration {
 }
 
 object Compositor {
+  import Defs._
   def unapply(value: Tagged[_]): Option[TaggedKeyedGroup] = value match {
-    case x: TaggedKeyedGroup if List("choice", "all", "sequence") contains x.value.key => Some(x)
+    case x: TaggedKeyedGroup => Some(x)
     case _ => None
   }
 }

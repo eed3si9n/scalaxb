@@ -21,7 +21,7 @@ trait Splitter { self: ContextProcessor with Lookup =>
 
   def splitParticles(particles: Seq[TaggedParticle[_]])(implicit tag: HostTag): Option[Seq[TaggedParticle[KeyedGroup]]] = {
     def buildSequence(ps: Seq[TaggedParticle[_]]): TaggedKeyedGroup =
-      TaggedKeyedGroup(KeyedGroup("sequence", XExplicitGroup(annotation = None,
+      TaggedKeyedGroup(KeyedGroup(SequenceTag, XExplicitGroup(annotation = None,
              arg1 = ps map {Tagged.toParticleDataRecord},
              minOccurs = 1,
              maxOccurs = "1",

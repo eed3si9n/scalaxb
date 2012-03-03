@@ -141,8 +141,8 @@ sealed trait Tagged[+A] {
 sealed trait TaggedAttr[+A] extends Tagged[A] {}
 
 object Tagged {
-  def apply(value: XSimpleType, tag: HostTag): Tagged[XSimpleType] = TaggedSimpleType(value, tag)
-  def apply(value: XComplexType, tag: HostTag): Tagged[XComplexType] = TaggedComplexType(value, tag)
+  def apply(value: XSimpleType, tag: HostTag): TaggedType[XSimpleType] = TaggedSimpleType(value, tag)
+  def apply(value: XComplexType, tag: HostTag): TaggedType[XComplexType] = TaggedComplexType(value, tag)
   def apply(value: XNamedGroup, tag: HostTag): Tagged[XNamedGroup] = TaggedNamedGroup(value, tag)
   def apply(value: XGroupRef, tag: HostTag): TaggedParticle[XGroupRef] = TaggedGroupRef(value, tag)
   def apply(value: KeyedGroup, tag: HostTag): TaggedParticle[KeyedGroup] = TaggedKeyedGroup(value, tag)
@@ -152,7 +152,7 @@ object Tagged {
     TaggedLocalElement(value, elementFormDefault, tag)
   def apply(value: XAttributable, tag: HostTag): TaggedAttr[XAttributable] = TaggedAttribute(value, tag)
   def apply(value: XAny, tag: HostTag): TaggedParticle[XAny] = TaggedWildCard(value, tag)
-  def apply(value: XsTypeSymbol, tag: HostTag): Tagged[XsTypeSymbol] = TaggedSymbol(value, tag)
+  def apply(value: XsTypeSymbol, tag: HostTag): TaggedType[XsTypeSymbol] = TaggedSymbol(value, tag)
   def apply(value: XNoFixedFacet, tag: HostTag): Tagged[XNoFixedFacet] = TaggedEnum(value, tag)
   def apply(value: AttributeSeqParam, tag: HostTag): Tagged[AttributeSeqParam] = TaggedAttributeSeqParam(value, tag)
   def apply(value: AllParam, tag: HostTag): Tagged[AllParam] = TaggedAllParam(value, tag)
@@ -190,20 +190,22 @@ case class TaggedGroupRef(value: XGroupRef, tag: HostTag) extends TaggedParticle
 case class TaggedKeyedGroup(value: KeyedGroup, tag: HostTag) extends TaggedParticle[KeyedGroup] {}
 case class TaggedWildCard(value: XAny, tag: HostTag) extends TaggedParticle[XAny] {}
 
-case class TaggedSimpleType(value: XSimpleType, tag: HostTag) extends Tagged[XSimpleType] {}
-case class TaggedComplexType(value: XComplexType, tag: HostTag) extends Tagged[XComplexType] {}
+sealed trait TaggedType[+A] extends Tagged[A] {}
+case class TaggedSimpleType(value: XSimpleType, tag: HostTag) extends TaggedType[XSimpleType] {}
+case class TaggedComplexType(value: XComplexType, tag: HostTag) extends TaggedType[XComplexType] {}
+case class TaggedSymbol(value: XsTypeSymbol, tag: HostTag) extends TaggedType[XsTypeSymbol] {}
+object TaggedXsAnyType extends TaggedSymbol(XsAnyType, HostTag(Some(Defs.SCALAXB_URI), SimpleTypeHost, "anyType"))
+
 case class TaggedNamedGroup(value: XNamedGroup, tag: HostTag) extends Tagged[XNamedGroup] {}
 case class TaggedAttributeGroup(value: XAttributeGroup, tag: HostTag) extends TaggedAttr[XAttributeGroup] {}
 case class TaggedTopLevelElement(value: XTopLevelElement, tag: HostTag) extends Tagged[XTopLevelElement] {}
 case class TaggedAttribute(value: XAttributable, tag: HostTag) extends TaggedAttr[XAttributable] {}
 case class TaggedAnyAttribute(value: XWildcardable, tag: HostTag) extends TaggedAttr[XWildcardable] {}
-case class TaggedSymbol(value: XsTypeSymbol, tag: HostTag) extends Tagged[XsTypeSymbol] {}
 case class TaggedEnum(value: XNoFixedFacet, tag: HostTag) extends Tagged[XNoFixedFacet] {}
 case class TaggedDataRecordSymbol(value: DataRecordSymbol) extends Tagged[DataRecordSymbol] {
   import Defs._
   val tag = HostTag(Some(SCALAXB_URI), SimpleTypeHost, "DataRecord")
 }
-object TaggedXsAnyType extends TaggedSymbol(XsAnyType, HostTag(Some(Defs.SCALAXB_URI), SimpleTypeHost, "anyType"))
 case class TaggedAttributeSeqParam(value: AttributeSeqParam, tag: HostTag) extends Tagged[AttributeSeqParam] {}
 case class TaggedAllParam(value: AllParam, tag: HostTag) extends Tagged[AllParam] {}
 
@@ -735,7 +737,7 @@ class ElementOps(val tagged: Tagged[XElement]) {
     }
   }
 
-  def typeStructure(implicit lookup: Lookup): Tagged[_] = {
+  def typeStructure(implicit lookup: Lookup): TaggedType[_] = {
     import lookup._
     val elem = resolve.value
 
@@ -749,7 +751,7 @@ class ElementOps(val tagged: Tagged[XElement]) {
       case DataRecord(_, _, x: XLocalComplexType) => Tagged(x, tagged.tag)
     }}
     typeValue getOrElse {
-      localType getOrElse { BuiltInAnyType.tagged }
+      localType getOrElse { TaggedXsAnyType }
     }
   }
 

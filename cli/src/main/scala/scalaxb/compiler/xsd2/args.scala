@@ -25,8 +25,7 @@ trait Args { self: Namer with Lookup with Params with Symbols =>
     Scalaxb_toXML APPLYTYPE typ APPLY(args)
 
   // called by buildConverter
-  def buildTypeSymbolArg(selector: Tree, typeSymbol: Tagged[Any]): Tree = typeSymbol match {
-    case x: TaggedWildCard => selector
+  def buildTypeSymbolArg(selector: Tree, typeSymbol: TaggedType[_]): Tree = typeSymbol match {
     case x: TaggedSymbol =>
       x.value match {
         case XsAnySimpleType | XsAnyType => selector

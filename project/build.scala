@@ -3,6 +3,7 @@ import sbt._
 object Builds extends Build {
   import Keys._
   import ls.Plugin.LsKeys._
+  import sbtbuildinfo.Plugin._
 
   lazy val buildSettings = Defaults.defaultSettings ++ customLsSettings ++ Seq(
     version := "0.6.9-SNAPSHOT",
@@ -45,7 +46,8 @@ object Builds extends Build {
   val Wsdl = config("wsdl") extend(Compile)
   val Soap11 = config("soap11") extend(Compile)
   val Soap12 = config("soap12") extend(Compile)
-  lazy val cliSettings = buildSettings ++ Seq(
+  lazy val cliSettings = buildInfoSettings ++
+    buildSettings ++ Seq(
     name := "scalaxb",
     libraryDependencies ++= Seq(
       "com.github.scopt" %% "scopt" % "1.1.2",
@@ -54,13 +56,8 @@ object Builds extends Build {
       "com.weiglewilczek.slf4s" %% "slf4s" % "1.0.7",
       "ch.qos.logback" % "logback-classic" % "0.9.29"),
     unmanagedSourceDirectories in Compile <+= baseDirectory( _ / "src_managed" ),
-    sourceGenerators in Compile <+= (sourceManaged in Compile, version) map { (dir, version) =>
-      val file = dir / "version.scala"
-      IO.write(file, """package scalaxb
-trait Version { val version = "%s" }
-""".format(version))
-      Seq(file)
-    }) ++ codeGenSettings
+    buildInfoPackage := "scalaxb",
+    sourceGenerators in Compile <+= buildInfo) ++ codeGenSettings
 
   def codeGenSettings: Seq[Project.Setting[_]] = Nil
 //  def codeGenSettings: Seq[Project.Setting[_]] = {

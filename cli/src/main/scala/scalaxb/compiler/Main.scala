@@ -22,7 +22,6 @@
 
 package scalaxb.compiler
 
-import scalaxb.{Version}
 import scala.collection.mutable.{ListBuffer, ListMap}
 import java.io.File
 import com.weiglewilczek.slf4s.Logger
@@ -31,7 +30,7 @@ object Defaults {
   val protocolFileName = "xmlprotocol.scala"
 }
 
-object Main extends Version {
+object Main {
   lazy val logger = Logger("main")
 
   def main(args: Array[String]) {
@@ -67,7 +66,7 @@ object Main extends Version {
     var laxAny = false
 
     packageNames(None) = None
-    val paramParser = new scopt.OptionParser("scalaxb", version) {
+    val paramParser = new scopt.OptionParser("scalaxb", scalaxb.BuildInfo.version) {
       opt("d", "outdir", "<directory>", "generated files will go into <directory>",
         { d: String => outdir = new File(d) })
       opt("p", "package", "<package>", "specifies the target package",

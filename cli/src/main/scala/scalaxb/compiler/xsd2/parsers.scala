@@ -41,7 +41,7 @@ trait Parsers { self: Namer with Lookup with Args with Params with Symbols =>
                       ignoreSubGroup: Boolean): Tree = {
     import Occurrence._
 
-    def buildConverter(typeSymbol: Tagged[Any], occurrence: Occurrence): Tree = {
+    def buildConverter(typeSymbol: TaggedType[_], occurrence: Occurrence): Tree = {
       // val record = "scalaxb.DataRecord(x.namespace, Some(x.name), " + buildTypeSymbolArg("x", typeSymbol) + ")"
       val record = DataRecordClass APPLY(REF("x") DOT "namespace",
         SOME(REF("x") DOT "name"),

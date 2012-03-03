@@ -195,7 +195,7 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter with Symbols =
     case _ => error("baseType#: Unsupported content " + decl.arg1.value.toString)
   }
 
-  def resolveType(typeName: QualifiedName): Tagged[Any] = typeName match {
+  def resolveType(typeName: QualifiedName): TaggedType[_] = typeName match {
     case BuiltInAnyType(tagged) => tagged
     case BuiltInType(tagged) => tagged
     case SimpleType(tagged) => tagged
@@ -243,22 +243,19 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter with Symbols =
     optionUriTree(elementNamespace(topLevelElement, namespace, qualified))
 
   object BuiltInAnyType {
-    // called by ElementOps
-    val tagged = Tagged(XsAnyType, HostTag(Some(XML_SCHEMA_URI), SimpleTypeHost, XS_ANY_TYPE.localPart))
+    def unapply(qname: QName): Option[TaggedType[XsTypeSymbol]] = unapply(qname: QualifiedName)
 
-    def unapply(qname: QName): Option[Tagged[XsTypeSymbol]] = unapply(qname: QualifiedName)
-
-    def unapply(typeName: QualifiedName): Option[Tagged[XsTypeSymbol]] = typeName match {
-      case XS_ANY_TYPE => Some(tagged)
-      case XS_ANY_SIMPLE_TYPE => Some(tagged)
+    def unapply(typeName: QualifiedName): Option[TaggedType[XsTypeSymbol]] = typeName match {
+      case XS_ANY_TYPE => Some(TaggedXsAnyType)
+      case XS_ANY_SIMPLE_TYPE => Some(TaggedXsAnyType)
       case _ => None
     }
   }
 
   object BuiltInType {
-    def unapply(qname: QName): Option[Tagged[XsTypeSymbol]] = unapply(qname: QualifiedName)
+    def unapply(qname: QName): Option[TaggedType[XsTypeSymbol]] = unapply(qname: QualifiedName)
 
-    def unapply(typeName: QualifiedName): Option[Tagged[XsTypeSymbol]] = typeName match {
+    def unapply(typeName: QualifiedName): Option[TaggedType[XsTypeSymbol]] = typeName match {
       case QualifiedName(Some(XML_SCHEMA_URI), localPart) =>
         Some(Tagged(XsTypeSymbol.toTypeSymbol(localPart), HostTag(typeName.namespace, SimpleTypeHost, localPart)))
       case _ => None
@@ -266,9 +263,9 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter with Symbols =
   }
 
   object SimpleType {
-    def unapply(qname: QName): Option[Tagged[XSimpleType]] = unapply(qname: QualifiedName)
+    def unapply(qname: QName): Option[TaggedType[XSimpleType]] = unapply(qname: QualifiedName)
 
-    def unapply(typeName: QualifiedName): Option[Tagged[XSimpleType]] = typeName match {
+    def unapply(typeName: QualifiedName): Option[TaggedType[XSimpleType]] = typeName match {
       case QualifiedName(`targetNamespace`, localPart) if schema.topTypes contains localPart =>
         schema.topTypes(localPart) match {
           case x: TaggedSimpleType => Some(x)
@@ -283,9 +280,9 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter with Symbols =
   }
 
   object ComplexType {
-    def unapply(qname: QName): Option[Tagged[XComplexType]] = unapply(qname: QualifiedName)
+    def unapply(qname: QName): Option[TaggedType[XComplexType]] = unapply(qname: QualifiedName)
 
-    def unapply(typeName: QualifiedName): Option[Tagged[XComplexType]] = typeName match {
+    def unapply(typeName: QualifiedName): Option[TaggedType[XComplexType]] = typeName match {
       case QualifiedName(`targetNamespace`, localPart) if schema.topTypes contains localPart =>
         schema.topTypes(localPart) match {
           case x: TaggedComplexType => Some(x)

@@ -1,0 +1,51 @@
+#!/bin/sh -e
+# Publish mvn-scalaxb to Sonatype OSS repository hosting.
+# Prompts for Sonatype username and password on first run, and stores
+# the credentials in ~/.m2/sonatype.xml.
+# The build is run using this settings file, and the appropriate
+# integration test and release profiles.
+#
+# Additional arguments for maven can be supplied on the command line,
+# for example:
+# ./publish -DaltDeploymentRepository=tmp::default::file:///tmp -P'!it'
+# This will publish to /tmp without running integration tests.
+
+SETTINGS="$HOME/.m2/sonatype.xml"
+
+setup() {
+  printf "Username: "
+  read username
+  printf "Password: "
+  read -s password
+  printf "\n"
+  cat <<EOF > "$SETTINGS"
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
+                      http://maven.apache.org/xsd/settings-1.0.0.xsd">
+
+  <servers>
+    <server>
+      <id>sonatype-nexus-staging</id>
+      <username>$username</username>
+      <password>$password</password>
+    </server>
+    <server>
+      <id>sonatype-nexus-snapshots</id>
+      <username>$username</username>
+      <password>$password</password>
+    </server>
+  </servers>
+
+</settings>
+EOF
+}
+
+init() {
+  if [ ! -f "$SETTINGS" ] ; then
+    setup
+  fi
+}
+
+init
+mvn -s "$SETTINGS" deploy -Pit,sonatype-oss-release "$@"

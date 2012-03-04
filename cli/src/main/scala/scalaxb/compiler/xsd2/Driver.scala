@@ -35,7 +35,7 @@ class Driver extends Module { driver =>
   type Schema = ReferenceSchema
   type Context = SchemaContext
   type RawSchema = scala.xml.Node
-  private lazy val logger = Log.forName("xsd2.Driver")
+  private val logger = Log.forName("xsd2.Driver")
   
   def generate(schema: Schema, part: String, context: Context, config: Config) = {
     val pkg = packageName(schema.targetNamespace map {_.toString}, context)

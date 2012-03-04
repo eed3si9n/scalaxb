@@ -24,7 +24,7 @@ trait Namer extends ScalaNames { self: Lookup with Splitter  =>
   val ALL_PARAM = "all"
   val MIXED_PARAM = "mixed"
 
-  private lazy val logger = Log.forName("xsd2.Namer")
+  private val logger = Log.forName("xsd2.Namer")
 
   private def names = context.names
 
@@ -33,7 +33,10 @@ trait Namer extends ScalaNames { self: Lookup with Splitter  =>
 
     elem.xelementoption map {_.value match {
       case x: XLocalComplexType =>
-        names(Tagged(x, tag)) = makeProtectedElementTypeName(elem)
+        val name = makeProtectedElementTypeName(elem)
+        names(Tagged(x, tag)) = name
+        logger.debug("nameElementTypes: named %s", name)
+        nameCompositors(x)
       case x: XLocalSimpleType if (containsEnumeration(x)) =>
         names(Tagged(x, tag)) = makeProtectedElementTypeName(elem)
         nameEnumValues(Tagged(x, elem.tag))
@@ -43,7 +46,9 @@ trait Namer extends ScalaNames { self: Lookup with Splitter  =>
 
   def nameSimpleTypes(decl: Tagged[XSimpleType]) {
     if (containsEnumeration(decl)) {
-      names(decl) = makeProtectedSimpleTypeName(decl)
+      val name = makeProtectedSimpleTypeName(decl)
+      logger.debug("nameSimpleTypes: named %s", name)
+      names(decl) = name
       nameEnumValues(decl)
     }
   }
@@ -52,7 +57,10 @@ trait Namer extends ScalaNames { self: Lookup with Splitter  =>
     val name = makeProtectedComplexTypeName(decl)
     logger.debug("nameComplexTypes: named %s", name)
     names(decl) = name
+    nameCompositors(decl)
+  }
 
+  def nameCompositors(decl: Tagged[XComplexType]) {
     val primarySequence = decl.primarySequence
     implicit val s = schema.unbound
     decl collect {
@@ -62,20 +70,35 @@ trait Namer extends ScalaNames { self: Lookup with Splitter  =>
 
   def nameCompositor(tagged: TaggedParticle[KeyedGroup], isPrimarySequence: Boolean) {
     tagged.value.key match {
-      case ChoiceTag   => names(tagged) = makeProtectedTypeName(tagged.tag.name + "Option", "", tagged.tag, false)
+      case ChoiceTag   =>
+        val name = makeProtectedTypeName(tagged.tag.name + "Option", "", tagged.tag, false)
+        names(tagged) = name
+        logger.debug("nameCompositor: named %s", name)
       case SequenceTag =>
         if (isPrimarySequence) {
           Occurrence(tagged) match {
             case Occurrence(1, 1, _) =>
-            case _ => names(tagged) = makeProtectedTypeName(tagged.tag.name + "Sequence", "", tagged.tag, false)
+            case _ => 
+              val name = makeProtectedTypeName(tagged.tag.name + "Sequence", "", tagged.tag, false)
+              names(tagged) = name
+              logger.debug("nameCompositor: named %s", name)
           }
         }
-        else names(tagged) = makeProtectedTypeName(tagged.tag.name + "Sequence", "", tagged.tag, false)
+        else {
+          val name = makeProtectedTypeName(tagged.tag.name + "Sequence", "", tagged.tag, false)
+          names(tagged) = name
+          logger.debug("nameCompositor: named %s", name)
+        }
         
         self.splitLongSequence(tagged) map { _ map { seq =>
-          names(seq) = makeProtectedTypeName(seq.tag.name + "Sequence", "", seq.tag, false)
+          val name = makeProtectedTypeName(seq.tag.name + "Sequence", "", seq.tag, false)
+          names(seq) = name
+          logger.debug("nameCompositor: named %s", name)
         }}
-      case AllTag      => names(tagged) = makeProtectedTypeName(tagged.tag.name + "All", "", tagged.tag, false)
+      case AllTag      =>
+        val name = makeProtectedTypeName(tagged.tag.name + "All", "", tagged.tag, false)
+        names(tagged) = name
+        logger.debug("nameCompositor: named %s", name)
       case _ =>
     }
   }

@@ -24,7 +24,7 @@ package scalaxb.compiler.xsd
 
 import scalaxb.compiler.{ScalaNames, Config, ReferenceNotFound}
 import scala.collection.mutable
-import com.weiglewilczek.slf4s.{Logger}
+import com.codahale.logula.Log
 
 trait PackageName {
   def packageName(schema: SchemaDecl, context: XsdContext): Option[String] =
@@ -46,7 +46,7 @@ trait PackageName {
 }
 
 trait ContextProcessor extends ScalaNames with PackageName {
-  lazy val logger = Logger("xsd.ContextProcessor")
+  lazy val logger = Log.forName("xsd.ContextProcessor")
   def config: Config
   val newline = System.getProperty("line.separator")
   val XSI_URL = "http://www.w3.org/2001/XMLSchema-instance"

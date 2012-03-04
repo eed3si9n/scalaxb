@@ -22,10 +22,10 @@
  
 package scalaxb.compiler.xsd
 
-import com.weiglewilczek.slf4s.Logger
+import com.codahale.logula.Log
 
 trait Args extends Params {
-  override lazy val logger = Logger("xsd.Args")
+  override lazy val logger = Log.forName("xsd.Args")
 
   def buildFromXML(typeName: String): String = "scalaxb.fromXML[" + typeName + "]"
   def buildFromXML(typeName: String, selector: String, stackString: String, formatter: Option[String]): String =

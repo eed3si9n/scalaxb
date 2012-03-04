@@ -1,9 +1,9 @@
 package scalaxb.compiler
 
-import com.weiglewilczek.slf4s.Logger
+import com.codahale.logula.Log
 
 class SbtApp extends xsbti.AppMain {
-  lazy val logger = Logger("main")
+  lazy val logger = Log.forName("main")
 
   def run(config: xsbti.AppConfiguration) = {
     try {

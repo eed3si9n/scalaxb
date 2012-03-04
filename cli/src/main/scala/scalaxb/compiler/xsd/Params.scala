@@ -22,7 +22,7 @@
  
 package scalaxb.compiler.xsd
 import scala.collection.mutable
-import com.weiglewilczek.slf4s.Logger
+import com.codahale.logula.Log
 
 sealed abstract class Cardinality
 case object Optional extends Cardinality { override def toString: String = "Optional" }
@@ -30,7 +30,7 @@ case object Single extends Cardinality { override def toString: String = "Single
 case object Multiple extends Cardinality { override def toString: String = "Multiple" }
 
 trait Params extends Lookup {
-  override lazy val logger = Logger("xsd.Params")
+  override lazy val logger = Log.forName("xsd.Params")
   val ATTRS_PARAM = "attributes"
   val anyNumbers: mutable.Map[AnyDecl, Int] = mutable.Map()
   

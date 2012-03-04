@@ -30,7 +30,7 @@ trait GenSource {
   import scala.xml.Node
   import scalaxb.compiler.xsd.{ReferenceTypeSymbol, SimpleTypeDecl, ComplexTypeDecl, BuiltInSimpleTypeSymbol,
     XsTypeSymbol, AnyType, XsAnyType}
-  import com.weiglewilczek.slf4s.Logger
+  import com.codahale.logula.Log
 
   val WSDL_SOAP11 = "http://schemas.xmlsoap.org/wsdl/soap/"
   val WSDL_SOAP12 = "http://schemas.xmlsoap.org/wsdl/soap12/"
@@ -38,7 +38,7 @@ trait GenSource {
   val SOAP_MEP_REQUEST_RESPONSE = "http://www.w3.org/2003/05/soap/mep/request-response"
   val SOAP_MEP_SOAP_RESPONSE = "http://www.w3.org/2003/05/soap/mep/soap-response"
 
-  lazy val logger = Logger("wsdl.GenSource")
+  lazy val logger = Log.forName("wsdl.GenSource")
   def context: WsdlContext
   def scope: scala.xml.NamespaceBinding
   def schemas = context.xsdcontext.schemas.toList

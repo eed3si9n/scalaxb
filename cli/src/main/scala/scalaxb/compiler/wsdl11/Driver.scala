@@ -30,10 +30,10 @@ import java.io.{Reader}
 import java.net.{URI}
 import scala.xml.{Node}
 import scalaxb.compiler.xsd.{SchemaLite, SchemaDecl, XsdContext}
-import com.weiglewilczek.slf4s.Logger
+import com.codahale.logula.Log
 
 class Driver extends Module { driver =>
-  private lazy val logger = Logger("wsdl")
+  private lazy val logger = Log.forName("wsdl")
   type Schema = WsdlPair
   type Context = WsdlContext
   type RawSchema = scala.xml.Node

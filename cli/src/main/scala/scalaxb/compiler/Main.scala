@@ -24,25 +24,25 @@ package scalaxb.compiler
 
 import scala.collection.mutable.{ListBuffer, ListMap}
 import java.io.File
-import com.weiglewilczek.slf4s.Logger
+import com.codahale.logula.Log
 
 object Defaults {
   val protocolFileName = "xmlprotocol.scala"
 }
 
 object Main {
-  lazy val logger = Logger("main")
+  lazy val log = Log.forName("main")
 
   def main(args: Array[String]) {
     // change this change SbtApp too.
     try { start(args); }
     catch {
       case e: ReferenceNotFound =>
-        logger.error(e.getMessage)
+        log.error(e.getMessage)
       case e: CaseClassTooLong =>
-        logger.error(e.getMessage)
+        log.error(e.getMessage)
       case e: Exception =>
-        logger.error(e.getStackTraceString)
+        log.error(e.getStackTraceString)
     }
   }
   

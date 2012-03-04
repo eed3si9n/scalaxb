@@ -27,10 +27,10 @@ import java.io.{File, Reader}
 import java.net.{URI}
 import collection.mutable
 import scala.xml.{Node, Elem}
-import com.weiglewilczek.slf4s.Logger
+import com.codahale.logula.Log
 
 class Driver extends Module { driver =>
-  private lazy val logger = Logger("xsd")
+  private lazy val logger = Log.forName("xsd")
 
   type Schema = SchemaDecl
   type Context = XsdContext

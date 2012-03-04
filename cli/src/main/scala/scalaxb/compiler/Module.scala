@@ -28,7 +28,7 @@ import scala.xml.{Node, Elem}
 import scala.xml.factory.{XMLLoader}
 import javax.xml.parsers.SAXParser
 import java.io.{File, PrintWriter, Reader, BufferedReader}
-import com.weiglewilczek.slf4s.Logger
+import com.codahale.logula.Log
 import collection.{mutable, Map, Set}
 
 case class Config(packageNames: Map[Option[String], Option[String]] = Map(None -> None),
@@ -107,7 +107,7 @@ trait Module {
   type Schema
   type Context
 
-  private lazy val logger = Logger("module")
+  private lazy val logger = Log.forName("module")
   def verbose: Boolean = false
   
   val encoding = "UTF-8"
@@ -151,7 +151,9 @@ trait Module {
       error("file not found: " + file.toString))
       
     val outfiles = processReaders(files, config)
-    outfiles map { x => logger.info("generated " + x + ".") }
+    outfiles map { x => 
+      println("generated " + x + ".")
+      logger.info("generated " + x + ".") }
     outfiles
   }
 
@@ -193,17 +195,15 @@ trait Module {
     processReaders(Seq(input), config) map {_.toString}
   }
 
-  // http://www.slf4j.org/apidocs/index.html
-  // http://logback.qos.ch/apidocs/index.html
-  // http://logback.qos.ch/xref/ch/qos/logback/classic/BasicConfigurator.html
   def configureLogger {
-    if (verbose) {
-      import org.slf4j.{LoggerFactory, Logger}
-      import ch.qos.logback.classic.{Logger => LBLogger, Level => LBLevel}
-      LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME) match {
-        case root: LBLogger => root.setLevel(LBLevel.TRACE)
-        case _ =>
-      }
+    import com.codahale.logula.Logging
+    import org.apache.log4j.Level
+
+    Logging.configure { log =>
+      log.level = if (verbose) Level.TRACE
+                  else Level.INFO
+      log.console.enabled = true
+      log.console.threshold = Level.WARN
     }
   }
 

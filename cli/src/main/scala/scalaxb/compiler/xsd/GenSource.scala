@@ -30,7 +30,7 @@ import com.codahale.logula.Log
 
 abstract class GenSource(val schema: SchemaDecl,
     val context: XsdContext) extends Parsers with XMLOutput {
-  override lazy val logger = Log.forName("xsd.GenSource")
+  private val logger = Log.forName("xsd.GenSource")
   type =>?[A, B] = PartialFunction[A, B]
   
   val topElems = schema.topElems

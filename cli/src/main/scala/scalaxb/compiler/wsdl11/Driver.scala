@@ -33,7 +33,7 @@ import scalaxb.compiler.xsd.{SchemaLite, SchemaDecl, XsdContext}
 import com.codahale.logula.Log
 
 class Driver extends Module { driver =>
-  private lazy val logger = Log.forName("wsdl")
+  private val logger = Log.forName("wsdl")
   type Schema = WsdlPair
   type Context = WsdlContext
   type RawSchema = scala.xml.Node

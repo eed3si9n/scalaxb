@@ -114,13 +114,10 @@ object Builds extends Build {
     publish := {},
     publishLocal := {}
   )
-
+  
   def testDeps(sv: String) = sv match {
-    case "2.8.1" =>   Seq("org.specs2" %% "specs2" % "1.4" % "test")
-//    case "2.9.0-1" => Seq("org.specs2" %% "specs2" % "1.6.1" % "test",
-//                          "org.specs2" %% "specs2-scalaz-core" % "6.0.RC2" % "test")
-    case _ => Seq("org.specs2" %% "specs2" % "1.6.1" % "test",
-                  "org.specs2" %% "specs2-scalaz-core" % "6.0.1" % "test")
+    case "2.8.1" =>   Seq("org.specs2" %% "specs2" % "1.5" % "test")
+    case _ => Seq("org.specs2" %% "specs2" % "1.8.2" % "test")
   }
 
   lazy val root = Project("root", file("."),

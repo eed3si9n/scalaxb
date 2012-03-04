@@ -30,7 +30,7 @@ case object Single extends Cardinality { override def toString: String = "Single
 case object Multiple extends Cardinality { override def toString: String = "Multiple" }
 
 trait Params extends Lookup {
-  override lazy val logger = Log.forName("xsd.Params")
+  private val logger = Log.forName("xsd.Params")
   val ATTRS_PARAM = "attributes"
   val anyNumbers: mutable.Map[AnyDecl, Int] = mutable.Map()
   

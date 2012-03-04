@@ -1,5 +1,5 @@
 import java.io.{File}
-import scalaxb.compiler.{Config, Verbose}
+import scalaxb.compiler.{Config}
 import scalaxb.compiler.xsd.{Driver}
 
 object XmlSchemaTest extends TestBase {

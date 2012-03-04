@@ -30,7 +30,7 @@ import scala.xml.{Node, Elem}
 import com.codahale.logula.Log
 
 class Driver extends Module { driver =>
-  private lazy val logger = Log.forName("xsd")
+  private val logger = Log.forName("xsd")
 
   type Schema = SchemaDecl
   type Context = XsdContext

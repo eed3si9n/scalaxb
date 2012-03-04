@@ -27,7 +27,7 @@ import scala.xml._
 import com.codahale.logula.Log
 
 abstract class GenProtocol(val context: XsdContext) extends ContextProcessor {
-  override lazy val logger = Log.forName("xsd.GenProtocol")
+  private val logger = Log.forName("xsd.GenProtocol")
 
   def generateProtocol(snippet: Snippet): Seq[Node] = {
     

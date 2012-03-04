@@ -38,7 +38,7 @@ trait GenSource {
   val SOAP_MEP_REQUEST_RESPONSE = "http://www.w3.org/2003/05/soap/mep/request-response"
   val SOAP_MEP_SOAP_RESPONSE = "http://www.w3.org/2003/05/soap/mep/soap-response"
 
-  lazy val logger = Log.forName("wsdl.GenSource")
+  private val logger = Log.forName("wsdl.GenSource")
   def context: WsdlContext
   def scope: scala.xml.NamespaceBinding
   def schemas = context.xsdcontext.schemas.toList

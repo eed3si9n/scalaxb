@@ -1,5 +1,4 @@
 import java.io.{File}
-import scalaxb.compiler.{Verbose}
 
 object PurchaseOrderTest extends TestBase {
   val inFile    = new File("integration/src/test/resources/ipo.xsd")

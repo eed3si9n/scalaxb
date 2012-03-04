@@ -3,7 +3,7 @@ package scalaxb.compiler
 import com.codahale.logula.Log
 
 class SbtApp extends xsbti.AppMain {
-  lazy val logger = Log.forName("main")
+  private val logger = Log.forName("main")
 
   def run(config: xsbti.AppConfiguration) = {
     try {

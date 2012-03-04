@@ -27,7 +27,7 @@ import scala.collection.mutable
 import com.codahale.logula.Log
 
 trait Lookup extends ContextProcessor {
-  override lazy val logger = Log.forName("xsd.Lookup")
+  private val logger = Log.forName("xsd.Lookup")
   def schema: SchemaDecl
   def context: XsdContext
   

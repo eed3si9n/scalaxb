@@ -31,7 +31,7 @@ object Defaults {
 }
 
 object Main {
-  lazy val log = Log.forName("main")
+  private val log = Log.forName("main")
 
   def main(args: Array[String]) {
     // change this change SbtApp too.

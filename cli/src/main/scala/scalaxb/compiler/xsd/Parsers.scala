@@ -26,7 +26,7 @@ import scala.collection.immutable
 import com.codahale.logula.Log
 
 trait Parsers extends Args with Params {
-  override lazy val logger = Log.forName("xsd.Parsers")
+  private val logger = Log.forName("xsd.Parsers")
   // called by makeCaseClassWithType and buildSeqParser
   def buildParser(particle: Particle, mixed: Boolean, wrapInDataRecord: Boolean): String =
     buildParser(particle, buildOccurrence(particle), mixed, wrapInDataRecord)

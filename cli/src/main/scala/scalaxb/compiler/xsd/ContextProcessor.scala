@@ -46,7 +46,7 @@ trait PackageName {
 }
 
 trait ContextProcessor extends ScalaNames with PackageName {
-  lazy val logger = Log.forName("xsd.ContextProcessor")
+  private val logger = Log.forName("xsd.ContextProcessor")
   def config: Config
   val newline = System.getProperty("line.separator")
   val XSI_URL = "http://www.w3.org/2001/XMLSchema-instance"

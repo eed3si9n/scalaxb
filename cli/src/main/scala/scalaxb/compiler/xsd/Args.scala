@@ -25,7 +25,7 @@ package scalaxb.compiler.xsd
 import com.codahale.logula.Log
 
 trait Args extends Params {
-  override lazy val logger = Log.forName("xsd.Args")
+  private val logger = Log.forName("xsd.Args")
 
   def buildFromXML(typeName: String): String = "scalaxb.fromXML[" + typeName + "]"
   def buildFromXML(typeName: String, selector: String, stackString: String, formatter: Option[String]): String =

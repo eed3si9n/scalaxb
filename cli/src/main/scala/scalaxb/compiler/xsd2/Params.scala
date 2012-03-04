@@ -9,12 +9,12 @@ import java.net.URI
 
 trait Params { self: Namer with Lookup =>
   import Predef.{any2stringadd => _}
-  import com.weiglewilczek.slf4s.Logger
+  import com.codahale.logula.Log
   import treehugger.forest._
   import definitions._
   import treehuggerDSL._
 
-  private lazy val logger: Logger = Logger("xsd2.Params")
+  private lazy val logger = Log.forName("xsd2.Params")
 
   case class Param(namespace: Option[URI],
     name: String,

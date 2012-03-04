@@ -30,12 +30,12 @@ import compiler._
 import xmlschema._
 
 class Driver extends Module { driver =>
-  import com.weiglewilczek.slf4s.Logger
+  import com.codahale.logula.Log
   
   type Schema = ReferenceSchema
   type Context = SchemaContext
   type RawSchema = scala.xml.Node
-  private lazy val logger = Logger("xsd2.Driver")
+  private lazy val logger = Log.forName("xsd2.Driver")
   
   def generate(schema: Schema, part: String, context: Context, config: Config) = {
     val pkg = packageName(schema.targetNamespace map {_.toString}, context)

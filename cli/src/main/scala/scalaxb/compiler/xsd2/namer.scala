@@ -1,7 +1,7 @@
 package scalaxb.compiler.xsd2
 
 import java.net.URI
-import com.weiglewilczek.slf4s.Logger
+import com.codahale.logula.Log
 import xmlschema._
 import scalaxb.compiler.{ScalaNames}
 import Defs._

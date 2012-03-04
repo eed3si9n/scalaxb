@@ -28,8 +28,8 @@ object QualifiedName {
 }
 
 trait Lookup extends ContextProcessor { self: Namer with Splitter with Symbols =>
-  import com.weiglewilczek.slf4s.{ Logger }
-  private lazy val logger = Logger("xsd2.Lookup")
+  import com.codahale.logula.Log
+  private lazy val logger = Log.forName("xsd2.Lookup")
 
   implicit val lookup = this;
   def schema: ReferenceSchema

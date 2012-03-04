@@ -14,7 +14,7 @@ trait Params { self: Namer with Lookup =>
   import definitions._
   import treehuggerDSL._
 
-  private lazy val logger = Log.forName("xsd2.Params")
+  private val logger = Log.forName("xsd2.Params")
 
   case class Param(namespace: Option[URI],
     name: String,

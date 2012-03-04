@@ -11,7 +11,7 @@ trait Args { self: Namer with Lookup with Params with Symbols =>
   import definitions._
   import treehuggerDSL._
   
-  private lazy val logger = Log.forName("xsd2.Args")
+  private val logger = Log.forName("xsd2.Args")
 
   def stackTree = (ElemNameClass APPLY(REF("node"))) LIST_:: REF("stack")
 

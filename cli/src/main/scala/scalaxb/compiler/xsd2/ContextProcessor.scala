@@ -8,7 +8,7 @@ import Defs._
 import scalaxb._
 
 trait ContextProcessor extends ScalaNames { self: Namer =>
-  private lazy val logger = Log.forName("xsd2.ContextProcessor")
+  private val logger = Log.forName("xsd2.ContextProcessor")
   def config: Config
   def context: SchemaContext
 
@@ -16,7 +16,8 @@ trait ContextProcessor extends ScalaNames { self: Namer =>
 
   def getName(tagged: Tagged[_]): String =
     context.names.get(tagged) getOrElse {
-      error(tagged.tag.toString + "??")
+      // error(tagged.tag.toString + "??")
+      tagged.tag.toString + "??"
     }
 
   def processSchema(schema: ReferenceSchema) {

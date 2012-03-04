@@ -1,5 +1,5 @@
 import java.io.{File}
-import scalaxb.compiler.Config
+import scalaxb.compiler._
 
 object BigTest extends TestBase {
   val inFile  = new File("integration/src/test/resources/big.xsd")

@@ -37,7 +37,7 @@ class Generator(val schema: ReferenceSchema,
   import definitions._
   import treehuggerDSL._
 
-  private lazy val logger = Log.forName("xsd2.Generator")
+  private val logger = Log.forName("xsd2.Generator")
   
   def generateEntitySource: Snippet =
     Snippet(
@@ -184,6 +184,8 @@ class Generator(val schema: ReferenceSchema,
   }
 
   def generateSequence(tagged: TaggedParticle[KeyedGroup]): Trippet = {
+    logger.debug("generateSequence: %s", tagged)
+
     implicit val tag = tagged.tag
     val name = getName(tagged)
 //      val superNames: List[String] = buildOptions(compositor)

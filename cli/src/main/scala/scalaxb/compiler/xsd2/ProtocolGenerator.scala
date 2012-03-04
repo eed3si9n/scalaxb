@@ -7,7 +7,7 @@ import Defs._
 
 case class ProtocolGenerator(config: Config) {
   import com.codahale.logula.Log
-  lazy val logger = Log.forName("xsd2.GenProtocol")
+  private val logger = Log.forName("xsd2.GenProtocol")
 
   def generateProtocol(snippet: Snippet): Seq[Node] = {
     val name = "XMLProtocol" // makeTypeName("XMLProtocol")

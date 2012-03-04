@@ -1,7 +1,7 @@
 package scalaxb.compiler.xsd2
 
 trait Args { self: Namer with Lookup with Params with Symbols =>
-  import com.weiglewilczek.slf4s.Logger
+  import com.codahale.logula.Log
   import scalaxb.compiler.xsd.{XsAnyType, BuiltInSimpleTypeSymbol, XsTypeSymbol, XsInt, XsAnySimpleType}
   import Defs._
   import Occurrence._
@@ -11,7 +11,7 @@ trait Args { self: Namer with Lookup with Params with Symbols =>
   import definitions._
   import treehuggerDSL._
   
-  private lazy val logger = Logger("xsd2.Args")
+  private lazy val logger = Log.forName("xsd2.Args")
 
   def stackTree = (ElemNameClass APPLY(REF("node"))) LIST_:: REF("stack")
 

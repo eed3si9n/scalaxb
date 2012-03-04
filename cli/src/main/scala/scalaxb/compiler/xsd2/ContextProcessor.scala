@@ -2,13 +2,13 @@ package scalaxb.compiler.xsd2
 
 import scalaxb.compiler.{ScalaNames, Config, ReferenceNotFound}
 import scala.collection.mutable
-import com.weiglewilczek.slf4s.Logger
+import com.codahale.logula.Log
 import xmlschema._
 import Defs._
 import scalaxb._
 
 trait ContextProcessor extends ScalaNames { self: Namer =>
-  private lazy val logger: Logger = Logger("xsd2.ContextProcessor")
+  private lazy val logger = Log.forName("xsd2.ContextProcessor")
   def config: Config
   def context: SchemaContext
 

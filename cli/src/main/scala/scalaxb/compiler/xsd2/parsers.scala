@@ -2,14 +2,14 @@ package scalaxb.compiler.xsd2
 
 trait Parsers { self: Namer with Lookup with Args with Params with Symbols =>
   import Predef.{any2stringadd => _, _}
-  import com.weiglewilczek.slf4s.Logger
+  import com.codahale.logula.Log
   import scalaxb.compiler.xsd.{XsAnyType, BuiltInSimpleTypeSymbol, XsAnySimpleType, XsTypeSymbol, XsInt}
   import Defs._
   import treehugger.forest._
   import definitions._
   import treehuggerDSL._
 
-  private lazy val logger: Logger = Logger("xsd2.Parsers")
+  private lazy val logger = Log.forName("xsd2.Parsers")
 
   def buildTextParser: Tree = REF("optTextRecord")
 

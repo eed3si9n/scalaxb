@@ -6,8 +6,8 @@ import xmlschema._
 import Defs._
 
 case class ProtocolGenerator(config: Config) {
-  import com.weiglewilczek.slf4s.Logger
-  lazy val logger = Logger("xsd2.GenProtocol")
+  import com.codahale.logula.Log
+  lazy val logger = Log.forName("xsd2.GenProtocol")
 
   def generateProtocol(snippet: Snippet): Seq[Node] = {
     val name = "XMLProtocol" // makeTypeName("XMLProtocol")

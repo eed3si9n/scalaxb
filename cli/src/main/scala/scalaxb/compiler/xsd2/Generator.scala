@@ -31,13 +31,13 @@ class Generator(val schema: ReferenceSchema,
     val context: SchemaContext, val config: Config) extends Params with PackageNamer
     with Namer with Lookup with Splitter with Parsers with Args with XMLOutputs with Symbols {
   import Predef.{any2stringadd => _}
-  import com.weiglewilczek.slf4s.Logger
+  import com.codahale.logula.Log
   import scalaxb.DataRecord
   import treehugger.forest._
   import definitions._
   import treehuggerDSL._
 
-  private lazy val logger = Logger("xsd2.Generator")
+  private lazy val logger = Log.forName("xsd2.Generator")
   
   def generateEntitySource: Snippet =
     Snippet(

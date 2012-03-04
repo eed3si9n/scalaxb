@@ -24,6 +24,8 @@ trait Namer extends ScalaNames { self: Lookup with Splitter  =>
   val ALL_PARAM = "all"
   val MIXED_PARAM = "mixed"
 
+  private lazy val logger = Log.forName("xsd2.Namer")
+
   private def names = context.names
 
   def nameElementTypes(elem: Tagged[XElement]) {
@@ -48,6 +50,7 @@ trait Namer extends ScalaNames { self: Lookup with Splitter  =>
 
   def nameComplexTypes(decl: Tagged[XComplexType]) {
     val name = makeProtectedComplexTypeName(decl)
+    logger.debug("nameComplexTypes: named %s", name)
     names(decl) = name
 
     val primarySequence = decl.primarySequence

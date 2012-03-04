@@ -1,6 +1,6 @@
 import org.specs2._
 
-object ProtocolSpec extends Specification { def is =
+object ProtocolSpec extends Specification { def is = sequential               ^
   "this is a specification to check the generated protocol source"            ^
                                                                               p^
   "the generated protocol source should"                                      ^
@@ -14,7 +14,7 @@ object ProtocolSpec extends Specification { def is =
                                                                               end
 
   import Example._
-  lazy val module = new scalaxb.compiler.xsd2.Driver
+  lazy val module = new scalaxb.compiler.xsd2.Driver with scalaxb.compiler.Verbose
   lazy val emptyProtocol = module.processNode(<xs:schema targetNamespace="http://www.example.com/"
     xmlns:xs="http://www.w3.org/2001/XMLSchema" />, "example")(1)
 

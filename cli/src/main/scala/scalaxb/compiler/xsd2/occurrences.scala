@@ -28,9 +28,9 @@ object Occurrence {
     case DataRecord(_, _, x: XElement)                       => Occurrence(x)
     case DataRecord(_, _, x: XAny)                           => Occurrence(x)
     case DataRecord(_, Some("group"), x: XGroupRef)          => Occurrence(x)
-    case DataRecord(_, Some(AllTag), x: XExplicitGroup)       => Occurrence(KeyedGroup(AllTag, x))
-    case DataRecord(_, Some(ChoiceTag), x: XExplicitGroup)    => Occurrence(KeyedGroup(ChoiceTag, x))
-    case DataRecord(_, Some(SequenceTag), x: XExplicitGroup)  => Occurrence(KeyedGroup(SequenceTag, x))
+    case DataRecord(_, Some("all"), x: XExplicitGroup)       => Occurrence(KeyedGroup(AllTag, x))
+    case DataRecord(_, Some("choice"), x: XExplicitGroup)    => Occurrence(KeyedGroup(ChoiceTag, x))
+    case DataRecord(_, Some("sequence"), x: XExplicitGroup)  => Occurrence(KeyedGroup(SequenceTag, x))
   }
 
   def apply(ref: XGroupRef): Occurrence =

@@ -52,10 +52,6 @@ object Defs {
 
   val XS_ANY_TYPE = QualifiedName(XML_SCHEMA_URI, "anyType")
   val XS_ANY_SIMPLE_TYPE = QualifiedName(XML_SCHEMA_URI, "anySimpleType")
-
-  val ChoiceTag = "choice"
-  val SequenceTag = "sequence"
-  val AllTag = "all"
 }
 
 abstract class TopLevelType
@@ -99,7 +95,20 @@ trait GroupOps {
     }
 }
 
-case class KeyedGroup(key: String, value: XExplicitGroupable) extends GroupOps {
+sealed trait CompositorKey
+case object ChoiceTag extends CompositorKey { override def toString = "choice" }
+case object SequenceTag extends CompositorKey { override def toString = "sequence" }
+case object AllTag extends CompositorKey { override def toString = "all" }
+
+object KeyedGroup {
+  def apply(key: String, value: XExplicitGroupable): KeyedGroup = key match {
+    case "choice"   => KeyedGroup(ChoiceTag, value)
+    case "sequence" => KeyedGroup(SequenceTag, value)
+    case "all"      => KeyedGroup(AllTag, value)
+  }
+}
+
+case class KeyedGroup(key: CompositorKey, value: XExplicitGroupable) extends GroupOps {
   import Defs._
 
   def tagged(implicit tag: HostTag) = Tagged(this, tag)
@@ -111,7 +120,7 @@ case class KeyedGroup(key: String, value: XExplicitGroupable) extends GroupOps {
           Seq(Tagged(any.copy(
             minOccurs = math.min(any.minOccurs.toInt, value.minOccurs.toInt),
             maxOccurs = Occurrence.max(any.maxOccurs, value.maxOccurs)), tag))
-        case DataRecord(_, Some(ChoiceTag), choice: XExplicitGroup) =>
+        case DataRecord(_, Some("choice"), choice: XExplicitGroup) =>
           Seq(Tagged(KeyedGroup(ChoiceTag, choice.copy(
             minOccurs = math.min(choice.minOccurs.toInt, value.minOccurs.toInt),
             maxOccurs = Occurrence.max(choice.maxOccurs, value.maxOccurs)) ), tag))
@@ -175,10 +184,10 @@ object Tagged {
   implicit def unbox[A](tagged: Tagged[A]): A = tagged.value
 
   def toParticleDataRecord(tagged: TaggedParticle[_]): DataRecord[XParticleOption] = tagged match {
-    case TaggedLocalElement(value, _, tag) => DataRecord(tag.namespace map {_.toString}, Some(tag.name), value)
-    case TaggedKeyedGroup(value, tag)      => DataRecord(tag.namespace map {_.toString}, Some(tag.name), value.value)
-    case TaggedGroupRef(value, tag)        => DataRecord(tag.namespace map {_.toString}, Some(tag.name), value)
-    case TaggedWildCard(value, tag)        => DataRecord(tag.namespace map {_.toString}, Some(tag.name), value)
+    case TaggedLocalElement(value, _, tag) => DataRecord(Some(Defs.XML_SCHEMA_URI.toString), Some("element"), value)
+    case TaggedKeyedGroup(value, tag)      => DataRecord(Some(Defs.XML_SCHEMA_URI.toString), Some(value.key.toString), value.value)
+    case TaggedGroupRef(value, tag)        => DataRecord(Some(Defs.XML_SCHEMA_URI.toString), Some("group"), value)
+    case TaggedWildCard(value, tag)        => DataRecord(Some(Defs.XML_SCHEMA_URI.toString), Some("any"), value)
   }
 }
 

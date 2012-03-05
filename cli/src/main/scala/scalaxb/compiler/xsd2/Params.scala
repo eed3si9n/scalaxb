@@ -162,7 +162,9 @@ trait Params { self: Namer with Lookup =>
       val compositor = tagged.value
       val name = getName(tagged).toLowerCase
       val typeSymbol = tagged
-      Param(tagged.tag.namespace, name, typeSymbol, Occurrence(compositor), false, false, false)
+      val retval = Param(tagged.tag.namespace, name, typeSymbol, Occurrence(compositor), false, false, false)
+      logger.debug("buildCompositorParam: " + retval.toString)
+      retval
     }
 
     private def buildWildCardParam(tagged: Tagged[XAny], postfix: Int): Param = {

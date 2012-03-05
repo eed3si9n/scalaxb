@@ -63,12 +63,14 @@ trait Namer extends ScalaNames { self: Lookup with Splitter  =>
   def nameCompositors(decl: Tagged[XComplexType]) {
     val primarySequence = decl.primarySequence
     implicit val s = schema.unbound
-    decl collect {
+    decl.particles collect {
       case Compositor(compositor) => nameCompositor(compositor, Some(compositor) == primarySequence)
     }
   }
 
   def nameCompositor(tagged: TaggedParticle[KeyedGroup], isPrimarySequence: Boolean) {
+    logger.debug("nameCompositor: %s", tagged.toString)
+
     tagged.value.key match {
       case ChoiceTag   =>
         val name = makeProtectedTypeName(tagged.tag.name + "Option", "", tagged.tag, false)
@@ -90,16 +92,18 @@ trait Namer extends ScalaNames { self: Lookup with Splitter  =>
           logger.debug("nameCompositor: named %s", name)
         }
         
-        self.splitLongSequence(tagged) map { _ map { seq =>
-          val name = makeProtectedTypeName(seq.tag.name + "Sequence", "", seq.tag, false)
-          names(seq) = name
-          logger.debug("nameCompositor: named %s", name)
+        self.splitLongSequence(tagged) map { _ map { seq => nameCompositor(seq, false)
         }}
       case AllTag      =>
         val name = makeProtectedTypeName(tagged.tag.name + "All", "", tagged.tag, false)
         names(tagged) = name
         logger.debug("nameCompositor: named %s", name)
-      case _ =>
+      case _ => error("unknown KeyedGroup" + tagged.toString)
+    }
+
+    implicit val tag = tagged.tag
+    tagged.particles collect {
+      case Compositor(compositor) => nameCompositor(compositor, false)
     }
   }
 

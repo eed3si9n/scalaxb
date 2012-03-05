@@ -8,7 +8,7 @@ import Defs._
 import scalaxb._
 
 trait ContextProcessor extends ScalaNames { self: Namer =>
-  private val logger = Log.forName("xsd2.ContextProcessor")
+  private[this] val logger = Log.forName("xsd2.ContextProcessor")
   def config: Config
   def context: SchemaContext
 

@@ -88,9 +88,8 @@ trait GroupOps {
       case DataRecord(_, _, x: XLocalElementable) =>
         Seq(TaggedLocalElement(x, lookup.schema.unbound.elementFormDefault, tag))
       case DataRecord(_, _, x: XGroupRef) => Seq(Tagged(x, tag))
-      case DataRecord(_, Some(particleKey), x: XExplicitGroupable) =>
-        if (particleKey == SequenceTag) KeyedGroup(particleKey, x).innerSequenceToParticles
-        else Seq(Tagged(KeyedGroup(particleKey, x), tag))
+      case DataRecord(_, Some("sequence"), x: XExplicitGroupable)  => KeyedGroup(SequenceTag, x).innerSequenceToParticles
+      case DataRecord(_, Some(particleKey), x: XExplicitGroupable) => Seq(Tagged(KeyedGroup(particleKey, x), tag))
       case DataRecord(_, _, x: XAny) => Seq(Tagged(x, tag))
     }
 }
@@ -478,9 +477,10 @@ object ComplexTypeIteration {
 
     def refToParticles(ref: XGroupRef): Seq[TaggedParticle[_]] = Seq(Tagged(ref, tag))
 
-    def toParticles(group: KeyedGroup): Seq[TaggedParticle[_]] =
-      if (group.key == SequenceTag && Occurrence(group).isSingle) group.particles
-      else Seq(Tagged(group, tag))
+    def toParticles(group: KeyedGroup): Seq[TaggedParticle[_]] = group match {
+      case KeyedGroup(SequenceTag, _) if Occurrence(group).isSingle => group.particles
+      case _ => Seq(Tagged(group, tag))
+    }
 
     def processRestriction(restriction: XRestrictionTypable): Seq[TaggedParticle[_]] = {
       val base: QualifiedName = restriction.base
@@ -593,19 +593,19 @@ object ComplexTypeIteration {
 
   def primarySequence(decl: Tagged[XComplexType]): Option[TaggedParticle[KeyedGroup]] =
     primaryCompositor(decl) flatMap { _ match {
-      case x@TaggedKeyedGroup(g, tag) if g.key == SequenceTag => Some(x)
+      case x@TaggedKeyedGroup(KeyedGroup(SequenceTag, _), tag) => Some(x)
       case _ => None
     }}
 
   def primaryChoice(decl: Tagged[XComplexType]): Option[TaggedParticle[KeyedGroup]] =
       primaryCompositor(decl) flatMap { _ match {
-        case x@TaggedKeyedGroup(g, tag) if g.key == ChoiceTag => Some(x)
+        case x@TaggedKeyedGroup(KeyedGroup(ChoiceTag, _), tag) => Some(x)
         case _ => None
       }}
 
   def primaryAll(decl: Tagged[XComplexType]): Option[TaggedParticle[KeyedGroup]] =
       primaryCompositor(decl) flatMap { _ match {
-        case x@TaggedKeyedGroup(g, tag) if g.key == AllTag => Some(x)
+        case x@TaggedKeyedGroup(KeyedGroup(AllTag, _), tag) => Some(x)
         case _ => None
       }}
 
@@ -631,11 +631,15 @@ object ComplexTypeIteration {
 
   def complexTypeToCompositors(decl: Tagged[XComplexType])
                       (implicit lookup: Lookup,
-                       targetNamespace: Option[URI], scope: NamespaceBinding): Seq[TaggedParticle[KeyedGroup]] =
-    primarySequence(decl).toSeq ++
-    decl.particles collect {
-      case Compositor(compositor) => compositor
-    }
+                       targetNamespace: Option[URI], scope: NamespaceBinding): Seq[TaggedParticle[KeyedGroup]] = {
+    val ps = primarySequence(decl)
+
+    // the primary sequence could appear as particles if it has multiple occurrence
+    ps.toSeq ++
+    (decl.particles collect {
+      case Compositor(compositor) if Some(compositor) != ps => compositor
+    })
+  }
 
   def complexTypeToAttributeGroups(decl: Tagged[XComplexType])
                       (implicit lookup: Lookup,

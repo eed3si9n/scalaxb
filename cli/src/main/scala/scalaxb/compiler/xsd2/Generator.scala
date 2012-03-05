@@ -51,24 +51,44 @@ class Generator(val schema: ReferenceSchema,
   def processComplexType(decl: Tagged[XComplexType]): Seq[Trippet] =
     Seq(generateComplexTypeEntity(buildComplexTypeSymbol(decl), decl))
 
+  def compositorsR(decl: Tagged[XComplexType]): Seq[TaggedParticle[KeyedGroup]] = {
+    val ps = decl.primarySequence
+    val singleps = ps map { tagged => Occurrence(tagged.value).isSingle } getOrElse {false}
+
+    def compositorsR(compositor: TaggedParticle[KeyedGroup]): Seq[TaggedParticle[KeyedGroup]] =
+      (compositor match {
+        case x @ TaggedKeyedGroup(KeyedGroup(ChoiceTag, _), _) => Seq(x)
+        case x @ TaggedKeyedGroup(KeyedGroup(AllTag, _), _)   => Seq(x)
+        case tagged @ TaggedKeyedGroup(KeyedGroup(SequenceTag, _), _) =>
+          implicit val tag = tagged.tag
+          (splitIfLongSequence(tagged) filterNot { Some(_) == ps })
+      }) ++
+      {
+        implicit val tag = compositor.tag
+        compositor.particles collect { case Compositor(comp) => comp } flatMap {compositorsR(_)}
+      }
+
+    val nonps = decl.compositors flatMap {compositorsR(_)}
+    if (singleps) nonps
+    else ps.toSeq ++ nonps 
+  }
+
   def generateComplexTypeEntity(sym: ClassSymbol, decl: Tagged[XComplexType]): Trippet = {
     logger.debug("generateComplexTypeEntity: emitting %s" format sym.toString)
 
     lazy val attributeSeqRef: Tagged[AttributeSeqParam] = TaggedAttributeSeqParam(AttributeSeqParam(), decl.tag)
     lazy val allRef: Tagged[AllParam] = Tagged(AllParam(), decl.tag)
 
-    logger.debug("generateComplexTypeEntity: decl: %s" format decl.toString)
-
-    // val localName = sym.decodedName
     val attributes = decl.flattenedAttributes
     val list =
       (decl.primaryAll map { _ => Seq(allRef) } getOrElse {
         splitParticlesIfLong(decl.particles)(decl.tag)}) ++
       (attributes.headOption map { _ => attributeSeqRef }).toSeq
+    
+    logger.debug("generateComplexTypeEntity: list: %s", list map {getName})
+
     val paramList: Seq[Param] = Param.fromSeq(list)
-    val compositors =  decl.compositors flatMap {splitIfLongSequence} filterNot {
-      Some(_) == decl.primarySequence &&
-      (decl.primarySequence map { tagged => Occurrence(tagged.value).isSingle } getOrElse {true}) }
+    val compositors = compositorsR(decl)
     val compositorCodes = compositors.toList map {generateCompositor}
     val hasSequenceParam = (paramList.size == 1) && (paramList.head.occurrence.isMultiple) &&
           (!paramList.head.attribute) && (!decl.mixed) // && (!longAll)

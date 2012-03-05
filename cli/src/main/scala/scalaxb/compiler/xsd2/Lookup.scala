@@ -29,7 +29,7 @@ object QualifiedName {
 
 trait Lookup extends ContextProcessor { self: Namer with Splitter with Symbols =>
   import com.codahale.logula.Log
-  private val logger = Log.forName("xsd2.Lookup")
+  private[this] val logger = Log.forName("xsd2.Lookup")
 
   implicit val lookup = this;
   def schema: ReferenceSchema
@@ -368,10 +368,10 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter with Symbols =
         case decl: TaggedComplexType => true
         case _ => false
       }
-    case x: TaggedKeyedGroup if x.value.key == ChoiceTag =>
-      implicit val tag = x.tag
-      x.value.particles forall { isOptionDescendant }
-    case x: TaggedKeyedGroup if x.value.key == SequenceTag => true
+    case TaggedKeyedGroup(value @ KeyedGroup(ChoiceTag, _), tag) =>
+      implicit val xtag = tag
+      value.particles forall { isOptionDescendant }
+    case TaggedKeyedGroup(KeyedGroup(SequenceTag, _), _) => true
     case _ => false
   }
 

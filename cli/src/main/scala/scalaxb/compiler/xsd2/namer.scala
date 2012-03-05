@@ -63,14 +63,13 @@ trait Namer extends ScalaNames { self: Lookup with Splitter  =>
   def nameCompositors(decl: Tagged[XComplexType]) {
     val primarySequence = decl.primarySequence
     implicit val s = schema.unbound
-    decl.particles collect {
+    decl collect {
       case Compositor(compositor) => nameCompositor(compositor, Some(compositor) == primarySequence)
     }
   }
 
   def nameCompositor(tagged: TaggedParticle[KeyedGroup], isPrimarySequence: Boolean) {
-    logger.debug("nameCompositor: %s", tagged.toString)
-
+    // logger.debug("nameCompositor: %s", tagged.toString)
     tagged.value.key match {
       case ChoiceTag   =>
         val name = makeProtectedTypeName(tagged.tag.name + "Option", "", tagged.tag, false)

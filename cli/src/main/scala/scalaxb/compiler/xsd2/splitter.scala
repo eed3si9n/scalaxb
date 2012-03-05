@@ -4,20 +4,27 @@ import xmlschema._
 import Defs._
 
 trait Splitter { self: ContextProcessor with Lookup =>
+  import com.codahale.logula.Log
+  
+  private def logger = Log.forName("xsd2.Splitter")
+
   def splitIfLongSequence(tagged: TaggedParticle[KeyedGroup]): Seq[TaggedParticle[KeyedGroup]] =
     splitLongSequence(tagged) getOrElse {Seq(tagged)}
 
   def splitLongSequence(tagged: TaggedParticle[KeyedGroup]): Option[Seq[TaggedParticle[KeyedGroup]]] =
-    tagged.key match {
-      case SequenceTag =>
+    tagged.value match {
+      case KeyedGroup(SequenceTag, _) =>
         implicit val tag = tagged.tag
         splitParticles(tagged.particles)
       case _ => None
     }
 
   // called by generator.
-  def splitParticlesIfLong(particles: Seq[TaggedParticle[_]])(implicit tag: HostTag): Seq[TaggedParticle[_]] =
-    splitParticles(particles) getOrElse {particles}
+  def splitParticlesIfLong(particles: Seq[TaggedParticle[_]])(implicit tag: HostTag): Seq[TaggedParticle[_]] = {
+    val retval = splitParticles(particles) getOrElse {particles}
+    logger.debug("splitParticlesIfLong: %s", retval map {getName(_)})
+    retval
+  }
 
   def splitParticles(particles: Seq[TaggedParticle[_]])(implicit tag: HostTag): Option[Seq[TaggedParticle[KeyedGroup]]] = {
     def buildSequence(ps: Seq[TaggedParticle[_]]): TaggedKeyedGroup =

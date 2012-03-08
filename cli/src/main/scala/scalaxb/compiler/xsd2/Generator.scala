@@ -142,7 +142,7 @@ class Generator(val schema: ReferenceSchema,
         case XSimpleContent(_, DataRecord(_, _, x: XSimpleExtensionType), _, _)        => simpleContentTree(x.base)
         case _ =>
           if (particles.isEmpty) NIL
-          else if (particles.size == 1) PARAM(buildXMLTree(Param(particles(0))))
+          else if (particles.size == 1) PAREN(buildXMLTree(Param(particles(0))))
           else (SeqClass DOT "concat")(Param.fromSeq(particles) map { x => buildXMLTree(x) })
       }
 

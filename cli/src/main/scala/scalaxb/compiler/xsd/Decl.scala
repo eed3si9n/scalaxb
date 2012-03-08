@@ -714,7 +714,7 @@ object AnyDecl {
   def fromXML(node: scala.xml.Node, config: ParserConfig) = {
     val minOccurs = CompositorDecl.buildOccurrence((node \ "@minOccurs").text)
     val maxOccurs = CompositorDecl.buildOccurrence((node \ "@maxOccurs").text)
-    val namespaceConstraint = (node \ "@namespace").text.split(' ').toList
+    val namespaceConstraint = (node \ "@namespace").headOption map { _.text.split(' ').toList } getOrElse {Nil}
     val processContents = (node \ "@processContents").text match {
       case "lax"  => LaxProcess
       case "skip" => SkipProcess

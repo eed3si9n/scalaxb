@@ -48,8 +48,7 @@ trait Parsers extends Args with Params {
     val parser = "any(%s)".format(
       if (laxAny) "_ => true"
       else namespaceConstraint match {
-        case Nil => "_ => true"
-        case "##any" :: Nil => "_ => true"
+        case ("##any" :: Nil) | Nil | ("" :: Nil) => "_ => true"
         case "##other" :: Nil => "_.namespace != %s" format (quoteNamespace(schema.targetNamespace))
         case _ =>
           """x => %s contains x.namespace""" format (namespaceConstraint.map {

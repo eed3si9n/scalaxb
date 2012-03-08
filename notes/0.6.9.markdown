@@ -1,7 +1,8 @@
 ## bug fixes and minor enhancements
-- Fixes soap 1.2 output wrapper. [#143][#143]
-- Fixed inner simple types being detected as duplicates. [#136][#136] reported by [@bampoosa][@bampoosa]
-- Added a few missing settings to sbt-scalaxb. [#144][#144] reported by [@devinus][@devinus]
+- Fixes soap 1.2 output wrapper. [#143][143]
+- Fixed inner simple types being detected as duplicates. [#136][136] reported by [@bampoosa][@bampoosa]
+- Added a few missing settings to sbt-scalaxb. [#144][144] reported by [@devinus][@devinus]
+- Fixes xs:any namespace attribute not defaulting to `##any`. [#147][147] reported by [@champloo][@champloo]
 
 ### mvn-scalaxb
 - mvn-scalaxb was updated by [@martiell][@martiell]
@@ -10,11 +11,13 @@
 - SLF4J logging is redirected to Maven plugin log.
 - Don't swallow stack traces when propagating exceptions from scalaxb.
 
-  [#136]: https://github.com/eed3si9n/scalaxb/issues/136
-  [#143]: https://github.com/eed3si9n/scalaxb/issues/143
-  [#144]: https://github.com/eed3si9n/scalaxb/issues/144
+  [136]: https://github.com/eed3si9n/scalaxb/issues/136
+  [143]: https://github.com/eed3si9n/scalaxb/issues/143
+  [144]: https://github.com/eed3si9n/scalaxb/issues/144
+  [147]: https://github.com/eed3si9n/scalaxb/issues/147
   [m2e]: http://wiki.eclipse.org/M2E_compatible_maven_plugins
   [@bampoosa]: https://github.com/bampoosa
   [@devinus]: https://github.com/devinus
   [@martiell]: https://github.com/martiell
+  [@champloo]: https://github.com/champloo
 

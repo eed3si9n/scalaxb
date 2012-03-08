@@ -264,6 +264,7 @@ object GeneralUsage {
       </xs:choice>
       <xs:any namespace="##other" processContents="lax" maxOccurs="unbounded"/>
       <xs:element name="person5" maxOccurs="unbounded" type="gen:Person"/>
+      <xs:any />
     </xs:sequence>
   </xs:complexType>
   */
@@ -283,6 +284,7 @@ object GeneralUsage {
       <o:foo xsi:type="xs:int">1</o:foo><o:foo xsi:type="xs:int">1</o:foo>
       <gen:person5><gen:firstName>John</gen:firstName><gen:lastName>Doe</gen:lastName></gen:person5>
       <gen:person5><gen:firstName>John</gen:firstName><gen:lastName>Doe</gen:lastName></gen:person5>
+      <local><something/></local>
     </gen:foo>
     val obj = fromXML[AnyTest](subject)
     
@@ -297,7 +299,8 @@ object GeneralUsage {
           Some(DataRecord(O, Some("foo"), Some(1))), // nillable optional
           Seq(DataRecord(O, Some("foo"), 1), // multiple
             DataRecord(O, Some("foo"), 1)),
-          Seq(Person("John", "Doe"), Person("John", "Doe"))
+          Seq(Person("John", "Doe"), Person("John", "Doe")),
+          DataRecord(None, Some("local"), _) // Local
            ) =>
         case _ => error("match failed: " + obj.toString)
       }

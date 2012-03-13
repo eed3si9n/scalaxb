@@ -14,7 +14,7 @@ object ProtocolSpec extends Specification { def is = sequential               ^
                                                                               end
 
   import Example._
-  lazy val module = new scalaxb.compiler.xsd2.Driver with scalaxb.compiler.Verbose
+  lazy val module = new scalaxb.compiler.xsd2.Driver
   lazy val emptyProtocol = module.processNode(<xs:schema targetNamespace="http://www.example.com/"
     xmlns:xs="http://www.w3.org/2001/XMLSchema" />, "example")(1)
 

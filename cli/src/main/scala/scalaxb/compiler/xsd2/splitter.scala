@@ -27,21 +27,21 @@ trait Splitter { self: ContextProcessor with Lookup =>
   }
 
   def splitParticles(particles: Seq[TaggedParticle[_]])(implicit tag: HostTag): Option[Seq[TaggedParticle[KeyedGroup]]] = {
-    def buildSequence(ps: Seq[TaggedParticle[_]]): TaggedKeyedGroup =
+    def buildSequence(ps: Seq[TaggedParticle[_]], i: Int): TaggedKeyedGroup =
       TaggedKeyedGroup(KeyedGroup(SequenceTag, XExplicitGroup(annotation = None,
              arg1 = ps map {Tagged.toParticleDataRecord},
              minOccurs = 1,
              maxOccurs = "1",
-             attributes = Map())), tag)
+             attributes = Map())), tag / (i.toString + "s"))
 
     def longList(ps: Seq[TaggedParticle[_]]): Option[Seq[TaggedParticle[_]]] =
       if (ps.size >= config.contentsSizeLimit) Some(ps)
       else None
 
-    def splitLong(ps: Seq[TaggedParticle[_]]): Seq[TaggedKeyedGroup] =
-      if (ps.size <= config.sequenceChunkSize) Seq(buildSequence(ps))
-      else Seq(buildSequence(ps.take(config.sequenceChunkSize))) ++ splitLong(ps.drop(config.sequenceChunkSize))
+    def splitLong(ps: Seq[TaggedParticle[_]], i: Int): Seq[TaggedKeyedGroup] =
+      if (ps.size <= config.sequenceChunkSize) Seq(buildSequence(ps, i))
+      else Seq(buildSequence(ps.take(config.sequenceChunkSize), i)) ++ splitLong(ps.drop(config.sequenceChunkSize), i + 1)
 
-    longList(particles) map { xs => splitLong(xs) }
+    longList(particles) map { xs => splitLong(xs, 0) }
   }
 }

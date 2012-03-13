@@ -84,7 +84,7 @@ object EntitySpec extends Specification { def is = sequential                 ^
   sequential
 
   import Example._
-  lazy val module = new scalaxb.compiler.xsd2.Driver with scalaxb.compiler.Verbose
+  lazy val module = new scalaxb.compiler.xsd2.Driver
   lazy val emptyEntitySource = module.processNode(<xs:schema targetNamespace="http://www.example.com/"
     xmlns:xs="http://www.w3.org/2001/XMLSchema" />, "example1")(0)
 

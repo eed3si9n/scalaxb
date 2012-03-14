@@ -28,18 +28,18 @@ trait Namer extends ScalaNames { self: Lookup with Splitter  =>
 
   private def names = context.names
 
-  def nameElementTypes(elem: Tagged[XElement]) {
-    implicit val tag = elem.tag
-
-    elem.xelementoption map {_.value match {
-      case x: XLocalComplexType =>
-        val name = makeProtectedElementTypeName(elem)
-        names(Tagged(x, tag)) = name
+  def nameElementTypes(tagged: Tagged[XElement]) {
+    tagged.localType map { _ match {
+      case x: TaggedComplexType =>
+        val name = makeProtectedElementTypeName(tagged)
+        names(x) = name
         logger.debug("nameElementTypes: named %s", name)
         nameCompositors(x)
-      case x: XLocalSimpleType if (containsEnumeration(x)) =>
-        names(Tagged(x, tag)) = makeProtectedElementTypeName(elem)
-        nameEnumValues(Tagged(x, elem.tag))
+      case x: TaggedSimpleType =>
+        val name = makeProtectedElementTypeName(tagged)
+        logger.debug("nameElementTypes: named %s", name)
+        names(x) = name
+        nameEnumValues(x)
       case _ =>
     }}
   }

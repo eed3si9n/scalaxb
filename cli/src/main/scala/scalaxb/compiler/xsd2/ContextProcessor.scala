@@ -22,6 +22,8 @@ trait ContextProcessor extends ScalaNames { self: Namer =>
 
   def processSchema(schema: ReferenceSchema) {
     logger.debug("processSchema")
+    logger.debug("processSchema - " + schema.unbound.toSeq)
+
     schema.unbound foreach {
       case tagged: TaggedTopLevelElement =>  nameElementTypes(tagged)
       case tagged: TaggedSimpleType =>

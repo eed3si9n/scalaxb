@@ -368,9 +368,8 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter with Symbols =
         case decl: TaggedComplexType => true
         case _ => false
       }
-    case TaggedKeyedGroup(value @ KeyedGroup(ChoiceTag, _), tag) =>
-      implicit val xtag = tag
-      value.particles forall { isOptionDescendant }
+    case group@TaggedKeyedGroup(KeyedGroup(ChoiceTag, _), _) =>
+      group.particles forall { isOptionDescendant }
     case TaggedKeyedGroup(KeyedGroup(SequenceTag, _), _) => true
     case _ => false
   }

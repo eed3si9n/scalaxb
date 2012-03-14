@@ -125,13 +125,11 @@ trait Params { self: Namer with Lookup =>
       retval
     }
 
-    private def buildChoiceParam(tagged: Tagged[KeyedGroup]): Param = {
-      implicit val tag = tagged.tag
-      val choice = tagged.value
+    private def buildChoiceParam(tagged: TaggedParticle[KeyedGroup]): Param = {
       val name = getName(tagged).toLowerCase
-      val particles = choice.particles
+      val particles = tagged.particles
 
-      val memberType = choice.particles match {
+      val memberType = tagged.particles match {
         case Nil       => TaggedXsAnyType
         case x :: xs =>
           val sameType = x match {
@@ -150,7 +148,7 @@ trait Params { self: Namer with Lookup =>
       }
       val typeSymbol = TaggedDataRecordSymbol(DataRecordSymbol(memberType))
       Param(tagged.tag.namespace, name, typeSymbol,
-        Occurrence(choice).copy(nillable = false), false, false, false)
+        Occurrence(tagged.value).copy(nillable = false), false, false, false)
     }
 
     private def particleType(particle: Tagged[_]) = particle match {

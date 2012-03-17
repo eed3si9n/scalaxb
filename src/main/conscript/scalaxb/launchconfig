@@ -6,6 +6,5 @@
 [scala]
   version: 2.9.1
 [repositories]
-  scala-tools-nexus-releases: http://nexus.scala-tools.org/content/repositories/releases/
-  scala-tools-nexus-snapshots: http://nexus.scala-tools.org/content/repositories/snapshots/
+  sonatype-public: https://oss.sonatype.org/content/repositories/public/
   maven-central

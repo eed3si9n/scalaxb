@@ -46,7 +46,7 @@ Build, and publish it locally.
 
 Finally, install it using conscript.
 
-    $ cs eed3si9n/scalaxb/local-SNAPSHOT
+    $ cs --local eed3si9n/scalaxb/local-SNAPSHOT
 
 Don't use sbaz
 ==============

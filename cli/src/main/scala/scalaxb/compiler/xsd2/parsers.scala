@@ -1,6 +1,6 @@
 package scalaxb.compiler.xsd2
 
-trait Parsers { self: Namer with Lookup with Args with Params with Symbols =>
+trait Parsers { self: Namer with Lookup with Args with Params with Symbols with Splitter =>
   import Predef.{any2stringadd => _, _}
   import com.codahale.logula.Log
   import scalaxb.compiler.xsd.{XsAnyType, BuiltInSimpleTypeSymbol, XsAnySimpleType, XsTypeSymbol, XsInt}
@@ -14,17 +14,19 @@ trait Parsers { self: Namer with Lookup with Args with Params with Symbols =>
   def buildTextParser: Tree = REF("optTextRecord")
 
   // called by makeCaseClassWithType and buildSeqParser
-  def buildParser(tagged: Tagged[_], mixed: Boolean, wrapInDataRecord: Boolean): Tree =
+  def buildParser(tagged: TaggedParticle[_], mixed: Boolean, wrapInDataRecord: Boolean): Tree =
     buildParser(tagged, Param(tagged).occurrence, mixed, wrapInDataRecord)
 
-  def buildParser(particle: Tagged[_], occurrence: Occurrence,
+  def buildParser(particle: TaggedParticle[_], occurrence: Occurrence,
       mixed: Boolean, wrapInDataRecord: Boolean): Tree = particle match {
     case tagged: TaggedLocalElement  => buildElemParser(tagged, occurrence, mixed, wrapInDataRecord, false)
+    case tagged: TaggedGroupRef      => buildGroupRefParser(tagged, occurrence, mixed, wrapInDataRecord)
+    case tagged: TaggedKeyedGroup    => buildKeyedGroupParser(tagged, occurrence, mixed, wrapInDataRecord)
+    case tagged: TaggedWildCard      => buildWildCardParser(tagged, occurrence, mixed, wrapInDataRecord, config.laxAny)
+
     // case ref: ElemRef             => buildElemParser(buildElement(ref), occurrence, mixed, wrapInDataRecord, false)
-    // case ref: GroupRef            => buildGroupParser(buildGroup(ref), occurrence, mixed, wrapInDataRecord)
     // case compositor: HasParticle  => buildCompositorParser(compositor, occurrence, mixed, wrapInDataRecord)
-    // case any: AnyDecl             => buildAnyParser(any.namespaceConstraint, occurrence, mixed, wrapInDataRecord, config.laxAny)
-    case _ => EmptyTree
+    // case _ => EmptyTree
   }
 
   def buildParserTree(tagged: TaggedLocalElement, occurrence: Occurrence): Tree = {
@@ -103,13 +105,14 @@ trait Parsers { self: Namer with Lookup with Args with Params with Symbols =>
     }
   }
 
+  def buildStackTree: Tree = (ElemNameClass APPLY(REF("node"))) LIST_:: REF("stack")
+
   def buildAnyParser(namespaceConstraint: List[String], occurrence: Occurrence, mixed: Boolean,
                      wrapInDataRecord: Boolean, laxAny: Boolean): Tree = {
-    def stack = (ElemNameClass APPLY(REF("node"))) LIST_:: REF("stack")
     def converter: Tree =
       if (occurrence.nillable) buildFromXML(nillableWildCardType, WILDCARD,
-        stack, None)
-      else buildFromXML(wildCardType, WILDCARD, stack, None)
+        buildStackTree, None)
+      else buildFromXML(wildCardType, WILDCARD, buildStackTree, None)
 
     def parser: Tree =
       REF("any") APPLY(
@@ -142,5 +145,101 @@ trait Parsers { self: Namer with Lookup with Args with Params with Symbols =>
       else if (wrapInDataRecord) wrappedParser
       else parser,
       occurrence)
+  }
+
+  def buildGroupRefParser(tagged: TaggedGroupRef, occurrence: Occurrence,
+      mixed: Boolean, wrapInDataRecord: Boolean): Tree = {
+    val group = resolveNamedGroup(tagged.value.ref.get)
+    def mixedParser: Tree = 
+      REF("parsemixed" + getName(group)) APPLY(REF("node"), buildStackTree)
+    def parser: Tree =
+      if (wrapInDataRecord) REF("parse" + getName(group)) APPLY(REF("node"), buildStackTree, TRUE)
+      else REF("parse" + getName(group)) APPLY(REF("node"), buildStackTree)
+      
+    buildParserTree(if (mixed) mixedParser
+      else parser,
+      occurrence) 
+  }
+
+  // minOccurs and maxOccurs may come from the declaration of the compositor,
+  // or from the element declaration.
+  def buildKeyedGroupParser(tagged: TaggedKeyedGroup, occurrence: Occurrence, 
+      mixed: Boolean, wrapInDataRecord: Boolean): Tree = tagged.value.key match {
+    case SequenceTag => 
+      // if (containsSingleChoice(seq)) buildChoiceParser(singleChoice(seq), occurrence, mixed)
+      buildSeqParser(tagged, occurrence, mixed, wrapInDataRecord)
+    case ChoiceTag   =>
+      buildChoiceParser(tagged, occurrence, mixed)
+    case AllTag      =>
+      buildAllParser(tagged, occurrence, mixed)
+  }
+
+  // for unmixed wrapped in data record, this should generate Seq(DataRecord(None, None, Foo("1", "2")))
+  // for mixed, this should generate
+  // Seq(DataRecord(Some("ipo") Some("a"), "1"), DataRecord(None, None, "foo"), DataRecord(Some("ipo") Some("b"), "2"))
+  def buildSeqParser(tagged: TaggedKeyedGroup,
+      occurrence: Occurrence, mixed: Boolean, wrapInDataRecord: Boolean): Tree = {
+    val ps = tagged.particles
+    val particles = if (mixed) ps
+      else splitParticlesIfLong(ps)(tagged.tag)
+    val parserList: Seq[Tree] = if (mixed) (0 to ps.size * 2 - 1).toList map { i =>
+        if (ps.size == 0) buildTextParser
+        else if (i % 2 == 0) buildParser(ps(i / 2), mixed, mixed)
+        else buildTextParser
+      }
+      else particles map { buildParser(_, mixed, mixed) }
+    
+    def buildSeqConverter(seq: TaggedKeyedGroup, mixed: Boolean,
+        wrapInDataRecord: Boolean): Tree = {
+      val sym = buildKeyedGroupTypeSymbol(seq)
+      val parserVariableList = if (mixed) (0 to particles.size * 2 - 1) map { buildSelector }
+        else (0 to particles.size - 1) map { buildSelector }
+      val argList = if (mixed) (0 to particles.size * 2 - 1).toList map { i =>
+          if (i % 2 == 0) buildArgForMixed(particles(i / 2), i)
+          else buildArgForOptTextRecord(i) }
+        else (0 to particles.size - 1).toList map { i => buildArg(particles(i), i) }
+      val paramList = if (mixed) Nil
+        else Param.fromSeq(particles)
+      val hasSequenceParam = (paramList.size == 1) &&
+        (paramList.head.occurrence.isMultiple) &&
+        (!mixed)
+      val simpleCase = if (hasSequenceParam) sym APPLY (SEQARG(argList.head))
+                       else sym APPLY(argList)
+      val pat = if (particles.isEmpty) WILDCARD
+                else INFIX_CHAIN("~", parserVariableList)
+      val rhs = if (mixed) SeqClass DOT "concat" APPLY(argList)
+                else if (wrapInDataRecord) DataRecordClass APPLY simpleCase
+                else simpleCase
+      BLOCK(
+        CASE(pat) ==> rhs
+      )
+    }
+    
+    val base = PAREN(INFIX_CHAIN("~", parserList)) INFIX("^^") APPLY(
+      buildSeqConverter(tagged, mixed, wrapInDataRecord))
+    val retval = buildParserTree(base, occurrence)
+    logger.debug("buildSeqParser:  " + tagged + NL + retval)
+    retval
+  }
+
+  // one or more particles may be emptiable within the choices.
+  // in such case, treat the whole choice to be minOccurs = 0,
+  // but make sure all particles has at least minOccurs = 1.
+  // additionally, treat all particles as maxOccurs = 1 and make the whole
+  // choice repeatable in case any one particle is repeatable.
+  // this may violate the schema, but it is a compromise as long as plurals are
+  // treated as Seq[DataRecord].
+  def buildChoiceParser(tagged: TaggedKeyedGroup, occurrence: Occurrence, mixed: Boolean): Tree = {
+    LIT(0)
+  }
+
+
+  def buildAllParser(tagged: TaggedKeyedGroup, occurrence: Occurrence, mixed: Boolean): Tree = {
+    LIT(0)
+  }
+
+  def buildWildCardParser(tagged: TaggedWildCard, occurrence: Occurrence, mixed: Boolean,
+                          wrapInDataRecord: Boolean, laxAny: Boolean): Tree = {
+    LIT(0)
   }
 }

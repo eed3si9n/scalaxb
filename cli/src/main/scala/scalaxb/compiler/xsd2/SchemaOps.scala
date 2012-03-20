@@ -105,14 +105,14 @@ trait GroupOps {
 }
 
 sealed trait CompositorKey
-case object ChoiceTag extends CompositorKey { override def toString = "choice" }
 case object SequenceTag extends CompositorKey { override def toString = "sequence" }
+case object ChoiceTag extends CompositorKey { override def toString = "choice" }
 case object AllTag extends CompositorKey { override def toString = "all" }
 
 object KeyedGroup {
   def apply(key: String, value: XExplicitGroupable): KeyedGroup = key match {
-    case "choice"   => KeyedGroup(ChoiceTag, value)
     case "sequence" => KeyedGroup(SequenceTag, value)
+    case "choice"   => KeyedGroup(ChoiceTag, value)
     case "all"      => KeyedGroup(AllTag, value)
   }
 }

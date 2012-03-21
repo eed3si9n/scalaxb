@@ -172,6 +172,7 @@ object Tagged {
   
   implicit def unbox[A](tagged: Tagged[A]): A = tagged.value
 
+  // reconstruct DataRecord
   def toParticleDataRecord(tagged: TaggedParticle[_]): DataRecord[XParticleOption] = tagged match {
     case TaggedLocalElement(value, _, tag) => DataRecord(Some(Defs.XML_SCHEMA_URI.toString), Some("element"), value)
     case TaggedKeyedGroup(value, tag)      => DataRecord(Some(Defs.XML_SCHEMA_URI.toString), Some(value.key.toString), value.value)

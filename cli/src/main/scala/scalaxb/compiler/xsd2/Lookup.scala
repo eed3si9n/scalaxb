@@ -224,9 +224,11 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter with Symbols =
     case _ => throw new ReferenceNotFound("attributeGroup", groupRef.namespace map { _.toString }, groupRef.localPart)
   }
 
+  def resolveNamedGroup(tagged: TaggedGroupRef): Tagged[XNamedGroup] =
+    resolveNamedGroup(tagged.value.ref.get)
   def resolveNamedGroup(groupRef: QualifiedName): Tagged[XNamedGroup] = groupRef match {
     case NamedGroup(group) => group
-    case _ => throw new ReferenceNotFound("attributeGroup", groupRef.namespace map { _.toString }, groupRef.localPart)    
+    case _ => throw new ReferenceNotFound("namedGroup", groupRef.namespace map { _.toString }, groupRef.localPart)    
   }
 
   def elementNamespace(tagged: Tagged[XElement]): Option[URI] = tagged.value match {

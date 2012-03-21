@@ -8,6 +8,7 @@ trait Parsers { self: Namer with Lookup with Args with Params with Symbols with 
   import treehugger.forest._
   import definitions._
   import treehuggerDSL._
+  import xmlschema.{XExplicitGroup}
 
   private val logger = Log.forName("xsd2.Parsers")
 
@@ -149,7 +150,7 @@ trait Parsers { self: Namer with Lookup with Args with Params with Symbols with 
 
   def buildGroupRefParser(tagged: TaggedGroupRef, occurrence: Occurrence,
       mixed: Boolean, wrapInDataRecord: Boolean): Tree = {
-    val group = resolveNamedGroup(tagged.value.ref.get)
+    val group = resolveNamedGroup(tagged)
     def mixedParser: Tree = 
       REF("parsemixed" + getName(group)) APPLY(REF("node"), buildStackTree)
     def parser: Tree =
@@ -230,7 +231,45 @@ trait Parsers { self: Namer with Lookup with Args with Params with Symbols with 
   // this may violate the schema, but it is a compromise as long as plurals are
   // treated as Seq[DataRecord].
   def buildChoiceParser(tagged: TaggedKeyedGroup, occurrence: Occurrence, mixed: Boolean): Tree = {
-    LIT(0)
+    val ps = tagged.particles
+    assert(ps.size > 0, "choice has no particles: " + tagged)
+
+    val containsStructure = if (mixed) true
+      else ps exists(_ match {
+        case elem: TaggedLocalElement => false
+        case _ => true
+        })
+    val singleOccurrence = occurrence.copy(minOccurs = 1, maxOccurs = 1) 
+    val parserList = ps filter {
+      case any: TaggedWildCard => false
+      case group: TaggedGroupRef if resolveNamedGroup(group).particles.isEmpty => false
+      case group: TaggedKeyedGroup if group.particles.isEmpty => false
+      case _ => true
+    } map {
+      case elem: TaggedLocalElement =>
+        // SequenceDecl(List(elem), 1, 1, 0)
+        if (mixed && containsStructure) buildParser(
+          Tagged(KeyedGroup(SequenceTag,
+            XExplicitGroup(arg1 = Seq(Tagged.toParticleDataRecord(elem)), minOccurs = 1, maxOccurs = "1", attributes = Map())), tagged.tag),
+          singleOccurrence, mixed, true)
+        else buildParser(elem, singleOccurrence, mixed, true)
+      case particle => buildParser(particle, singleOccurrence, mixed, true)
+    }
+    val choiceOperator = if (containsStructure) "|||" 
+                         else "|"
+    val nonany = if (parserList.size > 0) INFIX_CHAIN(choiceOperator, parserList)
+                 else EmptyTree
+    val anyList = ps collect {
+      case any: TaggedWildCard => buildParser(any, singleOccurrence, mixed, true)
+    }
+    val base: Tree =
+      if (anyList.size > 0)
+        if (nonany == EmptyTree) anyList(0)
+        else PAREN(nonany) INFIX("|") APPLY anyList(0)
+      else nonany
+    val retval = buildParserTree(base, occurrence)
+    logger.debug("buildChoiceParser:  " + tagged + NL + retval)
+    retval
   }
 
 

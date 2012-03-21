@@ -121,4 +121,56 @@ object Example {
         </xs:sequence>
       </xs:complexType>
     </xs:schema>
+
+  val choiceXML =
+    <xs:schema targetNamespace="http://www.example.com/general"
+        xmlns:xs="http://www.w3.org/2001/XMLSchema"
+        xmlns:gen="http://www.example.com/general">
+      <xs:complexType name="ChoiceComplexTypeTest">
+        <xs:sequence>
+          <xs:choice>
+            <xs:element name="person1" type="gen:Person"/>
+            <xs:element name="address1" type="gen:Address"/>
+          </xs:choice>
+          <xs:choice>
+            <xs:element name="person2" nillable="true" type="gen:Person"/>
+            <xs:element name="address2" nillable="true" type="gen:Address"/>
+          </xs:choice>
+          <xs:choice minOccurs="0">
+            <xs:element name="person3" type="gen:Person"/>
+            <xs:element name="address3" type="gen:Address"/>
+          </xs:choice>
+          <xs:choice minOccurs="0">
+            <xs:element name="person4" nillable="true" type="gen:Person"/>
+            <xs:element name="address4" nillable="true" type="gen:Address"/>
+          </xs:choice>
+          <xs:choice maxOccurs="unbounded">
+            <xs:element name="person5" type="gen:Person"/>
+            <xs:element name="address5" type="gen:Address"/>
+          </xs:choice>
+          <xs:choice maxOccurs="unbounded">
+            <xs:element name="person6" nillable="true" type="gen:Person"/>
+            <xs:element name="address6" nillable="true" type="gen:Address"/>
+          </xs:choice>
+          <xs:choice>
+            <xs:element name="int1" type="xs:int"/>
+            <xs:element name="int2" type="xs:int"/>
+          </xs:choice>
+        </xs:sequence>
+      </xs:complexType>
+
+      <xs:complexType name="Person">
+        <xs:sequence>
+          <xs:element name="firstName" type="xs:string"/>
+          <xs:element name="lastName" type="xs:string"/>
+        </xs:sequence>
+      </xs:complexType>
+
+      <xs:complexType name="Address">
+        <xs:sequence>
+          <xs:element name="street" type="xs:string"/>
+          <xs:element name="city" type="xs:string"/>
+        </xs:sequence>
+      </xs:complexType>
+    </xs:schema>
 }

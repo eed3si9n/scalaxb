@@ -10,10 +10,13 @@ object ProtocolSpec extends Specification { def is = sequential               ^
     "generate a format typeclass instance"                                    ! complexType1^
     "generate a combinator parser"                                            ! parser1^
     "generate an XML writer"                                                  ! output1^
-    "be referenced as Option[A] in the parser if nillable"                    ! cardinality1
+    "be referenced as Option[A] in the parser if nillable"                    ! cardinality1^
                                                                               end^
   "sequences in complex type should"                                          ^
-    "generate a combinator parser"                                            ! seq1^  
+    "generate a combinator parser"                                            ! seq1^ 
+                                                                              end^
+  "choices in a complex type should"                                          ^
+    "generate a combinator parser"                                            ! choice1^ 
                                                                               end
 
   import Example._
@@ -77,7 +80,21 @@ object ProtocolSpec extends Specification { def is = sequential               ^
   def seq1 = {
     println(seqProtocol)
     (seqProtocol must contain (
-      """scalaxb.toXML"""))
+      """((scalaxb.ElemName(None, "person1")) ~ (scalaxb.ElemName(None, "address1"))) ^^ {
+    case p1 ~ p2 => example.SequenceComplexTypeTestSequence(scalaxb.fromXML[example.Person](p1, scalaxb.ElemName(node) :: stack), scalaxb.fromXML[example.Address](p2, scalaxb.ElemName(node) :: stack))
+  }"""))
+  }
+
+  lazy val choiceProtocol = module.processNode(choiceXML, "example")(1)
+
+  def choice1 = {
+    println(choiceProtocol)
+    (choiceProtocol must contain (
+      """(((scalaxb.ElemName(None, "person1")) ^^ ({ x =>
+    scalaxb.DataRecord(x.namespace, Some(x.name), scalaxb.fromXML[example.Person](x, scalaxb.ElemName(node) :: stack))
+  })) | ((scalaxb.ElemName(None, "address1")) ^^ ({ x =>
+    scalaxb.DataRecord(x.namespace, Some(x.name), scalaxb.fromXML[example.Address](x, scalaxb.ElemName(node) :: stack))
+  })))"""))
   }
 
 }

@@ -63,18 +63,20 @@ trait Namer extends ScalaNames { self: Lookup with Splitter  =>
   def nameCompositors(decl: Tagged[XComplexType]) {
     val primarySequence = decl.primarySequence
     implicit val s = schema.unbound
-    decl collect {
-      case Compositor(compositor) => nameCompositor(compositor, Some(compositor) == primarySequence)
+    val cs: Seq[TaggedParticle[KeyedGroup]] = decl.toSeq collect {
+      case Compositor(compositor) => compositor
     }
+    logger.debug("nameCompositors: %s", cs map { _.tag.toString })
+    cs foreach { c => nameCompositor(c, Some(c) == primarySequence) }
   }
 
   def nameCompositor(tagged: TaggedParticle[KeyedGroup], isPrimarySequence: Boolean) {
-    // logger.debug("nameCompositor: %s", tagged.toString)
+    logger.debug("nameCompositor: %s", tagged.tag)
     tagged.value.key match {
       case ChoiceTag   =>
         val name = makeProtectedTypeName(tagged.tag.name + "Option", "", tagged.tag, false)
         names(tagged) = name
-        logger.debug("nameCompositor: named %s", name)
+        logger.debug("nameCompositor: named %s %s", tagged.tag, name)
       case SequenceTag =>
         if (isPrimarySequence) {
           Occurrence(tagged) match {
@@ -82,27 +84,23 @@ trait Namer extends ScalaNames { self: Lookup with Splitter  =>
             case _ => 
               val name = makeProtectedTypeName(tagged.tag.name + "Sequence", "", tagged.tag, false)
               names(tagged) = name
-              logger.debug("nameCompositor: named %s", name)
+              logger.debug("nameCompositor: named %s %s", tagged.tag, name)
           }
         }
         else {
           val name = makeProtectedTypeName(tagged.tag.name + "Sequence", "", tagged.tag, false)
           names(tagged) = name
-          logger.debug("nameCompositor: named %s", name)
+          logger.debug("nameCompositor: named %s %s", tagged.tag, name)
         }
         
-        self.splitLongSequence(tagged) map { _ map { seq => nameCompositor(seq, false)
+        self.splitLongSequence(tagged) map { _ map { seq =>
+          nameCompositor(seq, false)
         }}
       case AllTag      =>
         val name = makeProtectedTypeName(tagged.tag.name + "All", "", tagged.tag, false)
         names(tagged) = name
-        logger.debug("nameCompositor: named %s", name)
+        logger.debug("nameCompositor: named %s %s", tagged.tag, name)
       case _ => error("unknown KeyedGroup" + tagged.toString)
-    }
-
-    implicit val tag = tagged.tag
-    tagged.particles collect {
-      case Compositor(compositor) => nameCompositor(compositor, false)
     }
   }
 

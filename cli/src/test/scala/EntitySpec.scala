@@ -316,7 +316,8 @@ object EntitySpec extends Specification { def is = sequential                 ^
     </xs:schema>, "example")(0)
 
     println(entitySource)
-    entitySource must contain("""case class Item(""")
+    (entitySource must contain("""case class Items(item: example.Item*)""")) and
+    (entitySource must contain("""case class Item("""))
   }
 
   lazy val seqEntitySource = module.processNode(sequenceXML, "example")(0)

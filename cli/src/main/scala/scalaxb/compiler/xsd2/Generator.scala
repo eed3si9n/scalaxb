@@ -82,7 +82,7 @@ class Generator(val schema: ReferenceSchema,
     val attributes = decl.flattenedAttributes
     val list =
       (decl.primaryAll map { _ => Seq(allRef) } getOrElse {
-        splitParticlesIfLong(decl.particles)(decl.tag)}) ++
+        splitParticlesIfLong(decl.particles, decl.tag)}) ++
       (attributes.headOption map { _ => attributeSeqRef }).toSeq
     
     logger.debug("generateComplexTypeEntity: list: %s", list map {getName})
@@ -98,7 +98,7 @@ class Generator(val schema: ReferenceSchema,
 
     val accessors: Seq[Tree] =
       (decl.primaryAll map { generateAllAccessors(_) } getOrElse {
-        splitParticles(decl.particles)(decl.tag) map { generateLongSeqAccessors(_) } getOrElse {Nil} }) ++
+        splitParticles(decl.particles, decl.tag) map { generateLongSeqAccessors(_) } getOrElse {Nil} }) ++
       (attributes.headOption map  { _ => generateAttributeAccessors(attributes, true) } getOrElse {Nil})
     val parents = complexTypeSuperTypes(decl)
 
@@ -205,13 +205,12 @@ class Generator(val schema: ReferenceSchema,
 
   def generateSequence(tagged: TaggedParticle[KeyedGroup]): Trippet = {
     logger.debug("generateSequence: %s", tagged)
-
-    implicit val tag = tagged.tag
+    
     val name = getName(tagged)
 //      val superNames: List[String] = buildOptions(compositor)
 //      val superString = if (superNames.isEmpty) ""
 //        else " extends " + superNames.mkString(" with ")
-    val list = splitParticlesIfLong(tagged.particles)
+    val list = splitParticlesIfLong(tagged.particles, tagged.tag)
     val paramList = Param.fromSeq(list)
     // Snippet(<source>case class { name }({
     //  paramList.map(_.toScalaCode).mkString(", " + NL + indent(1))})</source>)

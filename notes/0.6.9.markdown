@@ -3,6 +3,7 @@
 - Fixed inner simple types being detected as duplicates. [#136][136] reported by [@bampoosa][@bampoosa]
 - Added a few missing settings to sbt-scalaxb. [#144][144] reported by [@devinus][@devinus]
 - Fixes xs:any namespace attribute not defaulting to `##any`. [#147][147] reported by [@champloo][@champloo]
+- Fixes handling of wsdl with mixed complex type. [#149][149] reported by [@jcranky][@jcranky]
 
 ### mvn-scalaxb
 - mvn-scalaxb was updated by [@martiell][@martiell]
@@ -15,8 +16,10 @@
   [143]: https://github.com/eed3si9n/scalaxb/issues/143
   [144]: https://github.com/eed3si9n/scalaxb/issues/144
   [147]: https://github.com/eed3si9n/scalaxb/issues/147
+  [149]: https://github.com/eed3si9n/scalaxb/issues/149
   [m2e]: http://wiki.eclipse.org/M2E_compatible_maven_plugins
   [@bampoosa]: https://github.com/bampoosa
   [@devinus]: https://github.com/devinus
   [@martiell]: https://github.com/martiell
   [@champloo]: https://github.com/champloo
+  [@jcranky]: https://github.com/jcranky

@@ -518,7 +518,8 @@ trait GenSource {
         case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
           val flatParticles = xsdgenerator.flattenElements(decl, 0)
           val attributes = xsdgenerator.flattenAttributes(decl)
-          if (flatParticles.size == 1 && attributes.size == 0) {
+          if (decl.mixed) None
+          else if (flatParticles.size == 1 && attributes.size == 0) {
             val head = flatParticles.head
             if (xsdgenerator.buildParam(head).cardinality == Single) Some(head)
             else None

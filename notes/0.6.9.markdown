@@ -1,8 +1,9 @@
 ## bug fixes and minor enhancements
-- Fixes soap 1.2 output wrapper. [#143][143]
+- Changes the logger to logula.
 - Fixed inner simple types being detected as duplicates. [#136][136] reported by [@bampoosa][@bampoosa]
 - Added a few missing settings to sbt-scalaxb. [#144][144] reported by [@devinus][@devinus]
 - Fixes xs:any namespace attribute not defaulting to `##any`. [#147][147] reported by [@champloo][@champloo]
+- Fixes soap 1.2 output wrapper. [#143][143]
 - Fixes handling of wsdl with mixed complex type. [#149][149] reported by [@jcranky][@jcranky]
 - Fixes handling of wsdl with header outputs. [#150][150] reported by [@jcranky][@jcranky]
 

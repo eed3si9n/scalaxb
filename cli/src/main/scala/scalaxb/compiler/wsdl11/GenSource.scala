@@ -378,7 +378,7 @@ trait GenSource {
         val v =
           if (b.literal && p.element.isDefined) "body.headOption getOrElse {body}"
           else if (b.literal) """scala.xml.Elem("", "Body", scala.xml.Null, defaultScope, body.toSeq: _*)"""
-          else """(body.head \ "%s").head""" format (p.name.get)
+          else """(<x>{body}</x> \ "%s").head""" format (p.name.get)
 
         val post =
           if (document) singleOutputType(output, document) map { elem =>
@@ -392,8 +392,8 @@ trait GenSource {
         val message = context.messages(splitTypeName(b.message))
         message.part find {_.name == Some(b.part)} map { p =>
           val v =
-            if (b.literal && p.element.isDefined) """(header \ "%s").head""" format (p.element.get.getLocalPart)
-            else """(header \ "%s").head""" format (p.name.get)
+            if (b.literal && p.element.isDefined) """(<x>{header}</x> \ "%s").head""" format (p.element.get.getLocalPart)
+            else """(<x>{header}</x> \ "%s").head""" format (p.name.get)
           "scalaxb.fromXML[%s](%s)".format(partTypeName(p), v)
         }
       })

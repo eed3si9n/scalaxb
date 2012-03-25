@@ -52,7 +52,7 @@ object Builds extends Build {
     buildSettings ++ Seq(
     name := "scalaxb",
     libraryDependencies ++= Seq(
-      "com.github.scopt" %% "scopt" % "1.1.2",
+      "com.github.scopt" %% "scopt" % "2.0.0",
       "org.scala-tools.sbt" % "launcher-interface" % "0.7.4" % "provided" from (
         "http://databinder.net/repo/org.scala-tools.sbt/launcher-interface/0.7.4/jars/launcher-interface.jar"),
       "com.codahale" %% "logula" % "2.1.3"),

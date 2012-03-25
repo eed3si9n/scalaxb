@@ -59,6 +59,13 @@
     <url>https://github.com/eed3si9n/scalaxb</url>
   </scm>
 
+  <repositories>
+    <repository>
+      <id>repo.codahale.com</id>
+      <url>http://repo.codahale.com</url>
+    </repository>
+  </repositories>
+
   <dependencies>
 
     <dependency>

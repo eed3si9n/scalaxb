@@ -64,6 +64,10 @@
       <id>repo.codahale.com</id>
       <url>http://repo.codahale.com</url>
     </repository>
+    <repository>
+      <id>sonatype-ossrh-releases</id>
+      <url>https://oss.sonatype.org/content/repositories/releases</url>
+    </repository>
   </repositories>
 
   <dependencies>

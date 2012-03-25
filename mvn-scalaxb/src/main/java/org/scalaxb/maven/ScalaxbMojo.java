@@ -34,7 +34,6 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.util.Scanner;
-import org.slf4j.impl.MavenLoggerFactory;
 import org.sonatype.plexus.build.incremental.BuildContext;
 
 import scala.collection.JavaConversions;
@@ -62,8 +61,6 @@ public class ScalaxbMojo extends AbstractScalaxbMojo {
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
-        MavenLoggerFactory.setLog(getLog());
-
         getOutputDirectory().mkdirs();
         String outputPath = getOutputDirectory().getAbsolutePath();
         getLog().debug("Adding source root: " + outputPath);

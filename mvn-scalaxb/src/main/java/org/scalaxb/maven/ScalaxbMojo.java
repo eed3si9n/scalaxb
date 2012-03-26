@@ -24,21 +24,29 @@ package org.scalaxb.maven;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.sort;
+import static scala.collection.JavaConversions.asScalaBuffer;
+import static scala.collection.JavaConversions.seqAsJavaList;
+import static scalaxb.compiler.Module$.MODULE$;
 
 import java.io.File;
+import java.text.ChoiceFormat;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.util.Scanner;
 import org.sonatype.plexus.build.incremental.BuildContext;
 
-import scala.collection.JavaConversions;
-import scala.collection.mutable.Buffer;
+import scala.Option;
+import scalaxb.compiler.Arguments;
 import scalaxb.compiler.CaseClassTooLong;
+import scalaxb.compiler.Module;
 import scalaxb.compiler.ReferenceNotFound;
 
 /**
@@ -116,24 +124,40 @@ public class ScalaxbMojo extends AbstractScalaxbMojo {
         return changes;
     }
 
+    /**
+     * Build up ('command line') arguments for scalaxb, and invoke the scalaxb
+     * compiler.
+     * @param schemaFiles The WSDL and XSD input files.
+     */
     private void generateBindings(List<String> schemaFiles)
             throws MojoExecutionException, MojoFailureException {
         List<String> arguments = new ArrayList<String>();
         arguments.addAll(arguments());
         arguments.addAll(schemaFiles);
-        invokeCompiler(arguments);
-    }
 
-    private void invokeCompiler(List<String> arguments)
-            throws MojoExecutionException, MojoFailureException {
-
-        if (getLog().isInfoEnabled()) {
-            getLog().info("Running in process: scalaxb " + argumentsToString(arguments));
+        Option<Arguments> option = Arguments.apply(asScalaBuffer(arguments));
+        String args = argumentsToString(arguments);
+        if (!option.isDefined()) {
+            throw new MojoExecutionException("Error parsing arguments " + args);
         }
 
+        if (getLog().isDebugEnabled()) {
+            getLog().debug("Running: scalaxb " + args);
+        }
+        invokeCompiler(option.get());
+    }
+
+    /**
+     * Runs scalaxb using the specified arguments, wrapping any exceptions
+     * thrown with appropriate Maven exceptions.
+     */
+    private void invokeCompiler(Arguments args)
+            throws MojoExecutionException, MojoFailureException {
         try {
-            Buffer<String> args = JavaConversions.asScalaBuffer(arguments);
-            scalaxb.compiler.Main.start(args);
+            List<File> generated = generateSources(args);
+            if (getLog().isInfoEnabled()) {
+                getLog().info(generatedFilesMessage(generated));
+            }
             context.refresh(getOutputDirectory());
         } catch (ReferenceNotFound ex) {
             throw new MojoFailureException(ex.getMessage(), ex);
@@ -141,6 +165,45 @@ public class ScalaxbMojo extends AbstractScalaxbMojo {
             throw new MojoFailureException(ex.getMessage(), ex);
         } catch (Exception ex) {
             throw new MojoExecutionException("Error running scalaxb", ex);
+        }
+    }
+
+    /**
+     * Returns a message indicating the number of files generated, for logging.
+     */
+    private String generatedFilesMessage(List<File> generated) {
+        double[] limits = {0, 1, 2};
+        String[] files = {"No files", "1 file", "{0,number} files"};
+        ChoiceFormat choice = new ChoiceFormat(limits, files);
+        MessageFormat format = new MessageFormat("{0} generated.");
+        format.setFormatByArgumentIndex(0, choice);
+        return format.format(new Object[]{generated.size()});
+    }
+
+    /**
+     * Runs scalaxb using the specified arguments.
+     */
+    private List<File> generateSources(Arguments args) {
+        File file = args.files().head();
+        boolean verbose = args.verbose();
+        Module module = MODULE$.moduleByFileName(file, verbose);
+        configureLogging(verbose);
+        List<File> generated = seqAsJavaList(
+                module.processFiles(args.files(), args.config()));
+        return generated;
+    }
+
+    /**
+     * Reconfigures logging so that logging goes through Maven Log.
+     * @param verbose True if verbose logging is required.
+     */
+    private void configureLogging(boolean verbose) {
+        LogAppender appender = new LogAppender(getLog());
+        Logger rootLogger = Logger.getRootLogger();
+        rootLogger.removeAllAppenders();
+        rootLogger.addAppender(appender);
+        if (!verbose) {
+            rootLogger.setLevel(Level.WARN);
         }
     }
 

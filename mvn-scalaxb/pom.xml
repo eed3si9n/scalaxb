@@ -10,7 +10,7 @@
 
   <groupId>org.scalaxb</groupId>
   <artifactId>scalaxb-maven-plugin</artifactId>
-  <version>0.6.9-SNAPSHOT</version>
+  <version>0.6.10-SNAPSHOT</version>
   <packaging>maven-plugin</packaging>
 
   <name>scalaxb Maven Plugin</name>
@@ -59,24 +59,23 @@
     <url>https://github.com/eed3si9n/scalaxb</url>
   </scm>
 
+  <repositories>
+    <repository>
+      <id>repo.codahale.com</id>
+      <url>http://repo.codahale.com</url>
+    </repository>
+    <repository>
+      <id>sonatype-ossrh-releases</id>
+      <url>https://oss.sonatype.org/content/repositories/releases</url>
+    </repository>
+  </repositories>
+
   <dependencies>
 
     <dependency>
       <groupId>org.scalaxb</groupId>
       <artifactId>scalaxb_${scala.version}</artifactId>
       <version>${project.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>ch.qos.logback</groupId>
-          <artifactId>logback-classic</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-api</artifactId>
-      <version>1.6.1</version>
     </dependency>
 
     <dependency>

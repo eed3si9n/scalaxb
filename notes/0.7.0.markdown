@@ -1,7 +1,17 @@
+## Additional resolvers required
+
+The logger is changed to logula.
+For sbt-scalaxb, additional resolvers are now required:
+
+    resolvers ++= Seq(
+      "sonatype-public" at "https://oss.sonatype.org/content/repositories/public",
+      "repo.codahale.com" at "http://repo.codahale.com")
+
+    addSbtPlugin("org.scalaxb" % "sbt-scalaxb" % "0.7.0")
+
 ## bug fixes and minor enhancements
-- Changes the logger to logula.
-- Fixed inner simple types being detected as duplicates. [#136][136] reported by [@bampoosa][@bampoosa]
-- Added a few missing settings to sbt-scalaxb. [#144][144] reported by [@devinus][@devinus]
+- Fixes inner simple types being detected as duplicates. [#136][136] reported by [@bampoosa][@bampoosa]
+- Adds a few missing settings to sbt-scalaxb. [#144][144] reported by [@devinus][@devinus]
 - Fixes xs:any namespace attribute not defaulting to `##any`. [#147][147] reported by [@champloo][@champloo]
 - Fixes soap 1.2 output wrapper. [#143][143]
 - Fixes handling of wsdl with mixed complex type. [#149][149] reported by [@jcranky][@jcranky]

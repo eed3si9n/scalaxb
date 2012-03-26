@@ -26,7 +26,7 @@ object Builds extends Build {
       </developers>),
     publishArtifact in Test := false,
     resolvers ++= Seq(
-      ScalaToolsSnapshots,
+      "sonatype-public" at "https://oss.sonatype.org/content/repositories/public",
       "repo.codahale.com" at "http://repo.codahale.com"),
     publishTo <<= version { (v: String) =>
       val nexus = "https://oss.sonatype.org/"
@@ -41,7 +41,10 @@ object Builds extends Build {
 
   lazy val customLsSettings = _root_.ls.Plugin.lsSettings ++ Seq(
     licenses in lsync <<= licenses,
-    tags in lsync := Seq("xml", "soap", "wsdl", "code-generation")
+    tags in lsync := Seq("xml", "soap", "wsdl", "code-generation"),
+    (externalResolvers in lsync) := Seq(
+      "sonatype-public" at "https://oss.sonatype.org/content/repositories/public",
+      "repo.codahale.com" at "http://repo.codahale.com")
   )
 
   val Xsd = config("xsd") extend(Compile)

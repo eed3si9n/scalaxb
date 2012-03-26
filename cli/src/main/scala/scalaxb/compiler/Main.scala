@@ -45,8 +45,31 @@ object Main {
         log.error(e.getStackTraceString)
     }
   }
-  
+
   def start(args: Seq[String]) {
+    Arguments(args) foreach { args =>
+      val module = Module.moduleByFileName(args.files.head, args.verbose)
+      module.processFiles(args.files, args.config)
+    }
+  }
+
+}
+
+/**
+ * The parsed command line arguments.
+ */
+case class Arguments(
+      config: Config,
+      files: Seq[File],
+      verbose: Boolean)
+
+object Arguments {
+
+  /**
+   * Parse the command line arguments. The result is an option, and is None if
+   * the command line arguments were invalid, or if no files were specified.
+   */
+  def apply(args: Seq[String]): Option[Arguments] = {
     var verbose = false
     val packageNames: ListMap[Option[String], Option[String]] =
       ListMap.empty[Option[String], Option[String]]
@@ -107,10 +130,7 @@ object Main {
     }
 
     if (paramParser.parse(args) && !files.isEmpty) {
-      val module = Module.moduleByFileName(files.head, verbose)
-
-      module.processFiles(files,
-        Config(packageNames = packageNames,
+        val config = Config(packageNames = packageNames,
           outdir = outdir,
           packageDir = packageDir,
           classPrefix = classPrefix,
@@ -123,7 +143,11 @@ object Main {
           contentsSizeLimit = contentsSizeLimit,
           sequenceChunkSize = sequenceChunkSize,
           prependFamilyName = prependFamilyName,
-          laxAny = laxAny) )
+          laxAny = laxAny)
+        Some(Arguments(config, files, verbose))
+    } else {
+      None
     }
   }
+
 }

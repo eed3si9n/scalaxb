@@ -128,6 +128,13 @@ class Generator(val schema: ReferenceSchema,
         particles.zipWithIndex map { case (i, x) => buildArg(i, x) }
       }
 
+    val simpleFromXml =
+      if (particles.isEmpty && !decl.mixed) true
+      else (decl.primaryAll) match {
+        case Some(x) => true
+        case _ => false
+      }
+
     def makeWritesChildNodes: Option[Tree] = {
       def simpleContentTree(base: QualifiedName): Tree = base match {
         case BuiltInAnyType(_) => SEQ(TextClass APPLY(REF("__obj") DOT "value" DOT "value" DOT "toString"))
@@ -159,38 +166,37 @@ class Generator(val schema: ReferenceSchema,
       (ElemNameParserClass TYPE_OF sym) ::
       (groups.toList map { case tagged: TaggedGroupRef =>
         formatterSymbol(userDefinedClassSymbol(tagged)): Type })
-
-//    <source>  trait Default{name.formatterName} extends {defaultFormatSuperNames.mkString(" with ")} {{
-//    val targetNamespace: Option[String] = { quoteUri(schema.targetNamespace) }
-//
-//    { if (decl.name.isDefined) "override def typeName: Option[String] = " + quote(decl.name) + NL + NL + indent(2)
-//      else ""
-//    }{ if (decl.mixed) "override def isMixed: Boolean = true" + NL + NL + indent(2)
-//       else "" }def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[{name.fullyQualifiedName}] =
-//      { parserList.mkString(" ~ " + NL + indent(3)) } ^^
-//      {{ case { parserVariableList.mkString(" ~ ") } =>
-//      {name.fullyQualifiedName}({argsString}) }}
-//
-//{makeWritesAttribute}{makeWritesChildNodes}  }}</source>
     
     val fmt = formatterSymbol(sym)
 
-    TRAITDEF("Default" + fmt.decodedName) withParents(defaultFormatSuperNames) := BLOCK(List(
-      Some(VAL("targetNamespace", TYPE_OPTION(StringClass)) := optionUriTree(schema.targetNamespace)),
-      decl.name map { typeName =>
-        DEF("typeName", TYPE_OPTION(StringClass)) withFlags(Flags.OVERRIDE) := optionTree(decl.name)
-      },
-      if (decl.mixed) Some(DEF("isMixed", BooleanClass) withFlags(Flags.OVERRIDE) := TRUE)
-      else None,
-      Some(DEF("parser", ParserClass TYPE_OF sym) withParams(
-          PARAM("node", "scala.xml.Node"), PARAM("stack", TYPE_LIST("scalaxb.ElemName"))) :=
-        INFIX_CHAIN("~", parserList) INFIX("^^") APPLY BLOCK(
-          CASE(INFIX_CHAIN("~", parserVariableList)) ==> REF(sym) APPLY particleArgs
-        )
-      ),
-      makeWritesAttribute,
-      makeWritesChildNodes
-    ).flatten)
+    if (simpleFromXml)
+      TRAITDEF("Default" + fmt.decodedName) withParents(xmlFormatType(sym) :: (CanWriteChildNodesClass TYPE_OF sym) :: Nil) := BLOCK(List(
+        Some(VAL("targetNamespace", TYPE_OPTION(StringClass)) := optionUriTree(schema.targetNamespace)),
+        Some(DEF("reads", eitherType(StringClass, fmt)) withParams(
+          PARAM("seq", NodeSeqClass), PARAM("stack", TYPE_LIST(ElemNameClass))) := REF("seq") MATCH(
+          CASE (ID("node") withType(NodeClass)) ==> (REF("Right") APPLY(sym APPLY particleArgs)),
+          CASE (WILDCARD) ==> (REF("Left") APPLY LIT("reads failed: seq must be scala.xml.Node"))
+        )),
+        makeWritesAttribute,
+        makeWritesChildNodes
+      ).flatten)
+    else
+      TRAITDEF("Default" + fmt.decodedName) withParents(defaultFormatSuperNames) := BLOCK(List(
+        Some(VAL("targetNamespace", TYPE_OPTION(StringClass)) := optionUriTree(schema.targetNamespace)),
+        decl.name map { typeName =>
+          DEF("typeName", TYPE_OPTION(StringClass)) withFlags(Flags.OVERRIDE) := optionTree(decl.name)
+        },
+        if (decl.mixed) Some(DEF("isMixed", BooleanClass) withFlags(Flags.OVERRIDE) := TRUE)
+        else None,
+        Some(DEF("parser", ParserClass TYPE_OF sym) withParams(
+            PARAM("node", "scala.xml.Node"), PARAM("stack", TYPE_LIST("scalaxb.ElemName"))) :=
+          INFIX_CHAIN("~", parserList) INFIX("^^") APPLY BLOCK(
+            CASE(INFIX_CHAIN("~", parserVariableList)) ==> REF(sym) APPLY particleArgs
+          )
+        ),
+        makeWritesAttribute,
+        makeWritesChildNodes
+      ).flatten)
   }
 
   private def makeImplicitValue(sym: ClassSymbol): Tree = {

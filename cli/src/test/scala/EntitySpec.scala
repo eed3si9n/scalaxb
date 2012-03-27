@@ -378,27 +378,7 @@ object EntitySpec extends Specification { def is = sequential                 ^
   }
 
   def all1 = {
-    val entitySource = module.processNode(<xs:schema targetNamespace="http://www.example.com/general"
-        xmlns:xs="http://www.w3.org/2001/XMLSchema"
-        xmlns:gen="http://www.example.com/general">
-      <xs:complexType name="AllComplexTypeTest">
-        <xs:all>
-          <xs:element name="address1" type="gen:Address"/>
-          <xs:element name="address2" minOccurs="0" type="gen:Address"/>
-          <xs:element name="string3" type="xs:string"/>
-          <xs:element name="string4" type="xs:string"/>
-          <xs:element name="string5" type="xs:string"/>
-          <xs:element name="string6" type="xs:string"/>
-        </xs:all>
-      </xs:complexType>
-
-      <xs:complexType name="Address">
-        <xs:sequence>
-          <xs:element name="street" type="xs:string"/>
-          <xs:element name="city" type="xs:string"/>
-        </xs:sequence>
-      </xs:complexType>
-    </xs:schema>, "example")(0)
+    val entitySource = module.processNode(allXML, "example")(0)
 
     println(entitySource)
     entitySource must contain("""case class AllComplexTypeTest(all: Map[String, scalaxb.DataRecord[Any]])""")

@@ -172,7 +172,7 @@ trait Parsers { self: Namer with Lookup with Args with Params with Symbols with 
     case ChoiceTag   =>
       buildChoiceParser(tagged, occurrence, mixed)
     case AllTag      =>
-      buildAllParser(tagged, occurrence, mixed)
+      EmptyTree // this parser will not be used
   }
 
   // for unmixed wrapped in data record, this should generate Seq(DataRecord(None, None, Foo("1", "2")))
@@ -270,11 +270,6 @@ trait Parsers { self: Namer with Lookup with Args with Params with Symbols with 
     val retval = buildParserTree(base, occurrence)
     logger.debug("buildChoiceParser:  " + tagged + NL + retval)
     retval
-  }
-
-
-  def buildAllParser(tagged: TaggedKeyedGroup, occurrence: Occurrence, mixed: Boolean): Tree = {
-    LIT(0)
   }
 
   def buildWildCardParser(tagged: TaggedWildCard, occurrence: Occurrence, mixed: Boolean,

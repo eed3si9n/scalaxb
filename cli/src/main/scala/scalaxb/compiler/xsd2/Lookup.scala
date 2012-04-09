@@ -1,5 +1,6 @@
 package scalaxb.compiler.xsd2
 
+import scalashim._
 import java.net.URI
 import javax.xml.namespace.QName
 import xmlschema._
@@ -102,7 +103,7 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter with Symbols =
     //    case ReferenceTypeSymbol(decl: ComplexTypeDecl) => buildTypeName(decl, shortLocal)
     //    case XsXMLFormat(decl: ComplexTypeDecl) => "scalaxb.XMLFormat[" + buildTypeName(decl, shortLocal) + "]"
     //    case XsXMLFormat(group: AttributeGroupDecl) => "scalaxb.XMLFormat[" + buildTypeName(group, shortLocal) + "]"
-    case _ => error("buildTypeName # unsupported: " + tagged)
+    case _ => sys.error("buildTypeName # unsupported: " + tagged)
   }
 
   def buildAttributeGroupTypeSymbol(tagged: Tagged[XAttributeGroup]): ClassSymbol =
@@ -195,7 +196,7 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter with Symbols =
     case XList(_, Some(simpleType), _, _, _) =>
       baseType(Tagged(simpleType, decl.tag))
     case x: XUnion => Tagged(XsString, HostTag(Some(XML_SCHEMA_URI), SimpleTypeHost, "string"))
-    case _ => error("baseType#: Unsupported content " + decl.arg1.value.toString)
+    case _ => sys.error("baseType#: Unsupported content " + decl.arg1.value.toString)
   }
 
   def resolveType(typeName: QualifiedName): TaggedType[_] = typeName match {

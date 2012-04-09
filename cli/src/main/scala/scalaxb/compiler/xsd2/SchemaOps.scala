@@ -22,6 +22,7 @@
 
 package scalaxb.compiler.xsd2
 
+import scalashim._
 import java.net.{URI}
 import scala.xml.{NamespaceBinding}
 import scalaxb._
@@ -80,17 +81,17 @@ object HostTag {
   def apply(namespace: Option[URI], topLevel: TopLevelType, name: String): HostTag =
     HostTag(namespace, topLevel, name, "/")
   def apply(namespace: Option[URI], elem: XTopLevelElement): HostTag =
-    HostTag(namespace, ElementHost, elem.name getOrElse {error("name is required.")})
+    HostTag(namespace, ElementHost, elem.name getOrElse {sys.error("name is required.")})
   def apply(namespace: Option[URI], decl: XTopLevelSimpleType): HostTag =
-    HostTag(namespace, SimpleTypeHost, decl.name getOrElse {error("name is required.")})
+    HostTag(namespace, SimpleTypeHost, decl.name getOrElse {sys.error("name is required.")})
   def apply(namespace: Option[URI], decl: XTopLevelComplexType): HostTag =
-    HostTag(namespace, ComplexTypeHost, decl.name getOrElse {error("name is required.")})
+    HostTag(namespace, ComplexTypeHost, decl.name getOrElse {sys.error("name is required.")})
   def apply(namespace: Option[URI], attr: XTopLevelAttribute): HostTag =
-    HostTag(namespace, AttributeHost, attr.name getOrElse {error("name is required.")})
+    HostTag(namespace, AttributeHost, attr.name getOrElse {sys.error("name is required.")})
   def apply(namespace: Option[URI], group: XNamedGroup): HostTag =
-    HostTag(namespace, NamedGroupHost, group.name getOrElse {error("name is required.")})
+    HostTag(namespace, NamedGroupHost, group.name getOrElse {sys.error("name is required.")})
   def apply(namespace: Option[URI], group: XNamedAttributeGroup): HostTag =
-    HostTag(namespace, AttributeGroupHost, group.name getOrElse {error("name is required.")})
+    HostTag(namespace, AttributeGroupHost, group.name getOrElse {sys.error("name is required.")})
 }
 
 trait GroupOps {

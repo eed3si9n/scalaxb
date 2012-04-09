@@ -1,6 +1,7 @@
 package scalaxb.compiler.xsd2
 
 trait Args { self: Namer with Lookup with Params with Symbols =>
+  import scalashim._
   import com.codahale.logula.Log
   import scalaxb.compiler.xsd.{XsAnyType, BuiltInSimpleTypeSymbol, XsTypeSymbol, XsInt, XsAnySimpleType}
   import Defs._
@@ -111,14 +112,14 @@ trait Args { self: Namer with Lookup with Params with Symbols =>
       case AnyLike(x) =>
         val param = Param(x)
         buildTypeSymbolArg(buildType(x), selector, param.occurrence, None, None, wrapForLongAll)
-      case _ => error("Args#buildArg: " + tagged.toString)
+      case _ => sys.error("Args#buildArg: " + tagged.toString)
     }
 
   // called by generateDefaultFormat. By spec, <all> contains only elements.
   def buildArgForAll(tagged: Tagged[Any]): Tree = {
     val o = tagged match {
       case elem: TaggedLocalElement => elemToOptional(elem)
-      case _ => error("buildArgForAll unsupported type: " + tagged.toString)
+      case _ => sys.error("buildArgForAll unsupported type: " + tagged.toString)
     }
     // "%s map { %s -> _ }" format(buildArg(o, buildSelector(o), true), quote(buildNodeName(o, true)))
     buildArg(o, buildSelector(o), true) MAP BLOCK( LIT(buildNodeName(o, true)) ANY_-> WILDCARD )

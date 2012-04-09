@@ -23,6 +23,7 @@
 package scalaxb.compiler.wsdl11
 
 trait GenSource {
+  import scalashim._
   import wsdl11._
   import scalaxb.{DataRecord}
   import scalaxb.compiler.{Config, Snippet, ReferenceNotFound, Module}
@@ -105,7 +106,7 @@ trait GenSource {
           faultsToTypeName(faults, soap12), outputTypeName(binding, op, output, document))
       case DataRecord(_, _, XNotificationoperationSequence(output)) =>
         "def %s: %s".format(name, outputTypeName(binding, op, output, document))
-      case _ => error("unsupported.")
+      case _ => sys.error("unsupported.")
     }
 
     logger.debug("makeOperation: " + retval)
@@ -121,7 +122,7 @@ trait GenSource {
         (Some(input), Some(output), Some(faults))
       case DataRecord(_, _, XNotificationoperationSequence(output)) =>
         (None, Some(output), None)
-      case _ => error("unsupported.")
+      case _ => sys.error("unsupported.")
     }
 
   def makeOperationOutputWrapperName(op: XOperationType): String =
@@ -142,7 +143,7 @@ trait GenSource {
     val headers = headerBindings(binding.input)
     val symbol =  operationParts(op) match {
       case (Some(input), _, _) => toTypeSymbol(input)
-      case _ => error("expected input:" + op.name)
+      case _ => sys.error("expected input:" + op.name)
     }
     makeOperationWrapperParams(op, headers, symbol)
   }
@@ -152,7 +153,7 @@ trait GenSource {
     val headers = headerBindings(binding.output)
     val symbol =  operationParts(op) match {
       case (_, Some(ouput), _) => toTypeSymbol(ouput)
-      case _ => error("expected ouput: " + op.name)
+      case _ => sys.error("expected ouput: " + op.name)
     }
     makeOperationWrapperParams(op, headers, symbol)
   }
@@ -173,7 +174,7 @@ trait GenSource {
 
   def boundOperation(binding: XBinding_operationType, intf: XPortTypeType) =
     (intf.operation filter {_.name == binding.name}).headOption getOrElse {
-      error("operation %s was not found in %s".format(binding.name, intf.name))
+      sys.error("operation %s was not found in %s".format(binding.name, intf.name))
     }
 
   def isDocument(binding: XBinding_operationType, defaultDocument: Boolean) =
@@ -241,7 +242,7 @@ trait GenSource {
           |          case Right((header, body)) =>
           |            %s
           |        }""".stripMargin.format(address, quotedMethod, actionString, outputString(output, binding, op, document))
-      case _ => error("unsupported.")
+      case _ => sys.error("unsupported.")
     }
 
     val retval = makeOperation(binding, intf, defaultDocument, soap12) + " = " + NL +
@@ -448,9 +449,9 @@ trait GenSource {
         }
       case AnyType(symbol) =>
         List(ParamCache(paramName, xsdgenerator.buildTypeName(symbol), false))
-      case x => error("unexpected type: " + x)
+      case x => sys.error("unexpected type: " + x)
     }
-  } getOrElse {error("unexpected input: " + input)}
+  } getOrElse {sys.error("unexpected input: " + input)}
 
   def buildPartsArg(input: XParamType): String = (paramMessage(input).part map { part =>
     "%s: %s".format(part.name getOrElse {"in"}, partTypeName(part))
@@ -471,13 +472,13 @@ trait GenSource {
       part.element map { element =>
         val param = xsdgenerator.buildParam(xsdgenerator.elements(splitTypeName(element))) map {camelCase}
         ParamCache(param.toParamName, param.typeName, false)
-      } getOrElse {error("part does not have either type or element: " + part.toString)}
+      } getOrElse {sys.error("part does not have either type or element: " + part.toString)}
     }
 
   def toTypeSymbol(part: XPartType): XsTypeSymbol =
     part.typeValue map { toTypeSymbol(_) } getOrElse {
       part.element map { element => xsdgenerator.elements(splitTypeName(element)).typeSymbol
-      } getOrElse {error("part does not have either type or element: " + part.toString)}
+      } getOrElse {sys.error("part does not have either type or element: " + part.toString)}
     }
 
   def toTypeSymbol(qname: javax.xml.namespace.QName): XsTypeSymbol = {
@@ -494,7 +495,7 @@ trait GenSource {
 
   def toElement(part: XPartType) = part.element map  { element =>
     xsdgenerator.elements(splitTypeName(element))
-  } getOrElse {error("part does not have an element: " + part.toString)}
+  } getOrElse {sys.error("part does not have an element: " + part.toString)}
 
   def outputTypeName(binding: XBinding_operationType, op: XOperationType,
                      output: XParamType, document: Boolean): String =

@@ -22,6 +22,7 @@
 
 package scalaxb.compiler.xsd
 
+import scalashim._
 import scalaxb.compiler.{ScalaNames, Config, ReferenceNotFound}
 import scala.collection.mutable
 import com.codahale.logula.Log
@@ -291,7 +292,7 @@ trait ContextProcessor extends ScalaNames with PackageName {
   
   def singleChoice(seq: SequenceDecl): ChoiceDecl = seq.particles match {
     case (choice@ChoiceDecl(_, _, _, _)) :: Nil => choice
-    case _ => error("Does not cointain single choice.")
+    case _ => sys.error("Does not cointain single choice.")
   }
   
   lazy val sequenceChunkSize = config.sequenceChunkSize
@@ -338,7 +339,7 @@ trait ContextProcessor extends ScalaNames with PackageName {
       if (group.particles.size == 1) group.particles(0) match {
         case compositor: HasParticle => makeGroupCompositorName(compositor, group)
       }
-      else error("ContextProcessor#makeCompositorNames: group must contain one content model: " + group)
+      else sys.error("ContextProcessor#makeCompositorNames: group must contain one content model: " + group)
     }
     
     def isFirstCompositor =

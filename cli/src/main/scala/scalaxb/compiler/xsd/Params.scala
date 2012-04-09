@@ -21,6 +21,8 @@
  */
  
 package scalaxb.compiler.xsd
+
+import scalashim._
 import scala.collection.mutable
 import com.codahale.logula.Log
 
@@ -98,7 +100,7 @@ trait Params extends Lookup {
     case attr: AttributeDecl => buildParam(attr)
     case any: AnyAttributeDecl => buildParam(any)
     case group: AttributeGroupDecl => buildParam(group)
-    case _ => error("Params#buildParam: unsupported delcaration " + decl.toString)
+    case _ => sys.error("Params#buildParam: unsupported delcaration " + decl.toString)
   }
   
   def buildParam(elem: ElemDecl): Param = {
@@ -169,7 +171,7 @@ trait Params extends Lookup {
       case choice: ChoiceDecl   => choice
       case all: AllDecl         => all  
     }
-    else error("Params#primaryCompositor: group must contain one content model: " + group)
+    else sys.error("Params#primaryCompositor: group must contain one content model: " + group)
 
   // context.compositorNames contains the definition of GroupDecl,
   // while particle GroupDecl may differ in cardinality.

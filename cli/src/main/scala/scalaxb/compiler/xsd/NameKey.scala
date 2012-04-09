@@ -9,6 +9,8 @@ case object AttributeGroupKind extends NamespaceKind
 case class NameKey(kind: NamespaceKind, namespace: Option[String], name: String)
 
 object NameKey {
+  import scalashim._
+  
   implicit def toNameKey(schema: SchemaDecl): NameKey =
     NameKey(SchemaKind, schema.targetNamespace, schema.hashCode().toString)
   implicit def toNameKey(decl: SimpleTypeDecl): NameKey =
@@ -25,6 +27,6 @@ object NameKey {
     case x: ComplexTypeDecl => toNameKey(x)
     case x: GroupDecl => toNameKey(x)
     case x: AttributeGroupDecl => toNameKey(x)
-    case _ => error("unexpected Decl: " + decl.toString)
+    case _ => sys.error("unexpected Decl: " + decl.toString)
   }
 }

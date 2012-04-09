@@ -22,6 +22,7 @@
  
 package scalaxb.compiler
 
+import scalashim._
 import scala.collection.mutable.{ListBuffer, ListMap}
 import java.net.{URI}
 import scala.xml.{Node, Elem}
@@ -162,7 +163,7 @@ trait Module {
     }
 
     files.foreach(file => if (!file.exists)
-      error("file not found: " + file.toString))
+      sys.error("file not found: " + file.toString))
       
     val outfiles = processReaders(files, config)
     outfiles map { x => 

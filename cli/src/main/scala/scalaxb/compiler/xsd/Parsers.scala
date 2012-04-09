@@ -21,6 +21,8 @@
  */
 
 package scalaxb.compiler.xsd
+
+import scalashim._
 import scala.collection.mutable
 import scala.collection.immutable
 import com.codahale.logula.Log
@@ -261,14 +263,14 @@ trait Parsers extends Args with Params {
       
       case symbol: ReferenceTypeSymbol =>
         if (symbol.decl == null)
-          error("Parsers#buildParser: " + elem.toString +
+          sys.error("Parsers#buildParser: " + elem.toString +
             " Invalid type " + symbol.getClass.toString + ": " +
             symbol.toString + " with null decl")
         else    
-          error("Parsers#buildParser: " + elem.toString +
+          sys.error("Parsers#buildParser: " + elem.toString +
             " Invalid type " + symbol.getClass.toString + ": " +
             symbol.toString + " with " + symbol.decl.toString)
-      case _ => error("Parsers#buildParser: " + elem.toString +
+      case _ => sys.error("Parsers#buildParser: " + elem.toString +
         " Invalid type " + elem.typeSymbol.getClass.toString + ": " + elem.typeSymbol.toString)
     }
   }

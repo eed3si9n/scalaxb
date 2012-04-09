@@ -22,6 +22,7 @@
 
 package scalaxb.compiler.xsd
 
+import scalashim._
 import scalaxb.compiler.{Config, Snippet, CaseClassTooLong}
 import scala.collection.mutable
 import scala.collection.{Map}
@@ -78,7 +79,7 @@ abstract class GenSource(val schema: SchemaDecl,
           if schema.topTypes.contains(name))
       yield schema.topTypes(name)) match {
         case x :: xs => x
-        case Nil     => error("Type not found: {" + namespace + "}:" + name)
+        case Nil     => sys.error("Type not found: {" + namespace + "}:" + name)
       }
       
   def makeTrait(decl: ComplexTypeDecl): Snippet = {
@@ -585,7 +586,7 @@ object {localName} {{
     def writes(__obj: {fqn}, __namespace: Option[String], __elementLabel: Option[String],
         __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
       scala.xml.Elem(scalaxb.Helper.getPrefix(__namespace, __scope).orNull, 
-        __elementLabel getOrElse {{ error("missing element label.") }},
+        __elementLabel getOrElse {{ sys.error("missing element label.") }},
         scala.xml.Null, __scope, scala.xml.Text(__obj.toString))
   }}</source>,
       makeImplicitValue(fqn, formatterName))

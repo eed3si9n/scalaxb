@@ -4,6 +4,7 @@ object Builds extends Build {
   import Keys._
   import ls.Plugin.LsKeys._
   import sbtbuildinfo.Plugin._
+  import sbtscalashim.Plugin._
 
   lazy val buildSettings = Defaults.defaultSettings ++ customLsSettings ++ Seq(
     version := "0.7.1-SNAPSHOT",
@@ -13,6 +14,7 @@ object Builds extends Build {
     description := """scalaxb is an XML data-binding tool for Scala that supports W3C XML Schema (xsd) and wsdl.""",
     scalaVersion := "2.9.1",
     crossScalaVersions := Seq("2.9.1", "2.8.1"), // Scala interpreter bug in 2.9.1
+    scalacOptions := Seq("-deprecation", "-unchecked"),
     pomExtra := (<scm>
         <url>git@github.com:eed3si9n/scalaxb.git</url>
         <connection>scm:git:git@github.com:eed3si9n/scalaxb.git</connection>
@@ -51,7 +53,7 @@ object Builds extends Build {
   val Wsdl = config("wsdl") extend(Compile)
   val Soap11 = config("soap11") extend(Compile)
   val Soap12 = config("soap12") extend(Compile)
-  lazy val cliSettings = buildInfoSettings ++
+  lazy val cliSettings = buildInfoSettings ++ scalaShimSettings ++
     buildSettings ++ Seq(
     name := "scalaxb",
     libraryDependencies ++= Seq(
@@ -61,7 +63,8 @@ object Builds extends Build {
       "com.codahale" %% "logula" % "2.1.3"),
     unmanagedSourceDirectories in Compile <+= baseDirectory( _ / "src_managed" ),
     buildInfoPackage := "scalaxb",
-    sourceGenerators in Compile <+= buildInfo) ++ codeGenSettings
+    sourceGenerators in Compile <+= buildInfo,
+    sourceGenerators in Compile <+= scalaShim) ++ codeGenSettings
 
   def codeGenSettings: Seq[Project.Setting[_]] = Nil
 //  def codeGenSettings: Seq[Project.Setting[_]] = {

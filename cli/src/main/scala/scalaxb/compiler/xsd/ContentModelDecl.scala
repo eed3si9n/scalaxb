@@ -22,6 +22,8 @@
 
 package scalaxb.compiler.xsd
 
+import scalashim._
+
 trait ComplexTypeContent {
   val base: XsTypeSymbol
   val attributes: List[AttributeLike]
@@ -47,7 +49,7 @@ object SimpContRestrictionDecl {
       case Some(x) => TypeSymbolParser.fromString(x.text, node.scope, config.targetNamespace)
       case None    =>
         simpleType getOrElse {
-          error("SimpContRestrictionDecl#fromXML: restriction must have either base attribute or simpleType.")
+          sys.error("SimpContRestrictionDecl#fromXML: restriction must have either base attribute or simpleType.")
         }
     }
     
@@ -73,7 +75,7 @@ object SimpContExtensionDecl {
             symbol.decl = decl
             symbol
           
-          case None    => error("SimpContExtensionDecl#fromXML: restriction must have either base attribute or simpleType.")
+          case None    => sys.error("SimpContExtensionDecl#fromXML: restriction must have either base attribute or simpleType.")
         }
     }
     val attributes = AttributeLike.fromParentNode(node, config)
@@ -159,7 +161,7 @@ object SimpTypRestrictionDecl {
             symbol.decl = decl
             symbol
           
-          case None    => error("SimpTypRestrictionDecl#fromXML: restriction must have either base attribute or simpleType.")
+          case None    => sys.error("SimpTypRestrictionDecl#fromXML: restriction must have either base attribute or simpleType.")
         }
     }
     
@@ -183,7 +185,7 @@ object SimpTypListDecl {
             symbol.decl = decl
             symbol
           
-          case None    => error("SimpTypListDecl#fromXML: restriction must have either itemType attribute or simpleType.")
+          case None    => sys.error("SimpTypListDecl#fromXML: restriction must have either itemType attribute or simpleType.")
         }
     }
     

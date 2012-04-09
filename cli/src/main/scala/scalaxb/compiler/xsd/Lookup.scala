@@ -22,6 +22,7 @@
 
 package scalaxb.compiler.xsd
 
+import scalashim._
 import scalaxb.compiler.{ReferenceNotFound}
 import scala.collection.mutable
 import com.codahale.logula.Log
@@ -158,7 +159,7 @@ trait Lookup extends ContextProcessor {
     buildTypeName(packageName(decl, context), decl, shortLocal)
   
   def buildTypeName(pkg: Option[String], decl: Decl, shortLocal: Boolean): String = {
-    if (!context.typeNames.contains(decl)) error(pkg + ": Type name not found: " + decl.toString)
+    if (!context.typeNames.contains(decl)) sys.error(pkg + ": Type name not found: " + decl.toString)
     
     if (shortLocal && pkg == packageName(schema, context)) context.typeNames(decl)
     else buildFullyQualifiedName(pkg, context.typeNames(decl))
@@ -179,7 +180,7 @@ trait Lookup extends ContextProcessor {
     val pkg = packageName(schema, context)
     val typeNames = context.enumValueNames(pkg)
     if (!typeNames.contains(enumTypeName, enum))
-      error(pkg + ": Type name not found: " + enum.toString)
+      sys.error(pkg + ": Type name not found: " + enum.toString)
     
     if (shortLocal && pkg == packageName(schema, context)) typeNames(enumTypeName, enum)
     else buildFullyQualifiedName(pkg, typeNames(enumTypeName, enum))   
@@ -206,7 +207,7 @@ trait Lookup extends ContextProcessor {
     case SimpTypListDecl(itemType) => itemType
     case SimpTypUnionDecl() => XsString
 
-    case _ => error("GenSource: Unsupported content " +  decl.content.toString)
+    case _ => sys.error("GenSource: Unsupported content " +  decl.content.toString)
   }
   
   def containsForeignType(compositor: HasParticle): Boolean = {

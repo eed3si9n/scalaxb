@@ -22,6 +22,7 @@
  
 package scalaxb.compiler.xsd
 
+import scalashim._
 import com.codahale.logula.Log
 
 trait Args extends Params {
@@ -83,7 +84,7 @@ trait Args extends Params {
     case attr: AttributeDecl   => buildArg(attr, buildSelector(attr), false)
     case ref: AttributeRef     => buildArg(buildAttribute(ref))
     case group: AttributeGroupDecl => buildAttributeGroupArg(group, false)
-    case _ => error("GenSource#buildArg unsupported delcaration " + decl.toString)
+    case _ => sys.error("GenSource#buildArg unsupported delcaration " + decl.toString)
   }
   
   def buildArgForAttribute(decl: AttributeLike, longAttribute: Boolean): String =
@@ -106,7 +107,7 @@ trait Args extends Params {
     val o = particle match {
       case elem: ElemDecl => toOptional(elem)
       case ref: ElemRef   => toOptional(buildElement(ref))
-      case _ => error("buildArgForAll unsupported type: " + particle)
+      case _ => sys.error("buildArgForAll unsupported type: " + particle)
     }
     val arg = buildArg(o, buildSelector(o), longAll)
     if (longAll) arg + " map { " + quote(buildNodeName(o, true)) + " -> _ }"
@@ -139,11 +140,11 @@ trait Args extends Params {
         toCardinality(elem.minOccurs, elem.maxOccurs), false, elem.defaultValue, elem.fixedValue, wrapForLongAll)
       
       case symbol: ReferenceTypeSymbol =>
-        if (symbol.decl == null) error("GenSource#buildArg: " + elem.toString + " Invalid type " + symbol.getClass.toString + ": " +
+        if (symbol.decl == null) sys.error("GenSource#buildArg: " + elem.toString + " Invalid type " + symbol.getClass.toString + ": " +
             symbol.toString + " with null decl")
-        else error("GenSource#buildArg: " + elem.toString + " Invalid type " + symbol.getClass.toString + ": " +
+        else sys.error("GenSource#buildArg: " + elem.toString + " Invalid type " + symbol.getClass.toString + ": " +
             symbol.toString + " with " + symbol.decl.toString)
-      case _ => error("GenSource#buildArg: " + elem.toString + " Invalid type " + elem.typeSymbol.getClass.toString + ": " + elem.typeSymbol.toString)
+      case _ => sys.error("GenSource#buildArg: " + elem.toString + " Invalid type " + elem.typeSymbol.getClass.toString + ": " + elem.typeSymbol.toString)
     }
   
   def buildArg(attr: AttributeDecl, selector: String, wrapForLong: Boolean): String =
@@ -164,9 +165,9 @@ trait Args extends Params {
         buildArg(buildTypeName(decl, false), selector, toCardinality(attr), false,
           attr.defaultValue, attr.fixedValue, wrapForLong)
       case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
-        error("Args: Attribute with complex type " + decl.toString)
+        sys.error("Args: Attribute with complex type " + decl.toString)
       case _ =>
-        error("Args: unsupported type: " + attr.typeSymbol)
+        sys.error("Args: unsupported type: " + attr.typeSymbol)
     }
 
   // called by makeCaseClassWithType
@@ -182,14 +183,14 @@ trait Args extends Params {
         case comp: ComplexContentDecl => content match {
           case SimpleContentDecl(SimpContRestrictionDecl(_, Some(simpleType: XsTypeSymbol), _, _))  =>
             buildArg(content, simpleType)
-          case _ => error("Args: Unsupported content " + content.toString)
+          case _ => sys.error("Args: Unsupported content " + content.toString)
         }
-        case _ => error("Args: Unsupported content " + content.toString)
+        case _ => sys.error("Args: Unsupported content " + content.toString)
       }
     case ReferenceTypeSymbol(decl: SimpleTypeDecl) =>
       buildArg(buildTypeName(decl, false), "node", Single, false, None, None, false)
         
-    case _ => error("Args: Unsupported type " + typeSymbol.toString)    
+    case _ => sys.error("Args: Unsupported type " + typeSymbol.toString)    
   }
 
   // scala's <foo/> \ "foo" syntax is not namespace aware, but {ns}foo is useful for long all.

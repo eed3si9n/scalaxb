@@ -22,6 +22,7 @@
 
 package scalaxb.compiler.xsd
 
+import scalashim._
 import scala.collection.{Map, Set}
 import scala.collection.mutable
 import scala.collection.immutable
@@ -149,7 +150,7 @@ object SchemaDecl {
       outerNamespace: Option[String],
       config: ParserConfig = new ParserConfig) = {
     val schema = (node \\ "schema").headOption.getOrElse {
-      error("xsd: schema element not found: " + node.toString) }
+      sys.error("xsd: schema element not found: " + node.toString) }
     
     config.scope = schema.scope
     config.targetNamespace = schema.attribute("targetNamespace").headOption map { _.text } orElse {outerNamespace}
@@ -631,7 +632,7 @@ object CompositorDecl {
         case <element>{ _* }</element>   =>
           if ((node \ "@name").headOption.isDefined) ElemDecl.fromXML(node, family, false, config)
           else if ((node \ "@ref").headOption.isDefined) ElemRef.fromXML(node, config)
-          else error("xsd: Unspported content type " + node.toString) 
+          else sys.error("xsd: Unspported content type " + node.toString) 
         case <choice>{ _* }</choice>     => ChoiceDecl.fromXML(node, family, config)
         case <sequence>{ _* }</sequence> => SequenceDecl.fromXML(node, family, config)
         case <all>{ _* }</all>           => AllDecl.fromXML(node, family, config)
@@ -639,9 +640,9 @@ object CompositorDecl {
         case <group>{ _* }</group>       =>
           if ((node \ "@name").headOption.isDefined) GroupDecl.fromXML(node, config)
           else if ((node \ "@ref").headOption.isDefined) GroupRef.fromXML(node, config)
-          else error("xsd: Unspported content type " + node.toString) 
+          else sys.error("xsd: Unspported content type " + node.toString) 
 
-        case _ => error("xsd: Unspported content type " + node.label)    
+        case _ => sys.error("xsd: Unspported content type " + node.label)    
       }
     )
   
@@ -652,9 +653,9 @@ object CompositorDecl {
     case <group>{ _* }</group>       =>
       if ((node \ "@name").headOption.isDefined) GroupDecl.fromXML(node, config)
       else if ((node \ "@ref").headOption.isDefined) GroupRef.fromXML(node, config)
-      else error("xsd: Unspported content type " + node.toString)
+      else sys.error("xsd: Unspported content type " + node.toString)
     
-    case _ => error("xsd: Unspported content type " + node.label)
+    case _ => sys.error("xsd: Unspported content type " + node.label)
   }
   
   def buildOccurrence(value: String) =
@@ -770,7 +771,7 @@ case class SchemaLite(targetNamespace: Option[String],
 object SchemaLite {
   def fromXML(node: scala.xml.Node) = {
     val schema = (node \\ "schema").headOption getOrElse {
-      error("xsd: schema element not found: " + node.toString)
+      sys.error("xsd: schema element not found: " + node.toString)
     }
     val targetNamespace = schema.attribute("targetNamespace").headOption map { _.text }
     

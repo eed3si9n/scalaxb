@@ -1,5 +1,6 @@
 package scalaxb.compiler.xsd2
 
+import scalashim._
 import java.net.URI
 import com.codahale.logula.Log
 import xmlschema._
@@ -100,7 +101,7 @@ trait Namer extends ScalaNames { self: Lookup with Splitter  =>
         val name = makeProtectedTypeName(tagged.tag.name + "All", "", tagged.tag, false)
         names(tagged) = name
         logger.debug("nameCompositor: named %s %s", tagged.tag, name)
-      case _ => error("unknown KeyedGroup" + tagged.toString)
+      case _ => sys.error("unknown KeyedGroup" + tagged.toString)
     }
   }
 
@@ -130,7 +131,7 @@ trait Namer extends ScalaNames { self: Lookup with Splitter  =>
     makeProtectedTypeName(tagged.name.get, "", tagged.tag, true);
   
   def makeProtectedTypeName(initialName: Option[String], postfix: String, tag: HostTag, appendHost: Boolean): String =
-    makeProtectedTypeName(initialName getOrElse {error("name is required.")}, postfix, tag, appendHost)
+    makeProtectedTypeName(initialName getOrElse {sys.error("name is required.")}, postfix, tag, appendHost)
 
   def makeProtectedTypeName(initialName: String, postfix: String, tag: HostTag, appendHost: Boolean): String = {
     def contains(s: String) = names.valuesIterator.contains(s)

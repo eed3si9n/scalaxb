@@ -182,7 +182,7 @@ abstract class GenSource(val schema: SchemaDecl,
       case _ => None
     }
     primary match {
-      case Some(SequenceDecl(_, _, _, _)) =>
+      case Some(SequenceDecl(_, _, _, _, _)) =>
         val flatParticles = flattenElements(decl, 0)
         val attributes = flattenAttributes(decl)
         flatParticles.forall(_.typeSymbol match {
@@ -714,7 +714,7 @@ object {localName} {{
   // sometimes we don't have ComplexTypeDecl because it's a group.
   def splitLongSequence(namespace: Option[String], family: List[String], particles: List[Particle]): List[Particle] =
     if (particles.size <= contentsSizeLimit && !isWrapped(namespace, family)) particles
-    else splitLong[SequenceDecl](particles) { SequenceDecl(_, 1, 1, 0) }
+    else splitLong[SequenceDecl](particles) { SequenceDecl(namespace, _, 1, 1, 0) }
   
   // used to generte accessor
   def splitSequences(decl: ComplexTypeDecl): List[SequenceDecl] = decl.content.content match {
@@ -736,7 +736,7 @@ object {localName} {{
   def splitSequences(namespace: Option[String], family: List[String],
         compositor: HasParticle): List[SequenceDecl] = compositor match {
     case seq: SequenceDecl if seq.particles.size > contentsSizeLimit || isWrapped(namespace, family) =>
-       splitLong[SequenceDecl](seq.particles) { xs => SequenceDecl(xs, 1, 1, 0) }
+       splitLong[SequenceDecl](seq.particles) { xs => SequenceDecl(namespace, xs, 1, 1, 0) }
     case _ => Nil
   }
      

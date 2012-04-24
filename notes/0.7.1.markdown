@@ -1,0 +1,4 @@
+## bug fixes and minor enhancements
+- fixes generated code for imported groups. [#156][156]
+
+  [156]: https://github.com/eed3si9n/scalaxb/issues/156

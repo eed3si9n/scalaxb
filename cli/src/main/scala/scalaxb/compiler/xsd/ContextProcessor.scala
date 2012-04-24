@@ -286,12 +286,12 @@ trait ContextProcessor extends ScalaNames with PackageName {
       ComplexContentDecl.empty, Nil, None)
 
   def containsSingleChoice(seq: SequenceDecl) = seq.particles match {
-    case ChoiceDecl(_, _, _, _) :: Nil => true
+    case ChoiceDecl(_, _, _, _, _) :: Nil => true
     case _ => false
   }
   
   def singleChoice(seq: SequenceDecl): ChoiceDecl = seq.particles match {
-    case (choice@ChoiceDecl(_, _, _, _)) :: Nil => choice
+    case (choice@ChoiceDecl(_, _, _, _, _)) :: Nil => choice
     case _ => sys.error("Does not cointain single choice.")
   }
   
@@ -380,7 +380,7 @@ trait ContextProcessor extends ScalaNames with PackageName {
     }
     
     def formSequence(decl: ComplexTypeDecl, rest: List[Particle]) = {      
-      val retval = SequenceDecl(rest, 1, 1, 0)
+      val retval = SequenceDecl(decl.namespace, rest, 1, 1, 0)
       context.compositorNames(retval) = familyName(decl) + "Sequence" + apparentSequenceNumber
       sequenceNumber += 1
       context.compositorParents(retval) = decl

@@ -18,4 +18,11 @@
       </xs:extension>
     </xs:complexContent>
   </xs:complexType>
+
+  <xs:complexType name="RestrictedArray">
+    <xs:complexContent>
+      <xs:restriction base="gen:Array">
+      </xs:restriction>
+    </xs:complexContent>
+  </xs:complexType>  
 </xs:schema>

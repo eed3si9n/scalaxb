@@ -105,6 +105,7 @@ trait Particle {
 }
 
 trait HasParticle extends Particle {
+  val namespace: Option[String]
   val particles: List[Particle]
   val minOccurs: Int
   val maxOccurs: Int
@@ -664,7 +665,8 @@ object CompositorDecl {
     else value.toInt
 }
 
-case class SequenceDecl(particles: List[Particle],
+case class SequenceDecl(namespace: Option[String],
+  particles: List[Particle],
   minOccurs: Int,
   maxOccurs: Int,
   uniqueId: Int = Incrementor.nextInt) extends CompositorDecl with HasParticle
@@ -673,11 +675,12 @@ object SequenceDecl {
   def fromXML(node: scala.xml.Node, family: List[String], config: ParserConfig) = {
     val minOccurs = CompositorDecl.buildOccurrence((node \ "@minOccurs").text)
     val maxOccurs = CompositorDecl.buildOccurrence((node \ "@maxOccurs").text)
-    SequenceDecl(CompositorDecl.fromNodeSeq(node.child, family, config), minOccurs, maxOccurs)
+    SequenceDecl(config.targetNamespace, CompositorDecl.fromNodeSeq(node.child, family, config), minOccurs, maxOccurs)
   }
 }
 
-case class ChoiceDecl(particles: List[Particle],
+case class ChoiceDecl(namespace: Option[String],
+  particles: List[Particle],
   minOccurs: Int,
   maxOccurs: Int,
   uniqueId: Int = Incrementor.nextInt) extends CompositorDecl with HasParticle
@@ -686,13 +689,14 @@ object ChoiceDecl {
   def fromXML(node: scala.xml.Node, family: List[String], config: ParserConfig) = {
     val minOccurs = CompositorDecl.buildOccurrence((node \ "@minOccurs").text)
     val maxOccurs = CompositorDecl.buildOccurrence((node \ "@maxOccurs").text)
-    val choice = ChoiceDecl(CompositorDecl.fromNodeSeq(node.child, family, config), minOccurs, maxOccurs)
+    val choice = ChoiceDecl(config.targetNamespace, CompositorDecl.fromNodeSeq(node.child, family, config), minOccurs, maxOccurs)
     config.choices += choice
     choice
   }
 }
 
-case class AllDecl(particles: List[Particle],
+case class AllDecl(namespace: Option[String],
+  particles: List[Particle],
   minOccurs: Int,
   maxOccurs: Int,
   uniqueId: Int = Incrementor.nextInt) extends CompositorDecl with HasParticle
@@ -701,7 +705,7 @@ object AllDecl {
   def fromXML(node: scala.xml.Node, family: List[String], config: ParserConfig) = {
     val minOccurs = CompositorDecl.buildOccurrence((node \ "@minOccurs").text)
     val maxOccurs = CompositorDecl.buildOccurrence((node \ "@maxOccurs").text)
-    AllDecl(CompositorDecl.fromNodeSeq(node.child, family, config), minOccurs, maxOccurs)
+    AllDecl(config.targetNamespace, CompositorDecl.fromNodeSeq(node.child, family, config), minOccurs, maxOccurs)
   }
 }
 

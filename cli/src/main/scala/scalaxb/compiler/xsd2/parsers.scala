@@ -249,8 +249,11 @@ trait Parsers { self: Namer with Lookup with Args with Params with Symbols with 
       case elem: TaggedLocalElement =>
         // SequenceDecl(List(elem), 1, 1, 0)
         if (mixed && containsStructure) buildParser(
-          Tagged(KeyedGroup(SequenceTag,
-            XExplicitGroup(arg1 = Seq(Tagged.toParticleDataRecord(elem)), minOccurs = 1, maxOccurs = "1", attributes = Map())), tagged.tag),
+          Tagged(KeyedGroup(
+            key = SequenceTag,
+            particles = Seq(elem),
+            minOccurs = 1,
+            maxOccurs = "1"), tagged.tag),
           singleOccurrence, mixed, true)
         else buildParser(elem, singleOccurrence, mixed, true)
       case particle => buildParser(particle, singleOccurrence, mixed, true)

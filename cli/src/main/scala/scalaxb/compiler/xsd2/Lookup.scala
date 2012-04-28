@@ -78,7 +78,7 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter with Symbols =
     case x: TaggedKeyedGroup =>
       x.key match {
         case ChoiceTag =>
-          val particleOs = x.value.value.arg1.toList map { Occurrence(_) }
+          val particleOs = x.value.particles.toList map { Occurrence(_) }
           if (particleOs exists { _.nillable }) buildNillableType(userDefinedClassSymbol(tagged))
           else userDefinedClassSymbol(tagged)
         case _ => userDefinedClassSymbol(tagged)
@@ -374,9 +374,9 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter with Symbols =
         case decl: TaggedComplexType => true
         case _ => false
       }
-    case group@TaggedKeyedGroup(KeyedGroup(ChoiceTag, _), _) =>
-      group.particles forall { isOptionDescendant }
-    case TaggedKeyedGroup(KeyedGroup(SequenceTag, _), _) => true
+    case group: TaggedKeyedGroup if group.value.key == ChoiceTag =>
+      group.value.particles forall { isOptionDescendant }
+    case group: TaggedKeyedGroup if group.value.key == SequenceTag => true
     case _ => false
   }
 

@@ -57,9 +57,9 @@ class Generator(val schema: ReferenceSchema,
 
     def compositorsR(compositor: TaggedParticle[KeyedGroup]): Seq[TaggedParticle[KeyedGroup]] =
       (compositor match {
-        case x @ TaggedKeyedGroup(KeyedGroup(ChoiceTag, _), _) => Seq(x)
-        case x @ TaggedKeyedGroup(KeyedGroup(AllTag, _), _)   => Seq(x)
-        case tagged @ TaggedKeyedGroup(KeyedGroup(SequenceTag, _), _) =>
+        case x: TaggedKeyedGroup if x.value.key == ChoiceTag => Seq(x)
+        case x: TaggedKeyedGroup if x.value.key == AllTag => Seq(x)
+        case tagged: TaggedKeyedGroup if tagged.value.key == SequenceTag =>
           implicit val tag = tagged.tag
           (splitIfLongSequence(tagged) filterNot { Some(_) == ps })
       }) ++

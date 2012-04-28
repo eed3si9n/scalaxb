@@ -42,13 +42,13 @@ object ProtocolSpec extends Specification { def is = sequential               ^
         <xs:element name="city" type="xs:string"/>
       </xs:sequence>
     </xs:complexType>
-  </xs:schema>, "example")(1)
+  </xs:schema>, "example1")(1)
 
   def complexType1 = {
     println(addressProtocol)
     addressProtocol.lines.toList must contain (
-      """implicit lazy val ExampleAddressFormat: scalaxb.XMLFormat[example.Address] = new DefaultExampleAddressFormat""",
-      """trait DefaultExampleAddressFormat extends scalaxb.ElemNameParser[example.Address] {"""
+      """implicit lazy val Example1AddressFormat: scalaxb.XMLFormat[example1.Address] = new DefaultExample1AddressFormat""",
+      """trait DefaultExample1AddressFormat extends scalaxb.ElemNameParser[example1.Address] {"""
     )
   }
 
@@ -60,12 +60,12 @@ object ProtocolSpec extends Specification { def is = sequential               ^
     (addressProtocol must contain(
       """case p1 ~ p2 =>""")) and
     (addressProtocol must contain(
-      """example.Address(scalaxb.fromXML[String](p1, scalaxb.ElemName(node) :: stack),"""))
+      """example1.Address(scalaxb.fromXML[String](p1, scalaxb.ElemName(node) :: stack),"""))
   }
 
   def output1 = {
     (addressProtocol must contain(
-      """def writesChildNodes(__obj: example.Address, __scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node] =""")) and
+      """def writesChildNodes(__obj: example1.Address, __scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node] =""")) and
     (addressProtocol must contain(
       """Seq.concat(scalaxb.toXML[String](__obj.street, Some("http://www.example.com/general"), Some("street"), __scope, false),"""))
   }

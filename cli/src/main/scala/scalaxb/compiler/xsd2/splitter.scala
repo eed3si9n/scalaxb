@@ -13,7 +13,7 @@ trait Splitter { self: ContextProcessor with Lookup =>
 
   def splitLongSequence(tagged: TaggedParticle[KeyedGroup]): Option[Seq[TaggedParticle[KeyedGroup]]] =
     tagged.value match {
-      case KeyedGroup(SequenceTag, _) =>
+      case x: KeyedGroup if x.key == SequenceTag =>
         splitParticles(tagged.particles, tagged.tag)
       case _ => None
     }
@@ -27,11 +27,11 @@ trait Splitter { self: ContextProcessor with Lookup =>
 
   def splitParticles(particles: Seq[TaggedParticle[_]], tag: HostTag): Option[Seq[TaggedParticle[KeyedGroup]]] = {
     def buildSequence(ps: Seq[TaggedParticle[_]], i: Int): TaggedKeyedGroup =
-      TaggedKeyedGroup(KeyedGroup(SequenceTag, XExplicitGroup(annotation = None,
-             arg1 = ps map {Tagged.toParticleDataRecord},
-             minOccurs = 1,
-             maxOccurs = "1",
-             attributes = Map())), tag / (i.toString + "s"))
+      TaggedKeyedGroup(KeyedGroup(
+        key = SequenceTag,
+        particles = ps,
+        minOccurs = 1,
+        maxOccurs = "1"), tag / ("split" + i.toString))
 
     def longList(ps: Seq[TaggedParticle[_]]): Option[Seq[TaggedParticle[_]]] =
       if (ps.size >= config.contentsSizeLimit) Some(ps)

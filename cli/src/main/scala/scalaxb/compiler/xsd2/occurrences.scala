@@ -24,13 +24,11 @@ object Occurrence {
   def apply(any: XAny): Occurrence =
     Occurrence(any.minOccurs.toInt, any.maxOccurs, false)
 
-  def apply(particle: DataRecord[XParticleOption]): Occurrence = particle match {
-    case DataRecord(_, _, x: XElement)                       => Occurrence(x)
-    case DataRecord(_, _, x: XAny)                           => Occurrence(x)
-    case DataRecord(_, Some("group"), x: XGroupRef)          => Occurrence(x)
-    case DataRecord(_, Some("all"), x: XExplicitGroup)       => Occurrence(KeyedGroup(AllTag, x))
-    case DataRecord(_, Some("choice"), x: XExplicitGroup)    => Occurrence(KeyedGroup(ChoiceTag, x))
-    case DataRecord(_, Some("sequence"), x: XExplicitGroup)  => Occurrence(KeyedGroup(SequenceTag, x))
+  def apply(particle: TaggedParticle[_]): Occurrence = particle match {
+    case TaggedLocalElement(x, form, tag) => Occurrence(x)
+    case TaggedGroupRef(x, tag)     => Occurrence(x)
+    case TaggedKeyedGroup(x, tag)   => Occurrence(x)
+    case TaggedWildCard(x, tag)     => Occurrence(x)
   }
 
   def apply(ref: XGroupRef): Occurrence =
@@ -38,14 +36,13 @@ object Occurrence {
 
   def apply(keyed: KeyedGroup): Occurrence = keyed.key match {
     case ChoiceTag =>
-      val choice = keyed.value
-      val o = Occurrence(choice.minOccurs.toInt, choice.maxOccurs, false)
-      val particleOs = choice.arg1.toList map {Occurrence(_)}
+      val o = Occurrence(keyed.minOccurs.toInt, keyed.maxOccurs, false)
+      val particleOs = keyed.particles.toList map {Occurrence(_)}
       Occurrence((o.minOccurs :: (particleOs map { _.minOccurs})).min,
         (o.maxOccurs :: (particleOs map { _.maxOccurs})).max,
         particleOs exists {_.nillable})
     case _ =>
-      Occurrence(keyed.value.minOccurs.toInt, keyed.value.maxOccurs, false)
+      Occurrence(keyed.minOccurs.toInt, keyed.maxOccurs, false)
   }
 
   def apply(attr: XAttributable): Occurrence = attr.use match {

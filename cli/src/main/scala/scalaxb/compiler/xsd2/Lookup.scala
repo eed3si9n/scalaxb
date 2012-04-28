@@ -381,8 +381,10 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter with Symbols =
   }
 
   def packageName(namespace: Option[URI]): String =
-    namespace map { ns =>
-      if (ns == SCALAXB_URI) "scalaxb"
-      else "example"
-    } getOrElse { "example" }
+    (if (namespace == Some(SCALAXB_URI)) Some("scalaxb")
+    else if (config.packageNames.contains(namespace map {_.toString})) config.packageNames(namespace map {_.toString})
+    else if (config.packageNames.contains(None)) config.packageNames(None)
+    else None) getOrElse {
+    "generated"
+  }
 }

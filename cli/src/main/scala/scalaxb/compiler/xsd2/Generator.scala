@@ -107,12 +107,12 @@ class Generator(val schema: ReferenceSchema,
         (if (accessors.isEmpty) EmptyTree
         else BLOCK(accessors: _*)),
         EmptyTree,
-        generateDefaultFormat(sym, decl),
+        generateDefaultFormat(sym, decl, hasSequenceParam),
         makeImplicitValue(sym)) ::
       compositorCodes: _*)
   }
 
-  private def generateDefaultFormat(sym: ClassSymbol, decl: Tagged[XComplexType]): Tree = {
+  private def generateDefaultFormat(sym: ClassSymbol, decl: Tagged[XComplexType], hasSequenceParam: Boolean): Tree = {
     val particles = decl.particles
     val unmixedParserList = particles map { buildParser(_, decl.mixed, decl.mixed) }
     val parserList = if (decl.mixed) buildTextParser +: (unmixedParserList flatMap { Seq(_, buildTextParser) })
@@ -174,7 +174,9 @@ class Generator(val schema: ReferenceSchema,
         Some(VAL("targetNamespace", TYPE_OPTION(StringClass)) := optionUriTree(schema.targetNamespace)),
         Some(DEF("reads", eitherType(StringClass, fmt)) withParams(
           PARAM("seq", NodeSeqClass), PARAM("stack", TYPE_LIST(ElemNameClass))) := REF("seq") MATCH(
-          CASE (ID("node") withType(NodeClass)) ==> (REF("Right") APPLY(sym APPLY particleArgs)),
+          CASE (ID("node") withType(NodeClass)) ==> (REF("Right") APPLY(
+            if (hasSequenceParam) sym APPLY SEQARG(particleArgs.head)
+            else sym APPLY particleArgs)),
           CASE (WILDCARD) ==> (REF("Left") APPLY LIT("reads failed: seq must be scala.xml.Node"))
         )),
         makeWritesAttribute,
@@ -191,7 +193,9 @@ class Generator(val schema: ReferenceSchema,
         Some(DEF("parser", ParserClass TYPE_OF sym) withParams(
             PARAM("node", "scala.xml.Node"), PARAM("stack", TYPE_LIST("scalaxb.ElemName"))) :=
           INFIX_CHAIN("~", parserList) INFIX("^^") APPLY BLOCK(
-            CASE(INFIX_CHAIN("~", parserVariableList)) ==> REF(sym) APPLY particleArgs
+            CASE(INFIX_CHAIN("~", parserVariableList)) ==> 
+              (if (hasSequenceParam) REF(sym) APPLY SEQARG(particleArgs.head)
+              else REF(sym) APPLY particleArgs)
           )
         ),
         makeWritesAttribute,

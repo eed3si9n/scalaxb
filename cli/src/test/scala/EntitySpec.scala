@@ -62,8 +62,8 @@ object EntitySpec extends Specification { def is = sequential                 ^
                                                                               end^
   "wildcards should"                                                          ^
     "be referenced as DataRecord[Any] named any*"                             ! wildcard1^
-    "be referenced as Option[DataRecord[A]] if optional"                      ! wildcard2^
-    "be referenced as Seq[DataRecord[A]] if maxOccurs >1"                     ! wildcard2^
+    "be referenced as Option[DataRecord[Any]] if optional"                    ! wildcard2^
+    "be referenced as Seq[DataRecord[Any]] if maxOccurs >1"                   ! wildcard2^
                                                                               end^
   "a single particle with maxOccurs >1 should"                                ^
     "be referenced as A*"                                                     ! param1^
@@ -384,27 +384,22 @@ object EntitySpec extends Specification { def is = sequential                 ^
     entitySource must contain("""case class AllComplexTypeTest(all: Map[String, scalaxb.DataRecord[Any]])""")
   }
 
-  lazy val wildcardEntitySource = module.processNode(<xs:schema targetNamespace="http://www.example.com/general"
-      xmlns:xs="http://www.w3.org/2001/XMLSchema"
-      xmlns:gen="http://www.example.com/general">
-    <xs:complexType name="AnyTest2">
-      <xs:sequence>
-        <xs:any minOccurs="0" />
-        <xs:element name="foo" type="xs:string" />
-        <xs:any/>
-        <xs:element name="foo2" type="xs:string" />
-        <xs:any maxOccurs="unbounded" />
-      </xs:sequence>
-    </xs:complexType>
-  </xs:schema>, "example")(0)
+  lazy val wildcardEntitySource = module.processNode(wildcardXML, "example")(0)
 
   val exptectedAnyTest =
-    """case class AnyTest2(any: Option[scalaxb.DataRecord[Any]], """ +
-      """foo: String, """ +
+    """case class WildcardTest(person1: example.Person, """ +
+      """any: scalaxb.DataRecord[Any], """ +
       """any2: scalaxb.DataRecord[Any], """ +
-      """foo2: String, """ +
-      """any3: Seq[scalaxb.DataRecord[Any]])"""
-
+      """any3: scalaxb.DataRecord[Any], """ +
+      """any4: scalaxb.DataRecord[Any], """ +
+      """wildcardtestoption: scalaxb.DataRecord[scalaxb.DataRecord[Any]], """ +
+      """person3: Option[example.Person], """ +
+      """any5: Option[scalaxb.DataRecord[Any]], """ +
+      """wildcardtestoption2: Option[scalaxb.DataRecord[scalaxb.DataRecord[Any]]], """ +
+      """any6: Seq[scalaxb.DataRecord[Any]], """ +
+      """person5: Seq[example.Person], """ +
+      """any7: scalaxb.DataRecord[Any])"""
+  
   def wildcard1 = {
     println(wildcardEntitySource)
     wildcardEntitySource must contain(exptectedAnyTest)

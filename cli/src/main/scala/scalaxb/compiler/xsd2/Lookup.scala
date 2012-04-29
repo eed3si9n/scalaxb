@@ -77,13 +77,14 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter with Symbols =
     case x: TaggedEnum        => buildEnumTypeSymbol(x)
     case x: TaggedKeyedGroup =>
       x.key match {
+        case AllTag => MapStringDataRecordAnyClass
         case ChoiceTag =>
           val particleOs = x.value.particles.toList map { Occurrence(_) }
           if (particleOs exists { _.nillable }) buildNillableType(userDefinedClassSymbol(tagged))
           else userDefinedClassSymbol(tagged)
         case _ => userDefinedClassSymbol(tagged)
       }
-    case TaggedAttributeSeqParam(_, _) | TaggedAllParam(_, _) =>
+    case TaggedAttributeSeqParam(_, _) =>
       MapStringDataRecordAnyClass
     case x: TaggedAttribute =>
       x.value.typeValue map { ref => buildType(resolveType(ref)) } getOrElse {

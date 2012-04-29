@@ -104,11 +104,11 @@ trait Params { self: Namer with Lookup =>
       case TaggedSimpleType(decl, tag) => Param(tagged.tag.namespace, tagged.tag.name, tagged, SingleNotNillable(), false, false, false)
       case TaggedSymbol(symbol, tag)   => Param(tagged.tag.namespace, "value", tagged, SingleNotNillable(), false, false, false)
       case x: TaggedLocalElement       => buildElementParam(x)
+      case x: TaggedKeyedGroup if x.key == AllTag => buildDataRecordMapParam(ALL_PARAM, x)
       case x: TaggedKeyedGroup if x.key == ChoiceTag => buildChoiceParam(x)
       case x: TaggedKeyedGroup         => buildCompositorParam(x)
       case x: TaggedWildCard           => buildWildCardParam(x, postfix)
       case x: TaggedAttributeSeqParam  => buildDataRecordMapParam(ATTRS_PARAM, x)
-      case x: TaggedAllParam           => buildDataRecordMapParam(ALL_PARAM, x)
       case _ => error("buildParam: " + tagged)
     }
 

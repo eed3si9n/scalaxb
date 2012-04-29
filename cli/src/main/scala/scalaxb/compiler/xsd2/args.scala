@@ -49,10 +49,10 @@ trait Args { self: Namer with Lookup with Params with Symbols =>
 
     val retval: Tree = if (wrapForLongAll) {
       // PrefixedAttribute only contains pre, so you need to pass in node to get the namespace.
-      if (treeToString(selector).contains("@")) (selector DOT "headOption") MAP LAMBDA(PARAM("x")) ==> BLOCK(
+      if (treeToString(selector).contains("@")) (selector DOT "headOption") MAP LAMBDA(PARAM("x", NodeClass)) ==> BLOCK(
           DataRecordClass APPLY(REF("x"), REF("node"), buildFromXML(typ, REF("x"), stackTree, formatter))
         )
-      else (selector DOT "headOption") MAP LAMBDA(PARAM("x")) ==> BLOCK(
+      else (selector DOT "headOption") MAP LAMBDA(PARAM("x", NodeClass)) ==> BLOCK(
             DataRecordClass APPLY(REF("x"), buildFromXML(typ, REF("x"), stackTree, formatter))
         )
     } else occurrence match {
@@ -122,7 +122,7 @@ trait Args { self: Namer with Lookup with Params with Symbols =>
       case _ => sys.error("buildArgForAll unsupported type: " + tagged.toString)
     }
     // "%s map { %s -> _ }" format(buildArg(o, buildSelector(o), true), quote(buildNodeName(o, true)))
-    buildArg(o, buildSelector(o), true) MAP BLOCK( LIT(buildNodeName(o, true)) ANY_-> WILDCARD )
+    PAREN(buildArg(o, buildSelector(o), true)) MAP BLOCK( LIT(buildNodeName(o, true)) ANY_-> WILDCARD )
   }
 
   def elemToOptional(tagged: TaggedLocalElement): TaggedLocalElement =

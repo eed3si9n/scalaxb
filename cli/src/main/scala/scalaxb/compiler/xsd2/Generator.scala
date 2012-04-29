@@ -89,7 +89,7 @@ class Generator(val schema: ReferenceSchema,
 
     val paramList: Seq[Param] = Param.fromSeq(list)
     val compositors = compositorsR(decl)
-    val compositorCodes = compositors.toList map {generateCompositor}
+    val compositorCodes = compositors.toList map { x => generateCompositor(sym.owner.newClass(getName(x)), x) }
     val hasSequenceParam = (paramList.size == 1) && (paramList.head.occurrence.isMultiple) &&
           (!paramList.head.attribute) && (!decl.mixed) && (!longAll)
     val paramsTrees =
@@ -183,7 +183,7 @@ class Generator(val schema: ReferenceSchema,
     if (simpleFromXml)
       TRAITDEF("Default" + fmt.decodedName) withParents(xmlFormatType(sym) :: (CanWriteChildNodesClass TYPE_OF sym) :: Nil) := BLOCK(List(
         Some(VAL("targetNamespace", TYPE_OPTION(StringClass)) := optionUriTree(schema.targetNamespace)),
-        Some(DEF("reads", eitherType(StringClass, fmt)) withParams(
+        Some(DEF("reads", eitherType(StringClass, sym)) withParams(
           PARAM("seq", NodeSeqClass), PARAM("stack", TYPE_LIST(ElemNameClass))) := REF("seq") MATCH(
           CASE (ID("node") withType(NodeClass)) ==> (REF("Right") APPLY(sym APPLY argsTree)),
           CASE (WILDCARD) ==> (REF("Left") APPLY LIT("reads failed: seq must be scala.xml.Node"))
@@ -213,37 +213,68 @@ class Generator(val schema: ReferenceSchema,
   private def makeImplicitValue(sym: ClassSymbol): Tree = {
     val fmt = formatterSymbol(sym)
     LAZYVAL(fmt) withFlags(Flags.IMPLICIT) withType(xmlFormatType(sym)) :=
-      NEW("Default" + fmt.decodedName)    
+      NEW(ANONDEF("Default" + fmt.decodedName) := BLOCK())   
   }
 
   def complexTypeSuperTypes(decl: Tagged[XComplexType]): Seq[Type] = {
     decl.attributeGroups map {buildType}
   }
 
-  def generateSequence(tagged: TaggedParticle[KeyedGroup]): Trippet = {
+  def generateSequence(sym: ClassSymbol, tagged: TaggedParticle[KeyedGroup]): Trippet = {
     logger.debug("generateSequence: %s", tagged)
     
-    val name = getName(tagged)
 //      val superNames: List[String] = buildOptions(compositor)
 //      val superString = if (superNames.isEmpty) ""
 //        else " extends " + superNames.mkString(" with ")
     val list = splitParticlesIfLong(tagged.particles, tagged.tag)
     val paramList = Param.fromSeq(list)
-    // Snippet(<source>case class { name }({
-    //  paramList.map(_.toScalaCode).mkString(", " + NL + indent(1))})</source>)
-    Trippet(CASECLASSDEF(name) withParams(paramList map {_.tree}: _*))
+    Trippet(CASECLASSDEF(sym) withParams(paramList map {_.tree}: _*),
+      EmptyTree,
+      generateSequenceFormat(sym, tagged),
+      makeImplicitValue(sym))
   }
 
-  def generateCompositor(decl: TaggedParticle[KeyedGroup]): Trippet = decl.key match {
-    case SequenceTag => generateSequence(decl)
+  private def generateSequenceFormat(sym: ClassSymbol, tagged: TaggedParticle[KeyedGroup]): Tree = {
+    logger.debug("generateSequenceFormat")
+    
+    val list = splitParticlesIfLong(tagged.particles, tagged.tag)
+    val paramList = Param.fromSeq(list)
+    val fmt = formatterSymbol(sym)
+
+    def makeWritesXML: Option[Tree] = {
+      def simpleContentTree(base: QualifiedName): Tree = base match {
+        case BuiltInAnyType(_) => SEQ(TextClass APPLY(REF("__obj") DOT "value" DOT "value" DOT "toString"))
+        case _ => SEQ(TextClass APPLY(REF("__obj") DOT "value" DOT "toString"))
+      }
+      def toXMLArgs: List[Tree] = REF("x") :: (REF("x") DOT "namespace").tree :: (REF("x") DOT "key").tree :: REF("__scope") :: FALSE :: Nil
+ 
+      def childTree: Tree = if (paramList.isEmpty) NIL
+        else if (paramList.size == 1) buildXMLTree(paramList(0))
+        else (SeqClass DOT "concat")(paramList map { x => buildXMLTree(x) })
+
+      Some(DEF("writes", NodeSeqClass) withParams(PARAM("__obj", sym),
+        PARAM("__namespace", optionType(StringClass)),
+        PARAM("__elementLabel", optionType(StringClass)),
+        PARAM("__scope", NamespaceBindingClass),
+        PARAM("__typeAttribute", BooleanClass)) := childTree)
+    }
+    
+    TRAITDEF("Default" + fmt.decodedName) withParents(XMLFormatClass TYPE_OF sym) := BLOCK(List(
+      Some(DEF("reads", eitherType(StringClass, sym)) withParams(
+          PARAM("seq", NodeSeqClass), PARAM("stack", TYPE_LIST(ElemNameClass))) := LEFT(LIT("Don't call me!"))),
+      makeWritesXML
+    ).flatten)
+  }
+
+  def generateCompositor(sym: ClassSymbol, decl: TaggedParticle[KeyedGroup]): Trippet = decl.key match {
+    case SequenceTag => generateSequence(sym, decl)
     case _ =>
 //      val superNames: List[String] = buildOptions(compositor)
 //      val superString = if (superNames.isEmpty) ""
 //        else " extends " + superNames.mkString(" with ")
       val superString = ""
-      val name = getName(decl)
       // Snippet(<source>trait {name}{superString}</source>)
-      Trippet(TRAITDEF(name))
+      Trippet(TRAITDEF(sym))
   }
 
   def processSimpleType(decl: Tagged[XSimpleType]): Seq[Trippet] =

@@ -20,6 +20,9 @@ object ProtocolSpec extends Specification { def is = sequential               ^
                                                                               end^
   "an all in a complex type should"                                           ^
     "generate a combinator parser"                                            ! all1^ 
+                                                                              end^
+  "wildcards in a complex type should"                                        ^
+    "generate a combinator parser"                                            ! wildcard1^
                                                                               end
 
   import Example._
@@ -105,5 +108,12 @@ object ProtocolSpec extends Specification { def is = sequential               ^
 
     println(allProtocol)
     allProtocol must contain("""def reads(seq: scala.xml.NodeSeq, stack: List[scalaxb.ElemName])""")
+  }
+
+  def wildcard1 = {
+    val wilcardProcotol = module.processNode(wildcardXML, "example")(1)
+
+    println(wilcardProcotol)
+    wilcardProcotol must contain("""(any(_.namespace != Some("http://www.example.com/general"))) ~""")
   }  
 }

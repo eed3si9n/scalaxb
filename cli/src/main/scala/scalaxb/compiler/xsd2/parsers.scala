@@ -23,7 +23,10 @@ trait Parsers { self: Namer with Lookup with Args with Params with Symbols with 
     case tagged: TaggedLocalElement  => buildElemParser(tagged, occurrence, mixed, wrapInDataRecord, false)
     case tagged: TaggedGroupRef      => buildGroupRefParser(tagged, occurrence, mixed, wrapInDataRecord)
     case tagged: TaggedKeyedGroup    => buildKeyedGroupParser(tagged, occurrence, mixed, wrapInDataRecord)
-    case tagged: TaggedWildCard      => buildWildCardParser(tagged, occurrence, mixed, wrapInDataRecord, config.laxAny)
+    case tagged: TaggedWildCard      =>
+      val namespaceConstraint = if (tagged.value.namespace == "") Nil
+                                else tagged.value.namespace.split(' ').toList
+      buildWildCardParser(namespaceConstraint, occurrence, mixed, wrapInDataRecord, config.laxAny)
 
     // case ref: ElemRef             => buildElemParser(buildElement(ref), occurrence, mixed, wrapInDataRecord, false)
     // case compositor: HasParticle  => buildCompositorParser(compositor, occurrence, mixed, wrapInDataRecord)
@@ -75,7 +78,7 @@ trait Parsers { self: Namer with Lookup with Args with Params with Symbols with 
     tagged.typeStructure match {
       case x: TaggedSymbol =>
         x.value match {
-          case XsAnySimpleType | XsAnyType => buildAnyParser(Nil, occurrence, mixed, wrapInDataRecord, true)
+          case XsAnySimpleType | XsAnyType => buildWildCardParser(Nil, occurrence, mixed, wrapInDataRecord, true)
           case symbol: BuiltInSimpleTypeSymbol => addConverter(buildParserTree(tagged, occurrence))
         }
 
@@ -108,8 +111,8 @@ trait Parsers { self: Namer with Lookup with Args with Params with Symbols with 
 
   def buildStackTree: Tree = (ElemNameClass APPLY(REF("node"))) LIST_:: REF("stack")
 
-  def buildAnyParser(namespaceConstraint: List[String], occurrence: Occurrence, mixed: Boolean,
-                     wrapInDataRecord: Boolean, laxAny: Boolean): Tree = {
+  def buildWildCardParser(namespaceConstraint: List[String], occurrence: Occurrence, mixed: Boolean,
+                          wrapInDataRecord: Boolean, laxAny: Boolean): Tree = {
     def converter: Tree =
       if (occurrence.nillable) buildFromXML(nillableWildCardType, WILDCARD,
         buildStackTree, None)
@@ -273,10 +276,5 @@ trait Parsers { self: Namer with Lookup with Args with Params with Symbols with 
     val retval = buildParserTree(base, occurrence)
     logger.debug("buildChoiceParser:  " + tagged + NL + retval)
     retval
-  }
-
-  def buildWildCardParser(tagged: TaggedWildCard, occurrence: Occurrence, mixed: Boolean,
-                          wrapInDataRecord: Boolean, laxAny: Boolean): Tree = {
-    LIT(0)
   }
 }

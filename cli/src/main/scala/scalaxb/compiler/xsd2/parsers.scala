@@ -27,10 +27,6 @@ trait Parsers { self: Namer with Lookup with Args with Params with Symbols with 
       val namespaceConstraint = if (tagged.value.namespace == "") Nil
                                 else tagged.value.namespace.split(' ').toList
       buildWildCardParser(namespaceConstraint, occurrence, mixed, wrapInDataRecord, config.laxAny)
-
-    // case ref: ElemRef             => buildElemParser(buildElement(ref), occurrence, mixed, wrapInDataRecord, false)
-    // case compositor: HasParticle  => buildCompositorParser(compositor, occurrence, mixed, wrapInDataRecord)
-    // case _ => EmptyTree
   }
 
   def buildParserTree(tagged: TaggedLocalElement, occurrence: Occurrence): Tree = {

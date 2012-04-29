@@ -410,21 +410,7 @@ object EntitySpec extends Specification { def is = sequential                 ^
   }
 
   def param1 = {
-    val entitySource = module.processNode(<xs:schema targetNamespace="http://www.example.com/general"
-        xmlns:xs="http://www.w3.org/2001/XMLSchema"
-        xmlns:gen="http://www.example.com/general">
-      <xs:complexType name="SeqParamTest">
-        <xs:sequence>
-          <xs:element name="foo" type="xs:string" maxOccurs="unbounded" />
-        </xs:sequence>
-      </xs:complexType>
-
-      <xs:complexType name="NillableSeqParamTest">
-        <xs:sequence>
-          <xs:element name="foo" type="xs:string" maxOccurs="unbounded" nillable="true" />
-        </xs:sequence>
-      </xs:complexType>
-    </xs:schema>, "example")(0)
+    val entitySource = module.processNode(seqParamXML, "example")(0)
 
     println(entitySource)
     entitySource.lines.toList must contain(

@@ -19,10 +19,13 @@ object ProtocolSpec extends Specification { def is = sequential               ^
     "generate a combinator parser"                                            ! choice1^ 
                                                                               end^
   "an all in a complex type should"                                           ^
-    "generate a combinator parser"                                            ! all1^ 
+    "generates a combinator parser"                                           ! all1^ 
                                                                               end^
   "wildcards in a complex type should"                                        ^
     "generate a combinator parser"                                            ! wildcard1^
+                                                                              end^
+  "a single particle with maxOccurs >1 should"                                ^
+    "generates a combinator parser that uses _*"                              ! arg1^    
                                                                               end
 
   import Example._
@@ -104,16 +107,23 @@ object ProtocolSpec extends Specification { def is = sequential               ^
   }
 
   def all1 = {
-    val allProtocol = module.processNode(allXML, "example")(1)
-
-    println(allProtocol)
-    allProtocol must contain("""def reads(seq: scala.xml.NodeSeq, stack: List[scalaxb.ElemName])""")
+    val p = module.processNode(allXML, "example")(1)
+    println(p)
+    (p must contain("""example.AllComplexTypeTest(scala.collection.immutable.ListMap((List(""")) and
+    (p must contain(""").flatten[(String, scalaxb.DataRecord[Any])]: _*))))"""))
   }
 
   def wildcard1 = {
     val wilcardProcotol = module.processNode(wildcardXML, "example")(1)
-
     println(wilcardProcotol)
     wilcardProcotol must contain("""(any(_.namespace != Some("http://www.example.com/general"))) ~""")
-  }  
+  }
+
+  def arg1 = {
+    val p = module.processNode(seqParamXML, "example")(1)
+    println(p)
+    (p must contain("""example.SeqParamTest((p1.toSeq map { x =>""")) and
+    (p must contain("""  scalaxb.fromXML[String](x, scalaxb.ElemName(node) :: stack)""")) and
+    (p must contain("""}: _*)"""))
+  } 
 }

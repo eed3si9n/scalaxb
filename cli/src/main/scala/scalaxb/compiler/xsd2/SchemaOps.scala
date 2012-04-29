@@ -159,7 +159,7 @@ case class NamedGroupOps(tagged: Tagged[XNamedGroup]) extends GroupOps {
 case class AttributeSeqParam() {}
 
 /** represents param created for xs:all. */
-case class AllParam() {}
+// case class AllParam() {}
 
 sealed trait Tagged[+A] {
   def value: A
@@ -184,7 +184,6 @@ object Tagged {
   def apply(value: XsTypeSymbol, tag: HostTag): TaggedType[XsTypeSymbol] = TaggedSymbol(value, tag)
   def apply(value: XNoFixedFacet, tag: HostTag): Tagged[XNoFixedFacet] = TaggedEnum(value, tag)
   def apply(value: AttributeSeqParam, tag: HostTag): Tagged[AttributeSeqParam] = TaggedAttributeSeqParam(value, tag)
-  def apply(value: AllParam, tag: HostTag): Tagged[AllParam] = TaggedAllParam(value, tag)
 
   implicit def box(value: XSimpleType)(implicit tag: HostTag) = Tagged(value, tag)
   implicit def box(value: XComplexType)(implicit tag: HostTag) = Tagged(value, tag)
@@ -224,7 +223,6 @@ case class TaggedDataRecordSymbol(value: DataRecordSymbol) extends Tagged[DataRe
   val tag = HostTag(Some(SCALAXB_URI), SimpleTypeHost, "DataRecord")
 }
 case class TaggedAttributeSeqParam(value: AttributeSeqParam, tag: HostTag) extends Tagged[AttributeSeqParam] {}
-case class TaggedAllParam(value: AllParam, tag: HostTag) extends Tagged[AllParam] {}
 
 case class DataRecordSymbol(member: Tagged[Any]) extends XsTypeSymbol {
   val name = "DataRecordSymbol(" + member + ")"

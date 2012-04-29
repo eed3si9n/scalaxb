@@ -77,13 +77,13 @@ class Generator(val schema: ReferenceSchema,
     logger.debug("generateComplexTypeEntity: emitting %s" format sym.toString)
 
     lazy val attributeSeqRef: Tagged[AttributeSeqParam] = TaggedAttributeSeqParam(AttributeSeqParam(), decl.tag)
-    lazy val allRef: Tagged[AllParam] = Tagged(AllParam(), decl.tag)
 
     val attributes = decl.flattenedAttributes
     val list =
-      (decl.primaryAll map { _ => Seq(allRef) } getOrElse {
+      (decl.primaryAll map { all => Seq(all) } getOrElse {
         splitParticlesIfLong(decl.particles, decl.tag)}) ++
       (attributes.headOption map { _ => attributeSeqRef }).toSeq
+    val longAll = decl.primaryAll map {_ => true} getOrElse {false}
     
     logger.debug("generateComplexTypeEntity: list: %s", list map {getName})
 
@@ -91,7 +91,7 @@ class Generator(val schema: ReferenceSchema,
     val compositors = compositorsR(decl)
     val compositorCodes = compositors.toList map {generateCompositor}
     val hasSequenceParam = (paramList.size == 1) && (paramList.head.occurrence.isMultiple) &&
-          (!paramList.head.attribute) && (!decl.mixed) // && (!longAll)
+          (!paramList.head.attribute) && (!decl.mixed) && (!longAll)
     val paramsTrees =
       if (hasSequenceParam) paramList.head.varargTree :: Nil
       else paramList map {_.tree}
@@ -107,13 +107,15 @@ class Generator(val schema: ReferenceSchema,
         (if (accessors.isEmpty) EmptyTree
         else BLOCK(accessors: _*)),
         EmptyTree,
-        generateDefaultFormat(sym, decl, hasSequenceParam),
+        generateDefaultFormat(sym, decl, hasSequenceParam, longAll),
         makeImplicitValue(sym)) ::
       compositorCodes: _*)
   }
 
-  private def generateDefaultFormat(sym: ClassSymbol, decl: Tagged[XComplexType], hasSequenceParam: Boolean): Tree = {
-    val particles = decl.particles
+  private def generateDefaultFormat(sym: ClassSymbol, decl: Tagged[XComplexType],
+      hasSequenceParam: Boolean, longAll: Boolean): Tree = {
+    val particles = (decl.primaryAll map { all => Seq(all) } getOrElse {
+        splitParticlesIfLong(decl.particles, decl.tag)})
     val unmixedParserList = particles map { buildParser(_, decl.mixed, decl.mixed) }
     val parserList = if (decl.mixed) buildTextParser +: (unmixedParserList flatMap { Seq(_, buildTextParser) })
       else unmixedParserList
@@ -168,15 +170,22 @@ class Generator(val schema: ReferenceSchema,
         formatterSymbol(userDefinedClassSymbol(tagged)): Type })
     
     val fmt = formatterSymbol(sym)
+    val argsTree: Seq[Tree] =
+      if (hasSequenceParam) Seq(SEQARG(particleArgs.head))
+      else {
+        if (longAll)
+          Seq(ListMapClass.module APPLY SEQARG((LIST(particleArgs) DOT "flatten") APPLYTYPE
+            TYPE_TUPLE(StringClass, DataRecordAnyClass)
+          ))
+        else particleArgs
+      }
 
     if (simpleFromXml)
       TRAITDEF("Default" + fmt.decodedName) withParents(xmlFormatType(sym) :: (CanWriteChildNodesClass TYPE_OF sym) :: Nil) := BLOCK(List(
         Some(VAL("targetNamespace", TYPE_OPTION(StringClass)) := optionUriTree(schema.targetNamespace)),
         Some(DEF("reads", eitherType(StringClass, fmt)) withParams(
           PARAM("seq", NodeSeqClass), PARAM("stack", TYPE_LIST(ElemNameClass))) := REF("seq") MATCH(
-          CASE (ID("node") withType(NodeClass)) ==> (REF("Right") APPLY(
-            if (hasSequenceParam) sym APPLY SEQARG(particleArgs.head)
-            else sym APPLY particleArgs)),
+          CASE (ID("node") withType(NodeClass)) ==> (REF("Right") APPLY(sym APPLY argsTree)),
           CASE (WILDCARD) ==> (REF("Left") APPLY LIT("reads failed: seq must be scala.xml.Node"))
         )),
         makeWritesAttribute,
@@ -193,9 +202,7 @@ class Generator(val schema: ReferenceSchema,
         Some(DEF("parser", ParserClass TYPE_OF sym) withParams(
             PARAM("node", "scala.xml.Node"), PARAM("stack", TYPE_LIST("scalaxb.ElemName"))) :=
           INFIX_CHAIN("~", parserList) INFIX("^^") APPLY BLOCK(
-            CASE(INFIX_CHAIN("~", parserVariableList)) ==> 
-              (if (hasSequenceParam) REF(sym) APPLY SEQARG(particleArgs.head)
-              else REF(sym) APPLY particleArgs)
+            CASE(INFIX_CHAIN("~", parserVariableList)) ==> (sym APPLY argsTree)
           )
         ),
         makeWritesAttribute,

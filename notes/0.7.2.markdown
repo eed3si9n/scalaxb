@@ -1,0 +1,5 @@
+## bug fixes and minor enhancements
+- Fixes xsi:type attribute wiping out other attributes due to SI-5843 [#159][159]. reported by [@psnively][@psnively]
+
+  [159]: https://github.com/eed3si9n/scalaxb/issues/159
+  [@psnively]: https://github.com/psnively

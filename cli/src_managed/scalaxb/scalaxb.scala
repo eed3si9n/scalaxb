@@ -625,19 +625,17 @@ trait CanWriteChildNodes[A] extends CanWriteXML[A] {
   def writesChildNodes(obj: A, scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node]
 
   def writes(obj: A, namespace: Option[String], elementLabel: Option[String],
-      scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
-    scala.xml.Elem(Helper.getPrefix(namespace, scope).orNull,
+      scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq = {
+    val elem =  scala.xml.Elem(Helper.getPrefix(namespace, scope).orNull,
       elementLabel getOrElse { error("missing element label.") },
-      if (typeAttribute && typeName.isDefined &&
-          scope.getPrefix(Helper.XSI_URL) != null) {
-        val attrs = writesAttribute(obj, scope)
-        val mod = attrs remove (Helper.XSI_URL, scope, "type")
-        scala.xml.Attribute(scope.getPrefix(Helper.XSI_URL), "type",
-          Helper.prefixedName(targetNamespace, typeName.get, scope), mod)
-      }
-      else writesAttribute(obj, scope),
+      writesAttribute(obj, scope),
       scope,
       writesChildNodes(obj, scope): _*)
+    if (typeAttribute && typeName.isDefined && scope.getPrefix(Helper.XSI_URL) != null)
+      elem % scala.xml.Attribute(scope.getPrefix(Helper.XSI_URL), "type",
+        Helper.prefixedName(targetNamespace, typeName.get, scope), scala.xml.Null)
+    else elem
+  }
 }
 
 trait AttributeGroupFormat[A] extends scalaxb.XMLFormat[A] {
@@ -900,7 +898,6 @@ object Helper {
 
     f(toScope(xs map {_._1}: _*), Map(xs map {_._2}: _*))
   }
-
 }
 
 class ParserFailure(message: String) extends RuntimeException(message)

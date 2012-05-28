@@ -567,16 +567,21 @@ object GeneralUsage {
       Some("foo") -> "http://www.example.com/foo",
       Some("xs") -> "http://www.w3.org/2001/XMLSchema",
       Some("xsi") -> "http://www.w3.org/2001/XMLSchema-instance")
-    val subject = <foo:billTo xmlns:gen="http://www.example.com/general" xmlns:foo="http://www.example.com/foo">
+    val subject = <foo:billTo
+          xmlns:gen="http://www.example.com/general"
+          xmlns:foo="http://www.example.com/foo"
+          href="http://foo.com/">
         <gen:street>1537 Paper Street</gen:street>
         <gen:city>Wilmington</gen:city>
         <gen:state>DE</gen:state>
         <gen:zip>19886</gen:zip>
       </foo:billTo>
-    val obj: Addressable = scalaxb.fromXML[USAddress](subject)
+    val usaddress = scalaxb.fromXML[USAddress](subject)
+    val obj: Addressable = usaddress
+    println(obj)
     val document = scalaxb.toXML(obj, Some("http://www.example.com/foo"), Some("billTo"), scope, true)
     document.toString match {
-      case """<foo:billTo xsi:type="gen:USAddress" xmlns:gen="http://www.example.com/general" xmlns:foo="http://www.example.com/foo" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><gen:street>1537 Paper Street</gen:street><gen:city>Wilmington</gen:city><gen:state>DE</gen:state><gen:zip>19886</gen:zip></foo:billTo>""" =>
+      case """<foo:billTo href="http://foo.com/" xsi:type="gen:USAddress" xmlns:gen="http://www.example.com/general" xmlns:foo="http://www.example.com/foo" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><gen:street>1537 Paper Street</gen:street><gen:city>Wilmington</gen:city><gen:state>DE</gen:state><gen:zip>19886</gen:zip></foo:billTo>""" =>
       case x => error("match failed: " + x)
     }
     println(document)

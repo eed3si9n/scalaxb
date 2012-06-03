@@ -23,9 +23,8 @@
 package scalaxb.compiler.xsd
 
 import scalashim._
-import scalaxb.compiler.{ScalaNames, Config, ReferenceNotFound}
+import scalaxb.compiler.{ScalaNames, Config, ReferenceNotFound, Log}
 import scala.collection.mutable
-import com.codahale.logula.Log
 
 trait PackageName {
   def packageName(schema: SchemaDecl, context: XsdContext): Option[String] =

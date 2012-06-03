@@ -22,7 +22,7 @@
 
 package scalaxb.compiler.xsd
 import scala.collection.mutable
-import com.codahale.logula.Log
+import scalaxb.compiler.Log
 
 trait XMLOutput extends Args {
   private val logger = Log.forName("xsd.XMLOutput")

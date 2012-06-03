@@ -23,9 +23,9 @@
 package scalaxb.compiler.xsd
 
 import scalashim._
+import scalaxb.compiler.Log
 import scala.collection.mutable
 import scala.collection.immutable
-import com.codahale.logula.Log
 
 trait Parsers extends Args with Params {
   private val logger = Log.forName("xsd.Parsers")

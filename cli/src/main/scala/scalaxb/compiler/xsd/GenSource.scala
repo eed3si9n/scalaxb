@@ -23,11 +23,10 @@
 package scalaxb.compiler.xsd
 
 import scalashim._
-import scalaxb.compiler.{Config, Snippet, CaseClassTooLong}
+import scalaxb.compiler.{Config, Snippet, CaseClassTooLong, Log}
 import scala.collection.mutable
 import scala.collection.{Map}
 import scala.xml._
-import com.codahale.logula.Log
 
 abstract class GenSource(val schema: SchemaDecl,
     val context: XsdContext) extends Parsers with XMLOutput {

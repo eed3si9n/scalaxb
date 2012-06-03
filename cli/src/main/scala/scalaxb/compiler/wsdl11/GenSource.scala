@@ -223,7 +223,7 @@ trait GenSource {
           |        }""".stripMargin.format(
             bodyString(op, input, binding, document),
             headerString(op, input, binding, document), address, quotedMethod, actionString,
-            faultString(faults), outputString(output, binding, op, document))
+            faultString(faults), outputString(output, binding, op, document, soap12))
       case DataRecord(_, _, XSolicitresponseoperationSequence(output, input, faults)) =>
         // "def %s(%s): Either[scalaxb.Fault[Any], %s]".format(op.name, arg(input), paramTypeName)
         """soapClient.requestResponse(%s,
@@ -234,14 +234,14 @@ trait GenSource {
           |        }""".format(
             bodyString(op, input, binding, document),
             headerString(op, input, binding, document), address, quotedMethod, actionString,
-            faultString(faults), outputString(output, binding, op, document))
+            faultString(faults), outputString(output, binding, op, document, soap12))
       case DataRecord(_, _, XNotificationoperationSequence(output)) =>
         // "def %s: %s".format(op.name, paramTypeName)
         """soapClient.requestResponse(Nil, defaultScope, %s, %s, %s) match {
           |          case Left(x)  => error(x.toString)
           |          case Right((header, body)) =>
           |            %s
-          |        }""".stripMargin.format(address, quotedMethod, actionString, outputString(output, binding, op, document))
+          |        }""".stripMargin.format(address, quotedMethod, actionString, outputString(output, binding, op, document, soap12))
       case _ => sys.error("unsupported.")
     }
 
@@ -369,7 +369,7 @@ trait GenSource {
   }
 
   def outputString(output: XParamType, binding: XBinding_operationType,
-                   op: XOperationType, document: Boolean): String = {
+                   op: XOperationType, document: Boolean, soap12: Boolean): String = {
     val parts = paramMessage(output).part
     if (parts.isEmpty) "()"
     else {
@@ -379,6 +379,7 @@ trait GenSource {
         val v =
           if (b.literal && p.element.isDefined) "body.headOption getOrElse {body}"
           else if (b.literal) """scala.xml.Elem("", "Body", scala.xml.Null, defaultScope, body.toSeq: _*)"""
+          else if (!soap12) """(scalaxb.Helper.resolveSoap11Refs(body.head) \ "%s").head""" format (p.name.get)
           else """(body.head \ "%s").head""" format (p.name.get)
 
         val post =

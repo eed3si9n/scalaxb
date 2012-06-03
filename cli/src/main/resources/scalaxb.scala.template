@@ -898,6 +898,33 @@ object Helper {
 
     f(toScope(xs map {_._1}: _*), Map(xs map {_._2}: _*))
   }
+
+  def resolveSoap11Refs(node: Node): Node = {
+    import scala.xml.transform._
+
+    def lookupRef(id: String): Seq[Node] =
+      node.child flatMap {
+        case elem: Elem if (elem \ "@id").text == id =>
+          if ((elem \ "@{http://schemas.xmlsoap.org/soap/encoding/}root").text == "1") elem
+          else elem.child.toSeq
+        case _ => Nil
+      }
+    val rule = new RewriteRule {
+      override def transform(n: Node): Seq[Node] = n match {
+        case x@Elem(prefix, label, attr, scope, _*) if attr exists(p => p.key == "href") =>
+          Elem(prefix, label, attr remove("href"), scope, lookupRef((x \ "@href").text.tail): _*)
+        case x@Elem(prefix, label, attr, scope, _*) if attr exists(p => p.key == "id") =>
+          Nil
+        case other => other
+      }
+    }
+    val rt = new RuleTransformer(rule)
+    var retval: Node = node
+    while (retval != rt(retval)) {
+      retval = rt(retval)
+    } // while
+    retval
+  }
 }
 
 class ParserFailure(message: String) extends RuntimeException(message)

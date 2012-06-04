@@ -44,6 +44,7 @@ class Generator(val schema: ReferenceSchema,
       (schema.unbound.toSeq flatMap {
         case x: TaggedComplexType => processComplexType(x) map {_.toSnippet}
         case x: TaggedSimpleType if containsEnumeration(x) && isRootEnumeration(x) => processSimpleType(x) map {_.toSnippet}
+        case x: TaggedNamedGroup => processNamedGroup(x) map {_.toSnippet}
         case x@TaggedAttributeGroup(group: XNamedAttributeGroup, _) => processAttributeGroup(x) map {_.toSnippet}
         case _ => Nil
       }): _*)
@@ -288,6 +289,12 @@ class Generator(val schema: ReferenceSchema,
     }
 
     Trippet(TRAITDEF(sym).tree :: enumValues.toList, Nil, Nil, Nil)
+  }
+
+  def processNamedGroup(tagged: Tagged[XNamedGroup]): Seq[Trippet] = {
+    val compositors = tagged.compositors
+    val compositorCodes = compositors.toList map { x => generateCompositor(userDefinedClassSymbol(x), x) }
+    Seq(Trippet(Trippet(Nil, Nil, Nil, Nil) :: compositorCodes: _*))
   }
   
   def processAttributeGroup(tagged: Tagged[XAttributeGroup]): Seq[Trippet] =

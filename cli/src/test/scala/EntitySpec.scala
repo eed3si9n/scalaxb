@@ -43,6 +43,9 @@ object EntitySpec extends Specification { def is = sequential                 ^
   "local elements with a local complex type should"                           ^
     "generate a case class named similarly"                                   ! localelement1^
                                                                               end^
+  "top-level named group should"                                              ^
+    "generate a case class named similarly"                                   ! group1^
+                                                                              end^
   "sequences in a complex type should"                                        ^
     "generate a case class named FooSequence* for non-primary sequences"      ! seq1^
     "be referenced as fooSequence within the type"                            ! seq2^
@@ -80,8 +83,6 @@ object EntitySpec extends Specification { def is = sequential                 ^
     "generate accessors in the referencing complex type"                      ! attributegroup2^
     "be extended by the referencing complex types"                            ! attributegroup3^
                                                                               end
-
-  sequential
 
   import Example._
   // scalaxb.compiler.Module.configureLogger(true)
@@ -318,6 +319,25 @@ object EntitySpec extends Specification { def is = sequential                 ^
     println(entitySource)
     (entitySource must contain("""case class Items(item: example.Item*)""")) and
     (entitySource must contain("""case class Item("""))
+  }
+
+  def group1 = {
+    val entitySource = module.processNode(<xs:schema targetNamespace="http://www.example.com/ipo"
+        xmlns:xs="http://www.w3.org/2001/XMLSchema"
+        xmlns:ipo="http://www.example.com/ipo">
+      <xs:group name="emptySeqGroup">
+        <xs:sequence/>
+      </xs:group>
+      <xs:group name="seqGroup">
+        <xs:sequence>
+          <xs:element name="city" type="xs:string"/>
+        </xs:sequence>
+      </xs:group>      
+    </xs:schema>, "example")(0)
+
+    println(entitySource)
+    (entitySource must contain("""case class EmptySeqGroupSequence""")) and
+    (entitySource must contain("""case class SeqGroupSequence(city: String)"""))    
   }
 
   lazy val seqEntitySource = module.processNode(sequenceXML, "example")(0)

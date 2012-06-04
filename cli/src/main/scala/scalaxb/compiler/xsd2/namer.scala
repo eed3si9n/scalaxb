@@ -61,6 +61,11 @@ trait Namer extends ScalaNames { self: Lookup with Splitter  =>
     nameCompositors(decl)
   }
 
+  def nameNamedGroup(tagged: Tagged[XNamedGroup]) {
+    logger.debug("nameNamedGroup: %s", tagged.toString)
+    tagged.compositors foreach { c => nameCompositor(c, false) }
+  }
+
   def nameCompositors(decl: Tagged[XComplexType]) {
     val primarySequence = decl.primarySequence
     implicit val s = schema.unbound

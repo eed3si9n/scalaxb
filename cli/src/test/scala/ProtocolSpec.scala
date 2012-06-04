@@ -53,7 +53,7 @@ object ProtocolSpec extends Specification { def is = sequential               ^
   def complexType1 = {
     println(addressProtocol)
     addressProtocol.lines.toList must contain (
-      """implicit lazy val Example1AddressFormat: scalaxb.XMLFormat[example1.Address] = new DefaultExample1AddressFormat""",
+      """implicit lazy val Example1AddressFormat: scalaxb.XMLFormat[example1.Address] = new DefaultExample1AddressFormat {""",
       """trait DefaultExample1AddressFormat extends scalaxb.ElemNameParser[example1.Address] {"""
     )
   }

@@ -1,7 +1,5 @@
 package scalaxb.compiler
 
-import com.codahale.logula.Log
-
 class SbtApp extends xsbti.AppMain {
   private val logger = Log.forName("main")
 

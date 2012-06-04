@@ -38,7 +38,8 @@ object Plugin extends sbt.Plugin {
     def apply(sources: Seq[File], config: sc.Config, outdir: File, verbose: Boolean = false): Seq[File] =
       sources.headOption map { src =>
         import sc._
-        val module = Module.moduleByFileName(src, verbose)
+        sc.Log.configureLogger(verbose)
+        val module = Module.moduleByFileName(src)
         module.processFiles(sources, config.copy(outdir = outdir))
       } getOrElse {Nil}
   }

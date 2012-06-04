@@ -24,7 +24,6 @@ package scalaxb.compiler
 
 import scala.collection.mutable.{ListBuffer, ListMap}
 import java.io.File
-import com.codahale.logula.Log
 
 object Defaults {
   val protocolFileName = "xmlprotocol.scala"
@@ -48,7 +47,8 @@ object Main {
 
   def start(args: Seq[String]) {
     Arguments(args) foreach { args =>
-      val module = Module.moduleByFileName(args.files.head, args.verbose)
+      Log.configureLogger(args.verbose)
+      val module = Module.moduleByFileName(args.files.head)
       module.processFiles(args.files, args.config)
     }
   }

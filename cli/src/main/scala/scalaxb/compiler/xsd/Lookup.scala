@@ -23,9 +23,8 @@
 package scalaxb.compiler.xsd
 
 import scalashim._
-import scalaxb.compiler.{ReferenceNotFound}
+import scalaxb.compiler.{Log, ReferenceNotFound}
 import scala.collection.mutable
-import com.codahale.logula.Log
 
 trait Lookup extends ContextProcessor {
   private val logger = Log.forName("xsd.Lookup")

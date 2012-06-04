@@ -23,7 +23,7 @@
 package scalaxb.compiler.xsd
 
 import scalashim._
-import com.codahale.logula.Log
+import scalaxb.compiler.Log
 
 trait Args extends Params {
   private val logger = Log.forName("xsd.Args")

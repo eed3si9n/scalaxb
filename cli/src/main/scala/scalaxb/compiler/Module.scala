@@ -29,7 +29,6 @@ import scala.xml.{Node, Elem}
 import scala.xml.factory.{XMLLoader}
 import javax.xml.parsers.SAXParser
 import java.io.{File, PrintWriter, Reader, BufferedReader}
-import com.codahale.logula.Log
 import collection.{mutable, Map, Set}
 
 case class Config(packageNames: Map[Option[String], Option[String]] = Map(None -> None),
@@ -81,8 +80,7 @@ object Module {
   val NL = System.getProperty("line.separator")
   val FileExtension = """.*([.]\w+)$""".r
 
-  def moduleByFileName(file: File, verbose: Boolean): Module = {
-    configureLogger(verbose)
+  def moduleByFileName(file: File): Module = {
     file.toString match {
       case FileExtension(".wsdl") =>
         new scalaxb.compiler.wsdl11.Driver
@@ -103,18 +101,6 @@ object Module {
     }
   }
 
-  def configureLogger(verbose: Boolean) {
-    import com.codahale.logula.Logging
-    import org.apache.log4j.Level
-
-    Logging.configure { log =>
-      log.level = if (verbose) Level.TRACE
-                  else Level.INFO
-      log.console.enabled = true
-      log.console.threshold = if (verbose) Level.TRACE
-                              else Level.WARN
-    }
-  }
 }
 
 trait Module {

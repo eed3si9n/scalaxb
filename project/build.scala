@@ -28,8 +28,7 @@ object Builds extends Build {
       </developers>),
     publishArtifact in Test := false,
     resolvers ++= Seq(
-      "sonatype-public" at "https://oss.sonatype.org/content/repositories/public",
-      "repo.codahale.com" at "http://repo.codahale.com"),
+      "sonatype-public" at "https://oss.sonatype.org/content/repositories/public"),
     publishTo <<= version { (v: String) =>
       val nexus = "https://oss.sonatype.org/"
       if (v.trim.endsWith("SNAPSHOT")) Some("snapshots" at nexus + "content/repositories/snapshots") 
@@ -45,8 +44,7 @@ object Builds extends Build {
     licenses in lsync <<= licenses,
     tags in lsync := Seq("xml", "soap", "wsdl", "code-generation"),
     (externalResolvers in lsync) := Seq(
-      "sonatype-public" at "https://oss.sonatype.org/content/repositories/public",
-      "repo.codahale.com" at "http://repo.codahale.com")
+      "sonatype-public" at "https://oss.sonatype.org/content/repositories/public")
   )
 
   val Xsd = config("xsd") extend(Compile)
@@ -60,7 +58,7 @@ object Builds extends Build {
       "com.github.scopt" %% "scopt" % "2.0.1",
       "org.scala-tools.sbt" % "launcher-interface" % "0.7.4" % "provided" from (
         "http://databinder.net/repo/org.scala-tools.sbt/launcher-interface/0.7.4/jars/launcher-interface.jar"),
-      "com.codahale" %% "logula" % "2.1.3"),
+      "log4j" % "log4j" % "1.2.17"),
     unmanagedSourceDirectories in Compile <+= baseDirectory( _ / "src_managed" ),
     buildInfoPackage := "scalaxb",
     sourceGenerators in Compile <+= buildInfo,

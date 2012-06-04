@@ -23,8 +23,8 @@
 package scalaxb.compiler.xsd
 
 import scalashim._
+import scalaxb.compiler.Log
 import scala.collection.mutable
-import com.codahale.logula.Log
 
 sealed abstract class Cardinality
 case object Optional extends Cardinality { override def toString: String = "Optional" }

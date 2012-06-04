@@ -22,9 +22,8 @@
  
 package scalaxb.compiler.xsd
 
-import scalaxb.compiler.{Module, Config, Snippet}
+import scalaxb.compiler.{Module, Config, Snippet, Log}
 import scala.xml._
-import com.codahale.logula.Log
 
 abstract class GenProtocol(val context: XsdContext) extends ContextProcessor {
   private val logger = Log.forName("xsd.GenProtocol")

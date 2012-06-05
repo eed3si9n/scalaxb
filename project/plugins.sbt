@@ -17,8 +17,7 @@ resolvers += ("ScalaTools Snapshots" at "http://scala-tools.org/repo-snapshots/"
 // addSbtPlugin("com.eed3si9n" % "sbt-appengine" % "0.3.0")
 
 resolvers ++= Seq(
-  "less is" at "http://repo.lessis.me",
-  "coda" at "http://repo.codahale.com")
+  "less is" at "http://repo.lessis.me")
 
 addSbtPlugin("me.lessis" % "ls-sbt" % "0.1.1")
 

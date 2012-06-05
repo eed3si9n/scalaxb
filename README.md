@@ -30,8 +30,7 @@ There are currently four ways of running scalaxb:
 To call scalaxb from sbt 0.11.2, put this in your `project/plugins.sbt`:
 
     resolvers ++= Seq(
-      "sonatype-public" at "https://oss.sonatype.org/content/groups/public",
-      "repo.codahale.com" at "http://repo.codahale.com")
+      "sonatype-public" at "https://oss.sonatype.org/content/groups/public")
 
     addSbtPlugin("org.scalaxb" % "sbt-scalaxb" % "X.X")
     
@@ -48,8 +47,7 @@ and this in `build.sbt`:
 To call scalaxb from sbt 0.10.1, put this in your `project/plugins/build.sbt`:
 
     resolvers ++= Seq(
-      "sonatype-public" at "https://oss.sonatype.org/content/groups/public",
-      "repo.codahale.com" at "http://repo.codahale.com")
+      "sonatype-public" at "https://oss.sonatype.org/content/groups/public")
 
     libraryDependencies <+= (sbtVersion) { sv => "org.scalaxb" %% "sbt-scalaxb" % ("sbt" + sv + "_X.X") }
 

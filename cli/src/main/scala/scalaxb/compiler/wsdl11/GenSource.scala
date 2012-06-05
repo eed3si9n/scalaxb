@@ -26,12 +26,11 @@ trait GenSource {
   import scalashim._
   import wsdl11._
   import scalaxb.{DataRecord}
-  import scalaxb.compiler.{Config, Snippet, ReferenceNotFound, Module}
+  import scalaxb.compiler.{Config, Snippet, ReferenceNotFound, Module, Log}
   import Module.{NL, indent, camelCase}
   import scala.xml.Node
   import scalaxb.compiler.xsd.{ReferenceTypeSymbol, SimpleTypeDecl, ComplexTypeDecl, BuiltInSimpleTypeSymbol,
     XsTypeSymbol, AnyType, XsAnyType}
-  import com.codahale.logula.Log
 
   val WSDL_SOAP11 = "http://schemas.xmlsoap.org/wsdl/soap/"
   val WSDL_SOAP12 = "http://schemas.xmlsoap.org/wsdl/soap12/"

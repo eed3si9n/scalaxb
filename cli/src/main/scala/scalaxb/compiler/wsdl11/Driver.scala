@@ -24,14 +24,13 @@ package scalaxb.compiler.wsdl11
 
 import scalashim._
 import scala.collection.mutable
-import scalaxb.compiler.{Module, Config, Snippet, CustomXML, CanBeWriter}
+import scalaxb.compiler.{Module, Config, Snippet, CustomXML, CanBeWriter, Log}
 import scalaxb.{DataRecord}
 import wsdl11._
 import java.io.{Reader}
 import java.net.{URI}
 import scala.xml.{Node}
 import scalaxb.compiler.xsd.{SchemaLite, SchemaDecl, XsdContext}
-import com.codahale.logula.Log
 
 class Driver extends Module { driver =>
   private val logger = Log.forName("wsdl")

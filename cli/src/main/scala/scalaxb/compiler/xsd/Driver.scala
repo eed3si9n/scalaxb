@@ -22,12 +22,11 @@
  
 package scalaxb.compiler.xsd
 
-import scalaxb.compiler.{Module, Config, Snippet, CustomXML, CanBeWriter}
+import scalaxb.compiler.{Module, Config, Snippet, CustomXML, CanBeWriter, Log}
 import java.io.{File, Reader}
 import java.net.{URI}
 import collection.mutable
 import scala.xml.{Node, Elem}
-import com.codahale.logula.Log
 
 class Driver extends Module { driver =>
   private val logger = Log.forName("xsd")

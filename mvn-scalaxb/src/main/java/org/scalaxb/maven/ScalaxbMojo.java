@@ -186,7 +186,7 @@ public class ScalaxbMojo extends AbstractScalaxbMojo {
     private List<File> generateSources(Arguments args) {
         File file = args.files().head();
         boolean verbose = args.verbose();
-        Module module = MODULE$.moduleByFileName(file, verbose);
+        Module module = MODULE$.moduleByFileName(file);
         configureLogging(verbose);
         List<File> generated = seqAsJavaList(
                 module.processFiles(args.files(), args.config()));

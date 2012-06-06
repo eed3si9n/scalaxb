@@ -1,11 +1,12 @@
-#!/bin/sh
-# Build scalaxb and install into the local maven repository.
-# (actually just into ~/.m2/repository: it doesn't check settings.xml)
-if [ -z "$APPENGINE_SDK_HOME" ] ; then
-  echo The APPENGINE_SDK_HOME environment variable must be set.
-  exit 1
+#!/bin/bash -e
+# Build scalaxb and install into a local maven repository.
+# By default, installs to ~/.m2/repository.
+# Alternatively, a repository path can be specified as an argument.
+
+REPO=${1:-$HOME/.m2/repository}
+if [ "$REPO" = "${REPO#/}" ]; then
+  REPO=$PWD/$REPO;
 fi
-REPO=$HOME/.m2/repository
 cd $(dirname $0)/..
 sbt <<EOF
 project app

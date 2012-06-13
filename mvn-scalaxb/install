@@ -8,7 +8,8 @@ if [ "$REPO" = "${REPO#/}" ]; then
   REPO=$PWD/$REPO;
 fi
 cd $(dirname $0)/..
-sbt <<EOF
+run () { tr '\n' '\000' | xargs -0 sbt; }
+run <<EOF
 project app
 set publishTo := Some(Resolver.file("file",  new File("$REPO")))
 publish

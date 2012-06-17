@@ -104,6 +104,7 @@ trait Params { self: Namer with Lookup =>
       case TaggedSimpleType(decl, tag) => Param(tagged.tag.namespace, tagged.tag.name, tagged, SingleNotNillable(), false, false, false)
       case TaggedSymbol(symbol, tag)   => Param(tagged.tag.namespace, "value", tagged, SingleNotNillable(), false, false, false)
       case x: TaggedLocalElement       => buildElementParam(x)
+      case x: TaggedGroupRef           => buildGroupRefParam(x)
       case x: TaggedKeyedGroup if x.key == AllTag => buildDataRecordMapParam(ALL_PARAM, x)
       case x: TaggedKeyedGroup if x.key == ChoiceTag => buildChoiceParam(x)
       case x: TaggedKeyedGroup         => buildCompositorParam(x)
@@ -162,6 +163,15 @@ trait Params { self: Namer with Lookup =>
       val typeSymbol = tagged
       val retval = Param(tagged.tag.namespace, name, typeSymbol, Occurrence(compositor), false, false, false)
       logger.debug("buildCompositorParam: " + retval.toString)
+      retval
+    }
+
+    private def buildGroupRefParam(tagged: Tagged[XGroupRef]): Param = {
+      val group = resolveNamedGroup(tagged)
+      val name = getName(group).toLowerCase
+      val typeSymbol = tagged
+      val retval = Param(tagged.tag.namespace, name, typeSymbol, Occurrence(tagged), false, false, false)
+      logger.debug("buildGroupRefParam: " + retval.toString)
       retval
     }
 

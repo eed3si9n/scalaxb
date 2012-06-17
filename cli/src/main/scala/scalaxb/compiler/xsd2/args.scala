@@ -102,6 +102,13 @@ trait Args { self: Namer with Lookup with Params with Symbols =>
           case tagged: TaggedComplexType =>
             buildTypeSymbolArg(buildType(tagged), selector, o, elem.default, elem.fixed, wrapForLongAll)
         }
+      case x: TaggedGroupRef =>
+        val param = Param(x)
+        param.occurrence match {
+          case Multiple(_)         => selector DOT "toSeq"
+          case OptionalNillable(_) => selector INFIX("getOrElse") APPLY BLOCK(NONE)
+          case _ => selector
+        }
       case x: TaggedKeyedGroup =>
         val param = Param(x)
         param.occurrence match {

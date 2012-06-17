@@ -75,6 +75,7 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter with Symbols =
     case x: TaggedSimpleType  => buildSimpleTypeType(x)   
     case x: TaggedComplexType => buildComplexTypeSymbol(x)
     case x: TaggedEnum        => buildEnumTypeSymbol(x)
+    case x: TaggedGroupRef    => buildNamedGroupSymbol(resolveNamedGroup(x))
     case x: TaggedKeyedGroup =>
       x.key match {
         case AllTag => MapStringDataRecordAnyClass
@@ -229,7 +230,7 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter with Symbols =
     case _ => throw new ReferenceNotFound("attributeGroup", groupRef.namespace map { _.toString }, groupRef.localPart)
   }
 
-  def resolveNamedGroup(tagged: TaggedGroupRef): Tagged[XNamedGroup] =
+  def resolveNamedGroup(tagged: Tagged[XGroupRef]): Tagged[XNamedGroup] =
     resolveNamedGroup(tagged.value.ref.get)
   def resolveNamedGroup(groupRef: QualifiedName): Tagged[XNamedGroup] = groupRef match {
     case NamedGroup(group) => group

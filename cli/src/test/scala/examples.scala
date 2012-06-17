@@ -247,5 +247,19 @@ object Example {
           <xs:element name="foo" type="xs:string" maxOccurs="unbounded" nillable="true" />
         </xs:sequence>
       </xs:complexType>
-    </xs:schema>   
+    </xs:schema> 
+
+  val namedGroupXML =
+    <xs:schema targetNamespace="http://www.example.com/ipo"
+        xmlns:xs="http://www.w3.org/2001/XMLSchema"
+        xmlns:ipo="http://www.example.com/ipo">
+      <xs:group name="emptySeqGroup">
+        <xs:sequence/>
+      </xs:group>
+      <xs:group name="seqGroup">
+        <xs:sequence>
+          <xs:element name="city" type="xs:string"/>
+        </xs:sequence>
+      </xs:group>      
+    </xs:schema>  
 }

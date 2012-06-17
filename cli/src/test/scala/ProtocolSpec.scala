@@ -12,6 +12,9 @@ object ProtocolSpec extends Specification { def is = sequential               ^
     "generate an XML writer"                                                  ! output1^
     "be referenced as Option[A] in the parser if nillable"                    ! cardinality1^
                                                                               end^
+  "top-level named groups should"                                             ^
+    "generate a combinator parser"                                            ! namedGroup1^ 
+                                                                              end^
   "sequences in complex type should"                                          ^
     "generate a combinator parser"                                            ! seq1^ 
                                                                               end^
@@ -82,6 +85,14 @@ object ProtocolSpec extends Specification { def is = sequential               ^
     println(cardinalityProtocol)
     (cardinalityProtocol must contain(
       """scalaxb.toXML[Option[example.Person]](__obj.person2, None, Some("person2"), __scope, false)"""))
+  }
+
+  lazy val namedGroupProtocol = module.processNode(namedGroupXML, "example")(1)
+  
+  def namedGroup1 = {
+    println(namedGroupProtocol)
+    (namedGroupProtocol must contain(
+      """  def parseSeqGroupGroup(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[example.SeqGroupSequence] = (((scalaxb.ElemName(None, "city"))) ^^ {"""))    
   }
 
   lazy val seqProtocol = module.processNode(sequenceXML, "example")(1)

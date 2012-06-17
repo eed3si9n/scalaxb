@@ -322,18 +322,7 @@ object EntitySpec extends Specification { def is = sequential                 ^
   }
 
   def group1 = {
-    val entitySource = module.processNode(<xs:schema targetNamespace="http://www.example.com/ipo"
-        xmlns:xs="http://www.w3.org/2001/XMLSchema"
-        xmlns:ipo="http://www.example.com/ipo">
-      <xs:group name="emptySeqGroup">
-        <xs:sequence/>
-      </xs:group>
-      <xs:group name="seqGroup">
-        <xs:sequence>
-          <xs:element name="city" type="xs:string"/>
-        </xs:sequence>
-      </xs:group>      
-    </xs:schema>, "example")(0)
+    val entitySource = module.processNode(namedGroupXML, "example")(0)
 
     println(entitySource)
     (entitySource must contain("""case class EmptySeqGroupSequence""")) and

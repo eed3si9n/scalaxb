@@ -163,7 +163,7 @@ trait Parsers { self: Namer with Lookup with Args with Params with Symbols with 
 
   // minOccurs and maxOccurs may come from the declaration of the compositor,
   // or from the element declaration.
-  def buildKeyedGroupParser(tagged: TaggedKeyedGroup, occurrence: Occurrence, 
+  def buildKeyedGroupParser(tagged: TaggedParticle[KeyedGroup], occurrence: Occurrence, 
       mixed: Boolean, wrapInDataRecord: Boolean): Tree = tagged.value.key match {
     case SequenceTag => 
       // if (containsSingleChoice(seq)) buildChoiceParser(singleChoice(seq), occurrence, mixed)
@@ -177,7 +177,7 @@ trait Parsers { self: Namer with Lookup with Args with Params with Symbols with 
   // for unmixed wrapped in data record, this should generate Seq(DataRecord(None, None, Foo("1", "2")))
   // for mixed, this should generate
   // Seq(DataRecord(Some("ipo") Some("a"), "1"), DataRecord(None, None, "foo"), DataRecord(Some("ipo") Some("b"), "2"))
-  def buildSeqParser(tagged: TaggedKeyedGroup,
+  def buildSeqParser(tagged: TaggedParticle[KeyedGroup],
       occurrence: Occurrence, mixed: Boolean, wrapInDataRecord: Boolean): Tree = {
     val ps = tagged.particles
     val particles = if (mixed) ps
@@ -189,7 +189,7 @@ trait Parsers { self: Namer with Lookup with Args with Params with Symbols with 
       }
       else particles map { buildParser(_, mixed, mixed) }
     
-    def buildSeqConverter(seq: TaggedKeyedGroup, mixed: Boolean,
+    def buildSeqConverter(seq: TaggedParticle[KeyedGroup], mixed: Boolean,
         wrapInDataRecord: Boolean): Tree = {
       val sym = buildKeyedGroupTypeSymbol(seq)
       val parserVariableList = if (mixed) (0 to particles.size * 2 - 1) map { buildSelector }
@@ -229,7 +229,7 @@ trait Parsers { self: Namer with Lookup with Args with Params with Symbols with 
   // choice repeatable in case any one particle is repeatable.
   // this may violate the schema, but it is a compromise as long as plurals are
   // treated as Seq[DataRecord].
-  def buildChoiceParser(tagged: TaggedKeyedGroup, occurrence: Occurrence, mixed: Boolean): Tree = {
+  def buildChoiceParser(tagged: TaggedParticle[KeyedGroup], occurrence: Occurrence, mixed: Boolean): Tree = {
     val ps = tagged.particles
     assert(ps.size > 0, "choice has no particles: " + tagged)
 

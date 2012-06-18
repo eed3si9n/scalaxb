@@ -60,7 +60,7 @@ object EntitySpec extends Specification { def is = sequential                 ^
   def entity2 = {
     emptyEntitySource must find("""package example1""".stripMargin)
   }
-  
+
   def restriction1 = {
     val entitySource = module.processNode(<xs:schema targetNamespace="http://www.example.com/"
         xmlns:xs="http://www.w3.org/2001/XMLSchema">
@@ -125,9 +125,14 @@ object EntitySpec extends Specification { def is = sequential                 ^
         xmlns:tns="http://www.example.com">
       <xs:complexType name="SimpleTypeTest">
         <xs:sequence>
+          <xs:element name="numberlist1" type="tns:ListOfUnsignedInt"/>
           <xs:element name="milklist1" type="tns:ListOfMilk"/>
         </xs:sequence>
       </xs:complexType>
+
+      <xs:simpleType name="ListOfUnsignedInt">
+        <xs:list itemType="xs:unsignedInt"/>
+      </xs:simpleType>
 
       <xs:simpleType name="ListOfMilk">
         <xs:list itemType="tns:MilkType"/>
@@ -142,7 +147,7 @@ object EntitySpec extends Specification { def is = sequential                 ^
     </xs:schema>, "example")(0)
 
     println(entitySource)
-    entitySource must contain("""milklist1: Seq[example.MilkType]""")
+    entitySource must contain("""numberlist1: Seq[Long], milklist1: Seq[example.MilkType]""")
   }
 
   def union1 = {

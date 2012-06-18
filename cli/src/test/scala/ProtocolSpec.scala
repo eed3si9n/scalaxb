@@ -1,3 +1,5 @@
+package scalaxb.specs
+
 import org.specs2._
 
 object ProtocolSpec extends Specification { def is = sequential               ^

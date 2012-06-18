@@ -20,6 +20,8 @@
  * THE SOFTWARE.
  */
 
+package scalaxb.specs
+
 import org.specs2.matcher._
 import java.io.{File}
 import scala.tools.nsc.{Settings}
@@ -151,20 +153,6 @@ trait CompilerMatcher {
     }
     file.delete
   }
-
-  def copyFileFromResource(source: String, dest: File) {
-    val in = getClass.getResourceAsStream(source)
-    val reader = new java.io.BufferedReader(new java.io.InputStreamReader(in))
-    val out = new java.io.PrintWriter(new java.io.FileWriter(dest))
-    var line: String = null
-    line = reader.readLine
-    while (line != null) {
-      out.println(line)
-      line = reader.readLine
-    }
-    in.close
-    out.flush
-  }
   
   private def jarPathOfClass(className: String) = {
     val resource = className.split('.').mkString("/", "/", ".class")
@@ -177,8 +165,8 @@ trait CompilerMatcher {
     } else {
       path.substring(indexOfFile, indexOfSeparator)
     }
-  }
-  
+  } 
+
   private def toSourceFile(file: File): SourceFile = 
-    new BatchSourceFile(new PlainFile(file))
+    new BatchSourceFile(new PlainFile(file)) 
 }

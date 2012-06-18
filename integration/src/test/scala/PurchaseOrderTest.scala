@@ -1,9 +1,11 @@
+package scalaxb.specs
+
 import java.io.{File}
 
 object PurchaseOrderTest extends TestBase {
   val inFile    = new File("integration/src/test/resources/ipo.xsd")
   val usageFile = new File(tmp, "PurchaseOrderUsage.scala")
-  copyFileFromResource("PurchaseOrderUsage.scala", usageFile)
+  ResourceUtil.copyFileFromResource("PurchaseOrderUsage.scala", usageFile)
 
   // override val module = new scalaxb.compiler.xsd.Driver with Verbose
   lazy val generated = module.process(inFile, "ipo", tmp)

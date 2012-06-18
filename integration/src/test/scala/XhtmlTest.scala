@@ -1,3 +1,5 @@
+package scalaxb.specs
+
 import java.io.{File}
 
 object XhtmlTest extends TestBase {

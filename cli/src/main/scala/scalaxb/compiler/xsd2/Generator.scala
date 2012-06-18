@@ -65,13 +65,14 @@ class Generator(val schema: ReferenceSchema,
         case tagged: TaggedKeyedGroup if tagged.value.key == SequenceTag =>
           implicit val tag = tagged.tag
           (splitIfLongSequence(tagged) filterNot { Some(_) == ps })
+        case _ => Nil
       }) ++
       {
         implicit val tag = compositor.tag
         compositor.particles collect { case Compositor(comp) => comp } flatMap {compositorsR(_)}
       }
 
-    val nonps = decl.compositors flatMap {compositorsR(_)}
+    val nonps = decl.compositors filterNot { Some(_) == ps } flatMap {compositorsR(_)}
     if (singleps) nonps
     else ps.toSeq ++ nonps 
   }

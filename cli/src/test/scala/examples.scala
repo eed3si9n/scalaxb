@@ -1,6 +1,66 @@
 package scalaxb.specs
 
 object Example {
+  val builtInTypesXML =
+    <xs:schema targetNamespace="http://www.example.com/general"
+        xmlns:xs="http://www.w3.org/2001/XMLSchema"
+        xmlns:gen="http://www.example.com/general">
+      <xs:complexType name="SingularBuiltInTypeTest">
+        <xs:sequence>
+          <xs:element name="string" type="xs:string"/>
+          <xs:element name="boolean" type="xs:boolean"/>
+          <xs:element name="decimal" type="xs:decimal"/>
+          <xs:element name="float" type="xs:float"/>
+          <xs:element name="double" type="xs:double"/>
+          <xs:element name="duration" type="xs:duration"/>
+          <xs:element name="dateTime" type="xs:dateTime"/>
+          <xs:element name="time" type="xs:time"/>
+          <xs:element name="date" type="xs:date"/>
+          <xs:element name="gYearMonth" type="xs:gYearMonth"/>
+
+          <xs:element name="gYear" type="xs:gYear"/>
+          <xs:element name="gMonthDay" type="xs:gMonthDay"/>
+          <xs:element name="gDay" type="xs:gDay"/>
+          <xs:element name="gMonth" type="xs:gMonth"/>
+          <xs:element name="hexBinary" type="xs:hexBinary"/>
+          <xs:element name="base64Binary" type="xs:base64Binary"/>
+          <xs:element name="anyURI" type="xs:anyURI"/>
+          <xs:element name="QName" type="xs:QName"/>
+          <xs:element name="NOTATION" type="xs:NOTATION"/>
+          <xs:element name="normalizedString" type="xs:normalizedString"/>
+
+          <xs:element name="token" type="xs:token"/>
+          <xs:element name="language" type="xs:language"/>
+          <xs:element name="NMTOKEN" type="xs:NMTOKEN"/>
+          <xs:element name="NMTOKENS" type="xs:NMTOKENS"/>
+          <xs:element name="Name" type="xs:Name"/>
+          <xs:element name="NCName" type="xs:NCName"/>
+          <xs:element name="ID" type="xs:ID"/>
+          <xs:element name="IDREF" type="xs:IDREF"/>
+          <xs:element name="IDREFS" type="xs:IDREFS"/>
+          <xs:element name="ENTITY" type="xs:ENTITY"/>
+
+          <xs:element name="ENTITIES" type="xs:ENTITIES"/>
+          <xs:element name="integer" type="xs:integer"/>
+          <xs:element name="nonPositiveInteger" type="xs:nonPositiveInteger"/>
+          <xs:element name="negativeInteger" type="xs:negativeInteger"/>
+          <xs:element name="long" type="xs:long"/>
+          <xs:element name="int" type="xs:int"/>
+          <xs:element name="short" type="xs:short"/>
+          <xs:element name="byte" type="xs:byte"/>
+          <xs:element name="nonNegativeInteger" type="xs:nonNegativeInteger"/>
+          <xs:element name="unsignedLong" type="xs:unsignedLong"/>
+
+          <xs:element name="unsignedInt" type="xs:unsignedInt"/>
+          <xs:element name="unsignedShort" type="xs:unsignedShort"/>
+          <xs:element name="unsignedByte" type="xs:unsignedByte"/>
+          <xs:element name="positiveInteger" type="xs:positiveInteger"/>
+          <xs:element name="anyType" type="xs:anyType"/>
+          <xs:element name="anySimpleType" type="xs:anySimpleType" />
+        </xs:sequence>
+      </xs:complexType>
+    </xs:schema>
+
   val complexTypeCardinalityXML =
     <xs:schema targetNamespace="http://www.example.com/general"
         xmlns:xs="http://www.w3.org/2001/XMLSchema"

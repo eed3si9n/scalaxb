@@ -166,13 +166,16 @@ class Generator(val schema: ReferenceSchema,
 
     val makeWritesAttribute = None
 
-    val groups = decl.flattenedGroups filter { case tagged: TaggedGroupRef =>
+    val groups = decl.flattenedGroups map { ref =>
+      resolveNamedGroup(ref.ref.get) 
+    } filter { tagged =>
       implicit val tag = tagged.tag
-      resolveNamedGroup(tagged.ref.get).particles.size > 0 }
+      tagged.particles.size > 0
+    }
     val defaultFormatSuperNames: Seq[Type] =
       (ElemNameParserClass TYPE_OF sym) ::
-      (groups.toList map { case tagged: TaggedGroupRef =>
-        formatterSymbol(userDefinedClassSymbol(tagged)): Type })
+      (groups.toList map { case tagged: TaggedNamedGroup =>
+        formatterSymbol(buildNamedGroupSymbol(tagged)): Type })
     
     val fmt = formatterSymbol(sym)
     val argsTree: Seq[Tree] =

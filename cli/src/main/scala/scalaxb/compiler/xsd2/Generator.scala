@@ -72,7 +72,7 @@ class Generator(val schema: ReferenceSchema,
         compositor.particles collect { case Compositor(comp) => comp } flatMap {compositorsR(_)}
       }
 
-    val nonps = decl.compositors filterNot { Some(_) == ps } flatMap {compositorsR(_)}
+    val nonps = (decl.compositors flatMap {compositorsR(_)}).distinct
     if (singleps) nonps
     else ps.toSeq ++ nonps 
   }

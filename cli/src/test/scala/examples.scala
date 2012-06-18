@@ -199,6 +199,27 @@ object Example {
       </xs:complexType>
     </xs:schema>
 
+  val grouprefXML =
+    <xs:schema targetNamespace="http://www.example.com/general"
+        xmlns:xs="http://www.w3.org/2001/XMLSchema"
+        xmlns:gen="http://www.example.com/general">
+      <xs:complexType name="Array" >
+        <xs:annotation>
+        <xs:documentation>
+         'Array' is a complex type for accessors identified by position 
+        </xs:documentation>
+      </xs:annotation>
+        <xs:group ref="gen:Array" minOccurs="0" />
+      </xs:complexType>
+
+      <xs:group name="Array" >
+        <xs:sequence>
+          <xs:any namespace="##any" minOccurs="0" maxOccurs="unbounded" processContents="lax" />
+        </xs:sequence>
+      </xs:group>
+    </xs:schema>
+
+
   val wildcardXML =
     <xs:schema targetNamespace="http://www.example.com/general"
         xmlns:xs="http://www.w3.org/2001/XMLSchema"

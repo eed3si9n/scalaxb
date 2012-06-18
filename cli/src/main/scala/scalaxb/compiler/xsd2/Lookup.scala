@@ -134,11 +134,7 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter with Symbols =
         buildType(baseType(decl))
       case list: XList =>
         val base = baseType(decl)
-        val baseName = base.value match {
-          case symbol: BuiltInSimpleTypeSymbol => symbol.name
-          case decl: XSimpleType => getName(base)
-        }
-        TYPE_SEQ(userDefinedClassSymbol(base.tag.namespace, baseName))
+        TYPE_SEQ(buildType(baseType(decl)))
       // union baseType is hardcoded to xs:string.
       case union: XUnion =>
         buildType(baseType(decl))

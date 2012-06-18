@@ -1,3 +1,5 @@
+package scalaxb.specs
+
 import java.io.{File}
 import scalaxb.compiler.{Config}
 import scalaxb.compiler.ConfigEntry._

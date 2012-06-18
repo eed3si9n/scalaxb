@@ -20,6 +20,8 @@
  * THE SOFTWARE.
  */
 
+package scalaxb.specs
+
 import scala.language.reflectiveCalls
 import org.specs2.matcher._
 import java.io.{File}
@@ -192,6 +194,7 @@ trait CompilerMatcher {
     in.close
     out.flush
   }
+
   private def jarPathOfClass(className: String) = {
     val resource = className.split('.').mkString("/", "/", ".class")
     val path = getClass.getResource(resource).getPath
@@ -204,6 +207,8 @@ trait CompilerMatcher {
       path.substring(indexOfFile, indexOfSeparator)
     }
   }
+
   private def toSourceFile(file: File): SourceFile =
     new BatchSourceFile(new PlainFile(file))
+  }
 }

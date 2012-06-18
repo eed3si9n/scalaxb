@@ -1,3 +1,5 @@
+package scalaxb.specs
+
 import java.io.{File}
 import scala.collection.immutable.{ Map, Set, Seq }
 import scalaxb.compiler._
@@ -22,11 +24,12 @@ object GeneralTest extends TestBase {
         Some("http://www.example.com/general_import") -> Some("gimport")))).
     update(Outdir(tmp))
 
+  ResourceUtil.copyFileFromResource("GeneralUsage.scala", usageFile)
+  ResourceUtil.copyFileFromResource("CustomizationUsage.scala", custumFile)
+
   lazy val generated = module.processFiles(Seq(inFile, mimeFile, importFile),
     config)
-  copyFileFromResource("GeneralUsage.scala", usageFile)
-  copyFileFromResource("CustomizationUsage.scala", custumFile)
-  
+
   "general.scala file must compile together with GeneralUsage.scala" in {
     (List("GeneralUsage.allTests"),
       usageFile :: generated) must evaluateTo(true,

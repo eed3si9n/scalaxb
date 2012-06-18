@@ -1,3 +1,5 @@
+package scalaxb.specs
+
 object Example {
   val complexTypeCardinalityXML =
     <xs:schema targetNamespace="http://www.example.com/general"

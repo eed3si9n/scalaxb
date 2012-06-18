@@ -52,7 +52,9 @@ class Generator(val schema: ReferenceSchema,
   def processComplexType(decl: Tagged[XComplexType]): Seq[Trippet] =
     Seq(generateComplexTypeEntity(buildComplexTypeSymbol(decl), decl))
 
-  def compositorsR(decl: Tagged[XComplexType]): Seq[TaggedParticle[KeyedGroup]] = {
+  /** recursively return compositors.
+   */
+  private def compositorsR(decl: Tagged[XComplexType]): Seq[TaggedParticle[KeyedGroup]] = {
     val ps = decl.primarySequence
     val singleps = ps map { tagged => Occurrence(tagged.value).isSingle } getOrElse {false}
 
@@ -81,8 +83,7 @@ class Generator(val schema: ReferenceSchema,
 
     val attributes = decl.flattenedAttributes
     val list =
-      (decl.primaryAll map { all => Seq(all) } getOrElse {
-        splitParticlesIfLong(decl.particles, decl.tag)}) ++
+      decl.splitParticles ++
       (attributes.headOption map { _ => attributeSeqRef }).toSeq
     val longAll = decl.primaryAll map {_ => true} getOrElse {false}
     
@@ -93,18 +94,22 @@ class Generator(val schema: ReferenceSchema,
     val compositorCodes = compositors.toList map { x => generateCompositor(sym.owner.newClass(getName(x)), x) }
     val hasSequenceParam = (paramList.size == 1) && (paramList.head.occurrence.isMultiple) &&
           (!paramList.head.attribute) && (!decl.mixed) && (!longAll)
-    val paramsTrees =
-      if (hasSequenceParam) paramList.head.varargTree :: Nil
-      else paramList map {_.tree}
-
     val accessors: Seq[Tree] =
-      (decl.primaryAll map { generateAllAccessors(_) } getOrElse {
-        splitParticles(decl.particles, decl.tag) map { generateLongSeqAccessors(_) } getOrElse {Nil} }) ++
+      (decl.primaryCompositor map {
+        case x: TaggedKeyedGroup if x.value.key == AllTag => generateAllAccessors(x)
+        case tagged: TaggedKeyedGroup if tagged.value.key == SequenceTag =>
+          splitLongSequence(tagged) map {
+            generateLongSeqAccessors(_)
+          } getOrElse {Nil}
+        case _ => Nil
+      } getOrElse {Nil}) ++
       (attributes.headOption map  { _ => generateAttributeAccessors(attributes, true) } getOrElse {Nil})
     val parents = complexTypeSuperTypes(decl)
 
     Trippet(
-      Trippet(CASECLASSDEF(sym) withParams(paramsTrees) withParents(parents) :=
+      Trippet(CASECLASSDEF(sym) withParams(
+          if (hasSequenceParam) paramList.head.varargTree :: Nil
+          else paramList map {_.tree}) withParents(parents) :=
         (if (accessors.isEmpty) EmptyTree
         else BLOCK(accessors: _*)),
         EmptyTree,
@@ -115,8 +120,7 @@ class Generator(val schema: ReferenceSchema,
 
   private def generateDefaultFormat(sym: ClassSymbol, decl: Tagged[XComplexType],
       hasSequenceParam: Boolean, longAll: Boolean): Tree = {
-    val particles = (decl.primaryAll map { all => Seq(all) } getOrElse {
-        splitParticlesIfLong(decl.particles, decl.tag)})
+    val particles = decl.splitParticles
     val unmixedParserList = particles map { buildParser(_, decl.mixed, decl.mixed) }
     val parserList = if (decl.mixed) buildTextParser +: (unmixedParserList flatMap { Seq(_, buildTextParser) })
       else unmixedParserList
@@ -227,7 +231,7 @@ class Generator(val schema: ReferenceSchema,
 //      val superNames: List[String] = buildOptions(compositor)
 //      val superString = if (superNames.isEmpty) ""
 //        else " extends " + superNames.mkString(" with ")
-    val list = splitParticlesIfLong(tagged.particles, tagged.tag)
+    val list = splitLongSequence(tagged) getOrElse {tagged.particles}
     val paramList = Param.fromSeq(list)
     Trippet(CASECLASSDEF(sym) withParams(paramList map {_.tree}: _*),
       EmptyTree,
@@ -235,10 +239,9 @@ class Generator(val schema: ReferenceSchema,
       makeImplicitValue(sym))
   }
 
-  private def generateSequenceFormat(sym: ClassSymbol, tagged: TaggedParticle[KeyedGroup]): Tree = {
+  private[this] def generateSequenceFormat(sym: ClassSymbol, tagged: TaggedParticle[KeyedGroup]): Tree = {
     logger.debug("generateSequenceFormat")
-    
-    val list = splitParticlesIfLong(tagged.particles, tagged.tag)
+    val list = splitLongSequence(tagged) getOrElse {tagged.particles}
     val paramList = Param.fromSeq(list)
     val fmt = formatterSymbol(sym)
 

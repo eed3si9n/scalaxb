@@ -369,7 +369,8 @@ object SchemaIteration {
 case class ComplexTypeOps(decl: Tagged[XComplexType]) {
   def particles(implicit lookup: Lookup, targetNamespace: Option[URI], scope: NamespaceBinding) =
     ComplexTypeIteration.complexTypeToParticles(decl)
-
+  def splitParticles(implicit lookup: Lookup, splitter: Splitter, targetNamespace: Option[URI], scope: NamespaceBinding) =
+    ComplexTypeIteration.complexTypeToSplitParticles(decl)
   def primaryCompositor(implicit lookup: Lookup): Option[TaggedParticle[_]] = {
     implicit val unbound = lookup.schema.unbound
     ComplexTypeIteration.primaryCompositor(decl)
@@ -471,6 +472,17 @@ object ComplexTypeIteration {
         } getOrElse {Nil}) ++ SchemaIteration.processAttrSeq(arg2)
     })
   }
+
+  def complexTypeToSplitParticles(decl: Tagged[XComplexType])
+    (implicit lookup: Lookup, splitter: Splitter, targetNamespace: Option[URI], scope: NamespaceBinding): Seq[TaggedParticle[_]] =
+    decl.primaryCompositor map {
+      case x: TaggedGroupRef => Seq(x)
+      case x: TaggedKeyedGroup if x.value.key == ChoiceTag => Seq(x)
+      case x: TaggedKeyedGroup if x.value.key == AllTag => Seq(x)
+      case tagged: TaggedKeyedGroup if tagged.value.key == SequenceTag =>
+        implicit val tag = tagged.tag
+        splitter.splitLongSequence(tagged) getOrElse {decl.particles}
+    } getOrElse {Nil}    
 
   /** particles of the given decl flattened one level.
    * returns list of Tagged[XSimpleType], Tagged[BuiltInSimpleTypeSymbol], Tagged[XElement], Tagged[KeyedGroup],

@@ -1,3 +1,5 @@
+package scalaxb.specs
+
 import java.io.{File}
 import scalaxb.compiler._
 
@@ -20,9 +22,9 @@ object GeneralTest extends TestBase {
         Some("http://www.example.com/general_import") -> Some("gimport")),
       attributePrefix = Some("attr_"),
       outdir = tmp))
-  copyFileFromResource("GeneralUsage.scala", usageFile)
-  copyFileFromResource("CustomizationUsage.scala", custumFile)
-  
+  ResourceUtil.copyFileFromResource("GeneralUsage.scala", usageFile)
+  ResourceUtil.copyFileFromResource("CustomizationUsage.scala", custumFile)
+    
   "general.scala file must compile together with GeneralUsage.scala" in {
     (List("GeneralUsage.allTests"),
       usageFile :: generated) must evaluateTo(true,

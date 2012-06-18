@@ -1,3 +1,5 @@
+package scalaxb.specs
+
 import java.io.{File}
 
 object MixedContentTest extends TestBase {
@@ -5,7 +7,7 @@ object MixedContentTest extends TestBase {
   val usageFile = new File(tmp, "MixedUsage.scala")
   
   lazy val generated = module.process(inFile, "mixed", tmp)
-  copyFileFromResource("MixedUsage.scala", usageFile)
+  ResourceUtil.copyFileFromResource("MixedUsage.scala", usageFile)
     
   "mixed.scala file must compile together with MixedUsage.scala" in {
     (List("MixedUsage.allTests"),

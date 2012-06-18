@@ -17,15 +17,7 @@ trait Splitter { self: ContextProcessor with Lookup =>
         splitParticles(tagged.particles, tagged.tag)
       case _ => None
     }
-
-  // called by generator.
-  def splitParticlesIfLong(particles: Seq[TaggedParticle[_]], tag: HostTag): Seq[TaggedParticle[_]] = {
-    val retval = splitParticles(particles, tag) getOrElse {particles}
-    logger.debug("splitParticlesIfLong: %s", retval map {getName(_)})
-    retval
-  }
-
-  def splitParticles(particles: Seq[TaggedParticle[_]], tag: HostTag): Option[Seq[TaggedParticle[KeyedGroup]]] = {
+  private[this] def splitParticles(particles: Seq[TaggedParticle[_]], tag: HostTag): Option[Seq[TaggedParticle[KeyedGroup]]] = {
     def buildSequence(ps: Seq[TaggedParticle[_]], i: Int): TaggedKeyedGroup =
       TaggedKeyedGroup(KeyedGroup(
         key = SequenceTag,

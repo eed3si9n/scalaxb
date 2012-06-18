@@ -1,3 +1,5 @@
+package scalaxb.specs
+
 import org.specs2._
 
 object EntitySpec extends Specification { def is = sequential                 ^
@@ -358,9 +360,12 @@ object EntitySpec extends Specification { def is = sequential                 ^
       """multiplesequencecomplextypetestsequence: example.MultipleSequenceComplexTypeTestSequence*)""")
   }
 
-  def seq5 = {
-    seqEntitySource must contain("""case class LongSequenceComplexTypeTestSequence(int1: Int""")
-  }
+  val seqExpectedLongSequenceTest = 
+    """case class LongSequenceComplexTypeTest(longsequencecomplextypetestsequence0: example.LongSequenceComplexTypeTestSequence0, """
+
+  def seq5 =
+    (seqEntitySource must contain(seqExpectedLongSequenceTest)) and
+    (seqEntitySource must contain("""case class LongSequenceComplexTypeTestSequence(int1: Int"""))
 
   def seq6 = {
     seqEntitySource must contain("""case class LongSequenceComplexTypeTestSequence(int1: Int""")

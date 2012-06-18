@@ -181,7 +181,7 @@ trait Parsers { self: Namer with Lookup with Args with Params with Symbols with 
       occurrence: Occurrence, mixed: Boolean, wrapInDataRecord: Boolean): Tree = {
     val ps = tagged.particles
     val particles = if (mixed) ps
-      else splitParticlesIfLong(ps, tagged.tag)
+      else splitLongSequence(tagged) getOrElse {ps}
     val parserList: Seq[Tree] = if (mixed) (0 to ps.size * 2 - 1).toList map { i =>
         if (ps.size == 0) buildTextParser
         else if (i % 2 == 0) buildParser(ps(i / 2), mixed, mixed)

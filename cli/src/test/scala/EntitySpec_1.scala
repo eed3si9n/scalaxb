@@ -78,7 +78,7 @@ object EntitySpec_1 extends Specification { def is = sequential               ^
   }
 
   val seqExpectedLongSequenceTest = 
-    """case class LongSequenceComplexTypeTest(longsequencecomplextypetestsequence0: example.LongSequenceComplexTypeTestSequence0, """
+    """case class LongSequenceComplexTypeTest(longsequencecomplextypetestsequence: example.LongSequenceComplexTypeTestSequence, """
 
   def seq5 =
     (seqEntitySource must contain(seqExpectedLongSequenceTest)) and
@@ -119,7 +119,7 @@ object EntitySpec_1 extends Specification { def is = sequential               ^
     val entitySource = module.processNode(grouprefXML, "example")(0)
 
     println(entitySource)
-    entitySource must contain("""case class GrouprefTest(all: Map[String, scalaxb.DataRecord[Any]])""")    
+    entitySource must contain("""case class ArrayType(arraygroup: Option[example.ArrayGroup])""")    
   }
 
   lazy val wildcardEntitySource = module.processNode(wildcardXML, "example")(0)

@@ -119,7 +119,8 @@ object EntitySpec_1 extends Specification { def is = sequential               ^
     val entitySource = module.processNode(grouprefXML, "example")(0)
 
     println(entitySource)
-    entitySource must contain("""case class ArrayType(arraygroup: Option[example.ArrayGroup])""")    
+    (entitySource must contain("""case class EmptySequenceGroupTest(emptyseqgroupsequence: example.EmptySeqGroupSequence)""")) and
+    (entitySource must contain("""case class ArrayType(arraysequence: Option[example.ArraySequence])"""))
   }
 
   lazy val wildcardEntitySource = module.processNode(wildcardXML, "example")(0)

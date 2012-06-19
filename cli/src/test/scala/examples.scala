@@ -259,27 +259,6 @@ object Example {
       </xs:complexType>
     </xs:schema>
 
-  val grouprefXML =
-    <xs:schema targetNamespace="http://www.example.com/general"
-        xmlns:xs="http://www.w3.org/2001/XMLSchema"
-        xmlns:gen="http://www.example.com/general">
-      <xs:complexType name="Array" >
-        <xs:annotation>
-        <xs:documentation>
-         'Array' is a complex type for accessors identified by position 
-        </xs:documentation>
-      </xs:annotation>
-        <xs:group ref="gen:Array" minOccurs="0" />
-      </xs:complexType>
-
-      <xs:group name="Array" >
-        <xs:sequence>
-          <xs:any namespace="##any" minOccurs="0" maxOccurs="unbounded" processContents="lax" />
-        </xs:sequence>
-      </xs:group>
-    </xs:schema>
-
-
   val wildcardXML =
     <xs:schema targetNamespace="http://www.example.com/general"
         xmlns:xs="http://www.w3.org/2001/XMLSchema"
@@ -344,5 +323,48 @@ object Example {
           <xs:element name="city" type="xs:string"/>
         </xs:sequence>
       </xs:group>      
-    </xs:schema>  
+    </xs:schema>
+
+  val grouprefXML =
+    <xs:schema targetNamespace="http://www.example.com/general"
+        xmlns:xs="http://www.w3.org/2001/XMLSchema"
+        xmlns:gen="http://www.example.com/general">
+      <xs:complexType name="EmptySequenceGroupTest">
+        <xs:sequence>
+          <xs:group ref="gen:emptySeqGroup"/>
+        </xs:sequence>
+      </xs:complexType>
+
+      <xs:complexType name="EmptyChoiceGroupTest">
+        <xs:choice>
+          <xs:group ref="gen:emptySeqGroup"/>
+          <xs:element name="string1" type="xs:string"/>
+        </xs:choice>
+      </xs:complexType>      
+
+      <xs:complexType name="Array" >
+        <xs:annotation>
+        <xs:documentation>
+         'Array' is a complex type for accessors identified by position 
+        </xs:documentation>
+      </xs:annotation>
+        <xs:group ref="gen:Array" minOccurs="0" />
+      </xs:complexType>
+
+      <xs:group name="Array" >
+        <xs:sequence>
+          <xs:any namespace="##any" minOccurs="0" maxOccurs="unbounded" processContents="lax" />
+        </xs:sequence>
+      </xs:group>
+
+      <xs:group name="emptySeqGroup">
+        <xs:sequence/>
+      </xs:group>
+
+      <xs:group name="seqGroup">
+        <xs:sequence>
+          <xs:element name="city" type="xs:string"/>
+        </xs:sequence>
+      </xs:group>       
+    </xs:schema>
 }

@@ -63,6 +63,12 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter with Symbols =
     case _ => StringClass
   }
 
+  def buildBaseType(tagged: TaggedKeyedGroup): Type =
+    tagged.key match {
+      case ChoiceTag => userDefinedClassSymbol(tagged)
+      case _ => buildType(tagged)
+    }
+
   def buildType(tagged: Tagged[Any]): Type = tagged match {
     case x: TaggedDataRecordSymbol => DataRecordClass TYPE_OF buildType(x.value.member)
     case x: TaggedWildCard => wildCardType

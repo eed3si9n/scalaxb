@@ -114,6 +114,6 @@ object WrappedSchema {
 
   def choiceList(schema: XSchema): Seq[TaggedKeyedGroup] =
     schema.toSeq collect {
-      case tagged: TaggedKeyedGroup if tagged.value.key == "choice" => tagged
+      case tagged: TaggedKeyedGroup if tagged.value.key == ChoiceTag => tagged
     }
 }

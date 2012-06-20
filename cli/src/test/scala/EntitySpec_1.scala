@@ -13,6 +13,7 @@ object EntitySpec_1 extends Specification { def is = sequential               ^
                                                                               end^
   "choices in a complex type should"                                          ^
     "generate a trait named FooOption*"                                       ! choice1^
+    "mixin FooOption to choice candidates"                                    ! choice3^
     "be referenced as DataRecord[FooOption] if it's made of non-nillable complex type element" ! choice2^
     "be referenced as DataRecord[Option[FooOption]] if it's made of complex types, some nillable" ! choice2^
     "be referenced as DataRecord[Int] if it's made of xs:int"                 ! choice2^
@@ -106,6 +107,15 @@ object EntitySpec_1 extends Specification { def is = sequential               ^
 
   def choice2 = {
     choiceEntitySource must contain(expectedChoiceTest)
+  }
+
+  def choice3 = {
+    choiceEntitySource must contain("case class Address(street: String, city: String) extends example.ChoiceComplexTypeTestOption " +
+      "with example.ChoiceComplexTypeTestOption2 " +
+      "with example.ChoiceComplexTypeTestOption3 " +
+      "with example.ChoiceComplexTypeTestOption4 " +
+      "with example.ChoiceComplexTypeTestOption5 " +
+      "with example.ChoiceComplexTypeTestOption6")
   }
 
   def all1 = {

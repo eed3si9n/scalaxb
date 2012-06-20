@@ -226,7 +226,27 @@ class Generator(val schema: ReferenceSchema,
   }
 
   def complexTypeSuperTypes(decl: Tagged[XComplexType]): Seq[Type] = {
-    decl.attributeGroups map {buildType}
+    def choices: List[TaggedKeyedGroup] =
+      (for {
+        sch <- context.schemas
+        choice <- WrappedSchema.choiceList(sch.unbound)
+        p <- choice.particles
+      } yield p match {
+        case x: TaggedLocalElement =>
+          (x.ref, x.typeValue) match {
+            case (Some(Element(elem)), _) =>
+              elem.typeValue match {
+                case Some(ComplexType(t)) if t == decl => Some(choice)
+                case _ => None
+              }  
+            case (_, Some(ComplexType(t))) if t == decl => Some(choice)
+            case _ => None
+          }
+        case _ => None
+      }).flatten.toList.distinct
+
+    (choices map {buildBaseType}) ++
+    (decl.attributeGroups map {buildType})
   }
 
   def generateSequence(sym: ClassSymbol, tagged: TaggedParticle[KeyedGroup]): Trippet = {

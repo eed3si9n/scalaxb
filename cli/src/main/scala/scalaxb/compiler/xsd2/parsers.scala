@@ -16,7 +16,7 @@ trait Parsers { self: Namer with Lookup with Args with Params with Symbols with 
 
   // called by makeCaseClassWithType and buildSeqParser
   def buildParser(tagged: TaggedParticle[_], mixed: Boolean, wrapInDataRecord: Boolean): Tree =
-    buildParser(tagged, Param(tagged).occurrence, mixed, wrapInDataRecord)
+    buildParser(tagged, Occurrence(tagged), mixed, wrapInDataRecord)
 
   def buildParser(particle: TaggedParticle[_], occurrence: Occurrence,
       mixed: Boolean, wrapInDataRecord: Boolean): Tree = particle match {
@@ -44,12 +44,10 @@ trait Parsers { self: Namer with Lookup with Args with Params with Symbols with 
     import Occurrence._
 
     def buildConverter(typeSymbol: TaggedType[_], occurrence: Occurrence): Tree = {
-      // val record = "scalaxb.DataRecord(x.namespace, Some(x.name), " + buildTypeSymbolArg("x", typeSymbol) + ")"
       val record = DataRecordClass APPLY(REF("x") DOT "namespace",
         SOME(REF("x") DOT "name"),
         buildTypeSymbolArg(REF("x"), typeSymbol))
 
-      // val nillableRecord = "scalaxb.DataRecord(x.namespace, Some(x.name), x.nilOption map {" + buildTypeSymbolArg("_", typeSymbol) + "})"
       val nillableRecord = DataRecordClass APPLY(REF("x") DOT "namespace",
         SOME(REF("x") DOT "name"),
         REF("x") DOT "nilOption" MAP buildTypeSymbolArg(WILDCARD, typeSymbol))

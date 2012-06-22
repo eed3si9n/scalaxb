@@ -83,6 +83,7 @@ class Generator(val schema: ReferenceSchema,
     lazy val attributeSeqRef: Tagged[AttributeSeqParam] = TaggedAttributeSeqParam(AttributeSeqParam(), decl.tag)
 
     val attributes = decl.flattenedAttributes
+    val hasAttributes = !attributes.isEmpty
     val list =
       decl.splitParticles ++
       (attributes.headOption map { _ => attributeSeqRef }).toSeq
@@ -114,13 +115,13 @@ class Generator(val schema: ReferenceSchema,
         (if (accessors.isEmpty) EmptyTree
         else BLOCK(accessors: _*)),
         EmptyTree,
-        generateDefaultFormat(sym, decl, hasSequenceParam, longAll),
+        generateDefaultFormat(sym, decl, hasAttributes, hasSequenceParam, longAll),
         makeImplicitValue(sym)) ::
       compositorCodes: _*)
   }
 
   private def generateDefaultFormat(sym: ClassSymbol, decl: Tagged[XComplexType],
-      hasSequenceParam: Boolean, longAll: Boolean): Tree = {
+      hasAttributes: Boolean, hasSequenceParam: Boolean, longAll: Boolean): Tree = {
     val particles = decl.splitParticles
     val unmixedParserList = particles map { buildParser(_, decl.mixed, decl.mixed) }
     val parserList = if (decl.mixed) buildTextParser +: (unmixedParserList flatMap { Seq(_, buildTextParser) })
@@ -165,7 +166,11 @@ class Generator(val schema: ReferenceSchema,
         PARAM("__scope", NamespaceBindingClass)) := childTree)
     }
 
-    val makeWritesAttribute = None
+    val makeWritesAttribute: Option[Tree] =
+      if (!hasAttributes) None
+      else Some(DEF("writesAttribute", MetaDataClass) withFlags(Flags.OVERRIDE) withParams(
+        PARAM("__obj", sym), PARAM("__scope", NamespaceBindingClass)
+      ) := (HelperClass DOT "mapToAttributes")(REF("__obj") DOT "attributes", REF("__scope")))
 
     val groups = decl.flattenedGroups map { ref =>
       resolveNamedGroup(ref.ref.get) 
@@ -180,14 +185,17 @@ class Generator(val schema: ReferenceSchema,
     
     val fmt = formatterSymbol(sym)
     val argsTree: Seq[Tree] =
-      if (hasSequenceParam) Seq(SEQARG(particleArgs.head))
-      else {
-        if (longAll)
+      (Nil match {
+        case _ if hasSequenceParam =>
+          Seq(SEQARG(particleArgs.head))
+        case _ if longAll =>
           Seq(ListMapClass.module APPLY SEQARG((LIST(particleArgs) DOT "flatten") APPLYTYPE
             TYPE_TUPLE(StringClass, DataRecordAnyClass)
           ))
-        else particleArgs
-      }
+        case _ => particleArgs
+      }) ++ 
+      (if (hasAttributes) Seq((HelperClass DOT "attributesToMap")(REF("node")))
+      else Nil)
 
     if (simpleFromXml)
       TRAITDEF("Default" + fmt.decodedName) withParents(xmlFormatType(sym) :: (CanWriteChildNodesClass TYPE_OF sym) :: Nil) := BLOCK(List(

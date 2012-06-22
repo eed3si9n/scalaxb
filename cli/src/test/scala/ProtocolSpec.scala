@@ -24,7 +24,7 @@ object ProtocolSpec extends Specification { def is = sequential               ^
     "generate a combinator parser"                                            ! choice1^ 
                                                                               end^
   "an all in a complex type should"                                           ^
-    "generates a combinator parser"                                           ! all1^ 
+    "generate a combinator parser"                                            ! all1^ 
                                                                               end^
   "a groupref in a complex type should"                                       ^
     "generate a combinator parse"                                             ! groupref1^
@@ -33,7 +33,10 @@ object ProtocolSpec extends Specification { def is = sequential               ^
     "generate a combinator parser"                                            ! wildcard1^
                                                                               end^
   "a single particle with maxOccurs >1 should"                                ^
-    "generates a combinator parser that uses _*"                              ! arg1^    
+    "generate a combinator parser that uses _*"                               ! arg1^    
+                                                                              end^
+  "attributes in complex type should"                                         ^
+    "generate a combinator parser"                                            ! attribute1^
                                                                               end
 
   import Example._
@@ -148,5 +151,12 @@ object ProtocolSpec extends Specification { def is = sequential               ^
     (p must contain("""example.SeqParamTest((p1.toSeq map { x =>""")) and
     (p must contain("""  scalaxb.fromXML[String](x, scalaxb.ElemName(node) :: stack)""")) and
     (p must contain("""}: _*)"""))
-  } 
+  }
+
+  def attribute1 = {
+    val p = module.processNode(attributeXML, "example")(1)
+    println(p)
+
+    p must contain("""example.AttributeTest(scalaxb.Helper.attributesToMap(node))""")
+  }
 }

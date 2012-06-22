@@ -367,4 +367,32 @@ object Example {
         </xs:sequence>
       </xs:group>       
     </xs:schema>
+
+  val attributeXML =
+    <xs:schema targetNamespace="http://www.example.com/general"
+        xmlns:xs="http://www.w3.org/2001/XMLSchema"
+        xmlns:gen="http://www.example.com/general">
+      <xs:simpleType name="MilkType">
+        <xs:restriction base="xs:NMTOKEN">
+          <xs:enumeration value="WHOLE"/>
+          <xs:enumeration value="SKIM"/>
+        </xs:restriction>
+      </xs:simpleType>
+
+      <xs:element name="attributeTest">
+        <xs:complexType>
+          <xs:attribute name="milk1" type="gen:MilkType"/>
+          <xs:attribute name="string2" type="xs:string"/>
+          <xs:anyAttribute namespace="##any"/>
+        </xs:complexType>
+      </xs:element>
+
+      <xs:complexType name="anySimpleTypeExtension">
+        <xs:simpleContent>
+          <xs:extension base="xs:anySimpleType">
+             <xs:anyAttribute namespace="##any" processContents="lax"/>
+          </xs:extension>
+        </xs:simpleContent>
+      </xs:complexType>
+    </xs:schema>
 }

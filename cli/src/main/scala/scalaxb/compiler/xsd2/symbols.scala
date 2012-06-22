@@ -35,7 +35,7 @@ trait Symbols {
   lazy val JavaxXmlNamespacePackage  = JavaxXmlPackageClass.newPackage("namespace")
   lazy val JavaxXmlNamespacePackageClass = JavaxXmlNamespacePackage.moduleClass
   lazy val QNameClass          = JavaxXmlNamespacePackageClass.newClass("QName")
-  lazy val MetaDataClass       = XmlPackage.newClass("MetaData")
+  lazy val MetaDataClass       = XmlPackage.moduleClass.newClass("MetaData")
 
   def xmlFormatType(arg: Type): Type = appliedType(XMLFormatClass.typeConstructor, List(arg))
   def parserType(arg: Type): Type = appliedType(ParserClass.typeConstructor, List(arg))

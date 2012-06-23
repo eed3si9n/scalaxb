@@ -226,10 +226,17 @@ case class TaggedDataRecordSymbol(value: DataRecordSymbol) extends Tagged[DataRe
   import Defs._
   val tag = HostTag(Some(SCALAXB_URI), SimpleTypeHost, "DataRecord")
 }
+case class TaggedOptionSymbol(value: OptionSymbol) extends Tagged[OptionSymbol] {
+  import Defs._
+  val tag = HostTag(Some(SCALA_URI), SimpleTypeHost, "Option")
+}
 case class TaggedAttributeSeqParam(value: AttributeSeqParam, tag: HostTag) extends Tagged[AttributeSeqParam] {}
 
 case class DataRecordSymbol(member: Tagged[Any]) extends XsTypeSymbol {
   val name = "DataRecordSymbol(" + member + ")"
+}
+case class OptionSymbol(member: Tagged[Any]) extends XsTypeSymbol {
+  val name = "OptionSymbol(" + member + ")"
 }
 
 class SchemaIteration(underlying: Seq[Tagged[_]]) extends scala.collection.IndexedSeqLike[Tagged[_], SchemaIteration] {

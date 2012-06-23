@@ -331,10 +331,10 @@ object Example {
     <xs:schema targetNamespace="http://www.example.com/ipo"
         xmlns:xs="http://www.w3.org/2001/XMLSchema"
         xmlns:ipo="http://www.example.com/ipo">
-      <xs:group name="emptySeqGroup">
+      <xs:group name="emptySeq">
         <xs:sequence/>
       </xs:group>
-      <xs:group name="seqGroup">
+      <xs:group name="seq">
         <xs:sequence>
           <xs:element name="city" type="xs:string"/>
         </xs:sequence>
@@ -347,13 +347,13 @@ object Example {
         xmlns:gen="http://www.example.com/general">
       <xs:complexType name="EmptySequenceGroupTest">
         <xs:sequence>
-          <xs:group ref="gen:emptySeqGroup"/>
+          <xs:group ref="gen:emptySeq"/>
         </xs:sequence>
       </xs:complexType>
 
       <xs:complexType name="EmptyChoiceGroupTest">
         <xs:choice>
-          <xs:group ref="gen:emptySeqGroup"/>
+          <xs:group ref="gen:emptySeq"/>
           <xs:element name="string1" type="xs:string"/>
         </xs:choice>
       </xs:complexType>      
@@ -373,11 +373,11 @@ object Example {
         </xs:sequence>
       </xs:group>
 
-      <xs:group name="emptySeqGroup">
+      <xs:group name="emptySeq">
         <xs:sequence/>
       </xs:group>
 
-      <xs:group name="seqGroup">
+      <xs:group name="seq">
         <xs:sequence>
           <xs:element name="city" type="xs:string"/>
         </xs:sequence>

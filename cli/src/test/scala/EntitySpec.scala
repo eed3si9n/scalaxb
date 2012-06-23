@@ -43,7 +43,7 @@ object EntitySpec extends Specification { def is = sequential                 ^
     "generate a case class named similarly"                                   ! localelement1^
                                                                               end^
   "top-level named group should"                                              ^
-    "generate a case class named similarly"                                   ! group1^
+    "generate a case class FooGroup out of the primary compositor"            ! group1^
                                                                               end
 
   import Example._
@@ -276,7 +276,7 @@ object EntitySpec extends Specification { def is = sequential                 ^
     val entitySource = module.processNode(namedGroupXML, "example")(0)
 
     println(entitySource)
-    (entitySource must contain("""case class EmptySeqGroupSequence""")) and
-    (entitySource must contain("""case class SeqGroupSequence(city: String)"""))    
+    (entitySource must contain("""case class EmptySeqGroup""")) and
+    (entitySource must contain("""case class SeqGroup(city: String)"""))    
   }
 }

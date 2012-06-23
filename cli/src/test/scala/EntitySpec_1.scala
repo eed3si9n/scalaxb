@@ -22,7 +22,7 @@ object EntitySpec_1 extends Specification { def is = sequential               ^
     "be referenced as Map[String, scalaxb.DataRecord[Any]]"                   ! all1^
                                                                               end^
   "a groupref in a complex type should"                                       ^
-    "be referenced as the group's primary compositor"                         ! groupref1^
+    "be referenced as the group's primary compositor named FooGroup"          ! groupref1^
                                                                               end^
   "wildcards should"                                                          ^
     "be referenced as DataRecord[Any] named any* if it's made of non-nillable elements" ! wildcard1^
@@ -130,8 +130,8 @@ object EntitySpec_1 extends Specification { def is = sequential               ^
     val entitySource = module.processNode(grouprefXML, "example")(0)
 
     println(entitySource)
-    (entitySource must contain("""case class EmptySequenceGroupTest(emptyseqgroupsequence: example.EmptySeqGroupSequence)""")) and
-    (entitySource must contain("""case class ArrayType(arraysequence: Option[example.ArraySequence])"""))
+    (entitySource must contain("""case class EmptySequenceGroupTest(emptyseqgroup: example.EmptySeqGroup)""")) and
+    (entitySource must contain("""case class ArrayType(arraygroup: Option[example.ArrayGroup])"""))
   }
 
   lazy val wildcardEntitySource = module.processNode(wildcardXML, "example")(0)

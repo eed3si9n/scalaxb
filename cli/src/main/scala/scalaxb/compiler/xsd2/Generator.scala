@@ -327,10 +327,13 @@ class Generator(val schema: ReferenceSchema,
   }
 
   def processNamedGroup(tagged: Tagged[XNamedGroup]): Seq[Trippet] = {
+    val sym = buildNamedGroupSymbol(tagged)
     val compositors = tagged.compositors
-    val compositorCodes = compositors.toList map { x => generateCompositor(userDefinedClassSymbol(x), x) }
+    val primary = tagged.primaryCompositor
+    val compositorCodes = compositors.toList map { x =>
+      generateCompositor(userDefinedClassSymbol(x), x) }
     Seq(Trippet(Trippet(EmptyTree, EmptyTree,
-      generateNamedGroupFormat(buildNamedGroupSymbol(tagged), tagged), EmptyTree) :: compositorCodes: _*))
+      generateNamedGroupFormat(sym, tagged), EmptyTree) :: compositorCodes: _*))
   }
   
   def generateNamedGroupFormat(sym: ClassSymbol, tagged: Tagged[XNamedGroup]): Tree =

@@ -35,7 +35,7 @@ trait Namer extends ScalaNames { self: Lookup with Splitter  =>
         val name = makeProtectedElementTypeName(tagged)
         names(x) = name
         logger.debug("nameElementTypes: named %s", name)
-        nameCompositors(x)
+        nameComplexTypeCompositors(x)
       case x: TaggedSimpleType =>
         val name = makeProtectedElementTypeName(tagged)
         logger.debug("nameElementTypes: named %s", name)
@@ -58,23 +58,28 @@ trait Namer extends ScalaNames { self: Lookup with Splitter  =>
     val name = makeProtectedComplexTypeName(decl)
     logger.debug("nameComplexTypes: named %s", name)
     names(decl) = name
-    nameCompositors(decl)
+    nameComplexTypeCompositors(decl)
   }
 
   def nameNamedGroup(tagged: Tagged[XNamedGroup]) {
     val name = makeProtectedNamedGroup(tagged)
     logger.debug("nameNamedGroup: named %s", name)
     names(tagged) = name
-    tagged.compositors foreach { c => nameCompositor(c, false) }
+
+    val primary = tagged.primaryCompositor
+    tagged.compositors foreach { c =>
+      if (Some(c) == primary) names(c) = name
+      else nameCompositor(c, false)
+    }
   }
 
-  def nameCompositors(decl: Tagged[XComplexType]) {
+  def nameComplexTypeCompositors(decl: Tagged[XComplexType]) {
     val primarySequence = decl.primarySequence
     implicit val s = schema.unbound
     val cs: Seq[TaggedParticle[KeyedGroup]] = decl.toSeq collect {
       case Compositor(compositor) => compositor
     }
-    logger.debug("nameCompositors: %s", cs map { _.tag.toString })
+    logger.debug("nameComplexTypeCompositors: %s", cs map { _.tag.toString })
     cs foreach { c => nameCompositor(c, Some(c) == primarySequence) }
   }
 

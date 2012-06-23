@@ -2,7 +2,7 @@ package scalaxb.compiler.xsd2
 
 import scalaxb._
 import xmlschema._
-import scalaxb.compiler.xsd.{XsAnyType, BuiltInSimpleTypeSymbol, XsTypeSymbol, XsInt}
+import scalaxb.compiler.xsd.{XsAnyType, XsNillableAny, BuiltInSimpleTypeSymbol, XsTypeSymbol, XsInt}
 import Defs._
 import Occurrence._
 import java.net.URI
@@ -116,8 +116,11 @@ trait Params { self: Namer with Lookup =>
     private def buildElementParam(tagged: Tagged[XLocalElementable]): Param = {
       val elem = tagged.resolve
       val name = elem.name
-      val retval = Param(tagged.tag.namespace, name.get, elem.typeStructure,
-        Occurrence(tagged.value), false,
+      val (typeSymbol, o) = (elem.typeStructure, Occurrence(tagged.value)) match {
+        case (AnyLike(symbol), o) if o.nillable => (TaggedXsNillableAny, o.copy(nillable = false))
+        case (symbol, o) => (symbol, o) 
+      }
+      val retval = Param(tagged.tag.namespace, name.get, typeSymbol, o, false,
         elem match {
           case TaggedTopLevelElement(_, _) => true
           case _ => false

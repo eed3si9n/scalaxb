@@ -26,7 +26,7 @@ import scalashim._
 import java.net.{URI}
 import scala.xml.{NamespaceBinding}
 import scalaxb._
-import scalaxb.compiler.xsd.{XsTypeSymbol, XsAnyType}
+import scalaxb.compiler.xsd.{XsTypeSymbol, XsAnyType, XsNillableAny}
 import xmlschema._
 import scala.collection.mutable.{Builder, ArrayBuffer}
 import scala.collection.generic.CanBuildFrom
@@ -215,6 +215,7 @@ case class TaggedSimpleType(value: XSimpleType, tag: HostTag) extends TaggedType
 case class TaggedComplexType(value: XComplexType, tag: HostTag) extends TaggedType[XComplexType] {}
 case class TaggedSymbol(value: XsTypeSymbol, tag: HostTag) extends TaggedType[XsTypeSymbol] {}
 object TaggedXsAnyType extends TaggedSymbol(XsAnyType, HostTag(Some(Defs.SCALAXB_URI), SimpleTypeHost, "anyType"))
+object TaggedXsNillableAny extends TaggedSymbol(XsNillableAny, HostTag(Some(Defs.SCALAXB_URI), SimpleTypeHost, "nillableAny"))
 
 case class TaggedNamedGroup(value: XNamedGroup, tag: HostTag) extends Tagged[XNamedGroup] {}
 case class TaggedAttributeGroup(value: XAttributeGroup, tag: HostTag) extends TaggedAttr[XAttributeGroup] {}

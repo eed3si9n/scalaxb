@@ -6,7 +6,7 @@ import javax.xml.namespace.QName
 import xmlschema._
 import scalaxb._
 import scalaxb.compiler.{ScalaNames, Config, Snippet, ReferenceNotFound}
-import scalaxb.compiler.xsd.{XsAnyType, XsAnySimpleType, XsString, BuiltInSimpleTypeSymbol, XsTypeSymbol, XsWildcard}
+import scalaxb.compiler.xsd.{XsAnyType, XsAnySimpleType, XsString, BuiltInSimpleTypeSymbol, XsTypeSymbol, XsWildcard, XsNillableAny}
 import Defs._
 import scala.xml.NamespaceBinding
 import treehugger.forest._
@@ -83,9 +83,9 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter with Symbols =
     case x: TaggedWildCard => wildCardType
     case x: TaggedSymbol =>
       x.value match {
+        case XsNillableAny =>  nillableWildCardType
         case XsAnySimpleType | XsAnyType => DataRecordAnyClass
         case symbol: BuiltInSimpleTypeSymbol => buildBuiltinType(symbol)
-          //QualifiedName(Some(XML_SCHEMA_URI), symbol.name)
       }
     case x: TaggedSimpleType  => buildSimpleTypeType(x)   
     case x: TaggedComplexType => buildComplexTypeSymbol(x)
@@ -106,20 +106,6 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter with Symbols =
       x.value.typeValue map { ref => buildType(resolveType(ref)) } getOrElse {
         buildSimpleTypeType(Tagged(x.value.simpleType.get, x.tag)) }
     case x: TaggedAttributeGroup => buildAttributeGroupTypeSymbol(x)
-    
-    //    case XsNillableAny  => nillableAnyTypeName
-    //    case XsAnyAttribute  => "Map[String, scalaxb.DataRecord[Any]]"
-    //    case XsDataRecord(ReferenceTypeSymbol(decl: ComplexTypeDecl)) if compositorWrapper.contains(decl) =>
-    //      compositorWrapper(decl) match {
-    //        case choice: ChoiceDecl => buildChoiceTypeName(decl, choice, shortLocal)
-    //        case _ => "scalaxb.DataRecord[Any]"
-    //      }
-    //    case r: XsDataRecord => "scalaxb.DataRecord[Any]"
-    //    case XsMixed         => "scalaxb.DataRecord[Any]"
-    //    case ReferenceTypeSymbol(decl: SimpleTypeDecl) => buildTypeName(decl, shortLocal)
-    //    case ReferenceTypeSymbol(decl: ComplexTypeDecl) => buildTypeName(decl, shortLocal)
-    //    case XsXMLFormat(decl: ComplexTypeDecl) => "scalaxb.XMLFormat[" + buildTypeName(decl, shortLocal) + "]"
-    //    case XsXMLFormat(group: AttributeGroupDecl) => "scalaxb.XMLFormat[" + buildTypeName(group, shortLocal) + "]"
     case _ => sys.error("buildTypeName # unsupported: " + tagged)
   }
 
@@ -367,7 +353,7 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter with Symbols =
       case x: TaggedWildCard => Some(tagged)
       case x: TaggedSymbol =>
         x.value match {
-          case XsAnySimpleType | XsAnyType => Some(tagged)
+          case XsAnySimpleType | XsAnyType | XsNillableAny => Some(tagged)
           case symbol: BuiltInSimpleTypeSymbol => None
         }
       case _ => None

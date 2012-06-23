@@ -1,6 +1,22 @@
 package scalaxb.specs
 
 object Example {
+  val anyTypeXML =
+    <xs:schema targetNamespace="http://www.example.com/general"
+        xmlns:xs="http://www.w3.org/2001/XMLSchema"
+        xmlns:gen="http://www.example.com/general">
+      <xs:complexType name="AnyTypeTest">
+        <xs:sequence>
+          <xs:element name="any1" type="xs:anyType"/>
+          <xs:element name="any2" nillable="true" type="xs:anyType"/>
+          <xs:element name="any3" minOccurs="0" type="xs:anyType"/>
+          <xs:element name="any4" minOccurs="0" nillable="true" type="xs:anyType"/>
+          <xs:element name="any5" maxOccurs="unbounded" type="xs:anyType"/>
+          <xs:element name="any6" maxOccurs="unbounded" nillable="true" type="xs:anyType"/>      
+        </xs:sequence>
+      </xs:complexType>
+    </xs:schema>
+
   val builtInTypesXML =
     <xs:schema targetNamespace="http://www.example.com/general"
         xmlns:xs="http://www.w3.org/2001/XMLSchema"

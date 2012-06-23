@@ -100,7 +100,7 @@ object ProtocolSpec extends Specification { def is = sequential               ^
   def namedGroup1 = {
     println(namedGroupProtocol)
     (namedGroupProtocol must contain(
-      """  def parseSeqGroupGroup(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[example.SeqGroupSequence] = (((scalaxb.ElemName(None, "city"))) ^^ {"""))    
+      """  def parseSeqGroup(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[example.SeqGroup] = (((scalaxb.ElemName(None, "city"))) ^^ {"""))    
   }
 
   lazy val seqProtocol = module.processNode(sequenceXML, "example")(1)

@@ -174,7 +174,8 @@ trait Params { self: Namer with Lookup =>
 
     private def buildGroupRefParam(tagged: Tagged[XGroupRef]): Param = {
       val group = resolveNamedGroup(tagged)
-      val retval = buildCompositorParam(group.primaryCompositor.get)
+      val name = getName(group).toLowerCase
+      val retval = Param(group.tag.namespace, name, tagged, Occurrence(tagged), false, false, false)
       logger.debug("buildGroupRefParam: " + retval.toString)
       retval.copy(occurrence = Occurrence(tagged.value))
     }

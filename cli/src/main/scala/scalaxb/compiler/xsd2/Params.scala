@@ -129,6 +129,7 @@ trait Params { self: Namer with Lookup =>
     private def buildChoiceParam(tagged: TaggedParticle[KeyedGroup]): Param = {
       val name = getName(tagged).toLowerCase
       val particles = tagged.particles
+      val o = Occurrence(tagged)
 
       val memberType = tagged.particles match {
         case Nil       => TaggedXsAnyType
@@ -147,9 +148,11 @@ trait Params { self: Namer with Lookup =>
             else TaggedXsAnyType
           }
       }
-      val typeSymbol = TaggedDataRecordSymbol(DataRecordSymbol(memberType))
+      val typeSymbol =
+        if (o.nillable) TaggedDataRecordSymbol(DataRecordSymbol(TaggedOptionSymbol(OptionSymbol(memberType))))
+        else TaggedDataRecordSymbol(DataRecordSymbol(memberType))
       Param(tagged.tag.namespace, name, typeSymbol,
-        Occurrence(tagged.value).copy(nillable = false), false, false, false)
+        o.copy(nillable = false), false, false, false)
     }
 
     private def particleType(particle: Tagged[_]) = particle match {

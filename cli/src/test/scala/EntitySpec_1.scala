@@ -135,27 +135,27 @@ object EntitySpec_1 extends Specification { def is = sequential               ^
 
   lazy val wildcardEntitySource = module.processNode(wildcardXML, "example")(0)
 
-  val exptectedAnyTest =
+  val exptectedWildcardTest =
     """case class WildcardTest(person1: example.Person, """ +
       """any: scalaxb.DataRecord[Any], """ +
       """any2: scalaxb.DataRecord[Any], """ +
       """any3: scalaxb.DataRecord[Any], """ +
       """any4: scalaxb.DataRecord[Any], """ +
-      """wildcardtestoption: scalaxb.DataRecord[scalaxb.DataRecord[Any]], """ +
+      """wildcardtestoption: scalaxb.DataRecord[Option[Any]], """ +
       """person3: Option[example.Person], """ +
       """any5: Option[scalaxb.DataRecord[Any]], """ +
-      """wildcardtestoption2: Option[scalaxb.DataRecord[scalaxb.DataRecord[Any]]], """ +
+      """wildcardtestoption2: Option[scalaxb.DataRecord[Option[Any]]], """ +
       """any6: Seq[scalaxb.DataRecord[Any]], """ +
       """person5: Seq[example.Person], """ +
       """any7: scalaxb.DataRecord[Any])"""
   
   def wildcard1 = {
     println(wildcardEntitySource)
-    wildcardEntitySource must contain(exptectedAnyTest)
+    wildcardEntitySource must contain(exptectedWildcardTest)
   }
 
   def wildcard2 = {
-    wildcardEntitySource must contain(exptectedAnyTest)
+    wildcardEntitySource must contain(exptectedWildcardTest)
   }
 
   def param1 = {

@@ -14,8 +14,8 @@ object EntitySpec_1 extends Specification { def is = sequential               ^
   "choices in a complex type should"                                          ^
     "generate a trait named FooOption*"                                       ! choice1^
     "mixin FooOption to choice candidates"                                    ! choice3^
-    "be referenced as DataRecord[FooOption] if it's made of non-nillable complex type element" ! choice2^
-    "be referenced as DataRecord[Option[FooOption]] if it's made of complex types, some nillable" ! choice2^
+    "be referenced as DataRecord[FooOption] if it's made of non-nillable complex type elements" ! choice2^
+    "be referenced as DataRecord[Option[FooOption]] if it includes nillable elements" ! choice2^
     "be referenced as DataRecord[Int] if it's made of xs:int"                 ! choice2^
                                                                               end^
   "an all in a complex type should"                                           ^
@@ -25,7 +25,8 @@ object EntitySpec_1 extends Specification { def is = sequential               ^
     "be referenced as the group's primary compositor"                         ! groupref1^
                                                                               end^
   "wildcards should"                                                          ^
-    "be referenced as DataRecord[Any] named any*"                             ! wildcard1^
+    "be referenced as DataRecord[Any] named any* if it's made of non-nillable elements" ! wildcard1^
+    "be referenced as DataRecord[Option[Any]] it includes nillable elements"  ! wildcard2^
     "be referenced as Option[DataRecord[Any]] if optional"                    ! wildcard2^
     "be referenced as Seq[DataRecord[Any]] if maxOccurs >1"                   ! wildcard2^
                                                                               end^

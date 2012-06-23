@@ -70,7 +70,16 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter with Symbols =
     }
 
   def buildType(tagged: Tagged[Any]): Type = tagged match {
-    case x: TaggedDataRecordSymbol => DataRecordClass TYPE_OF buildType(x.value.member)
+    case x: TaggedDataRecordSymbol =>
+      DataRecordClass TYPE_OF (x.value.member match {
+        case AnyLike(any) => (AnyClass: Type)
+        case x => buildType(x)
+      })
+    case x: TaggedOptionSymbol =>
+      TYPE_OPTION((x.value.member match {
+        case AnyLike(any) => (AnyClass: Type)
+        case x => buildType(x)
+      }))
     case x: TaggedWildCard => wildCardType
     case x: TaggedSymbol =>
       x.value match {
@@ -84,11 +93,11 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter with Symbols =
     case x: TaggedGroupRef    => buildNamedGroupSymbol(resolveNamedGroup(x))
     case x: TaggedKeyedGroup =>
       x.key match {
-        case AllTag => MapStringDataRecordAnyClass
+        case AllTag    => MapStringDataRecordAnyClass
         case ChoiceTag =>
-          val particleOs = x.value.particles.toList map { Occurrence(_) }
-          if (particleOs exists { _.nillable }) buildNillableType(userDefinedClassSymbol(tagged))
-          else userDefinedClassSymbol(tagged)
+          // choice tag should return the choice trait here.
+          // DataRecord wrapping is done at the Param level.
+          userDefinedClassSymbol(tagged)
         case _ => userDefinedClassSymbol(tagged)
       }
     case TaggedAttributeSeqParam(_, _) =>

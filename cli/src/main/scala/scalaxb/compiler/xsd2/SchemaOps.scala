@@ -480,32 +480,17 @@ object ComplexTypeIteration {
     (implicit lookup: Lookup, splitter: Splitter, targetNamespace: Option[URI], scope: NamespaceBinding): Seq[TaggedParticle[_]] =
     decl.primaryCompositor map {
       case x: TaggedGroupRef =>
-        if (isEmptyCompositor(x)) Nil
+        if (lookup.isEmptyCompositor(x)) Nil
         else Seq(x)
       case x: TaggedKeyedGroup if x.value.key == ChoiceTag =>
-        if (isEmptyCompositor(x)) Nil
+        if (lookup.isEmptyCompositor(x)) Nil
         else Seq(x)
       case x: TaggedKeyedGroup if x.value.key == AllTag => Seq(x)
       case tagged: TaggedKeyedGroup if tagged.value.key == SequenceTag =>
         implicit val tag = tagged.tag
         val split = splitter.splitLongSequence(tagged) getOrElse {decl.particles}
-        split filter { x => !isEmptyCompositor(x) }
+        split filter { x => !lookup.isEmptyCompositor(x) }
     } getOrElse {Nil}
-
-  // empty compositors are excluded from params.
-  private def isEmptyCompositor(tagged: TaggedParticle[Any])
-      (implicit lookup: Lookup, splitter: Splitter): Boolean =
-    tagged match {
-      case x: TaggedGroupRef           =>
-        val group = lookup.resolveNamedGroup(x)
-        group.primaryCompositor map {isEmptyCompositor} getOrElse {false}
-      case x: TaggedKeyedGroup if x.key == AllTag => false
-      case x: TaggedKeyedGroup if x.key == ChoiceTag =>
-        if (x.particles.isEmpty) true
-        else x.particles forall {isEmptyCompositor}
-      case x: TaggedKeyedGroup if x.key == SequenceTag => x.particles.isEmpty
-      case _ => false
-    }   
 
   /** particles of the given decl flattened one level.
    * returns list of Tagged[XSimpleType], Tagged[BuiltInSimpleTypeSymbol], Tagged[XElement], Tagged[KeyedGroup],

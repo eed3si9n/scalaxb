@@ -370,6 +370,8 @@ object SchemaIteration {
 }
 
 case class ComplexTypeOps(decl: Tagged[XComplexType]) {
+  def base(implicit lookup: Lookup): TaggedType[_] =
+    ComplexTypeIteration.complexTypeToBaseType(decl)
   def particles(implicit lookup: Lookup, targetNamespace: Option[URI], scope: NamespaceBinding) =
     ComplexTypeIteration.complexTypeToParticles(decl)
   def splitNonEmptyParticles(implicit lookup: Lookup, splitter: Splitter, targetNamespace: Option[URI], scope: NamespaceBinding) =
@@ -572,6 +574,28 @@ object ComplexTypeIteration {
           case DataRecord(_, Some(key), x: XExplicitGroupable) => processKeyedGroupParticle(KeyedGroup(key, x, childtag), childtag)
           case _ => Nil
         } getOrElse {Nil}
+    }
+  }
+
+  private[scalaxb] def complexTypeToBaseType(decl: Tagged[XComplexType])
+    (implicit lookup: Lookup): TaggedType[_] = {
+    import lookup._
+    def processBase(base: QualifiedName): TaggedType[_] =
+      base match {
+        case BuiltInType(tagged) => tagged
+        case SimpleType(tagged)  => tagged
+        case ComplexType(tagged) => tagged
+        case _ => TaggedXsAnyType
+      } // base match
+
+    decl.value.arg1.value match {
+      case XComplexContent(_, DataRecord(_, _, x: XComplexRestrictionType), _, _, _) => processBase(x.base)
+      case XComplexContent(_, DataRecord(_, _, x: XExtensionType), _, _, _)          => processBase(x.base)
+      case XSimpleContent(_, DataRecord(_, _, x: XSimpleRestrictionType), _, _)      => processBase(x.base)
+      case XSimpleContent(_, DataRecord(_, _, x: XSimpleExtensionType), _, _)        => processBase(x.base)
+
+      // this is an abbreviated form of xs:anyType restriction.
+      case XComplexTypeModelSequence1(arg1, arg2) => TaggedXsAnyType
     }
   }
 

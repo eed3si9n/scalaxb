@@ -27,7 +27,7 @@ object ProtocolSpec extends Specification { def is = sequential               ^
     "generate a combinator parser"                                            ! all1^ 
                                                                               end^
   "a groupref in a complex type should"                                       ^
-    "generate a combinator parse"                                             ! groupref1^
+    "generate a reference to group parsing method"                            ! groupref1^
                                                                               end^
   "wildcards in a complex type should"                                        ^
     "generate a combinator parser"                                            ! wildcard1^
@@ -136,7 +136,8 @@ object ProtocolSpec extends Specification { def is = sequential               ^
     val p = module.processNode(grouprefXML, "example")(1)
 
     println(p)
-    p must contain("""trait DefaultExampleArrayTypeFormat extends scalaxb.ElemNameParser[example.ArrayType] with example.ExampleArrayGroupFormat {""") 
+    (p must contain("""trait DefaultExampleArrayTypeFormat extends scalaxb.ElemNameParser[example.ArrayType] with example.ExampleArrayGroupFormat {""")) and
+    (p must contain("""def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[example.ArrayType] = opt(parseArrayGroup(node, scalaxb.ElemName(node) :: stack)) ^^ {"""))
   }
 
   def wildcard1 = {

@@ -243,8 +243,19 @@ object Example {
           </xs:choice>
           <xs:choice>
             <xs:element name="int1" type="xs:int"/>
-            <xs:sequence/>
+            <xs:choice/>
           </xs:choice>
+        </xs:sequence>
+      </xs:complexType>
+
+      <xs:complexType name="EmptyChoiceComplexTypeTest">
+        <xs:choice/>
+      </xs:complexType>
+
+      <xs:complexType name="EmptyChoiceComplexTypeTest2">
+        <xs:sequence>
+          <xs:element name="int1" type="xs:int"/>
+          <xs:choice/>
         </xs:sequence>
       </xs:complexType>
 
@@ -362,7 +373,7 @@ object Example {
         </xs:sequence>
       </xs:complexType>
 
-      <xs:complexType name="EmptyChoiceGroupTest">
+      <xs:complexType name="EmptyGroupChoiceTest">
         <xs:choice>
           <xs:group ref="gen:emptySeq"/>
           <xs:element name="string1" type="xs:string"/>

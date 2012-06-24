@@ -60,9 +60,9 @@ class Generator(val schema: ReferenceSchema,
 
     def compositorsR(compositor: TaggedParticle[KeyedGroup]): Seq[TaggedParticle[KeyedGroup]] =
       (compositor match {
-        case x: TaggedKeyedGroup if x.value.key == ChoiceTag => Seq(x)
         case x: TaggedKeyedGroup if x.value.key == AllTag => Seq(x)
-        case tagged: TaggedKeyedGroup if tagged.value.key == SequenceTag && tagged.particles.isEmpty => Nil
+        case tagged: TaggedKeyedGroup if tagged.particles.isEmpty => Nil
+        case x: TaggedKeyedGroup if x.value.key == ChoiceTag => Seq(x)
         case tagged: TaggedKeyedGroup if tagged.value.key == SequenceTag =>
           implicit val tag = tagged.tag
           (splitIfLongSequence(tagged) filterNot { Some(_) == ps })
@@ -86,7 +86,7 @@ class Generator(val schema: ReferenceSchema,
     val attributes = decl.flattenedAttributes
     val hasAttributes = !attributes.isEmpty
     val list =
-      decl.splitParticles ++
+      decl.splitNonEmptyParticles ++
       (attributes.headOption map { _ => attributeSeqRef }).toSeq
     val longAll = decl.primaryAll map {_ => true} getOrElse {false}
     
@@ -123,7 +123,7 @@ class Generator(val schema: ReferenceSchema,
 
   private def generateDefaultFormat(sym: ClassSymbol, decl: Tagged[XComplexType],
       hasAttributes: Boolean, hasSequenceParam: Boolean, longAll: Boolean): Tree = {
-    val particles = decl.splitParticles
+    val particles = decl.splitNonEmptyParticles
     val unmixedParserList = particles map { buildParser(_, decl.mixed, decl.mixed) }
     val parserList = if (decl.mixed) buildTextParser +: (unmixedParserList flatMap { Seq(_, buildTextParser) })
       else unmixedParserList

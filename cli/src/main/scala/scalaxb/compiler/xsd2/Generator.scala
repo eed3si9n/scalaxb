@@ -62,6 +62,7 @@ class Generator(val schema: ReferenceSchema,
       (compositor match {
         case x: TaggedKeyedGroup if x.value.key == ChoiceTag => Seq(x)
         case x: TaggedKeyedGroup if x.value.key == AllTag => Seq(x)
+        case tagged: TaggedKeyedGroup if tagged.value.key == SequenceTag && tagged.particles.isEmpty => Nil
         case tagged: TaggedKeyedGroup if tagged.value.key == SequenceTag =>
           implicit val tag = tagged.tag
           (splitIfLongSequence(tagged) filterNot { Some(_) == ps })
@@ -330,42 +331,48 @@ class Generator(val schema: ReferenceSchema,
     val sym = buildNamedGroupSymbol(tagged)
     val compositors = tagged.compositors
     val primary = tagged.primaryCompositor
-    val compositorCodes = compositors.toList map { x =>
-      generateCompositor(userDefinedClassSymbol(x), x) }
-    Seq(Trippet(Trippet(EmptyTree, EmptyTree,
-      generateNamedGroupFormat(sym, tagged), EmptyTree) :: compositorCodes: _*))
+    
+    if (primary map {_.particles.isEmpty} getOrElse {false}) Nil
+    else {
+      val compositorCodes = compositors.toList map { x =>
+        generateCompositor(userDefinedClassSymbol(x), x) }
+      Seq(Trippet(Trippet(EmptyTree, EmptyTree,
+        generateNamedGroupFormat(sym, tagged), EmptyTree) :: compositorCodes: _*))
+    }
   }
   
   def generateNamedGroupFormat(sym: ClassSymbol, tagged: Tagged[XNamedGroup]): Tree =
-    tagged.primaryCompositor map { compositor =>
-      val fmt = formatterSymbol(sym)
-      val param = Param(compositor)
-      val parser = buildKeyedGroupParser(compositor, Occurrence.SingleNotNillable(), false, false)
-      val (wrapperParam, wrapperParser) = compositor match {
-        case x: TaggedKeyedGroup if x.key == ChoiceTag => (param, parser)
-        case _ =>
-          param.copy(typeSymbol = TaggedDataRecordSymbol(DataRecordSymbol(param.typeSymbol))) ->
-          buildKeyedGroupParser(compositor, Occurrence.SingleNotNillable(), false, true)
-      }
-      val mixedParam = param.copy(typeSymbol = TaggedDataRecordSymbol(DataRecordSymbol(TaggedXsAnyType)))
-      val subgroups = compositor.particles collect { case ref: TaggedGroupRef => resolveNamedGroup(ref) }
-      val parents: Seq[ClassSymbol] =
-        if (subgroups.isEmpty) List(AnyElemNameParserClass)
-        else subgroups map { g => formatterSymbol(buildNamedGroupSymbol(g)) }
+    tagged.primaryCompositor map {
+      case compositor if compositor.particles.isEmpty => EmptyTree
+      case compositor =>
+        val fmt = formatterSymbol(sym)
+        val param = Param(compositor)
+        val parser = buildKeyedGroupParser(compositor, Occurrence.SingleNotNillable(), false, false)
+        val (wrapperParam, wrapperParser) = compositor match {
+          case x: TaggedKeyedGroup if x.key == ChoiceTag => (param, parser)
+          case _ =>
+            param.copy(typeSymbol = TaggedDataRecordSymbol(DataRecordSymbol(param.typeSymbol))) ->
+            buildKeyedGroupParser(compositor, Occurrence.SingleNotNillable(), false, true)
+        }
+        val mixedParam = param.copy(typeSymbol = TaggedDataRecordSymbol(DataRecordSymbol(TaggedXsAnyType)))
+        val subgroups = compositor.particles collect { case ref: TaggedGroupRef => resolveNamedGroup(ref) }
+        val parents: Seq[ClassSymbol] =
+          if (subgroups.isEmpty) List(AnyElemNameParserClass)
+          else subgroups map { g => formatterSymbol(buildNamedGroupSymbol(g)) }
 
-      TRAITDEF(fmt) withParents(parents) := BLOCK(List(
-        DEF("parse" + sym.decodedName, parserType(param.baseType)) withParams(
-          PARAM("node", NodeClass),
-          PARAM("stack", TYPE_LIST(ElemNameClass))) := parser,
-        DEF("parse" + sym.decodedName, parserType(wrapperParam.baseType)) withParams(
-          PARAM("node", NodeClass),
-          PARAM("stack", TYPE_LIST(ElemNameClass)),
-          PARAM("wrap", BooleanClass)) := wrapperParser,
-        DEF("parsemixed" + sym.decodedName, parserType(seqType(mixedParam.baseType))) withParams(
-          PARAM("node", NodeClass),
-          PARAM("stack", TYPE_LIST(ElemNameClass))) :=
-          buildKeyedGroupParser(compositor, Occurrence.SingleNotNillable(), true, true)
-      ))
+        TRAITDEF(fmt) withParents(parents) := BLOCK(List(
+          DEF("parse" + sym.decodedName, parserType(param.baseType)) withParams(
+            PARAM("node", NodeClass),
+            PARAM("stack", TYPE_LIST(ElemNameClass))) := parser,
+          DEF("parse" + sym.decodedName, parserType(wrapperParam.baseType)) withParams(
+            PARAM("node", NodeClass),
+            PARAM("stack", TYPE_LIST(ElemNameClass)),
+            PARAM("wrap", BooleanClass)) := wrapperParser,
+          DEF("parsemixed" + sym.decodedName, parserType(seqType(mixedParam.baseType))) withParams(
+            PARAM("node", NodeClass),
+            PARAM("stack", TYPE_LIST(ElemNameClass))) :=
+            buildKeyedGroupParser(compositor, Occurrence.SingleNotNillable(), true, true)
+        ))
     } getOrElse {EmptyTree}
 
   def processAttributeGroup(tagged: Tagged[XAttributeGroup]): Seq[Trippet] =

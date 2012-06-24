@@ -148,6 +148,13 @@ object Example {
         <xs:sequence/>
       </xs:complexType>
 
+      <xs:complexType name="EmptySequenceComplexTypeTest2">
+        <xs:sequence>
+          <xs:element name="int1" type="xs:int"/>
+          <xs:sequence/>
+        </xs:sequence>
+      </xs:complexType>
+
       <xs:complexType name="LongSequenceComplexTypeTest">
         <xs:sequence>
           <xs:element name="int1" type="xs:int"/>
@@ -233,6 +240,10 @@ object Example {
           <xs:choice>
             <xs:element name="int1" type="xs:int"/>
             <xs:element name="int2" type="xs:int"/>
+          </xs:choice>
+          <xs:choice>
+            <xs:element name="int1" type="xs:int"/>
+            <xs:sequence/>
           </xs:choice>
         </xs:sequence>
       </xs:complexType>

@@ -85,13 +85,28 @@ trait Params { self: Namer with Lookup =>
 
     def fromSeq(particles: Seq[Tagged[Any]]): Seq[Param] = {
       var anyNumber: Int = 0
-      particles map { tagged => tagged.value match {
+      particles flatMap { tagged => tagged.value match {
         case any: XAny =>
           anyNumber += 1
-          buildParam(tagged, anyNumber)
-        case _         => buildParam(tagged, 0)
+          Some(buildParam(tagged, anyNumber))
+        case _         =>
+          if (isEmptyCompositor(tagged)) None
+          else Some(buildParam(tagged, 0))
       }}
     }
+
+    // empty compositors are excluded from params.
+    private def isEmptyCompositor(tagged: Tagged[Any]): Boolean = tagged match {
+      case x: TaggedGroupRef           =>
+        val group = resolveNamedGroup(x)
+        group.primaryCompositor map {isEmptyCompositor} getOrElse {false}
+      case x: TaggedKeyedGroup if x.key == AllTag => false
+      case x: TaggedKeyedGroup if x.key == ChoiceTag =>
+        if (x.particles.isEmpty) true
+        else x.particles forall {isEmptyCompositor}
+      case x: TaggedKeyedGroup if x.key == SequenceTag => x.particles.isEmpty
+      case _ => false
+    } 
 
     // called by generateAccessors
     def fromAttributes(attributes: Seq[Tagged[_]]): Seq[Param] = attributes collect {

@@ -178,11 +178,10 @@ trait Params { self: Namer with Lookup =>
       case _ => None
     }
 
-    private def buildCompositorParam(tagged: Tagged[KeyedGroup]): Param = {
-      val compositor = tagged.value
+    private def buildCompositorParam(tagged: TaggedParticle[KeyedGroup]): Param = {
       val name = getName(tagged).toLowerCase
       val typeSymbol = tagged
-      val retval = Param(tagged.tag.namespace, name, typeSymbol, Occurrence(compositor), false, false, false)
+      val retval = Param(tagged.tag.namespace, name, typeSymbol, Occurrence(tagged), false, false, false)
       logger.debug("buildCompositorParam: " + retval.toString)
       retval
     }

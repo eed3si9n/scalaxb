@@ -27,7 +27,7 @@ object Occurrence {
   def apply(particle: TaggedParticle[_]): Occurrence = particle match {
     case TaggedLocalElement(x, form, tag) => Occurrence(x)
     case TaggedGroupRef(x, tag)     => Occurrence(x)
-    case TaggedKeyedGroup(x, tag)   => Occurrence(x)
+    case TaggedKeyedGroup(x, tag)     => Occurrence(x)
     case TaggedWildCard(x, tag)     => Occurrence(x)
   }
 
@@ -41,6 +41,10 @@ object Occurrence {
       Occurrence((o.minOccurs :: (particleOs map { _.minOccurs})).min,
         (o.maxOccurs :: (particleOs map { _.maxOccurs})).max,
         particleOs exists {_.nillable})
+    case SequenceTag =>
+      val minValue = if (keyed.particles.isEmpty) 0
+                     else keyed.minOccurs.toInt
+      Occurrence(minValue, keyed.maxOccurs, false)
     case _ =>
       Occurrence(keyed.minOccurs.toInt, keyed.maxOccurs, false)
   }

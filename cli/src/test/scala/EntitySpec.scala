@@ -276,7 +276,7 @@ object EntitySpec extends Specification { def is = sequential                 ^
     val entitySource = module.processNode(namedGroupXML, "example")(0)
 
     println(entitySource)
-    (entitySource must contain("""case class EmptySeqGroup""")) and
+    (entitySource must not contain("""case class EmptySeqGroup""")) and
     (entitySource must contain("""case class SeqGroup(city: String)"""))    
   }
 }

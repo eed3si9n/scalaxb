@@ -56,7 +56,7 @@ class Generator(val schema: ReferenceSchema,
    */
   private def compositorsR(decl: Tagged[XComplexType]): Seq[TaggedParticle[KeyedGroup]] = {
     val ps = decl.primarySequence
-    val singleps = ps map { tagged => Occurrence(tagged.value).isSingle } getOrElse {false}
+    val singleps = ps map { tagged => Occurrence(tagged).isSingle } getOrElse {false}
 
     def compositorsR(compositor: TaggedParticle[KeyedGroup]): Seq[TaggedParticle[KeyedGroup]] =
       (compositor match {

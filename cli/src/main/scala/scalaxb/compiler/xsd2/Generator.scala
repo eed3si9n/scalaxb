@@ -88,6 +88,7 @@ class Generator(val schema: ReferenceSchema,
     val list =
       (decl.primaryCompositor map { _ => decl.splitNonEmptyParticles } getOrElse {
         decl.base match {
+          case TaggedXsAnyType      => Nil
           case x: TaggedComplexType => Nil
           case _ => Seq(decl.base)
         }

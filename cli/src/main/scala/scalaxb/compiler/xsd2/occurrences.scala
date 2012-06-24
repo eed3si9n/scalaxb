@@ -24,19 +24,31 @@ object Occurrence {
   def apply(any: XAny): Occurrence =
     Occurrence(any.minOccurs.toInt, any.maxOccurs, false)
 
-  def apply(particle: TaggedParticle[_]): Occurrence = particle match {
+  def apply(particle: TaggedParticle[_])(implicit lookup: Lookup, slitter: Splitter): Occurrence = particle match {
     case TaggedLocalElement(x, form, tag) => Occurrence(x)
-    case TaggedGroupRef(x, tag)     => Occurrence(x)
-    case TaggedKeyedGroup(x, tag)     => Occurrence(x)
-    case TaggedWildCard(x, tag)     => Occurrence(x)
+    case x: TaggedGroupRef                => Occurrence(x)
+    case TaggedKeyedGroup(x, tag)         => Occurrence(x)
+    case TaggedWildCard(x, tag)           => Occurrence(x)
   }
 
-  def apply(ref: XGroupRef): Occurrence =
-    Occurrence(ref.minOccurs.toInt, ref.maxOccurs, false)
+  // Normally groupref has its own occurrence in <group> tag.
+  // However due to emptiness being treated as minOccurs=0,
+  // minOccurs of the groupref needs reflect it.
+  def apply(tagged: TaggedGroupRef)(implicit lookup: Lookup, slitter: Splitter): Occurrence = {
+    val group = lookup.resolveNamedGroup(tagged)
+    val underlying = group.primaryCompositor map {
+        Occurrence(_)
+      } getOrElse {Occurrence(1, 1, false)}
+    val o = Occurrence(tagged.minOccurs.toInt, tagged.maxOccurs, false)
+    Occurrence(Math.min(o.minOccurs, underlying.minOccurs),
+      Math.max(o.maxOccurs, underlying.maxOccurs), false)
+  }
 
-  def apply(keyed: KeyedGroup): Occurrence = keyed.key match {
+  def apply(keyed: KeyedGroup)(implicit lookup: Lookup, slitter: Splitter): Occurrence = keyed.key match {
     case ChoiceTag =>
-      val o = Occurrence(keyed.minOccurs.toInt, keyed.maxOccurs, false)
+      val minValue = if (keyed.particles.isEmpty) 0
+                     else keyed.minOccurs.toInt
+      val o = Occurrence(minValue, keyed.maxOccurs, false)
       val particleOs = keyed.particles.toList map {Occurrence(_)}
       Occurrence((o.minOccurs :: (particleOs map { _.minOccurs})).min,
         (o.maxOccurs :: (particleOs map { _.maxOccurs})).max,

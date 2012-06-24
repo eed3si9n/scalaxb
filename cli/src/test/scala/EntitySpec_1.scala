@@ -6,7 +6,7 @@ object EntitySpec_1 extends Specification { def is = sequential               ^
   "sequences in a complex type should"                                        ^
     "generate a case class named FooSequence* for non-primary sequences"      ! seq1^
     "be referenced as fooSequence within the type"                            ! seq2^
-    "not generate anything when the primary sequence is empty"                ! seq3^
+    "not generate anything it is empty, and skipped from the params"          ! seq3^
     "generate a case class if the primary sequence is either optional or multiple" ! seq4^
     "be split into chunks of case classes when it exceeds 20 particles"       ! seq5^
     "generate accessors for elements within the wrapped sequence"             ! seq6^
@@ -14,15 +14,16 @@ object EntitySpec_1 extends Specification { def is = sequential               ^
   "choices in a complex type should"                                          ^
     "generate a trait named FooOption*"                                       ! choice1^
     "mixin FooOption to choice candidates"                                    ! choice3^
-    "be referenced as DataRecord[FooOption] if it's made of non-nillable complex type elements" ! choice2^
-    "be referenced as DataRecord[Option[FooOption]] if it includes nillable elements" ! choice2^
+    "be referenced as DataRecord[X] if it's made of non-nillable complex type elements" ! choice2^
+    "be referenced as DataRecord[Option[X]] if it includes nillable elements" ! choice2^
+    "be referenced as DataRecord[Option[X]] if it includes empty sequence"    ! choice2^
     "be referenced as DataRecord[Int] if it's made of xs:int"                 ! choice2^
                                                                               end^
   "an all in a complex type should"                                           ^
     "be referenced as Map[String, scalaxb.DataRecord[Any]]"                   ! all1^
                                                                               end^
   "a groupref in a complex type should"                                       ^
-    "be referenced as the group's primary compositor named FooGroup"          ! groupref1^
+    "be referenced as the group's non-empty primary compositor named FooGroup" ! groupref1^
                                                                               end^
   "wildcards should"                                                          ^
     "be referenced as DataRecord[Any] named any* if it's made of non-nillable elements" ! wildcard1^
@@ -71,7 +72,8 @@ object EntitySpec_1 extends Specification { def is = sequential               ^
   }
 
   def seq3 = {
-    seqEntitySource must contain("""case class EmptySequenceComplexTypeTest""")
+    (seqEntitySource must contain("""case class EmptySequenceComplexTypeTest""")) and
+    (seqEntitySource must contain("""case class EmptySequenceComplexTypeTest2(int1: Int)"""))
   }
 
   def seq4 = {
@@ -99,7 +101,8 @@ object EntitySpec_1 extends Specification { def is = sequential               ^
       """choicecomplextypetestoption4: Option[scalaxb.DataRecord[Option[example.ChoiceComplexTypeTestOption4]]], """ +
       """choicecomplextypetestoption5: Seq[scalaxb.DataRecord[example.ChoiceComplexTypeTestOption5]], """ +
       """choicecomplextypetestoption6: Seq[scalaxb.DataRecord[Option[example.ChoiceComplexTypeTestOption6]]], """ +
-      """choicecomplextypetestoption7: scalaxb.DataRecord[Int])"""
+      """choicecomplextypetestoption7: scalaxb.DataRecord[Int], """ +
+      """choicecomplextypetestoption8: Option[scalaxb.DataRecord[Any]])"""
 
   def choice1 = {
     println(choiceEntitySource)
@@ -130,7 +133,8 @@ object EntitySpec_1 extends Specification { def is = sequential               ^
     val entitySource = module.processNode(grouprefXML, "example")(0)
 
     println(entitySource)
-    (entitySource must contain("""case class EmptySequenceGroupTest(emptyseqgroup: example.EmptySeqGroup)""")) and
+    (entitySource must not contain """case class EmptySeqGroup""") and
+    (entitySource must contain("""case class EmptySequenceGroupTest""")) and
     (entitySource must contain("""case class ArrayType(arraygroup: Option[example.ArrayGroup])"""))
   }
 

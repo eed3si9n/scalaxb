@@ -41,7 +41,6 @@ object Defs {
   implicit def attributeGroupToAttributeGroupOps(tagged: Tagged[XAttributeGroup]): AttributeGroupOps =
     new AttributeGroupOps(tagged)
   implicit def namedGroupToNamedGroupOps(tagged: Tagged[XNamedGroup]): NamedGroupOps = NamedGroupOps(tagged)
-  implicit def keyedGroupToKeyedGroupOps(tagged: TaggedParticle[KeyedGroup]): KeyedGroupOps = KeyedGroupOps(tagged)
   
   val XML_SCHEMA_URI = new URI("http://www.w3.org/2001/XMLSchema")
   val XSI_URL = new URI("http://www.w3.org/2001/XMLSchema-instance")
@@ -143,10 +142,6 @@ case class KeyedGroup(key: CompositorKey,
   minOccurs: BigInt,
   maxOccurs: String,
   attributes: Map[String, scalaxb.DataRecord[Any]] = Map())
-
-case class KeyedGroupOps(tagged: TaggedParticle[KeyedGroup]) extends GroupOps {
-  def particles(implicit lookup: Lookup, splitter: Splitter): Seq[TaggedParticle[_]] = tagged.particles
-}
 
 case class NamedGroupOps(tagged: Tagged[XNamedGroup]) extends GroupOps {
   def value = tagged.value

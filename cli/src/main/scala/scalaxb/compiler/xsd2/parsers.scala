@@ -237,12 +237,7 @@ trait Parsers { self: Namer with Lookup with Args with Params with Symbols with 
         case _ => true
         })
     val singleOccurrence = occurrence.copy(minOccurs = 1, maxOccurs = 1) 
-    val parserList = ps filter {
-      case any: TaggedWildCard => false
-      case group: TaggedGroupRef if resolveNamedGroup(group).particles.isEmpty => false
-      case group: TaggedKeyedGroup if group.particles.isEmpty => false
-      case _ => true
-    } map {
+    val parserList = ps filter { !isEmptyCompositor(_) } map {
       case elem: TaggedLocalElement =>
         // SequenceDecl(List(elem), 1, 1, 0)
         if (mixed && containsStructure) buildParser(

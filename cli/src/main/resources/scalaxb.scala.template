@@ -864,7 +864,7 @@ object Helper {
   }
 
   def attributesToMap(node: Node) =
-    scala.collection.immutable.ListMap[String, DataRecord[Any]](node match {
+    scala.collection.immutable.ListMap[String, DataRecord[Any]]((node match {
       case elem: Elem =>
         elem.attributes.toList flatMap {
           case scala.xml.UnprefixedAttribute(key, value, _) =>
@@ -875,7 +875,7 @@ object Helper {
           case _ => Nil        
         }
       case _ => Nil
-    })
+    }): _*)
 
   def mapToAttributes(attrs: scala.collection.Map[String, DataRecord[Any]], scope: NamespaceBinding): scala.xml.MetaData = {
     var attr: scala.xml.MetaData  = scala.xml.Null

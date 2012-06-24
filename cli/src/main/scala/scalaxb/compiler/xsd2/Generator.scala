@@ -86,7 +86,12 @@ class Generator(val schema: ReferenceSchema,
     val attributes = decl.flattenedAttributes
     val hasAttributes = !attributes.isEmpty
     val list =
-      decl.splitNonEmptyParticles ++
+      (decl.primaryCompositor map { _ => decl.splitNonEmptyParticles } getOrElse {
+        decl.base match {
+          case x: TaggedComplexType => Nil
+          case _ => Seq(decl.base)
+        }
+      }) ++
       (attributes.headOption map { _ => attributeSeqRef }).toSeq
     val longAll = decl.primaryAll map {_ => true} getOrElse {false}
     

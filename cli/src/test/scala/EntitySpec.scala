@@ -36,6 +36,9 @@ object EntitySpec extends Specification { def is = sequential                 ^
     "be referenced as Seq[A] if maxOccurs >1"                                 ! complexType3^
     "be referenced as Seq[Option[A]] if nillable and maxOccurs >1"            ! complexType3^
                                                                               end^
+  "complex extensions of a simple type should"                                ^
+    "generate a case class named similarly"                                   ! complexType4^
+                                                                              end^
   "top-level elements with a local complex type should"                       ^
     "generate a case class named similarly"                                   ! element1^
                                                                               end^
@@ -216,6 +219,31 @@ object EntitySpec extends Specification { def is = sequential                 ^
 
   def complexType3 = {
     complexTypeEntitySource must contain(expectedComplexTypeTest)
+  }
+
+  def complexType4 = {
+    val entitySource = module.processNode(<xs:schema targetNamespace="http://www.example.com"
+        xmlns:xs="http://www.w3.org/2001/XMLSchema"
+        xmlns:tns="http://www.example.com">
+      <xs:complexType name="base64Binary" >
+        <xs:simpleContent>
+          <xs:extension base="xs:base64Binary" >
+            <xs:attribute ref="tns:contentType" />
+          </xs:extension>
+        </xs:simpleContent>
+      </xs:complexType>
+
+      <xs:attribute name="contentType">
+        <xs:simpleType>
+          <xs:restriction base="xs:string" >
+          <xs:minLength value="3" />
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>      
+    </xs:schema>, "example")(0)
+
+    println(entitySource)
+    entitySource must contain("""case class Base64BinaryType(value: scalaxb.Base64Binary, attributes: Map[String, scalaxb.DataRecord[Any]])""")
   }
 
   def element1 = {

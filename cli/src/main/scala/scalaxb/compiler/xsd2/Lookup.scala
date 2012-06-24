@@ -172,6 +172,21 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter with Symbols =
       case _ => false
     }
 
+  // empty compositors are excluded from params.
+  def isEmptyCompositor(tagged: TaggedParticle[Any])
+      (implicit splitter: Splitter): Boolean =
+    tagged match {
+      case x: TaggedGroupRef           =>
+        val group = resolveNamedGroup(x)
+        group.primaryCompositor map {isEmptyCompositor} getOrElse {false}
+      case x: TaggedKeyedGroup if x.key == AllTag => false
+      case x: TaggedKeyedGroup if x.key == ChoiceTag =>
+        if (x.particles.isEmpty) true
+        else x.particles forall {isEmptyCompositor}
+      case x: TaggedKeyedGroup if x.key == SequenceTag => x.particles.isEmpty
+      case _ => false
+    }  
+
   def baseType(decl: Tagged[XSimpleType]): Tagged[Any] = decl.value.arg1.value match {
     case XRestriction(_, _, _, Some(base), _) if containsEnumeration(decl) =>
       QualifiedName(base) match {

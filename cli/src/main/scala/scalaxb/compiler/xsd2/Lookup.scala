@@ -100,6 +100,7 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter with Symbols =
           userDefinedClassSymbol(tagged)
         case _ => userDefinedClassSymbol(tagged)
       }
+    case TaggedMixedSeqParam(_, _)  => wildCardType
     case TaggedAttributeSeqParam(_, _) =>
       MapStringDataRecordAnyClass
     case x: TaggedAttribute =>

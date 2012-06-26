@@ -157,8 +157,8 @@ case class NamedGroupOps(tagged: Tagged[XNamedGroup]) extends GroupOps {
 /** represents attributes param */
 case class AttributeSeqParam() {}
 
-/** represents param created for xs:all. */
-// case class AllParam() {}
+/** represents mixed param. */
+case class MixedSeqParam() {}
 
 sealed trait Tagged[+A] {
   def value: A
@@ -183,7 +183,8 @@ object Tagged {
   def apply(value: XsTypeSymbol, tag: HostTag): TaggedType[XsTypeSymbol] = TaggedSymbol(value, tag)
   def apply(value: XNoFixedFacet, tag: HostTag): Tagged[XNoFixedFacet] = TaggedEnum(value, tag)
   def apply(value: AttributeSeqParam, tag: HostTag): Tagged[AttributeSeqParam] = TaggedAttributeSeqParam(value, tag)
-
+  def apply(value: MixedSeqParam, tag: HostTag): Tagged[MixedSeqParam] = TaggedMixedSeqParam(value, tag)
+    
   implicit def box(value: XSimpleType)(implicit tag: HostTag) = Tagged(value, tag)
   implicit def box(value: XComplexType)(implicit tag: HostTag) = Tagged(value, tag)
   implicit def box(value: XNamedGroup)(implicit tag: HostTag) = Tagged(value, tag)
@@ -193,6 +194,7 @@ object Tagged {
   implicit def box(value: XsTypeSymbol)(implicit tag: HostTag) = Tagged(value, tag)
   implicit def box(value: XNoFixedFacet)(implicit tag: HostTag) = Tagged(value, tag)
   implicit def box(value: AttributeSeqParam)(implicit tag: HostTag) = Tagged(value, tag)
+  implicit def box(value: MixedSeqParam)(implicit tag: HostTag) = Tagged(value, tag)
   
   implicit def unbox[A](tagged: Tagged[A]): A = tagged.value
 }
@@ -226,14 +228,14 @@ case class TaggedOptionSymbol(value: OptionSymbol) extends Tagged[OptionSymbol] 
   import Defs._
   val tag = HostTag(Some(SCALA_URI), SimpleTypeHost, "Option")
 }
-case class TaggedAttributeSeqParam(value: AttributeSeqParam, tag: HostTag) extends Tagged[AttributeSeqParam] {}
-
 case class DataRecordSymbol(member: Tagged[Any]) extends XsTypeSymbol {
   val name = "DataRecordSymbol(" + member + ")"
 }
 case class OptionSymbol(member: Tagged[Any]) extends XsTypeSymbol {
   val name = "OptionSymbol(" + member + ")"
 }
+case class TaggedAttributeSeqParam(value: AttributeSeqParam, tag: HostTag) extends Tagged[AttributeSeqParam] {}
+case class TaggedMixedSeqParam(value: MixedSeqParam, tag: HostTag) extends Tagged[MixedSeqParam] {}
 
 class SchemaIteration(underlying: Seq[Tagged[_]]) extends scala.collection.IndexedSeqLike[Tagged[_], SchemaIteration] {
   lazy val length: Int = underlying.length

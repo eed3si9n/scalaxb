@@ -36,6 +36,9 @@ object EntitySpec_1 extends Specification { def is = sequential               ^
   "a single particle with maxOccurs >1 should"                                ^
     "be referenced as A*"                                                     ! param1^
                                                                               end^
+  "mixed contents in a complex type should"                                   ^
+    "generate a parameter named mixed in place of normal parameters"          ! mixed1^
+                                                                              end^
   "substitution groups should"                                                ^
     "be referenced as the group head's type"                                  ! sub1^
                                                                               end^
@@ -183,6 +186,13 @@ object EntitySpec_1 extends Specification { def is = sequential               ^
       """case class SeqParamTest(foo: String*)""",
       """case class NillableSeqParamTest(foo: Option[String]*)"""
     )
+  }
+
+  lazy val mixedEntitySource = module.processNode(mixedXML, "example")(0)
+
+  def mixed1 = {
+    println(mixedEntitySource)
+    mixedEntitySource must contain ("mixed: Seq[scalaxb.DataRecord[Any]]")
   }
 
   def sub1 = {

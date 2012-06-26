@@ -82,11 +82,13 @@ class Generator(val schema: ReferenceSchema,
     logger.debug("generateComplexTypeEntity: emitting %s" format sym.toString)
 
     lazy val attributeSeqRef: Tagged[AttributeSeqParam] = TaggedAttributeSeqParam(AttributeSeqParam(), decl.tag)
+    lazy val mixedSeqRef: Tagged[MixedSeqParam] = TaggedMixedSeqParam(MixedSeqParam(), decl.tag)
 
     val attributes = decl.flattenedAttributes
     val hasAttributes = !attributes.isEmpty
     val list =
-      (decl.primaryCompositor map { _ => decl.splitNonEmptyParticles } getOrElse {
+      (if (decl.mixed) Seq(mixedSeqRef)
+      else decl.primaryCompositor map { _ => decl.splitNonEmptyParticles } getOrElse {
         decl.base match {
           case TaggedXsAnyType      => Nil
           case x: TaggedComplexType => Nil
@@ -193,9 +195,9 @@ class Generator(val schema: ReferenceSchema,
     val fmt = formatterSymbol(sym)
     val argsTree: Seq[Tree] =
       (Nil match {
-        case _ if hasSequenceParam =>
-          Seq(SEQARG(particleArgs.head))
-        case _ if longAll =>
+        case _ if decl.mixed       => Seq((SeqClass DOT "concat")(particleArgs))
+        case _ if hasSequenceParam => Seq(SEQARG(particleArgs.head))
+        case _ if longAll          =>
           Seq(ListMapClass.module APPLY SEQARG((LIST(particleArgs) DOT "flatten") APPLYTYPE
             TYPE_TUPLE(StringClass, DataRecordAnyClass)
           ))

@@ -405,6 +405,17 @@ object Example {
         </xs:sequence>
       </xs:group>       
     </xs:schema>
+  
+  val mixedXML =
+    <xs:schema targetNamespace="http://www.example.com/general"
+        xmlns:xs="http://www.w3.org/2001/XMLSchema"
+        xmlns:gen="http://www.example.com/general">
+      <xs:complexType name="TopLevelMultipleSeqAnyTest" mixed="true">
+        <xs:sequence minOccurs="0" maxOccurs="unbounded">
+          <xs:any namespace="##other" processContents="lax"/>
+        </xs:sequence>
+      </xs:complexType>
+    </xs:schema>
 
   val attributeXML =
     <xs:schema targetNamespace="http://www.example.com/general"

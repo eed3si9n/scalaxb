@@ -110,6 +110,7 @@ trait Params { self: Namer with Lookup with Splitter =>
       case x: TaggedKeyedGroup         => buildCompositorParam(x)
       case x: TaggedWildCard           => buildWildCardParam(x, postfix)
       case x: TaggedAttributeSeqParam  => buildDataRecordMapParam(ATTRS_PARAM, x)
+      case x: TaggedMixedSeqParam      => buildMixedParam(x)
       case _ => error("buildParam: " + tagged)
     }
 
@@ -185,6 +186,12 @@ trait Params { self: Namer with Lookup with Splitter =>
         else "any" + postfix.toString
       val retval = Param(tagged.tag.namespace, name, tagged, Occurrence(any), false, false, false)
       logger.debug("buildWildCardParam:  " + retval.toString)
+      retval
+    }
+
+    private def buildMixedParam(tagged: TaggedMixedSeqParam): Param = {
+      val retval = Param(tagged.tag.namespace, MIXED_PARAM, tagged, UnboundedNotNillable(), false, false, false)
+      logger.debug("buildMixedParam:  " + retval.toString)
       retval
     }
 

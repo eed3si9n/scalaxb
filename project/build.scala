@@ -2,7 +2,7 @@ import sbt._
 
 object Builds extends Build {
   import Keys._
-  import ls.Plugin.LsKeys._
+  import ls.Plugin.{LsKeys => lskeys}
   import sbtbuildinfo.Plugin._
   import sbtscalashim.Plugin._
 
@@ -12,8 +12,8 @@ object Builds extends Build {
     homepage := Some(url("http://scalaxb.org")),
     licenses := Seq("MIT License" -> url("https://github.com/eed3si9n/scalaxb/blob/master/LICENSE")),
     description := """scalaxb is an XML data-binding tool for Scala that supports W3C XML Schema (xsd) and wsdl.""",
-    scalaVersion := "2.9.1",
-    crossScalaVersions := Seq("2.9.1", "2.8.1"), // Scala interpreter bug in 2.9.1
+    scalaVersion := "2.9.2",
+    crossScalaVersions := Seq("2.9.2", "2.9.1", "2.8.1"),
     scalacOptions := Seq("-deprecation", "-unchecked"),
     pomExtra := (<scm>
         <url>git@github.com:eed3si9n/scalaxb.git</url>
@@ -41,9 +41,8 @@ object Builds extends Build {
   )
 
   lazy val customLsSettings = _root_.ls.Plugin.lsSettings ++ Seq(
-    licenses in lsync <<= licenses,
-    tags in lsync := Seq("xml", "soap", "wsdl", "code-generation"),
-    (externalResolvers in lsync) := Seq(
+    lskeys.tags in lskeys.lsync := Seq("xml", "soap", "wsdl", "code-generation"),
+    (externalResolvers in lskeys.lsync) := Seq(
       "sonatype-public" at "https://oss.sonatype.org/content/repositories/public")
   )
 
@@ -55,7 +54,7 @@ object Builds extends Build {
     buildSettings ++ Seq(
     name := "scalaxb",
     libraryDependencies ++= Seq(
-      "com.github.scopt" %% "scopt" % "2.0.1",
+      "com.github.scopt" % "scopt_2.9.1" % "2.0.1",
       "org.scala-tools.sbt" % "launcher-interface" % "0.7.4" % "provided" from (
         "http://databinder.net/repo/org.scala-tools.sbt/launcher-interface/0.7.4/jars/launcher-interface.jar"),
       "log4j" % "log4j" % "1.2.17"),
@@ -107,8 +106,8 @@ object Builds extends Build {
 //  import ScriptedPlugin._
   lazy val pluginSettings = buildSettings ++ Seq(
     sbtPlugin := true,
-    description in lsync := """sbt plugin to run scalaxb""",
-    crossScalaVersions := Seq("2.9.1"),
+    description in lskeys.lsync := """sbt plugin to run scalaxb""",
+    crossScalaVersions := Seq("2.9.2"),
     publishMavenStyle := true) // ++
 //    ScriptedPlugin.scriptedSettings ++ Seq(
 //    scriptedBufferLog := false

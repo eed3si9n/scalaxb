@@ -1,8 +1,11 @@
 ## bug fixes and minor enhancements
 - Adds support for resolveing SOAP encoding hrefs. [#160][160]. reported by [@greenrd][@greenrd]
 - Fixes xsi:type attribute wiping out other attributes due to SI-5843 [#159][159]. reported by [@psnively][@psnively]
+- Fixes reserve word escaping when names contain trailing whitespaces. [#163][163]. reported by [@dohzya][@dohzya]
 
   [159]: https://github.com/eed3si9n/scalaxb/issues/159
   [160]: https://github.com/eed3si9n/scalaxb/issues/160
+  [163]: https://github.com/eed3si9n/scalaxb/issues/163
   [@psnively]: https://github.com/psnively
   [@greenrd]: https://github.com/greenrd
+  [@dohzya ]: https://github.com/dohzya 

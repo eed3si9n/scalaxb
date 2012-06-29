@@ -166,7 +166,8 @@ trait Namer extends ScalaNames { self: Lookup with Splitter  =>
     }
   }
 
-  def makeParamName(name: String) = {
+  def makeParamName(name0: String) = {
+    val name = name0.trim
     val base = config.paramPrefix map { p =>
       if (p.endsWith("_"))  p + name
       else p + name.capitalize

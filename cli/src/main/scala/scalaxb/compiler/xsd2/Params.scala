@@ -101,7 +101,7 @@ trait Params { self: Namer with Lookup with Splitter =>
     // tagged can be Tagged[XSimpleType], Tagged[BuiltInSymbol], Tagged[XLocalElementable], Tagged[KeyedGroup],
     // Tagged[XAny].
     private def buildParam(tagged: Tagged[Any], postfix: Int) = tagged match {
-      case TaggedSimpleType(decl, tag) => Param(tagged.tag.namespace, tagged.tag.name, tagged, SingleNotNillable(), false, false, false)
+      case TaggedSimpleType(decl, tag) => Param(tagged.tag.namespace, "value", tagged, SingleNotNillable(), false, false, false)
       case TaggedSymbol(symbol, tag)   => Param(tagged.tag.namespace, "value", tagged, SingleNotNillable(), false, false, false)
       case x: TaggedLocalElement       => buildElementParam(x)
       case x: TaggedGroupRef           => buildGroupRefParam(x)

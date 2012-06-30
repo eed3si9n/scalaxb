@@ -444,4 +444,80 @@ object Example {
         </xs:simpleContent>
       </xs:complexType>
     </xs:schema>
+
+  val derivationXML =
+    <xs:schema targetNamespace="http://www.example.com/general"
+        xmlns:xs="http://www.w3.org/2001/XMLSchema"
+        xmlns:gen="http://www.example.com/general">
+      <xs:complexType name="SimpleTypeTest">
+        <xs:sequence>
+          <xs:element name="numberlist1" type="gen:ListOfUnsignedInt"/>
+          <xs:element name="milklist1" type="gen:ListOfMilk"/>
+        </xs:sequence>
+      </xs:complexType>      
+
+      <xs:simpleType name="MilkType">
+        <xs:restriction base="xs:NMTOKEN">
+          <xs:enumeration value="WHOLE"/>
+          <xs:enumeration value="SKIM"/>
+        </xs:restriction>
+      </xs:simpleType>
+
+      <xs:simpleType name="ListOfMilk">
+        <xs:list itemType="gen:MilkType"/>
+      </xs:simpleType>
+
+      <xs:simpleType name="ListOfMilkDerived">
+        <xs:restriction base="gen:ListOfMilk">
+          <xs:minLength value="0"/>
+          <xs:maxLength value="1"/>
+        </xs:restriction>
+      </xs:simpleType>
+
+      <xs:complexType name="ComplexListOfMilk">
+        <xs:simpleContent>
+          <xs:extension base="gen:ListOfMilkDerived">
+            <xs:attributeGroup ref="gen:coreattrs"/>
+          </xs:extension>
+        </xs:simpleContent>
+      </xs:complexType>
+
+      <xs:complexType name="ComplexMilk">
+        <xs:simpleContent>
+          <xs:extension base="gen:MilkType">
+            <xs:attributeGroup ref="gen:coreattrs"/>
+          </xs:extension>
+        </xs:simpleContent>
+      </xs:complexType>
+
+      <xs:simpleType name="ListOfUnsignedInt">
+        <xs:list itemType="xs:unsignedInt"/>
+      </xs:simpleType>
+
+      <xs:simpleType name="ListOfUnsignedIntDerived">
+        <xs:restriction base="gen:ListOfUnsignedInt">
+          <xs:minLength value="0"/>
+          <xs:maxLength value="1"/>
+        </xs:restriction>
+      </xs:simpleType>
+
+      <xs:complexType name="ComplexListOfBuiltInType">
+        <xs:simpleContent>
+          <xs:extension base="gen:ListOfUnsignedIntDerived">
+            <xs:attributeGroup ref="gen:coreattrs"/>
+          </xs:extension>
+        </xs:simpleContent>
+      </xs:complexType>
+
+      <xs:attributeGroup name="coreattrs">
+        <xs:annotation>
+          <xs:documentation>
+          core attributes common to most elements
+          id       document-wide unique id
+          </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="id" type="xs:ID"/>
+        <xs:attribute name="class" type="xs:NMTOKENS"/>
+      </xs:attributeGroup>      
+    </xs:schema>
 }

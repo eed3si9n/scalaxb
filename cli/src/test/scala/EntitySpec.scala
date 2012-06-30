@@ -18,6 +18,9 @@ object EntitySpec extends Specification { def is = sequential                 ^
   "lists of a simple type should"                                             ^
     "be referenced as Seq of its base type"                                   ! derivation1^
                                                                               end^
+  "complex derivation of a simple type should"                                ^
+    "generate a case class named similarly with a parameter named value"      ! derivation2^
+                                                                              end^
   "unions of simple types should"                                             ^
     "be referenced as String"                                                 ! union1^
                                                                               end^
@@ -122,35 +125,15 @@ object EntitySpec extends Specification { def is = sequential                 ^
     entitySource must contain("""comment: String""") and contain("""comment2: String""")
   }
 
+  lazy val derivEntitySource = module.processNode(derivationXML, "example")(0)
+
   def derivation1 = {
-    val entitySource = module.processNode(<xs:schema targetNamespace="http://www.example.com"
-        xmlns:xs="http://www.w3.org/2001/XMLSchema"
-        xmlns:tns="http://www.example.com">
-      <xs:complexType name="SimpleTypeTest">
-        <xs:sequence>
-          <xs:element name="numberlist1" type="tns:ListOfUnsignedInt"/>
-          <xs:element name="milklist1" type="tns:ListOfMilk"/>
-        </xs:sequence>
-      </xs:complexType>
+    println(derivEntitySource)
+    derivEntitySource must contain("""case class SimpleTypeTest(numberlist1: Seq[Long], milklist1: Seq[example.MilkType])""")
+  }
 
-      <xs:simpleType name="ListOfUnsignedInt">
-        <xs:list itemType="xs:unsignedInt"/>
-      </xs:simpleType>
-
-      <xs:simpleType name="ListOfMilk">
-        <xs:list itemType="tns:MilkType"/>
-      </xs:simpleType>
-
-      <xs:simpleType name="MilkType">
-        <xs:restriction base="xs:NMTOKEN">
-          <xs:enumeration value="WHOLE"/>
-          <xs:enumeration value="SKIM"/>
-        </xs:restriction>
-      </xs:simpleType>
-    </xs:schema>, "example")(0)
-
-    println(entitySource)
-    entitySource must contain("""numberlist1: Seq[Long], milklist1: Seq[example.MilkType]""")
+  def derivation2 = {
+    derivEntitySource must contain("""case class ComplexMilk(value: example.MilkType, attributes: Map[String, scalaxb.DataRecord[Any]])""")
   }
 
   def union1 = {

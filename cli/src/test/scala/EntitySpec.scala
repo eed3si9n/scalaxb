@@ -21,6 +21,9 @@ object EntitySpec extends Specification { def is = sequential                 ^
   "complex derivation of a simple type should"                                ^
     "generate a case class named similarly with a parameter named value"      ! derivation2^
                                                                               end^
+  "complex derivation of a complex type with simple content should"           ^
+    "generate a case class named similarly with a parameter named value"      ! derivation3^
+                                                                              end^
   "unions of simple types should"                                             ^
     "be referenced as String"                                                 ! union1^
                                                                               end^
@@ -57,7 +60,7 @@ object EntitySpec extends Specification { def is = sequential                 ^
   lazy val module = new scalaxb.compiler.xsd2.Driver 
   lazy val emptyEntitySource = module.processNode(<xs:schema targetNamespace="http://www.example.com/"
     xmlns:xs="http://www.w3.org/2001/XMLSchema" />, "example1")(0)
-  scalaxb.compiler.Module.configureLogger(true)
+  // scalaxb.compiler.Module.configureLogger(true)
 
   def entity1 = {
     println(emptyEntitySource)
@@ -136,6 +139,10 @@ object EntitySpec extends Specification { def is = sequential                 ^
   def derivation2 = {
     (derivEntitySource must contain("""case class ComplexMilk(value: example.MilkType, attributes: Map[String, scalaxb.DataRecord[Any]])""")) and
     (derivEntitySource must contain("""case class ComplexListOfMilk(value: Seq[example.MilkType], attributes: Map[String, scalaxb.DataRecord[Any]])"""))
+  }
+
+  def derivation3 = {
+    derivEntitySource must contain("""case class ComplexMilkDerived(value: example.MilkType, attributes: Map[String, scalaxb.DataRecord[Any]])""")
   }
 
   def union1 = {

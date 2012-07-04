@@ -126,20 +126,36 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter with Symbols =
   def buildEnumTypeSymbol(tagged: Tagged[XNoFixedFacet]): ClassSymbol =
     userDefinedClassSymbol(tagged.tag.namespace, getName(tagged))
 
-  def buildSimpleTypeType(decl: Tagged[XSimpleType]): Type = {
+  // build corresponding Scala type from simple type.
+  // union uses String.
+  // list uses Seq of base type.
+  // restriction uses the bottom most enumeration type or the bottom builtin type.
+  def buildSimpleTypeType(decl: TaggedType[XSimpleType]): Type = {
+    def buildSymbol = userDefinedClassSymbol(decl.tag.namespace, getName(decl))
+
     decl.arg1.value match {
-      case restriction: XRestriction if containsEnumeration(decl) =>
-        // trace type hierarchy to the top most type that implements enumeration.
-        val base = baseType(decl)
-        userDefinedClassSymbol(base.tag.namespace, getName(base))
-      case restriction: XRestriction =>
-        buildType(baseType(decl))
-      case list: XList =>
-        val base = baseType(decl)
-        TYPE_SEQ(buildType(baseType(decl)))
+      case list: XList => TYPE_SEQ(buildType(decl.baseType))
       // union baseType is hardcoded to xs:string.
-      case union: XUnion =>
-        buildType(baseType(decl))
+      case union: XUnion => buildType(decl.baseType)
+
+      case XRestriction(_, _, _, Some(base), _) if containsEnumeration(decl) =>
+        QualifiedName(base) match {
+          case BuiltInType(tagged) => buildSymbol
+          case SimpleType(tagged) if containsEnumeration(tagged) => buildSimpleTypeType(tagged)
+          case SimpleType(tagged) => buildSymbol
+        }
+      case XRestriction(_, _, _, Some(base), _) =>
+        QualifiedName(base) match {
+          case BuiltInType(tagged) => buildType(tagged)
+          case SimpleType(tagged)  => buildSimpleTypeType(tagged)
+        }
+      case XRestriction(_, XSimpleRestrictionModelSequence(Some(simpleType), _), _, _, _) if containsEnumeration(decl) =>
+        val t = Tagged(simpleType, decl.tag)
+        if (containsEnumeration(t)) buildSimpleTypeType(t)
+        else buildSymbol
+      case XRestriction(_, XSimpleRestrictionModelSequence(Some(simpleType), _), _, _, _) =>
+        buildSimpleTypeType(Tagged(simpleType, decl.tag))
+      case _ => sys.error("buildSimpleTypeType#: Unsupported content " + decl.arg1.value.toString)
     }
   }
 
@@ -187,35 +203,6 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter with Symbols =
       case x: TaggedKeyedGroup if x.key == SequenceTag => x.particles.isEmpty
       case _ => false
     }  
-
-  def baseType(decl: Tagged[XSimpleType]): Tagged[Any] = decl.value.arg1.value match {
-    case XRestriction(_, _, _, Some(base), _) if containsEnumeration(decl) =>
-      QualifiedName(base) match {
-        case BuiltInType(tagged) => decl
-        case SimpleType(tagged) =>
-          if (containsEnumeration(tagged)) baseType(tagged)
-          else decl
-      }
-    case XRestriction(_, _, _, Some(base), _) =>
-      QualifiedName(base) match {
-        case BuiltInType(tagged) => tagged
-        case SimpleType(tagged) => baseType(tagged)
-      }
-    case XRestriction(_, XSimpleRestrictionModelSequence(Some(simpleType), _), _, _, _) if containsEnumeration(decl) =>
-      if (containsEnumeration(Tagged(simpleType, decl.tag))) baseType(Tagged(simpleType, decl.tag))
-      else decl
-    case XRestriction(_, XSimpleRestrictionModelSequence(Some(simpleType), _), _, _, _) =>
-      baseType(Tagged(simpleType, decl.tag))
-    case XList(_, _, _, Some(itemType), _) =>
-      QualifiedName(itemType) match {
-        case BuiltInType(tagged) => tagged
-        case SimpleType(tagged) => baseType(tagged)
-      }
-    case XList(_, Some(simpleType), _, _, _) =>
-      baseType(Tagged(simpleType, decl.tag))
-    case x: XUnion => Tagged(XsString, HostTag(Some(XML_SCHEMA_URI), SimpleTypeHost, "string"))
-    case _ => sys.error("baseType#: Unsupported content " + decl.arg1.value.toString)
-  }
 
   def resolveType(typeName: QualifiedName): TaggedType[_] = typeName match {
     case BuiltInAnyType(tagged) => tagged

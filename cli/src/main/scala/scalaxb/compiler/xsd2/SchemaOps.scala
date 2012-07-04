@@ -26,7 +26,7 @@ import scalashim._
 import java.net.{URI}
 import scala.xml.{NamespaceBinding}
 import scalaxb._
-import scalaxb.compiler.xsd.{XsTypeSymbol, XsAnyType, XsNillableAny}
+import scalaxb.compiler.xsd.{XsTypeSymbol, XsAnyType, XsNillableAny, XsString}
 import xmlschema._
 import scala.collection.mutable.{Builder, ArrayBuffer}
 import scala.collection.generic.CanBuildFrom
@@ -41,7 +41,8 @@ object Defs {
   implicit def attributeGroupToAttributeGroupOps(tagged: Tagged[XAttributeGroup]): AttributeGroupOps =
     new AttributeGroupOps(tagged)
   implicit def namedGroupToNamedGroupOps(tagged: Tagged[XNamedGroup]): NamedGroupOps = NamedGroupOps(tagged)
-  
+  implicit def simpleTypeToSimpleTypeOps(tagged: TaggedType[XSimpleType]): SimpleTypeOps = SimpleTypeOps(tagged)
+
   val XML_SCHEMA_URI = new URI("http://www.w3.org/2001/XMLSchema")
   val XSI_URL = new URI("http://www.w3.org/2001/XMLSchema-instance")
   val XSI_PREFIX = "xsi"
@@ -152,6 +153,32 @@ case class NamedGroupOps(tagged: Tagged[XNamedGroup]) extends GroupOps {
     ComplexTypeIteration.namedGroupToPrimaryCompositor(value, tag)
   def compositors(implicit lookup: Lookup, splitter: Splitter) =
     ComplexTypeIteration.namedGroupToCompositors(value, tag)   
+}
+
+case class SimpleTypeOps(decl: TaggedType[XSimpleType]) {
+  def baseType(implicit lookup: Lookup): TaggedType[_] = {
+    import Defs._
+    import lookup._
+    decl.value.arg1.value match {
+      case XRestriction(_, _, _, Some(base), _) =>
+        QualifiedName(base) match {
+          case BuiltInType(tagged) => tagged
+          case SimpleType(tagged)  => tagged
+        }
+      case XRestriction(_, XSimpleRestrictionModelSequence(Some(simpleType), _), _, _, _) =>
+        Tagged(simpleType, decl.tag)
+      case XList(_, _, _, Some(itemType), _) =>
+        QualifiedName(itemType) match {
+          case BuiltInType(tagged) => tagged
+          case SimpleType(tagged)  => tagged
+        }
+      case XList(_, Some(simpleType), _, _, _) =>
+        Tagged(simpleType, decl.tag)
+      case x: XUnion =>
+        Tagged(XsString, HostTag(Some(XML_SCHEMA_URI), SimpleTypeHost, "string"))
+      case _ => sys.error("baseType#: Unsupported content " + decl.arg1.value.toString)
+    }    
+  }
 }
 
 /** represents attributes param */
@@ -516,6 +543,7 @@ object ComplexTypeIteration {
     def processRestriction(restriction: XRestrictionTypable): Seq[TaggedParticle[_]] = {
       val base: QualifiedName = restriction.base
       base match {
+        // TaggedTypes are not TaggedParticle
         // case BuiltInType(tagged) => Seq(tagged)
         // case SimpleType(tagged)  => Seq(tagged)
 
@@ -539,6 +567,7 @@ object ComplexTypeIteration {
     def processExtension(extension: XExtensionTypable): Seq[TaggedParticle[_]] =  {
       val base: QualifiedName = extension.base
       base match {
+        // TaggedTypes are not TaggedParticle
         // case BuiltInType(tagged) => Seq(tagged)
         // case SimpleType(tagged)  => Seq(tagged)
         case ComplexType(tagged) =>

@@ -99,7 +99,7 @@ class Generator(val schema: ReferenceSchema,
     val longAll = decl.primaryAll map {_ => true} getOrElse {false}
     
     logger.debug("generateComplexTypeEntity: list: %s", list map {getName})
-
+    
     val paramList: Seq[Param] = Param.fromSeq(list)
     val compositors = compositorsR(decl)
     val compositorCodes = compositors.toList map { x => generateCompositor(sym.owner.newClass(getName(x)), x) }

@@ -54,9 +54,10 @@ object EntitySpec extends Specification { def is = sequential                 ^
 
   import Example._
   // scalaxb.compiler.Module.configureLogger(true)
-  lazy val module = new scalaxb.compiler.xsd2.Driver
+  lazy val module = new scalaxb.compiler.xsd2.Driver 
   lazy val emptyEntitySource = module.processNode(<xs:schema targetNamespace="http://www.example.com/"
     xmlns:xs="http://www.w3.org/2001/XMLSchema" />, "example1")(0)
+  scalaxb.compiler.Module.configureLogger(true)
 
   def entity1 = {
     println(emptyEntitySource)
@@ -133,7 +134,8 @@ object EntitySpec extends Specification { def is = sequential                 ^
   }
 
   def derivation2 = {
-    derivEntitySource must contain("""case class ComplexMilk(value: example.MilkType, attributes: Map[String, scalaxb.DataRecord[Any]])""")
+    (derivEntitySource must contain("""case class ComplexMilk(value: example.MilkType, attributes: Map[String, scalaxb.DataRecord[Any]])""")) and
+    (derivEntitySource must contain("""case class ComplexListOfMilk(value: Seq[example.MilkType], attributes: Map[String, scalaxb.DataRecord[Any]])"""))
   }
 
   def union1 = {

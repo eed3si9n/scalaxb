@@ -32,7 +32,7 @@ trait Args { self: Namer with Lookup with Params with Symbols =>
         case XsAnySimpleType | XsAnyType => selector
         case symbol: BuiltInSimpleTypeSymbol => buildTypeSymbolArg(buildType(x), selector, SingleNotNillable())
       }
-    case x: TaggedSimpleType => buildTypeSymbolArg(buildType(baseType(x)), selector, SingleNotNillable())
+    case x: TaggedSimpleType => buildTypeSymbolArg(buildType(x), selector, SingleNotNillable())
     case x: TaggedComplexType =>
       buildFromXML(buildType(x), selector, stackTree, None)
   }

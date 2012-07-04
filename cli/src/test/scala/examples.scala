@@ -482,6 +482,13 @@ object Example {
         </xs:simpleContent>
       </xs:complexType>
 
+      <xs:complexType name="ComplexMilkDerived">
+        <xs:simpleContent>
+          <xs:restriction base="gen:ComplexMilk">
+          </xs:restriction>
+        </xs:simpleContent>
+      </xs:complexType>
+
       <xs:complexType name="ComplexMilk">
         <xs:simpleContent>
           <xs:extension base="gen:MilkType">

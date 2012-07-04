@@ -14,6 +14,9 @@ object ProtocolSpec extends Specification { def is = sequential               ^
     "generate an XML writer"                                                  ! output1^
     "be referenced as Option[A] in the parser if nillable"                    ! cardinality1^
                                                                               end^
+  "complex derivation of simple type should"                                  ^
+    "generate a simple protocol"                                              ! derivation1^
+                                                                              end^
   "top-level named groups should"                                             ^
     "generate a combinator parser"                                            ! namedGroup1^ 
                                                                               end^
@@ -93,6 +96,14 @@ object ProtocolSpec extends Specification { def is = sequential               ^
     println(cardinalityProtocol)
     (cardinalityProtocol must contain(
       """scalaxb.toXML[Option[example.Person]](__obj.person2, None, Some("person2"), __scope, false)"""))
+  }
+
+  lazy val derivProcolSource = module.processNode(derivationXML, "example")(1)
+
+  def derivation1 = {
+    println(derivProcolSource)
+    (derivProcolSource must contain(
+      """example.ComplexListOfMilk(scalaxb.fromXML[Seq[example.MilkType]](node, scalaxb.ElemName(node) :: stack),"""))
   }
 
   lazy val namedGroupProtocol = module.processNode(namedGroupXML, "example")(1)

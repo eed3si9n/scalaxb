@@ -399,6 +399,8 @@ object SchemaIteration {
 }
 
 case class ComplexTypeOps(decl: Tagged[XComplexType]) {
+  def hasSimpleContent: Boolean =
+    ComplexTypeIteration.complexTypeHasSimpleContent(decl)
   def base(implicit lookup: Lookup): TaggedType[_] =
     ComplexTypeIteration.complexTypeToBaseType(decl)
   def particles(implicit lookup: Lookup, targetNamespace: Option[URI], scope: NamespaceBinding) =
@@ -608,6 +610,12 @@ object ComplexTypeIteration {
     }
   }
 
+  private[scalaxb] def complexTypeHasSimpleContent(decl: Tagged[XComplexType]): Boolean =
+    decl.value.arg1.value match {
+      case x: XSimpleContent => true
+      case _ => false
+    }
+  
   private[scalaxb] def complexTypeToBaseType(decl: Tagged[XComplexType])
     (implicit lookup: Lookup): TaggedType[_] = {
     import lookup._

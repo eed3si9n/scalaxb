@@ -99,7 +99,7 @@ class Generator(val schema: ReferenceSchema,
     val longAll = decl.primaryAll map {_ => true} getOrElse {false}
     
     logger.debug("generateComplexTypeEntity: list: %s", list map {getName})
-    
+
     val paramList: Seq[Param] = Param.fromSeq(list)
     val compositors = compositorsR(decl)
     val compositorCodes = compositors.toList map { x => generateCompositor(sym.owner.newClass(getName(x)), x) }
@@ -132,12 +132,13 @@ class Generator(val schema: ReferenceSchema,
   private def generateDefaultFormat(sym: ClassSymbol, decl: Tagged[XComplexType],
       hasAttributes: Boolean, hasSequenceParam: Boolean, longAll: Boolean): Tree = {
     val particles = decl.splitNonEmptyParticles
-    val unmixedParserList = particles map { buildParser(_, decl.mixed, decl.mixed) }
+    val unmixedParserList = particles map { buildParticleParser(_, decl.mixed, decl.mixed) }
     val parserList = if (decl.mixed) buildTextParser +: (unmixedParserList flatMap { Seq(_, buildTextParser) })
       else unmixedParserList
     val parserVariableList: Seq[Tree] = ( 0 to parserList.size - 1) map { i => buildSelector(i) }
 
-    val particleArgs: Seq[Tree] = if (decl.mixed) (0 to parserList.size - 1).toList map { i =>
+    val particleArgs: Seq[Tree] =
+      if (decl.mixed) (0 to parserList.size - 1).toList map { i =>
         if (i % 2 == 1) buildArgForMixed(particles((i - 1) / 2), i)
         else buildArgForOptTextRecord(i) }
       else decl.primaryAll map { all => 
@@ -145,31 +146,28 @@ class Generator(val schema: ReferenceSchema,
         all.particles map { buildArgForAll(_) } } getOrElse {
         particles.zipWithIndex map { case (i, x) => buildArg(i, x) }
       }
-
     val simpleFromXml =
       if (particles.isEmpty && !decl.mixed) true
+      else if (decl.hasSimpleContent) true
       else (decl.primaryAll) match {
         case Some(x) => true
         case _ => false
       }
 
     def makeWritesChildNodes: Option[Tree] = {
-      def simpleContentTree(base: QualifiedName): Tree = base match {
-        case BuiltInAnyType(_) => SEQ(TextClass APPLY(REF("__obj") DOT "value" DOT "value" DOT "toString"))
+      def simpleContentTree(base: TaggedType[_]): Tree = base match {
+        case x: TaggedSymbol => SEQ(TextClass APPLY(REF("__obj") DOT "value" DOT "value" DOT "toString"))
         case _ => SEQ(TextClass APPLY(REF("__obj") DOT "value" DOT "toString"))
       }
       def toXMLArgs: List[Tree] = REF("x") :: (REF("x") DOT "namespace").tree :: (REF("x") DOT "key").tree :: REF("__scope") :: FALSE :: Nil
-      def childTree: Tree = if (decl.mixed) (REF("__obj") DOT makeParamName(MIXED_PARAM) DOT "toSeq") FLATMAP LAMBDA(PARAM("x")) ==> BLOCK(
-          buildToXML(DataRecordAnyClass, toXMLArgs)
-        )
-      else decl.value.arg1.value match {
-        case XSimpleContent(_, DataRecord(_, _, x: XSimpleRestrictionType), _, _)      => simpleContentTree(x.base)
-        case XSimpleContent(_, DataRecord(_, _, x: XSimpleExtensionType), _, _)        => simpleContentTree(x.base)
-        case _ =>
-          if (particles.isEmpty) NIL
-          else if (particles.size == 1) PAREN(buildXMLTree(Param(particles(0))))
-          else (SeqClass DOT "concat")(Param.fromSeq(particles) map { x => buildXMLTree(x) })
-      }
+      def childTree: Tree =
+        if (decl.mixed) (REF("__obj") DOT makeParamName(MIXED_PARAM) DOT "toSeq") FLATMAP LAMBDA(PARAM("x")) ==> BLOCK(
+            buildToXML(DataRecordAnyClass, toXMLArgs)
+          )
+        else if (decl.hasSimpleContent) simpleContentTree(decl.base)
+        else if (particles.isEmpty) NIL
+        else if (particles.size == 1) PAREN(buildXMLTree(Param(particles(0))))
+        else (SeqClass DOT "concat")(Param.fromSeq(particles) map { x => buildXMLTree(x) })
 
       Some(DEF("writesChildNodes", TYPE_SEQ(NodeClass)) withParams(PARAM("__obj", sym),
         PARAM("__scope", NamespaceBindingClass)) := childTree)
@@ -196,6 +194,7 @@ class Generator(val schema: ReferenceSchema,
     val argsTree: Seq[Tree] =
       (Nil match {
         case _ if decl.mixed       => Seq((SeqClass DOT "concat")(particleArgs))
+        case _ if decl.hasSimpleContent => Seq(buildSimpleContentArg(decl.base))
         case _ if hasSequenceParam => Seq(SEQARG(particleArgs.head))
         case _ if longAll          =>
           Seq(ListMapClass.module APPLY SEQARG((LIST(particleArgs) DOT "flatten") APPLYTYPE

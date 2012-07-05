@@ -89,11 +89,8 @@ class Generator(val schema: ReferenceSchema,
     val list =
       (if (decl.mixed) Seq(mixedSeqRef)
       else decl.primaryCompositor map { _ => decl.splitNonEmptyParticles } getOrElse {
-        decl.base match {
-          case TaggedXsAnyType      => Nil
-          case x: TaggedComplexType => Nil
-          case _ => Seq(decl.base)
-        }
+        if (decl.hasSimpleContent) Seq(decl.simpleContentRoot)
+        else Nil
       }) ++
       (attributes.headOption map { _ => attributeSeqRef }).toSeq
     val longAll = decl.primaryAll map {_ => true} getOrElse {false}
@@ -194,7 +191,7 @@ class Generator(val schema: ReferenceSchema,
     val argsTree: Seq[Tree] =
       (Nil match {
         case _ if decl.mixed       => Seq((SeqClass DOT "concat")(particleArgs))
-        case _ if decl.hasSimpleContent => Seq(buildSimpleContentArg(decl.base))
+        case _ if decl.hasSimpleContent => Seq(buildSimpleContentArg(decl.simpleContentRoot))
         case _ if hasSequenceParam => Seq(SEQARG(particleArgs.head))
         case _ if longAll          =>
           Seq(ListMapClass.module APPLY SEQARG((LIST(particleArgs) DOT "flatten") APPLYTYPE

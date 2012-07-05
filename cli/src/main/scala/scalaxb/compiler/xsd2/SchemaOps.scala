@@ -401,6 +401,8 @@ object SchemaIteration {
 case class ComplexTypeOps(decl: Tagged[XComplexType]) {
   def hasSimpleContent: Boolean =
     ComplexTypeIteration.complexTypeHasSimpleContent(decl)
+  def simpleContentRoot(implicit lookup: Lookup): TaggedType[_] =
+    ComplexTypeIteration.complexTypeToSimpleContentRoot(decl)
   def base(implicit lookup: Lookup): TaggedType[_] =
     ComplexTypeIteration.complexTypeToBaseType(decl)
   def particles(implicit lookup: Lookup, targetNamespace: Option[URI], scope: NamespaceBinding) =
@@ -615,7 +617,19 @@ object ComplexTypeIteration {
       case x: XSimpleContent => true
       case _ => false
     }
-  
+
+  // root of simple content
+  private[scalaxb] def complexTypeToSimpleContentRoot(decl: Tagged[XComplexType])
+    (implicit lookup: Lookup): TaggedType[_] = {
+    import lookup._
+    decl.base match {
+      case x: TaggedSymbol => x: TaggedType[_]
+      case x: TaggedSimpleType => x: TaggedType[_]
+      case x: TaggedType[XComplexType] => complexTypeToSimpleContentRoot(x)
+      case _ => TaggedXsAnyType
+    }
+  }
+
   private[scalaxb] def complexTypeToBaseType(decl: Tagged[XComplexType])
     (implicit lookup: Lookup): TaggedType[_] = {
     import lookup._

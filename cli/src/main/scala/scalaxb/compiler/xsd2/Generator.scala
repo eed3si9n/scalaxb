@@ -270,7 +270,10 @@ class Generator(val schema: ReferenceSchema,
 //        else " extends " + superNames.mkString(" with ")
     val list = splitLongSequence(tagged) getOrElse {tagged.particles}
     val paramList = Param.fromSeq(list)
-    Trippet(CASECLASSDEF(sym) withParams(paramList map {_.tree}: _*),
+    val hasSequenceParam = (paramList.size == 1) && (paramList.head.occurrence.isMultiple)    
+    Trippet(CASECLASSDEF(sym) withParams(
+      (if (hasSequenceParam) paramList.head.varargTree :: Nil
+      else paramList map {_.tree}): _*),
       EmptyTree,
       generateSequenceFormat(sym, tagged),
       makeImplicitValue(sym))

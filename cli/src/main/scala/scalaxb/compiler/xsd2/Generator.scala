@@ -153,7 +153,7 @@ class Generator(val schema: ReferenceSchema,
 
     def makeWritesChildNodes: Option[Tree] = {
       def simpleContentTree(base: TaggedType[_]): Tree = base match {
-        case x: TaggedSymbol => SEQ(TextClass APPLY(REF("__obj") DOT "value" DOT "value" DOT "toString"))
+        case TaggedXsAnyType | TaggedXsNillableAny => SEQ(TextClass APPLY(REF("__obj") DOT "value" DOT "value" DOT "toString"))
         case _ => SEQ(TextClass APPLY(REF("__obj") DOT "value" DOT "toString"))
       }
       def toXMLArgs: List[Tree] = REF("x") :: (REF("x") DOT "namespace").tree :: (REF("x") DOT "key").tree :: REF("__scope") :: FALSE :: Nil

@@ -73,7 +73,7 @@ trait Args { self: Namer with Lookup with Params with Symbols =>
   }
 
   def buildSimpleContentArg(tagged: Tagged[Any]): Tree =
-    EmptyTree // buildArg(tagged, REF("node"), false)
+    buildArg(tagged, REF("node"), false)
 
   def buildArg(tagged: Tagged[Any], pos: Int): Tree = buildArg(tagged, buildSelector(pos), false)
 

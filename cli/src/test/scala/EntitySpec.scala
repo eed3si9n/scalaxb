@@ -31,6 +31,7 @@ object EntitySpec extends Specification { def is = sequential                 ^
     "generate a trait named similarly"                                        ! enum1^
     "each enumerations represented as case object"                            ! enum2^
     "be referenced as the trait"                                              ! enum3^
+    "generate a companion object named similarly"                             ! enum4^
                                                                               end^
   "top-level complex types should"                                            ^
     "generate a case class named similarly"                                   ! complexType1^
@@ -191,6 +192,10 @@ object EntitySpec extends Specification { def is = sequential                 ^
 
   def enum3 = {
     enumEntitySource must contain("""milk1: example.MilkType""")
+  }
+
+  def enum4 = {
+    enumEntitySource must contain("""object MilkType {""")
   }
 
   lazy val complexTypeEntitySource = module.processNode(complexTypeCardinalityXML, "example")(0)

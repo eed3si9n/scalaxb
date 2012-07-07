@@ -17,6 +17,9 @@ object ProtocolSpec extends Specification { def is = sequential               ^
   "complex derivation of simple type should"                                  ^
     "generate a simple protocol"                                              ! derivation1^
                                                                               end^
+  "top-level simple type with enumeration should"                             ^
+    "generate a combinator parser"                                            ! enum1^ 
+                                                                              end^
   "top-level named groups should"                                             ^
     "generate a combinator parser"                                            ! namedGroup1^ 
                                                                               end^
@@ -104,6 +107,11 @@ object ProtocolSpec extends Specification { def is = sequential               ^
     println(derivProcolSource)
     (derivProcolSource must contain(
       """example.ComplexListOfMilk(scalaxb.fromXML[Seq[example.MilkType]](node, scalaxb.ElemName(node) :: stack),"""))
+  }
+
+  def enum1 = {
+    (derivProcolSource must contain(
+      """trait DefaultExampleMilkTypeFormat extends scalaxb.XMLFormat[example.MilkType] {""")) 
   }
 
   lazy val namedGroupProtocol = module.processNode(namedGroupXML, "example")(1)

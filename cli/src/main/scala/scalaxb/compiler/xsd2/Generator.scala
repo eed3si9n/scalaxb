@@ -324,14 +324,45 @@ class Generator(val schema: ReferenceSchema,
   def processSimpleType(decl: Tagged[XSimpleType]): Seq[Trippet] =
     Seq(generateSimpleType(userDefinedClassSymbol(decl), decl))
 
-  def generateSimpleType(sym: ClassSymbol, decl: Tagged[XSimpleType]) = {
-    val enumValues = filterEnumeration(decl) map { enum =>
+  private def generateSimpleType(sym: ClassSymbol, decl: Tagged[XSimpleType]) = {
+    val enums = filterEnumeration(decl)
+    val enumValues = enums map { enum =>
       CASEOBJECTDEF(userDefinedClassSymbol(enum)) withParents(sym) := BLOCK(
         DEF(Any_toString) withFlags(Flags.OVERRIDE) := LIT(enum.value.value)
       )
     }
+    val companionTree: Tree = 
+      if (enums.isEmpty) OBJECTDEF(sym) := BLOCK(
+        DEF("fromString", sym) withParams(PARAM("value", StringClass)) := REF(sym) APPLY()
+        )
+      else OBJECTDEF(sym) := BLOCK(
+        DEF("fromString", sym) withParams(PARAM("value", StringClass)) := REF("value") MATCH(
+          enums map { enum => CASE (LIT(enum.value.value)) ==> REF(userDefinedClassSymbol(enum)) }
+        ))
+    Trippet(TRAITDEF(sym).tree :: companionTree ::
+      enumValues.toList, Nil,
+      generateSimpleTypeFormat(sym, decl) :: Nil,
+      makeImplicitValue(sym) :: Nil)
+  }
 
-    Trippet(TRAITDEF(sym).tree :: enumValues.toList, Nil, Nil, Nil)
+  private def generateSimpleTypeFormat(sym: ClassSymbol, decl: Tagged[XSimpleType]): Tree = {
+    val fmt = formatterSymbol(sym)
+    
+    TRAITDEF("Default" + fmt.decodedName) withParents(XMLFormatClass TYPE_OF sym) := BLOCK(List(
+      DEF("reads", eitherType(StringClass, sym)) withParams(
+          PARAM("seq", NodeSeqClass), PARAM("stack", TYPE_LIST(ElemNameClass))) :=
+        RIGHT((sym DOT "fromString")(REF("seq") DOT "text")),
+      DEF("writes", NodeSeqClass) withParams(PARAM("__obj", sym),
+        PARAM("__namespace", optionType(StringClass)),
+        PARAM("__elementLabel", optionType(StringClass)),
+        PARAM("__scope", NamespaceBindingClass),
+        PARAM("__typeAttribute", BooleanClass)) :=
+        ElemClass APPLY((HelperClass DOT "getPrefix").APPLY(REF("__namespace"), REF("__scope")) DOT "orNull",
+          REF("__elementLabel") INFIX("getOrElse") APPLY(BLOCK( (REF("sys") DOT "error")(LIT("missing element label.")))),
+          REF(NullModule),
+          REF("__scope"),
+          TextClass APPLY(REF("__obj") DOT "toString"))
+    ))    
   }
 
   def processNamedGroup(tagged: Tagged[XNamedGroup]): Seq[Trippet] = {

@@ -24,6 +24,9 @@ object EntitySpec extends Specification { def is = sequential                 ^
   "complex derivation of a complex type with simple content should"           ^
     "generate a case class named similarly with a parameter named value"      ! derivation3^
                                                                               end^
+  "complex derivation of a complex type with complex content should"          ^
+    "generate a trait which the case classes extend"                          ! derivation4^
+                                                                              end^
   "unions of simple types should"                                             ^
     "be referenced as String"                                                 ! union1^
                                                                               end^
@@ -146,6 +149,13 @@ object EntitySpec extends Specification { def is = sequential                 ^
     derivEntitySource must contain("""case class ComplexMilkDerived(value: example.MilkType, attributes: Map[String, scalaxb.DataRecord[Any]])""")
   }
 
+  lazy val addressEntitySource = module.processNode(addressXML, "example")(0)
+
+  def derivation4 = {
+    println(addressEntitySource)
+    addressEntitySource must contain("""trait Addressable""")
+  }
+  
   def union1 = {
     val entitySource = module.processNode(<xs:schema targetNamespace="http://www.example.com/"
         xmlns:xs="http://www.w3.org/2001/XMLSchema"

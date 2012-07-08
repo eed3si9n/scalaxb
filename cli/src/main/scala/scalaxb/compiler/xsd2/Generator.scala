@@ -117,7 +117,9 @@ class Generator(val schema: ReferenceSchema,
         case _ => Nil
       } getOrElse {Nil}) ++
       (attributes.headOption map  { _ => generateAttributeAccessors(attributes, true) } getOrElse {Nil})
-    val parents = complexTypeSuperTypes(decl)
+    val parents: Seq[Type] = 
+      if (context.baseToSubs.contains(decl)) Seq(buildTraitSymbol(decl): Type)
+      else complexTypeSuperTypes(decl)
 
     Trippet(
       Trippet(CASECLASSDEF(sym) withParams(
@@ -238,8 +240,27 @@ class Generator(val schema: ReferenceSchema,
   }
 
   private def generateBaseComplexTypeTrait(sym: ClassSymbol, decl: Tagged[XComplexType]): Trippet = {
+    logger.debug("generateBaseComplexTypeTrait: emitting %s" format sym.toString)
 
-    Trippet(TRAITDEF(sym),
+    lazy val attributeSeqRef: Tagged[AttributeSeqParam] = TaggedAttributeSeqParam(AttributeSeqParam(), decl.tag)
+
+    val attributes = decl.flattenedAttributes
+    val hasAttributes = !attributes.isEmpty
+    val list =
+      (if (decl.mixed) Nil
+      else decl.primaryCompositor map { _ => decl.splitNonEmptyParticles } getOrElse {
+        if (decl.hasSimpleContent) Seq(decl.simpleContentRoot)
+        else Nil
+      }) ++
+      (attributes.headOption map { _ => attributeSeqRef }).toSeq
+
+    val paramList: Seq[Param] = Param.fromSeq(list)
+    val compositors = compositorsR(decl)
+    val compositorCodes = compositors.toList map { x => generateCompositor(sym.owner.newClass(getName(x)), x) }
+
+    Trippet(TRAITDEF(sym) := BLOCK(
+        paramList map {_.traitTree}
+      ),
       EmptyTree,
       EmptyTree, // generateSequenceFormat(sym, tagged),
       EmptyTree) // makeImplicitValue(sym))
@@ -271,6 +292,10 @@ class Generator(val schema: ReferenceSchema,
         case _ => None
       }).flatten.toList.distinct
 
+    (decl.base match {
+      case base: TaggedComplexType => Seq(buildTraitSymbol(base): Type)
+      case _ => Nil 
+    }) ++
     (choices map {buildBaseType}) ++
     (decl.attributeGroups map {buildType})
   }

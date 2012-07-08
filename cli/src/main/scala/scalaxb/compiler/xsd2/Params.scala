@@ -43,6 +43,9 @@ trait Params { self: Namer with Lookup with Splitter =>
     def toTraitScalaCode(implicit targetNamespace: Option[URI], lookup: Lookup): String =
       paramName + ": " + typ
 
+    def traitTree(implicit targetNamespace: Option[URI], lookup: Lookup): DefDef =
+      DEF(paramName, typ)
+
     def tree(implicit targetNamespace: Option[URI], lookup: Lookup): ValDef =
       PARAM(paramName, typ)
 

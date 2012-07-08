@@ -28,7 +28,8 @@ trait Namer extends ScalaNames { self: Lookup with Splitter  =>
   private val logger = Log.forName("xsd2.Namer")
 
   private def names = context.names
-
+  private def traitNames = context.traitNames
+  
   def nameElementTypes(tagged: Tagged[XElement]) {
     tagged.localType map { _ match {
       case x: TaggedComplexType =>
@@ -52,6 +53,15 @@ trait Namer extends ScalaNames { self: Lookup with Splitter  =>
       names(decl) = name
       nameEnumValues(decl)
     }
+  }
+
+  def nameTrait(decl: Tagged[XComplexType]) {
+    val rawName = decl.name.get
+    val initialName = if (rawName.last == 'e') rawName.dropRight(1) + "able"
+                      else rawName + "able"
+    val name = makeProtectedTypeName(initialName, "Type", decl.tag, true)
+    logger.debug("nameTrait: named %s", name)
+    traitNames(decl) = name  
   }
 
   def nameComplexTypes(decl: Tagged[XComplexType]) {

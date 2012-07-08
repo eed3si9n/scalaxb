@@ -50,7 +50,12 @@ class Generator(val schema: ReferenceSchema,
       }): _*)
 
   def processComplexType(decl: Tagged[XComplexType]): Seq[Trippet] =
-    Seq(generateComplexTypeEntity(buildComplexTypeSymbol(decl), decl))
+    if (context.baseToSubs.contains(decl)) {
+      generateBaseComplexTypeTrait(buildTraitSymbol(decl), decl) :: 
+      (if (decl.abstractValue) Nil
+      else generateComplexTypeEntity(buildComplexTypeSymbol(decl), decl) :: Nil)
+    }
+    else Seq(generateComplexTypeEntity(buildComplexTypeSymbol(decl), decl))
 
   /** recursively return compositors.
    */
@@ -230,6 +235,14 @@ class Generator(val schema: ReferenceSchema,
         makeWritesAttribute,
         makeWritesChildNodes
       ).flatten)
+  }
+
+  private def generateBaseComplexTypeTrait(sym: ClassSymbol, decl: Tagged[XComplexType]): Trippet = {
+
+    Trippet(TRAITDEF(sym),
+      EmptyTree,
+      EmptyTree, // generateSequenceFormat(sym, tagged),
+      EmptyTree) // makeImplicitValue(sym))
   }
 
   private def makeImplicitValue(sym: ClassSymbol): Tree = {

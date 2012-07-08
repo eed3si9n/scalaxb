@@ -153,9 +153,16 @@ object EntitySpec extends Specification { def is = sequential                 ^
 
   def derivation4 = {
     println(addressEntitySource)
-    addressEntitySource must contain("""trait Addressable""")
+    (addressEntitySource.lines.toList must contain(
+      """trait Addressable {""",
+      """  def street: String""",
+      """}""")) and
+    (addressEntitySource.lines.toList must contain(
+      """case class Address(street: String, city: String, state: String) extends example.Addressable""")) and
+    (addressEntitySource.lines.toList must contain(
+      """case class USAddress(street: String, city: String, state: String, zip: BigInt, attributes: Map[String, scalaxb.DataRecord[Any]]) extends example.Addressable {"""))
   }
-  
+
   def union1 = {
     val entitySource = module.processNode(<xs:schema targetNamespace="http://www.example.com/"
         xmlns:xs="http://www.w3.org/2001/XMLSchema"

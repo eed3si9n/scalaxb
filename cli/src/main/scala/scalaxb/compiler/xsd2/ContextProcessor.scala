@@ -7,18 +7,21 @@ import xmlschema._
 import Defs._
 import scalaxb._
 
-trait ContextProcessor extends ScalaNames { self: Namer =>
-  private[this] val logger = Log.forName("xsd2.ContextProcessor")
+trait ContextProcessor extends ScalaNames { self: Namer with Lookup =>
+  private val logger = Log.forName("xsd2.ContextProcessor")
   def config: Config
   def context: SchemaContext
-
-  // lazy val names = context.names
 
   def getName(tagged: Tagged[_]): String =
     context.names.get(tagged) getOrElse {
       // error(tagged.tag.toString + "??")
       tagged.tag.toString + "??"
     }
+
+  def getTraitName(tagged: Tagged[XComplexType]): String =
+    context.traitNames.get(tagged) getOrElse {
+      error(tagged.tag.toString + "??")
+    }    
 
   def processSchema(schema: ReferenceSchema) {
     logger.debug("processSchema")
@@ -49,6 +52,29 @@ trait ContextProcessor extends ScalaNames { self: Namer =>
       case tagged: TaggedLocalElement => nameElementTypes(tagged)
       case _ =>
     }
+
+    schema.unbound foreach {
+      case tagged: TaggedComplexType =>
+        tagged.base match {
+          case base: TaggedComplexType => associateSubType(tagged, base)
+          case _ =>
+        }
+      case _ =>
+    }
+
+    context.baseToSubs.keysIterator.toList foreach { base =>
+      if (!base.abstractValue
+        // && context.schemas.exists(schema => context.duplicatedTypes.contains((schema, base)))
+      ) {
+        nameTrait(base)
+      } // if
+    }
+  }
+
+  def associateSubType(tagged: TaggedComplexType, base: TaggedComplexType) {
+    logger.debug("associateSubType - " + tagged + " " + base)
+    if (!context.baseToSubs.contains(base)) { context.baseToSubs(base) = Nil }
+    context.baseToSubs(base) = tagged :: context.baseToSubs(base)
   }
 
   def containsEnumeration(tagged: Tagged[Any]): Boolean = tagged match {

@@ -527,4 +527,29 @@ object Example {
         <xs:attribute name="class" type="xs:NMTOKENS"/>
       </xs:attributeGroup>      
     </xs:schema>
+
+  val addressXML =
+    <xs:schema targetNamespace="http://www.example.com/general"
+        xmlns:xs="http://www.w3.org/2001/XMLSchema"
+        xmlns:gen="http://www.example.com/general">
+      <xs:complexType name="Address">
+        <xs:sequence>
+          <xs:element name="street" type="xs:string"/>
+          <xs:element name="city" type="xs:string"/>
+          <xs:element name="state" type="xs:string"/>
+        </xs:sequence>
+      </xs:complexType>
+
+      <xs:complexType name="USAddress">
+        <xs:complexContent>
+          <xs:extension base="gen:Address">
+            <xs:sequence>
+              <xs:element name="zip"   type="xs:positiveInteger"/>
+            </xs:sequence>
+            <xs:attribute name="href" type="xs:anyURI"/>
+            <xs:anyAttribute/>
+          </xs:extension>
+        </xs:complexContent>
+      </xs:complexType>
+    </xs:schema>
 }

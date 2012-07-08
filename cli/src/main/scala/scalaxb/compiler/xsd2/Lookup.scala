@@ -117,6 +117,9 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter with Symbols =
   def buildComplexTypeSymbol(tagged: Tagged[XComplexType]): ClassSymbol =
     userDefinedClassSymbol(tagged.tag.namespace, getName(tagged))
 
+  def buildTraitSymbol(tagged: Tagged[XComplexType]): ClassSymbol =
+    userDefinedClassSymbol(tagged.tag.namespace, getTraitName(tagged))
+
   def buildNamedGroupSymbol(tagged: Tagged[XNamedGroup]): ClassSymbol =
     userDefinedClassSymbol(tagged.tag.namespace, getName(tagged))
 

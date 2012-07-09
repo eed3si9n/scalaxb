@@ -68,8 +68,7 @@ object CustomizationUsage {
           p10.headOption map { _.nilOption map { fromXML[general.MilkType](_, scalaxb.ElemName(node) :: stack) }},
           p11.toSeq map { fromXML[general.MilkType](_, scalaxb.ElemName(node) :: stack) },
           p12.toSeq map { _.nilOption map { fromXML[general.MilkType](_, scalaxb.ElemName(node) :: stack) }},
-          (node \ "@attr1").headOption map { fromXML[Long](_, scalaxb.ElemName(node) :: stack) },
-          (node \ "@attr2").headOption map { fromXML[general.MilkType](_, scalaxb.ElemName(node) :: stack) }) }
+          scalaxb.Helper.attributesToMap(node)) }
     }
   }
 
@@ -103,7 +102,7 @@ object CustomizationUsage {
     def check(obj: Any) = obj match {
         case SingularSimpleTypeTest(2, None, None, Some(Some(2)), Seq(3, 2), Seq(), 
           SKIM, None, None, None, Seq(WHOLE, SKIM), Seq(),
-          None, None) =>
+          _) =>
         case _ => sys.error("match failed: " + obj.toString)
       }
     println(obj)

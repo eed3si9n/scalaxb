@@ -156,8 +156,13 @@ JDREVGRw==</base64Binary>
     def check(obj: Any) = obj match {
         case SingularSimpleTypeTest(1, None, None, Some(Some(1)), Seq(2, 1), Seq(), 
           WHOLE, None, None, None, Seq(WHOLE, SKIM), Seq(),
+<<<<<<< HEAD
           None, None) =>
         case _ => sys.error("match failed: " + obj.toString)
+=======
+          _) =>
+        case _ => error("match failed: " + obj.toString)
+>>>>>>> usage updates
       }
     check(obj)
     val document = toXML[SingularSimpleTypeTest](obj, "foo", defaultScope)
@@ -202,7 +207,7 @@ JDREVGRw==</base64Binary>
     def check(obj: Any) = obj match {
         case ListTest(Seq(1, 2, 3), None, None, Some(Some(Seq(1))), Seq(Seq(), Seq(1)), Seq(None), Seq(1, 2, 3),
           Seq(WHOLE), None, None, None, Seq(Seq(), Seq(SKIM)), Seq(None), Seq(WHOLE),
-          None, None) =>
+          _) =>
         case _ => sys.error("match failed: " + obj.toString)
       }
     check(obj)
@@ -372,7 +377,7 @@ JDREVGRw==</base64Binary>
         xmlns:xs="http://www.w3.org/2001/XMLSchema"
         milk1="SKIM" />
     val obj = fromXML[LongAttributeTest](subject)
-    obj.attr_milk1 match {
+    obj.milk1 match {
       case Some(SKIM) =>
       case _ => sys.error("match failed: " + obj.toString)
     }

@@ -210,7 +210,7 @@ JDREVGRw==</base64Binary>
     def check(obj: Any) = obj match {
         case ListTest(Seq(1, 2, 3), None, None, Some(Some(Seq(1))), Seq(Seq(), Seq(1)), Seq(None), Seq(1, 2, 3),
           Seq(WHOLE), None, None, None, Seq(Seq(), Seq(SKIM)), Seq(None), Seq(WHOLE),
-          attr) =>
+          _) =>
         case _ => sys.error("match failed: " + obj.toString)
       }
     check(obj)

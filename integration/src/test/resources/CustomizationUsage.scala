@@ -70,10 +70,7 @@ object CustomizationUsage {
           p11.headOption map { _.nilOption map { fromXML[general.MilkType](_, scalaxb.ElemName(node) :: stack) }},
           p12.toSeq map { fromXML[general.MilkType](_, scalaxb.ElemName(node) :: stack) },
           p13.toSeq map { _.nilOption map { fromXML[general.MilkType](_, scalaxb.ElemName(node) :: stack) }},
-          scala.collection.immutable.ListMap(List(
-            (node \ "@attr1").headOption map { x => scalaxb.DataRecord(x, node, scalaxb.fromXML[Long](x, scalaxb.ElemName(node) :: stack)) } map { "@attr1" -> _ },
-            (node \ "@attr2").headOption map { x => scalaxb.DataRecord(x, node, scalaxb.fromXML[general.MilkType](x, scalaxb.ElemName(node) :: stack)) } map { "@attr2" -> _ }
-          ).flatten[(String, scalaxb.DataRecord[Any])]: _*)) }
+          scalaxb.Helper.attributesToMap(node)) }
     }
   }
 
@@ -108,7 +105,8 @@ object CustomizationUsage {
     def check(obj: Any) = obj match {
         // custom parser adds 1.
         case SingularSimpleTypeTest(2, None, None, Some(Some(2)), Seq(3, 2), Seq(), None,
-          SKIM, None, None, None, Seq(WHOLE, SKIM), Seq(), attrs) =>
+          SKIM, None, None, None, Seq(WHOLE, SKIM), Seq(),
+          _) =>
         case _ => sys.error("match failed: " + obj.toString)
       }
     println(obj)

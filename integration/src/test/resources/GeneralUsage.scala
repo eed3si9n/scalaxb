@@ -579,7 +579,7 @@ JDREVGRw==</base64Binary>
     val shipTo = scalaxb.fromXML[Addressable](subject)
 
     def check(obj: Addressable) = obj match {
-      case USAddress(_, _, _, _, _, _) =>
+      case USAddress(_, _, _, _, _) =>
       case _ => sys.error("match failed: " + obj.toString)
     }
     val document = scalaxb.toXML[Addressable](shipTo, Some("http://www.example.com/general"), Some("shipTo"), subject.scope)

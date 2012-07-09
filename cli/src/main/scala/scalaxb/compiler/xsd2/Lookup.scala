@@ -60,6 +60,7 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter with Symbols =
     case "BigInt"               => BigIntClass
     case "Long"                 => LongClass
     case "Short"                => ShortClass
+    case "Byte"                 => ByteClass
     case _ => StringClass
   }
 

@@ -255,10 +255,11 @@ class Generator(val schema: ReferenceSchema,
       (attributes.headOption map { _ => attributeSeqRef }).toSeq
 
     val paramList: Seq[Param] = Param.fromSeq(list)
+    val parents: Seq[Type] = complexTypeSuperTypes(decl)
     val compositors = compositorsR(decl)
     val compositorCodes = compositors.toList map { x => generateCompositor(sym.owner.newClass(getName(x)), x) }
 
-    Trippet(TRAITDEF(sym) := BLOCK(
+    Trippet(TRAITDEF(sym) withParents(parents) := BLOCK(
         paramList map {_.traitTree}
       ),
       EmptyTree,

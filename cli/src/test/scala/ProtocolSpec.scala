@@ -17,6 +17,9 @@ object ProtocolSpec extends Specification { def is = sequential               ^
   "complex derivation of simple type should"                                  ^
     "generate a simple protocol"                                              ! derivation1^
                                                                               end^
+  "complex derivation of complex type should"                                 ^
+    "generate a simple protocol"                                              ! derivation2^
+                                                                              end^
   "top-level simple type with enumeration should"                             ^
     "generate a combinator parser"                                            ! enum1^ 
                                                                               end^
@@ -107,6 +110,16 @@ object ProtocolSpec extends Specification { def is = sequential               ^
     println(derivProcolSource)
     (derivProcolSource must contain(
       """example.ComplexListOfMilk(scalaxb.fromXML[Seq[example.MilkType]](node, scalaxb.ElemName(node) :: stack),"""))
+  }
+
+  lazy val addressProcolSource = module.processNode(addressXML, "example")(1)
+
+  def derivation2 = {
+    println(addressProcolSource)
+    (addressProcolSource must contain(
+      """trait DefaultExampleAddressableFormat extends scalaxb.XMLFormat[example.Addressable] {""")) and
+   (addressProcolSource must contain(
+      """case (Some("http://www.example.com/general"), Some("USAddress")) => Right(scalaxb.fromXML[example.USAddress](node, stack))""")) 
   }
 
   def enum1 = {

@@ -262,8 +262,54 @@ class Generator(val schema: ReferenceSchema,
         paramList map {_.traitTree}
       ),
       EmptyTree,
-      EmptyTree, // generateSequenceFormat(sym, tagged),
-      EmptyTree) // makeImplicitValue(sym))
+      generateBaseComplexTypeFormat(sym, decl),
+      makeImplicitValue(sym))
+  }
+
+  private def generateBaseComplexTypeFormat(sym: ClassSymbol, decl: Tagged[XComplexType]): Tree = {
+    logger.debug("generateBaseComplexTypeFormat - ", sym)
+
+    val fmt = formatterSymbol(sym)
+
+    def makeReadsXML: Tree = {
+      def caseTrees: Seq[CaseDef] =
+        (context.baseToSubs(decl) filter {_.name.isDefined} map { sub =>
+          CASE(TUPLE(optionUriTree(schema.targetNamespace), optionTree(sub.name))) ==>
+            RIGHT(buildFromXML(buildComplexTypeSymbol(sub), REF("node"), REF("stack"), None))
+        }) ++
+        (if (!decl.abstractValue) Seq(CASE(WILDCARD) ==> RIGHT(buildFromXML(buildComplexTypeSymbol(decl), REF("node"), REF("stack"), None)))
+        else Seq(CASE(ID("x")) ==> LEFT(LIT("unknown type: ") INFIX("+") APPLY REF("x"))))
+      DEF("reads", eitherType(StringClass, sym)) withParams(
+        PARAM("seq", NodeSeqClass), PARAM("stack", TYPE_LIST(ElemNameClass))) := 
+          REF("seq") MATCH(
+            CASE(ID("node") withType(NodeClass)) ==>
+              ((HelperClass DOT "instanceType")(REF("node")) MATCH(caseTrees: _*)),
+            CASE(WILDCARD) ==> LEFT(LIT("reads failed: seq must be scala.xml.Node"))  
+          )
+    }
+
+    def makeWritesXML: Tree = {
+      def caseTrees: Seq[CaseDef] =
+        (context.baseToSubs(decl) map { sub =>
+          CASE(ID("x") withType(buildComplexTypeSymbol(sub))) ==>
+            buildToXML(buildComplexTypeSymbol(sub), REF("x") :: REF("__namespace") :: REF("__elementLabel") :: REF("__scope") :: TRUE :: Nil)
+        }) ++
+        (if (!decl.abstractValue) Seq(
+          CASE(ID("x") withType(buildComplexTypeSymbol(decl))) ==>
+            buildToXML(buildComplexTypeSymbol(decl), REF("x") :: REF("__namespace") :: REF("__elementLabel") :: REF("__scope") :: FALSE :: Nil))
+        else Seq(
+          CASE(WILDCARD) ==> (REF("sys") DOT "error")(LIT("unknown type: ") INFIX("+") APPLY REF("__obj"))))
+      DEF("writes", NodeSeqClass) withParams(PARAM("__obj", sym),
+        PARAM("__namespace", optionType(StringClass)),
+        PARAM("__elementLabel", optionType(StringClass)),
+        PARAM("__scope", NamespaceBindingClass),
+        PARAM("__typeAttribute", BooleanClass)) := REF("__obj") MATCH(caseTrees: _*)
+    }
+    
+    TRAITDEF("Default" + fmt.decodedName) withParents(XMLFormatClass TYPE_OF sym) := BLOCK(
+      makeReadsXML,
+      makeWritesXML
+    )    
   }
 
   private def makeImplicitValue(sym: ClassSymbol): Tree = {

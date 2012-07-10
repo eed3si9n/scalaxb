@@ -74,6 +74,11 @@ class Driver extends Module { driver =>
   def packageName(namespace: Option[String], context: Context): Option[String] =
     new PackageNamer {}.packageName(namespace, context)
 
+  def processContext(cntxt: Context, schemas: Seq[Schema], cnfg: Config) {
+    cntxt.packageNames ++= cnfg.packageNames
+    cntxt.schemas ++= schemas
+  }
+
   def processSchema(s: Schema, cntxt: Context, cnfg: Config) =
     (new ContextProcessor() with Namer with Lookup with Splitter with Symbols {
       val config = cnfg
@@ -81,10 +86,6 @@ class Driver extends Module { driver =>
       val schema = s
     }).processSchema(s)
 
-  def processContext(context: Context, schemas: Seq[Schema], config: Config) {
-    context.packageNames ++= config.packageNames
-    context.schemas ++= schemas
-  }
 
   def replaceTargetNamespace(schema: Schema, tns: Option[String]): Schema =
     schema.copy(targetNamespace = tns map {new URI(_)})

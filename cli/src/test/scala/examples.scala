@@ -551,5 +551,49 @@ object Example {
           </xs:extension>
         </xs:complexContent>
       </xs:complexType>
+
+      <xs:complexType name="Array" >
+        <xs:annotation>
+        <xs:documentation>
+         'Array' is a complex type for accessors identified by position 
+        </xs:documentation>
+      </xs:annotation>
+        <xs:group ref="gen:Array" minOccurs="0" />
+      </xs:complexType>
+
+      <xs:group name="Array" >
+        <xs:sequence>
+          <xs:any namespace="##any" minOccurs="0" maxOccurs="unbounded" processContents="lax" />
+        </xs:sequence>
+      </xs:group>
+    </xs:schema>
+
+  val importXML =
+    <xs:schema targetNamespace="http://www.example.com/general_import"
+        xmlns:xs="http://www.w3.org/2001/XMLSchema"
+        xmlns:gen="http://www.example.com/general"
+        xmlns:im="http://www.example.com/general_import"
+        elementFormDefault="qualified">
+      <xs:import namespace="http://www.example.com/general"
+            schemaLocation="http://www.example.com/general"/>
+      <xs:element name="SubGroupMember3" type="xs:string" substitutionGroup="gen:subgroupHead"/>
+
+      <xs:complexType name="IntlAddress">
+        <xs:complexContent>
+          <xs:extension base="gen:Address">
+            <xs:sequence>
+              <xs:element name="postalCode"   type="xs:positiveInteger"/>
+              <xs:element name="country"   type="xs:string"/>
+            </xs:sequence>
+          </xs:extension>
+        </xs:complexContent>
+      </xs:complexType>
+
+      <xs:complexType name="RestrictedArray">
+        <xs:complexContent>
+          <xs:restriction base="gen:Array">
+          </xs:restriction>
+        </xs:complexContent>
+      </xs:complexType>  
     </xs:schema>
 }

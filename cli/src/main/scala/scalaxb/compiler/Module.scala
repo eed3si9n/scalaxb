@@ -230,8 +230,8 @@ trait Module {
   }
 
   def processNode(input: Node, packageName: String): List[String] =
-    processNode(input, Config(packageNames = Map(None -> Some(packageName))))
-
+    processNodes(Seq(input), Config(packageNames = Map(None -> Some(packageName))))
+  
   def processNode(input: Node, config: Config): List[String] =
     infoNode(input, config)._2
 

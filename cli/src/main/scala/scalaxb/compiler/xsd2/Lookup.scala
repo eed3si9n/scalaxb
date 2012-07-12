@@ -5,7 +5,7 @@ import java.net.URI
 import javax.xml.namespace.QName
 import xmlschema._
 import scalaxb._
-import scalaxb.compiler.{ScalaNames, Config, Snippet, ReferenceNotFound}
+import scalaxb.compiler.{ScalaNames, Config, Snippet, ReferenceNotFound, Log}
 import scalaxb.compiler.xsd.{XsAnyType, XsAnySimpleType, XsString, BuiltInSimpleTypeSymbol, XsTypeSymbol, XsWildcard, XsNillableAny}
 import Defs._
 import scala.xml.NamespaceBinding
@@ -29,7 +29,6 @@ object QualifiedName {
 }
 
 trait Lookup extends ContextProcessor { self: Namer with Splitter with Symbols =>
-  import com.codahale.logula.Log
   private[this] val logger = Log.forName("xsd2.Lookup")
 
   implicit val lookup = this;

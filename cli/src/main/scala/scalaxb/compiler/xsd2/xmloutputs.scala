@@ -1,12 +1,12 @@
 package scalaxb.compiler.xsd2
 
 trait XMLOutputs { self: Args with Params with Lookup with Namer =>
-  import com.codahale.logula.Log
   import Predef.{any2stringadd => _, _}
   import treehugger.forest._
   import definitions._
   import treehuggerDSL._
-
+  import scalaxb.compiler.Log
+  
   private val logger = Log.forName("xsd2.XMLOutput")
 
   def buildXMLTree(param: Param): Tree = {

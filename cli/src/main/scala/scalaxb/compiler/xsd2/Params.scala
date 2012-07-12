@@ -9,7 +9,7 @@ import java.net.URI
 
 trait Params { self: Namer with Lookup with Splitter =>
   import Predef.{any2stringadd => _}
-  import com.codahale.logula.Log
+  import scalaxb.compiler.Log
   import treehugger.forest._
   import definitions._
   import treehuggerDSL._

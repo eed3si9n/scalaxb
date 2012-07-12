@@ -23,7 +23,7 @@
 package scalaxb.compiler.xsd2
 
 import scala.xml.Node
-import scalaxb.compiler.{Config, Snippet, Trippet}
+import scalaxb.compiler.{Config, Snippet, Trippet, Log}
 import xmlschema._
 import Defs._
 
@@ -31,7 +31,6 @@ class Generator(val schema: ReferenceSchema,
     val context: SchemaContext, val config: Config) extends Params with PackageNamer
     with Namer with Lookup with Splitter with Parsers with Args with XMLOutputs with Symbols {
   import Predef.{any2stringadd => _}
-  import com.codahale.logula.Log
   import scalaxb.DataRecord
   import treehugger.forest._
   import definitions._

@@ -4,8 +4,7 @@ import xmlschema._
 import Defs._
 
 trait Splitter { self: ContextProcessor with Lookup =>
-  import com.codahale.logula.Log
-  
+  import scalaxb.compiler.Log
   private def logger = Log.forName("xsd2.Splitter")
 
   def splitIfLongSequence(tagged: TaggedParticle[KeyedGroup]): Seq[TaggedParticle[KeyedGroup]] =

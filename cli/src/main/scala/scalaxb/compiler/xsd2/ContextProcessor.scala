@@ -1,8 +1,7 @@
 package scalaxb.compiler.xsd2
 
-import scalaxb.compiler.{ScalaNames, Config, ReferenceNotFound}
+import scalaxb.compiler.{ScalaNames, Config, ReferenceNotFound, Log}
 import scala.collection.mutable
-import com.codahale.logula.Log
 import xmlschema._
 import Defs._
 import scalaxb._

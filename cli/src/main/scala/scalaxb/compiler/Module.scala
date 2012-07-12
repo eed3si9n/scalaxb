@@ -205,7 +205,7 @@ trait Module {
     val snippets = ListBuffer.empty[Snippet]
     val context = buildContext
 
-    logger.debug("%s" format files.toString())
+    logger.debug("%s", files.toString())
 
     val importables0 = ListMap[From, Importable](files map { f =>
       f -> toImportable(ev.toURI(f), ev.toRawSchema(f))}: _*)
@@ -308,7 +308,7 @@ trait Module {
             x.targetNamespace match {
               case Some(ns) =>
               case None =>
-                logger.debug("processUnnamedIncludes - setting %s's outer namespace to %s" format (x.location, tnsstr))
+                logger.debug("processUnnamedIncludes - setting %s's outer namespace to %s", x.location, tnsstr)
                 schemas(x) = parse(x, context, tns)
             }
             mapping(x) = tns

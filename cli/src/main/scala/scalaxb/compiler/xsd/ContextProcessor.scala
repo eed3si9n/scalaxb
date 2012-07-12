@@ -76,7 +76,7 @@ trait ContextProcessor extends ScalaNames with PackageName {
 
     def registerDuplicatedType(schema: SchemaDecl, decl: Decl, name: String) {
       context.duplicatedTypes += ((schema, decl))
-      logger.warn("%s is defined more than once." format name)
+      logger.warn("%s is defined more than once.", name)
     }
 
     def nameEnumSimpleType(schema: SchemaDecl, decl: SimpleTypeDecl,

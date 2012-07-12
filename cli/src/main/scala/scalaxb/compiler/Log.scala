@@ -24,9 +24,30 @@ package scalaxb.compiler
 import org.apache.log4j.{Logger, Level, ConsoleAppender, EnhancedPatternLayout}
 import org.apache.log4j.spi.LoggingEvent
 
-object Log {
+case class Log(logger: Logger) {
+  def info(message: String, args: Any*) {
+    logger.info(message format (args.toSeq: _*))
+  }
 
-  def forName(name: String) = Logger.getLogger(name)
+  def debug(message: String, args: Any*) {
+    logger.debug(message format (args.toSeq: _*))
+  }
+
+  def warn(message: String, args: Any*) {
+    logger.warn(message format (args.toSeq: _*))
+  }
+
+  def error(message: String, args: Any*) {
+    logger.error(message format (args.toSeq: _*))
+  }
+
+  def fatal(message: String, args: Any*) {
+    logger.fatal(message format (args.toSeq: _*))
+  }
+}
+
+object Log {
+  def forName(name: String) = Log(Logger.getLogger(name))
 
   def configureLogger(verbose: Boolean) {
     val root = Logger.getRootLogger()

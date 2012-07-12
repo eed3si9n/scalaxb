@@ -2,9 +2,8 @@ package scalaxb.compiler.xsd2
 
 import scalashim._
 import java.net.URI
-import com.codahale.logula.Log
 import xmlschema._
-import scalaxb.compiler.{ScalaNames}
+import scalaxb.compiler.{ScalaNames, Log}
 import Defs._
 import treehugger.forest._
 import definitions._

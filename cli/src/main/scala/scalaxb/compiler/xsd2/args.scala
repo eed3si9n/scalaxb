@@ -2,7 +2,6 @@ package scalaxb.compiler.xsd2
 
 trait Args { self: Namer with Lookup with Params with Symbols =>
   import scalashim._
-  import com.codahale.logula.Log
   import scalaxb.compiler.xsd.{XsAnyType, BuiltInSimpleTypeSymbol, XsTypeSymbol, XsInt, XsAnySimpleType}
   import Defs._
   import Occurrence._
@@ -11,6 +10,7 @@ trait Args { self: Namer with Lookup with Params with Symbols =>
   import treehugger.forest._
   import definitions._
   import treehuggerDSL._
+  import scalaxb.compiler.Log
   
   private val logger = Log.forName("xsd2.Args")
 

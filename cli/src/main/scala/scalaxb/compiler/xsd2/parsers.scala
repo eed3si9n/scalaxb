@@ -2,7 +2,7 @@ package scalaxb.compiler.xsd2
 
 trait Parsers { self: Namer with Lookup with Args with Params with Symbols with Splitter =>
   import Predef.{any2stringadd => _, _}
-  import com.codahale.logula.Log
+  import scalaxb.compiler.Log
   import scalaxb.compiler.xsd.{XsAnyType, BuiltInSimpleTypeSymbol, XsAnySimpleType, XsTypeSymbol, XsInt}
   import Defs._
   import treehugger.forest._

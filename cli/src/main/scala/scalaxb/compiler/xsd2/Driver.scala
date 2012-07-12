@@ -29,9 +29,7 @@ import scalaxb._
 import compiler._
 import xmlschema._
 
-class Driver extends Module { driver =>
-  import com.codahale.logula.Log
-  
+class Driver extends Module { driver =>  
   type Schema = ReferenceSchema
   type Context = SchemaContext
   type RawSchema = scala.xml.Node

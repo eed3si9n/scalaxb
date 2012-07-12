@@ -1,12 +1,11 @@
 package scalaxb.compiler.xsd2
 
 import scala.xml.Node
-import scalaxb.compiler.{Config, Snippet}
+import scalaxb.compiler.{Config, Snippet, Log}
 import xmlschema._
 import Defs._
 
 case class ProtocolGenerator(config: Config) {
-  import com.codahale.logula.Log
   private val logger = Log.forName("xsd2.GenProtocol")
 
   def generateProtocol(snippet: Snippet): Seq[Node] = {

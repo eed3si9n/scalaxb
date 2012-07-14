@@ -338,21 +338,22 @@ trait Module {
     def toFileNamePart[From](file: From)(implicit ev: CanBeRawSchema[From, RawSchema]): String =
       """([.]\w+)$""".r.replaceFirstIn(new File(ev.toURI(file).getPath).getName, "")
 
-    def processImportables[A](xs: List[(Importable, A)])(implicit ev: CanBeRawSchema[A, RawSchema]) = xs flatMap {
-      case (importable, file) =>
-        generate(cs.schemas(importable), toFileNamePart(file), cs.context, config) map { case (pkg, snippet, part) =>
-          snippets += snippet
-          val output = evTo.newInstance(pkg, part + ".scala")
-          val out = evTo.toWriter(output)
-          try {
-            printNodes(snippet.definition, out)
-          } finally {
-            out.flush()
-            out.close()
+    def processImportables[A](xs: List[(Importable, A)])(implicit ev: CanBeRawSchema[A, RawSchema]) =
+      xs flatMap {
+        case (importable, file) =>
+          generate(schemas(importable), toFileNamePart(file), context, config) map { case (pkg, snippet, part) =>
+            snippets += snippet
+            val output = evTo.newInstance(pkg, part + ".scala")
+            val out = evTo.toWriter(output)
+            try {
+              printNodes(snippet.definition, out)
+            } finally {
+              out.flush()
+              out.close()
+            }
+            output
           }
-          output
-        }
-    }
+      }
 
     def processProtocol = {
       val pkg = config.protocolPackageName match {

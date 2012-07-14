@@ -23,7 +23,10 @@ trait ContextProcessor extends ScalaNames { self: Namer with Lookup =>
     }    
 
   def processContext() {
+    logger.debug("processContext")
     context.schemas map { schema =>
+      logger.debug("processContext - " + schema.unbound.toSeq)
+
       schema.unbound foreach {
         case tagged: TaggedComplexType =>
           tagged.base match {
@@ -45,8 +48,6 @@ trait ContextProcessor extends ScalaNames { self: Namer with Lookup =>
 
   def processSchema(schema: ReferenceSchema) {
     logger.debug("processSchema")
-    logger.debug("processSchema - " + schema.unbound.toSeq)
-
     schema.unbound foreach {
       case tagged: TaggedTopLevelElement =>  nameElementTypes(tagged)
       case tagged: TaggedSimpleType =>

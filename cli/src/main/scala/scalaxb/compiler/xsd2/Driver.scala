@@ -75,6 +75,13 @@ class Driver extends Module { driver =>
   def processContext(cntxt: Context, schemas: Seq[Schema], cnfg: Config) {
     cntxt.packageNames ++= cnfg.packageNames
     cntxt.schemas ++= schemas
+    schemas.headOption map { s =>
+      (new ContextProcessor() with Namer with Lookup with Splitter with Symbols {
+        val config = cnfg
+        val context = cntxt
+        val schema = s
+      }).processContext()           
+    }
   }
 
   def processSchema(s: Schema, cntxt: Context, cnfg: Config) =

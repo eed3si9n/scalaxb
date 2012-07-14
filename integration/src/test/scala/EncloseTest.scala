@@ -3,7 +3,7 @@ package scalaxb.specs
 import scalaxb.compiler.{Config}
 
 object EncloseTest extends TestBase {
-  lazy val generated = module.processNode(dupeChildTypes,
+  lazy val generated = module.processNodes(Seq(dupeChildTypes),
     Config(packageNames = Map(None -> Some("enclose")),
       packageDir = true, outdir = tmp, prependFamilyName = true))
 

@@ -22,6 +22,27 @@ trait ContextProcessor extends ScalaNames { self: Namer with Lookup =>
       error(tagged.tag.toString + "??")
     }    
 
+  def processContext() {
+    context.schemas map { schema =>
+      schema.unbound foreach {
+        case tagged: TaggedComplexType =>
+          tagged.base match {
+            case base: TaggedComplexType => associateSubType(tagged, base)
+            case _ =>
+          }
+        case _ =>
+      }
+
+      context.baseToSubs.keysIterator.toList foreach { base =>
+        if (!base.abstractValue
+          // && context.schemas.exists(schema => context.duplicatedTypes.contains((schema, base)))
+        ) {
+          nameTrait(base)
+        } // if
+      }
+    }
+  }
+
   def processSchema(schema: ReferenceSchema) {
     logger.debug("processSchema")
     logger.debug("processSchema - " + schema.unbound.toSeq)
@@ -50,23 +71,6 @@ trait ContextProcessor extends ScalaNames { self: Namer with Lookup =>
     schema.unbound foreach {
       case tagged: TaggedLocalElement => nameElementTypes(tagged)
       case _ =>
-    }
-
-    schema.unbound foreach {
-      case tagged: TaggedComplexType =>
-        tagged.base match {
-          case base: TaggedComplexType => associateSubType(tagged, base)
-          case _ =>
-        }
-      case _ =>
-    }
-
-    context.baseToSubs.keysIterator.toList foreach { base =>
-      if (!base.abstractValue
-        // && context.schemas.exists(schema => context.duplicatedTypes.contains((schema, base)))
-      ) {
-        nameTrait(base)
-      } // if
     }
   }
 

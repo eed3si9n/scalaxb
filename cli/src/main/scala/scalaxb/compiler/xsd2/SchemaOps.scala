@@ -409,22 +409,14 @@ case class ComplexTypeOps(decl: Tagged[XComplexType]) {
     ComplexTypeIteration.complexTypeToParticles(decl)
   def splitNonEmptyParticles(implicit lookup: Lookup, splitter: Splitter, targetNamespace: Option[URI], scope: NamespaceBinding) =
     ComplexTypeIteration.complexTypeToSplitNonEmptyParticles(decl)
-  def primaryCompositor(implicit lookup: Lookup): Option[TaggedParticle[_]] = {
-    implicit val unbound = lookup.schema.unbound
+  def primaryCompositor(implicit lookup: Lookup): Option[TaggedParticle[_]] =
     ComplexTypeIteration.primaryCompositor(decl)
-  } 
-  def primarySequence(implicit lookup: Lookup): Option[TaggedParticle[KeyedGroup]] = {
-    implicit val unbound = lookup.schema.unbound
+  def primarySequence(implicit lookup: Lookup): Option[TaggedParticle[KeyedGroup]] =
     ComplexTypeIteration.primarySequence(decl)
-  }
-  def primaryChoice(implicit lookup: Lookup): Option[TaggedParticle[KeyedGroup]] = {
-    implicit val unbound = lookup.schema.unbound
+  def primaryChoice(implicit lookup: Lookup): Option[TaggedParticle[KeyedGroup]] =
     ComplexTypeIteration.primaryChoice(decl)
-  } 
-  def primaryAll(implicit lookup: Lookup): Option[TaggedParticle[KeyedGroup]] = {
-    implicit val unbound = lookup.schema.unbound
+  def primaryAll(implicit lookup: Lookup): Option[TaggedParticle[KeyedGroup]] =
     ComplexTypeIteration.primaryAll(decl)
-  }
 
   def compositors(implicit lookup: Lookup, targetNamespace: Option[URI], scope: NamespaceBinding) =
     ComplexTypeIteration.complexTypeToCompositors(decl)
@@ -788,31 +780,38 @@ object ComplexTypeIteration {
     }
   }
 
-  def primarySequence(decl: Tagged[XComplexType])(implicit schema: XSchema): Option[TaggedParticle[KeyedGroup]] =
+  def primarySequence(decl: Tagged[XComplexType])(implicit lookup: Lookup): Option[TaggedParticle[KeyedGroup]] =
     primaryCompositor(decl) flatMap { _ match {
       case x: TaggedKeyedGroup if x.value.key == SequenceTag => Some(x)
       case _ => None
     }}
 
-  def primaryChoice(decl: Tagged[XComplexType])(implicit schema: XSchema): Option[TaggedParticle[KeyedGroup]] =
+  def primaryChoice(decl: Tagged[XComplexType])(implicit lookup: Lookup): Option[TaggedParticle[KeyedGroup]] =
       primaryCompositor(decl) flatMap { _ match {
         case x: TaggedKeyedGroup if x.value.key == ChoiceTag => Some(x)
         case _ => None
       }}
 
-  def primaryAll(decl: Tagged[XComplexType])(implicit schema: XSchema): Option[TaggedParticle[KeyedGroup]] =
+  def primaryAll(decl: Tagged[XComplexType])(implicit lookup: Lookup): Option[TaggedParticle[KeyedGroup]] =
       primaryCompositor(decl) flatMap { _ match {
         case x: TaggedKeyedGroup if x.value.key == AllTag => Some(x)
         case _ => None
       }}
 
-  def primaryCompositor(decl: Tagged[XComplexType])(implicit schema: XSchema): Option[TaggedParticle[_]] = {
+  def primaryCompositor(decl: Tagged[XComplexType])(implicit lookup: Lookup): Option[TaggedParticle[_]] = {
+    implicit val unbound = lookup.schema.unbound
+    
     def extract(model: Option[DataRecord[Any]]) = model match {
       // XTypeDefParticleOption is either XGroupRef or XExplicitGroupable
-      case Some(DataRecord(_, Some(key), x: XGroupRef))          => Some(Tagged(x, decl.tag / "_"))
+      case Some(DataRecord(_, Some(key), x: XGroupRef))          =>
+        Some(Tagged(x, decl.tag / "_"))
       case Some(DataRecord(_, Some(key), x: XExplicitGroupable)) =>
         Some(Tagged(KeyedGroup(key, x, decl.tag / "_"), decl.tag / "_"))
-      case _ => None
+      case _ => 
+        decl.base match {
+          case base: TaggedComplexType => base.primaryCompositor
+          case _ => None
+        }
     }
 
     decl.value.arg1.value match {

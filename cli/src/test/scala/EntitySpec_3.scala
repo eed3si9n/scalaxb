@@ -2,7 +2,7 @@ package scalaxb.specs
 
 import org.specs2._
 
-object EntitySpec3 extends Specification { def is = sequential                ^
+object EntitySpec_3 extends Specification { def is = sequential               ^
   "this is a specification to check the generated entity source"              ^
                                                                               p^
   "restrictions of a built-in should"                                         ^

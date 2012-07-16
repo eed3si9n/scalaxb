@@ -223,11 +223,4 @@ trait Namer extends ScalaNames { self: Lookup with Splitter  =>
     value map { x => SOME(LIT(x)) } getOrElse {NONE}
 
   def optionUriTree(value: Option[URI]): Tree = optionTree(value map {_.toString})
-
-  def INFIX_CHAIN(op: String, seq: Iterable[Tree]): Tree =
-    seq.toList match {
-      case Nil => EmptyTree
-      case List(x) => x
-      case xs => xs reduceLeft { (x, y) => x INFIX(op) APPLY y }
-    }
 }

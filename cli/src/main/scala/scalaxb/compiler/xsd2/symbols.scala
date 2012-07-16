@@ -5,8 +5,6 @@ import definitions._
 import treehuggerDSL._
 
 trait Symbols {
-  lazy val NamespaceBindingClass = XmlPackageClass.newClass("NamespaceBinding")
-
   lazy val ScalaxbPackage      = RootClass.newPackage("scalaxb")
   lazy val ScalaxbPackageClass = ScalaxbPackage.moduleClass
   lazy val Scalaxb_fromXML     = ScalaxbPackageClass.newMethod("fromXML")
@@ -35,9 +33,6 @@ trait Symbols {
   lazy val JavaxXmlNamespacePackage  = JavaxXmlPackageClass.newPackage("namespace")
   lazy val JavaxXmlNamespacePackageClass = JavaxXmlNamespacePackage.moduleClass
   lazy val QNameClass          = JavaxXmlNamespacePackageClass.newClass("QName")
-  lazy val MetaDataClass       = XmlPackage.moduleClass.newClass("MetaData")
-  lazy val NullClass           = XmlPackage.moduleClass.newClass("Null")
-  lazy val NullModule          = NullClass.module
 
   def xmlFormatType(arg: Type): Type = appliedType(XMLFormatClass.typeConstructor, List(arg))
   def parserType(arg: Type): Type = appliedType(ParserClass.typeConstructor, List(arg))

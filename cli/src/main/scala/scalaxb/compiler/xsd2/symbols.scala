@@ -34,6 +34,9 @@ trait Symbols {
   lazy val JavaxXmlNamespacePackageClass = JavaxXmlNamespacePackage.moduleClass
   lazy val QNameClass          = JavaxXmlNamespacePackageClass.newClass("QName")
 
+  // workaround treehugger 0.2.0 bug
+  lazy val NamespaceBindingClass = definitions.getClass("scala.xml.NamespaceBinding")
+  
   def xmlFormatType(arg: Type): Type = appliedType(XMLFormatClass.typeConstructor, List(arg))
   def parserType(arg: Type): Type = appliedType(ParserClass.typeConstructor, List(arg))
 }

@@ -434,7 +434,7 @@
     </xs:sequence>
   </xs:complexType>
 
-  <xs:element name="subgroupHead" type="xs:string"/>
+  <xs:element name="subgroupHead" type="xs:anyType"/>
   <xs:element name="SubGroupMember" type="gen:MilkType" substitutionGroup="gen:subgroupHead"/>
   <xs:element name="SubGroupMember2" type="gen:Person" substitutionGroup="gen:subgroupHead"/>
   <xs:element name="subgroupTop" type="gen:SubstitutionGroupTest"/>

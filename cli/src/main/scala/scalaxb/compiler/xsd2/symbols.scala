@@ -9,6 +9,7 @@ trait Symbols {
   lazy val ScalaxbPackageClass = ScalaxbPackage.moduleClass
   lazy val Scalaxb_fromXML     = ScalaxbPackageClass.newMethod("fromXML")
   lazy val Scalaxb_toXML       = ScalaxbPackageClass.newMethod("toXML")
+  lazy val Scalaxb_toScope     = ScalaxbPackageClass.newMethod("toScope")
 
   lazy val Base64BinaryClass   = ScalaxbPackageClass.newClass("Base64Binary")
   lazy val HexBinaryClass      = ScalaxbPackageClass.newClass("HexBinary")

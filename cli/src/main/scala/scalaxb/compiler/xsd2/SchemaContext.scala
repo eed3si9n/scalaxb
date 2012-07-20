@@ -24,9 +24,11 @@ package scalaxb.compiler.xsd2
 
 import scala.collection.mutable
 import xmlschema._
+import java.net.URI
 
 case class SchemaContext(schemas: mutable.ListBuffer[ReferenceSchema] = mutable.ListBuffer(),
                          names: mutable.ListMap[Tagged[_], String] = mutable.ListMap(),
                          traitNames: mutable.ListMap[Tagged[XComplexType], String] = mutable.ListMap(),
                          packageNames: mutable.ListMap[Option[String], Option[String]] = mutable.ListMap(),
-                         baseToSubs: mutable.ListMap[Tagged[XComplexType], List[Tagged[XComplexType]]] = mutable.ListMap())
+                         baseToSubs: mutable.ListMap[Tagged[XComplexType], List[Tagged[XComplexType]]] = mutable.ListMap(),
+                         prefixes: mutable.ListMap[URI, String] = mutable.ListMap())

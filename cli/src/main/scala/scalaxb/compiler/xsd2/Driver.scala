@@ -43,7 +43,7 @@ class Driver extends Module { driver =>
 
   def generateProtocol(snippet: Snippet,
     context: Context, config: Config): Seq[Node] =
-    ProtocolGenerator(config).generateProtocol(snippet)
+    ProtocolGenerator(context.schemas.head, context, config).generateProtocol(snippet)
 
   def toImportable(alocation: URI, rawschema: RawSchema): Importable =
     new Importable {

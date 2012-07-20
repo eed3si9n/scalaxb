@@ -44,6 +44,7 @@ object Defs {
   implicit def simpleTypeToSimpleTypeOps(tagged: TaggedType[XSimpleType]): SimpleTypeOps = SimpleTypeOps(tagged)
 
   val XML_SCHEMA_URI = new URI("http://www.w3.org/2001/XMLSchema")
+  val XS_PREFIX = "xs"
   val XSI_URL = new URI("http://www.w3.org/2001/XMLSchema-instance")
   val XSI_PREFIX = "xsi"
   val XML_URI = new URI("http://www.w3.org/XML/1998/namespace")

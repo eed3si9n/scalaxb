@@ -10,7 +10,7 @@
 
   <groupId>org.scalaxb</groupId>
   <artifactId>scalaxb-maven-plugin</artifactId>
-  <version>0.7.2-SNAPSHOT</version>
+  <version>0.7.2</version>
   <packaging>maven-plugin</packaging>
 
   <name>scalaxb Maven Plugin</name>

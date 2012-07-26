@@ -7,12 +7,12 @@ object Builds extends Build {
   import sbtscalashim.Plugin._
 
   lazy val buildSettings = Defaults.defaultSettings ++ customLsSettings ++ Seq(
-    version := "0.7.2-SNAPSHOT",
+    version := "0.7.2",
     organization := "org.scalaxb",
     homepage := Some(url("http://scalaxb.org")),
     licenses := Seq("MIT License" -> url("https://github.com/eed3si9n/scalaxb/blob/master/LICENSE")),
     description := """scalaxb is an XML data-binding tool for Scala that supports W3C XML Schema (xsd) and wsdl.""",
-    scalaVersion := "2.9.2",
+    scalaVersion := "2.9.1",
     crossScalaVersions := Seq("2.9.2", "2.9.1", "2.8.1"),
     scalacOptions := Seq("-deprecation", "-unchecked"),
     pomExtra := (<scm>
@@ -53,11 +53,14 @@ object Builds extends Build {
   lazy val cliSettings = buildInfoSettings ++ scalaShimSettings ++
     buildSettings ++ Seq(
     name := "scalaxb",
-    libraryDependencies ++= Seq(
-      "com.github.scopt" % "scopt_2.9.1" % "2.0.1",
+    libraryDependencies <++= (scalaVersion) { sv => Seq(
+      sv match {
+        case "2.9.2" => "com.github.scopt" % "scopt_2.9.1" % "2.0.1"
+        case _ => "com.github.scopt" %% "scopt" % "2.0.1"
+      },
       "org.scala-tools.sbt" % "launcher-interface" % "0.7.4" % "provided" from (
         "http://databinder.net/repo/org.scala-tools.sbt/launcher-interface/0.7.4/jars/launcher-interface.jar"),
-      "log4j" % "log4j" % "1.2.17"),
+      "log4j" % "log4j" % "1.2.17") },
     unmanagedSourceDirectories in Compile <+= baseDirectory( _ / "src_managed" ),
     buildInfoPackage := "scalaxb",
     sourceGenerators in Compile <+= buildInfo,

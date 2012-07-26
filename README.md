@@ -11,7 +11,7 @@ and the object back to XML.
 Status
 ------
 
-The latest is 0.7.1. Some things may not work.
+The latest is 0.7.2. Some things may not work.
 I'd really appreciate if you could run it against your favorite xsd
 file and let me know the result.
 
@@ -25,9 +25,9 @@ There are currently four ways of running scalaxb:
 - maven plugin mvn-scalaxb
 - web API scalaxb-heroku hosted on heroku
 
-### sbt-scalaxb for sbt 0.11.2
+### sbt-scalaxb for sbt 0.11.3
 
-To call scalaxb from sbt 0.11.2, put this in your `project/plugins.sbt`:
+To call scalaxb from sbt 0.11.3, put this in your `project/plugins.sbt`:
 
     resolvers ++= Seq(
       "sonatype-public" at "https://oss.sonatype.org/content/groups/public")
@@ -36,20 +36,11 @@ To call scalaxb from sbt 0.11.2, put this in your `project/plugins.sbt`:
     
 and this in `build.sbt`:
 
-    seq(scalaxbSettings: _*)
+    scalaxbSettings
 
     packageName in scalaxb in Compile := "xxx"
 
     sourceGenerators in Compile <+= scalaxb in Compile
-
-### sbt-scalaxb for sbt 0.10.1
-
-To call scalaxb from sbt 0.10.1, put this in your `project/plugins/build.sbt`:
-
-    resolvers ++= Seq(
-      "sonatype-public" at "https://oss.sonatype.org/content/groups/public")
-
-    libraryDependencies <+= (sbtVersion) { sv => "org.scalaxb" %% "sbt-scalaxb" % ("sbt" + sv + "_X.X") }
 
 ### command line app scalaxb
 

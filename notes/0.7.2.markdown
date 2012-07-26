@@ -1,11 +1,21 @@
+## new logger
+
+[@martiell][@martiell] contributed a log4j wrapper that replaces logula. [#161][161].
+The main change is that our resolver is down to Sonatype:
+
+    resolvers += "sonatype-public" at "https://oss.sonatype.org/content/groups/public"
+
 ## bug fixes and minor enhancements
-- Adds support for resolveing SOAP encoding hrefs. [#160][160]. reported by [@greenrd][@greenrd]
+
+- Adds support for resolving SOAP encoding hrefs. [#160][160]. reported by [@greenrd][@greenrd]
 - Fixes xsi:type attribute wiping out other attributes due to SI-5843 [#159][159]. reported by [@psnively][@psnively]
 - Fixes reserve word escaping when names contain trailing whitespaces. [#163][163]. reported by [@dohzya][@dohzya]
 
   [159]: https://github.com/eed3si9n/scalaxb/issues/159
   [160]: https://github.com/eed3si9n/scalaxb/issues/160
+  [161]: https://github.com/eed3si9n/scalaxb/issues/161
   [163]: https://github.com/eed3si9n/scalaxb/issues/163
   [@psnively]: https://github.com/psnively
   [@greenrd]: https://github.com/greenrd
-  [@dohzya ]: https://github.com/dohzya 
+  [@dohzya]: https://github.com/dohzya
+  [@martiell]: https://github.com/martiell

@@ -26,23 +26,53 @@ import org.apache.log4j.spi.LoggingEvent
 
 case class Log(logger: Logger) {
   def info(message: String, args: Any*) {
-    logger.info(message format (args.toSeq: _*))
+    if (args.toSeq.isEmpty) logger.info(message)
+    else try {
+      logger.info(message format (args.toSeq: _*))
+    }
+    catch {
+      case _ => logger.info(message)
+    }
   }
 
   def debug(message: String, args: Any*) {
-    logger.debug(message format (args.toSeq: _*))
+    if (args.toSeq.isEmpty) logger.debug(message)
+    else try {
+      logger.debug(message format (args.toSeq: _*))
+    }
+    catch {
+      case _ => logger.debug(message)
+    }
   }
 
   def warn(message: String, args: Any*) {
-    logger.warn(message format (args.toSeq: _*))
+    if (args.toSeq.isEmpty) logger.warn(message)
+    else try {
+      logger.warn(message format (args.toSeq: _*))
+    }
+    catch {
+      case _ => logger.warn(message)
+    }
   }
 
   def error(message: String, args: Any*) {
-    logger.error(message format (args.toSeq: _*))
+    if (args.toSeq.isEmpty) logger.error(message)
+    else try {
+      logger.error(message format (args.toSeq: _*))
+    }
+    catch {
+      case _ => logger.error(message)
+    }
   }
 
   def fatal(message: String, args: Any*) {
-    logger.fatal(message format (args.toSeq: _*))
+    if (args.toSeq.isEmpty) logger.fatal(message)
+    else try {
+      logger.fatal(message format (args.toSeq: _*))
+    }
+    catch {
+      case _ => logger.fatal(message)
+    }
   }
 }
 

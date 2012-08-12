@@ -24,6 +24,7 @@ package org.scalaxb.maven;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.sort;
+import static org.apache.maven.plugins.annotations.LifecyclePhase.GENERATE_SOURCES;
 import static scala.collection.JavaConversions.asScalaBuffer;
 import static scala.collection.JavaConversions.seqAsJavaList;
 import static scalaxb.compiler.Module$.MODULE$;
@@ -39,6 +40,9 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugins.annotations.Component;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.util.Scanner;
 import org.sonatype.plexus.build.incremental.BuildContext;
@@ -49,22 +53,13 @@ import scalaxb.compiler.CaseClassTooLong;
 import scalaxb.compiler.Module;
 import scalaxb.compiler.ReferenceNotFound;
 
-/**
- * @goal generate
- * @phase generate-sources
- */
+@Mojo(name = "generate", defaultPhase = GENERATE_SOURCES)
 public class ScalaxbMojo extends AbstractScalaxbMojo {
 
-    /**
-     * @parameter expression="${project}"
-     * @required
-     * @readonly
-     */
+    @Parameter(property = "project", required = true, readonly = true)
     private MavenProject project;
 
-    /**
-     * @component
-     */
+    @Component
     private BuildContext context;
 
     @Override

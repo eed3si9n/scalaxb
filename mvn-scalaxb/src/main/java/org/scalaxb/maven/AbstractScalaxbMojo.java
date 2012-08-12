@@ -31,46 +31,43 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.maven.plugin.AbstractMojo;
+import org.apache.maven.plugins.annotations.Parameter;
 
 public abstract class AbstractScalaxbMojo extends AbstractMojo {
 
     /**
      * The directory containing the XSD files. If the specified directory does
      * not exist or is empty, then it is ignored.
-     * @parameter
-     *   expression="${scalaxb.xsdDirectory}"
-     *   default-value="${project.basedir}/src/main/xsd"
-     * @required
      */
+    @Parameter(property = "scalaxb.xsdDirectory",
+            defaultValue = "${project.basedir}/src/main/xsd",
+            required = true)
     private File xsdDirectory;
 
     /**
      * The directory containing the WSDL files. If the specified directory does
      * not exist or is empty, then it is ignored.
-     * @parameter
-     *   expression="${scalaxb.wsdlDirectory}"
-     *   default-value="${project.basedir}/src/main/wsdl"
-     * @required
      */
+    @Parameter(property = "scalaxb.wsdlDirectory",
+            defaultValue = "${project.basedir}/src/main/wsdl",
+            required = true)
     private File wsdlDirectory;
 
     /**
      * The output directory.
-     * @parameter
-     *   expression="${scalaxb.outputDirectory}"
-     *   default-value="${project.build.directory}/generated-sources/scalaxb"
-     * @required
      */
+    @Parameter(property = "scalaxb.outputDirectory",
+            defaultValue = "${project.build.directory}/generated-sources/scalaxb",
+            required = true)
     private File outputDirectory;
 
     /**
      * The package in which to generate classes. Classes are generated in the
      * package specified, unless the <code>packageNames</code> parameter is used
      * to override this value.
-     * @parameter
-     *   expression="${scalaxb.packageName}"
-     *   default-value="generated"
      */
+    @Parameter(property = "scalaxb.packageName",
+            defaultValue = "generated")
     private String packageName;
 
     /**
@@ -93,25 +90,23 @@ public abstract class AbstractScalaxbMojo extends AbstractMojo {
      *   &lt;/packageName&gt;
      * &lt;/packageNames&gt;
      * </pre>
-     * @parameter
      */
+    @Parameter
     private PackageName[] packageNames;
 
     /**
      * The prefix to use on generated classes.
-     * @parameter expression="${scalaxb.classPrefix}"
      */
+    @Parameter(property = "scalaxb.classPrefix")
     private String classPrefix;
 
     /**
      * The prefix to use on generated parameter names.
-     * @parameter expression="${scalaxb.parameterPrefix}"
      */
+    @Parameter(property = "scalaxb.parameterPrefix")
     private String parameterPrefix;
 
-    /**
-     * @parameter
-     */
+    @Parameter
     private List<String> wrapContents;
 
     /**
@@ -120,16 +115,16 @@ public abstract class AbstractScalaxbMojo extends AbstractMojo {
      * runtime being present on the classpath when more than one jar contains
      * scalaxb bindings.  To prevent the scalaxb runtime sources being
      * generated, this option should be set to false.
-     * @parameter default-value="true"
      */
+    @Parameter(defaultValue = "true")
     private boolean generateRuntime;
 
     /**
      * Maximum number of parameters to use in generated case class constructors.
      * This allows parameters sequences to be separated into chunks of the given
      * size.
-     * @parameter
      */
+    @Parameter
     private Integer chunkSize;
 
    /**
@@ -141,20 +136,17 @@ public abstract class AbstractScalaxbMojo extends AbstractMojo {
     * this value to false will cause the generated sources to be written
     * directly into the output directory, without creating a directory for the
     * package.
-    *
-    * @parameter
-    *   default-value="true"
-    *   expression="${scalaxb.package-dir}"
     */
-   private boolean packageDir;
+    @Parameter(property = "scalaxb.package-dir",
+            defaultValue = "true")
+    private boolean packageDir;
 
    /**
     * The name of the file to generate that includes the protocol
     * implementation; that is, the code that marshals values to and from XML.
-    * @parameter
-    *   @default-value="xmlprotocol.scala"
     */
-   private String protocolFile;
+    @Parameter(defaultValue = "xmlprotocol.scala")
+    private String protocolFile;
 
    /**
     * The package in which to generate the 'protocol' code; that is, the code
@@ -164,9 +156,9 @@ public abstract class AbstractScalaxbMojo extends AbstractMojo {
     * <code>scalaxb.fromXML</code> functions. If unspecified, the protocol code
     * is generated in the same package as the generated classes that define the
     * values marshalled to and from XML.
-    * @parameter
     */
-   private String protocolPackage;
+    @Parameter
+    private String protocolPackage;
 
    /**
     * Relaxes namespace constraints of <code>xs:any</code>.
@@ -178,12 +170,10 @@ public abstract class AbstractScalaxbMojo extends AbstractMojo {
     * <code>xs:any</code> element with a namespace of <code>##local</code>.
     * By default, this option is false, thus enforcing this requirement. Setting
     * this option to true allows namespaced content to be used.
-    *
-    * @parameter
-    *   default-value="false"
-    *   expression="${scalaxb.lax-any}"
     */
-   private boolean laxAny;
+    @Parameter(property = "scalaxb.lax-any",
+            defaultValue = "false")
+    private boolean laxAny;
 
    /**
     * Prefix to prepend to the names of generated parameters for XML attributes.
@@ -191,15 +181,11 @@ public abstract class AbstractScalaxbMojo extends AbstractMojo {
     * This option sets a prefix to be used in the names of parameters for XML
     * attributes. It is useful when a schema defines both an element and an
     * attribute of the same name within a complex type.
-    * @parameter
-    *   expression="${scalaxb.attributePrefix}"
     */
-   private String attributePrefix;
+    @Parameter(property = "scalaxb.attributePrefix")
+    private String attributePrefix;
 
-    /**
-     *
-     * @parameter expression="${scalaxb.verbose}"
-     */
+    @Parameter(property = "scalaxb.verbose")
     private boolean verbose;
 
     /**

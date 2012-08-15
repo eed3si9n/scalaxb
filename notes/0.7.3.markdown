@@ -1,0 +1,6 @@
+## bug fixes
+
+- Fixes logger formatting [#166][166]. reported by [@psnively][@psnively]
+
+  [166]: https://github.com/eed3si9n/scalaxb/issues/166
+  [@psnively]: https://github.com/psnively

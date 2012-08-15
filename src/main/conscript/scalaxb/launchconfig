@@ -1,11 +1,10 @@
 [app]
-  version: 0.7.2
+  version: 0.7.3
   org: org.scalaxb
   name: scalaxb
   class: scalaxb.compiler.SbtApp
 [scala]
-  version: 2.9.1
+  version: 2.9.2
 [repositories]
-  repo-codahale: http://repo.codahale.com
   sonatype-public: https://oss.sonatype.org/content/repositories/public/
   maven-central

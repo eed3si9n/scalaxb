@@ -6,6 +6,13 @@ build. By default, it binds to the generate-sources phase of the
 build lifecycle, allowing Scala sources to be generated from XSD
 files, and subsequently included in the rest of the build.
 
+User documentation
+------------------
+
+ * [Getting Started](http://martiell.github.com/scalaxb/maven/usage.html)
+ * [Configuration Reference](http://martiell.github.com/scalaxb/maven/generate-mojo.html)
+ * [scalaxb.org/mvn-scalaxb](http://scalaxb.org/mvn-scalaxb)
+
 Building
 --------
 

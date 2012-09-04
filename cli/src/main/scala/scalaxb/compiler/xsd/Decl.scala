@@ -337,7 +337,7 @@ object AttributeDecl {
       case _            => OptionalUse
     }
     val qualified = (node \ "@form").headOption map {
-      _.text == "qualifeid" } getOrElse {config.attributeQualifiedDefault}
+      _.text == "qualified" } getOrElse {config.attributeQualifiedDefault}
     val annotation = (node \ "annotation").headOption map { x =>
       AnnotationDecl.fromXML(x, config) }
 

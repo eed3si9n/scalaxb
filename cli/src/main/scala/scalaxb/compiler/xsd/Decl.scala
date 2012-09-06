@@ -337,7 +337,7 @@ object AttributeDecl {
       case _            => OptionalUse
     }
     val qualified = (node \ "@form").headOption map {
-      _.text == "qualifeid" } getOrElse {config.attributeQualifiedDefault}
+      _.text == "qualified" } getOrElse {config.attributeQualifiedDefault}
     val annotation = (node \ "annotation").headOption map { x =>
       AnnotationDecl.fromXML(x, config) }
 
@@ -439,7 +439,7 @@ object ElemDecl {
     } // if-else
 
     val qualified = (node \ "@form").headOption map {
-      _.text == "qualifeid" } getOrElse {config.elementQualifiedDefault}
+      _.text == "qualified" } getOrElse {config.elementQualifiedDefault}
     val defaultValue = (node \ "@default").headOption map { _.text }
     val fixedValue = (node \ "@fixed").headOption map { _.text }
     val minOccurs = CompositorDecl.buildOccurrence((node \ "@minOccurs").text)

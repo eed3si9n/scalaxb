@@ -248,8 +248,8 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
       { case p1 =>
       wsdl11.XPartType(p1.headOption map { scalaxb.fromXML[wsdl11.XDocumentation](_, scalaxb.ElemName(node) :: stack) },
         (node \ "@name").headOption map { scalaxb.fromXML[String](_, scalaxb.ElemName(node) :: stack) },
-        (node \ "@type").headOption map { scalaxb.fromXML[javax.xml.namespace.QName](_, scalaxb.ElemName(node) :: stack)(scalaxb.qnameXMLFormat(node.scope)) },
-        (node \ "@element").headOption map { scalaxb.fromXML[javax.xml.namespace.QName](_, scalaxb.ElemName(node) :: stack)(scalaxb.qnameXMLFormat(node.scope)) },
+        (node \ "@type").headOption map { scalaxb.fromXML[javax.xml.namespace.QName](_, scalaxb.ElemName(node) :: stack)(scalaxb.XMLStandardTypes.qnameXMLFormat(node.scope)) },
+        (node \ "@element").headOption map { scalaxb.fromXML[javax.xml.namespace.QName](_, scalaxb.ElemName(node) :: stack)(scalaxb.XMLStandardTypes.qnameXMLFormat(node.scope)) },
         scala.collection.immutable.ListMap((node match {
           case elem: scala.xml.Elem =>
             elem.attributes.toList flatMap {
@@ -344,7 +344,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
       { case p1 =>
       wsdl11.XParamType(p1.headOption map { scalaxb.fromXML[wsdl11.XDocumentation](_, scalaxb.ElemName(node) :: stack) },
         (node \ "@name").headOption map { scalaxb.fromXML[String](_, scalaxb.ElemName(node) :: stack) },
-        scalaxb.fromXML[javax.xml.namespace.QName]((node \ "@message"), scalaxb.ElemName(node) :: stack)(scalaxb.qnameXMLFormat(node.scope))) })
+        scalaxb.fromXML[javax.xml.namespace.QName]((node \ "@message"), scalaxb.ElemName(node) :: stack)(scalaxb.XMLStandardTypes.qnameXMLFormat(node.scope))) })
     
     override def writesAttribute(__obj: wsdl11.XParamType, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {
       var attr: scala.xml.MetaData  = scala.xml.Null
@@ -368,7 +368,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
       { case p1 =>
       wsdl11.XFaultType(p1.headOption map { scalaxb.fromXML[wsdl11.XDocumentation](_, scalaxb.ElemName(node) :: stack) },
         scalaxb.fromXML[String]((node \ "@name"), scalaxb.ElemName(node) :: stack),
-        scalaxb.fromXML[javax.xml.namespace.QName]((node \ "@message"), scalaxb.ElemName(node) :: stack)(scalaxb.qnameXMLFormat(node.scope))) })
+        scalaxb.fromXML[javax.xml.namespace.QName]((node \ "@message"), scalaxb.ElemName(node) :: stack)(scalaxb.XMLStandardTypes.qnameXMLFormat(node.scope))) })
     
     override def writesAttribute(__obj: wsdl11.XFaultType, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {
       var attr: scala.xml.MetaData  = scala.xml.Null
@@ -434,7 +434,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
         p2.toSeq map { scalaxb.fromXML[scalaxb.DataRecord[Any]](_, scalaxb.ElemName(node) :: stack) },
         p3.toSeq map { scalaxb.fromXML[wsdl11.XBinding_operationType](_, scalaxb.ElemName(node) :: stack) },
         scalaxb.fromXML[String]((node \ "@name"), scalaxb.ElemName(node) :: stack),
-        scalaxb.fromXML[javax.xml.namespace.QName]((node \ "@type"), scalaxb.ElemName(node) :: stack)(scalaxb.qnameXMLFormat(node.scope))) })
+        scalaxb.fromXML[javax.xml.namespace.QName]((node \ "@type"), scalaxb.ElemName(node) :: stack)(scalaxb.XMLStandardTypes.qnameXMLFormat(node.scope))) })
     
     override def writesAttribute(__obj: wsdl11.XBindingType, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {
       var attr: scala.xml.MetaData  = scala.xml.Null
@@ -547,7 +547,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
       wsdl11.XPortType(p1.headOption map { scalaxb.fromXML[wsdl11.XDocumentation](_, scalaxb.ElemName(node) :: stack) },
         p2.headOption map { scalaxb.fromXML[scalaxb.DataRecord[Any]](_, scalaxb.ElemName(node) :: stack) },
         scalaxb.fromXML[String]((node \ "@name"), scalaxb.ElemName(node) :: stack),
-        scalaxb.fromXML[javax.xml.namespace.QName]((node \ "@binding"), scalaxb.ElemName(node) :: stack)(scalaxb.qnameXMLFormat(node.scope))) })
+        scalaxb.fromXML[javax.xml.namespace.QName]((node \ "@binding"), scalaxb.ElemName(node) :: stack)(scalaxb.XMLStandardTypes.qnameXMLFormat(node.scope))) })
     
     override def writesAttribute(__obj: wsdl11.XPortType, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {
       var attr: scala.xml.MetaData  = scala.xml.Null

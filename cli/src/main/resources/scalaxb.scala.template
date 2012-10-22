@@ -4,7 +4,7 @@ import scala.xml.{Node, NodeSeq, NamespaceBinding, Elem, UnprefixedAttribute, Pr
 import javax.xml.datatype.{XMLGregorianCalendar}
 import javax.xml.namespace.QName
 
-object `package` extends XMLStandardTypes {
+object `package` {
   import annotation.implicitNotFound
 
   @implicitNotFound(msg = "Cannot find XMLFormat type class for ${A}")
@@ -59,6 +59,9 @@ trait CanReadXML[A] {
 trait CanWriteXML[A] {
   def writes(obj: A, namespace: Option[String], elementLabel: Option[String],
       scope: NamespaceBinding, typeAttribute: Boolean): NodeSeq
+}
+
+object XMLStandardTypes extends XMLStandardTypes {
 }
 
 trait XMLStandardTypes {
@@ -707,13 +710,11 @@ class ElemNameSeqPosition(val source: Seq[ElemName], val offset: Int) extends
 }
 
 class HexBinary(_vector: Vector[Byte]) extends scala.collection.IndexedSeq[Byte] {
-  private val vector = _vector
-
+  val vector = _vector
   def length = vector.length
   def apply(idx: Int): Byte = vector(idx)
   override def toString: String =
     (vector map { x => ("0" + Integer.toHexString(x.toInt)).takeRight(2) }).mkString.toUpperCase
-  def toIndexedSeq: IndexedSeq[Byte] = vector
 }
 
 object HexBinary {
@@ -731,16 +732,14 @@ object HexBinary {
     apply(array: _*)
   }
 
-  def unapplySeq[Byte](x: HexBinary) = Some(x.toIndexedSeq)
+  def unapplySeq[Byte](x: HexBinary) = Some(x.vector)
 }
 
 class Base64Binary(_vector: Vector[Byte]) extends scala.collection.IndexedSeq[Byte] {
-  private val vector = _vector
-
+  val vector = _vector
   def length = vector.length
   def apply(idx: Int): Byte = vector(idx)
   override def toString: String = (new sun.misc.BASE64Encoder()).encodeBuffer(vector.toArray).stripLineEnd
-  def toIndexedSeq: IndexedSeq[Byte] = vector
 }
 
 object Base64Binary {
@@ -755,7 +754,7 @@ object Base64Binary {
     apply(array: _*)
   }
 
-  def unapplySeq[Byte](x: Base64Binary) = Some(x.toIndexedSeq)
+  def unapplySeq[Byte](x: Base64Binary) = Some(x.vector)
 }
 
 object XMLCalendar {
@@ -816,7 +815,7 @@ object Helper {
       scope: scala.xml.NamespaceBinding) =
     scala.xml.Elem(getPrefix(namespace, scope).orNull, elementLabel,
       scala.xml.Attribute(scope.getPrefix(XSI_URL), "nil", "true", scala.xml.Null),
-      scope, Nil: _*)
+      scope)
 
   def splitBySpace(text: String) = text.split(' ').filter("" !=)
 

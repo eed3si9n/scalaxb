@@ -152,7 +152,7 @@ trait Args extends Params {
       // special treatment for QName attributes
       case XsQName =>
         buildArg(buildTypeName(XsQName), selector, toCardinality(attr), false,
-          attr.defaultValue, attr.fixedValue, wrapForLong, Some("scalaxb.qnameXMLFormat(node.scope)"))
+          attr.defaultValue, attr.fixedValue, wrapForLong, Some("scalaxb.XMLStandardTypes.qnameXMLFormat(node.scope)"))
       case symbol: BuiltInSimpleTypeSymbol =>
         buildArg(buildTypeName(symbol), selector, toCardinality(attr), false,
           attr.defaultValue, attr.fixedValue, wrapForLong)
@@ -160,7 +160,7 @@ trait Args extends Params {
       // special treatment for QName attributes
       case ReferenceTypeSymbol(decl: SimpleTypeDecl) if buildTypeName(decl, false) == buildTypeName(XsQName) =>
         buildArg(buildTypeName(decl, false), selector, toCardinality(attr), false,
-          attr.defaultValue, attr.fixedValue, wrapForLong, Some("scalaxb.qnameXMLFormat(node.scope)"))
+          attr.defaultValue, attr.fixedValue, wrapForLong, Some("scalaxb.XMLStandardTypes.qnameXMLFormat(node.scope)"))
       case ReferenceTypeSymbol(decl: SimpleTypeDecl) =>
         buildArg(buildTypeName(decl, false), selector, toCardinality(attr), false,
           attr.defaultValue, attr.fixedValue, wrapForLong)

@@ -287,7 +287,7 @@ trait XMLProtocol extends scalaxb.XMLStandardTypes {
     val targetNamespace: Option[String] = Some("http://www.w3.org/2003/05/soap-envelope")
     
     def reads(seq: scala.xml.NodeSeq, stack: List[scalaxb.ElemName]): Either[String, soapenvelope12.NotUnderstoodType] = seq match {
-      case node: scala.xml.Node => Right(soapenvelope12.NotUnderstoodType(scalaxb.fromXML[javax.xml.namespace.QName]((node \ "@qname"), scalaxb.ElemName(node) :: stack)(scalaxb.qnameXMLFormat(node.scope))))
+      case node: scala.xml.Node => Right(soapenvelope12.NotUnderstoodType(scalaxb.fromXML[javax.xml.namespace.QName]((node \ "@qname"), scalaxb.ElemName(node) :: stack)(scalaxb.XMLStandardTypes.qnameXMLFormat(node.scope))))
       case _ => Left("reads failed: seq must be scala.xml.Node")
     }
     
@@ -307,7 +307,7 @@ trait XMLProtocol extends scalaxb.XMLStandardTypes {
     val targetNamespace: Option[String] = Some("http://www.w3.org/2003/05/soap-envelope")
     
     def reads(seq: scala.xml.NodeSeq, stack: List[scalaxb.ElemName]): Either[String, soapenvelope12.SupportedEnvType] = seq match {
-      case node: scala.xml.Node => Right(soapenvelope12.SupportedEnvType(scalaxb.fromXML[javax.xml.namespace.QName]((node \ "@qname"), scalaxb.ElemName(node) :: stack)(scalaxb.qnameXMLFormat(node.scope))))
+      case node: scala.xml.Node => Right(soapenvelope12.SupportedEnvType(scalaxb.fromXML[javax.xml.namespace.QName]((node \ "@qname"), scalaxb.ElemName(node) :: stack)(scalaxb.XMLStandardTypes.qnameXMLFormat(node.scope))))
       case _ => Left("reads failed: seq must be scala.xml.Node")
     }
     

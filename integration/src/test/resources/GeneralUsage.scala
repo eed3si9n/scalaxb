@@ -311,7 +311,7 @@ object GeneralUsage {
       Some("o") -> "http://www.example.com/other")
     val document = toXML[AnyTest](obj, "foo", scope)
     println(document.toString)
-    (document.toString contains """<x:other xmlns:x="http://www.example.com/x"><x:something></x:something></x:other>""") match {
+    (document.toString contains """<x:other xmlns:x="http://www.example.com/x"><x:something/></x:other>""") match {
       case true =>
       case _ => error("x:other includes outer namespace bindings: " + document.toString)
     }
@@ -581,7 +581,7 @@ object GeneralUsage {
     println(obj)
     val document = scalaxb.toXML(obj, Some("http://www.example.com/foo"), Some("billTo"), scope, true)
     document.toString match {
-      case """<foo:billTo href="http://foo.com/" xsi:type="gen:USAddress" xmlns:gen="http://www.example.com/general" xmlns:foo="http://www.example.com/foo" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><gen:street>1537 Paper Street</gen:street><gen:city>Wilmington</gen:city><gen:state>DE</gen:state><gen:zip>19886</gen:zip></foo:billTo>""" =>
+      case """<foo:billTo xsi:type="gen:USAddress" href="http://foo.com/" xmlns:gen="http://www.example.com/general" xmlns:foo="http://www.example.com/foo" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><gen:street>1537 Paper Street</gen:street><gen:city>Wilmington</gen:city><gen:state>DE</gen:state><gen:zip>19886</gen:zip></foo:billTo>""" =>
       case x => error("match failed: " + x)
     }
     println(document)

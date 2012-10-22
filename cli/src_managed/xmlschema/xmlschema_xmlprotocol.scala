@@ -405,8 +405,8 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
         p2.headOption map { scalaxb.fromXML[xmlschema.XLocalSimpleType](_, scalaxb.ElemName(node) :: stack) },
         (node \ "@id").headOption map { scalaxb.fromXML[String](_, scalaxb.ElemName(node) :: stack) },
         (node \ "@name").headOption map { scalaxb.fromXML[String](_, scalaxb.ElemName(node) :: stack) },
-        (node \ "@ref").headOption map { scalaxb.fromXML[javax.xml.namespace.QName](_, scalaxb.ElemName(node) :: stack)(scalaxb.qnameXMLFormat(node.scope)) },
-        (node \ "@type").headOption map { scalaxb.fromXML[javax.xml.namespace.QName](_, scalaxb.ElemName(node) :: stack)(scalaxb.qnameXMLFormat(node.scope)) },
+        (node \ "@ref").headOption map { scalaxb.fromXML[javax.xml.namespace.QName](_, scalaxb.ElemName(node) :: stack)(scalaxb.XMLStandardTypes.qnameXMLFormat(node.scope)) },
+        (node \ "@type").headOption map { scalaxb.fromXML[javax.xml.namespace.QName](_, scalaxb.ElemName(node) :: stack)(scalaxb.XMLStandardTypes.qnameXMLFormat(node.scope)) },
         (node \ "@use").headOption map { scalaxb.fromXML[xmlschema.XUse](_, scalaxb.ElemName(node) :: stack) } getOrElse { scalaxb.fromXML[xmlschema.XUse](scala.xml.Text("optional"), scalaxb.ElemName(node) :: stack) },
         (node \ "@default").headOption map { scalaxb.fromXML[String](_, scalaxb.ElemName(node) :: stack) },
         (node \ "@fixed").headOption map { scalaxb.fromXML[String](_, scalaxb.ElemName(node) :: stack) },
@@ -466,8 +466,8 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
         p2.headOption map { scalaxb.fromXML[xmlschema.XLocalSimpleType](_, scalaxb.ElemName(node) :: stack) },
         (node \ "@id").headOption map { scalaxb.fromXML[String](_, scalaxb.ElemName(node) :: stack) },
         (node \ "@name").headOption map { scalaxb.fromXML[String](_, scalaxb.ElemName(node) :: stack) },
-        (node \ "@ref").headOption map { scalaxb.fromXML[javax.xml.namespace.QName](_, scalaxb.ElemName(node) :: stack)(scalaxb.qnameXMLFormat(node.scope)) },
-        (node \ "@type").headOption map { scalaxb.fromXML[javax.xml.namespace.QName](_, scalaxb.ElemName(node) :: stack)(scalaxb.qnameXMLFormat(node.scope)) },
+        (node \ "@ref").headOption map { scalaxb.fromXML[javax.xml.namespace.QName](_, scalaxb.ElemName(node) :: stack)(scalaxb.XMLStandardTypes.qnameXMLFormat(node.scope)) },
+        (node \ "@type").headOption map { scalaxb.fromXML[javax.xml.namespace.QName](_, scalaxb.ElemName(node) :: stack)(scalaxb.XMLStandardTypes.qnameXMLFormat(node.scope)) },
         (node \ "@use").headOption map { scalaxb.fromXML[xmlschema.XUse](_, scalaxb.ElemName(node) :: stack) } getOrElse { scalaxb.fromXML[xmlschema.XUse](scala.xml.Text("optional"), scalaxb.ElemName(node) :: stack) },
         (node \ "@default").headOption map { scalaxb.fromXML[String](_, scalaxb.ElemName(node) :: stack) },
         (node \ "@fixed").headOption map { scalaxb.fromXML[String](_, scalaxb.ElemName(node) :: stack) },
@@ -677,7 +677,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
         p2,
         p3,
         (node \ "@id").headOption map { scalaxb.fromXML[String](_, scalaxb.ElemName(node) :: stack) },
-        scalaxb.fromXML[javax.xml.namespace.QName]((node \ "@base"), scalaxb.ElemName(node) :: stack)(scalaxb.qnameXMLFormat(node.scope)),
+        scalaxb.fromXML[javax.xml.namespace.QName]((node \ "@base"), scalaxb.ElemName(node) :: stack)(scalaxb.XMLStandardTypes.qnameXMLFormat(node.scope)),
         scala.collection.immutable.ListMap((node match {
           case elem: scala.xml.Elem =>
             elem.attributes.toList flatMap {
@@ -724,7 +724,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
         p2,
         p3,
         (node \ "@id").headOption map { scalaxb.fromXML[String](_, scalaxb.ElemName(node) :: stack) },
-        scalaxb.fromXML[javax.xml.namespace.QName]((node \ "@base"), scalaxb.ElemName(node) :: stack)(scalaxb.qnameXMLFormat(node.scope)),
+        scalaxb.fromXML[javax.xml.namespace.QName]((node \ "@base"), scalaxb.ElemName(node) :: stack)(scalaxb.XMLStandardTypes.qnameXMLFormat(node.scope)),
         scala.collection.immutable.ListMap((node match {
           case elem: scala.xml.Elem =>
             elem.attributes.toList flatMap {
@@ -787,7 +787,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
         p2,
         p3,
         (node \ "@id").headOption map { scalaxb.fromXML[String](_, scalaxb.ElemName(node) :: stack) },
-        scalaxb.fromXML[javax.xml.namespace.QName]((node \ "@base"), scalaxb.ElemName(node) :: stack)(scalaxb.qnameXMLFormat(node.scope)),
+        scalaxb.fromXML[javax.xml.namespace.QName]((node \ "@base"), scalaxb.ElemName(node) :: stack)(scalaxb.XMLStandardTypes.qnameXMLFormat(node.scope)),
         scala.collection.immutable.ListMap((node match {
           case elem: scala.xml.Elem =>
             elem.attributes.toList flatMap {
@@ -878,7 +878,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
         p2,
         p3,
         (node \ "@id").headOption map { scalaxb.fromXML[String](_, scalaxb.ElemName(node) :: stack) },
-        scalaxb.fromXML[javax.xml.namespace.QName]((node \ "@base"), scalaxb.ElemName(node) :: stack)(scalaxb.qnameXMLFormat(node.scope)),
+        scalaxb.fromXML[javax.xml.namespace.QName]((node \ "@base"), scalaxb.ElemName(node) :: stack)(scalaxb.XMLStandardTypes.qnameXMLFormat(node.scope)),
         scala.collection.immutable.ListMap((node match {
           case elem: scala.xml.Elem =>
             elem.attributes.toList flatMap {
@@ -924,7 +924,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
         p2,
         p3,
         (node \ "@id").headOption map { scalaxb.fromXML[String](_, scalaxb.ElemName(node) :: stack) },
-        scalaxb.fromXML[javax.xml.namespace.QName]((node \ "@base"), scalaxb.ElemName(node) :: stack)(scalaxb.qnameXMLFormat(node.scope)),
+        scalaxb.fromXML[javax.xml.namespace.QName]((node \ "@base"), scalaxb.ElemName(node) :: stack)(scalaxb.XMLStandardTypes.qnameXMLFormat(node.scope)),
         scala.collection.immutable.ListMap((node match {
           case elem: scala.xml.Elem =>
             elem.attributes.toList flatMap {
@@ -1034,9 +1034,9 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
         p3.toSeq,
         (node \ "@id").headOption map { scalaxb.fromXML[String](_, scalaxb.ElemName(node) :: stack) },
         (node \ "@name").headOption map { scalaxb.fromXML[String](_, scalaxb.ElemName(node) :: stack) },
-        (node \ "@ref").headOption map { scalaxb.fromXML[javax.xml.namespace.QName](_, scalaxb.ElemName(node) :: stack)(scalaxb.qnameXMLFormat(node.scope)) },
-        (node \ "@type").headOption map { scalaxb.fromXML[javax.xml.namespace.QName](_, scalaxb.ElemName(node) :: stack)(scalaxb.qnameXMLFormat(node.scope)) },
-        (node \ "@substitutionGroup").headOption map { scalaxb.fromXML[javax.xml.namespace.QName](_, scalaxb.ElemName(node) :: stack)(scalaxb.qnameXMLFormat(node.scope)) },
+        (node \ "@ref").headOption map { scalaxb.fromXML[javax.xml.namespace.QName](_, scalaxb.ElemName(node) :: stack)(scalaxb.XMLStandardTypes.qnameXMLFormat(node.scope)) },
+        (node \ "@type").headOption map { scalaxb.fromXML[javax.xml.namespace.QName](_, scalaxb.ElemName(node) :: stack)(scalaxb.XMLStandardTypes.qnameXMLFormat(node.scope)) },
+        (node \ "@substitutionGroup").headOption map { scalaxb.fromXML[javax.xml.namespace.QName](_, scalaxb.ElemName(node) :: stack)(scalaxb.XMLStandardTypes.qnameXMLFormat(node.scope)) },
         (node \ "@minOccurs").headOption map { scalaxb.fromXML[BigInt](_, scalaxb.ElemName(node) :: stack) } getOrElse { scalaxb.fromXML[BigInt](scala.xml.Text("1"), scalaxb.ElemName(node) :: stack) },
         (node \ "@maxOccurs").headOption map { scalaxb.fromXML[String](_, scalaxb.ElemName(node) :: stack) } getOrElse { scalaxb.fromXML[String](scala.xml.Text("1"), scalaxb.ElemName(node) :: stack) },
         (node \ "@default").headOption map { scalaxb.fromXML[String](_, scalaxb.ElemName(node) :: stack) },
@@ -1136,9 +1136,9 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
         p3.toSeq,
         (node \ "@id").headOption map { scalaxb.fromXML[String](_, scalaxb.ElemName(node) :: stack) },
         (node \ "@name").headOption map { scalaxb.fromXML[String](_, scalaxb.ElemName(node) :: stack) },
-        (node \ "@ref").headOption map { scalaxb.fromXML[javax.xml.namespace.QName](_, scalaxb.ElemName(node) :: stack)(scalaxb.qnameXMLFormat(node.scope)) },
-        (node \ "@type").headOption map { scalaxb.fromXML[javax.xml.namespace.QName](_, scalaxb.ElemName(node) :: stack)(scalaxb.qnameXMLFormat(node.scope)) },
-        (node \ "@substitutionGroup").headOption map { scalaxb.fromXML[javax.xml.namespace.QName](_, scalaxb.ElemName(node) :: stack)(scalaxb.qnameXMLFormat(node.scope)) },
+        (node \ "@ref").headOption map { scalaxb.fromXML[javax.xml.namespace.QName](_, scalaxb.ElemName(node) :: stack)(scalaxb.XMLStandardTypes.qnameXMLFormat(node.scope)) },
+        (node \ "@type").headOption map { scalaxb.fromXML[javax.xml.namespace.QName](_, scalaxb.ElemName(node) :: stack)(scalaxb.XMLStandardTypes.qnameXMLFormat(node.scope)) },
+        (node \ "@substitutionGroup").headOption map { scalaxb.fromXML[javax.xml.namespace.QName](_, scalaxb.ElemName(node) :: stack)(scalaxb.XMLStandardTypes.qnameXMLFormat(node.scope)) },
         (node \ "@minOccurs").headOption map { scalaxb.fromXML[BigInt](_, scalaxb.ElemName(node) :: stack) } getOrElse { scalaxb.fromXML[BigInt](scala.xml.Text("1"), scalaxb.ElemName(node) :: stack) },
         (node \ "@maxOccurs").headOption map { scalaxb.fromXML[String](_, scalaxb.ElemName(node) :: stack) } getOrElse { scalaxb.fromXML[String](scala.xml.Text("1"), scalaxb.ElemName(node) :: stack) },
         (node \ "@default").headOption map { scalaxb.fromXML[String](_, scalaxb.ElemName(node) :: stack) },
@@ -1254,7 +1254,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
         p2.toSeq,
         (node \ "@id").headOption map { scalaxb.fromXML[String](_, scalaxb.ElemName(node) :: stack) },
         (node \ "@name").headOption map { scalaxb.fromXML[String](_, scalaxb.ElemName(node) :: stack) },
-        (node \ "@ref").headOption map { scalaxb.fromXML[javax.xml.namespace.QName](_, scalaxb.ElemName(node) :: stack)(scalaxb.qnameXMLFormat(node.scope)) },
+        (node \ "@ref").headOption map { scalaxb.fromXML[javax.xml.namespace.QName](_, scalaxb.ElemName(node) :: stack)(scalaxb.XMLStandardTypes.qnameXMLFormat(node.scope)) },
         (node \ "@minOccurs").headOption map { scalaxb.fromXML[BigInt](_, scalaxb.ElemName(node) :: stack) } getOrElse { scalaxb.fromXML[BigInt](scala.xml.Text("1"), scalaxb.ElemName(node) :: stack) },
         (node \ "@maxOccurs").headOption map { scalaxb.fromXML[String](_, scalaxb.ElemName(node) :: stack) } getOrElse { scalaxb.fromXML[String](scala.xml.Text("1"), scalaxb.ElemName(node) :: stack) },
         scala.collection.immutable.ListMap((node match {
@@ -1304,7 +1304,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
         p2.toSeq,
         (node \ "@id").headOption map { scalaxb.fromXML[String](_, scalaxb.ElemName(node) :: stack) },
         (node \ "@name").headOption map { scalaxb.fromXML[String](_, scalaxb.ElemName(node) :: stack) },
-        (node \ "@ref").headOption map { scalaxb.fromXML[javax.xml.namespace.QName](_, scalaxb.ElemName(node) :: stack)(scalaxb.qnameXMLFormat(node.scope)) },
+        (node \ "@ref").headOption map { scalaxb.fromXML[javax.xml.namespace.QName](_, scalaxb.ElemName(node) :: stack)(scalaxb.XMLStandardTypes.qnameXMLFormat(node.scope)) },
         (node \ "@minOccurs").headOption map { scalaxb.fromXML[BigInt](_, scalaxb.ElemName(node) :: stack) } getOrElse { scalaxb.fromXML[BigInt](scala.xml.Text("1"), scalaxb.ElemName(node) :: stack) },
         (node \ "@maxOccurs").headOption map { scalaxb.fromXML[String](_, scalaxb.ElemName(node) :: stack) } getOrElse { scalaxb.fromXML[String](scala.xml.Text("1"), scalaxb.ElemName(node) :: stack) },
         scala.collection.immutable.ListMap((node match {
@@ -1356,7 +1356,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
         p2.toSeq,
         (node \ "@id").headOption map { scalaxb.fromXML[String](_, scalaxb.ElemName(node) :: stack) },
         (node \ "@name").headOption map { scalaxb.fromXML[String](_, scalaxb.ElemName(node) :: stack) },
-        (node \ "@ref").headOption map { scalaxb.fromXML[javax.xml.namespace.QName](_, scalaxb.ElemName(node) :: stack)(scalaxb.qnameXMLFormat(node.scope)) },
+        (node \ "@ref").headOption map { scalaxb.fromXML[javax.xml.namespace.QName](_, scalaxb.ElemName(node) :: stack)(scalaxb.XMLStandardTypes.qnameXMLFormat(node.scope)) },
         (node \ "@minOccurs").headOption map { scalaxb.fromXML[BigInt](_, scalaxb.ElemName(node) :: stack) } getOrElse { scalaxb.fromXML[BigInt](scala.xml.Text("1"), scalaxb.ElemName(node) :: stack) },
         (node \ "@maxOccurs").headOption map { scalaxb.fromXML[String](_, scalaxb.ElemName(node) :: stack) } getOrElse { scalaxb.fromXML[String](scala.xml.Text("1"), scalaxb.ElemName(node) :: stack) },
         scala.collection.immutable.ListMap((node match {
@@ -1408,7 +1408,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
         p2.toSeq,
         (node \ "@id").headOption map { scalaxb.fromXML[String](_, scalaxb.ElemName(node) :: stack) },
         (node \ "@name").headOption map { scalaxb.fromXML[String](_, scalaxb.ElemName(node) :: stack) },
-        (node \ "@ref").headOption map { scalaxb.fromXML[javax.xml.namespace.QName](_, scalaxb.ElemName(node) :: stack)(scalaxb.qnameXMLFormat(node.scope)) },
+        (node \ "@ref").headOption map { scalaxb.fromXML[javax.xml.namespace.QName](_, scalaxb.ElemName(node) :: stack)(scalaxb.XMLStandardTypes.qnameXMLFormat(node.scope)) },
         (node \ "@minOccurs").headOption map { scalaxb.fromXML[BigInt](_, scalaxb.ElemName(node) :: stack) } getOrElse { scalaxb.fromXML[BigInt](scala.xml.Text("1"), scalaxb.ElemName(node) :: stack) },
         (node \ "@maxOccurs").headOption map { scalaxb.fromXML[String](_, scalaxb.ElemName(node) :: stack) } getOrElse { scalaxb.fromXML[String](scala.xml.Text("1"), scalaxb.ElemName(node) :: stack) },
         scala.collection.immutable.ListMap((node match {
@@ -1479,7 +1479,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
         p2.toSeq,
         (node \ "@id").headOption map { scalaxb.fromXML[String](_, scalaxb.ElemName(node) :: stack) },
         (node \ "@name").headOption map { scalaxb.fromXML[String](_, scalaxb.ElemName(node) :: stack) },
-        (node \ "@ref").headOption map { scalaxb.fromXML[javax.xml.namespace.QName](_, scalaxb.ElemName(node) :: stack)(scalaxb.qnameXMLFormat(node.scope)) },
+        (node \ "@ref").headOption map { scalaxb.fromXML[javax.xml.namespace.QName](_, scalaxb.ElemName(node) :: stack)(scalaxb.XMLStandardTypes.qnameXMLFormat(node.scope)) },
         (node \ "@minOccurs").headOption map { scalaxb.fromXML[BigInt](_, scalaxb.ElemName(node) :: stack) } getOrElse { scalaxb.fromXML[BigInt](scala.xml.Text("1"), scalaxb.ElemName(node) :: stack) },
         (node \ "@maxOccurs").headOption map { scalaxb.fromXML[String](_, scalaxb.ElemName(node) :: stack) } getOrElse { scalaxb.fromXML[String](scala.xml.Text("1"), scalaxb.ElemName(node) :: stack) },
         scala.collection.immutable.ListMap((node match {
@@ -1531,7 +1531,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
         p2.toSeq,
         (node \ "@id").headOption map { scalaxb.fromXML[String](_, scalaxb.ElemName(node) :: stack) },
         (node \ "@name").headOption map { scalaxb.fromXML[String](_, scalaxb.ElemName(node) :: stack) },
-        (node \ "@ref").headOption map { scalaxb.fromXML[javax.xml.namespace.QName](_, scalaxb.ElemName(node) :: stack)(scalaxb.qnameXMLFormat(node.scope)) },
+        (node \ "@ref").headOption map { scalaxb.fromXML[javax.xml.namespace.QName](_, scalaxb.ElemName(node) :: stack)(scalaxb.XMLStandardTypes.qnameXMLFormat(node.scope)) },
         (node \ "@minOccurs").headOption map { scalaxb.fromXML[BigInt](_, scalaxb.ElemName(node) :: stack) } getOrElse { scalaxb.fromXML[BigInt](scala.xml.Text("1"), scalaxb.ElemName(node) :: stack) },
         (node \ "@maxOccurs").headOption map { scalaxb.fromXML[String](_, scalaxb.ElemName(node) :: stack) } getOrElse { scalaxb.fromXML[String](scala.xml.Text("1"), scalaxb.ElemName(node) :: stack) },
         scala.collection.immutable.ListMap((node match {
@@ -1616,9 +1616,9 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
         p3.toSeq,
         (node \ "@id").headOption map { scalaxb.fromXML[String](_, scalaxb.ElemName(node) :: stack) },
         (node \ "@name").headOption map { scalaxb.fromXML[String](_, scalaxb.ElemName(node) :: stack) },
-        (node \ "@ref").headOption map { scalaxb.fromXML[javax.xml.namespace.QName](_, scalaxb.ElemName(node) :: stack)(scalaxb.qnameXMLFormat(node.scope)) },
-        (node \ "@type").headOption map { scalaxb.fromXML[javax.xml.namespace.QName](_, scalaxb.ElemName(node) :: stack)(scalaxb.qnameXMLFormat(node.scope)) },
-        (node \ "@substitutionGroup").headOption map { scalaxb.fromXML[javax.xml.namespace.QName](_, scalaxb.ElemName(node) :: stack)(scalaxb.qnameXMLFormat(node.scope)) },
+        (node \ "@ref").headOption map { scalaxb.fromXML[javax.xml.namespace.QName](_, scalaxb.ElemName(node) :: stack)(scalaxb.XMLStandardTypes.qnameXMLFormat(node.scope)) },
+        (node \ "@type").headOption map { scalaxb.fromXML[javax.xml.namespace.QName](_, scalaxb.ElemName(node) :: stack)(scalaxb.XMLStandardTypes.qnameXMLFormat(node.scope)) },
+        (node \ "@substitutionGroup").headOption map { scalaxb.fromXML[javax.xml.namespace.QName](_, scalaxb.ElemName(node) :: stack)(scalaxb.XMLStandardTypes.qnameXMLFormat(node.scope)) },
         (node \ "@minOccurs").headOption map { scalaxb.fromXML[BigInt](_, scalaxb.ElemName(node) :: stack) } getOrElse { scalaxb.fromXML[BigInt](scala.xml.Text("1"), scalaxb.ElemName(node) :: stack) },
         (node \ "@maxOccurs").headOption map { scalaxb.fromXML[String](_, scalaxb.ElemName(node) :: stack) } getOrElse { scalaxb.fromXML[String](scala.xml.Text("1"), scalaxb.ElemName(node) :: stack) },
         (node \ "@default").headOption map { scalaxb.fromXML[String](_, scalaxb.ElemName(node) :: stack) },
@@ -1741,7 +1741,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
         p2.toSeq,
         (node \ "@id").headOption map { scalaxb.fromXML[String](_, scalaxb.ElemName(node) :: stack) },
         (node \ "@name").headOption map { scalaxb.fromXML[String](_, scalaxb.ElemName(node) :: stack) },
-        (node \ "@ref").headOption map { scalaxb.fromXML[javax.xml.namespace.QName](_, scalaxb.ElemName(node) :: stack)(scalaxb.qnameXMLFormat(node.scope)) },
+        (node \ "@ref").headOption map { scalaxb.fromXML[javax.xml.namespace.QName](_, scalaxb.ElemName(node) :: stack)(scalaxb.XMLStandardTypes.qnameXMLFormat(node.scope)) },
         (node \ "@minOccurs").headOption map { scalaxb.fromXML[BigInt](_, scalaxb.ElemName(node) :: stack) } getOrElse { scalaxb.fromXML[BigInt](scala.xml.Text("1"), scalaxb.ElemName(node) :: stack) },
         (node \ "@maxOccurs").headOption map { scalaxb.fromXML[String](_, scalaxb.ElemName(node) :: stack) } getOrElse { scalaxb.fromXML[String](scala.xml.Text("1"), scalaxb.ElemName(node) :: stack) },
         scala.collection.immutable.ListMap((node match {
@@ -1933,7 +1933,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
         p2,
         (node \ "@id").headOption map { scalaxb.fromXML[String](_, scalaxb.ElemName(node) :: stack) },
         (node \ "@name").headOption map { scalaxb.fromXML[String](_, scalaxb.ElemName(node) :: stack) },
-        (node \ "@ref").headOption map { scalaxb.fromXML[javax.xml.namespace.QName](_, scalaxb.ElemName(node) :: stack)(scalaxb.qnameXMLFormat(node.scope)) },
+        (node \ "@ref").headOption map { scalaxb.fromXML[javax.xml.namespace.QName](_, scalaxb.ElemName(node) :: stack)(scalaxb.XMLStandardTypes.qnameXMLFormat(node.scope)) },
         scala.collection.immutable.ListMap((node match {
           case elem: scala.xml.Elem =>
             elem.attributes.toList flatMap {
@@ -1979,7 +1979,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
         p2,
         (node \ "@id").headOption map { scalaxb.fromXML[String](_, scalaxb.ElemName(node) :: stack) },
         (node \ "@name").headOption map { scalaxb.fromXML[String](_, scalaxb.ElemName(node) :: stack) },
-        (node \ "@ref").headOption map { scalaxb.fromXML[javax.xml.namespace.QName](_, scalaxb.ElemName(node) :: stack)(scalaxb.qnameXMLFormat(node.scope)) },
+        (node \ "@ref").headOption map { scalaxb.fromXML[javax.xml.namespace.QName](_, scalaxb.ElemName(node) :: stack)(scalaxb.XMLStandardTypes.qnameXMLFormat(node.scope)) },
         scala.collection.immutable.ListMap((node match {
           case elem: scala.xml.Elem =>
             elem.attributes.toList flatMap {
@@ -2283,7 +2283,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
         p3.toSeq map { scalaxb.fromXML[xmlschema.XField](_, scalaxb.ElemName(node) :: stack) },
         (node \ "@id").headOption map { scalaxb.fromXML[String](_, scalaxb.ElemName(node) :: stack) },
         scalaxb.fromXML[String]((node \ "@name"), scalaxb.ElemName(node) :: stack),
-        scalaxb.fromXML[javax.xml.namespace.QName]((node \ "@refer"), scalaxb.ElemName(node) :: stack)(scalaxb.qnameXMLFormat(node.scope)),
+        scalaxb.fromXML[javax.xml.namespace.QName]((node \ "@refer"), scalaxb.ElemName(node) :: stack)(scalaxb.XMLStandardTypes.qnameXMLFormat(node.scope)),
         scala.collection.immutable.ListMap((node match {
           case elem: scala.xml.Elem =>
             elem.attributes.toList flatMap {
@@ -2667,7 +2667,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
       xmlschema.XRestriction(p1.headOption map { scalaxb.fromXML[xmlschema.XAnnotation](_, scalaxb.ElemName(node) :: stack) },
         p2,
         (node \ "@id").headOption map { scalaxb.fromXML[String](_, scalaxb.ElemName(node) :: stack) },
-        (node \ "@base").headOption map { scalaxb.fromXML[javax.xml.namespace.QName](_, scalaxb.ElemName(node) :: stack)(scalaxb.qnameXMLFormat(node.scope)) },
+        (node \ "@base").headOption map { scalaxb.fromXML[javax.xml.namespace.QName](_, scalaxb.ElemName(node) :: stack)(scalaxb.XMLStandardTypes.qnameXMLFormat(node.scope)) },
         scala.collection.immutable.ListMap((node match {
           case elem: scala.xml.Elem =>
             elem.attributes.toList flatMap {
@@ -2708,7 +2708,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
       xmlschema.XList(p1.headOption map { scalaxb.fromXML[xmlschema.XAnnotation](_, scalaxb.ElemName(node) :: stack) },
         p2.headOption map { scalaxb.fromXML[xmlschema.XLocalSimpleType](_, scalaxb.ElemName(node) :: stack) },
         (node \ "@id").headOption map { scalaxb.fromXML[String](_, scalaxb.ElemName(node) :: stack) },
-        (node \ "@itemType").headOption map { scalaxb.fromXML[javax.xml.namespace.QName](_, scalaxb.ElemName(node) :: stack)(scalaxb.qnameXMLFormat(node.scope)) },
+        (node \ "@itemType").headOption map { scalaxb.fromXML[javax.xml.namespace.QName](_, scalaxb.ElemName(node) :: stack)(scalaxb.XMLStandardTypes.qnameXMLFormat(node.scope)) },
         scala.collection.immutable.ListMap((node match {
           case elem: scala.xml.Elem =>
             elem.attributes.toList flatMap {
@@ -3748,7 +3748,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     
     def reads(seq: scala.xml.NodeSeq, stack: List[scalaxb.ElemName]): Either[String, xmlschema.XDefRef] = seq match {
       case node: scala.xml.Node => Right(xmlschema.XDefRef((node \ "@name").headOption map { scalaxb.fromXML[String](_, scalaxb.ElemName(node) :: stack) },
-      (node \ "@ref").headOption map { scalaxb.fromXML[javax.xml.namespace.QName](_, scalaxb.ElemName(node) :: stack)(scalaxb.qnameXMLFormat(node.scope)) }))
+      (node \ "@ref").headOption map { scalaxb.fromXML[javax.xml.namespace.QName](_, scalaxb.ElemName(node) :: stack)(scalaxb.XMLStandardTypes.qnameXMLFormat(node.scope)) }))
       case _ => Left("reads failed: seq must be scala.xml.Node")
     }
     

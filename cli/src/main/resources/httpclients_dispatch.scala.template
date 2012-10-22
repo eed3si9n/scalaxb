@@ -7,8 +7,9 @@ trait DispatchHttpClients extends HttpClients {
     import dispatch._
 
     def request(in: String, address: java.net.URI, headers: Map[String, String]): String = {
-      val http = new Http
-      http x (url(address.toString) << (in) <:< headers as_str)
+      val req = url(address.toString) << in <:< headers
+      val s = Http(req OK as.String)
+      s()
     }
   }
 }

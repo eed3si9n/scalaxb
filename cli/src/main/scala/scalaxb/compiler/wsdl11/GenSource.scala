@@ -279,7 +279,7 @@ trait GenSource {
     }
     b map { node =>
       HeaderBinding((node \ "@use").headOption map {_.text == "literal"} getOrElse {true},
-        scalaxb.fromXML[javax.xml.namespace.QName](node \ "@message")(scalaxb.qnameXMLFormat(node.scope)),
+        scalaxb.fromXML[javax.xml.namespace.QName](node \ "@message")(scalaxb.XMLStandardTypes.qnameXMLFormat(node.scope)),
         (node \ "@part").text,
         (node \ "@encodingStyle").headOption map {_.text},
         (node \ "@namespace").headOption map {_.text}

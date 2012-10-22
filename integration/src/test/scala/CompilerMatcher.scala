@@ -71,7 +71,7 @@ trait CompilerMatcher {
       
       val s = settings(outdir, classpath, usecurrentcp, unchecked)
       val main = new IMain(s) {
-        def lastRequest = prevRequestList.last
+        def lastReq = prevRequestList.last
       }
       main.compileSources(files.map(toSourceFile(_)): _*)
       code map { c => main.interpret(c) match {
@@ -79,7 +79,7 @@ trait CompilerMatcher {
         case _ => 
       }}
       val holder = allCatch opt {
-        main.lastRequest.lineRep.call("$result")
+        main.lastReq.lineRep.call("$result")
       }
       if (holder != Some(expected))
         println("actual: %s" format(holder.map(_.toString).getOrElse{"None"}))

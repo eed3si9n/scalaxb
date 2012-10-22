@@ -13,7 +13,7 @@ object XhtmlTest extends TestBase {
         Some("http://www.w3.org/1999/xhtml"), Some("html"), document.scope).toString""" // "
      ),
      generated) must evaluateTo("""<html lang="en" xmlns="http://www.w3.org/1999/xhtml">""" + // "
-     """<head><title>foo</title></head><body></body></html>""", // "
+     """<head><title>foo</title></head><body/></html>""", // "
      outdir = "./tmp")
   }
 }

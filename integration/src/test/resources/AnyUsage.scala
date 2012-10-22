@@ -13,6 +13,7 @@ object AnyUsage {
   def allTests = {
     testAny
     testAny2
+    testAny3
     true
   }
   
@@ -36,20 +37,6 @@ object AnyUsage {
           <unsignedShort xsi:type="xs:unsignedShort">1</unsignedShort>
           <unsignedByte xsi:type="xs:unsignedByte">1</unsignedByte>
           <decimal xsi:type="xs:decimal">1</decimal>
-          <boolean xsi:type="xs:boolean">false</boolean>
-          <string xsi:type="xs:string">foo</string>
-          <normalizedString xsi:type="xs:normalizedString">foo</normalizedString>
-          <token xsi:type="xs:token">foo</token>
-          <language xsi:type="xs:language">en-US</language>
-          <Name xsi:type="xs:Name">foo</Name>
-          <NCName xsi:type="xs:NCName">foo</NCName>
-          <NMTOKEN xsi:type="xs:NMTOKEN">foo</NMTOKEN>
-          <NMTOKENS xsi:type="xs:NMTOKENS">foo</NMTOKENS>
-          <ID xsi:type="xs:ID">foo</ID>
-          <IDREF xsi:type="xs:IDREF">foo</IDREF>
-          <IDREFS xsi:type="xs:IDREFS">foo</IDREFS>
-          <ENTITY xsi:type="xs:ENTITY">foo</ENTITY>
-          <ENTITIES xsi:type="xs:ENTITIES">foo</ENTITIES>
         </foo>
     val obj = fromXML[Element1](subject)
     obj match {
@@ -69,7 +56,36 @@ object AnyUsage {
           DataRecord(Some("http://www.example.com/any"), Some("unsignedInt"), 1),
           DataRecord(Some("http://www.example.com/any"), Some("unsignedShort"), 1),
           DataRecord(Some("http://www.example.com/any"), Some("unsignedByte"), 1),
-          DataRecord(Some("http://www.example.com/any"), Some("decimal"), 1),
+          DataRecord(Some("http://www.example.com/any"), Some("decimal"), 1)
+        ) =>
+      case _ => error("match failed: " + obj.toString)
+    }
+    val document = toXML[Element1](obj, "foo", defaultScope)
+    println(document)
+  }
+
+  def testAny2 {
+    val subject = <foo xmlns="http://www.example.com/any"
+        xmlns:xs="http://www.w3.org/2001/XMLSchema"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <boolean xsi:type="xs:boolean">false</boolean>
+          <string xsi:type="xs:string">foo</string>
+          <normalizedString xsi:type="xs:normalizedString">foo</normalizedString>
+          <token xsi:type="xs:token">foo</token>
+          <language xsi:type="xs:language">en-US</language>
+          <Name xsi:type="xs:Name">foo</Name>
+          <NCName xsi:type="xs:NCName">foo</NCName>
+          <NMTOKEN xsi:type="xs:NMTOKEN">foo</NMTOKEN>
+          <NMTOKENS xsi:type="xs:NMTOKENS">foo</NMTOKENS>
+          <ID xsi:type="xs:ID">foo</ID>
+          <IDREF xsi:type="xs:IDREF">foo</IDREF>
+          <IDREFS xsi:type="xs:IDREFS">foo</IDREFS>
+          <ENTITY xsi:type="xs:ENTITY">foo</ENTITY>
+          <ENTITIES xsi:type="xs:ENTITIES">foo</ENTITIES>
+        </foo>
+    val obj = fromXML[Element1](subject)
+    obj match {
+      case Element1(
           DataRecord(Some("http://www.example.com/any"), Some("boolean"), false),
           DataRecord(Some("http://www.example.com/any"), Some("string"), "foo"),
           DataRecord(Some("http://www.example.com/any"), Some("normalizedString"), "foo"),
@@ -91,7 +107,7 @@ object AnyUsage {
     println(document)
   }
   
-  def testAny2 {
+  def testAny3 {
     val ExampleCom = new java.net.URI("http://www.example.com/")
     val ExampleQName = javax.xml.namespace.QName.valueOf("{http://www.example.com/any}foo")
     lazy val typeFactory = javax.xml.datatype.DatatypeFactory.newInstance()

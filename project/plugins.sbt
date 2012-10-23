@@ -28,3 +28,5 @@ addSbtPlugin("com.eed3si9n" % "sbt-scalashim" % "0.2.2")
 
 resolvers += Resolver.url("sbt-plugin-releases",
   new URL("http://scalasbt.artifactoryonline.com/scalasbt/sbt-plugin-releases/"))(Resolver.ivyStylePatterns)
+
+addSbtPlugin("net.virtual-void" % "sbt-cross-building" % "0.7.0-RC2")

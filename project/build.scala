@@ -7,7 +7,7 @@ object Builds extends Build {
   import sbtscalashim.Plugin._
 
   lazy val buildSettings = Defaults.defaultSettings ++ customLsSettings ++ Seq(
-    version := "1.0.0-SNAPSHOT",
+    version := "1.0.0-RC1",
     organization := "org.scalaxb",
     homepage := Some(url("http://scalaxb.org")),
     licenses := Seq("MIT License" -> url("https://github.com/eed3si9n/scalaxb/blob/master/LICENSE")),

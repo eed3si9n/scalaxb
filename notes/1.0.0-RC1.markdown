@@ -1,0 +1,17 @@
+This is a release candidate for the first stable release of scalaxb.
+
+## breaking changes since 0.7
+
+Some changes were made to adapt to Scala 2.10.0-RC1.
+
+- To avoid implicit conflict, the `scalaxb` package object no longer extends `XMLStandardTypes`.
+- `scalaxb.XMLStandardTypes` object was added to support explicitly importing implicits.
+- `HexBinary` class and `Base64Binary` class's `toIndexedSeq` method is now a field named `vector`.
+- The default http client for SOAP binding is upgraded to [Dispatch 0.9.2](http://dispatch.databinder.net/).
+
+## bug fixes and minor enhancements
+
+- Fixes typo in element form check ("qualified") [#168][168]. Fixed by [@mprihoda][@mprihoda]
+
+  [168]: https://github.com/eed3si9n/scalaxb/pull/168
+  [@mprihoda]: https://github.com/mprihoda

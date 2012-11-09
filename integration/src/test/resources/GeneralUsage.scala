@@ -75,7 +75,8 @@ object GeneralUsage {
       <gDay>---10</gDay>
       <gMonth>--10</gMonth>
       <hexBinary>0F</hexBinary>
-      <base64Binary>QUJDREVGRw==</base64Binary>
+      <base64Binary>QU
+JDREVGRw==</base64Binary>
       <anyURI>http://localhost/</anyURI>
       <QName>foo</QName>
       <NOTATION>foo</NOTATION>

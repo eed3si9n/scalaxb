@@ -12,6 +12,9 @@ Some changes were made to adapt to Scala 2.10.0-RC1.
 ## bug fixes and minor enhancements
 
 - Fixes typo in element form check ("qualified") [#168][168]. Fixed by [@mprihoda][@mprihoda]
+- More lenient handling of base64Binary encoding. [#173][173]. Requested by [@nmccready][@nmccready]
 
   [168]: https://github.com/eed3si9n/scalaxb/pull/168
+  [173]: https://github.com/eed3si9n/scalaxb/pull/173
   [@mprihoda]: https://github.com/mprihoda
+  [@nmccready]: https://github.com/nmccready

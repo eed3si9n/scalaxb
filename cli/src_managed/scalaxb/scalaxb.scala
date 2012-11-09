@@ -3,6 +3,7 @@ package scalaxb
 import scala.xml.{Node, NodeSeq, NamespaceBinding, Elem, UnprefixedAttribute, PrefixedAttribute}
 import javax.xml.datatype.{XMLGregorianCalendar}
 import javax.xml.namespace.QName
+import javax.xml.bind.DatatypeConverter
 
 object `package` {
   import annotation.implicitNotFound
@@ -713,8 +714,7 @@ class HexBinary(_vector: Vector[Byte]) extends scala.collection.IndexedSeq[Byte]
   val vector = _vector
   def length = vector.length
   def apply(idx: Int): Byte = vector(idx)
-  override def toString: String =
-    (vector map { x => ("0" + Integer.toHexString(x.toInt)).takeRight(2) }).mkString.toUpperCase
+  override def toString: String = DatatypeConverter.printHexBinary(vector.toArray)
 }
 
 object HexBinary {
@@ -725,10 +725,7 @@ object HexBinary {
   }
 
   def apply(value: String): HexBinary = {
-    val array = new Array[Byte](value.length / 2)
-    for (i <- 0 to array.length - 1) {
-      array(i) = Integer.parseInt(value.drop(i * 2).take(2), 16).toByte
-    }
+    val array = DatatypeConverter.parseHexBinary(value)
     apply(array: _*)
   }
 
@@ -739,7 +736,7 @@ class Base64Binary(_vector: Vector[Byte]) extends scala.collection.IndexedSeq[By
   val vector = _vector
   def length = vector.length
   def apply(idx: Int): Byte = vector(idx)
-  override def toString: String = (new sun.misc.BASE64Encoder()).encodeBuffer(vector.toArray).stripLineEnd
+  override def toString: String = DatatypeConverter.printBase64Binary(vector.toArray)
 }
 
 object Base64Binary {
@@ -750,7 +747,7 @@ object Base64Binary {
   }
 
   def apply(value: String): Base64Binary = {
-    val array = (new sun.misc.BASE64Decoder()).decodeBuffer(value)
+    val array = DatatypeConverter.parseBase64Binary(value)
     apply(array: _*)
   }
 

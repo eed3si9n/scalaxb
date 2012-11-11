@@ -1,5 +1,5 @@
 [app]
-  version: 1.0.0-RC1
+  version: 1.0.0-RC2
   org: org.scalaxb
   name: scalaxb
   class: scalaxb.compiler.SbtApp

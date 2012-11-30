@@ -87,5 +87,13 @@
       </sequence>
     </complexType>
   </element>
-  
+
+  <!-- #174 -->
+  <complexType name="DupeAttribute">
+    <simpleContent>
+      <restriction base="xipo:DupeAttributeBase">
+        <attribute name="name" type="string" use="optional" />
+      </restriction>
+    </simpleContent>
+  </complexType>
 </schema>

@@ -361,7 +361,9 @@ trait Args extends Params {
     (resolveRef(lhs), resolveRef(rhs)) match {
       case (x: AnyAttributeDecl, y: AnyAttributeDecl) => true
       case (x: AttributeDecl, y: AttributeDecl) =>
-        (x.name == y.name && x.namespace == y.namespace)
+        (x.name == y.name && (x.namespace == y.namespace || 
+          (!x.qualified && !y.qualified) || 
+          (!x.global && !y.global)))
       case (x: AttributeGroupDecl, y: AttributeGroupDecl) =>
         (x.name == y.name && x.namespace == y.namespace)
       case _ => false

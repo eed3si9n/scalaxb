@@ -59,13 +59,6 @@
     <url>https://github.com/eed3si9n/scalaxb</url>
   </scm>
 
-  <repositories>
-    <repository>
-      <id>sonatype-ossrh-releases</id>
-      <url>https://oss.sonatype.org/content/repositories/releases</url>
-    </repository>
-  </repositories>
-
   <dependencies>
 
     <dependency>

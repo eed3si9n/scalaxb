@@ -14,9 +14,13 @@ Some changes were made to adapt to Scala 2.10.0-RC1.
 - Fixes typo in element form check ("qualified") [#168][168]. Fixed by [@mprihoda][@mprihoda]
 - More lenient handling of base64Binary encoding. [#173][173]. Requested by [@nmccready][@nmccready]
 - Fixes attribute merging across namespace. [#174][174] reporetd by [@sbrownyarris][@sbrownyarris]
+- Fixes handling of chameleon schemas. [#176][176] reported by [@Marza][@Marza]
 
   [168]: https://github.com/eed3si9n/scalaxb/pull/168
-  [173]: https://github.com/eed3si9n/scalaxb/pull/173
+  [173]: https://github.com/eed3si9n/scalaxb/issues/173
+  [174]: https://github.com/eed3si9n/scalaxb/issues/174
+  [176]: https://github.com/eed3si9n/scalaxb/issues/176
   [@mprihoda]: https://github.com/mprihoda
   [@nmccready]: https://github.com/nmccready
   [@sbrownyarris]: https://github.com/sbrownyarris
+  [@Marza]: https://github.com/Marza

@@ -1,17 +1,20 @@
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
-           xmlns:xipo="http://www.example.com/IPO"
-        elementFormDefault="qualified">
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
     <xs:complexType name="PartsType">
       <xs:sequence>
         <xs:element name="part" maxOccurs="unbounded">
           <xs:complexType>
             <xs:simpleContent>
               <xs:extension base="xs:string">
-                <xs:attribute name="number" type="xipo:SKU"/>
+                <xs:attribute name="number" type="Cameleon"/>
               </xs:extension>
             </xs:simpleContent>
           </xs:complexType>
         </xs:element>
       </xs:sequence>
     </xs:complexType>
+    <xs:simpleType name="Cameleon">
+      <xs:restriction base="xs:string">
+        <xs:pattern value="\d{3}-[A-Z]{2}"/>
+      </xs:restriction>
+    </xs:simpleType>
 </xs:schema>

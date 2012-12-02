@@ -46,7 +46,7 @@ object SimpContRestrictionDecl {
     }
     
     val base = (node \ "@base").headOption match {
-      case Some(x) => TypeSymbolParser.fromString(x.text, node.scope, config.targetNamespace)
+      case Some(x) => TypeSymbolParser.fromString(x.text, node.scope, config)
       case None    =>
         simpleType getOrElse {
           sys.error("SimpContRestrictionDecl#fromXML: restriction must have either base attribute or simpleType.")
@@ -65,7 +65,7 @@ case class SimpContExtensionDecl(base: XsTypeSymbol,
 object SimpContExtensionDecl {
   def fromXML(node: scala.xml.Node, family: List[String], config: ParserConfig) = {
     val base = (node \ "@base").headOption match {
-      case Some(x) => TypeSymbolParser.fromString(x.text, node.scope, config.targetNamespace)
+      case Some(x) => TypeSymbolParser.fromString(x.text, node.scope, config)
       case None    =>
         (node \ "simpleType").headOption match {
           case Some(x) => Some(x.text)
@@ -98,7 +98,7 @@ object CompContRestrictionDecl {
   
   def fromXML(node: scala.xml.Node, family: List[String], config: ParserConfig) = {
     val baseName = (node \ "@base").text
-    val base = TypeSymbolParser.fromString(baseName, node.scope, config.targetNamespace)
+    val base = TypeSymbolParser.fromString(baseName, node.scope, config)
     var compositor: Option[HasParticle] = None
     
     for (child <- node.child) child match {
@@ -126,7 +126,7 @@ case class CompContExtensionDecl(base: XsTypeSymbol,
 object CompContExtensionDecl {
   def fromXML(node: scala.xml.Node, family: List[String], config: ParserConfig) = {
     val baseName = (node \ "@base").text
-    val base = TypeSymbolParser.fromString(baseName, node.scope, config.targetNamespace)
+    val base = TypeSymbolParser.fromString(baseName, node.scope, config)
     var compositor: Option[HasParticle] = None
     
     for (child <- node.child) child match {
@@ -151,7 +151,7 @@ case class SimpTypRestrictionDecl(base: XsTypeSymbol, facets: List[Facetable]) e
 object SimpTypRestrictionDecl {  
   def fromXML(node: scala.xml.Node, family: List[String], config: ParserConfig) = {
     val base = (node \ "@base").headOption match {
-      case Some(x) => TypeSymbolParser.fromString(x.text, node.scope, config.targetNamespace)
+      case Some(x) => TypeSymbolParser.fromString(x.text, node.scope, config)
       case None    =>
         (node \ "simpleType").headOption match {
           case Some(x) => Some(x.text)
@@ -175,7 +175,7 @@ case class SimpTypListDecl(itemType: XsTypeSymbol) extends ContentTypeDecl
 object SimpTypListDecl {
   def fromXML(node: scala.xml.Node, family: List[String], config: ParserConfig) = {
     val itemType = (node \ "@itemType").headOption match {
-      case Some(x) => TypeSymbolParser.fromString(x.text, node.scope, config.targetNamespace)
+      case Some(x) => TypeSymbolParser.fromString(x.text, node.scope, config)
       case None    =>
         (node \ "simpleType").headOption match {
           case Some(x) => Some(x.text)

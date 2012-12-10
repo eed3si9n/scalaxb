@@ -11,9 +11,9 @@ Some changes were made to adapt to Scala 2.10.0-RC1.
 
 ## bug fixes and minor enhancements
 
-- Fixes generated code for named groups containing nillable choices. [#162][162] reported by [@rajish][@rajish]
 - Fixes typo in element form check ("qualified") [#168][168]. Fixed by [@mprihoda][@mprihoda]
 - More lenient handling of base64Binary encoding. [#173][173]. Requested by [@nmccready][@nmccready]
+- Fixes generated code for named groups containing nillable choices. [#162][162] reported by [@rajish][@rajish]
 - Fixes attribute merging across namespace. [#174][174] reporetd by [@sbrownyarris][@sbrownyarris]
 - Fixes handling of chameleon schemas. [#176][176] reported by [@Marza][@Marza]
 - Fixes grandchildren types missing from generated XMLFormat of traits. [#178][178] reported by [@kidasoft][@kidasoft]

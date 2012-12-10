@@ -18,7 +18,7 @@ Some changes were made to adapt to Scala 2.10.0-RC1.
 - Fixes handling of chameleon schemas. [#176][176] reported by [@Marza][@Marza]
 - Fixes grandchildren types missing from generated XMLFormat of traits. [#178][178] reported by [@kidasoft][@kidasoft]
 
-  [162]: https://github.com/eed3si9n/scalaxb/pull/168
+  [162]: https://github.com/eed3si9n/scalaxb/pull/162
   [168]: https://github.com/eed3si9n/scalaxb/pull/168
   [173]: https://github.com/eed3si9n/scalaxb/issues/173
   [174]: https://github.com/eed3si9n/scalaxb/issues/174

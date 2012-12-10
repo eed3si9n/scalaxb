@@ -467,17 +467,18 @@ abstract class GenSource(val schema: SchemaDecl,
     
     val compositor = primaryCompositor(group)
     val param = buildParam(compositor)
+    val o = buildOccurrence(compositor).toSingle
     val wrapperParam = compositor match {
       case choice: ChoiceDecl => param
       case _ => param.copy(typeSymbol = XsDataRecord(param.typeSymbol))
     }
     val mixedParam = param.copy(typeSymbol = XsDataRecord(XsAnyType))
-    val parser = buildCompositorParser(compositor, SingleUnnillable, false, false)
+    val parser = buildCompositorParser(compositor, o, false, false)
     val wrapperParser = compositor match {
       case choice: ChoiceDecl => parser
-      case _ => buildCompositorParser(compositor, SingleUnnillable, false, true)
+      case _ => buildCompositorParser(compositor, o, false, true)
     }
-    val mixedparser = buildCompositorParser(compositor, SingleUnnillable, true, true)
+    val mixedparser = buildCompositorParser(compositor, o, true, true)
     
     val groups = filterGroup(compositor)
     val superNames: List[String] = 

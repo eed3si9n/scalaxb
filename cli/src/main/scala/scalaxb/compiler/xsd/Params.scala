@@ -36,8 +36,9 @@ trait Params extends Lookup {
   val ATTRS_PARAM = "attributes"
   val anyNumbers: mutable.Map[AnyDecl, Int] = mutable.Map()
   
-  case class Occurrence(minOccurs: Int, maxOccurs: Int, nillable: Boolean)
-  val SingleUnnillable = Occurrence(1, 1, false)
+  case class Occurrence(minOccurs: Int, maxOccurs: Int, nillable: Boolean) {
+    def toSingle: Occurrence = copy(minOccurs = 1, maxOccurs = 1)
+  }
 
   def toCardinality(minOccurs: Int, maxOccurs: Int): Cardinality =
     if (maxOccurs > 1) Multiple
@@ -189,10 +190,12 @@ trait Params extends Lookup {
   def buildOccurrence(compos: HasParticle): Occurrence = compos match {
     case ref: GroupRef =>
       val o = buildOccurrence(buildGroup(ref))
-      Occurrence(math.min(ref.minOccurs, o.minOccurs), math.max(ref.maxOccurs, o.maxOccurs), o.nillable)
+      // nillability of primary compositor doesn not transfer to group or group refs
+      Occurrence(math.min(ref.minOccurs, o.minOccurs), math.max(ref.maxOccurs, o.maxOccurs), false)
     case group: GroupDecl =>
       val o = buildOccurrence(primaryCompositor(group))
-      Occurrence(math.min(group.minOccurs, o.minOccurs), math.max(group.maxOccurs, o.maxOccurs), o.nillable)
+      // nillability of primary compositor doesn not transfer to group or group refs
+      Occurrence(math.min(group.minOccurs, o.minOccurs), math.max(group.maxOccurs, o.maxOccurs), false)
     case choice: ChoiceDecl =>
       val particleOccurences = choice.particles map {buildOccurrence}
       val minOccurs = (choice.minOccurs :: particleOccurences.map(_.minOccurs)).min

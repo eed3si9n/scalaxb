@@ -418,7 +418,13 @@
       </xs:extension>
     </xs:simpleContent>
   </xs:complexType>
-  
+
+  <xs:complexType name="NillableChoiceGroupTest">
+    <xs:sequence>
+      <xs:group ref="gen:NillableChoiceGroup" minOccurs="1" maxOccurs="1" />
+    </xs:sequence>
+  </xs:complexType>
+
   <xs:attributeGroup name="coreattrs">
     <xs:annotation>
       <xs:documentation>
@@ -456,6 +462,23 @@
             <xs:element name="dupeElem">
               <xs:complexType/>
             </xs:element>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+    </xs:choice>
+  </xs:group>
+
+  <xs:group name="NillableChoiceGroup">
+    <xs:choice>
+      <xs:element name="Elem1" nillable="true">
+        <xs:complexType>
+          <xs:sequence>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="Elem2">
+        <xs:complexType>
+          <xs:sequence>
           </xs:sequence>
         </xs:complexType>
       </xs:element>

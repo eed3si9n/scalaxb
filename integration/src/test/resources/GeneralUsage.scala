@@ -52,6 +52,7 @@ object GeneralUsage {
     testTypeAttribute
     testCrossNamespaceExtension
     testInnerSimpleType
+    testAbstractExtension
     true
   }
   
@@ -628,5 +629,24 @@ JDREVGRw==</base64Binary>
     val document = scalaxb.toXML[InnerSimpleTypeTest](billing, Some("http://www.example.com/general"), Some("billing"), subject.scope)
     println(document)
     check(fromXML[InnerSimpleTypeTest](document))
+  }
+
+  def testAbstractExtension {
+    println("testAbstractExtension")
+    val subject = <gen:event xmlns:gen="http://www.example.com/general"
+                          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                          xsi:type="gen:EventTwo">
+        <gen:queueEntry>foo</gen:queueEntry>
+        <gen:callId>foo</gen:callId>
+      </gen:event>
+    val event = scalaxb.fromXML[BaseEvent](subject)
+    def check(obj: BaseEvent) = obj match {
+      case EventTwo("foo", "foo") =>
+      case _ => error("match failed: " + obj.toString)
+    }
+    check(event)
+    val document = scalaxb.toXML[BaseEvent](event, Some("http://www.example.com/general"), Some("event"), subject.scope)
+    println(document)
+    check(fromXML[BaseEvent](document))
   }
 }

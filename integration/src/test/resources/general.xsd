@@ -425,6 +425,27 @@
     </xs:sequence>
   </xs:complexType>
 
+  <xs:complexType name="BaseEvent" abstract="true">
+  </xs:complexType>
+  <xs:complexType name="EventOne">
+    <xs:complexContent>
+      <xs:extension base="gen:BaseEvent">
+        <xs:sequence>
+          <xs:element name="queueEntry" type="xs:string" />
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:complexType name="EventTwo">
+    <xs:complexContent>
+      <xs:extension base="gen:EventOne">
+        <xs:sequence>
+          <xs:element name="callId" type="xs:string" />
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
   <xs:attributeGroup name="coreattrs">
     <xs:annotation>
       <xs:documentation>

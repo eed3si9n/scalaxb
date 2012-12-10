@@ -81,6 +81,14 @@ abstract class GenSource(val schema: SchemaDecl,
         case Nil     => sys.error("Type not found: {" + namespace + "}:" + name)
       }
       
+  def baseToDescendants(base: ComplexTypeDecl): List[ComplexTypeDecl] =
+    context.baseToSubs(base) flatMap { child =>
+      child :: (
+        if (context.baseToSubs.contains(child)) baseToDescendants(child)
+        else Nil
+      )
+    }
+
   def makeTrait(decl: ComplexTypeDecl): Snippet = {
     val localName = buildTypeName(decl, true)
     val fqn = buildTypeName(decl, false)
@@ -135,7 +143,7 @@ abstract class GenSource(val schema: SchemaDecl,
     }def reads(seq: scala.xml.NodeSeq, stack: List[scalaxb.ElemName]): Either[String, {fqn}] = seq match {{
       case node: scala.xml.Node =>     
         scalaxb.Helper.instanceType(node) match {{
-          { val cases = for (sub <- context.baseToSubs(decl) if sub.isNamed)
+          { val cases = for (sub <- baseToDescendants(decl) if sub.isNamed)
               yield makeCaseEntry(sub)
             cases.mkString(newline + indent(4 + compDepth))        
           }

@@ -53,6 +53,7 @@ object GeneralUsage {
     testCrossNamespaceExtension
     testInnerSimpleType
     testAbstractExtension
+    testLiteralBoolean
     true
   }
   
@@ -313,7 +314,11 @@ JDREVGRw==</base64Binary>
       Some("o") -> "http://www.example.com/other")
     val document = toXML[AnyTest](obj, "foo", scope)
     println(document.toString)
-    (document.toString contains """<x:other xmlns:x="http://www.example.com/x"><x:something/></x:other>""") match {
+    //  actually xml library in scala-2.9.2 print <x:something/>  as <x:something></x:something>
+    //  so, reduce original test (below)
+    //(document.toString contains """<x:other xmlns:x="http://www.example.com/x"><x:something/></x:other>""") match {
+    //  and check only for 1-st part
+    (document.toString contains   """<x:other xmlns:x="http://www.example.com/x"><x:something""") match {
       case true =>
       case _ => error("x:other includes outer namespace bindings: " + document.toString)
     }
@@ -582,8 +587,10 @@ JDREVGRw==</base64Binary>
     val obj: Addressable = usaddress
     println(obj)
     val document = scalaxb.toXML(obj, Some("http://www.example.com/foo"), Some("billTo"), scope, true)
+     // TODO: order of attributes can be any, so, better reformulate this test in way not depending from concrete XML representation
     document.toString match {
       case """<foo:billTo xsi:type="gen:USAddress" href="http://foo.com/" xmlns:gen="http://www.example.com/general" xmlns:foo="http://www.example.com/foo" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><gen:street>1537 Paper Street</gen:street><gen:city>Wilmington</gen:city><gen:state>DE</gen:state><gen:zip>19886</gen:zip></foo:billTo>""" =>
+      case """<foo:billTo href="http://foo.com/" xsi:type="gen:USAddress" xmlns:gen="http://www.example.com/general" xmlns:foo="http://www.example.com/foo" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><gen:street>1537 Paper Street</gen:street><gen:city>Wilmington</gen:city><gen:state>DE</gen:state><gen:zip>19886</gen:zip></foo:billTo>""" =>
       case x => error("match failed: " + x)
     }
     println(document)
@@ -649,4 +656,23 @@ JDREVGRw==</base64Binary>
     println(document)
     check(fromXML[BaseEvent](document))
   }
+
+  def testLiteralBoolean {
+    println("testLiteralBoolean")
+    val subject = 
+      <literalBoolean xmlns="http://www.example.com/general"
+                      xmlns:xs="http://www.w3.org/2001/XMLSchema" 
+           avail="1" reason="xxx" >
+      </literalBoolean>
+    val withBoolean = scalaxb.fromXML[LiteralBoolean](subject)
+    System.err.println("received:"+withBoolean)
+    def check(obj: LiteralBoolean) = obj match {
+      case LiteralBoolean(true,Some("xxx")) =>
+      case _ => error("match failed: " + obj.toString)
+    }
+    check(withBoolean)
+  }
+
+
+
 }

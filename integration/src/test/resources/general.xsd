@@ -548,4 +548,10 @@
       <xs:any namespace="##any" minOccurs="0" maxOccurs="unbounded" processContents="lax" />
     </xs:sequence>
   </xs:group>
+
+  <xs:complexType name="LiteralBoolean">
+    <xs:attribute name="avail" type="xs:boolean"  use="required" />
+    <xs:attribute name="reason" type="xs:string"/>
+  </xs:complexType>
+
 </xs:schema>

@@ -175,7 +175,11 @@ trait XMLStandardTypes {
 
   implicit lazy val __BooleanXMLFormat: XMLFormat[Boolean] = new XMLFormat[Boolean] {
     def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, Boolean] = try {
-      Right(seq.text.toBoolean) } catch { case e: Exception => Left(e.toString) }
+          seq.text match {
+              case "1" | "true" => Right(true)
+              case "0" | "false" => Right(false)
+              case x => Left("Invalid boolean: "+x)
+          }
 
     def writes(obj: Boolean, namespace: Option[String], elementLabel: Option[String],
         scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =

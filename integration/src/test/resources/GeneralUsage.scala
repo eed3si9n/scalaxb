@@ -314,10 +314,8 @@ JDREVGRw==</base64Binary>
       Some("o") -> "http://www.example.com/other")
     val document = toXML[AnyTest](obj, "foo", scope)
     println(document.toString)
-    //  actually xml library in scala-2.9.2 print <x:something/>  as <x:something></x:something>
-    //  so, reduce original test (below)
-    //(document.toString contains """<x:other xmlns:x="http://www.example.com/x"><x:something/></x:other>""") match {
-    //  and check only for 1-st part
+    //  actually xml library can print <x:something/>  as <x:something></x:something>
+    //  so check only for 1-st part
     (document.toString contains   """<x:other xmlns:x="http://www.example.com/x"><x:something""") match {
       case true =>
       case _ => error("x:other includes outer namespace bindings: " + document.toString)

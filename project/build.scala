@@ -7,13 +7,13 @@ object Builds extends Build {
   import sbtscalashim.Plugin._
 
   lazy val buildSettings = Defaults.defaultSettings ++ customLsSettings ++ Seq(
-    version := "1.0.0-RC3",
+    version := "1.0.0",
     organization := "org.scalaxb",
     homepage := Some(url("http://scalaxb.org")),
     licenses := Seq("MIT License" -> url("https://github.com/eed3si9n/scalaxb/blob/master/LICENSE")),
     description := """scalaxb is an XML data-binding tool for Scala that supports W3C XML Schema (xsd) and wsdl.""",
-    scalaVersion := "2.10.0-RC5",
-    crossScalaVersions := Seq("2.10.0-RC5", "2.9.2", "2.9.1", "2.8.1"),
+    scalaVersion := "2.10.0",
+    crossScalaVersions := Seq("2.10.0", "2.9.2", "2.9.1", "2.8.1"),
     scalacOptions := Seq("-deprecation", "-unchecked"),
     pomExtra := (<scm>
         <url>git@github.com:eed3si9n/scalaxb.git</url>
@@ -59,8 +59,7 @@ object Builds extends Build {
     libraryDependencies <++= (scalaVersion) { sv => Seq(
       sv match {
         case "2.9.2" => "com.github.scopt" % "scopt_2.9.1" % "2.1.0"
-        case "2.10.0-RC5" => "com.github.scopt" %% "scopt" % "2.1.0" cross CrossVersion.full
-        case _ => "com.github.scopt" %% "scopt" % "2.0.1"
+        case _ => "com.github.scopt" %% "scopt" % "2.1.0"
       },
       "org.scala-tools.sbt" % "launcher-interface" % "0.7.4" % "provided" from (
         "http://databinder.net/repo/org.scala-tools.sbt/launcher-interface/0.7.4/jars/launcher-interface.jar"),
@@ -104,7 +103,7 @@ object Builds extends Build {
     libraryDependencies <++= scalaVersion { sv =>
       testDeps(sv) ++
       Seq(
-        "net.databinder.dispatch" %% "dispatch-core" % "0.9.4" % "test",
+        "net.databinder.dispatch" %% "dispatch-core" % "0.9.5" % "test",
         "org.scala-lang" % "scala-compiler" % sv
       )
     }
@@ -130,7 +129,8 @@ object Builds extends Build {
   
   def testDeps(sv: String) = sv match {
     case "2.8.1" =>   Seq("org.specs2" %% "specs2" % "1.5" % "test")
-    case _ => Seq("org.specs2" %% "specs2" % "1.12.3" % "test" cross CrossVersion.full)
+    case x if x startsWith "2.9." => Seq("org.specs2" %% "specs2" % "1.12.3" % "test")
+    case _ => Seq("org.specs2" %% "specs2" % "1.13" % "test")
   }
 
   lazy val root = Project("root", file("."),

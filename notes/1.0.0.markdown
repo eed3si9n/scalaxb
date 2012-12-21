@@ -1,4 +1,4 @@
-This is the first stable release of scalaxb.
+This is the first stable release of scalaxb.　Thanks to many people who tried it out, reported bugs, and contributed ideas and code.
 
 ## breaking changes since 0.7
 

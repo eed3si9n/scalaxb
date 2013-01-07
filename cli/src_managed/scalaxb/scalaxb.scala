@@ -805,7 +805,7 @@ object Helper {
   }
 
   def toURI(value: String) =
-    java.net.URI.create(value)
+    java.net.URI.create(value.trim)
 
   def isNil(node: scala.xml.Node) =
     (node \ ("@{" + XSI_URL + "}nil")).headOption map { _.text == "true" } getOrElse {

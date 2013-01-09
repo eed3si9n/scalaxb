@@ -405,7 +405,7 @@ object DataRecord extends XMLStandardTypes {
     case _ => DataRecord(value)
   }
 
-  def apply[A:CanWriteXML](node: Node, parent: Node, value: A): DataRecord[A] = node match {
+  def apply[A:CanWriteXML](node: Node, parent: Node, value: A): DataRecord[A] = (node: Any) match {
     case elem: Elem => DataRecord(node, value)
     case attr: UnprefixedAttribute =>
       val key = Some(attr.key)

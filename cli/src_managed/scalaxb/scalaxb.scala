@@ -405,15 +405,8 @@ object DataRecord extends XMLStandardTypes {
     case _ => DataRecord(value)
   }
 
-  def apply[A:CanWriteXML](node: Node, parent: Node, value: A): DataRecord[A] = (node: Any) match {
-    case elem: Elem => DataRecord(node, value)
-    case attr: UnprefixedAttribute =>
-      val key = Some(attr.key)
-      DataRecord(None, key, value)
-    case attr: PrefixedAttribute =>
-      val ns = scalaxb.Helper.nullOrEmpty(attr.getNamespace(node))
-      val key = Some(attr.key)
-      DataRecord(ns, key, value)
+  // this is for long attributes
+  def apply[A:CanWriteXML](x: Node, node: Node, value: A): DataRecord[A] = x match {
     case _ => DataRecord(value)
   }
 

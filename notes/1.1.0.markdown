@@ -1,0 +1,6 @@
+## bug fixes and minor enhancements
+
+- Trims URIs. [#185][185] contributed by [@colinrgodsey][@colinrgodsey]
+
+  [185]: https://github.com/eed3si9n/scalaxb/pull/185
+  [@colinrgodsey]: https://github.com/colinrgodsey

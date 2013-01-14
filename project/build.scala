@@ -5,15 +5,16 @@ object Builds extends Build {
   import ls.Plugin.{LsKeys => lskeys}
   import sbtbuildinfo.Plugin._
   import sbtscalashim.Plugin._
+  import conscript.Harness.conscriptSettings
 
   lazy val buildSettings = Defaults.defaultSettings ++ customLsSettings ++ Seq(
-    version := "1.0.0",
+    version := "1.1.0-SNAPSHOT",
     organization := "org.scalaxb",
     homepage := Some(url("http://scalaxb.org")),
     licenses := Seq("MIT License" -> url("https://github.com/eed3si9n/scalaxb/blob/master/LICENSE")),
     description := """scalaxb is an XML data-binding tool for Scala that supports W3C XML Schema (xsd) and wsdl.""",
     scalaVersion := "2.10.0",
-    crossScalaVersions := Seq("2.10.0", "2.9.2", "2.9.1", "2.8.1"),
+    crossScalaVersions := Seq("2.10.0", "2.9.2", "2.9.1"),
     scalacOptions := Seq("-deprecation", "-unchecked"),
     pomExtra := (<scm>
         <url>git@github.com:eed3si9n/scalaxb.git</url>
@@ -53,7 +54,7 @@ object Builds extends Build {
   val Wsdl = config("wsdl") extend(Compile)
   val Soap11 = config("soap11") extend(Compile)
   val Soap12 = config("soap12") extend(Compile)
-  lazy val cliSettings = buildInfoSettings ++ scalaShimSettings ++
+  lazy val cliSettings = buildInfoSettings ++ scalaShimSettings ++ conscriptSettings ++
     buildSettings ++ Seq(
     name := "scalaxb",
     libraryDependencies <++= (scalaVersion) { sv => Seq(
@@ -61,8 +62,6 @@ object Builds extends Build {
         case "2.9.2" => "com.github.scopt" % "scopt_2.9.1" % "2.1.0"
         case _ => "com.github.scopt" %% "scopt" % "2.1.0"
       },
-      "org.scala-tools.sbt" % "launcher-interface" % "0.7.4" % "provided" from (
-        "http://databinder.net/repo/org.scala-tools.sbt/launcher-interface/0.7.4/jars/launcher-interface.jar"),
       "log4j" % "log4j" % "1.2.17") },
     unmanagedSourceDirectories in Compile <+= baseDirectory( _ / "src_managed" ),
     buildInfoPackage := "scalaxb",
@@ -141,17 +140,4 @@ object Builds extends Build {
     settings = itSettings) dependsOn(cli % "test->compile")
   lazy val scalaxbPlugin = Project("sbt-scalaxb", file("sbt-scalaxb"),
     settings = pluginSettings) dependsOn(cli)
-//  lazy val appengine = Project("web", file("web"),
-//    settings = webSettings) dependsOn(cli)
-
-//  lazy val webSettings = buildSettings ++
-//    appengineSettings ++ Seq(
-//    scalaVersion := "2.9.0-1",
-//    crossScalaVersions := Seq("2.9.0-1", "2.8.1"),
-//    libraryDependencies ++= Seq(
-//      "net.databinder" %% "unfiltered-filter" % "0.4.0",
-//      "net.databinder" %% "unfiltered-uploads" % "0.4.0",
-//      "javax.servlet" % "servlet-api" % "2.3" % "provided"
-//    )
-//  ) ++ noPublish
 }

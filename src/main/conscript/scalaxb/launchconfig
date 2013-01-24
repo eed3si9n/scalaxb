@@ -4,7 +4,7 @@
   name: scalaxb
   class: scalaxb.compiler.SbtApp
 [scala]
-  version: 2.10.0
+  version: 2.9.2
 [repositories]
   sonatype-public: https://oss.sonatype.org/content/repositories/public/
   maven-central

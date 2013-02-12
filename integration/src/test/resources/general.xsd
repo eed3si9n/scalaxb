@@ -294,6 +294,14 @@
     </xs:complexContent>
   </xs:complexType>
 
+  <xs:simpleType name="SymbolType">
+    <xs:restriction base="xs:NMTOKEN">
+      <xs:enumeration value="+"/>
+      <xs:enumeration value="-"/>
+      <xs:enumeration value=" "/>
+    </xs:restriction>
+  </xs:simpleType>
+
   <xs:simpleType name="MilkType">
     <xs:restriction base="xs:NMTOKEN">
       <xs:enumeration value="WHOLE"/>

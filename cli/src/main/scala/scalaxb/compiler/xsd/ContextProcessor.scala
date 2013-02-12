@@ -534,9 +534,19 @@ trait ContextProcessor extends ScalaNames with PackageName {
     else context.prefixes.getOrElse(ns, "")
   } getOrElse {""}
       
-  def identifier(value: String) =
-    """\W""".r.replaceAllIn(value, "")
-      
+  def identifier(value: String) = {
+    val nonspace = 
+      if (value.trim != "") """\s""".r.replaceAllIn(value, "")
+      else value    
+    if ("""\W""".r.findFirstIn(nonspace).isDefined) {
+      (nonspace.toSeq map { c =>
+        if ("""\W""".r.findFirstIn(c.toString).isDefined) "u" + c.toInt.toString
+        else c.toString
+      }).mkString
+    }
+    else nonspace
+  }
+
   def quote(value: Option[String]): String = value map {
     "Some(\"" + _ + "\")"
   } getOrElse { "None" }

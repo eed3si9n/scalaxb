@@ -3,8 +3,10 @@
 - Fixes handling of large groups. [#188][188] reported by [@workingDog][@workingDog]
 - Fixes handling of `xs:any` with namespace constraints. [#189][189]
 - Removes upper limit on duplicate name resolution. [#190][190]
+- Fixes handling of enum values that are symbols. [#191][191]
 
   [188]: https://github.com/eed3si9n/scalaxb/pull/188
   [189]: https://github.com/eed3si9n/scalaxb/pull/189
   [190]: https://github.com/eed3si9n/scalaxb/pull/190
+  [191]: https://github.com/eed3si9n/scalaxb/pull/191
   [@workingDog]: https://github.com/workingDog

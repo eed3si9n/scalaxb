@@ -56,7 +56,7 @@ trait Parsers extends Args with Params {
           """x => %s contains x.namespace""" format (namespaceConstraint.map {
             case "##targetNamespace" => quoteNamespace(schema.targetNamespace)
             case "##local" => "None"
-            case x => "Some(%s)".format(x)
+            case x => quoteNamespace(Some(x))
           }).mkString("List(", ", ", ")")
       })
     

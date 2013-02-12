@@ -1,6 +1,8 @@
 ## bug fixes
 
 - Fixes handling of large groups. [#188][188] reported by [@workingDog][@workingDog]
+- Fixes handling of `xs:any` with namespace constraints. [#189][189]
 
   [188]: https://github.com/eed3si9n/scalaxb/pull/188
+  [189]: https://github.com/eed3si9n/scalaxb/pull/189
   [@workingDog]: https://github.com/workingDog

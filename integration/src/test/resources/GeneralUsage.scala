@@ -255,6 +255,8 @@ JDREVGRw==</base64Binary>
     <xs:sequence>
       <xs:element name="person1" type="gen:Person"/>
       <xs:any namespace="##other" processContents="lax"/>
+      <xs:any namespace="##local" processContents="lax"/>
+      <xs:any namespace="http://www.example.com/general" processContents="lax"/>
       <xs:choice>
         <xs:element name="person2" nillable="true" type="gen:Person"/>
         <xs:any namespace="##other" processContents="lax"/>
@@ -280,6 +282,7 @@ JDREVGRw==</base64Binary>
       <gen:person1><gen:firstName>John</gen:firstName><gen:lastName>Doe</gen:lastName></gen:person1>
       <x:other xmlns:x="http://www.example.com/x"><x:something/></x:other>
       <local><something/></local>
+      <gen:foo><something/></gen:foo>
       <gen:person2 xsi:nil="true"/>
       <gen:person3><gen:firstName>John</gen:firstName><gen:lastName>Doe</gen:lastName></gen:person3>
       <o:foo xsi:type="xs:int">1</o:foo>
@@ -296,6 +299,7 @@ JDREVGRw==</base64Binary>
           Person("John", "Doe"),
           DataRecord(Some("http://www.example.com/x"), Some("other"), _), // Single
           DataRecord(None, Some("local"), _), // Local
+          DataRecord(NS, Some("foo"), _), // Specific
           DataRecord(NS, Some("person2"), None),
           Some(Person("John", "Doe")),
           Some(DataRecord(O, Some("foo"), 1)), // optional

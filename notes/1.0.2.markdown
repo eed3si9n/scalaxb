@@ -1,0 +1,6 @@
+## bug fixes
+
+- Fixes handling of large groups. [#188][188] reported by [@workingDog][@workingDog]
+
+  [188]: https://github.com/eed3si9n/scalaxb/pull/188
+  [@workingDog]: https://github.com/workingDog

@@ -358,7 +358,7 @@ trait ContextProcessor extends ScalaNames with PackageName {
           sequenceNumber += 1
           
           if (seq.particles.size > contentsSizeLimit || isWrapped(group.namespace, List(group.name)))
-            splitLong[SequenceDecl](seq.particles) { formSequence(makeGroupComplexType(group), _) }
+            splitLong[SequenceDecl](seq.particles) { formSequence(makeGroupComplexType(group), group.name, _) }
         case choice: ChoiceDecl =>
           context.compositorParents(compositor) = makeGroupComplexType(group)
           if (isFirstCompositor) context.compositorNames(compositor) = groupName + "Option"
@@ -378,9 +378,9 @@ trait ContextProcessor extends ScalaNames with PackageName {
       }      
     }
     
-    def formSequence(decl: ComplexTypeDecl, rest: List[Particle]) = {      
+    def formSequence(decl: ComplexTypeDecl, baseName: String, rest: List[Particle]) = {      
       val retval = SequenceDecl(decl.namespace, rest, 1, 1, 0)
-      context.compositorNames(retval) = familyName(decl) + "Sequence" + apparentSequenceNumber
+      context.compositorNames(retval) = baseName + "Sequence" + apparentSequenceNumber
       sequenceNumber += 1
       context.compositorParents(retval) = decl
       retval
@@ -419,7 +419,7 @@ trait ContextProcessor extends ScalaNames with PackageName {
           sequenceNumber += 1
           
           if (seq.particles.size > contentsSizeLimit || isWrapped(decl.namespace, decl.family))
-            splitLong[SequenceDecl](seq.particles) { formSequence(decl, _) }
+            splitLong[SequenceDecl](seq.particles) { formSequence(decl, familyName(decl), _) }
         case choice: ChoiceDecl =>
           context.compositorParents(compositor) = decl
           if (choiceNumber == 0) context.compositorNames.getOrElseUpdate(compositor, familyName(decl) + "Option")

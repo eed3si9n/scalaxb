@@ -455,9 +455,11 @@ trait ContextProcessor extends ScalaNames with PackageName {
     if (!contains(name)) name
     else {
       name = makeTypeName(initialName) + postfix
-      for (i <- 2 to 100) {
-        if (contains(name)) name = makeTypeName(initialName) + postfix + i
-      } // for i
+      var i = 2
+      while (contains(name)) {
+        name = makeTypeName(initialName) + postfix + i
+        i = i + 1
+      }
       name
     }    
   }

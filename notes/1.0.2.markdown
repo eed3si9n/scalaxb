@@ -4,9 +4,11 @@
 - Fixes handling of `xs:any` with namespace constraints. [#189][189]
 - Removes upper limit on duplicate name resolution. [#190][190]
 - Fixes handling of enum values that are symbols. [#191][191]
+- Fixes `xs:group` references naming conflict. [#192][192]
 
   [188]: https://github.com/eed3si9n/scalaxb/pull/188
   [189]: https://github.com/eed3si9n/scalaxb/pull/189
   [190]: https://github.com/eed3si9n/scalaxb/pull/190
   [191]: https://github.com/eed3si9n/scalaxb/pull/191
+  [192]: https://github.com/eed3si9n/scalaxb/pull/192
   [@workingDog]: https://github.com/workingDog

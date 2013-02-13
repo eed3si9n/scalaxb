@@ -96,7 +96,7 @@ abstract class GenSource(val schema: SchemaDecl,
     logger.debug("makeTrait: emitting " + fqn)
 
     val childElements = if (decl.mixed) Nil
-      else flattenElements(decl, 0)
+      else flattenElements(decl)
     val list = List.concat[Decl](childElements, flattenAttributes(decl))
     val paramList = list map { buildParam }
     val defaultType = buildFullyQualifiedName(schema, makeProtectedTypeName(schema.targetNamespace, decl, context))    
@@ -190,7 +190,7 @@ abstract class GenSource(val schema: SchemaDecl,
     }
     primary match {
       case Some(SequenceDecl(_, _, _, _, _)) =>
-        val flatParticles = flattenElements(decl, 0)
+        val flatParticles = flattenElements(decl)
         val attributes = flattenAttributes(decl)
         flatParticles.forall(_.typeSymbol match {
           case AnyType(symbol) => false
@@ -216,7 +216,7 @@ abstract class GenSource(val schema: SchemaDecl,
       if (context.baseToSubs.contains(decl)) List(buildTypeName(decl, true))
       else buildSuperNames(decl)
 
-    val flatParticles = flattenElements(decl, 0)
+    val flatParticles = flattenElements(decl)
     // val particles = buildParticles(decl, name)
     val childElements = if (decl.mixed) flattenMixed(decl)
       else flatParticles 
@@ -347,7 +347,7 @@ abstract class GenSource(val schema: SchemaDecl,
       {childString}</source>
     }
 
-    val groups = filterGroup(decl) filter { g => primaryCompositor(g).particles.size > 0 }
+    val groups = filterGroup(decl).distinct filter { g => primaryCompositor(g).particles.size > 0 }
     val defaultFormatSuperNames: List[String] = "scalaxb.ElemNameParser[" + fqn + "]" :: groups.map(g =>
       buildFormatterName(g.namespace, groupTypeName(g)))
     
@@ -488,7 +488,7 @@ abstract class GenSource(val schema: SchemaDecl,
     }
     val mixedparser = buildCompositorParser(compositor, o, true, true)
     
-    val groups = filterGroup(compositor)
+    val groups = filterGroup(compositor).distinct
     val superNames: List[String] = 
       if (groups.isEmpty) List("scalaxb.AnyElemNameParser")
       else groups.map { g => buildFormatterName(g.namespace, groupTypeName(g)) }
@@ -608,7 +608,7 @@ object {localName} {{
       case ReferenceTypeSymbol(base: ComplexTypeDecl) => List(buildTypeName(base, true))
       case _ => Nil
     }
-  
+
   def buildOptions(decl: ComplexTypeDecl): List[String] = {
     val set = mutable.ListBuffer.empty[String]
     def addIfMatch(typeSymbol: XsTypeSymbol, choice: ChoiceDecl) = {
@@ -675,8 +675,7 @@ object {localName} {{
     case _ => Nil    
   }
 
-  def filterGroup(compositor: Option[HasParticle]): List[GroupDecl] =
-      compositor match {
+  def filterGroup(compositor: Option[HasParticle]): List[GroupDecl] = compositor match {
     case Some(c) => filterGroup(c)
     case None => Nil
   }
@@ -690,25 +689,56 @@ object {localName} {{
         case group: GroupDecl => List(group)
         case compositor2: HasParticle => filterGroup(compositor2)
         case _ => Nil
-      }).distinct
+      })
   }
   
-  def flattenElements(decl: ComplexTypeDecl, index: Int): List[ElemDecl] = {
+  def argSize(decl: ComplexTypeDecl): Int = decl.content.content match {
+    // complex content means 1. has child elements 2. has attributes
+    case CompContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
+      argSize(base)
+    case res@CompContRestrictionDecl(XsAnyType, _, _) =>
+      argSize(res.compositor)
+    case ext@CompContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
+      argSize(base) + argSize(ext.compositor)
+    case ext@CompContExtensionDecl(XsAnyType, _, _) =>
+      argSize(ext.compositor)
+    case _ => 1 
+  }
+
+  def argSize(compositor: Option[HasParticle]): Int = compositor match {
+    case Some(c) =>
+      c match {
+        case seq: SequenceDecl => c.particles.size
+        case _ => 1
+      }
+    case None => 1
+  }
+
+  def flattenElements(decl: ComplexTypeDecl): List[ElemDecl] = {
+    val index = decl.content.content match {
+      // complex content means 1. has child elements 2. has attributes
+      case CompContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) => argSize(base)
+      case res@CompContRestrictionDecl(XsAnyType, _, _) => 0
+      case ext@CompContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) => argSize(base)
+      case ext@CompContExtensionDecl(XsAnyType, _, _) => 0
+      case _ => 0    
+    }
+
     anyNumbers.clear()
 
     val build: ComplexTypeContent =>? List[ElemDecl] = {
       case SimpContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _, _) =>
-        flattenElements(base, index)
+        flattenElements(base)
       case SimpContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _) =>
-        flattenElements(base, index)
+        flattenElements(base)
       
       // complex content means 1. has child elements 2. has attributes
       case CompContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
-        flattenElements(base, index)        
+        flattenElements(base)        
       case res@CompContRestrictionDecl(XsAnyType, _, _) =>
         res.compositor map { flattenElements(decl.namespace, decl.family, _, index, true) } getOrElse { Nil }
       case ext@CompContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
-        flattenElements(base, index) :::
+        flattenElements(base) :::
           (ext.compositor map { flattenElements(decl.namespace, decl.family, _, index, true) } getOrElse { Nil })
       case ext@CompContExtensionDecl(XsAnyType, _, _) =>
         ext.compositor map { flattenElements(decl.namespace, decl.family, _, index, true) } getOrElse { Nil }
@@ -774,8 +804,8 @@ object {localName} {{
           else List(buildCompositorRef(seq, index))
         else splitLongSequence(
             namespace, family, compositor.particles).zipWithIndex flatMap {
-          case (ref: GroupRef, i: Int)            => flattenElements(namespace, family, buildGroup(ref), i, wrapTopSequence)
-          case (compositor2: HasParticle, i: Int) => List(buildCompositorRef(compositor2, i))
+          case (ref: GroupRef, i: Int)            => flattenElements(namespace, family, buildGroup(ref), i + index, wrapTopSequence)
+          case (compositor2: HasParticle, i: Int) => List(buildCompositorRef(compositor2, i + index))
           case (elem: ElemDecl, i: Int)           => List(elem)
           case (ref: ElemRef, i: Int)             => List(buildElement(ref))
           case (any: AnyDecl, i: Int)             => List(buildAnyRef(any))

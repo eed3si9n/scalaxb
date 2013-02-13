@@ -25,6 +25,7 @@ package scalaxb.compiler.xsd
 import scalashim._
 import scalaxb.compiler.Log
 import scala.collection.mutable
+import scalaxb.compiler.Module.camelCase
 
 sealed abstract class Cardinality
 case object Optional extends Cardinality { override def toString: String = "Optional" }
@@ -259,7 +260,9 @@ trait Params extends Lookup {
   def buildCompositorRef(compositor: HasParticle, occurrence: Occurrence, index: Int): ElemDecl = {
     val ns = compositor.namespace
     val (typeName, name) = compositor match {
-      case group: GroupDecl => (groupTypeName(group), "arg" + (index + 1))
+      case group: GroupDecl =>
+        val tn = makeTypeName(context.compositorNames(primaryCompositor(group)))
+        (groupTypeName(group), camelCase(tn) + (index + 1).toString)
       case _ =>
         val tn = makeTypeName(context.compositorNames(compositor))
         (tn, tn.toLowerCase)

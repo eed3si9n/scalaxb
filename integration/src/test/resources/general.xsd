@@ -461,6 +461,23 @@
     </xs:sequence>
   </xs:complexType>
 
+  <xs:complexType name="SequenceGroupTest2">
+    <xs:sequence>
+      <xs:group ref="gen:Group1" minOccurs="1" maxOccurs="1" />
+      <xs:group ref="gen:Group1" minOccurs="1" maxOccurs="1" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="ExtendedGrouprefTest">
+    <xs:complexContent>
+      <xs:extension base="gen:SequenceGroupTest">
+        <xs:sequence>
+          <xs:group ref="gen:Array" minOccurs="1" maxOccurs="1" />
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
   <xs:attributeGroup name="coreattrs">
     <xs:annotation>
       <xs:documentation>

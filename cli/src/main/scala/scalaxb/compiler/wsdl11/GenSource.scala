@@ -428,7 +428,7 @@ trait GenSource {
         List(ParamCache(paramName, xsdgenerator.buildTypeName(symbol), false))
       case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
         import scalaxb.compiler.xsd.{Multiple, AllDecl, ComplexContentDecl, CompContRestrictionDecl, CompContExtensionDecl}
-        val flatParticles = xsdgenerator.flattenElements(decl, 0)
+        val flatParticles = xsdgenerator.flattenElements(decl)
         val attributes = xsdgenerator.flattenAttributes(decl)
         val list = List.concat(flatParticles, attributes)
         val primary = decl.content match {
@@ -517,7 +517,7 @@ trait GenSource {
       import scalaxb.compiler.xsd.{ReferenceTypeSymbol, ComplexTypeDecl, Single}
       toTypeSymbol(part) match {
         case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
-          val flatParticles = xsdgenerator.flattenElements(decl, 0)
+          val flatParticles = xsdgenerator.flattenElements(decl)
           val attributes = xsdgenerator.flattenAttributes(decl)
           if (decl.mixed) None
           else if (flatParticles.size == 1 && attributes.size == 0) {

@@ -65,7 +65,7 @@ abstract class GenSource(val schema: SchemaDecl,
     
   def makeSuperType(decl: ComplexTypeDecl): Snippet = {
     val localName = makeProtectedTypeName(schema.targetNamespace, decl, context)
-    val fqn = buildFullyQualifiedName(schema, localName)
+    val fqn = buildFullyQualifiedNameFromNS(schema.targetNamespace, localName)
     makeCaseClassWithType(localName, fqn, decl)
   }
     
@@ -99,7 +99,7 @@ abstract class GenSource(val schema: SchemaDecl,
       else flattenElements(decl)
     val list = List.concat[Decl](childElements, flattenAttributes(decl))
     val paramList = list map { buildParam }
-    val defaultType = buildFullyQualifiedName(schema, makeProtectedTypeName(schema.targetNamespace, decl, context))    
+    val defaultType = buildFullyQualifiedNameFromNS(schema.targetNamespace, makeProtectedTypeName(schema.targetNamespace, decl, context))    
     val argList = list map {
       case any: AnyAttributeDecl => buildArgForAnyAttribute(decl, false)
       case x => buildArg(x)
@@ -432,7 +432,7 @@ abstract class GenSource(val schema: SchemaDecl,
   
   def makeSequence(seq: SequenceDecl): Snippet = {    
     val localName = makeTypeName(context.compositorNames(seq))
-    val fqn = buildFullyQualifiedName(schema, localName)
+    val fqn = buildFullyQualifiedNameFromNS(schema.targetNamespace, localName)
     val formatterName = buildFormatterName(schema.targetNamespace, localName)
     logger.debug("makeSequence: emitting " + fqn)
 
@@ -471,7 +471,7 @@ abstract class GenSource(val schema: SchemaDecl,
     val compositors = context.compositorParents.filter(
       x => x._2 == makeGroupComplexType(group)).keysIterator.toList
     val localName = makeTypeName(context.compositorNames(group))
-    val fqn = buildFullyQualifiedName(schema, localName)
+    val fqn = buildFullyQualifiedNameFromNS(schema.targetNamespace, localName)
     val formatterName = buildFormatterName(group.namespace, localName)
     logger.debug("makeGroup: emitting " + fqn)
 

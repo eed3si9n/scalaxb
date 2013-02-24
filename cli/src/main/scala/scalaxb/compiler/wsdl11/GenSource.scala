@@ -400,7 +400,7 @@ trait GenSource {
       })
 
       if (!multipart) fromXmls.head
-      else "%s(%s)" format (xsdgenerator.buildFullyQualifiedName(pkg, makeOperationOutputWrapperName(op)),
+      else "%s(%s)" format (xsdgenerator.buildFullyQualifiedNameFromPackage(pkg, makeOperationOutputWrapperName(op)),
         fromXmls.mkString("," + NL + "              "))
     }
   }
@@ -507,7 +507,7 @@ trait GenSource {
         if (paramMessage(output).part.isEmpty) "Unit"
         else paramTypeName(output)
       }}
-    else xsdgenerator.buildFullyQualifiedName(pkg, makeOperationOutputWrapperName(op))
+    else xsdgenerator.buildFullyQualifiedNameFromPackage(pkg, makeOperationOutputWrapperName(op))
 
   def singleOutputPart(output: XParamType): Option[XPartType] =
     paramMessage(output).part.headOption
@@ -559,7 +559,7 @@ trait GenSource {
 
     val interfaceType = context.interfaces(splitTypeName(binding.typeValue))
     val interfaceTypeName = interfaceType.name.capitalize
-    val interfaceTypeFQN = xsdgenerator.buildFullyQualifiedName(pkg, interfaceTypeName)
+    val interfaceTypeFQN = xsdgenerator.buildFullyQualifiedNameFromPackage(pkg, interfaceTypeName)
     val port = findPort(binding).headOption
     val address = port flatMap {_.any flatMap {
       case DataRecord(_, _, node: Node) if node.scope.getURI((node.prefix)) == WSDL_SOAP11 =>
@@ -607,7 +607,7 @@ trait {interfaceTypeName} {{
     val name = makeBindingName(binding)
     val interfaceType = context.interfaces(splitTypeName(binding.typeValue))
     val interfaceTypeName = interfaceType.name.capitalize
-    val interfaceTypeFQN = xsdgenerator.buildFullyQualifiedName(pkg, interfaceTypeName)
+    val interfaceTypeFQN = xsdgenerator.buildFullyQualifiedNameFromPackage(pkg, interfaceTypeName)
     val port = findPort(binding).headOption
     val address = port flatMap {_.any flatMap {
       case DataRecord(_, _, node: Node) if node.scope.getURI((node.prefix)) == WSDL_SOAP12 =>

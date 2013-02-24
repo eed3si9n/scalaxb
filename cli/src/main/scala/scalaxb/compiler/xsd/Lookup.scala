@@ -161,7 +161,7 @@ trait Lookup extends ContextProcessor {
     if (!context.typeNames.contains(decl)) sys.error(pkg + ": Type name not found: " + decl.toString)
     
     if (shortLocal && pkg == packageName(schema, context)) context.typeNames(decl)
-    else buildFullyQualifiedName(pkg, context.typeNames(decl))
+    else buildFullyQualifiedNameFromPackage(pkg, context.typeNames(decl))
   }
   
   def buildTypeName(decl: SimpleTypeDecl, shortLocal: Boolean): String = decl.content match {
@@ -182,13 +182,15 @@ trait Lookup extends ContextProcessor {
       sys.error(pkg + ": Type name not found: " + enum.toString)
     
     if (shortLocal && pkg == packageName(schema, context)) typeNames(enumTypeName, enum)
-    else buildFullyQualifiedName(pkg, typeNames(enumTypeName, enum))   
+    else buildFullyQualifiedNameFromPackage(pkg, typeNames(enumTypeName, enum))   
   }
   
-  def buildFullyQualifiedName(sch: SchemaDecl, localName: String): String =
-    buildFullyQualifiedName(packageName(sch, context), localName)
-  
-  def buildFullyQualifiedName(pkg: Option[String], localName: String): String =
+  def buildFullyQualifiedNameFromNS(namespace: Option[String], localName: String): String = {
+   val pkg = packageName(namespace, context)
+   buildFullyQualifiedNameFromPackage(pkg, localName)
+  }
+
+  def buildFullyQualifiedNameFromPackage(pkg: Option[String], localName: String): String =
     pkg.map(_ + ".").getOrElse("") + localName
   
   def buildFormatterName(group: AttributeGroupDecl): String =

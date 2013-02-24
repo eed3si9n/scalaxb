@@ -46,4 +46,9 @@
     </xs:simpleContent>
   </xs:complexType>
 
+  <xs:complexType name="ForeignBaseType">
+    <xs:sequence minOccurs="0">
+      <xs:element name="string1" type="xs:string" />
+    </xs:sequence>
+  </xs:complexType>
 </xs:schema>

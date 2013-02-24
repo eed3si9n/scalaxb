@@ -5,9 +5,10 @@
 - Removes upper limit on duplicate name resolution. [#190][190]
 - Fixes handling of enum values that are symbols. [#191][191]
 - Fixes `xs:group` references naming conflict. [#192][192]
-- Fixes `xs:choice` that's made up of a foreign type. [#193][193]
-- Fixes split `xs:sequence` whose only item is nillable and unbounded. [#194][194]
-- Fixes `xs:choice` that includes a substitution group. [#195][195]
+- Fixes handling of `xs:choice` that's made up of a foreign type. [#193][193]
+- Fixes handling of split `xs:sequence` whose only item is nillable and unbounded. [#194][194]
+- Fixes handling of `xs:choice` that includes a substitution group. [#195][195]
+- Fixes handling of complex types containing foreign `xs:sequence`. [#196][196]
 
   [188]: https://github.com/eed3si9n/scalaxb/pull/188
   [189]: https://github.com/eed3si9n/scalaxb/pull/189
@@ -17,4 +18,5 @@
   [193]: https://github.com/eed3si9n/scalaxb/pull/193
   [194]: https://github.com/eed3si9n/scalaxb/pull/194
   [195]: https://github.com/eed3si9n/scalaxb/pull/195
+  [196]: https://github.com/eed3si9n/scalaxb/pull/196
   [@workingDog]: https://github.com/workingDog

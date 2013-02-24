@@ -278,7 +278,7 @@
       <xs:element ref="gen:complexSubGroup"/>
     </xs:choice>
   </xs:complexType>
-  
+
   <xs:complexType name="TopLevelMultipleSeqTest">
     <xs:sequence minOccurs="0" maxOccurs="unbounded">
       <xs:element name="firstName" type="xs:string"/>
@@ -469,6 +469,16 @@
          <xs:anyAttribute namespace="##any" processContents="lax"/>
       </xs:extension>
     </xs:simpleContent>
+  </xs:complexType>
+
+  <xs:complexType name="ForeignExtensionTest">
+    <xs:complexContent>
+      <xs:extension base="xmime:ForeignBaseType">
+        <xs:sequence minOccurs="0">
+          <xs:element name="person1" type="gen:Person" />
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
   </xs:complexType>
 
   <xs:complexType name="NillableChoiceGroupTest">

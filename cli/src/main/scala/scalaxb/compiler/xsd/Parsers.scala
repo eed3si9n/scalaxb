@@ -107,7 +107,7 @@ trait Parsers extends Args with Params {
     def buildSeqConverter(seq: SequenceDecl, mixed: Boolean,
         wrapInDataRecord: Boolean): String = {
       lazy val localName = makeTypeName(context.compositorNames(seq))
-      lazy val fqn = buildFullyQualifiedName(schema, localName)
+      lazy val fqn = buildFullyQualifiedNameFromNS(seq.namespace, localName)
       
       val particles = buildParticles(splits)
       val parserVariableList = if (mixed) (0 to particles.size * 2 - 1) map { buildSelector }
@@ -217,19 +217,6 @@ trait Parsers extends Args with Params {
    
     // these are the known members of the sub group.
     val particles = substitutionGroupMembers(elem)
-
-    // schemas flatMap {
-    //   _.topElems.valuesIterator.toSeq collect {
-    //     case e: ElemDecl if e.name == elem.name && e.namespace == elem.namespace => e
-    //     case e: ElemDecl if e.substitutionGroup == Some(elem.namespace, elem.name) => e
-    //   } filter { e: ElemDecl =>
-    //     e.typeSymbol match {
-    //       case ReferenceTypeSymbol(decl: ComplexTypeDecl) => !decl.abstractValue
-    //       case _ => true
-    //     }
-    //   }
-    // }
-
     val parserList = particles map { particle =>
       buildElemParser(particle, Occurrence(math.max(particle.minOccurs, 1), 1, occurrence.nillable), mixed, true, true)
     }

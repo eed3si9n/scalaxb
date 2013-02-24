@@ -430,11 +430,12 @@ abstract class GenSource(val schema: SchemaDecl,
       Snippet(<source>trait {localName}{superString}</source>)
   }
   
-  def makeSequence(seq: SequenceDecl): Snippet = {
+  def makeSequence(seq: SequenceDecl): Snippet = {    
     val localName = makeTypeName(context.compositorNames(seq))
     val fqn = buildFullyQualifiedName(schema, localName)
     val formatterName = buildFormatterName(schema.targetNamespace, localName)
-    
+    logger.debug("makeSequence: emitting " + fqn)
+
     // pass in local name for the family.
     // since the sequence is already split at this point, it does not require resplitting.
     val particles = flattenElements(schema.targetNamespace, List(localName), seq, 0, false)
@@ -443,7 +444,7 @@ abstract class GenSource(val schema: SchemaDecl,
       (paramList.head.cardinality == Multiple) &&
       (!paramList.head.attribute)
     val paramsString = if (hasSequenceParam)
-        makeParamName(paramList.head.name, false) + ": " + buildTypeName(paramList.head.typeSymbol) + "*"
+        makeParamName(paramList.head.name, false) + ": " + paramList.head.singleTypeName + "*"
       else paramList.map(_.toScalaCode).mkString("," + newline + indent(1))    
     def makeWritesXML = <source>    def writes(__obj: {fqn}, __namespace: Option[String], __elementLabel: Option[String], 
         __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
@@ -472,7 +473,8 @@ abstract class GenSource(val schema: SchemaDecl,
     val localName = makeTypeName(context.compositorNames(group))
     val fqn = buildFullyQualifiedName(schema, localName)
     val formatterName = buildFormatterName(group.namespace, localName)
-    
+    logger.debug("makeGroup: emitting " + fqn)
+
     val compositor = primaryCompositor(group)
     val param = buildParam(compositor)
     val o = buildOccurrence(compositor).toSingle
@@ -514,7 +516,8 @@ abstract class GenSource(val schema: SchemaDecl,
     val localName = buildTypeName(group, true)
     val fqn = buildTypeName(group, false)
     val formatterName = buildFormatterName(group.namespace, localName)
-        
+    logger.debug("makeAttributeGroup: emitting " + fqn)
+
     val attributes = flattenAttributes(group.attributes)
     val paramList = attributes map { buildParam }
     val argList = attributes map {

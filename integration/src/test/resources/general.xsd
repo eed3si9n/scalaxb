@@ -232,6 +232,33 @@
     </xs:sequence>
   </xs:complexType>
 
+  <!-- must be exactly 21 elements -->
+  <xs:complexType name="LongSequenceOfNillableTest">
+    <xs:sequence>
+      <xs:element name="string1" type="xs:string"/>
+      <xs:element name="string2" type="xs:string"/>
+      <xs:element name="string3" type="xs:string"/>
+      <xs:element name="string4" type="xs:string"/>
+      <xs:element name="string5" type="xs:string"/>
+      <xs:element name="string6" type="xs:string"/>
+      <xs:element name="string7" type="xs:string"/>
+      <xs:element name="string8" type="xs:string"/>
+      <xs:element name="string9" type="xs:string"/>
+      <xs:element name="string10" type="xs:string"/>
+      <xs:element name="string11" type="xs:string"/>
+      <xs:element name="string12" type="xs:string"/>
+      <xs:element name="string13" type="xs:string"/>
+      <xs:element name="string14" type="xs:string"/>
+      <xs:element name="string15" type="xs:string"/>
+      <xs:element name="string16" type="xs:string"/>
+      <xs:element name="string17" type="xs:string"/>
+      <xs:element name="string18" type="xs:string"/>
+      <xs:element name="string19" type="xs:string"/>
+      <xs:element name="string20" type="xs:string"/>
+      <xs:element name="person" type="gen:Person" nillable="true" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
   <xs:complexType name="EmptyChoiceGroupTest">
     <xs:choice>
       <xs:group ref="gen:emptySeqGroup"/>

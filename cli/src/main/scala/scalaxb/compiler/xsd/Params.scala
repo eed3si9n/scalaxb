@@ -106,7 +106,7 @@ trait Params extends Lookup {
   }
   
   def buildParam(elem: ElemDecl): Param = {
-    val typeSymbol = if (isSubstitionGroup(elem)) buildSubstitionGroupSymbol(elem.typeSymbol)
+    val typeSymbol = if (isSubstitutionGroup(elem)) buildSubstitionGroupSymbol(elem.typeSymbol)
       else elem.typeSymbol match {
         case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
           if (compositorWrapper.contains(decl)) buildCompositorSymbol(compositorWrapper(decl), elem.typeSymbol)

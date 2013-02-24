@@ -273,6 +273,12 @@
     </xs:choice>
   </xs:complexType>
 
+  <xs:complexType name="SubstitutionGroupChoiceTest">
+    <xs:choice>
+      <xs:element ref="gen:complexSubGroup"/>
+    </xs:choice>
+  </xs:complexType>
+  
   <xs:complexType name="TopLevelMultipleSeqTest">
     <xs:sequence minOccurs="0" maxOccurs="unbounded">
       <xs:element name="firstName" type="xs:string"/>
@@ -416,6 +422,9 @@
       <xs:element ref="gen:subgroupHead"/>
     </xs:sequence>
   </xs:complexType>
+
+  <xs:element name="complexSubGroup" type="gen:Person" />
+  <xs:element name="complexSubGroupMember" type="gen:Person" substitutionGroup="gen:complexSubGroup" />
 
   <xs:element name="longAttributeTest">
     <xs:complexType>

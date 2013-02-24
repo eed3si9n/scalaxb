@@ -118,7 +118,7 @@ trait Args extends Params {
     buildArg(elem, buildSelector(pos), false)
   
   def buildArg(elem: ElemDecl, selector: String, wrapForLongAll: Boolean): String =
-    if ((isSubstitionGroup(elem))) selector
+    if ((isSubstitutionGroup(elem))) selector
     else elem.typeSymbol match {
       case symbol: BuiltInSimpleTypeSymbol => buildArg(buildTypeName(symbol), selector, 
         toCardinality(elem.minOccurs, elem.maxOccurs), elem.nillable getOrElse(false), elem.defaultValue, elem.fixedValue, wrapForLongAll)

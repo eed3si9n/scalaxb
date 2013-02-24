@@ -225,10 +225,23 @@ trait Lookup extends ContextProcessor {
     )
   }
 
-  def isSubstitionGroup(elem: ElemDecl) =
+  def isSubstitutionGroup(elem: ElemDecl) =
     elem.global && (elem.namespace map { x =>
       context.substituteGroups.contains((elem.namespace, elem.name))
     } getOrElse { false })
+  
+  def substitutionGroupMembers(elem: ElemDecl): Seq[ElemDecl] =
+    schemas flatMap {
+      _.topElems.valuesIterator.toSeq collect {
+        case e: ElemDecl if e.name == elem.name && e.namespace == elem.namespace => e
+        case e: ElemDecl if e.substitutionGroup == Some(elem.namespace, elem.name) => e
+      } filter { e: ElemDecl =>
+        e.typeSymbol match {
+          case ReferenceTypeSymbol(decl: ComplexTypeDecl) => !decl.abstractValue
+          case _ => true
+        }
+      }
+    }
 
   // don't name targetNamespace as "targetNamespace" since this would cause problem with mixing in groups.
   def quoteNamespace(namespace: Option[String]): String =

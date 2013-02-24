@@ -234,7 +234,7 @@ abstract class GenSource(val schema: SchemaDecl,
     //   case group: AttributeGroupDecl => group
     // }).toList).distinct
     
-    val unmixedParserList = flatParticles map { buildParser(_, decl.mixed, decl.mixed) }
+    val unmixedParserList = flatParticles map { buildParser(_, decl.mixed, decl.mixed, false) }
     val parserList = if (decl.mixed) buildTextParser :: (unmixedParserList flatMap { List(_, buildTextParser) })
       else unmixedParserList
     val parserVariableList = ( 0 to parserList.size - 1) map { buildSelector }
@@ -483,12 +483,12 @@ abstract class GenSource(val schema: SchemaDecl,
       case _ => param.copy(typeSymbol = XsDataRecord(param.typeSymbol))
     }
     val mixedParam = param.copy(typeSymbol = XsDataRecord(XsAnyType))
-    val parser = buildCompositorParser(compositor, o, false, false)
+    val parser = buildCompositorParser(compositor, o, false, false, false)
     val wrapperParser = compositor match {
       case choice: ChoiceDecl => parser
-      case _ => buildCompositorParser(compositor, o, false, true)
+      case _ => buildCompositorParser(compositor, o, false, true, false)
     }
-    val mixedparser = buildCompositorParser(compositor, o, true, true)
+    val mixedparser = buildCompositorParser(compositor, o, true, true, false)
     
     val groups = filterGroup(compositor).distinct
     val superNames: List[String] = 

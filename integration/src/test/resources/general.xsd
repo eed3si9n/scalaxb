@@ -239,6 +239,13 @@
     </xs:choice>
   </xs:complexType>
 
+  <xs:complexType name="ForeignChoiceTest">
+    <xs:choice>
+      <xs:element name="base64Binary1" type="xmime:base64Binary"/>
+      <xs:element name="base64Binary2" type="xmime:base64Binary"/>
+    </xs:choice>
+  </xs:complexType>
+
   <xs:complexType name="TopLevelMultipleSeqTest">
     <xs:sequence minOccurs="0" maxOccurs="unbounded">
       <xs:element name="firstName" type="xs:string"/>

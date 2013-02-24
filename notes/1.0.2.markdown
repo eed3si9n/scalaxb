@@ -5,10 +5,12 @@
 - Removes upper limit on duplicate name resolution. [#190][190]
 - Fixes handling of enum values that are symbols. [#191][191]
 - Fixes `xs:group` references naming conflict. [#192][192]
+- Fixes `xs:choice` that's made up of a foreign type. [#193][193]
 
   [188]: https://github.com/eed3si9n/scalaxb/pull/188
   [189]: https://github.com/eed3si9n/scalaxb/pull/189
   [190]: https://github.com/eed3si9n/scalaxb/pull/190
   [191]: https://github.com/eed3si9n/scalaxb/pull/191
   [192]: https://github.com/eed3si9n/scalaxb/pull/192
+  [193]: https://github.com/eed3si9n/scalaxb/pull/193
   [@workingDog]: https://github.com/workingDog

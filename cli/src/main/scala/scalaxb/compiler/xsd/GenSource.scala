@@ -244,7 +244,7 @@ abstract class GenSource(val schema: SchemaDecl,
         case _ => false
       }
     val particleArgs = if (decl.mixed) (0 to parserList.size - 1).toList map { i =>
-        if (i % 2 == 1) buildArgForMixed(flatParticles((i - 1) / 2), i)
+        if (i % 2 == 1) buildArgForMixed(flatParticles((i - 1) / 2), i, false)
         else buildArgForOptTextRecord(i) }
       else primary match {
         case Some(all: AllDecl) => all.particles map { buildArgForAll(_, longAll) }

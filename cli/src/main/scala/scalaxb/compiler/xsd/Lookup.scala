@@ -60,7 +60,8 @@ trait Lookup extends ContextProcessor {
         nillable = ref.nillable match {
           case None => that.nillable
           case _    => ref.nillable
-        })
+        },
+        global = true)
     } get
 
   def buildSymbolElement(symbol: XsTypeSymbol): ElemDecl =

@@ -74,9 +74,9 @@ trait Parsers extends Args with Params {
       mixed: Boolean, wrapInDataRecord: Boolean, ignoreSubGroup: Boolean): String = compositor match {
     case ref: GroupRef        => buildGroupParser(buildGroup(ref), occurrence, mixed, wrapInDataRecord)
     case seq: SequenceDecl    => 
-      if (containsSingleChoice(seq)) buildChoiceParser(singleChoice(seq), occurrence, mixed)
+      if (containsSingleChoice(seq)) buildChoiceParser(singleChoice(seq), occurrence, mixed, ignoreSubGroup)
       else buildSeqParser(seq, occurrence, mixed, wrapInDataRecord, ignoreSubGroup)
-    case choice: ChoiceDecl   => buildChoiceParser(choice, occurrence, mixed)
+    case choice: ChoiceDecl   => buildChoiceParser(choice, occurrence, mixed, ignoreSubGroup)
     case all: AllDecl         => buildAllParser(all, occurrence, mixed)
     case group: GroupDecl     => buildGroupParser(group, occurrence, mixed, wrapInDataRecord)
   }
@@ -113,7 +113,7 @@ trait Parsers extends Args with Params {
       val parserVariableList = if (mixed) (0 to particles.size * 2 - 1) map { buildSelector }
         else (0 to particles.size - 1) map { buildSelector }
       val argList = if (mixed) (0 to particles.size * 2 - 1).toList map { i =>
-          if (i % 2 == 0) buildArgForMixed(particles(i / 2), i)
+          if (i % 2 == 0) buildArgForMixed(particles(i / 2), i, ignoreSubGroup)
           else buildArgForOptTextRecord(i) }
         else (0 to particles.size - 1).toList map { i => buildArg(particles(i), i) }
       val paramList = if (mixed) Nil
@@ -160,7 +160,9 @@ trait Parsers extends Args with Params {
   // choice repeatable in case any one particle is repeatable.
   // this may violate the schema, but it is a compromise as long as plurals are
   // treated as Seq[DataRecord].
-  def buildChoiceParser(choice: ChoiceDecl, occurrence: Occurrence, mixed: Boolean): String = {
+  // substitution group parsing is implemented as choice parser.
+  // in that case, pass ignoreSubGroup to be false.
+  def buildChoiceParser(choice: ChoiceDecl, occurrence: Occurrence, mixed: Boolean, ignoreSubGroup: Boolean): String = {
     assert(choice.particles.size > 0, "choice has no particles: " + choice)
     val containsStructure = if (mixed) true
       else choice.particles exists(_ match {
@@ -214,15 +216,14 @@ trait Parsers extends Args with Params {
     
   def buildSubstitionGroupParser(elem: ElemDecl, occurrence: Occurrence, mixed: Boolean): String = {
     logger.debug("buildSubstitionGroupParser")
-   
+    
     // these are the known members of the sub group.
     val particles = substitutionGroupMembers(elem)
-    val parserList = particles map { particle =>
-      buildElemParser(particle, Occurrence(math.max(particle.minOccurs, 1), 1, occurrence.nillable), mixed, true, true)
-    }
-    val choiceOperator = "|"
-    if (parserList.size > 0) buildParserString(parserList.mkString(" " + choiceOperator + " " + newline + indent(3)), occurrence)
-    else buildAnyParser(List("##any"), occurrence, mixed, true, true)
+    val choice = ChoiceDecl(elem.namespace,
+      if (particles.size > 0) particles.toList
+      else List(AnyDecl(elem.minOccurs, elem.maxOccurs, List("##any"), LaxProcess)),
+      elem.minOccurs, elem.maxOccurs)
+    buildChoiceParser(choice, occurrence, mixed, true)
   }
   
   def buildElemParser(elem: ElemDecl, occurrence: Occurrence, mixed: Boolean, wrapInDataRecord: Boolean,
@@ -245,7 +246,7 @@ trait Parsers extends Args with Params {
         indent(3) + buildConverter(elem.typeSymbol, occurrence) + ")"
       else p
     
-    if (isSubstitutionGroup(elem) && !ignoreSubGroup) addConverter(buildSubstitionGroupParser(elem, occurrence, mixed))
+    if (isSubstitutionGroup(elem) && !ignoreSubGroup) buildSubstitionGroupParser(elem, occurrence, mixed)
     else elem.typeSymbol match {
       case symbol: BuiltInSimpleTypeSymbol => addConverter(buildParserString(elem, occurrence))
       case ReferenceTypeSymbol(decl: SimpleTypeDecl) =>  addConverter(buildParserString(elem, occurrence))

@@ -259,6 +259,19 @@
     </xs:sequence>
   </xs:complexType>
 
+  <xs:complexType name="SubstitutionGroupTest">
+    <xs:sequence>
+      <xs:element ref="gen:subgroupHead"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="OptionalSubstitutionGroupTest">
+    <xs:sequence>
+      <xs:element ref="gen:complexSubGroup" minOccurs="0"/>
+      <xs:element name="person2" type="gen:Person" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
   <xs:complexType name="EmptyChoiceGroupTest">
     <xs:choice>
       <xs:group ref="gen:emptySeqGroup"/>
@@ -417,11 +430,6 @@
   <xs:element name="SubGroupMember" type="gen:MilkType" substitutionGroup="gen:subgroupHead"/>
   <xs:element name="SubGroupMember2" type="gen:Person" substitutionGroup="gen:subgroupHead"/>
   <xs:element name="subgroupTop" type="gen:SubstitutionGroupTest"/>
-  <xs:complexType name="SubstitutionGroupTest">
-    <xs:sequence>
-      <xs:element ref="gen:subgroupHead"/>
-    </xs:sequence>
-  </xs:complexType>
 
   <xs:element name="complexSubGroup" type="gen:Person" />
   <xs:element name="complexSubGroupMember" type="gen:Person" substitutionGroup="gen:complexSubGroup" />
@@ -589,6 +597,13 @@
         </xs:complexType>
       </xs:element>
     </xs:choice>
+  </xs:group>
+
+  <xs:group name="OptionalSubstitutionGroupGroup">
+    <xs:sequence>
+      <xs:element ref="gen:complexSubGroup" minOccurs="0"/>
+      <xs:element name="person2" type="gen:Person" minOccurs="0"/>     
+    </xs:sequence>
   </xs:group>
 
   <xs:complexType name="JpegPictureType" xmime:expectedContentTypes="image/jpeg;q=1.0, image/tiff;q=0.8">

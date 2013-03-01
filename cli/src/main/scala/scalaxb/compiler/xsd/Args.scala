@@ -252,15 +252,18 @@ trait Args extends Params {
     else "scala.collection.immutable.ListMap((" + xs + "): _*)"
   }
     
-  def buildArgForMixed(particle: Particle, pos: Int): String =
-    buildArgForMixed(particle, buildSelector(pos))
+  def buildArgForMixed(particle: Particle, pos: Int, ignoreSubGroup: Boolean): String =
+    buildArgForMixed(particle, buildSelector(pos), ignoreSubGroup)
   
-  def buildArgForMixed(particle: Particle, selector: String): String = {
+  // sub groups behave like a choice
+  def buildArgForMixed(particle: Particle, selector: String, ignoreSubGroup: Boolean): String = {
     val cardinality = toCardinality(particle.minOccurs, particle.maxOccurs)
-    val isCompositor = particle match {
+    def isCompositor(p: Particle): Boolean = p match {
       case ref: GroupRef => true
+      case ref: ElemRef => isCompositor(buildElement(ref))
       case elem: ElemDecl =>
-        elem.typeSymbol match {
+        if (!ignoreSubGroup && isSubstitutionGroup(elem)) true
+        else elem.typeSymbol match {
           case AnyType(symbol) => true
           case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
             if (compositorWrapper.contains(decl)) true
@@ -273,13 +276,13 @@ trait Args extends Params {
     
     val retval = cardinality match {
       case Multiple =>
-        if (isCompositor) selector + ".flatten"
+        if (isCompositor(particle)) selector + ".flatten"
         else selector
       case Optional =>
-        if (isCompositor) selector + " getOrElse {Nil}"
+        if (isCompositor(particle)) selector + " getOrElse {Nil}"
         else selector + ".toList"
       case Single =>
-        if (isCompositor) selector
+        if (isCompositor(particle)) selector
         else "Seq(" + selector + ")"
     }
     

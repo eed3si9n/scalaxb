@@ -9,6 +9,7 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <scala.version>@scala.version@</scala.version>
+    <binary.version>@binary.version@</binary.version>
   </properties>
 
   <dependencies>
@@ -21,7 +22,7 @@
 
     <dependency>
       <groupId>org.scalatest</groupId>
-      <artifactId>scalatest_${scala.version}</artifactId>
+      <artifactId>scalatest_${binary.version}</artifactId>
       <version>@scalatest.version@</version>
       <scope>test</scope>
     </dependency>

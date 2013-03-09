@@ -106,6 +106,37 @@ public abstract class AbstractScalaxbMojo extends AbstractMojo {
     @Parameter(property = "scalaxb.parameterPrefix")
     private String parameterPrefix;
 
+    /**
+     * Wraps the content of specified complex types into separate case classes.
+     * <br/>
+     * By default, when a type inherits from a complex type, the case class
+     * generated for that type will include fields for the content of the
+     * inherited type. With some XML schemas, this cause case classes with many
+     * fields to be generated. Many fields can cause case classes to become
+     * inconvenient to use, and there is a limit to the number of fields that
+     * can appear in a case class (see <code>chunkSize</code>).
+     * <br/>
+     * The <code>&lt;wrapContents&gt;</code> option causes a separate case class
+     * to be generated for the named complex types. Where a type inherits from
+     * the complex type, it will have a reference to the case class for that
+     * complex type, instead of a number of fields for the content of that
+     * complex type.
+     * <br/>
+     * This option is useful when inheriting from complexTypes would cause a
+     * case class to contain too many fields. It may be a better alternative to
+     * using the <code>chunkSize</code> option, because that simply limits the
+     * number of fields in every generated case class. In contrast, this option
+     * provides more fine-grained control: it allows related fields to be
+     * grouped for a given set of types.
+     * <br/>
+     * For example, the following will generate a separate case class for the
+     * complex type named in the &lt;wrapContent&gt; element.
+     * <pre>
+     * &lt;wrapContents&gt;
+     *   &lt;wrapContent&gt;{http://example.com/schema}ComplexType&lt;/wrapContent&gt;
+     * &lt;/wrapContents&gt;
+     * </pre>
+     */
     @Parameter
     private List<String> wrapContents;
 

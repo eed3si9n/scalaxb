@@ -42,6 +42,7 @@ object GeneralUsage {
     testTopLevelOptionalSeq
     testTopLevelMustipleSeqAny
     testSimpleAnyTypeRestriction
+    testSimpleAnyTypeIndirectRestriction
     testSimpleAnyTypeExtension
     testDataRecord
     testDataRecordAny
@@ -433,6 +434,24 @@ JDREVGRw==</base64Binary>
     val document = toXML[AnySimpleTypeRestriction](obj, "foo", scope)
     println(document)
     check(fromXML[AnySimpleTypeRestriction](document))
+  }
+
+  def testSimpleAnyTypeIndirectRestriction {
+    println("testSimpleAnyTypeIndirectRestriction")
+    val subject = <foo xmlns="http://www.example.com/general"
+      xmlns:gen="http://www.example.com/general"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xmlns:xs="http://www.w3.org/2001/XMLSchema">1</foo>
+    val obj = fromXML[IndirectAnySimpleTypeRestriction](subject)
+
+    def check(obj: Any) = obj match {
+        case IndirectAnySimpleTypeRestriction(DataRecord(_, _, <foo>1</foo>), _) =>
+        case _ => error("match failed: " + obj.toString)
+      }
+    check(obj)
+    val document = toXML[IndirectAnySimpleTypeRestriction](obj, "foo", scope)
+    println(document)
+    check(fromXML[IndirectAnySimpleTypeRestriction](document))
   }
 
   def testSimpleAnyTypeExtension {

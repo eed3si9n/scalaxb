@@ -335,20 +335,23 @@ abstract class GenSource(val schema: SchemaDecl,
         case _ => "Seq(scala.xml.Text(__obj.value.toString))"
       }
 
-      def childString = if (decl.mixed) "__obj." + makeParamName(MIXED_PARAM, false) +
-        ".toSeq flatMap { x => " + buildToXML("scalaxb.DataRecord[Any]", "x, x.namespace, x.key, __scope, false") + " }"
-      else decl.content.content match {
-        case SimpContRestrictionDecl(base: XsTypeSymbol, _, _, _) => simpleContentString(base)
-        case SimpContExtensionDecl(base: XsTypeSymbol, _)         => simpleContentString(base)
-        case _ =>
-          if (childElemParams.isEmpty) "Nil"
-          else if (childElemParams.size == 1) "(" + buildXMLString(childElemParams(0)) + ")"
-          else childElemParams.map(x =>
-            buildXMLString(x)).mkString("Seq.concat(", "," + newline + indent(4), ")")
-      }
+      def childString(decl: ComplexTypeDecl): String =
+        if (decl.mixed) "__obj." + makeParamName(MIXED_PARAM, false) +
+          ".toSeq flatMap { x => " + buildToXML("scalaxb.DataRecord[Any]", "x, x.namespace, x.key, __scope, false") + " }"
+        else decl.content.content match {
+          case SimpContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _, _) => childString(base)
+          case SimpContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _) => childString(base)
+          case SimpContRestrictionDecl(base: XsTypeSymbol, _, _, _) => simpleContentString(base)
+          case SimpContExtensionDecl(base: XsTypeSymbol, _)         => simpleContentString(base)
+          case _ =>
+            if (childElemParams.isEmpty) "Nil"
+            else if (childElemParams.size == 1) "(" + buildXMLString(childElemParams(0)) + ")"
+            else childElemParams.map(x =>
+              buildXMLString(x)).mkString("Seq.concat(", "," + newline + indent(4), ")")
+        }
 
       <source>    def writesChildNodes(__obj: {fqn}, __scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node] =
-      {childString}</source>
+      {childString(decl)}</source>
     }
 
     val groups = filterGroup(decl).distinct filter { g => primaryCompositor(g).particles.size > 0 }

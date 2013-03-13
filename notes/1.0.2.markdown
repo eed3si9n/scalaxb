@@ -10,6 +10,7 @@
 - Fixes handling of `xs:choice` that includes a substitution group. [#195][195]
 - Fixes handling of complex types containing foreign `xs:sequence`. [#196][196]
 - Fixes handling of `xs:group` or a mixed complex type that includes an optional substitution group. [#197][197]
+- Fixes handling of complex types that directly derives from `xs:anySimpleType`. [#203][203]
 
   [188]: https://github.com/eed3si9n/scalaxb/pull/188
   [189]: https://github.com/eed3si9n/scalaxb/pull/189
@@ -21,4 +22,5 @@
   [195]: https://github.com/eed3si9n/scalaxb/pull/195
   [196]: https://github.com/eed3si9n/scalaxb/pull/196
   [197]: https://github.com/eed3si9n/scalaxb/pull/197
+  [203]: https://github.com/eed3si9n/scalaxb/pull/203
   [@workingDog]: https://github.com/workingDog

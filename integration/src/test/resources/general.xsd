@@ -479,6 +479,29 @@
     </xs:simpleContent>
   </xs:complexType>
 
+  <xs:complexType name="anySimpleTypeRestriction">
+    <xs:simpleContent>
+      <xs:restriction base="xs:anySimpleType">
+        <xs:simpleType>
+          <xs:union>
+            <xs:simpleType>
+              <xs:restriction base="xs:unsignedShort">
+                <xs:enumeration value="1"/>
+                <xs:enumeration value="2"/>
+              </xs:restriction>
+            </xs:simpleType>
+            <xs:simpleType>
+              <xs:restriction base="xs:unsignedShort">
+                <xs:enumeration value="0"/>
+              </xs:restriction>
+            </xs:simpleType>
+          </xs:union>
+        </xs:simpleType>
+        <xs:anyAttribute namespace="##any" processContents="lax"/>
+      </xs:restriction>
+    </xs:simpleContent>
+  </xs:complexType>
+
   <xs:complexType name="ForeignExtensionTest">
     <xs:complexContent>
       <xs:extension base="xmime:ForeignBaseType">

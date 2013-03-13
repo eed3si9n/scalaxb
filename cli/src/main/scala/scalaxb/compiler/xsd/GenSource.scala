@@ -327,7 +327,11 @@ abstract class GenSource(val schema: SchemaDecl,
     
     def makeWritesChildNodes = {
       def simpleContentString(base: XsTypeSymbol) = base match {
-        case AnyType(symbol) => "Seq(scala.xml.Text(__obj.value.value.toString))"
+        case AnyType(symbol) => 
+          "__obj.value.value match {" + newline +
+          indent(4) + "case elem: scala.xml.Elem => elem.child" + newline +
+          indent(4) + "case _ => Seq(scala.xml.Text(__obj.value.value.toString))" + newline +
+          indent(3) + "}"
         case _ => "Seq(scala.xml.Text(__obj.value.toString))"
       }
 

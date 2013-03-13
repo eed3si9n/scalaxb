@@ -47,10 +47,11 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <scala.version>2.9.1</scala.version>
+    <scala.version>2.10.0</scala.version>
+    <binary.version>2.10</binary.version>
     <maven.version>2.0.9</maven.version>
-    <junit.version>4.8.2</junit.version>
-    <scalatest.version>1.6.1</scalatest.version>
+    <junit.version>4.11</junit.version>
+    <scalatest.version>1.9.1</scalatest.version>
   </properties>
 
   <scm>
@@ -63,7 +64,7 @@
 
     <dependency>
       <groupId>org.scalaxb</groupId>
-      <artifactId>scalaxb_${scala.version}</artifactId>
+      <artifactId>scalaxb_${binary.version}</artifactId>
       <version>${project.version}</version>
     </dependency>
 

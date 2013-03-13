@@ -53,6 +53,9 @@ import scalaxb.compiler.CaseClassTooLong;
 import scalaxb.compiler.Module;
 import scalaxb.compiler.ReferenceNotFound;
 
+/**
+ * Generates Scala code from XSD and WSDL.
+ */
 @Mojo(name = "generate", defaultPhase = GENERATE_SOURCES)
 public class ScalaxbMojo extends AbstractScalaxbMojo {
 

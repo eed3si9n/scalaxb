@@ -9,6 +9,7 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <scala.version>@scala.version@</scala.version>
+    <binary.version>@binary.version@</binary.version>
   </properties>
 
   <dependencies>
@@ -21,7 +22,7 @@
 
     <dependency>
       <groupId>net.databinder.dispatch</groupId>
-      <artifactId>dispatch-core_${scala.version}</artifactId>
+      <artifactId>dispatch-core_${binary.version}</artifactId>
       <version>0.9.2</version>
     </dependency>
 

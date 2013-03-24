@@ -534,6 +534,13 @@
     </xs:complexContent>
   </xs:complexType>
 
+  <xs:complexType name="MixedStringExtensionTest" mixed="true">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+
   <xs:complexType name="NillableChoiceGroupTest">
     <xs:sequence>
       <xs:group ref="gen:NillableChoiceGroup" minOccurs="1" maxOccurs="1" />

@@ -94,8 +94,12 @@ abstract class GenSource(val schema: SchemaDecl,
     val fqn = buildTypeName(decl, false)
     val formatterName = buildFormatterName(decl.namespace, localName)
     logger.debug("makeTrait: emitting " + fqn)
-
-    val childElements = if (decl.mixed) Nil
+    val effectiveMixed = decl.content match {
+      case x: SimpleContentDecl => false
+      case _ => decl.mixed
+    }
+    
+    val childElements = if (effectiveMixed) Nil
       else flattenElements(decl)
     val list = List.concat[Decl](childElements, flattenAttributes(decl))
     val paramList = list map { buildParam }
@@ -211,14 +215,18 @@ abstract class GenSource(val schema: SchemaDecl,
       case ComplexContentDecl(CompContExtensionDecl(_, x, _)) => x
       case _ => None
     }
-        
+    val effectiveMixed = decl.content match {
+      case x: SimpleContentDecl => false
+      case _ => decl.mixed
+    }
+    
     val superNames: List[String] =
       if (context.baseToSubs.contains(decl)) List(buildTypeName(decl, true))
       else buildSuperNames(decl)
 
     val flatParticles = flattenElements(decl)
     // val particles = buildParticles(decl, name)
-    val childElements = if (decl.mixed) flattenMixed(decl)
+    val childElements = if (effectiveMixed) flattenMixed(decl)
       else flatParticles 
     val attributes = flattenAttributes(decl)
     val longAttribute = (attributes.size + childElements.size > contentsSizeLimit &&
@@ -234,8 +242,8 @@ abstract class GenSource(val schema: SchemaDecl,
     //   case group: AttributeGroupDecl => group
     // }).toList).distinct
     
-    val unmixedParserList = flatParticles map { buildParser(_, decl.mixed, decl.mixed, false) }
-    val parserList = if (decl.mixed) buildTextParser :: (unmixedParserList flatMap { List(_, buildTextParser) })
+    val unmixedParserList = flatParticles map { buildParser(_, effectiveMixed, effectiveMixed, false) }
+    val parserList = if (effectiveMixed) buildTextParser :: (unmixedParserList flatMap { List(_, buildTextParser) })
       else unmixedParserList
     val parserVariableList = ( 0 to parserList.size - 1) map { buildSelector }
     
@@ -243,7 +251,7 @@ abstract class GenSource(val schema: SchemaDecl,
         case Some(all: AllDecl) if isLongAll(all, decl.namespace, decl.family) => true
         case _ => false
       }
-    val particleArgs = if (decl.mixed) (0 to parserList.size - 1).toList map { i =>
+    val particleArgs = if (effectiveMixed) (0 to parserList.size - 1).toList map { i =>
         if (i % 2 == 1) buildArgForMixed(flatParticles((i - 1) / 2), i, false)
         else buildArgForOptTextRecord(i) }
       else primary match {
@@ -264,13 +272,13 @@ abstract class GenSource(val schema: SchemaDecl,
       else " extends " + superNames.mkString(" with ")
     
     val hasSequenceParam = (paramList.size == 1) && (paramList.head.cardinality == Multiple) &&
-      (!paramList.head.attribute) && (!decl.mixed) && (!longAll)
+      (!paramList.head.attribute) && (!effectiveMixed) && (!longAll)
     
     def paramsString = if (hasSequenceParam) makeParamName(paramList.head.name, false) + ": " +
         paramList.head.singleTypeName + "*"
       else paramList.map(_.toScalaCode).mkString("," + newline + indent(1))
     
-    val simpleFromXml: Boolean = if (flatParticles.isEmpty && !decl.mixed) true
+    val simpleFromXml: Boolean = if (flatParticles.isEmpty && !effectiveMixed) true
       else (decl.content, primary) match {
         case (x: SimpleContentDecl, _) => true
         case (_, Some(all: AllDecl)) => true
@@ -279,7 +287,7 @@ abstract class GenSource(val schema: SchemaDecl,
     
     def argsString = if (hasSequenceParam) particleArgs.head + ": _*"
       else {
-        val particleString = if (decl.mixed) "Seq.concat(" + particleArgs.mkString("," + newline + indent(4)) + ")"
+        val particleString = if (effectiveMixed) "Seq.concat(" + particleArgs.mkString("," + newline + indent(4)) + ")"
           else if (longAll) "scala.collection.immutable.ListMap(List(" + newline + 
               indent(4) + particleArgs.mkString("," + newline + indent(4)) + ").flatten[(String, scalaxb.DataRecord[Any])]: _*)"
           else decl.content match {
@@ -336,7 +344,7 @@ abstract class GenSource(val schema: SchemaDecl,
       }
 
       def childString(decl: ComplexTypeDecl): String =
-        if (decl.mixed) "__obj." + makeParamName(MIXED_PARAM, false) +
+        if (effectiveMixed) "__obj." + makeParamName(MIXED_PARAM, false) +
           ".toSeq flatMap { x => " + buildToXML("scalaxb.DataRecord[Any]", "x, x.namespace, x.key, __scope, false") + " }"
         else decl.content.content match {
           case SimpContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _, _) => childString(base)
@@ -378,7 +386,7 @@ abstract class GenSource(val schema: SchemaDecl,
     
     { if (decl.isNamed) "override def typeName: Option[String] = Some(" + quote(decl.name) + ")" + newline + newline + indent(2)  
       else ""
-    }{ if (decl.mixed) "override def isMixed: Boolean = true" + newline + newline + indent(2)
+    }{ if (effectiveMixed) "override def isMixed: Boolean = true" + newline + newline + indent(2)
        else "" }def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[{fqn}] =
       phrase({ parserList.mkString(" ~ " + newline + indent(3)) } ^^
       {{ case { parserVariableList.mkString(" ~ ") } =>

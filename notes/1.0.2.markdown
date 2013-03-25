@@ -12,6 +12,7 @@
 - Fixes handling of `xs:group` or a mixed complex type that includes an optional substitution group. [#197][197]
 - Fixes handling of complex types that directly or indirectly derives from `xs:anySimpleType`. [#200][200]/[#203][203] reported by [@sagarcjoshi][@sagarcjoshi]
 - Fixes handling of mixed complex type that extends simple type. [#205][205]
+- Fixes `DispatchHttpClients` not handling non-200 results. reported and fixed by [@dportabella][@dportabella] in [#204][204]
 
   [188]: https://github.com/eed3si9n/scalaxb/issues/188
   [189]: https://github.com/eed3si9n/scalaxb/issues/189
@@ -25,6 +26,8 @@
   [197]: https://github.com/eed3si9n/scalaxb/issues/197
   [200]: https://github.com/eed3si9n/scalaxb/issues/200
   [203]: https://github.com/eed3si9n/scalaxb/issues/203
+  [204]: https://github.com/eed3si9n/scalaxb/issues/204
   [205]: https://github.com/eed3si9n/scalaxb/issues/205
   [@workingDog]: https://github.com/workingDog
   [@sagarcjoshi]: https://github.com/sagarcjoshi
+  [@dportabella]: https://github.com/dportabella

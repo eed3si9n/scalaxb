@@ -242,7 +242,7 @@ trait Parsers { self: Namer with Lookup with Args with Params with Symbols with 
         if (mixed && containsStructure) buildParticleParser(
           Tagged(KeyedGroup(
             key = SequenceTag,
-            particles = Seq(elem),
+            particles = Vector(elem),
             minOccurs = 1,
             maxOccurs = "1"), tagged.tag),
           singleOccurrence, mixed, true)

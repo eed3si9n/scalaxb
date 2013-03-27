@@ -53,7 +53,7 @@ trait Params { self: Namer with Lookup with Splitter =>
       PARAM(paramName, TYPE_*(singleType))
 
     def toScalaCode(implicit targetNamespace: Option[URI], lookup: Lookup): String =
-      toTraitScalaCode + (
+      toTraitScalaCode(targetNamespace, lookup) + (
         if (occurrence == OptionalNotNillable && attribute) " = None"
         else "")
 
@@ -61,7 +61,7 @@ trait Params { self: Namer with Lookup with Splitter =>
                                (implicit targetNamespace: Option[URI], lookup: Lookup): Tree =
       generateImpl match {
         case true =>
-          LAZYVAL(toTraitScalaCode) := (occurrence match {
+          LAZYVAL(toTraitScalaCode(targetNamespace, lookup)) := (occurrence match {
             case SingleNotNillable(_) =>
               REF(wrapper) APPLY(LIT(buildNodeName)) DOT "as" APPLYTYPE singleType
             case _ =>
@@ -69,7 +69,7 @@ trait Params { self: Namer with Lookup with Splitter =>
                 WILDCARD DOT "as" APPLYTYPE singleType
               )
           })
-        case _ => DEF(toTraitScalaCode)
+        case _ => DEF(toTraitScalaCode(targetNamespace, lookup))
       }
 
     def toLongSeqAccessor(wrapper: String): Tree =
@@ -138,9 +138,9 @@ trait Params { self: Namer with Lookup with Splitter =>
       val particles = tagged.particles
       val o = Occurrence(tagged)
 
-      val memberType = tagged.particles match {
-        case Nil       => TaggedXsAnyType
-        case x :: xs =>
+      val memberType =
+        tagged.particles.headOption map { x =>
+          val xs = tagged.particles.tail
           val sameType = x match {
             case elem: TaggedLocalElement =>
               val firstType = particleType(x)
@@ -154,7 +154,7 @@ trait Params { self: Namer with Lookup with Splitter =>
               (particles forall { isOptionDescendant }) ) tagged
             else TaggedXsAnyType
           }
-      }
+        } getOrElse TaggedXsAnyType
       val typeSymbol =
         if (o.nillable) TaggedDataRecordSymbol(DataRecordSymbol(TaggedOptionSymbol(OptionSymbol(memberType))))
         else TaggedDataRecordSymbol(DataRecordSymbol(memberType))

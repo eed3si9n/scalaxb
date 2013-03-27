@@ -903,29 +903,6 @@ object Helper {
     } getOrElse { scala.xml.Text(obj) }
   }
 
-  def attributesToMap(node: Node) =
-    scala.collection.immutable.ListMap[String, DataRecord[Any]]((node match {
-      case elem: Elem =>
-        elem.attributes.toList flatMap {
-          case scala.xml.UnprefixedAttribute(key, value, _) =>
-            List(("@" + key, scalaxb.DataRecord(None, Some(key), value.text)))
-          case scala.xml.PrefixedAttribute(pre, key, value, _) =>
-            val ns = elem.scope.getURI(pre)
-            List(("@{" + ns + "}" + key, scalaxb.DataRecord(Option[String](ns), Some(key), value.text)))
-          case _ => Nil        
-        }
-      case _ => Nil
-    }): _*)
-
-  def mapToAttributes(attrs: scala.collection.Map[String, DataRecord[Any]], scope: NamespaceBinding): scala.xml.MetaData = {
-    var attr: scala.xml.MetaData  = scala.xml.Null
-    attrs.toList map {
-      case (key, x) =>
-        attr = scala.xml.Attribute((x.namespace map { scope.getPrefix(_) }).orNull, x.key.orNull, x.value.toString, attr)
-    }
-    attr
-  }
-
   // assume outer scope
   def mergeNodeSeqScope(nodeseq: NodeSeq, outer: NamespaceBinding): NodeSeq =
     nodeseq.toSeq flatMap { mergeNodeScope(_, outer) }

@@ -31,10 +31,10 @@ object QualifiedName {
 trait Lookup extends ContextProcessor { self: Namer with Splitter with Symbols =>
   private[this] val logger = Log.forName("xsd2.Lookup")
 
-  implicit val lookup = this;
+  implicit val lookupEv = this;
   def schema: ReferenceSchema
-  implicit lazy val scope: NamespaceBinding = schema.scope
-  implicit lazy val targetNamespace = schema.targetNamespace
+  implicit lazy val scopeEv: NamespaceBinding = schema.scope
+  implicit lazy val targetNamespaceEv = schema.targetNamespace
 
   val wildCardType = DataRecordAnyClass
   val nillableWildCardType = DataRecordOptionAnyClass
@@ -280,7 +280,7 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter with Symbols =
     def unapply(qname: QName): Option[TaggedType[XSimpleType]] = unapply(qname: QualifiedName)
 
     def unapply(typeName: QualifiedName): Option[TaggedType[XSimpleType]] = typeName match {
-      case QualifiedName(`targetNamespace`, localPart) if schema.topTypes contains localPart =>
+      case QualifiedName(`targetNamespaceEv`, localPart) if schema.topTypes contains localPart =>
         schema.topTypes(localPart) match {
           case x: TaggedSimpleType => Some(x)
           case _ => None
@@ -297,7 +297,7 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter with Symbols =
     def unapply(qname: QName): Option[TaggedType[XComplexType]] = unapply(qname: QualifiedName)
 
     def unapply(typeName: QualifiedName): Option[TaggedType[XComplexType]] = typeName match {
-      case QualifiedName(`targetNamespace`, localPart) if schema.topTypes contains localPart =>
+      case QualifiedName(`targetNamespaceEv`, localPart) if schema.topTypes contains localPart =>
         schema.topTypes(localPart) match {
           case x: TaggedComplexType => Some(x)
           case _ => None
@@ -314,7 +314,7 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter with Symbols =
     def unapply(qname: QName): Option[Tagged[XElement]] = unapply(qname: QualifiedName)
 
     def unapply(qualifiedName: QualifiedName): Option[Tagged[XElement]] = qualifiedName match {
-      case QualifiedName(`targetNamespace`, localPart) if schema.topElems contains localPart =>
+      case QualifiedName(`targetNamespaceEv`, localPart) if schema.topElems contains localPart =>
         Some(schema.topElems(localPart))
       case QualifiedName(ns, localPart) =>
         (schemasByNamespace(ns) flatMap { _.topElems.get(localPart) }).headOption
@@ -325,7 +325,7 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter with Symbols =
     def unapply(qname: QName): Option[TaggedAttr[XAttributable]] = unapply(qname: QualifiedName)
 
     def unapply(qualifiedName: QualifiedName): Option[TaggedAttr[XAttributable]] = qualifiedName match {
-      case QualifiedName(`targetNamespace`, localPart) if schema.topAttrs contains localPart =>
+      case QualifiedName(`targetNamespaceEv`, localPart) if schema.topAttrs contains localPart =>
         Some(schema.topAttrs(localPart))
       case QualifiedName(ns, localPart) =>
         (schemasByNamespace(ns) flatMap { _.topAttrs.get(localPart) }).headOption
@@ -336,7 +336,7 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter with Symbols =
     def unapply(qname: QName): Option[Tagged[XNamedGroup]] = unapply(qname: QualifiedName)
 
     def unapply(qualifiedName: QualifiedName): Option[Tagged[XNamedGroup]] = qualifiedName match {
-      case QualifiedName(`targetNamespace`, localPart) if schema.topGroups contains localPart =>
+      case QualifiedName(`targetNamespaceEv`, localPart) if schema.topGroups contains localPart =>
         Some(schema.topGroups(localPart))
       case QualifiedName(ns, localPart) =>
         (schemasByNamespace(ns) flatMap { _.topGroups.get(localPart) }).headOption
@@ -347,7 +347,7 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter with Symbols =
     def unapply(qname: QName): Option[TaggedAttr[XAttributeGroup]] = unapply(qname: QualifiedName)
 
     def unapply(qualifiedName: QualifiedName): Option[TaggedAttr[XAttributeGroup]] = qualifiedName match {
-      case QualifiedName(`targetNamespace`, localPart) if schema.topAttrGroups contains localPart =>
+      case QualifiedName(`targetNamespaceEv`, localPart) if schema.topAttrGroups contains localPart =>
         Some(schema.topAttrGroups(localPart))
       case QualifiedName(ns, localPart) =>
         (schemasByNamespace(ns) flatMap { _.topAttrGroups.get(localPart) }).headOption
@@ -370,9 +370,9 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter with Symbols =
     context.schemas filter {_.targetNamespace == namespace}
 
   def isForeignType(tagged: Tagged[_]): Boolean = tagged match {
-    case x: TaggedLocalElement => x.value.ref map { QualifiedName(_).namespace != targetNamespace } getOrElse { false }
+    case x: TaggedLocalElement => x.value.ref map { QualifiedName(_).namespace != targetNamespaceEv } getOrElse { false }
     case x: TaggedGroupRef =>
-      x.value.ref map { QualifiedName(_).namespace != targetNamespace } getOrElse { false }
+      x.value.ref map { QualifiedName(_).namespace != targetNamespaceEv } getOrElse { false }
     case _ => false
   }
 

@@ -37,7 +37,7 @@ trait ContextProcessor extends ScalaNames { self: Namer with Lookup =>
       }
 
       context.baseToSubs.keysIterator.toList foreach { base =>
-        if (!base.abstractValue
+        if (true
           // && context.schemas.exists(schema => context.duplicatedTypes.contains((schema, base)))
         ) {
           nameTrait(base)

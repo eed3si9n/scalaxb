@@ -65,8 +65,8 @@ object Builds extends Build {
         case "2.9.2" => "com.github.scopt" % "scopt_2.9.1" % "2.1.0"
         case _ => "com.github.scopt" %% "scopt" % "2.1.0"
       },
-      "log4j" % "log4j" % "1.2.17",
-      "com.eed3si9n" %% "treehugger" % "0.2.0") },
+      "com.eed3si9n" %% "treehugger" % "0.2.3",
+      "log4j" % "log4j" % "1.2.17") },
     libraryDependencies <++= scalaVersion(testDeps(_)),
     unmanagedSourceDirectories in Compile <+= baseDirectory( _ / "src_managed" ),
     buildInfoPackage := "scalaxb",

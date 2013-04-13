@@ -8,7 +8,7 @@ object Builds extends Build {
   import conscript.Harness.conscriptSettings
 
   lazy val buildSettings = Defaults.defaultSettings ++ customLsSettings ++ Seq(
-    version := "1.0.2",
+    version := "1.0.3-SNAPSHOT",
     organization := "org.scalaxb",
     homepage := Some(url("http://scalaxb.org")),
     licenses := Seq("MIT License" -> url("https://github.com/eed3si9n/scalaxb/blob/master/LICENSE")),

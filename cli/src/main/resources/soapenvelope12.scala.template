@@ -44,20 +44,20 @@ trait FaultcodeEnum
 
 object FaultcodeEnum {
   def fromString(value: String): FaultcodeEnum = value match {
-    case "tns:DataEncodingUnknown" => TnsDataEncodingUnknown
-    case "tns:MustUnderstand" => TnsMustUnderstand
-    case "tns:Receiver" => TnsReceiver
-    case "tns:Sender" => TnsSender
-    case "tns:VersionMismatch" => TnsVersionMismatch
+    case "soap:DataEncodingUnknown" => TnsDataEncodingUnknown
+    case "soap:MustUnderstand" => TnsMustUnderstand
+    case "soap:Receiver" => TnsReceiver
+    case "soap:Sender" => TnsSender
+    case "soap:VersionMismatch" => TnsVersionMismatch
 
   }
 }
 
-case object TnsDataEncodingUnknown extends FaultcodeEnum { override def toString = "tns:DataEncodingUnknown" }
-case object TnsMustUnderstand extends FaultcodeEnum { override def toString = "tns:MustUnderstand" }
-case object TnsReceiver extends FaultcodeEnum { override def toString = "tns:Receiver" }
-case object TnsSender extends FaultcodeEnum { override def toString = "tns:Sender" }
-case object TnsVersionMismatch extends FaultcodeEnum { override def toString = "tns:VersionMismatch" }
+case object TnsDataEncodingUnknown extends FaultcodeEnum { override def toString = "soap:DataEncodingUnknown" }
+case object TnsMustUnderstand extends FaultcodeEnum { override def toString = "soap:MustUnderstand" }
+case object TnsReceiver extends FaultcodeEnum { override def toString = "soap:Receiver" }
+case object TnsSender extends FaultcodeEnum { override def toString = "soap:Sender" }
+case object TnsVersionMismatch extends FaultcodeEnum { override def toString = "soap:VersionMismatch" }
 
 
 case class Subcode(Value: javax.xml.namespace.QName,

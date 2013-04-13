@@ -574,7 +574,7 @@ object DataRecord extends XMLStandardTypes {
             case x => x
           }
       }
-    case _ => error("unknown DataRecord.")
+    case _ => sys.error("unknown DataRecord.")
   }
 }
 
@@ -628,7 +628,7 @@ trait CanWriteChildNodes[A] extends CanWriteXML[A] {
   def writes(obj: A, namespace: Option[String], elementLabel: Option[String],
       scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq = {
     val elem =  scala.xml.Elem(Helper.getPrefix(namespace, scope).orNull,
-      elementLabel getOrElse { error("missing element label.") },
+      elementLabel getOrElse { sys.error("missing element label.") },
       writesAttribute(obj, scope),
       scope,
       writesChildNodes(obj, scope): _*)
@@ -641,7 +641,7 @@ trait CanWriteChildNodes[A] extends CanWriteXML[A] {
 
 trait AttributeGroupFormat[A] extends scalaxb.XMLFormat[A] {
   def writes(__obj: A, __namespace: Option[String], __elementLabel: Option[String],
-    __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq = error("don't call me.")
+    __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq = sys.error("don't call me.")
 
   def toAttribute(__obj: A, __attr: scala.xml.MetaData, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData
 }

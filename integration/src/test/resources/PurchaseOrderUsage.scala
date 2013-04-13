@@ -53,7 +53,7 @@ object PurchaseOrderUsage {
         "Wilmington",
         DE,
         Zipcode) =>
-      case _ => error("match failed: " + address.toString)
+      case _ => sys.error("match failed: " + address.toString)
     }
     
     println(address.toString)
@@ -77,8 +77,8 @@ object PurchaseOrderUsage {
         Some(XMLCalendar("2010-02-06Z")),
         "639-OS") =>
           if (usPrice != BigDecimal(4.00))
-            error("values don't match: " + item.toString)
-      case _ => error("match failed: " + item.toString)
+            sys.error("values don't match: " + item.toString)
+      case _ => sys.error("match failed: " + item.toString)
     }
     
     println(item.toString)
@@ -97,7 +97,7 @@ object PurchaseOrderUsage {
     val items = fromXML[Items](subject)
     items match {
       case Items(_) =>
-      case _ => error("match failed: " + items.toString)
+      case _ => sys.error("match failed: " + items.toString)
     }    
     println(items.toString)    
     
@@ -140,7 +140,7 @@ object PurchaseOrderUsage {
         None,
         Items(_),
         Some(XMLCalendar("1999-12-01Z"))) =>
-      case _ => error("match failed: " + purchaseOrder.toString)
+      case _ => sys.error("match failed: " + purchaseOrder.toString)
     }    
     println(purchaseOrder.toString)  
   }
@@ -152,7 +152,7 @@ object PurchaseOrderUsage {
     timeOlson match {
       case TimeOlson(XMLCalendar("00:00:00"),
         "") =>
-      case _ => error("match failed: " + timeOlson.toString)
+      case _ => sys.error("match failed: " + timeOlson.toString)
     }
     
     println(timeOlson.toString)
@@ -164,7 +164,7 @@ object PurchaseOrderUsage {
     val intWithAttr = fromXML[IntWithAttr](subject)
     intWithAttr match {
       case IntWithAttr(1, "test") =>
-      case _ => error("match failed: " + intWithAttr.toString)
+      case _ => sys.error("match failed: " + intWithAttr.toString)
     }
     
     println(intWithAttr.toString)    
@@ -180,7 +180,7 @@ object PurchaseOrderUsage {
     val obj = fromXML[Element1](subject)
     obj match {
       case Element1(DataRecord(Some("http://www.example.com/IPO"), Some("Choice2"), 1)) =>
-      case _ => error("match failed: " + obj.toString)
+      case _ => sys.error("match failed: " + obj.toString)
     }
 
     println(obj.toString)
@@ -191,7 +191,7 @@ object PurchaseOrderUsage {
     val obj = fromXML[Choice1](subject)
     obj match {
       case Choice1(_, "en", _) =>
-      case _ => error("match failed: " + obj.toString)
+      case _ => sys.error("match failed: " + obj.toString)
     }
     
     println(obj.toString)
@@ -220,12 +220,12 @@ object PurchaseOrderUsage {
         
         obj2 match {
           case `usaddress` =>
-          case _ => error("match failed: " + obj2.toString)
+          case _ => sys.error("match failed: " + obj2.toString)
         }
 
         println(obj2.toString)
         
-      case _ => error("parsed object is not USAddress") 
+      case _ => sys.error("parsed object is not USAddress") 
     }
   }
   
@@ -237,7 +237,7 @@ object PurchaseOrderUsage {
     val obj2 = fromXML[Element1](document)
     obj2 match {
       case `obj` =>
-      case _ => error("match failed: " + obj2.toString)
+      case _ => sys.error("match failed: " + obj2.toString)
     }
   }
   
@@ -259,7 +259,7 @@ object PurchaseOrderUsage {
     obj match {
       case Choice1(_, "en", attributes) if attributes("@{http://www.w3.org/1999/xhtml}href") ==
         DataRecord(Some("http://www.w3.org/1999/xhtml"), Some("href"), "4Q99.html") =>
-      case _ => error("match failed: " + obj.toString)
+      case _ => sys.error("match failed: " + obj.toString)
     }
     
     val document = toXML(obj, None, Some("choice1"), subject.scope)
@@ -283,7 +283,7 @@ object PurchaseOrderUsage {
     val obj2 = fromXML[Element1](document)
     obj2 match {
       case Element1(DataRecord(Some("http://www.w3.org/1998/Math/MathML"), Some("math"), _)) =>
-      case _ => error("match failed: " + document.toString)
+      case _ => sys.error("match failed: " + document.toString)
     }    
   }
   
@@ -297,7 +297,7 @@ object PurchaseOrderUsage {
     obj match {
       case Element2(attributes) if attributes("@{http://www.w3.org/1999/xhtml}href") ==
         DataRecord(Some("http://www.w3.org/1999/xhtml"), Some("href"), "4Q99.html") =>
-      case _ => error("match failed: " + obj.toString)
+      case _ => sys.error("match failed: " + obj.toString)
     }
     
     val document = toXML(obj, None, Some("foo"), subject.scope)
@@ -306,7 +306,7 @@ object PurchaseOrderUsage {
     obj2 match {
       case Element2(attributes) if attributes("@{http://www.w3.org/1999/xhtml}href") ==
         DataRecord(Some("http://www.w3.org/1999/xhtml"), Some("href"), "4Q99.html") =>
-      case _ => error("match failed: " + obj2.toString)
+      case _ => sys.error("match failed: " + obj2.toString)
     }
   }
   
@@ -324,7 +324,7 @@ object PurchaseOrderUsage {
         Base64Binary('A', 'B', 'C', 'D', 'E', 'F', 'G'),
         Some("foo"),
         None) =>
-      case _ => error("match failed: " + obj.toString)
+      case _ => sys.error("match failed: " + obj.toString)
     }
     val document = toXML(obj, None, Some("foo"), subject.scope)
     println(document)
@@ -347,7 +347,7 @@ object PurchaseOrderUsage {
     obj match {
       case NillableTest(None, Some(None), Seq(None, None),
         None, Some(None), Seq(None, None)) =>
-      case _ => error("match failed: " + obj.toString)
+      case _ => sys.error("match failed: " + obj.toString)
     }
     
     val document = toXML(obj, None, Some("foo"), subject.scope)
@@ -365,7 +365,7 @@ object PurchaseOrderUsage {
     val obj = fromXML[AllTest](subject)
     obj match {
       case AllTest(Some(""), Some(""), Some("bar"), _, None) =>
-      case _ => error("match failed: " + obj.toString)
+      case _ => sys.error("match failed: " + obj.toString)
     }
     
     val document = toXML(obj, None, Some("foo"), subject.scope)
@@ -388,7 +388,7 @@ object PurchaseOrderUsage {
         DataRecord(Some("http://www.example.com/IPO"), Some("script"), "")),
         DataRecord(None, None, HeadSequence1("bar", Seq(DataRecord(Some("http://www.example.com/IPO"), Some("script"), "")) )),
         None, None, Some(Ltr), None, None) =>
-      case _ => error("match failed: " + obj.toString)
+      case _ => sys.error("match failed: " + obj.toString)
     }
     
     val document = toXML(obj, None, Some("head"), subject.scope)
@@ -408,7 +408,7 @@ object PurchaseOrderUsage {
     obj match {
       case GH6Usage(DataRecord(Some("http://www.example.com/IPO"),
         Some("gh6sub1"), "foo"), "bar", "baz") =>
-      case _ => error("match failed: " + obj.toString)
+      case _ => sys.error("match failed: " + obj.toString)
     }
     
     val document = toXML(obj, None, Some("billTo"), subject.scope)

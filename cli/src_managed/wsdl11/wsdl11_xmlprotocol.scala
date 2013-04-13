@@ -111,7 +111,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
       case x: wsdl11.XStartWithExtensionsTypable => scalaxb.toXML[wsdl11.XStartWithExtensionsTypable](x, __namespace, __elementLabel, __scope, true)
       case x: wsdl11.XServiceType => scalaxb.toXML[wsdl11.XServiceType](x, __namespace, __elementLabel, __scope, true)
       case x: wsdl11.XPortType => scalaxb.toXML[wsdl11.XPortType](x, __namespace, __elementLabel, __scope, true)
-      case _ => error("Unknown type: " + __obj)
+      case _ => sys.error("Unknown type: " + __obj)
     }
   }
 
@@ -128,7 +128,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     def writes(__obj: wsdl11.XOpenAtts, __namespace: Option[String], __elementLabel: Option[String],
         __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq = __obj match {
       case x: wsdl11.XPartType => scalaxb.toXML[wsdl11.XPartType](x, __namespace, __elementLabel, __scope, true)
-      case _ => error("Unknown type: " + __obj)
+      case _ => sys.error("Unknown type: " + __obj)
     }
   }
 

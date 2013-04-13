@@ -248,7 +248,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     def writes(__obj: xmlschema.XFormChoice, __namespace: Option[String], __elementLabel: Option[String],
         __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
       scala.xml.Elem(scalaxb.Helper.getPrefix(__namespace, __scope).orNull, 
-        __elementLabel getOrElse { error("missing element label.") },
+        __elementLabel getOrElse { sys.error("missing element label.") },
         scala.xml.Null, __scope, scala.xml.Text(__obj.toString))
   }
 
@@ -262,7 +262,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     def writes(__obj: xmlschema.XReducedDerivationControl, __namespace: Option[String], __elementLabel: Option[String],
         __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
       scala.xml.Elem(scalaxb.Helper.getPrefix(__namespace, __scope).orNull, 
-        __elementLabel getOrElse { error("missing element label.") },
+        __elementLabel getOrElse { sys.error("missing element label.") },
         scala.xml.Null, __scope, scala.xml.Text(__obj.toString))
   }
 
@@ -276,7 +276,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     def writes(__obj: xmlschema.XTypeDerivationControl, __namespace: Option[String], __elementLabel: Option[String],
         __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
       scala.xml.Elem(scalaxb.Helper.getPrefix(__namespace, __scope).orNull, 
-        __elementLabel getOrElse { error("missing element label.") },
+        __elementLabel getOrElse { sys.error("missing element label.") },
         scala.xml.Null, __scope, scala.xml.Text(__obj.toString))
   }
 
@@ -371,7 +371,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     def writes(__obj: xmlschema.XUse, __namespace: Option[String], __elementLabel: Option[String],
         __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
       scala.xml.Elem(scalaxb.Helper.getPrefix(__namespace, __scope).orNull, 
-        __elementLabel getOrElse { error("missing element label.") },
+        __elementLabel getOrElse { sys.error("missing element label.") },
         scala.xml.Null, __scope, scala.xml.Text(__obj.toString))
   }
 
@@ -529,7 +529,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
         __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq = __obj match {
       case x: xmlschema.XTopLevelComplexType => scalaxb.toXML[xmlschema.XTopLevelComplexType](x, __namespace, __elementLabel, __scope, true)
       case x: xmlschema.XLocalComplexType => scalaxb.toXML[xmlschema.XLocalComplexType](x, __namespace, __elementLabel, __scope, true)
-      case _ => error("Unknown type: " + __obj)
+      case _ => sys.error("Unknown type: " + __obj)
     }
   }
 
@@ -1012,7 +1012,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
         __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq = __obj match {
       case x: xmlschema.XTopLevelElement => scalaxb.toXML[xmlschema.XTopLevelElement](x, __namespace, __elementLabel, __scope, true)
       case x: xmlschema.XLocalElementable => scalaxb.toXML[xmlschema.XLocalElementable](x, __namespace, __elementLabel, __scope, true)
-      case _ => error("Unknown type: " + __obj)
+      case _ => sys.error("Unknown type: " + __obj)
     }
   }
 
@@ -1218,7 +1218,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
         __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq = __obj match {
       case x: xmlschema.XRealGroupable => scalaxb.toXML[xmlschema.XRealGroupable](x, __namespace, __elementLabel, __scope, true)
       case x: xmlschema.XExplicitGroupable => scalaxb.toXML[xmlschema.XExplicitGroupable](x, __namespace, __elementLabel, __scope, true)
-      case _ => error("Unknown type: " + __obj)
+      case _ => sys.error("Unknown type: " + __obj)
     }
   }
 
@@ -1580,7 +1580,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     def writes(__obj: xmlschema.XMinOccurs, __namespace: Option[String], __elementLabel: Option[String],
         __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
       scala.xml.Elem(scalaxb.Helper.getPrefix(__namespace, __scope).orNull, 
-        __elementLabel getOrElse { error("missing element label.") },
+        __elementLabel getOrElse { sys.error("missing element label.") },
         scala.xml.Null, __scope, scala.xml.Text(__obj.toString))
   }
 
@@ -1594,7 +1594,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     def writes(__obj: xmlschema.XMaxOccurs, __namespace: Option[String], __elementLabel: Option[String],
         __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
       scala.xml.Elem(scalaxb.Helper.getPrefix(__namespace, __scope).orNull, 
-        __elementLabel getOrElse { error("missing element label.") },
+        __elementLabel getOrElse { sys.error("missing element label.") },
         scala.xml.Null, __scope, scala.xml.Text(__obj.toString))
   }
 
@@ -1693,7 +1693,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     def writes(__obj: xmlschema.XMinOccursType, __namespace: Option[String], __elementLabel: Option[String],
         __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
       scala.xml.Elem(scalaxb.Helper.getPrefix(__namespace, __scope).orNull, 
-        __elementLabel getOrElse { error("missing element label.") },
+        __elementLabel getOrElse { sys.error("missing element label.") },
         scala.xml.Null, __scope, scala.xml.Text(__obj.toString))
   }
 
@@ -1707,7 +1707,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     def writes(__obj: xmlschema.XMaxOccursType, __namespace: Option[String], __elementLabel: Option[String],
         __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
       scala.xml.Elem(scalaxb.Helper.getPrefix(__namespace, __scope).orNull, 
-        __elementLabel getOrElse { error("missing element label.") },
+        __elementLabel getOrElse { sys.error("missing element label.") },
         scala.xml.Null, __scope, scala.xml.Text(__obj.toString))
   }
 
@@ -1790,7 +1790,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     def writes(__obj: xmlschema.XProcessContents, __namespace: Option[String], __elementLabel: Option[String],
         __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
       scala.xml.Elem(scalaxb.Helper.getPrefix(__namespace, __scope).orNull, 
-        __elementLabel getOrElse { error("missing element label.") },
+        __elementLabel getOrElse { sys.error("missing element label.") },
         scala.xml.Null, __scope, scala.xml.Text(__obj.toString))
   }
 
@@ -1916,7 +1916,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
         __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq = __obj match {
       case x: xmlschema.XNamedAttributeGroup => scalaxb.toXML[xmlschema.XNamedAttributeGroup](x, __namespace, __elementLabel, __scope, true)
       case x: xmlschema.XAttributeGroupRef => scalaxb.toXML[xmlschema.XAttributeGroupRef](x, __namespace, __elementLabel, __scope, true)
-      case _ => error("Unknown type: " + __obj)
+      case _ => sys.error("Unknown type: " + __obj)
     }
   }
 
@@ -2542,7 +2542,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     def writes(__obj: xmlschema.XDerivationControl, __namespace: Option[String], __elementLabel: Option[String],
         __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
       scala.xml.Elem(scalaxb.Helper.getPrefix(__namespace, __scope).orNull, 
-        __elementLabel getOrElse { error("missing element label.") },
+        __elementLabel getOrElse { sys.error("missing element label.") },
         scala.xml.Null, __scope, scala.xml.Text(__obj.toString))
   }
 
@@ -2561,7 +2561,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
         __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq = __obj match {
       case x: xmlschema.XTopLevelSimpleType => scalaxb.toXML[xmlschema.XTopLevelSimpleType](x, __namespace, __elementLabel, __scope, true)
       case x: xmlschema.XLocalSimpleType => scalaxb.toXML[xmlschema.XLocalSimpleType](x, __namespace, __elementLabel, __scope, true)
-      case _ => error("Unknown type: " + __obj)
+      case _ => sys.error("Unknown type: " + __obj)
     }
   }
 
@@ -3014,7 +3014,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     def writes(__obj: xmlschema.XValue, __namespace: Option[String], __elementLabel: Option[String],
         __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
       scala.xml.Elem(scalaxb.Helper.getPrefix(__namespace, __scope).orNull, 
-        __elementLabel getOrElse { error("missing element label.") },
+        __elementLabel getOrElse { sys.error("missing element label.") },
         scala.xml.Null, __scope, scala.xml.Text(__obj.toString))
   }
 

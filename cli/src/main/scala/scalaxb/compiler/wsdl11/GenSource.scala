@@ -208,7 +208,7 @@ trait GenSource {
         // "def %s(%s): Unit".format(op.name, arg(input))
         """soapClient.requestResponse(%s,
           |            %s, defaultScope, %s, %s, %s) match {
-          |          case Left(x)  => error(x.toString)
+          |          case Left(x)  => sys.error(x.toString)
           |          case Right(x) => ()
           |        }""".stripMargin.format(bodyString(op, input, binding, document),
             headerString(op, input, binding, document), address, quotedMethod, actionString)
@@ -237,7 +237,7 @@ trait GenSource {
       case DataRecord(_, _, XNotificationoperationSequence(output)) =>
         // "def %s: %s".format(op.name, paramTypeName)
         """soapClient.requestResponse(Nil, defaultScope, %s, %s, %s) match {
-          |          case Left(x)  => error(x.toString)
+          |          case Left(x)  => sys.error(x.toString)
           |          case Right((header, body)) =>
           |            %s
           |        }""".stripMargin.format(address, quotedMethod, actionString, outputString(output, binding, op, document, soap12))
@@ -304,7 +304,7 @@ trait GenSource {
         val post =
           if (b.literal && document && !p.element.isDefined) """ match {
   case e: scala.xml.Elem => e.child
-  case _ => error("Elem not found!")
+  case _ => sys.error("Elem not found!")
 }"""
           else ""
         "scalaxb.toXML(%s, %s, %s, defaultScope)%s".format(v, nsString, label, post)
@@ -350,7 +350,7 @@ trait GenSource {
       val post =
         if (b.literal && document && !p.element.isDefined) """ match {
   case e: scala.xml.Elem => e.child
-  case _ => error("Elem not found!")
+  case _ => sys.error("Elem not found!")
 }"""
         else ""
 

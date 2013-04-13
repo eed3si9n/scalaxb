@@ -1,6 +1,12 @@
+## breaking changes
+
+- scalaxb now generates `sys.error`, so the generated code will no longer be compilable under Scala 2.8. [#115][115] reported by [@idot][@idot] and others.
+
 ## bug fixes and minor enhancements
 
 - Includes offending data in `ParserFailure` message. [#206][206] requested by [@caoilte][@caoilte]
 
+  [115]: https://github.com/eed3si9n/scalaxb/issues/115
   [206]: https://github.com/eed3si9n/scalaxb/issues/206
   [@caoilte]: https://github.com/caoilte
+  [@idot]: https://github.com/idot

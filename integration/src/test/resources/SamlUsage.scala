@@ -45,7 +45,7 @@ object SamlUsage {
         Some(_),
         Some("eduPersonAffiliation"),
         attributes) => 
-      case _ => error("match failed: " + obj.toString)
+      case _ => sys.error("match failed: " + obj.toString)
     }
     
     println(obj.toString)

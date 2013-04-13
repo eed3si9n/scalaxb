@@ -67,7 +67,7 @@ trait CompilerMatcher {
       val files = pair.value._2
         
       if (code.size < 1)
-        error("At least one line of code is required.")
+        sys.error("At least one line of code is required.")
       
       val s = settings(outdir, classpath, usecurrentcp, unchecked)
       val main = new IMain(s) {
@@ -75,7 +75,7 @@ trait CompilerMatcher {
       }
       main.compileSources(files.map(toSourceFile(_)): _*)
       code map { c => main.interpret(c) match {
-        case IR.Error => error("Error interpreting %s" format (c))
+        case IR.Error => sys.error("Error interpreting %s" format (c))
         case _ => 
       }}
       val holder = allCatch opt {
@@ -99,7 +99,7 @@ trait CompilerMatcher {
     val currentcp = if (usecurrentcp) {
       java.lang.Thread.currentThread.getContextClassLoader match {
         case cl: java.net.URLClassLoader => cl.getURLs.toList map {_.toString}
-        case _ => error("classloader is not a URLClassLoader")
+        case _ => sys.error("classloader is not a URLClassLoader")
       }
     } else Nil
     val classpathList = classpath ++ currentcp

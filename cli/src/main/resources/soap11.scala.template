@@ -4,9 +4,9 @@ case class Soap11Fault[+A](original: Any, detail: Option[A], headers: scala.xml.
   def asFault[B: scalaxb.XMLFormat] = Soap11Fault(original, detail map {
     case x: soapenvelope11.Detail => x.any.head.value match {
       case node: scala.xml.Node => scalaxb.fromXML[B](node)
-      case _ => error("unsupported fault: " + toString)
+      case _ => sys.error("unsupported fault: " + toString)
     }
-    case _ => error("unsupported fault: " + toString)
+    case _ => sys.error("unsupported fault: " + toString)
   }, headers)
 }
 
@@ -24,7 +24,7 @@ trait Soap11Clients { this: HttpClients =>
         scalaxb.fromScope(scope)).distinct: _*)
       val r = in map  { scalaxb.toXML(_, Some(SOAP_ENVELOPE11_URI), Some("Envelope"), merged) match {
         case elem: scala.xml.Elem => elem
-        case x => error("unexpected non-elem: " + x.toString)
+        case x => sys.error("unexpected non-elem: " + x.toString)
       }}
       val headers = scala.collection.mutable.Map[String, String]("Content-Type" -> "text/xml; charset=utf-8") ++
         (action map { x => "SOAPAction" -> """"%s"""".format(x)})
@@ -36,7 +36,7 @@ trait Soap11Clients { this: HttpClients =>
         scalaxb.fromXML[Envelope](response)
       }
       catch {
-        case e: Exception => error(e.toString + ": " + s)
+        case e: Exception => sys.error(e.toString + ": " + s)
       }
     }
 

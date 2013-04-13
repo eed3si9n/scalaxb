@@ -226,7 +226,7 @@ trait XMLProtocol extends scalaxb.XMLStandardTypes {
     def writes(__obj: soapenvelope12.FaultcodeEnum, __namespace: Option[String], __elementLabel: Option[String],
         __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
       scala.xml.Elem(scalaxb.Helper.getPrefix(__namespace, __scope).orNull, 
-        __elementLabel getOrElse { error("missing element label.") },
+        __elementLabel getOrElse { sys.error("missing element label.") },
         scala.xml.Null, __scope, scala.xml.Text(__obj.toString))
   }
 

@@ -58,7 +58,7 @@ object AnyUsage {
           DataRecord(Some("http://www.example.com/any"), Some("unsignedByte"), 1),
           DataRecord(Some("http://www.example.com/any"), Some("decimal"), 1)
         ) =>
-      case _ => error("match failed: " + obj.toString)
+      case _ => sys.error("match failed: " + obj.toString)
     }
     val document = toXML[Element1](obj, "foo", defaultScope)
     println(document)
@@ -101,7 +101,7 @@ object AnyUsage {
           DataRecord(Some("http://www.example.com/any"), Some("ENTITY"), "foo"),
           DataRecord(Some("http://www.example.com/any"), Some("ENTITIES"), Seq("foo"))
         ) =>
-      case _ => error("match failed: " + obj.toString)
+      case _ => sys.error("match failed: " + obj.toString)
     }
     val document = toXML[Element1](obj, "foo", defaultScope)
     println(document)
@@ -149,7 +149,7 @@ object AnyUsage {
           DataRecord(Some("http://www.example.com/any"), Some("gDay"), XMLCalendar("---10")),
           DataRecord(Some("http://www.example.com/any"), Some("gMonth"), XMLCalendar("--10"))
         ) =>
-      case _ => error("match failed: " + obj.toString)
+      case _ => sys.error("match failed: " + obj.toString)
     }
     val document = toXML[Element1](obj, "foo", defaultScope)
     println(document)

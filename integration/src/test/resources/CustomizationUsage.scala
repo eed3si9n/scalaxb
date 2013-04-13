@@ -104,7 +104,7 @@ object CustomizationUsage {
         case SingularSimpleTypeTest(2, None, None, Some(Some(2)), Seq(3, 2), Seq(), 
           SKIM, None, None, None, Seq(WHOLE, SKIM), Seq(),
           None, None) =>
-        case _ => error("match failed: " + obj.toString)
+        case _ => sys.error("match failed: " + obj.toString)
       }
     println(obj)
     check(obj)

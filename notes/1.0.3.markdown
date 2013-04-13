@@ -1,0 +1,6 @@
+## bug fixes and minor enhancements
+
+- Includes offending data in `ParserFailure` message. [#206][206] requested by [@caoilte][@caoilte]
+
+  [206]: https://github.com/eed3si9n/scalaxb/issues/206
+  [@caoilte]: https://github.com/caoilte

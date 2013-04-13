@@ -12,7 +12,7 @@ object `package` {
   def fromXML[A](seq: NodeSeq, stack: List[ElemName] = Nil)
                 (implicit format: XMLFormat[A]): A = format.reads(seq, stack) match {
     case Right(a) => a
-    case Left(a) => throw new ParserFailure(a)
+    case Left(a) => throw new ParserFailure("Error while parsing %s: %s" format(seq.toString, a))
   }
 
   @implicitNotFound(msg = "Cannot find XMLFormat type class for ${A}")
@@ -176,9 +176,9 @@ trait XMLStandardTypes {
   implicit lazy val __BooleanXMLFormat: XMLFormat[Boolean] = new XMLFormat[Boolean] {
     def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, Boolean] = 
       seq.text match {
-          case "1" | "true" => Right(true)
-          case "0" | "false" => Right(false)
-          case x => Left("Invalid boolean:"+x)
+        case "1" | "true" => Right(true)
+        case "0" | "false" => Right(false)
+        case x => Left("Invalid boolean: "+x)
       }
 
     def writes(obj: Boolean, namespace: Option[String], elementLabel: Option[String],
@@ -406,7 +406,7 @@ object DataRecord extends XMLStandardTypes {
   }
 
   // this is for long attributes
-  def apply[A:CanWriteXML](x: Node, node: Node, value: A): DataRecord[A] = x match {
+  def apply[A:CanWriteXML](x: Node, parent: Node, value: A): DataRecord[A] = x match {
     case _ => DataRecord(value)
   }
 

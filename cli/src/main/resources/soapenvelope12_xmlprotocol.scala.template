@@ -220,8 +220,10 @@ trait XMLProtocol extends scalaxb.XMLStandardTypes {
   trait DefaultSoapenvelope12FaultcodeEnumFormat extends scalaxb.XMLFormat[soapenvelope12.FaultcodeEnum] {
     val targetNamespace: Option[String] = Some("http://www.w3.org/2003/05/soap-envelope")
     
-    def reads(seq: scala.xml.NodeSeq, stack: List[scalaxb.ElemName]): Either[String, soapenvelope12.FaultcodeEnum] =
-      Right(soapenvelope12.FaultcodeEnum.fromString(seq.text))
+    def reads(seq: scala.xml.NodeSeq, stack: List[scalaxb.ElemName]): Either[String, soapenvelope12.FaultcodeEnum] = seq match {
+      case elem: scala.xml.Elem => Right(soapenvelope12.FaultcodeEnum.fromString(elem.text, elem.scope))
+      case _ => Right(soapenvelope12.FaultcodeEnum.fromString(seq.text, scala.xml.TopScope))
+    }
     
     def writes(__obj: soapenvelope12.FaultcodeEnum, __namespace: Option[String], __elementLabel: Option[String],
         __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =

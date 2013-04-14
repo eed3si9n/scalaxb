@@ -44,7 +44,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
 
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[wsdl11.XDocumentation] =
       phrase(optTextRecord ~ 
-      rep((((any(x => List(Some()) contains x.namespace) ^^ (scalaxb.fromXML[scalaxb.DataRecord[Any]](_, scalaxb.ElemName(node) :: stack))) ~ 
+      rep((((any(_ => true) ^^ (scalaxb.fromXML[scalaxb.DataRecord[Any]](_, scalaxb.ElemName(node) :: stack))) ~ 
       optTextRecord) ^^ 
       { case p1 ~ p2 => Seq.concat(Seq(p1), p2.toList) })) ~ 
       optTextRecord ^^
@@ -91,6 +91,8 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
           case (Some("http://schemas.xmlsoap.org/wsdl/"), Some("paramType")) => Right(scalaxb.fromXML[wsdl11.XParamType](node, stack))
           case (Some("http://schemas.xmlsoap.org/wsdl/"), Some("faultType")) => Right(scalaxb.fromXML[wsdl11.XFaultType](node, stack))
           case (Some("http://schemas.xmlsoap.org/wsdl/"), Some("startWithExtensionsType")) => Right(scalaxb.fromXML[wsdl11.XStartWithExtensionsTypable](node, stack))
+          case (Some("http://schemas.xmlsoap.org/wsdl/"), Some("bindingType")) => Right(scalaxb.fromXML[wsdl11.XBindingType](node, stack))
+          case (Some("http://schemas.xmlsoap.org/wsdl/"), Some("binding_operationType")) => Right(scalaxb.fromXML[wsdl11.XBinding_operationType](node, stack))
           case (Some("http://schemas.xmlsoap.org/wsdl/"), Some("serviceType")) => Right(scalaxb.fromXML[wsdl11.XServiceType](node, stack))
           case (Some("http://schemas.xmlsoap.org/wsdl/"), Some("portType")) => Right(scalaxb.fromXML[wsdl11.XPortType](node, stack))
           case x => Left("Unknown type: " + x)

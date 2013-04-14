@@ -53,7 +53,7 @@ case class XAnnotated(annotation: Option[xmlschema.XAnnotation] = None,
 trait XFormChoice
 
 object XFormChoice {
-  def fromString(value: String): XFormChoice = value match {
+  def fromString(value: String, scope: scala.xml.NamespaceBinding): XFormChoice = value match {
     case "qualified" => XQualified
     case "unqualified" => XUnqualified
 
@@ -66,7 +66,7 @@ case object XUnqualified extends XFormChoice { override def toString = "unqualif
 trait XReducedDerivationControl
 
 object XReducedDerivationControl {
-  def fromString(value: String): XReducedDerivationControl = value match {
+  def fromString(value: String, scope: scala.xml.NamespaceBinding): XReducedDerivationControl = value match {
     case "extension" => XExtensionValue2
     case "restriction" => XRestrictionValue3
 
@@ -79,7 +79,7 @@ case object XRestrictionValue3 extends XReducedDerivationControl { override def 
 trait XTypeDerivationControl
 
 object XTypeDerivationControl {
-  def fromString(value: String): XTypeDerivationControl = value match {
+  def fromString(value: String, scope: scala.xml.NamespaceBinding): XTypeDerivationControl = value match {
     case "extension" => XExtensionValue
     case "restriction" => XRestrictionValue2
     case "list" => XListValue2
@@ -107,13 +107,13 @@ case class XSchema(xschemaoption: Seq[scalaxb.DataRecord[xmlschema.XSchemaOption
   attributes: Map[String, scalaxb.DataRecord[Any]]) extends XOpenAttrsable
 
 trait XSchemaOption
-case class XSchemaSequence1(arg1: scalaxb.DataRecord[Any],
+case class XSchemaSequence1(xSchemaTopOption1: scalaxb.DataRecord[Any],
   annotation: Seq[xmlschema.XAnnotation] = Nil)
 
 trait XUse
 
 object XUse {
-  def fromString(value: String): XUse = value match {
+  def fromString(value: String, scope: scala.xml.NamespaceBinding): XUse = value match {
     case "prohibited" => XProhibited
     case "optional" => XOptional
     case "required" => XRequired
@@ -169,7 +169,7 @@ case class XTopLevelAttribute(annotation: Option[xmlschema.XAnnotation] = None,
 
 trait XComplexType extends XAnnotatedable {
   val annotation: Option[xmlschema.XAnnotation]
-  val arg1: scalaxb.DataRecord[xmlschema.XComplexTypeModelOption]
+  val xComplexTypeModelOption3: scalaxb.DataRecord[xmlschema.XComplexTypeModelOption]
   val id: Option[String]
   val name: Option[String]
   val mixed: Boolean
@@ -181,7 +181,7 @@ trait XComplexType extends XAnnotatedable {
 
 
 case class XTopLevelComplexType(annotation: Option[xmlschema.XAnnotation] = None,
-  arg1: scalaxb.DataRecord[xmlschema.XComplexTypeModelOption],
+  xComplexTypeModelOption3: scalaxb.DataRecord[xmlschema.XComplexTypeModelOption],
   id: Option[String] = None,
   name: Option[String] = None,
   mixed: Boolean,
@@ -192,7 +192,7 @@ case class XTopLevelComplexType(annotation: Option[xmlschema.XAnnotation] = None
 
 
 case class XLocalComplexType(annotation: Option[xmlschema.XAnnotation] = None,
-  arg1: scalaxb.DataRecord[xmlschema.XComplexTypeModelOption],
+  xComplexTypeModelOption3: scalaxb.DataRecord[xmlschema.XComplexTypeModelOption],
   id: Option[String] = None,
   name: Option[String] = None,
   mixed: Boolean,
@@ -205,7 +205,7 @@ case class XLocalComplexType(annotation: Option[xmlschema.XAnnotation] = None,
 trait XRestrictionTypable extends XAnnotatedable {
   val annotation: Option[xmlschema.XAnnotation]
   val xrestrictiontypableoption: Option[scalaxb.DataRecord[Any]]
-  val arg2: xmlschema.XAttrDeclsSequence
+  val xAttrDeclsSequence4: xmlschema.XAttrDeclsSequence
   val id: Option[String]
   val base: javax.xml.namespace.QName
   val attributes: Map[String, scalaxb.DataRecord[Any]]
@@ -214,7 +214,7 @@ trait XRestrictionTypable extends XAnnotatedable {
 
 case class XRestrictionType(annotation: Option[xmlschema.XAnnotation] = None,
   xrestrictiontypableoption: Option[scalaxb.DataRecord[Any]] = None,
-  arg2: xmlschema.XAttrDeclsSequence,
+  xAttrDeclsSequence4: xmlschema.XAttrDeclsSequence,
   id: Option[String] = None,
   base: javax.xml.namespace.QName,
   attributes: Map[String, scalaxb.DataRecord[Any]]) extends XRestrictionTypable
@@ -223,7 +223,7 @@ trait XRestrictionTypableOption
 
 case class XComplexRestrictionType(annotation: Option[xmlschema.XAnnotation] = None,
   xrestrictiontypableoption: Option[scalaxb.DataRecord[Any]] = None,
-  arg2: xmlschema.XAttrDeclsSequence,
+  xAttrDeclsSequence4: xmlschema.XAttrDeclsSequence,
   id: Option[String] = None,
   base: javax.xml.namespace.QName,
   attributes: Map[String, scalaxb.DataRecord[Any]]) extends XRestrictionTypable with XComplexContentOption
@@ -232,8 +232,8 @@ trait XComplexRestrictionTypeOption
 
 trait XExtensionTypable extends XAnnotatedable with XComplexContentOption {
   val annotation: Option[xmlschema.XAnnotation]
-  val arg1: Option[scalaxb.DataRecord[xmlschema.XTypeDefParticleOption]]
-  val arg2: xmlschema.XAttrDeclsSequence
+  val xTypeDefParticleOption3: Option[scalaxb.DataRecord[xmlschema.XTypeDefParticleOption]]
+  val xAttrDeclsSequence4: xmlschema.XAttrDeclsSequence
   val id: Option[String]
   val base: javax.xml.namespace.QName
   val attributes: Map[String, scalaxb.DataRecord[Any]]
@@ -241,8 +241,8 @@ trait XExtensionTypable extends XAnnotatedable with XComplexContentOption {
 
 
 case class XExtensionType(annotation: Option[xmlschema.XAnnotation] = None,
-  arg1: Option[scalaxb.DataRecord[xmlschema.XTypeDefParticleOption]] = None,
-  arg2: xmlschema.XAttrDeclsSequence,
+  xTypeDefParticleOption3: Option[scalaxb.DataRecord[xmlschema.XTypeDefParticleOption]] = None,
+  xAttrDeclsSequence4: xmlschema.XAttrDeclsSequence,
   id: Option[String] = None,
   base: javax.xml.namespace.QName,
   attributes: Map[String, scalaxb.DataRecord[Any]]) extends XExtensionTypable
@@ -258,7 +258,7 @@ trait XComplexContentOption
 
 case class XSimpleRestrictionType(annotation: Option[xmlschema.XAnnotation] = None,
   xrestrictiontypableoption: Option[scalaxb.DataRecord[Any]] = None,
-  arg2: xmlschema.XAttrDeclsSequence,
+  xAttrDeclsSequence4: xmlschema.XAttrDeclsSequence,
   id: Option[String] = None,
   base: javax.xml.namespace.QName,
   attributes: Map[String, scalaxb.DataRecord[Any]]) extends XRestrictionTypable with XSimpleContentOption
@@ -266,8 +266,8 @@ case class XSimpleRestrictionType(annotation: Option[xmlschema.XAnnotation] = No
 trait XSimpleRestrictionTypeOption
 
 case class XSimpleExtensionType(annotation: Option[xmlschema.XAnnotation] = None,
-  arg1: Option[scalaxb.DataRecord[xmlschema.XTypeDefParticleOption]] = None,
-  arg2: xmlschema.XAttrDeclsSequence,
+  xTypeDefParticleOption3: Option[scalaxb.DataRecord[xmlschema.XTypeDefParticleOption]] = None,
+  xAttrDeclsSequence4: xmlschema.XAttrDeclsSequence,
   id: Option[String] = None,
   base: javax.xml.namespace.QName,
   attributes: Map[String, scalaxb.DataRecord[Any]]) extends XExtensionTypable with XSimpleContentOption
@@ -290,7 +290,7 @@ trait XSimpleContentOption
 trait XElement extends XAnnotatedable {
   val annotation: Option[xmlschema.XAnnotation]
   val xelementoption: Option[scalaxb.DataRecord[xmlschema.XElementOption]]
-  val arg2: Seq[scalaxb.DataRecord[xmlschema.XIdentityConstraintOption]]
+  val xIdentityConstraintOption4: Seq[scalaxb.DataRecord[xmlschema.XIdentityConstraintOption]]
   val id: Option[String]
   val name: Option[String]
   val ref: Option[javax.xml.namespace.QName]
@@ -312,7 +312,7 @@ trait XElementOption
 
 case class XTopLevelElement(annotation: Option[xmlschema.XAnnotation] = None,
   xelementoption: Option[scalaxb.DataRecord[xmlschema.XElementOption]] = None,
-  arg2: Seq[scalaxb.DataRecord[xmlschema.XIdentityConstraintOption]] = Nil,
+  xIdentityConstraintOption4: Seq[scalaxb.DataRecord[xmlschema.XIdentityConstraintOption]] = Nil,
   id: Option[String] = None,
   name: Option[String] = None,
   ref: Option[javax.xml.namespace.QName] = None,
@@ -334,7 +334,7 @@ trait XTopLevelElementOption
 trait XLocalElementable extends XElement with XNestedParticleOption with XParticleOption {
   val annotation: Option[xmlschema.XAnnotation]
   val xelementoption: Option[scalaxb.DataRecord[xmlschema.XElementOption]]
-  val arg2: Seq[scalaxb.DataRecord[xmlschema.XIdentityConstraintOption]]
+  val xIdentityConstraintOption4: Seq[scalaxb.DataRecord[xmlschema.XIdentityConstraintOption]]
   val id: Option[String]
   val name: Option[String]
   val ref: Option[javax.xml.namespace.QName]
@@ -355,7 +355,7 @@ trait XLocalElementable extends XElement with XNestedParticleOption with XPartic
 
 case class XLocalElement(annotation: Option[xmlschema.XAnnotation] = None,
   xelementoption: Option[scalaxb.DataRecord[xmlschema.XElementOption]] = None,
-  arg2: Seq[scalaxb.DataRecord[xmlschema.XIdentityConstraintOption]] = Nil,
+  xIdentityConstraintOption4: Seq[scalaxb.DataRecord[xmlschema.XIdentityConstraintOption]] = Nil,
   id: Option[String] = None,
   name: Option[String] = None,
   ref: Option[javax.xml.namespace.QName] = None,
@@ -380,7 +380,7 @@ trait XLocalElementableOption
 */
 trait XGroup extends XAnnotatedable {
   val annotation: Option[xmlschema.XAnnotation]
-  val arg1: Seq[scalaxb.DataRecord[xmlschema.XParticleOption]]
+  val xParticleOption3: Seq[scalaxb.DataRecord[xmlschema.XParticleOption]]
   val id: Option[String]
   val name: Option[String]
   val ref: Option[javax.xml.namespace.QName]
@@ -392,7 +392,7 @@ trait XGroup extends XAnnotatedable {
 
 trait XRealGroupable extends XGroup {
   val annotation: Option[xmlschema.XAnnotation]
-  val arg1: Seq[scalaxb.DataRecord[xmlschema.XParticleOption]]
+  val xParticleOption3: Seq[scalaxb.DataRecord[xmlschema.XParticleOption]]
   val id: Option[String]
   val name: Option[String]
   val ref: Option[javax.xml.namespace.QName]
@@ -403,7 +403,7 @@ trait XRealGroupable extends XGroup {
 
 
 case class XRealGroup(annotation: Option[xmlschema.XAnnotation] = None,
-  arg1: Seq[scalaxb.DataRecord[xmlschema.XParticleOption]] = Nil,
+  xParticleOption3: Seq[scalaxb.DataRecord[xmlschema.XParticleOption]] = Nil,
   id: Option[String] = None,
   name: Option[String] = None,
   ref: Option[javax.xml.namespace.QName] = None,
@@ -414,7 +414,7 @@ case class XRealGroup(annotation: Option[xmlschema.XAnnotation] = None,
 trait XRealGroupableOption
 
 case class XAll(annotation: Option[xmlschema.XAnnotation] = None,
-  arg1: Seq[scalaxb.DataRecord[xmlschema.XParticleOption]] = Nil,
+  xParticleOption3: Seq[scalaxb.DataRecord[xmlschema.XParticleOption]] = Nil,
   id: Option[String] = None,
   name: Option[String] = None,
   ref: Option[javax.xml.namespace.QName] = None,
@@ -424,7 +424,7 @@ case class XAll(annotation: Option[xmlschema.XAnnotation] = None,
 
 
 case class XNamedGroup(annotation: Option[xmlschema.XAnnotation] = None,
-  arg1: Seq[scalaxb.DataRecord[xmlschema.XParticleOption]] = Nil,
+  xParticleOption3: Seq[scalaxb.DataRecord[xmlschema.XParticleOption]] = Nil,
   id: Option[String] = None,
   name: Option[String] = None,
   ref: Option[javax.xml.namespace.QName] = None,
@@ -435,7 +435,7 @@ case class XNamedGroup(annotation: Option[xmlschema.XAnnotation] = None,
 trait XNamedGroupOption
 
 case class XGroupRef(annotation: Option[xmlschema.XAnnotation] = None,
-  arg1: Seq[scalaxb.DataRecord[xmlschema.XParticleOption]] = Nil,
+  xParticleOption3: Seq[scalaxb.DataRecord[xmlschema.XParticleOption]] = Nil,
   id: Option[String] = None,
   name: Option[String] = None,
   ref: Option[javax.xml.namespace.QName] = None,
@@ -449,7 +449,7 @@ case class XGroupRef(annotation: Option[xmlschema.XAnnotation] = None,
 */
 trait XExplicitGroupable extends XGroup with XTypeDefParticleOption with XNestedParticleOption with XParticleOption with XRealGroupableOption {
   val annotation: Option[xmlschema.XAnnotation]
-  val arg1: Seq[scalaxb.DataRecord[xmlschema.XParticleOption]]
+  val xParticleOption3: Seq[scalaxb.DataRecord[xmlschema.XParticleOption]]
   val id: Option[String]
   val name: Option[String]
   val ref: Option[javax.xml.namespace.QName]
@@ -463,7 +463,7 @@ trait XExplicitGroupable extends XGroup with XTypeDefParticleOption with XNested
    group type for the three kinds of group
 */
 case class XExplicitGroup(annotation: Option[xmlschema.XAnnotation] = None,
-  arg1: Seq[scalaxb.DataRecord[xmlschema.XParticleOption]] = Nil,
+  xParticleOption3: Seq[scalaxb.DataRecord[xmlschema.XParticleOption]] = Nil,
   id: Option[String] = None,
   name: Option[String] = None,
   ref: Option[javax.xml.namespace.QName] = None,
@@ -473,7 +473,7 @@ case class XExplicitGroup(annotation: Option[xmlschema.XAnnotation] = None,
 
 
 case class XSimpleExplicitGroup(annotation: Option[xmlschema.XAnnotation] = None,
-  arg1: Seq[scalaxb.DataRecord[xmlschema.XParticleOption]] = Nil,
+  xParticleOption3: Seq[scalaxb.DataRecord[xmlschema.XParticleOption]] = Nil,
   id: Option[String] = None,
   name: Option[String] = None,
   ref: Option[javax.xml.namespace.QName] = None,
@@ -484,7 +484,7 @@ case class XSimpleExplicitGroup(annotation: Option[xmlschema.XAnnotation] = None
 trait XMinOccurs
 
 object XMinOccurs {
-  def fromString(value: String): XMinOccurs = value match {
+  def fromString(value: String, scope: scala.xml.NamespaceBinding): XMinOccurs = value match {
     case "0" => X0
     case "1" => X1
 
@@ -497,7 +497,7 @@ case object X1 extends XMinOccurs { override def toString = "1" }
 trait XMaxOccurs
 
 object XMaxOccurs {
-  def fromString(value: String): XMaxOccurs = value match {
+  def fromString(value: String, scope: scala.xml.NamespaceBinding): XMaxOccurs = value match {
     case "0" => X0Value
     case "1" => X1Value
 
@@ -512,7 +512,7 @@ case object X1Value extends XMaxOccurs { override def toString = "1" }
 */
 case class XNarrowMaxMin(annotation: Option[xmlschema.XAnnotation] = None,
   xelementoption: Option[scalaxb.DataRecord[xmlschema.XElementOption]] = None,
-  arg2: Seq[scalaxb.DataRecord[xmlschema.XIdentityConstraintOption]] = Nil,
+  xIdentityConstraintOption4: Seq[scalaxb.DataRecord[xmlschema.XIdentityConstraintOption]] = Nil,
   id: Option[String] = None,
   name: Option[String] = None,
   ref: Option[javax.xml.namespace.QName] = None,
@@ -533,7 +533,7 @@ trait XNarrowMaxMinOption
 trait XMinOccursType
 
 object XMinOccursType {
-  def fromString(value: String): XMinOccursType = value match {
+  def fromString(value: String, scope: scala.xml.NamespaceBinding): XMinOccursType = value match {
     case "0" => X0Value2
     case "1" => X1Value2
 
@@ -546,7 +546,7 @@ case object X1Value2 extends XMinOccursType { override def toString = "1" }
 trait XMaxOccursType
 
 object XMaxOccursType {
-  def fromString(value: String): XMaxOccursType = value match {
+  def fromString(value: String, scope: scala.xml.NamespaceBinding): XMaxOccursType = value match {
     case "1" => X1Value3
 
   }
@@ -560,7 +560,7 @@ case object X1Value3 extends XMaxOccursType { override def toString = "1" }
 */
 trait XAllable extends XExplicitGroupable with XTypeDefParticleOption with XParticleOption with XRealGroupableOption {
   val annotation: Option[xmlschema.XAnnotation]
-  val arg1: Seq[scalaxb.DataRecord[xmlschema.XParticleOption]]
+  val xParticleOption3: Seq[scalaxb.DataRecord[xmlschema.XParticleOption]]
   val id: Option[String]
   val name: Option[String]
   val ref: Option[javax.xml.namespace.QName]
@@ -574,7 +574,7 @@ trait XAllable extends XExplicitGroupable with XTypeDefParticleOption with XPart
    Only elements allowed inside
 */
 case class XAllType(annotation: Option[xmlschema.XAnnotation] = None,
-  arg1: Seq[scalaxb.DataRecord[xmlschema.XParticleOption]] = Nil,
+  xParticleOption3: Seq[scalaxb.DataRecord[xmlschema.XParticleOption]] = Nil,
   id: Option[String] = None,
   name: Option[String] = None,
   ref: Option[javax.xml.namespace.QName] = None,
@@ -585,7 +585,7 @@ case class XAllType(annotation: Option[xmlschema.XAnnotation] = None,
 trait XProcessContents
 
 object XProcessContents {
-  def fromString(value: String): XProcessContents = value match {
+  def fromString(value: String, scope: scala.xml.NamespaceBinding): XProcessContents = value match {
     case "skip" => XSkip
     case "lax" => XLax
     case "strict" => XStrict
@@ -625,7 +625,7 @@ case class XAny(annotation: Option[xmlschema.XAnnotation] = None,
 
 trait XAttributeGroup extends XAnnotatedable {
   val annotation: Option[xmlschema.XAnnotation]
-  val arg1: xmlschema.XAttrDeclsSequence
+  val xAttrDeclsSequence3: xmlschema.XAttrDeclsSequence
   val id: Option[String]
   val name: Option[String]
   val ref: Option[javax.xml.namespace.QName]
@@ -634,7 +634,7 @@ trait XAttributeGroup extends XAnnotatedable {
 
 
 case class XNamedAttributeGroup(annotation: Option[xmlschema.XAnnotation] = None,
-  arg1: xmlschema.XAttrDeclsSequence,
+  xAttrDeclsSequence3: xmlschema.XAttrDeclsSequence,
   id: Option[String] = None,
   name: Option[String] = None,
   ref: Option[javax.xml.namespace.QName] = None,
@@ -642,7 +642,7 @@ case class XNamedAttributeGroup(annotation: Option[xmlschema.XAnnotation] = None
 
 
 case class XAttributeGroupRef(annotation: Option[xmlschema.XAnnotation] = None,
-  arg1: xmlschema.XAttrDeclsSequence,
+  xAttrDeclsSequence3: xmlschema.XAttrDeclsSequence,
   id: Option[String] = None,
   name: Option[String] = None,
   ref: Option[javax.xml.namespace.QName] = None,
@@ -743,7 +743,7 @@ case class XAnyType(mixed: Seq[scalaxb.DataRecord[Any]] = Nil,
 trait XDerivationControl
 
 object XDerivationControl {
-  def fromString(value: String): XDerivationControl = value match {
+  def fromString(value: String, scope: scala.xml.NamespaceBinding): XDerivationControl = value match {
     case "substitution" => XSubstitution
     case "extension" => XExtension
     case "restriction" => XRestrictionValue
@@ -762,7 +762,7 @@ case object XUnionValue extends XDerivationControl { override def toString = "un
 
 trait XSimpleType extends XAnnotatedable {
   val annotation: Option[xmlschema.XAnnotation]
-  val arg1: scalaxb.DataRecord[xmlschema.XSimpleDerivationOption]
+  val xSimpleDerivationOption3: scalaxb.DataRecord[xmlschema.XSimpleDerivationOption]
   val id: Option[String]
   val finalValue: Option[String]
   val name: Option[String]
@@ -771,7 +771,7 @@ trait XSimpleType extends XAnnotatedable {
 
 
 case class XTopLevelSimpleType(annotation: Option[xmlschema.XAnnotation] = None,
-  arg1: scalaxb.DataRecord[xmlschema.XSimpleDerivationOption],
+  xSimpleDerivationOption3: scalaxb.DataRecord[xmlschema.XSimpleDerivationOption],
   id: Option[String] = None,
   finalValue: Option[String] = None,
   name: Option[String] = None,
@@ -779,7 +779,7 @@ case class XTopLevelSimpleType(annotation: Option[xmlschema.XAnnotation] = None,
 
 
 case class XLocalSimpleType(annotation: Option[xmlschema.XAnnotation] = None,
-  arg1: scalaxb.DataRecord[xmlschema.XSimpleDerivationOption],
+  xSimpleDerivationOption3: scalaxb.DataRecord[xmlschema.XSimpleDerivationOption],
   id: Option[String] = None,
   finalValue: Option[String] = None,
   name: Option[String] = None,
@@ -792,7 +792,7 @@ case class XLocalSimpleType(annotation: Option[xmlschema.XAnnotation] = None,
         
 */
 case class XRestriction(annotation: Option[xmlschema.XAnnotation] = None,
-  arg1: xmlschema.XSimpleRestrictionModelSequence,
+  xSimpleRestrictionModelSequence3: xmlschema.XSimpleRestrictionModelSequence,
   id: Option[String] = None,
   base: Option[javax.xml.namespace.QName] = None,
   attributes: Map[String, scalaxb.DataRecord[Any]]) extends XAnnotatedable with XSimpleDerivationOption
@@ -879,7 +879,7 @@ case class XTotalDigits(annotation: Option[xmlschema.XAnnotation] = None,
 trait XValue
 
 object XValue {
-  def fromString(value: String): XValue = value match {
+  def fromString(value: String, scope: scala.xml.NamespaceBinding): XValue = value match {
     case "preserve" => XPreserve
     case "replace" => XReplace
     case "collapse" => XCollapse
@@ -906,7 +906,7 @@ case class XPattern(annotation: Option[xmlschema.XAnnotation] = None,
   attributes: Map[String, scalaxb.DataRecord[Any]]) extends XNoFixedFacetable with XFacetsOption
 
 case class XSimpleRestrictionModelSequence(simpleType: Option[xmlschema.XLocalSimpleType] = None,
-  arg2: Seq[scalaxb.DataRecord[xmlschema.XFacetsOption]] = Nil)
+  xFacetsOption2: Seq[scalaxb.DataRecord[xmlschema.XFacetsOption]] = Nil)
 
 trait XFacetsOption
 trait XSimpleDerivationOption
@@ -916,8 +916,8 @@ case class XAllModelSequence(annotation: Option[xmlschema.XAnnotation] = None,
 
 trait XAllModelOption1
 trait XComplexTypeModelOption
-case class XComplexTypeModelSequence1(arg1: Option[scalaxb.DataRecord[xmlschema.XTypeDefParticleOption]] = None,
-  arg2: xmlschema.XAttrDeclsSequence) extends XComplexTypeModelOption
+case class XComplexTypeModelSequence1(xTypeDefParticleOption1: Option[scalaxb.DataRecord[xmlschema.XTypeDefParticleOption]] = None,
+  xAttrDeclsSequence2: xmlschema.XAttrDeclsSequence) extends XComplexTypeModelOption
 
 case class XAttrDeclsSequence(xattrdeclsoption1: Seq[scalaxb.DataRecord[xmlschema.XAttrDeclsOption1]] = Nil,
   anyAttribute: Option[xmlschema.XWildcardable] = None)

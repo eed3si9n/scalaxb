@@ -106,6 +106,38 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
       case node: scala.xml.Node =>     
         scalaxb.Helper.instanceType(node) match {
           case (Some("http://www.w3.org/2001/XMLSchema"), Some("annotated")) => Right(scalaxb.fromXML[xmlschema.XAnnotatedable](node, stack))
+          case (Some("http://www.w3.org/2001/XMLSchema"), Some("attribute")) => Right(scalaxb.fromXML[xmlschema.XAttributable](node, stack))
+          case (Some("http://www.w3.org/2001/XMLSchema"), Some("topLevelAttribute")) => Right(scalaxb.fromXML[xmlschema.XTopLevelAttribute](node, stack))
+          case (Some("http://www.w3.org/2001/XMLSchema"), Some("complexType")) => Right(scalaxb.fromXML[xmlschema.XComplexType](node, stack))
+          case (Some("http://www.w3.org/2001/XMLSchema"), Some("topLevelComplexType")) => Right(scalaxb.fromXML[xmlschema.XTopLevelComplexType](node, stack))
+          case (Some("http://www.w3.org/2001/XMLSchema"), Some("localComplexType")) => Right(scalaxb.fromXML[xmlschema.XLocalComplexType](node, stack))
+          case (Some("http://www.w3.org/2001/XMLSchema"), Some("restrictionType")) => Right(scalaxb.fromXML[xmlschema.XRestrictionTypable](node, stack))
+          case (Some("http://www.w3.org/2001/XMLSchema"), Some("complexRestrictionType")) => Right(scalaxb.fromXML[xmlschema.XComplexRestrictionType](node, stack))
+          case (Some("http://www.w3.org/2001/XMLSchema"), Some("simpleRestrictionType")) => Right(scalaxb.fromXML[xmlschema.XSimpleRestrictionType](node, stack))
+          case (Some("http://www.w3.org/2001/XMLSchema"), Some("extensionType")) => Right(scalaxb.fromXML[xmlschema.XExtensionTypable](node, stack))
+          case (Some("http://www.w3.org/2001/XMLSchema"), Some("simpleExtensionType")) => Right(scalaxb.fromXML[xmlschema.XSimpleExtensionType](node, stack))
+          case (Some("http://www.w3.org/2001/XMLSchema"), Some("element")) => Right(scalaxb.fromXML[xmlschema.XElement](node, stack))
+          case (Some("http://www.w3.org/2001/XMLSchema"), Some("topLevelElement")) => Right(scalaxb.fromXML[xmlschema.XTopLevelElement](node, stack))
+          case (Some("http://www.w3.org/2001/XMLSchema"), Some("localElement")) => Right(scalaxb.fromXML[xmlschema.XLocalElementable](node, stack))
+          case (Some("http://www.w3.org/2001/XMLSchema"), Some("narrowMaxMin")) => Right(scalaxb.fromXML[xmlschema.XNarrowMaxMin](node, stack))
+          case (Some("http://www.w3.org/2001/XMLSchema"), Some("group")) => Right(scalaxb.fromXML[xmlschema.XGroup](node, stack))
+          case (Some("http://www.w3.org/2001/XMLSchema"), Some("realGroup")) => Right(scalaxb.fromXML[xmlschema.XRealGroupable](node, stack))
+          case (Some("http://www.w3.org/2001/XMLSchema"), Some("namedGroup")) => Right(scalaxb.fromXML[xmlschema.XNamedGroup](node, stack))
+          case (Some("http://www.w3.org/2001/XMLSchema"), Some("groupRef")) => Right(scalaxb.fromXML[xmlschema.XGroupRef](node, stack))
+          case (Some("http://www.w3.org/2001/XMLSchema"), Some("explicitGroup")) => Right(scalaxb.fromXML[xmlschema.XExplicitGroupable](node, stack))
+          case (Some("http://www.w3.org/2001/XMLSchema"), Some("simpleExplicitGroup")) => Right(scalaxb.fromXML[xmlschema.XSimpleExplicitGroup](node, stack))
+          case (Some("http://www.w3.org/2001/XMLSchema"), Some("all")) => Right(scalaxb.fromXML[xmlschema.XAllable](node, stack))
+          case (Some("http://www.w3.org/2001/XMLSchema"), Some("wildcard")) => Right(scalaxb.fromXML[xmlschema.XWildcardable](node, stack))
+          case (Some("http://www.w3.org/2001/XMLSchema"), Some("attributeGroup")) => Right(scalaxb.fromXML[xmlschema.XAttributeGroup](node, stack))
+          case (Some("http://www.w3.org/2001/XMLSchema"), Some("namedAttributeGroup")) => Right(scalaxb.fromXML[xmlschema.XNamedAttributeGroup](node, stack))
+          case (Some("http://www.w3.org/2001/XMLSchema"), Some("attributeGroupRef")) => Right(scalaxb.fromXML[xmlschema.XAttributeGroupRef](node, stack))
+          case (Some("http://www.w3.org/2001/XMLSchema"), Some("keybase")) => Right(scalaxb.fromXML[xmlschema.XKeybasable](node, stack))
+          case (Some("http://www.w3.org/2001/XMLSchema"), Some("simpleType")) => Right(scalaxb.fromXML[xmlschema.XSimpleType](node, stack))
+          case (Some("http://www.w3.org/2001/XMLSchema"), Some("topLevelSimpleType")) => Right(scalaxb.fromXML[xmlschema.XTopLevelSimpleType](node, stack))
+          case (Some("http://www.w3.org/2001/XMLSchema"), Some("localSimpleType")) => Right(scalaxb.fromXML[xmlschema.XLocalSimpleType](node, stack))
+          case (Some("http://www.w3.org/2001/XMLSchema"), Some("facet")) => Right(scalaxb.fromXML[xmlschema.XFacetable](node, stack))
+          case (Some("http://www.w3.org/2001/XMLSchema"), Some("noFixedFacet")) => Right(scalaxb.fromXML[xmlschema.XNoFixedFacetable](node, stack))
+          case (Some("http://www.w3.org/2001/XMLSchema"), Some("numFacet")) => Right(scalaxb.fromXML[xmlschema.XNumFacetable](node, stack))
           case _ => Right(scalaxb.fromXML[xmlschema.XOpenAttrs](node, stack))
         }
       case _ => Left("reads failed: seq must be scala.xml.Node")  
@@ -159,16 +191,37 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
       case node: scala.xml.Node =>     
         scalaxb.Helper.instanceType(node) match {
           case (Some("http://www.w3.org/2001/XMLSchema"), Some("attribute")) => Right(scalaxb.fromXML[xmlschema.XAttributable](node, stack))
+          case (Some("http://www.w3.org/2001/XMLSchema"), Some("topLevelAttribute")) => Right(scalaxb.fromXML[xmlschema.XTopLevelAttribute](node, stack))
           case (Some("http://www.w3.org/2001/XMLSchema"), Some("complexType")) => Right(scalaxb.fromXML[xmlschema.XComplexType](node, stack))
+          case (Some("http://www.w3.org/2001/XMLSchema"), Some("topLevelComplexType")) => Right(scalaxb.fromXML[xmlschema.XTopLevelComplexType](node, stack))
+          case (Some("http://www.w3.org/2001/XMLSchema"), Some("localComplexType")) => Right(scalaxb.fromXML[xmlschema.XLocalComplexType](node, stack))
           case (Some("http://www.w3.org/2001/XMLSchema"), Some("restrictionType")) => Right(scalaxb.fromXML[xmlschema.XRestrictionTypable](node, stack))
+          case (Some("http://www.w3.org/2001/XMLSchema"), Some("complexRestrictionType")) => Right(scalaxb.fromXML[xmlschema.XComplexRestrictionType](node, stack))
+          case (Some("http://www.w3.org/2001/XMLSchema"), Some("simpleRestrictionType")) => Right(scalaxb.fromXML[xmlschema.XSimpleRestrictionType](node, stack))
           case (Some("http://www.w3.org/2001/XMLSchema"), Some("extensionType")) => Right(scalaxb.fromXML[xmlschema.XExtensionTypable](node, stack))
+          case (Some("http://www.w3.org/2001/XMLSchema"), Some("simpleExtensionType")) => Right(scalaxb.fromXML[xmlschema.XSimpleExtensionType](node, stack))
           case (Some("http://www.w3.org/2001/XMLSchema"), Some("element")) => Right(scalaxb.fromXML[xmlschema.XElement](node, stack))
+          case (Some("http://www.w3.org/2001/XMLSchema"), Some("topLevelElement")) => Right(scalaxb.fromXML[xmlschema.XTopLevelElement](node, stack))
+          case (Some("http://www.w3.org/2001/XMLSchema"), Some("localElement")) => Right(scalaxb.fromXML[xmlschema.XLocalElementable](node, stack))
+          case (Some("http://www.w3.org/2001/XMLSchema"), Some("narrowMaxMin")) => Right(scalaxb.fromXML[xmlschema.XNarrowMaxMin](node, stack))
           case (Some("http://www.w3.org/2001/XMLSchema"), Some("group")) => Right(scalaxb.fromXML[xmlschema.XGroup](node, stack))
+          case (Some("http://www.w3.org/2001/XMLSchema"), Some("realGroup")) => Right(scalaxb.fromXML[xmlschema.XRealGroupable](node, stack))
+          case (Some("http://www.w3.org/2001/XMLSchema"), Some("namedGroup")) => Right(scalaxb.fromXML[xmlschema.XNamedGroup](node, stack))
+          case (Some("http://www.w3.org/2001/XMLSchema"), Some("groupRef")) => Right(scalaxb.fromXML[xmlschema.XGroupRef](node, stack))
+          case (Some("http://www.w3.org/2001/XMLSchema"), Some("explicitGroup")) => Right(scalaxb.fromXML[xmlschema.XExplicitGroupable](node, stack))
+          case (Some("http://www.w3.org/2001/XMLSchema"), Some("simpleExplicitGroup")) => Right(scalaxb.fromXML[xmlschema.XSimpleExplicitGroup](node, stack))
+          case (Some("http://www.w3.org/2001/XMLSchema"), Some("all")) => Right(scalaxb.fromXML[xmlschema.XAllable](node, stack))
           case (Some("http://www.w3.org/2001/XMLSchema"), Some("wildcard")) => Right(scalaxb.fromXML[xmlschema.XWildcardable](node, stack))
           case (Some("http://www.w3.org/2001/XMLSchema"), Some("attributeGroup")) => Right(scalaxb.fromXML[xmlschema.XAttributeGroup](node, stack))
+          case (Some("http://www.w3.org/2001/XMLSchema"), Some("namedAttributeGroup")) => Right(scalaxb.fromXML[xmlschema.XNamedAttributeGroup](node, stack))
+          case (Some("http://www.w3.org/2001/XMLSchema"), Some("attributeGroupRef")) => Right(scalaxb.fromXML[xmlschema.XAttributeGroupRef](node, stack))
           case (Some("http://www.w3.org/2001/XMLSchema"), Some("keybase")) => Right(scalaxb.fromXML[xmlschema.XKeybasable](node, stack))
           case (Some("http://www.w3.org/2001/XMLSchema"), Some("simpleType")) => Right(scalaxb.fromXML[xmlschema.XSimpleType](node, stack))
+          case (Some("http://www.w3.org/2001/XMLSchema"), Some("topLevelSimpleType")) => Right(scalaxb.fromXML[xmlschema.XTopLevelSimpleType](node, stack))
+          case (Some("http://www.w3.org/2001/XMLSchema"), Some("localSimpleType")) => Right(scalaxb.fromXML[xmlschema.XLocalSimpleType](node, stack))
           case (Some("http://www.w3.org/2001/XMLSchema"), Some("facet")) => Right(scalaxb.fromXML[xmlschema.XFacetable](node, stack))
+          case (Some("http://www.w3.org/2001/XMLSchema"), Some("noFixedFacet")) => Right(scalaxb.fromXML[xmlschema.XNoFixedFacetable](node, stack))
+          case (Some("http://www.w3.org/2001/XMLSchema"), Some("numFacet")) => Right(scalaxb.fromXML[xmlschema.XNumFacetable](node, stack))
           case _ => Right(scalaxb.fromXML[xmlschema.XAnnotated](node, stack))
         }
       case _ => Left("reads failed: seq must be scala.xml.Node")  
@@ -242,8 +295,10 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
   trait DefaultXmlschemaXFormChoiceFormat extends scalaxb.XMLFormat[xmlschema.XFormChoice] {
     val targetNamespace: Option[String] = Some("http://www.w3.org/2001/XMLSchema")
     
-    def reads(seq: scala.xml.NodeSeq, stack: List[scalaxb.ElemName]): Either[String, xmlschema.XFormChoice] =
-      Right(xmlschema.XFormChoice.fromString(seq.text))
+    def reads(seq: scala.xml.NodeSeq, stack: List[scalaxb.ElemName]): Either[String, xmlschema.XFormChoice] = seq match {
+      case elem: scala.xml.Elem => Right(xmlschema.XFormChoice.fromString(elem.text, elem.scope))
+      case _ => Right(xmlschema.XFormChoice.fromString(seq.text, scala.xml.TopScope))
+    }
     
     def writes(__obj: xmlschema.XFormChoice, __namespace: Option[String], __elementLabel: Option[String],
         __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
@@ -256,8 +311,10 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
   trait DefaultXmlschemaXReducedDerivationControlFormat extends scalaxb.XMLFormat[xmlschema.XReducedDerivationControl] {
     val targetNamespace: Option[String] = Some("http://www.w3.org/2001/XMLSchema")
     
-    def reads(seq: scala.xml.NodeSeq, stack: List[scalaxb.ElemName]): Either[String, xmlschema.XReducedDerivationControl] =
-      Right(xmlschema.XReducedDerivationControl.fromString(seq.text))
+    def reads(seq: scala.xml.NodeSeq, stack: List[scalaxb.ElemName]): Either[String, xmlschema.XReducedDerivationControl] = seq match {
+      case elem: scala.xml.Elem => Right(xmlschema.XReducedDerivationControl.fromString(elem.text, elem.scope))
+      case _ => Right(xmlschema.XReducedDerivationControl.fromString(seq.text, scala.xml.TopScope))
+    }
     
     def writes(__obj: xmlschema.XReducedDerivationControl, __namespace: Option[String], __elementLabel: Option[String],
         __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
@@ -270,8 +327,10 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
   trait DefaultXmlschemaXTypeDerivationControlFormat extends scalaxb.XMLFormat[xmlschema.XTypeDerivationControl] {
     val targetNamespace: Option[String] = Some("http://www.w3.org/2001/XMLSchema")
     
-    def reads(seq: scala.xml.NodeSeq, stack: List[scalaxb.ElemName]): Either[String, xmlschema.XTypeDerivationControl] =
-      Right(xmlschema.XTypeDerivationControl.fromString(seq.text))
+    def reads(seq: scala.xml.NodeSeq, stack: List[scalaxb.ElemName]): Either[String, xmlschema.XTypeDerivationControl] = seq match {
+      case elem: scala.xml.Elem => Right(xmlschema.XTypeDerivationControl.fromString(elem.text, elem.scope))
+      case _ => Right(xmlschema.XTypeDerivationControl.fromString(seq.text, scala.xml.TopScope))
+    }
     
     def writes(__obj: xmlschema.XTypeDerivationControl, __namespace: Option[String], __elementLabel: Option[String],
         __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
@@ -355,7 +414,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     
     def writes(__obj: xmlschema.XSchemaSequence1, __namespace: Option[String], __elementLabel: Option[String], 
         __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
-      Seq.concat(Some(__obj.arg1) map {x => scalaxb.toXML[scalaxb.DataRecord[Any]](x, x.namespace, x.key, __scope, false)} get,
+      Seq.concat(Some(__obj.xSchemaTopOption1) map {x => scalaxb.toXML[scalaxb.DataRecord[Any]](x, x.namespace, x.key, __scope, false)} get,
         __obj.annotation flatMap { scalaxb.toXML[xmlschema.XAnnotation](_, Some("http://www.w3.org/2001/XMLSchema"), Some("annotation"), __scope, false) })
 
 
@@ -365,8 +424,10 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
   trait DefaultXmlschemaXUseFormat extends scalaxb.XMLFormat[xmlschema.XUse] {
     val targetNamespace: Option[String] = Some("http://www.w3.org/2001/XMLSchema")
     
-    def reads(seq: scala.xml.NodeSeq, stack: List[scalaxb.ElemName]): Either[String, xmlschema.XUse] =
-      Right(xmlschema.XUse.fromString(seq.text))
+    def reads(seq: scala.xml.NodeSeq, stack: List[scalaxb.ElemName]): Either[String, xmlschema.XUse] = seq match {
+      case elem: scala.xml.Elem => Right(xmlschema.XUse.fromString(elem.text, elem.scope))
+      case _ => Right(xmlschema.XUse.fromString(seq.text, scala.xml.TopScope))
+    }
     
     def writes(__obj: xmlschema.XUse, __namespace: Option[String], __elementLabel: Option[String],
         __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
@@ -584,7 +645,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
 
     def writesChildNodes(__obj: xmlschema.XTopLevelComplexType, __scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node] =
       Seq.concat(__obj.annotation map { scalaxb.toXML[xmlschema.XAnnotation](_, Some("http://www.w3.org/2001/XMLSchema"), Some("annotation"), __scope, false) } getOrElse {Nil},
-        Some(__obj.arg1) map {x => scalaxb.toXML[scalaxb.DataRecord[xmlschema.XComplexTypeModelOption]](x, x.namespace, x.key, __scope, false)} get)
+        Some(__obj.xComplexTypeModelOption3) map {x => scalaxb.toXML[scalaxb.DataRecord[xmlschema.XComplexTypeModelOption]](x, x.namespace, x.key, __scope, false)} get)
 
   }
 
@@ -639,7 +700,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
 
     def writesChildNodes(__obj: xmlschema.XLocalComplexType, __scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node] =
       Seq.concat(__obj.annotation map { scalaxb.toXML[xmlschema.XAnnotation](_, Some("http://www.w3.org/2001/XMLSchema"), Some("annotation"), __scope, false) } getOrElse {Nil},
-        Some(__obj.arg1) map {x => scalaxb.toXML[scalaxb.DataRecord[xmlschema.XComplexTypeModelOption]](x, x.namespace, x.key, __scope, false)} get)
+        Some(__obj.xComplexTypeModelOption3) map {x => scalaxb.toXML[scalaxb.DataRecord[xmlschema.XComplexTypeModelOption]](x, x.namespace, x.key, __scope, false)} get)
 
   }
 
@@ -705,7 +766,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     def writesChildNodes(__obj: xmlschema.XRestrictionType, __scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node] =
       Seq.concat(__obj.annotation map { scalaxb.toXML[xmlschema.XAnnotation](_, Some("http://www.w3.org/2001/XMLSchema"), Some("annotation"), __scope, false) } getOrElse {Nil},
         __obj.xrestrictiontypableoption map { x => scalaxb.toXML[scalaxb.DataRecord[Any]](x, x.namespace, x.key, __scope, false) } getOrElse {Nil},
-        scalaxb.toXML[xmlschema.XAttrDeclsSequence](__obj.arg2, None, Some("arg2"), __scope, false))
+        scalaxb.toXML[xmlschema.XAttrDeclsSequence](__obj.xAttrDeclsSequence4, None, Some("xAttrDeclsSequence4"), __scope, false))
 
   }
 
@@ -752,7 +813,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     def writesChildNodes(__obj: xmlschema.XComplexRestrictionType, __scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node] =
       Seq.concat(__obj.annotation map { scalaxb.toXML[xmlschema.XAnnotation](_, Some("http://www.w3.org/2001/XMLSchema"), Some("annotation"), __scope, false) } getOrElse {Nil},
         __obj.xrestrictiontypableoption map { x => scalaxb.toXML[scalaxb.DataRecord[Any]](x, x.namespace, x.key, __scope, false) } getOrElse {Nil},
-        scalaxb.toXML[xmlschema.XAttrDeclsSequence](__obj.arg2, None, Some("arg2"), __scope, false))
+        scalaxb.toXML[xmlschema.XAttrDeclsSequence](__obj.xAttrDeclsSequence4, None, Some("xAttrDeclsSequence4"), __scope, false))
 
   }
 
@@ -814,8 +875,8 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
 
     def writesChildNodes(__obj: xmlschema.XExtensionType, __scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node] =
       Seq.concat(__obj.annotation map { scalaxb.toXML[xmlschema.XAnnotation](_, Some("http://www.w3.org/2001/XMLSchema"), Some("annotation"), __scope, false) } getOrElse {Nil},
-        __obj.arg1 map { x => scalaxb.toXML[scalaxb.DataRecord[xmlschema.XTypeDefParticleOption]](x, x.namespace, x.key, __scope, false) } getOrElse {Nil},
-        scalaxb.toXML[xmlschema.XAttrDeclsSequence](__obj.arg2, None, Some("arg2"), __scope, false))
+        __obj.xTypeDefParticleOption3 map { x => scalaxb.toXML[scalaxb.DataRecord[xmlschema.XTypeDefParticleOption]](x, x.namespace, x.key, __scope, false) } getOrElse {Nil},
+        scalaxb.toXML[xmlschema.XAttrDeclsSequence](__obj.xAttrDeclsSequence4, None, Some("xAttrDeclsSequence4"), __scope, false))
 
   }
 
@@ -906,7 +967,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     def writesChildNodes(__obj: xmlschema.XSimpleRestrictionType, __scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node] =
       Seq.concat(__obj.annotation map { scalaxb.toXML[xmlschema.XAnnotation](_, Some("http://www.w3.org/2001/XMLSchema"), Some("annotation"), __scope, false) } getOrElse {Nil},
         __obj.xrestrictiontypableoption map { x => scalaxb.toXML[scalaxb.DataRecord[Any]](x, x.namespace, x.key, __scope, false) } getOrElse {Nil},
-        scalaxb.toXML[xmlschema.XAttrDeclsSequence](__obj.arg2, None, Some("arg2"), __scope, false))
+        scalaxb.toXML[xmlschema.XAttrDeclsSequence](__obj.xAttrDeclsSequence4, None, Some("xAttrDeclsSequence4"), __scope, false))
 
   }
 
@@ -951,8 +1012,8 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
 
     def writesChildNodes(__obj: xmlschema.XSimpleExtensionType, __scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node] =
       Seq.concat(__obj.annotation map { scalaxb.toXML[xmlschema.XAnnotation](_, Some("http://www.w3.org/2001/XMLSchema"), Some("annotation"), __scope, false) } getOrElse {Nil},
-        __obj.arg1 map { x => scalaxb.toXML[scalaxb.DataRecord[xmlschema.XTypeDefParticleOption]](x, x.namespace, x.key, __scope, false) } getOrElse {Nil},
-        scalaxb.toXML[xmlschema.XAttrDeclsSequence](__obj.arg2, None, Some("arg2"), __scope, false))
+        __obj.xTypeDefParticleOption3 map { x => scalaxb.toXML[scalaxb.DataRecord[xmlschema.XTypeDefParticleOption]](x, x.namespace, x.key, __scope, false) } getOrElse {Nil},
+        scalaxb.toXML[xmlschema.XAttrDeclsSequence](__obj.xAttrDeclsSequence4, None, Some("xAttrDeclsSequence4"), __scope, false))
 
   }
 
@@ -1003,6 +1064,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
         scalaxb.Helper.instanceType(node) match {
           case (Some("http://www.w3.org/2001/XMLSchema"), Some("topLevelElement")) => Right(scalaxb.fromXML[xmlschema.XTopLevelElement](node, stack))
           case (Some("http://www.w3.org/2001/XMLSchema"), Some("localElement")) => Right(scalaxb.fromXML[xmlschema.XLocalElementable](node, stack))
+          case (Some("http://www.w3.org/2001/XMLSchema"), Some("narrowMaxMin")) => Right(scalaxb.fromXML[xmlschema.XNarrowMaxMin](node, stack))
           case x => Left("Unknown type: " + x)
         }
       case _ => Left("reads failed: seq must be scala.xml.Node")  
@@ -1097,7 +1159,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     def writesChildNodes(__obj: xmlschema.XTopLevelElement, __scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node] =
       Seq.concat(__obj.annotation map { scalaxb.toXML[xmlschema.XAnnotation](_, Some("http://www.w3.org/2001/XMLSchema"), Some("annotation"), __scope, false) } getOrElse {Nil},
         __obj.xelementoption map { x => scalaxb.toXML[scalaxb.DataRecord[xmlschema.XElementOption]](x, x.namespace, x.key, __scope, false) } getOrElse {Nil},
-        __obj.arg2 flatMap { x => scalaxb.toXML[scalaxb.DataRecord[xmlschema.XIdentityConstraintOption]](x, x.namespace, x.key, __scope, false) })
+        __obj.xIdentityConstraintOption4 flatMap { x => scalaxb.toXML[scalaxb.DataRecord[xmlschema.XIdentityConstraintOption]](x, x.namespace, x.key, __scope, false) })
 
   }
 
@@ -1199,7 +1261,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     def writesChildNodes(__obj: xmlschema.XLocalElement, __scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node] =
       Seq.concat(__obj.annotation map { scalaxb.toXML[xmlschema.XAnnotation](_, Some("http://www.w3.org/2001/XMLSchema"), Some("annotation"), __scope, false) } getOrElse {Nil},
         __obj.xelementoption map { x => scalaxb.toXML[scalaxb.DataRecord[xmlschema.XElementOption]](x, x.namespace, x.key, __scope, false) } getOrElse {Nil},
-        __obj.arg2 flatMap { x => scalaxb.toXML[scalaxb.DataRecord[xmlschema.XIdentityConstraintOption]](x, x.namespace, x.key, __scope, false) })
+        __obj.xIdentityConstraintOption4 flatMap { x => scalaxb.toXML[scalaxb.DataRecord[xmlschema.XIdentityConstraintOption]](x, x.namespace, x.key, __scope, false) })
 
   }
 
@@ -1208,7 +1270,11 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
       case node: scala.xml.Node =>     
         scalaxb.Helper.instanceType(node) match {
           case (Some("http://www.w3.org/2001/XMLSchema"), Some("realGroup")) => Right(scalaxb.fromXML[xmlschema.XRealGroupable](node, stack))
+          case (Some("http://www.w3.org/2001/XMLSchema"), Some("namedGroup")) => Right(scalaxb.fromXML[xmlschema.XNamedGroup](node, stack))
+          case (Some("http://www.w3.org/2001/XMLSchema"), Some("groupRef")) => Right(scalaxb.fromXML[xmlschema.XGroupRef](node, stack))
           case (Some("http://www.w3.org/2001/XMLSchema"), Some("explicitGroup")) => Right(scalaxb.fromXML[xmlschema.XExplicitGroupable](node, stack))
+          case (Some("http://www.w3.org/2001/XMLSchema"), Some("simpleExplicitGroup")) => Right(scalaxb.fromXML[xmlschema.XSimpleExplicitGroup](node, stack))
+          case (Some("http://www.w3.org/2001/XMLSchema"), Some("all")) => Right(scalaxb.fromXML[xmlschema.XAllable](node, stack))
           case x => Left("Unknown type: " + x)
         }
       case _ => Left("reads failed: seq must be scala.xml.Node")  
@@ -1289,7 +1355,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
 
     def writesChildNodes(__obj: xmlschema.XRealGroup, __scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node] =
       Seq.concat(__obj.annotation map { scalaxb.toXML[xmlschema.XAnnotation](_, Some("http://www.w3.org/2001/XMLSchema"), Some("annotation"), __scope, false) } getOrElse {Nil},
-        __obj.arg1 flatMap { x => scalaxb.toXML[scalaxb.DataRecord[xmlschema.XParticleOption]](x, x.namespace, x.key, __scope, false) })
+        __obj.xParticleOption3 flatMap { x => scalaxb.toXML[scalaxb.DataRecord[xmlschema.XParticleOption]](x, x.namespace, x.key, __scope, false) })
 
   }
 
@@ -1339,7 +1405,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
 
     def writesChildNodes(__obj: xmlschema.XAll, __scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node] =
       Seq.concat(__obj.annotation map { scalaxb.toXML[xmlschema.XAnnotation](_, Some("http://www.w3.org/2001/XMLSchema"), Some("annotation"), __scope, false) } getOrElse {Nil},
-        __obj.arg1 flatMap { x => scalaxb.toXML[scalaxb.DataRecord[xmlschema.XParticleOption]](x, x.namespace, x.key, __scope, false) })
+        __obj.xParticleOption3 flatMap { x => scalaxb.toXML[scalaxb.DataRecord[xmlschema.XParticleOption]](x, x.namespace, x.key, __scope, false) })
 
   }
 
@@ -1391,7 +1457,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
 
     def writesChildNodes(__obj: xmlschema.XNamedGroup, __scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node] =
       Seq.concat(__obj.annotation map { scalaxb.toXML[xmlschema.XAnnotation](_, Some("http://www.w3.org/2001/XMLSchema"), Some("annotation"), __scope, false) } getOrElse {Nil},
-        __obj.arg1 flatMap { x => scalaxb.toXML[scalaxb.DataRecord[xmlschema.XParticleOption]](x, x.namespace, x.key, __scope, false) })
+        __obj.xParticleOption3 flatMap { x => scalaxb.toXML[scalaxb.DataRecord[xmlschema.XParticleOption]](x, x.namespace, x.key, __scope, false) })
 
   }
 
@@ -1443,7 +1509,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
 
     def writesChildNodes(__obj: xmlschema.XGroupRef, __scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node] =
       Seq.concat(__obj.annotation map { scalaxb.toXML[xmlschema.XAnnotation](_, Some("http://www.w3.org/2001/XMLSchema"), Some("annotation"), __scope, false) } getOrElse {Nil},
-        __obj.arg1 flatMap { x => scalaxb.toXML[scalaxb.DataRecord[xmlschema.XParticleOption]](x, x.namespace, x.key, __scope, false) })
+        __obj.xParticleOption3 flatMap { x => scalaxb.toXML[scalaxb.DataRecord[xmlschema.XParticleOption]](x, x.namespace, x.key, __scope, false) })
 
   }
 
@@ -1514,7 +1580,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
 
     def writesChildNodes(__obj: xmlschema.XExplicitGroup, __scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node] =
       Seq.concat(__obj.annotation map { scalaxb.toXML[xmlschema.XAnnotation](_, Some("http://www.w3.org/2001/XMLSchema"), Some("annotation"), __scope, false) } getOrElse {Nil},
-        __obj.arg1 flatMap { x => scalaxb.toXML[scalaxb.DataRecord[xmlschema.XParticleOption]](x, x.namespace, x.key, __scope, false) })
+        __obj.xParticleOption3 flatMap { x => scalaxb.toXML[scalaxb.DataRecord[xmlschema.XParticleOption]](x, x.namespace, x.key, __scope, false) })
 
   }
 
@@ -1566,7 +1632,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
 
     def writesChildNodes(__obj: xmlschema.XSimpleExplicitGroup, __scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node] =
       Seq.concat(__obj.annotation map { scalaxb.toXML[xmlschema.XAnnotation](_, Some("http://www.w3.org/2001/XMLSchema"), Some("annotation"), __scope, false) } getOrElse {Nil},
-        __obj.arg1 flatMap { x => scalaxb.toXML[scalaxb.DataRecord[xmlschema.XParticleOption]](x, x.namespace, x.key, __scope, false) })
+        __obj.xParticleOption3 flatMap { x => scalaxb.toXML[scalaxb.DataRecord[xmlschema.XParticleOption]](x, x.namespace, x.key, __scope, false) })
 
   }
 
@@ -1574,8 +1640,10 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
   trait DefaultXmlschemaXMinOccursFormat extends scalaxb.XMLFormat[xmlschema.XMinOccurs] {
     val targetNamespace: Option[String] = Some("http://www.w3.org/2001/XMLSchema")
     
-    def reads(seq: scala.xml.NodeSeq, stack: List[scalaxb.ElemName]): Either[String, xmlschema.XMinOccurs] =
-      Right(xmlschema.XMinOccurs.fromString(seq.text))
+    def reads(seq: scala.xml.NodeSeq, stack: List[scalaxb.ElemName]): Either[String, xmlschema.XMinOccurs] = seq match {
+      case elem: scala.xml.Elem => Right(xmlschema.XMinOccurs.fromString(elem.text, elem.scope))
+      case _ => Right(xmlschema.XMinOccurs.fromString(seq.text, scala.xml.TopScope))
+    }
     
     def writes(__obj: xmlschema.XMinOccurs, __namespace: Option[String], __elementLabel: Option[String],
         __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
@@ -1588,8 +1656,10 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
   trait DefaultXmlschemaXMaxOccursFormat extends scalaxb.XMLFormat[xmlschema.XMaxOccurs] {
     val targetNamespace: Option[String] = Some("http://www.w3.org/2001/XMLSchema")
     
-    def reads(seq: scala.xml.NodeSeq, stack: List[scalaxb.ElemName]): Either[String, xmlschema.XMaxOccurs] =
-      Right(xmlschema.XMaxOccurs.fromString(seq.text))
+    def reads(seq: scala.xml.NodeSeq, stack: List[scalaxb.ElemName]): Either[String, xmlschema.XMaxOccurs] = seq match {
+      case elem: scala.xml.Elem => Right(xmlschema.XMaxOccurs.fromString(elem.text, elem.scope))
+      case _ => Right(xmlschema.XMaxOccurs.fromString(seq.text, scala.xml.TopScope))
+    }
     
     def writes(__obj: xmlschema.XMaxOccurs, __namespace: Option[String], __elementLabel: Option[String],
         __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
@@ -1679,7 +1749,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     def writesChildNodes(__obj: xmlschema.XNarrowMaxMin, __scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node] =
       Seq.concat(__obj.annotation map { scalaxb.toXML[xmlschema.XAnnotation](_, Some("http://www.w3.org/2001/XMLSchema"), Some("annotation"), __scope, false) } getOrElse {Nil},
         __obj.xelementoption map { x => scalaxb.toXML[scalaxb.DataRecord[xmlschema.XElementOption]](x, x.namespace, x.key, __scope, false) } getOrElse {Nil},
-        __obj.arg2 flatMap { x => scalaxb.toXML[scalaxb.DataRecord[xmlschema.XIdentityConstraintOption]](x, x.namespace, x.key, __scope, false) })
+        __obj.xIdentityConstraintOption4 flatMap { x => scalaxb.toXML[scalaxb.DataRecord[xmlschema.XIdentityConstraintOption]](x, x.namespace, x.key, __scope, false) })
 
   }
 
@@ -1687,8 +1757,10 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
   trait DefaultXmlschemaXMinOccursTypeFormat extends scalaxb.XMLFormat[xmlschema.XMinOccursType] {
     val targetNamespace: Option[String] = Some("http://www.w3.org/2001/XMLSchema")
     
-    def reads(seq: scala.xml.NodeSeq, stack: List[scalaxb.ElemName]): Either[String, xmlschema.XMinOccursType] =
-      Right(xmlschema.XMinOccursType.fromString(seq.text))
+    def reads(seq: scala.xml.NodeSeq, stack: List[scalaxb.ElemName]): Either[String, xmlschema.XMinOccursType] = seq match {
+      case elem: scala.xml.Elem => Right(xmlschema.XMinOccursType.fromString(elem.text, elem.scope))
+      case _ => Right(xmlschema.XMinOccursType.fromString(seq.text, scala.xml.TopScope))
+    }
     
     def writes(__obj: xmlschema.XMinOccursType, __namespace: Option[String], __elementLabel: Option[String],
         __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
@@ -1701,8 +1773,10 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
   trait DefaultXmlschemaXMaxOccursTypeFormat extends scalaxb.XMLFormat[xmlschema.XMaxOccursType] {
     val targetNamespace: Option[String] = Some("http://www.w3.org/2001/XMLSchema")
     
-    def reads(seq: scala.xml.NodeSeq, stack: List[scalaxb.ElemName]): Either[String, xmlschema.XMaxOccursType] =
-      Right(xmlschema.XMaxOccursType.fromString(seq.text))
+    def reads(seq: scala.xml.NodeSeq, stack: List[scalaxb.ElemName]): Either[String, xmlschema.XMaxOccursType] = seq match {
+      case elem: scala.xml.Elem => Right(xmlschema.XMaxOccursType.fromString(elem.text, elem.scope))
+      case _ => Right(xmlschema.XMaxOccursType.fromString(seq.text, scala.xml.TopScope))
+    }
     
     def writes(__obj: xmlschema.XMaxOccursType, __namespace: Option[String], __elementLabel: Option[String],
         __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
@@ -1776,7 +1850,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
 
     def writesChildNodes(__obj: xmlschema.XAllType, __scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node] =
       Seq.concat(__obj.annotation map { scalaxb.toXML[xmlschema.XAnnotation](_, Some("http://www.w3.org/2001/XMLSchema"), Some("annotation"), __scope, false) } getOrElse {Nil},
-        __obj.arg1 flatMap { x => scalaxb.toXML[scalaxb.DataRecord[xmlschema.XParticleOption]](x, x.namespace, x.key, __scope, false) })
+        __obj.xParticleOption3 flatMap { x => scalaxb.toXML[scalaxb.DataRecord[xmlschema.XParticleOption]](x, x.namespace, x.key, __scope, false) })
 
   }
 
@@ -1784,8 +1858,10 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
   trait DefaultXmlschemaXProcessContentsFormat extends scalaxb.XMLFormat[xmlschema.XProcessContents] {
     val targetNamespace: Option[String] = Some("http://www.w3.org/2001/XMLSchema")
     
-    def reads(seq: scala.xml.NodeSeq, stack: List[scalaxb.ElemName]): Either[String, xmlschema.XProcessContents] =
-      Right(xmlschema.XProcessContents.fromString(seq.text))
+    def reads(seq: scala.xml.NodeSeq, stack: List[scalaxb.ElemName]): Either[String, xmlschema.XProcessContents] = seq match {
+      case elem: scala.xml.Elem => Right(xmlschema.XProcessContents.fromString(elem.text, elem.scope))
+      case _ => Right(xmlschema.XProcessContents.fromString(seq.text, scala.xml.TopScope))
+    }
     
     def writes(__obj: xmlschema.XProcessContents, __namespace: Option[String], __elementLabel: Option[String],
         __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
@@ -1962,7 +2038,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
 
     def writesChildNodes(__obj: xmlschema.XNamedAttributeGroup, __scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node] =
       Seq.concat(__obj.annotation map { scalaxb.toXML[xmlschema.XAnnotation](_, Some("http://www.w3.org/2001/XMLSchema"), Some("annotation"), __scope, false) } getOrElse {Nil},
-        scalaxb.toXML[xmlschema.XAttrDeclsSequence](__obj.arg1, None, Some("arg1"), __scope, false))
+        scalaxb.toXML[xmlschema.XAttrDeclsSequence](__obj.xAttrDeclsSequence3, None, Some("xAttrDeclsSequence3"), __scope, false))
 
   }
 
@@ -2008,7 +2084,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
 
     def writesChildNodes(__obj: xmlschema.XAttributeGroupRef, __scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node] =
       Seq.concat(__obj.annotation map { scalaxb.toXML[xmlschema.XAnnotation](_, Some("http://www.w3.org/2001/XMLSchema"), Some("annotation"), __scope, false) } getOrElse {Nil},
-        scalaxb.toXML[xmlschema.XAttrDeclsSequence](__obj.arg1, None, Some("arg1"), __scope, false))
+        scalaxb.toXML[xmlschema.XAttrDeclsSequence](__obj.xAttrDeclsSequence3, None, Some("xAttrDeclsSequence3"), __scope, false))
 
   }
 
@@ -2368,7 +2444,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
 
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[xmlschema.XAppinfo] =
       phrase(optTextRecord ~ 
-      rep(((any(x => List(Some()) contains x.namespace) ^^ (scalaxb.fromXML[scalaxb.DataRecord[Any]](_, scalaxb.ElemName(node) :: stack))) ~ 
+      rep(((any(_ => true) ^^ (scalaxb.fromXML[scalaxb.DataRecord[Any]](_, scalaxb.ElemName(node) :: stack))) ~ 
       optTextRecord) ^^ 
       { case p1 ~ p2 => Seq.concat(Seq(p1), p2.toList) }) ~ 
       optTextRecord ^^
@@ -2411,7 +2487,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
 
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[xmlschema.XDocumentation] =
       phrase(optTextRecord ~ 
-      rep(((any(x => List(Some()) contains x.namespace) ^^ (scalaxb.fromXML[scalaxb.DataRecord[Any]](_, scalaxb.ElemName(node) :: stack))) ~ 
+      rep(((any(_ => true) ^^ (scalaxb.fromXML[scalaxb.DataRecord[Any]](_, scalaxb.ElemName(node) :: stack))) ~ 
       optTextRecord) ^^ 
       { case p1 ~ p2 => Seq.concat(Seq(p1), p2.toList) }) ~ 
       optTextRecord ^^
@@ -2498,7 +2574,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
 
     def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[xmlschema.XAnyType] =
       phrase(optTextRecord ~ 
-      rep(((any(x => List(Some()) contains x.namespace) ^^ (scalaxb.fromXML[scalaxb.DataRecord[Any]](_, scalaxb.ElemName(node) :: stack))) ~ 
+      rep(((any(_ => true) ^^ (scalaxb.fromXML[scalaxb.DataRecord[Any]](_, scalaxb.ElemName(node) :: stack))) ~ 
       optTextRecord) ^^ 
       { case p1 ~ p2 => Seq.concat(Seq(p1), p2.toList) }) ~ 
       optTextRecord ^^
@@ -2536,8 +2612,10 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
   trait DefaultXmlschemaXDerivationControlFormat extends scalaxb.XMLFormat[xmlschema.XDerivationControl] {
     val targetNamespace: Option[String] = Some("http://www.w3.org/2001/XMLSchema")
     
-    def reads(seq: scala.xml.NodeSeq, stack: List[scalaxb.ElemName]): Either[String, xmlschema.XDerivationControl] =
-      Right(xmlschema.XDerivationControl.fromString(seq.text))
+    def reads(seq: scala.xml.NodeSeq, stack: List[scalaxb.ElemName]): Either[String, xmlschema.XDerivationControl] = seq match {
+      case elem: scala.xml.Elem => Right(xmlschema.XDerivationControl.fromString(elem.text, elem.scope))
+      case _ => Right(xmlschema.XDerivationControl.fromString(seq.text, scala.xml.TopScope))
+    }
     
     def writes(__obj: xmlschema.XDerivationControl, __namespace: Option[String], __elementLabel: Option[String],
         __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
@@ -2607,7 +2685,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
 
     def writesChildNodes(__obj: xmlschema.XTopLevelSimpleType, __scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node] =
       Seq.concat(__obj.annotation map { scalaxb.toXML[xmlschema.XAnnotation](_, Some("http://www.w3.org/2001/XMLSchema"), Some("annotation"), __scope, false) } getOrElse {Nil},
-        Some(__obj.arg1) map {x => scalaxb.toXML[scalaxb.DataRecord[xmlschema.XSimpleDerivationOption]](x, x.namespace, x.key, __scope, false)} get)
+        Some(__obj.xSimpleDerivationOption3) map {x => scalaxb.toXML[scalaxb.DataRecord[xmlschema.XSimpleDerivationOption]](x, x.namespace, x.key, __scope, false)} get)
 
   }
 
@@ -2653,7 +2731,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
 
     def writesChildNodes(__obj: xmlschema.XLocalSimpleType, __scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node] =
       Seq.concat(__obj.annotation map { scalaxb.toXML[xmlschema.XAnnotation](_, Some("http://www.w3.org/2001/XMLSchema"), Some("annotation"), __scope, false) } getOrElse {Nil},
-        Some(__obj.arg1) map {x => scalaxb.toXML[scalaxb.DataRecord[xmlschema.XSimpleDerivationOption]](x, x.namespace, x.key, __scope, false)} get)
+        Some(__obj.xSimpleDerivationOption3) map {x => scalaxb.toXML[scalaxb.DataRecord[xmlschema.XSimpleDerivationOption]](x, x.namespace, x.key, __scope, false)} get)
 
   }
 
@@ -2694,7 +2772,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
 
     def writesChildNodes(__obj: xmlschema.XRestriction, __scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node] =
       Seq.concat(__obj.annotation map { scalaxb.toXML[xmlschema.XAnnotation](_, Some("http://www.w3.org/2001/XMLSchema"), Some("annotation"), __scope, false) } getOrElse {Nil},
-        scalaxb.toXML[xmlschema.XSimpleRestrictionModelSequence](__obj.arg1, None, Some("arg1"), __scope, false))
+        scalaxb.toXML[xmlschema.XSimpleRestrictionModelSequence](__obj.xSimpleRestrictionModelSequence3, None, Some("xSimpleRestrictionModelSequence3"), __scope, false))
 
   }
 
@@ -3008,8 +3086,10 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
   trait DefaultXmlschemaXValueFormat extends scalaxb.XMLFormat[xmlschema.XValue] {
     val targetNamespace: Option[String] = Some("http://www.w3.org/2001/XMLSchema")
     
-    def reads(seq: scala.xml.NodeSeq, stack: List[scalaxb.ElemName]): Either[String, xmlschema.XValue] =
-      Right(xmlschema.XValue.fromString(seq.text))
+    def reads(seq: scala.xml.NodeSeq, stack: List[scalaxb.ElemName]): Either[String, xmlschema.XValue] = seq match {
+      case elem: scala.xml.Elem => Right(xmlschema.XValue.fromString(elem.text, elem.scope))
+      case _ => Right(xmlschema.XValue.fromString(seq.text, scala.xml.TopScope))
+    }
     
     def writes(__obj: xmlschema.XValue, __namespace: Option[String], __elementLabel: Option[String],
         __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
@@ -3132,7 +3212,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     def writes(__obj: xmlschema.XSimpleRestrictionModelSequence, __namespace: Option[String], __elementLabel: Option[String], 
         __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
       Seq.concat(__obj.simpleType map { scalaxb.toXML[xmlschema.XLocalSimpleType](_, Some("http://www.w3.org/2001/XMLSchema"), Some("simpleType"), __scope, false) } getOrElse {Nil},
-        __obj.arg2 flatMap { x => scalaxb.toXML[scalaxb.DataRecord[xmlschema.XFacetsOption]](x, x.namespace, x.key, __scope, false) })
+        __obj.xFacetsOption2 flatMap { x => scalaxb.toXML[scalaxb.DataRecord[xmlschema.XFacetsOption]](x, x.namespace, x.key, __scope, false) })
 
 
   }
@@ -3427,8 +3507,8 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     
     def writes(__obj: xmlschema.XComplexTypeModelSequence1, __namespace: Option[String], __elementLabel: Option[String], 
         __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
-      Seq.concat(__obj.arg1 map { x => scalaxb.toXML[scalaxb.DataRecord[xmlschema.XTypeDefParticleOption]](x, x.namespace, x.key, __scope, false) } getOrElse {Nil},
-        scalaxb.toXML[xmlschema.XAttrDeclsSequence](__obj.arg2, None, Some("arg2"), __scope, false))
+      Seq.concat(__obj.xTypeDefParticleOption1 map { x => scalaxb.toXML[scalaxb.DataRecord[xmlschema.XTypeDefParticleOption]](x, x.namespace, x.key, __scope, false) } getOrElse {Nil},
+        scalaxb.toXML[xmlschema.XAttrDeclsSequence](__obj.xAttrDeclsSequence2, None, Some("xAttrDeclsSequence2"), __scope, false))
 
 
   }

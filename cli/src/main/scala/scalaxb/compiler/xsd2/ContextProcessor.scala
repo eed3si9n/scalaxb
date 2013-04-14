@@ -93,9 +93,9 @@ trait ContextProcessor extends ScalaNames { self: Namer with Lookup =>
     filterEnumeration(tagged.value)(tagged.tag)
 
   def filterEnumeration(decl: XSimpleType)(implicit tag: HostTag): Seq[Tagged[XNoFixedFacet]] =
-    decl.arg1.value match {
+    decl.xSimpleDerivationOption3.value match {
       case restriction: XRestriction =>
-        restriction.arg1.arg2 collect {
+        restriction.xSimpleRestrictionModelSequence3.xFacetsOption2 collect {
           case DataRecord(_, Some("enumeration"), enum: XNoFixedFacet) => TaggedEnum(enum, tag)
         }
       case _ => Nil

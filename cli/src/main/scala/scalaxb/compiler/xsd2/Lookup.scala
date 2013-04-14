@@ -136,7 +136,7 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter with Symbols =
   def buildSimpleTypeType(decl: TaggedType[XSimpleType]): Type = {
     def buildSymbol = userDefinedClassSymbol(decl.tag.namespace, getName(decl))
 
-    decl.arg1.value match {
+    decl.xSimpleDerivationOption3.value match {
       case list: XList => TYPE_SEQ(buildType(decl.baseType))
       // union baseType is hardcoded to xs:string.
       case union: XUnion => buildType(decl.baseType)
@@ -158,7 +158,7 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter with Symbols =
         else buildSymbol
       case XRestriction(_, XSimpleRestrictionModelSequence(Some(simpleType), _), _, _, _) =>
         buildSimpleTypeType(Tagged(simpleType, decl.tag))
-      case _ => sys.error("buildSimpleTypeType#: Unsupported content " + decl.arg1.value.toString)
+      case _ => sys.error("buildSimpleTypeType#: Unsupported content " + decl.xSimpleDerivationOption3.value.toString)
     }
   }
 
@@ -181,7 +181,7 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter with Symbols =
 
   def isRootEnumeration(tagged: Tagged[XSimpleType]): Boolean =
     if (!containsEnumeration(tagged)) false
-    else tagged.value.arg1.value match {
+    else tagged.value.xSimpleDerivationOption3.value match {
       case XRestriction(_, _, _, Some(base), _) =>
         QualifiedName(base) match {
           case BuiltInType(tagged) => true

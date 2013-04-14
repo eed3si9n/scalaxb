@@ -171,7 +171,7 @@ JDREVGRw==</base64Binary>
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">x:Receiver</x:foo>
     val obj = fromXML[QNameEnum](subject)
     def check(obj: QNameEnum) = obj match {
-      case U123httpu58u47u47wwwu46exampleu46comu47generalu125Receiver =>
+      case Genu58Receiver =>
       case _ => sys.error("match failed: " + obj.toString)
     }
     check(obj)

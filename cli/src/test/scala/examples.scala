@@ -415,6 +415,12 @@ object Example {
           <xs:any namespace="##other" processContents="lax"/>
         </xs:sequence>
       </xs:complexType>
+      <xs:complexType name="MixedStringExtensionTest" mixed="true">
+        <xs:simpleContent>
+          <xs:extension base="xs:string">
+          </xs:extension>
+        </xs:simpleContent>
+      </xs:complexType>
     </xs:schema>
 
   val attributeXML =

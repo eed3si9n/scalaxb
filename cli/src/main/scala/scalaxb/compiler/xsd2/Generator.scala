@@ -91,7 +91,7 @@ class Generator(val schema: ReferenceSchema,
     val attributes = decl.flattenedAttributes
     val hasAttributes = !attributes.isEmpty
     val list =
-      (if (decl.mixed) Seq(mixedSeqRef)
+      (if (decl.effectiveMixed) Seq(mixedSeqRef)
       else decl.primaryCompositor map { _ => decl.splitNonEmptyParticles } getOrElse {
         if (decl.hasSimpleContent) Seq(decl.simpleContentRoot)
         else Nil
@@ -105,7 +105,7 @@ class Generator(val schema: ReferenceSchema,
     val compositors = compositorsR(decl)
     val compositorCodes = compositors.toList map { x => generateCompositor(sym.owner.newClass(getName(x)), x) }
     val hasSequenceParam = (paramList.size == 1) && (paramList.head.occurrence.isMultiple) &&
-          (!paramList.head.attribute) && (!decl.mixed) && (!longAll)
+          (!paramList.head.attribute) && (!decl.effectiveMixed) && (!longAll)
     val accessors: Seq[Tree] =
       (decl.primaryCompositor map {
         case x: TaggedKeyedGroup if x.value.key == AllTag => generateAllAccessors(x)
@@ -135,13 +135,13 @@ class Generator(val schema: ReferenceSchema,
   private def generateDefaultFormat(sym: ClassSymbol, decl: Tagged[XComplexType],
       hasAttributes: Boolean, hasSequenceParam: Boolean, longAll: Boolean): Tree = {
     val particles = decl.splitNonEmptyParticles
-    val unmixedParserList = particles map { buildParticleParser(_, decl.mixed, decl.mixed) }
-    val parserList = if (decl.mixed) buildTextParser +: (unmixedParserList flatMap { Seq(_, buildTextParser) })
+    val unmixedParserList = particles map { buildParticleParser(_, decl.effectiveMixed, decl.effectiveMixed) }
+    val parserList = if (decl.effectiveMixed) buildTextParser +: (unmixedParserList flatMap { Seq(_, buildTextParser) })
       else unmixedParserList
     val parserVariableList: Seq[Tree] = ( 0 to parserList.size - 1) map { i => buildSelector(i) }
 
     val particleArgs: Seq[Tree] =
-      if (decl.mixed) (0 to parserList.size - 1).toList map { i =>
+      if (decl.effectiveMixed) (0 to parserList.size - 1).toList map { i =>
         if (i % 2 == 1) buildArgForMixed(particles((i - 1) / 2), i)
         else buildArgForOptTextRecord(i) }
       else decl.primaryAll map { all => 
@@ -150,7 +150,7 @@ class Generator(val schema: ReferenceSchema,
         particles.zipWithIndex map { case (i, x) => buildArg(i, x) }
       }
     val simpleFromXml =
-      if (particles.isEmpty && !decl.mixed) true
+      if (particles.isEmpty && !decl.effectiveMixed) true
       else if (decl.hasSimpleContent) true
       else (decl.primaryAll) match {
         case Some(x) => true
@@ -164,7 +164,7 @@ class Generator(val schema: ReferenceSchema,
       }
       def toXMLArgs: List[Tree] = REF("x") :: (REF("x") DOT "namespace").tree :: (REF("x") DOT "key").tree :: REF("__scope") :: FALSE :: Nil
       def childTree: Tree =
-        if (decl.mixed) (REF("__obj") DOT makeParamName(MIXED_PARAM) DOT "toSeq") FLATMAP LAMBDA(PARAM("x")) ==> BLOCK(
+        if (decl.effectiveMixed) (REF("__obj") DOT makeParamName(MIXED_PARAM) DOT "toSeq") FLATMAP LAMBDA(PARAM("x")) ==> BLOCK(
             buildToXML(DataRecordAnyClass, toXMLArgs)
           )
         else if (decl.hasSimpleContent) simpleContentTree(decl.base)
@@ -196,10 +196,10 @@ class Generator(val schema: ReferenceSchema,
     val fmt = formatterSymbol(sym)
     val argsTree: Seq[Tree] =
       (Nil match {
-        case _ if decl.mixed       => Seq((SeqClass DOT "concat")(particleArgs))
+        case _ if decl.effectiveMixed   => Seq((SeqClass DOT "concat")(particleArgs))
         case _ if decl.hasSimpleContent => Seq(buildSimpleContentArg(decl.simpleContentRoot))
-        case _ if hasSequenceParam => Seq(SEQARG(particleArgs.head))
-        case _ if longAll          =>
+        case _ if hasSequenceParam      => Seq(SEQARG(particleArgs.head))
+        case _ if longAll               =>
           Seq(ListMapClass.module APPLY SEQARG((LIST(particleArgs) DOT "flatten") APPLYTYPE
             TYPE_TUPLE(StringClass, DataRecordAnyClass)
           ))
@@ -225,7 +225,7 @@ class Generator(val schema: ReferenceSchema,
         decl.name map { typeName =>
           DEF("typeName", TYPE_OPTION(StringClass)) withFlags(Flags.OVERRIDE) := optionTree(decl.name)
         },
-        if (decl.mixed) Some(DEF("isMixed", BooleanClass) withFlags(Flags.OVERRIDE) := TRUE)
+        if (decl.effectiveMixed) Some(DEF("isMixed", BooleanClass) withFlags(Flags.OVERRIDE) := TRUE)
         else None,
         Some(DEF("parser", parserType(sym)) withParams(
             PARAM("node", "scala.xml.Node"), PARAM("stack", TYPE_LIST("scalaxb.ElemName"))) :=
@@ -246,7 +246,7 @@ class Generator(val schema: ReferenceSchema,
     val attributes = decl.flattenedAttributes
     val hasAttributes = !attributes.isEmpty
     val list =
-      (if (decl.mixed) Nil
+      (if (decl.effectiveMixed) Nil
       else decl.primaryCompositor map { _ => decl.splitNonEmptyParticles } getOrElse {
         if (decl.hasSimpleContent) Seq(decl.simpleContentRoot)
         else Nil

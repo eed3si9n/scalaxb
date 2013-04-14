@@ -400,6 +400,8 @@ object SchemaIteration {
 }
 
 case class ComplexTypeOps(decl: Tagged[XComplexType]) {
+  def effectiveMixed: Boolean =
+    ComplexTypeIteration.complexTypeEffectiveMixed(decl)
   def hasSimpleContent: Boolean =
     ComplexTypeIteration.complexTypeHasSimpleContent(decl)
   def simpleContentRoot(implicit lookup: Lookup): TaggedType[_] =
@@ -461,6 +463,12 @@ object ComplexTypeIteration {
     new CanBuildFrom[ComplexTypeIteration, Tagged[_], ComplexTypeIteration] {
       def apply(): Builder[Tagged[_], ComplexTypeIteration] = newBuilder
       def apply(from: ComplexTypeIteration): Builder[Tagged[_], ComplexTypeIteration] = newBuilder
+    }
+
+  def complexTypeEffectiveMixed(decl: Tagged[XComplexType]): Boolean =
+    decl.xComplexTypeModelOption3.value match {
+      case x: XSimpleContent => false
+      case _ => decl.mixed
     }
 
   /** returns sequence of tagged objects from the given complex type. */

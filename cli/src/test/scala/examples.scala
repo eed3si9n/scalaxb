@@ -403,7 +403,31 @@ object Example {
         <xs:sequence>
           <xs:element name="city" type="xs:string"/>
         </xs:sequence>
-      </xs:group>       
+      </xs:group>
+
+      <!-- #162 -->
+      <xs:complexType name="NillableChoiceGroupTest">
+        <xs:sequence>
+          <xs:group ref="gen:NillableChoiceGroup"/>
+        </xs:sequence>
+      </xs:complexType>
+
+      <xs:group name="NillableChoiceGroup">
+        <xs:choice>
+          <xs:element name="Elem1" nillable="true">
+            <xs:complexType>
+              <xs:sequence>
+              </xs:sequence>
+            </xs:complexType>
+          </xs:element>
+          <xs:element name="Elem2">
+            <xs:complexType>
+              <xs:sequence>
+              </xs:sequence>
+            </xs:complexType>
+          </xs:element>
+        </xs:choice>
+      </xs:group>
     </xs:schema>
   
   val mixedXML =

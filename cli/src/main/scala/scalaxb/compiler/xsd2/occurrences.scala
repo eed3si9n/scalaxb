@@ -49,9 +49,9 @@ object Occurrence {
       val minValue = if (keyed.particles.isEmpty) 0
                      else keyed.minOccurs.toInt
       val o = Occurrence(minValue, keyed.maxOccurs, false)
-      val particleOs = keyed.particles.toList map {Occurrence(_)}
-      Occurrence((o.minOccurs :: (particleOs map { _.minOccurs})).min,
-        (o.maxOccurs :: (particleOs map { _.maxOccurs})).max,
+      val particleOs = keyed.particles.toSeq map {Occurrence(_)}
+      Occurrence((o.minOccurs +: (particleOs map { _.minOccurs})).min,
+        (o.maxOccurs +: (particleOs map { _.maxOccurs})).max,
         particleOs exists {_.nillable})
     case SequenceTag =>
       val minValue = if (keyed.particles.isEmpty) 0

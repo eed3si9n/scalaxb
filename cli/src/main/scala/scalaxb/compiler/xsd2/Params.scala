@@ -134,8 +134,26 @@ trait Params { self: Namer with Lookup with Splitter =>
       retval
     }
 
-    private def buildChoiceParam(tagged: TaggedParticle[KeyedGroup]): Param = {
-      val name = camelCase(getName(tagged))
+    private def buildGroupRefParam(tagged: TaggedParticle[XGroupRef], postfix: Int): Param = {
+      val group = resolveNamedGroup(tagged)
+      val namespace = group.tag.namespace
+      val name = camelCase(getName(group)) +
+        (if (postfix <= 1) ""
+         else postfix.toString)
+      val param = group.primaryCompositor map {
+        case x: TaggedKeyedGroup if x.key == ChoiceTag => buildChoiceParam(namespace, name, x)
+        case x: TaggedKeyedGroup => buildCompositorParam(namespace, name, x)
+      } getOrElse sys.error("buildGroupRefParam: " + tagged)
+      val retval = param.copy(occurrence = Occurrence(tagged))
+      logger.debug("buildGroupRefParam: " + postfix.toString + ": " + retval.toString)
+      retval
+    }
+
+    private def buildChoiceParam(tagged: TaggedParticle[KeyedGroup]): Param =
+      buildChoiceParam(tagged.tag.namespace, camelCase(getName(tagged)), tagged)
+
+    private def buildChoiceParam(namespace: Option[URI], name: String,
+        tagged: TaggedParticle[KeyedGroup]): Param = {
       val particles = tagged.particles
       val o = Occurrence(tagged)
 
@@ -159,7 +177,7 @@ trait Params { self: Namer with Lookup with Splitter =>
       val typeSymbol =
         if (o.nillable) TaggedDataRecordSymbol(DataRecordSymbol(TaggedOptionSymbol(OptionSymbol(memberType))))
         else TaggedDataRecordSymbol(DataRecordSymbol(memberType))
-      Param(tagged.tag.namespace, name, typeSymbol,
+      Param(namespace, name, typeSymbol,
         o.copy(nillable = false), false, false, false)
     }
 
@@ -168,21 +186,14 @@ trait Params { self: Namer with Lookup with Splitter =>
       case _ => None
     }
 
-    private def buildCompositorParam(tagged: TaggedParticle[KeyedGroup]): Param = {
-      val name = camelCase(getName(tagged))
-      val typeSymbol = tagged
-      val retval = Param(tagged.tag.namespace, name, typeSymbol, Occurrence(tagged), false, false, false)
-      logger.debug("buildCompositorParam: " + retval.toString)
-      retval
-    }
+    private def buildCompositorParam(tagged: TaggedParticle[KeyedGroup]): Param =
+      buildCompositorParam(tagged.tag.namespace, camelCase(getName(tagged)), tagged)
 
-    private def buildGroupRefParam(tagged: TaggedParticle[XGroupRef], postfix: Int): Param = {
-      val group = resolveNamedGroup(tagged)
-      val name = camelCase(getName(group)) +
-        (if (postfix <= 1) ""
-         else postfix.toString)
-      val retval = Param(group.tag.namespace, name, tagged, Occurrence(tagged), false, false, false)
-      logger.debug("buildGroupRefParam: " + postfix.toString + ": " + retval.toString)
+    private def buildCompositorParam(namespace: Option[URI], name: String,
+        tagged: TaggedParticle[KeyedGroup]): Param = {
+      val typeSymbol = tagged
+      val retval = Param(namespace, name, typeSymbol, Occurrence(tagged), false, false, false)
+      logger.debug("buildCompositorParam: " + retval.toString)
       retval
     }
 

@@ -79,6 +79,7 @@ trait Namer extends ScalaNames { self: Lookup with Splitter  =>
     tagged.compositors foreach { c =>
       if (Some(c) == primary) names(c) = name
       else nameCompositor(c, false)
+      splitLongSequence(c) map { _ foreach { nameCompositor(_, false) }}
     }
   }
 

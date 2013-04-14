@@ -169,7 +169,7 @@ class Generator(val schema: ReferenceSchema,
           )
         else if (decl.hasSimpleContent) simpleContentTree(decl.base)
         else if (particles.isEmpty) NIL
-        else if (particles.size == 1) PAREN(buildXMLTree(Param(particles(0))))
+        else if (particles.size == 1) PAREN(buildXMLTree(Param(particles(0), 0)))
         else (SeqClass DOT "concat")(Param.fromSeq(particles) map { x => buildXMLTree(x) })
 
       Some(DEF("writesChildNodes", TYPE_SEQ(NodeClass)) withParams(PARAM("__obj", sym),
@@ -472,7 +472,7 @@ class Generator(val schema: ReferenceSchema,
       case compositor if compositor.particles.isEmpty => EmptyTree
       case compositor =>
         val fmt = formatterSymbol(sym)
-        val param = Param(compositor)
+        val param = Param(compositor, 0)
         val parser = buildKeyedGroupParser(compositor, Occurrence.SingleNotNillable(), false, false)
         val (wrapperParam, wrapperParser) = compositor match {
           case x: TaggedKeyedGroup if x.key == ChoiceTag => (param, parser)

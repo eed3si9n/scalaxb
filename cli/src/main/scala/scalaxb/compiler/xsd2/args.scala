@@ -106,21 +106,21 @@ trait Args { self: Namer with Lookup with Params with Symbols =>
             buildTypeSymbolArg(buildType(tagged), selector, o, elem.default, elem.fixed, wrapForLongAll)
         }
       case x: TaggedGroupRef =>
-        val param = Param(x)
+        val param = Param(x, 0)
         param.occurrence match {
           case Multiple(_)         => selector DOT "toSeq"
           case OptionalNillable(_) => selector INFIX("getOrElse") APPLY BLOCK(NONE)
           case _ => selector
         }
       case x: TaggedKeyedGroup =>
-        val param = Param(x)
+        val param = Param(x, 0)
         param.occurrence match {
           case Multiple(_)         => selector DOT "toSeq"
           case OptionalNillable(_) => selector INFIX("getOrElse") APPLY BLOCK(NONE)
           case _ => selector
         }
       case AnyLike(x) =>
-        val param = Param(x)
+        val param = Param(x, 0)
         buildTypeSymbolArg(buildType(x), selector, param.occurrence, None, None, wrapForLongAll)
       case _ => sys.error("Args#buildArg: " + tagged.toString)
     }
@@ -146,7 +146,7 @@ trait Args { self: Namer with Lookup with Params with Symbols =>
   def buildArgForMixed(tagged: Tagged[Any], selector: Tree): Tree = {
     import Occurrence._
 
-    val occcurrence = Param(tagged).occurrence
+    val occcurrence = Param(tagged, 0).occurrence
     val isCompositor = tagged match {
       case x: TaggedWildCard => true
       case x: TaggedKeyedGroup => true

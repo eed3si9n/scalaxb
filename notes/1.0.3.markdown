@@ -5,8 +5,10 @@
 ## bug fixes and minor enhancements
 
 - Includes offending data in `ParserFailure` message. [#206][206] requested by [@caoilte][@caoilte]
+- Fixes handling of QName enums. [#208][208]
 
   [115]: https://github.com/eed3si9n/scalaxb/issues/115
   [206]: https://github.com/eed3si9n/scalaxb/issues/206
+  [208]: https://github.com/eed3si9n/scalaxb/issues/208
   [@caoilte]: https://github.com/caoilte
   [@idot]: https://github.com/idot

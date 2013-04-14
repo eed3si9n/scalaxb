@@ -265,10 +265,15 @@ trait XMLStandardTypes {
   }
 
   implicit def seqXMLFormat[A: XMLFormat]: XMLFormat[Seq[A]] = new XMLFormat[Seq[A]] {
-    def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, Seq[A]] = try {
-      val xs = Helper.splitBySpace(seq.text).toSeq
-      Right(xs map { x => fromXML[A](scala.xml.Text(x), stack) })
-    } catch { case e: Exception => Left(e.toString) }
+    def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, Seq[A]] =
+    seq match {
+      case node: scala.xml.Node =>
+        try {
+          val xs = Helper.splitBySpace(node.text).toSeq
+          Right(xs map { x => fromXML[A](scala.xml.Elem(node.prefix, node.label, scala.xml.Null, node.scope, scala.xml.Text(x)), stack) })
+        } catch { case e: Exception => Left(e.toString) }
+      case _ => Left("Node expected: " + seq.toString)
+    }
 
     def writes(obj: Seq[A], namespace: Option[String], elementLabel: Option[String],
         scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =

@@ -53,7 +53,7 @@ object SimpContRestrictionDecl {
         }
     }
     
-    val facets = Facetable.fromParent(node, config)
+    val facets = Facetable.fromParent(node, base, config)
     val attributes = AttributeLike.fromParentNode(node, config)
     SimpContRestrictionDecl(base, simpleType, facets, attributes)
   }
@@ -165,7 +165,7 @@ object SimpTypRestrictionDecl {
         }
     }
     
-    val facets = Facetable.fromParent(node, config)
+    val facets = Facetable.fromParent(node, base, config)
     SimpTypRestrictionDecl(base, facets)
   }
 }
@@ -206,15 +206,21 @@ trait Facetable {
 }
 
 object Facetable {
-  def fromParent(node: scala.xml.Node, config: ParserConfig): List[Facetable] = 
+  def fromParent(node: scala.xml.Node, base: XsTypeSymbol, config: ParserConfig): List[Facetable] = 
     node.child.toList collect {
-      case x@(<enumeration>{ _* }</enumeration>) => EnumerationDecl.fromXML(x, config)
+      case x@(<enumeration>{ _* }</enumeration>) => EnumerationDecl.fromXML(x, base, config)
     }
 }
 
 case class EnumerationDecl(value: String) extends Facetable
 
 object EnumerationDecl {
-  def fromXML(node: scala.xml.Node, config: ParserConfig) =
-    EnumerationDecl((node \ "@value").text)
+  def fromXML(node: scala.xml.Node, base: XsTypeSymbol, config: ParserConfig) =
+    base match {
+      case XsQName =>
+        val (ns, localPart) = TypeSymbolParser.splitTypeName((node \ "@value").text, config.scope, config.targetNamespace, config.isCameleonInclude)
+        val qname = new javax.xml.namespace.QName(ns.orNull, localPart)
+        EnumerationDecl(qname.toString)
+      case _ => EnumerationDecl((node \ "@value").text)
+    }
 }

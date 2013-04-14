@@ -347,6 +347,14 @@
     </xs:complexContent>
   </xs:complexType>
 
+  <!-- #208 -->
+  <xs:simpleType name="QNameEnum">
+    <xs:restriction base="xs:QName">
+      <xs:enumeration value="gen:Receiver"/>
+      <xs:enumeration value="gen:Sender"/>
+    </xs:restriction>
+  </xs:simpleType>
+
   <xs:simpleType name="SymbolType">
     <xs:restriction base="xs:NMTOKEN">
       <xs:enumeration value="+"/>

@@ -580,19 +580,28 @@ abstract class GenSource(val schema: SchemaDecl,
       indent(2) + "case " + quote(enum.value) + " => " + buildTypeName(localName, enum, true) + newline
     
     val enumString = enums.map(makeEnum).mkString(newline)
-    
+    def valueCode: String =
+      (decl.content match {
+        case SimpTypRestrictionDecl(base, _) => Some(base)
+        case _ => None
+      }) match {
+        case Some(XsQName) => """({ val (ns, localPart) = scalaxb.Helper.splitQName(value, scope)
+    new javax.xml.namespace.QName(ns.orNull, localPart).toString })"""
+        case _ => "value"
+      }
+
     val traitCode = enums match {
       case Nil =>
 <source>case class {localName}()
 
 object {localName} {{
-  def fromString(value: String): {localName} = {localName}()
+  def fromString(value: String, scope: scala.xml.NamespaceBinding): {localName} = {localName}()
 }}</source>    
       case _ =>
 <source>trait {localName}
 
 object {localName} {{
-  def fromString(value: String): {localName} = value match {{
+  def fromString(value: String, scope: scala.xml.NamespaceBinding): {localName} = {valueCode} match {{
 { enums.map(e => makeCaseEntry(e)) }
   }}
 }}
@@ -606,8 +615,10 @@ object {localName} {{
   trait Default{formatterName} extends scalaxb.XMLFormat[{fqn}] {{
     val targetNamespace: Option[String] = { quote(schema.targetNamespace) }
     
-    def reads(seq: scala.xml.NodeSeq, stack: List[scalaxb.ElemName]): Either[String, {fqn}] =
-      Right({fqn}.fromString(seq.text))
+    def reads(seq: scala.xml.NodeSeq, stack: List[scalaxb.ElemName]): Either[String, {fqn}] = seq match {{
+      case elem: scala.xml.Elem => Right({fqn}.fromString(elem.text, elem.scope))
+      case _ => Right({fqn}.fromString(seq.text, scala.xml.TopScope))
+    }}
     
     def writes(__obj: {fqn}, __namespace: Option[String], __elementLabel: Option[String],
         __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =

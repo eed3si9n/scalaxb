@@ -32,6 +32,7 @@ object GeneralUsage {
   def allTests = {
     testSingularBuiltInType
     testSingularSimpleType
+    testQNameEnum
     testList
     testSingularComplexType
     testChoiceComplexType
@@ -162,6 +163,21 @@ JDREVGRw==</base64Binary>
     val document = toXML[SingularSimpleTypeTest](obj, "foo", defaultScope)
     println(document)
     check(fromXML[SingularSimpleTypeTest](document))
+  }
+
+  def testQNameEnum {
+    println("testQNameEnum")
+    val subject = <x:foo xmlns:x="http://www.example.com/general"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">x:Receiver</x:foo>
+    val obj = fromXML[QNameEnum](subject)
+    def check(obj: QNameEnum) = obj match {
+      case U123httpu58u47u47wwwu46exampleu46comu47generalu125Receiver =>
+      case _ => sys.error("match failed: " + obj.toString)
+    }
+    check(obj)
+    val document = toXML[QNameEnum](obj, "foo", subject.scope)
+    println(document)
+    check(fromXML[QNameEnum](document))
   }
   
   def testList {

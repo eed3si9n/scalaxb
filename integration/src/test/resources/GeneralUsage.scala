@@ -702,15 +702,15 @@ JDREVGRw==</base64Binary>
         <gen:queueEntry>foo</gen:queueEntry>
         <gen:callId>foo</gen:callId>
       </gen:event>
-    val event = scalaxb.fromXML[BaseEvent](subject)
-    def check(obj: BaseEvent) = obj match {
+    val event = scalaxb.fromXML[BaseEventable](subject)
+    def check(obj: BaseEventable) = obj match {
       case EventTwo("foo", "foo") =>
       case _ => sys.error("match failed: " + obj.toString)
     }
     check(event)
-    val document = scalaxb.toXML[BaseEvent](event, Some("http://www.example.com/general"), Some("event"), subject.scope)
+    val document = scalaxb.toXML[BaseEventable](event, Some("http://www.example.com/general"), Some("event"), subject.scope)
     println(document)
-    check(fromXML[BaseEvent](document))
+    check(fromXML[BaseEventable](document))
   }
 
   def testLiteralBoolean {
@@ -723,7 +723,7 @@ JDREVGRw==</base64Binary>
     val withBoolean = scalaxb.fromXML[LiteralBoolean](subject)
     System.err.println("received:"+withBoolean)
     def check(obj: LiteralBoolean) = obj match {
-      case LiteralBoolean(true,Some("xxx")) =>
+      case LiteralBoolean(attributes) if attributes("@avail") == true =>
       case _ => sys.error("match failed: " + obj.toString)
     }
     check(withBoolean)

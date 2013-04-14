@@ -7,7 +7,7 @@ object GeneralTest extends TestBase {
   import scalaxb.compiler.xsd.Driver
   import scalaxb.compiler.xsd2.{Driver => Driver2}
 
-  // Log.configureLogger(true)
+  Log.configureLogger(true)
   override val module: Module = new Driver2
   
   val inFile    = new File("integration/src/test/resources/general.xsd")

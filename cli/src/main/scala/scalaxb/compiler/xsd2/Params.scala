@@ -2,6 +2,7 @@ package scalaxb.compiler.xsd2
 
 import scalaxb._
 import xmlschema._
+import scalaxb.compiler.Module.camelCase
 import scalaxb.compiler.xsd.{XsAnyType, XsNillableAny, BuiltInSimpleTypeSymbol, XsTypeSymbol, XsInt}
 import Defs._
 import Occurrence._
@@ -84,15 +85,15 @@ trait Params { self: Namer with Lookup with Splitter =>
   }
 
   object Param {
-    def apply(tagged: Tagged[Any]): Param = buildParam(tagged, 0)
+    def apply(tagged: Tagged[Any], postfix: Int): Param = buildParam(tagged, postfix)
 
     def fromSeq(particles: Seq[Tagged[Any]]): Seq[Param] = {
       var anyNumber: Int = 0
-      particles map { tagged => tagged.value match {
+      particles.zipWithIndex map { case (tagged, i) => tagged.value match {
         case any: XAny =>
           anyNumber += 1
           buildParam(tagged, anyNumber)
-        case _         => buildParam(tagged, 0)
+        case _         => buildParam(tagged, i + 1)
       }}
     }
     
@@ -107,14 +108,14 @@ trait Params { self: Namer with Lookup with Splitter =>
       case TaggedSimpleType(decl, tag) => Param(tagged.tag.namespace, "value", tagged, SingleNotNillable(), false, false, false)
       case TaggedSymbol(symbol, tag)   => Param(tagged.tag.namespace, "value", tagged, SingleNotNillable(), false, false, false)
       case x: TaggedLocalElement       => buildElementParam(x)
-      case x: TaggedGroupRef           => buildGroupRefParam(x)
+      case x: TaggedGroupRef           => buildGroupRefParam(x, postfix)
       case x: TaggedKeyedGroup if x.key == AllTag => buildDataRecordMapParam(ALL_PARAM, x)
       case x: TaggedKeyedGroup if x.key == ChoiceTag => buildChoiceParam(x)
       case x: TaggedKeyedGroup         => buildCompositorParam(x)
       case x: TaggedWildCard           => buildWildCardParam(x, postfix)
       case x: TaggedAttributeSeqParam  => buildDataRecordMapParam(ATTRS_PARAM, x)
       case x: TaggedMixedSeqParam      => buildMixedParam(x)
-      case _ => error("buildParam: " + tagged)
+      case _ => sys.error("buildParam: " + tagged)
     }
 
     private def buildElementParam(tagged: Tagged[XLocalElementable]): Param = {
@@ -134,7 +135,7 @@ trait Params { self: Namer with Lookup with Splitter =>
     }
 
     private def buildChoiceParam(tagged: TaggedParticle[KeyedGroup]): Param = {
-      val name = getName(tagged).toLowerCase
+      val name = camelCase(getName(tagged))
       val particles = tagged.particles
       val o = Occurrence(tagged)
 
@@ -168,18 +169,20 @@ trait Params { self: Namer with Lookup with Splitter =>
     }
 
     private def buildCompositorParam(tagged: TaggedParticle[KeyedGroup]): Param = {
-      val name = getName(tagged).toLowerCase
+      val name = camelCase(getName(tagged))
       val typeSymbol = tagged
       val retval = Param(tagged.tag.namespace, name, typeSymbol, Occurrence(tagged), false, false, false)
       logger.debug("buildCompositorParam: " + retval.toString)
       retval
     }
 
-    private def buildGroupRefParam(tagged: TaggedParticle[XGroupRef]): Param = {
+    private def buildGroupRefParam(tagged: TaggedParticle[XGroupRef], postfix: Int): Param = {
       val group = resolveNamedGroup(tagged)
-      val name = getName(group).toLowerCase
+      val name = camelCase(getName(group)) +
+        (if (postfix <= 1) ""
+         else postfix.toString)
       val retval = Param(group.tag.namespace, name, tagged, Occurrence(tagged), false, false, false)
-      logger.debug("buildGroupRefParam: " + retval.toString)
+      logger.debug("buildGroupRefParam: " + postfix.toString + ": " + retval.toString)
       retval
     }
 

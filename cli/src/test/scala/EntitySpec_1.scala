@@ -38,6 +38,7 @@ object EntitySpec_1 extends Specification { def is = sequential               ^
                                                                               end^
   "mixed contents in a complex type should"                                   ^
     "generate a parameter named mixed in place of normal parameters"          ! mixed1^
+    "except when it hold simple contents"                                     ! mixed2^
                                                                               end^
   "substitution groups should"                                                ^
     "be referenced as the group head's type"                                  ! sub1^
@@ -192,7 +193,11 @@ object EntitySpec_1 extends Specification { def is = sequential               ^
 
   def mixed1 = {
     println(mixedEntitySource)
-    mixedEntitySource must contain ("mixed: Seq[scalaxb.DataRecord[Any]]")
+    mixedEntitySource must contain ("case class TopLevelMultipleSeqAnyTest(mixed: Seq[scalaxb.DataRecord[Any]])")
+  }
+
+  def mixed2 = {
+    mixedEntitySource must contain ("case class MixedStringExtensionTest(value: String)")
   }
 
   def sub1 = {

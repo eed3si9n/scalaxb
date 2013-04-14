@@ -456,10 +456,14 @@ class Generator(val schema: ReferenceSchema,
     
     if (primary map {_.particles.isEmpty} getOrElse {false}) Nil
     else {
-      val compositorCodes = compositors.toList map { x =>
-        generateCompositor(userDefinedClassSymbol(x), x) }
+      val compositorCodes = compositors flatMap { x =>
+        Vector(generateCompositor(userDefinedClassSymbol(x), x)) ++
+        (splitLongSequence(x) map { _ map { x =>
+          generateCompositor(userDefinedClassSymbol(x), x)
+        }} getOrElse Vector())
+      }
       Seq(Trippet(Trippet(EmptyTree, EmptyTree,
-        generateNamedGroupFormat(sym, tagged), EmptyTree) :: compositorCodes: _*))
+        generateNamedGroupFormat(sym, tagged), EmptyTree) +: compositorCodes: _*))
     }
   }
   

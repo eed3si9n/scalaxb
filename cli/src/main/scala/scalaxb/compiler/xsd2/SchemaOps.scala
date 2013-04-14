@@ -697,15 +697,23 @@ object ComplexTypeIteration {
       case _ => None
     }
 
-  def namedGroupToCompositors(value: XNamedGroup, tag: HostTag)(implicit lookup: Lookup): IndexedSeq[TaggedParticle[KeyedGroup]] =
-     namedGroupToPrimaryCompositor(value, tag) match {
-       case Some(primary) =>
-         implicit val unbound = lookup.schema.unbound
-         processKeyedGroup(primary.value, primary.tag) collect {
-           case Compositor(compositor) => compositor
-         }
-       case _ => Vector()
-     }
+  // unlike processKeyedGroup don't traverse into local element or group refrences
+  def namedGroupToCompositors(value: XNamedGroup, tag: HostTag)(implicit lookup: Lookup): IndexedSeq[TaggedParticle[KeyedGroup]] = {
+    def process(group: KeyedGroup, childtag: HostTag)(implicit schema: XSchema): IndexedSeq[TaggedParticle[KeyedGroup]] =
+      IndexedSeq(Tagged(group, childtag)) ++
+      (group.particles flatMap {
+        case TaggedKeyedGroup(x, tag) => process(x, tag)
+        case _ => Vector()
+      })
+    namedGroupToPrimaryCompositor(value, tag) match {
+      case Some(primary) =>
+        implicit val unbound = lookup.schema.unbound
+        process(primary.value, primary.tag) collect {
+          case Compositor(compositor) => compositor
+        }
+      case _ => Vector()
+    }
+  }
 
   // List of TaggedElement, TaggedKeyedGroup, or TaggedAny.
   def namedGroupToParticles(value :XNamedGroup, tag: HostTag)(implicit lookup: Lookup, splitter: Splitter): IndexedSeq[TaggedParticle[_]] =

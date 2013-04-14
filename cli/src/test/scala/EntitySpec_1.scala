@@ -25,7 +25,8 @@ object EntitySpec_1 extends Specification { def is = sequential               ^
                                                                               end^
   "a groupref in a complex type should"                                       ^
     "be referenced as the group's non-empty primary compositor named FooGroup" ! groupref1^
-    "be referenced as DataRecord[Option[X]] if underlying choice includes empty compositor" ! groupref2^
+    "be referenced as Option[scalaxb.DataRecord[X]] if underlying choice includes empty compositor" ! groupref2^
+    "be referenced as scalaxb.DataRecord[Option[X]] if underlying choice includes nillable element" ! groupref3^
                                                                               end^
   "wildcards should"                                                          ^
     "be referenced as DataRecord[Any] named any* if it's made of non-nillable elements" ! wildcard1^
@@ -152,6 +153,10 @@ object EntitySpec_1 extends Specification { def is = sequential               ^
 
   def groupref2 = {
     (grouprefEntitySource must contain("""case class EmptyGroupChoiceTest(emptyGroupChoiceTestOption: Option[scalaxb.DataRecord[Any]])"""))
+  }
+
+  def groupref3 = {
+    (grouprefEntitySource must contain("""case class NillableChoiceGroupTest(nillableChoiceGroupGroup: scalaxb.DataRecord[Option[example.NillableChoiceGroupGroup]])"""))
   }
 
   lazy val wildcardEntitySource = module.processNode(wildcardXML, "example")(0)

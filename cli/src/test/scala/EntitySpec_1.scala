@@ -59,13 +59,13 @@ object EntitySpec_1 extends Specification { def is = sequential               ^
   lazy val seqEntitySource = module.processNode(sequenceXML, "example")(0)
 
   val seqExpectedSequenceTest =
-    """case class SequenceComplexTypeTest(sequencecomplextypetestsequence: example.SequenceComplexTypeTestSequence, """ +
-      """sequencecomplextypetestsequence2: example.SequenceComplexTypeTestSequence2, """ +
-      """sequencecomplextypetestsequence3: Option[example.SequenceComplexTypeTestSequence3], """ +
-      """sequencecomplextypetestsequence4: Option[example.SequenceComplexTypeTestSequence4], """ +
-      """sequencecomplextypetestsequence5: Seq[example.SequenceComplexTypeTestSequence5], """ +
-      """sequencecomplextypetestsequence6: Seq[example.SequenceComplexTypeTestSequence6], """ +
-      """sequencecomplextypetestsequence7: example.SequenceComplexTypeTestSequence7)"""
+    """case class SequenceComplexTypeTest(sequenceComplexTypeTestSequence: example.SequenceComplexTypeTestSequence, """ +
+      """sequenceComplexTypeTestSequence2: example.SequenceComplexTypeTestSequence2, """ +
+      """sequenceComplexTypeTestSequence3: Option[example.SequenceComplexTypeTestSequence3], """ +
+      """sequenceComplexTypeTestSequence4: Option[example.SequenceComplexTypeTestSequence4], """ +
+      """sequenceComplexTypeTestSequence5: Seq[example.SequenceComplexTypeTestSequence5], """ +
+      """sequenceComplexTypeTestSequence6: Seq[example.SequenceComplexTypeTestSequence6], """ +
+      """sequenceComplexTypeTestSequence7: example.SequenceComplexTypeTestSequence7)"""
 
   def seq1 = {
     println(seqEntitySource)
@@ -83,11 +83,11 @@ object EntitySpec_1 extends Specification { def is = sequential               ^
 
   def seq4 = {
     seqEntitySource must contain("""case class MultipleSequenceComplexTypeTest(""" +
-      """multiplesequencecomplextypetestsequence: example.MultipleSequenceComplexTypeTestSequence*)""")
+      """multipleSequenceComplexTypeTestSequence: example.MultipleSequenceComplexTypeTestSequence*)""")
   }
 
   val seqExpectedLongSequenceTest = 
-    """case class LongSequenceComplexTypeTest(longsequencecomplextypetestsequence: example.LongSequenceComplexTypeTestSequence, """
+    """case class LongSequenceComplexTypeTest(longSequenceComplexTypeTestSequence: example.LongSequenceComplexTypeTestSequence, """
 
   def seq5 =
     (seqEntitySource must contain(seqExpectedLongSequenceTest)) and
@@ -100,14 +100,14 @@ object EntitySpec_1 extends Specification { def is = sequential               ^
   lazy val choiceEntitySource = module.processNode(choiceXML, "example")(0)
 
   val expectedChoiceTest =
-    """case class ChoiceComplexTypeTest(choicecomplextypetestoption: scalaxb.DataRecord[example.ChoiceComplexTypeTestOption], """ +
-      """choicecomplextypetestoption2: scalaxb.DataRecord[Option[example.ChoiceComplexTypeTestOption2]], """ +
-      """choicecomplextypetestoption3: Option[scalaxb.DataRecord[example.ChoiceComplexTypeTestOption3]], """ +
-      """choicecomplextypetestoption4: Option[scalaxb.DataRecord[Option[example.ChoiceComplexTypeTestOption4]]], """ +
-      """choicecomplextypetestoption5: Seq[scalaxb.DataRecord[example.ChoiceComplexTypeTestOption5]], """ +
-      """choicecomplextypetestoption6: Seq[scalaxb.DataRecord[Option[example.ChoiceComplexTypeTestOption6]]], """ +
-      """choicecomplextypetestoption7: scalaxb.DataRecord[Int], """ +
-      """choicecomplextypetestoption8: Option[scalaxb.DataRecord[Any]])"""
+    """case class ChoiceComplexTypeTest(choiceComplexTypeTestOption: scalaxb.DataRecord[example.ChoiceComplexTypeTestOption], """ +
+      """choiceComplexTypeTestOption2: scalaxb.DataRecord[Option[example.ChoiceComplexTypeTestOption2]], """ +
+      """choiceComplexTypeTestOption3: Option[scalaxb.DataRecord[example.ChoiceComplexTypeTestOption3]], """ +
+      """choiceComplexTypeTestOption4: Option[scalaxb.DataRecord[Option[example.ChoiceComplexTypeTestOption4]]], """ +
+      """choiceComplexTypeTestOption5: Seq[scalaxb.DataRecord[example.ChoiceComplexTypeTestOption5]], """ +
+      """choiceComplexTypeTestOption6: Seq[scalaxb.DataRecord[Option[example.ChoiceComplexTypeTestOption6]]], """ +
+      """choiceComplexTypeTestOption7: scalaxb.DataRecord[Int], """ +
+      """choiceComplexTypeTestOption8: Option[scalaxb.DataRecord[Any]])"""
 
   def choice1 = {
     println(choiceEntitySource)
@@ -146,11 +146,11 @@ object EntitySpec_1 extends Specification { def is = sequential               ^
     println(grouprefEntitySource)
     (grouprefEntitySource must not contain """case class EmptySeqGroup""") and
     (grouprefEntitySource must contain("""case class EmptySequenceGroupTest""")) and
-    (grouprefEntitySource must contain("""case class ArrayType(arraygroup: Option[example.ArrayGroup])"""))
+    (grouprefEntitySource must contain("""case class ArrayType(arrayGroup: Option[example.ArrayGroup])"""))
   }
 
   def groupref2 = {
-    (grouprefEntitySource must contain("""case class EmptyGroupChoiceTest(emptygroupchoicetestoption: Option[scalaxb.DataRecord[Any]])"""))
+    (grouprefEntitySource must contain("""case class EmptyGroupChoiceTest(emptyGroupChoiceTestOption: Option[scalaxb.DataRecord[Any]])"""))
   }
 
   lazy val wildcardEntitySource = module.processNode(wildcardXML, "example")(0)
@@ -161,10 +161,10 @@ object EntitySpec_1 extends Specification { def is = sequential               ^
       """any2: scalaxb.DataRecord[Any], """ +
       """any3: scalaxb.DataRecord[Any], """ +
       """any4: scalaxb.DataRecord[Any], """ +
-      """wildcardtestoption: scalaxb.DataRecord[Option[Any]], """ +
+      """wildcardTestOption: scalaxb.DataRecord[Option[Any]], """ +
       """person3: Option[example.Person], """ +
       """any5: Option[scalaxb.DataRecord[Any]], """ +
-      """wildcardtestoption2: Option[scalaxb.DataRecord[Option[Any]]], """ +
+      """wildcardTestOption2: Option[scalaxb.DataRecord[Option[Any]]], """ +
       """any6: Seq[scalaxb.DataRecord[Any]], """ +
       """person5: Seq[example.Person], """ +
       """any7: scalaxb.DataRecord[Any])"""

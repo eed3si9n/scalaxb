@@ -128,9 +128,9 @@ object EntitySpec_3 extends Specification { def is = sequential               ^
     
     (importSources(0).lines.toList must contain(
       """trait Arrayable {""",
-      """  def arraygroup: Option[example.ArrayGroup]""",
+      """  def arrayGroup: Option[example.ArrayGroup]""",
       """}""")) and
     (importSources(1).lines.toList must contain(
-      """case class RestrictedArray(arraygroup: Option[example.ArrayGroup]) extends example.Arrayable"""))
+      """case class RestrictedArray(arrayGroup: Option[example.ArrayGroup]) extends example.Arrayable"""))
   }
 }

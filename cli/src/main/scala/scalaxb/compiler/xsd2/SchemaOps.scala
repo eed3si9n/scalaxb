@@ -751,12 +751,43 @@ object ComplexTypeIteration {
   //     else IndexedSeq(tagged)
   //   else splitter.splitIfLongSequence(tagged)
 
+  /** returns all grouprefs involved in the given complex type,
+   * including the ones from base type.
+   */
   def complexTypeToFlattenedGroups(decl: Tagged[XComplexType])
-        (implicit lookup: Lookup): IndexedSeq[TaggedParticle[XGroupRef]] = {
-    import lookup.schema
-    implicit val unbound = schema.unbound
-    decl.toIndexedSeq collect {
-      case x: TaggedGroupRef => x
+        (implicit lookup: Lookup, splitter: Splitter, targetNamespace: Option[URI], scope: NamespaceBinding): IndexedSeq[TaggedParticle[XGroupRef]] = {
+    import lookup.{ComplexType, resolveNamedGroup, schema}
+    def extract(model: Option[DataRecord[Any]]) = model match {
+      // XTypeDefParticleOption is either XGroupRef or XExplicitGroupable
+      case Some(DataRecord(_, _, x: XGroupRef)) =>
+        implicit val tag = decl.tag
+        val childtag = tag / "_"
+        val tagged = Tagged(x, childtag)
+        Vector(tagged)
+      case Some(DataRecord(_, Some(key), x: XExplicitGroupable)) =>
+        implicit val tag = decl.tag
+        implicit val unbound = schema.unbound
+        val childtag = tag / "_"
+        val compositor = Tagged(KeyedGroup(key, x, childtag), childtag)
+        compositor.particles collect {
+          case x: TaggedGroupRef => x
+        }
+      case _ => Vector()
+    }
+
+    def qnameGroups(base: QualifiedName): IndexedSeq[TaggedParticle[XGroupRef]] = base match {
+      case ComplexType(tagged) => complexTypeToFlattenedGroups(tagged)
+      case _ => Vector()
+    }
+
+    decl.value.xComplexTypeModelOption3.value match {
+      case XComplexContent(_, DataRecord(_, _, x: XComplexRestrictionType), _, _, _) =>
+        qnameGroups(x.base) ++ extract(x.xrestrictiontypableoption)
+      case XComplexContent(_, DataRecord(_, _, x: XExtensionType), _, _, _)          =>
+        qnameGroups(x.base) ++ extract(x.xTypeDefParticleOption3)
+      case XSimpleContent(_, _, _, _)                                                => Vector()
+      // this is an abbreviated form of xs:anyType restriction.
+      case XComplexTypeModelSequence1(arg1, arg2)                                    => extract(arg1)
     }
   }
 

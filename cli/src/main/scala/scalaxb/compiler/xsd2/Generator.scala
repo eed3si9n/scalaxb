@@ -182,18 +182,22 @@ class Generator(val schema: ReferenceSchema,
         PARAM("__obj", sym), PARAM("__scope", NamespaceBindingClass)
       ) := (HelperClass DOT "mapToAttributes")(REF("__obj") DOT "attributes", REF("__scope")))
 
-    val groups = decl.flattenedGroups map { ref =>
-      resolveNamedGroup(ref.ref.get) 
-    } filter { tagged =>
-      implicit val tag = tagged.tag
-      tagged.particles.size > 0
-    }
+    val groups =
+      (decl.flattenedGroups map { ref =>
+        resolveNamedGroup(ref.ref.get) 
+      } filter { tagged =>
+        (tagged.primaryCompositor map { c =>
+          c.particles.size
+        } getOrElse {0}) > 0
+      }).distinct
+    logger.debug("generateDefaultFormat: groups: %s", groups map {getName})
+
     val defaultFormatSuperNames: Seq[Type] =
-      (ElemNameParserClass TYPE_OF sym) ::
-      (groups.toList map { case tagged: TaggedNamedGroup =>
+      (ElemNameParserClass TYPE_OF sym) +:
+      (groups map { case tagged: TaggedNamedGroup =>
         formatterSymbol(buildNamedGroupSymbol(tagged)): Type })
     
-    val fmt = formatterSymbol(sym)
+    val dfmt = defaultFormatterSymbol(sym)
     val argsTree: Seq[Tree] =
       (Nil match {
         case _ if decl.effectiveMixed   => Seq((SeqClass DOT "concat")(particleArgs))
@@ -209,7 +213,7 @@ class Generator(val schema: ReferenceSchema,
       else Nil)
 
     if (simpleFromXml)
-      TRAITDEF("Default" + fmt.decodedName) withParents(xmlFormatType(sym) :: (CanWriteChildNodesClass TYPE_OF sym) :: Nil) := BLOCK(List(
+      TRAITDEF(dfmt.decodedName) withParents(xmlFormatType(sym) :: (CanWriteChildNodesClass TYPE_OF sym) :: Nil) := BLOCK(List(
         Some(VAL("targetNamespace", TYPE_OPTION(StringClass)) := optionUriTree(schema.targetNamespace)),
         Some(DEF("reads", eitherType(StringClass, sym)) withParams(
           PARAM("seq", NodeSeqClass), PARAM("stack", TYPE_LIST(ElemNameClass))) := REF("seq") MATCH(
@@ -220,7 +224,7 @@ class Generator(val schema: ReferenceSchema,
         makeWritesChildNodes
       ).flatten)
     else
-      TRAITDEF("Default" + fmt.decodedName) withParents(defaultFormatSuperNames) := BLOCK(List(
+      TRAITDEF(dfmt.decodedName) withParents(defaultFormatSuperNames) := BLOCK(List(
         Some(VAL("targetNamespace", TYPE_OPTION(StringClass)) := optionUriTree(schema.targetNamespace)),
         decl.name map { typeName =>
           DEF("typeName", TYPE_OPTION(StringClass)) withFlags(Flags.OVERRIDE) := optionTree(decl.name)
@@ -269,7 +273,7 @@ class Generator(val schema: ReferenceSchema,
   private def generateBaseComplexTypeFormat(sym: ClassSymbol, decl: Tagged[XComplexType]): Tree = {
     logger.debug("generateBaseComplexTypeFormat - ", sym)
 
-    val fmt = formatterSymbol(sym)
+    val dfmt = defaultFormatterSymbol(sym)
 
     def makeReadsXML: Tree = {
       def caseTrees: Seq[CaseDef] =
@@ -306,7 +310,7 @@ class Generator(val schema: ReferenceSchema,
         PARAM("__typeAttribute", BooleanClass)) := REF("__obj") MATCH(caseTrees: _*)
     }
     
-    TRAITDEF("Default" + fmt.decodedName) withParents(XMLFormatClass TYPE_OF sym) := BLOCK(
+    TRAITDEF(dfmt.decodedName) withParents(XMLFormatClass TYPE_OF sym) := BLOCK(
       makeReadsXML,
       makeWritesXML
     )    
@@ -314,8 +318,9 @@ class Generator(val schema: ReferenceSchema,
 
   private def makeImplicitValue(sym: ClassSymbol): Tree = {
     val fmt = formatterSymbol(sym)
+    val dfmt = defaultFormatterSymbol(sym)
     LAZYVAL(fmt) withFlags(Flags.IMPLICIT) withType(xmlFormatType(sym)) :=
-      NEW(ANONDEF("Default" + fmt.decodedName) := BLOCK())   
+      NEW(ANONDEF(dfmt.decodedName) := BLOCK())   
   }
 
   def complexTypeSuperTypes(decl: Tagged[XComplexType]): Seq[Type] = {
@@ -367,7 +372,7 @@ class Generator(val schema: ReferenceSchema,
     logger.debug("generateSequenceFormat")
     val list = splitLongSequence(tagged) getOrElse {tagged.particles}
     val paramList = Param.fromSeq(list)
-    val fmt = formatterSymbol(sym)
+    val dfmt = defaultFormatterSymbol(sym)
 
     def makeWritesXML: Option[Tree] = {
       def simpleContentTree(base: QualifiedName): Tree = base match {
@@ -387,7 +392,7 @@ class Generator(val schema: ReferenceSchema,
         PARAM("__typeAttribute", BooleanClass)) := childTree)
     }
     
-    TRAITDEF("Default" + fmt.decodedName) withParents(XMLFormatClass TYPE_OF sym) := BLOCK(List(
+    TRAITDEF(dfmt.decodedName) withParents(XMLFormatClass TYPE_OF sym) := BLOCK(List(
       Some(DEF("reads", eitherType(StringClass, sym)) withParams(
           PARAM("seq", NodeSeqClass), PARAM("stack", TYPE_LIST(ElemNameClass))) := LEFT(LIT("Don't call me!"))),
       makeWritesXML
@@ -430,9 +435,9 @@ class Generator(val schema: ReferenceSchema,
   }
 
   private def generateSimpleTypeFormat(sym: ClassSymbol, decl: Tagged[XSimpleType]): Tree = {
-    val fmt = formatterSymbol(sym)
+    val dfmt = defaultFormatterSymbol(sym)
     
-    TRAITDEF("Default" + fmt.decodedName) withParents(XMLFormatClass TYPE_OF sym) := BLOCK(List(
+    TRAITDEF(dfmt.decodedName) withParents(XMLFormatClass TYPE_OF sym) := BLOCK(List(
       DEF("reads", eitherType(StringClass, sym)) withParams(
           PARAM("seq", NodeSeqClass), PARAM("stack", TYPE_LIST(ElemNameClass))) :=
         RIGHT((sym DOT "fromString")(REF("seq") DOT "text")),

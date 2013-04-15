@@ -752,10 +752,13 @@ object ComplexTypeIteration {
   //   else splitter.splitIfLongSequence(tagged)
 
   def complexTypeToFlattenedGroups(decl: Tagged[XComplexType])
-        (implicit lookup: Lookup, splitter: Splitter, targetNamespace: Option[URI], scope: NamespaceBinding): IndexedSeq[TaggedParticle[XGroupRef]] =
-    complexTypeToFlattenedCompositors(decl) collect {
+        (implicit lookup: Lookup): IndexedSeq[TaggedParticle[XGroupRef]] = {
+    import lookup.schema
+    implicit val unbound = schema.unbound
+    decl.toIndexedSeq collect {
       case x: TaggedGroupRef => x
     }
+  }
 
   def complexTypeToFlattenedCompositors(decl: Tagged[XComplexType])
       (implicit lookup: Lookup, splitter: Splitter, targetNamespace: Option[URI], scope: NamespaceBinding): IndexedSeq[TaggedParticle[_]] = {

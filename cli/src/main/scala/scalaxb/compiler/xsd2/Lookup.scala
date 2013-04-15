@@ -173,10 +173,20 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter with Symbols =
   def packageSymbol(namespace: Option[URI]): Symbol =
     RootClass.newPackage(packageName(namespace))
 
-  def formatterSymbol(sym: ClassSymbol): ClassSymbol = {
+  private def formatterName(sym: ClassSymbol): String = {
     val pkg = sym.owner
     val lastPart = pkg.decodedName.split('.').reverse.head
-    pkg.newClass(lastPart.capitalize + sym.decodedName + "Format")
+    lastPart.capitalize + sym.decodedName + "Format"
+  }
+
+  def defaultFormatterSymbol(sym: ClassSymbol): ClassSymbol = {
+    val pkg = sym.owner
+    pkg.newClass("Default" + formatterName(sym))
+  }
+
+  def formatterSymbol(sym: ClassSymbol): ClassSymbol = {
+    val pkg = sym.owner
+    pkg.newClass(formatterName(sym))
   }
 
   def isRootEnumeration(tagged: Tagged[XSimpleType]): Boolean =

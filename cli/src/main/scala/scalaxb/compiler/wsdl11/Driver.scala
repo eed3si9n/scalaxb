@@ -64,6 +64,8 @@ class Driver extends Module { driver =>
       case DataRecord(WSDL_NS, Some(`elementName`), x: A) => f(x)
     }
 
+  override def processSchema(schema: Schema, context: Context, cnfg: Config) {}
+  
   def processDefinition(definition: XDefinitionsType, context: Context) {
     val ns = definition.targetNamespace map {_.toString}
 

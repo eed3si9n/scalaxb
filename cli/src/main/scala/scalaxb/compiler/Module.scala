@@ -68,6 +68,12 @@ trait CanBeWriter[A] {
  def toWriter(value: A): PrintWriter
  def newInstance(packageName: Option[String], fileName: String): A
 }
+object CanBeWriter {
+  implicit val stringWriter = new CanBeWriter[java.io.StringWriter] {
+    override def toWriter(value: java.io.StringWriter) = new PrintWriter(value)
+    override def newInstance(packageName: Option[String], fileName: String) = new java.io.StringWriter
+  }
+}
 
 trait CanBeRawSchema[A, B] {
   def toRawSchema(value: A): B
@@ -108,6 +114,14 @@ trait Module {
   type Schema
   type Context
 
+  case class CompileSource[From](context: Context,
+    schemas: ListMap[Importable, Schema],
+    importables: Seq[(Importable, From)],
+    additionalImportables: ListMap[Importable, File],
+    firstNamespace: Option[String]) {
+
+  }
+
   private val logger = Log.forName("module")
   def verbose: Boolean = false
   
@@ -128,6 +142,14 @@ trait Module {
     override def toRawSchema(value: File) = readerToRawSchema(UnicodeFileReader.reader(value))
     override def toURI(value: File) = value.toURI
   }
+  val stringReader = new CanBeRawSchema[String, RawSchema] {
+    override def toRawSchema(value: String) = readerToRawSchema(new java.io.StringReader(value))
+    override def toURI(value: String) = new URI("file://C:/temp.txt")
+  }
+  val nodeReader = new CanBeRawSchema[Node, RawSchema] {
+    override def toRawSchema(value: Node) = nodeToRawSchema(value)
+    override def toURI(value: Node) = new URI("file://C:/temp.txt")
+  }
 
   def process(file: File, packageName: String, outdir: File): List[File] =
     process(file, Config(packageNames = Map(None -> Some(packageName)), outdir = outdir) )
@@ -136,6 +158,14 @@ trait Module {
     processFiles(List(file), config)
   
   def processFiles(files: Seq[File], config: Config): List[File] = {
+    val (source, outfiles) = infoFiles(files, config)
+    outfiles map { x => 
+      println("generated " + x + ".")
+      logger.info("generated " + x + ".") }
+    outfiles
+  }
+
+  def infoFiles(files: Seq[File], config: Config): (CompileSource[File], List[File]) = {
     implicit val fileWriter = new CanBeWriter[File] {
       override def toWriter(value: File) = new PrintWriter(new java.io.OutputStreamWriter(
           new java.io.FileOutputStream(value), encoding))
@@ -145,17 +175,11 @@ trait Module {
         dir.mkdirs()
         new File(dir, fileName)
       }
-
     }
 
     files.foreach(file => if (!file.exists)
-      sys.error("file not found: " + file.toString))
-      
-    val outfiles = processReaders(files, config)
-    outfiles map { x => 
-      println("generated " + x + ".")
-      logger.info("generated " + x + ".") }
-    outfiles
+      sys.error("file not found: " + file.toString))  
+    processReaders(files, config)
   }
 
   def packageDir(packageName: Option[String], dir: File) = packageName map { x =>
@@ -165,35 +189,25 @@ trait Module {
   def processString(input: String, packageName: String): List[String] =
     processString(input, Config(packageNames = Map(None -> Some(packageName))))
 
-  def processString(input: String, config: Config): List[String] = {
-    implicit val stringReader = new CanBeRawSchema[String, RawSchema] {
-      override def toRawSchema(value: String) = readerToRawSchema(new java.io.StringReader(value))
-      override def toURI(value: String) = new URI("file://C:/temp.txt")
-    }
+  def processString(input: String, config: Config): List[String] =
+    infoString(input, config)._2
 
-    implicit val stringWriter = new CanBeWriter[java.io.StringWriter] {
-      override def toWriter(value: java.io.StringWriter) = new PrintWriter(value)
-      override def newInstance(packageName: Option[String], fileName: String) = new java.io.StringWriter
-    }
-
-    processReaders(Seq(input), config) map {_.toString}
+  def infoString(input: String, config: Config): (CompileSource[String], List[String]) = {
+    implicit val ev = stringReader
+    val (source, result) = processReaders(Seq(input), config)
+    (source, result map {_.toString})
   }
 
   def processNode(input: Node, packageName: String): List[String] =
     processNode(input, Config(packageNames = Map(None -> Some(packageName))))
 
-  def processNode(input: Node, config: Config): List[String] = {
-    implicit val nodeReader = new CanBeRawSchema[Node, RawSchema] {
-      override def toRawSchema(value: Node) = nodeToRawSchema(value)
-      override def toURI(value: Node) = new URI("file://C:/temp.txt")
-    }
+  def processNode(input: Node, config: Config): List[String] =
+    infoNode(input, config)._2
 
-    implicit val stringWriter = new CanBeWriter[java.io.StringWriter] {
-      override def toWriter(value: java.io.StringWriter) = new PrintWriter(value)
-      override def newInstance(packageName: Option[String], fileName: String) = new java.io.StringWriter
-    }
-
-    processReaders(Seq(input), config) map {_.toString}
+  def infoNode(input: Node, config: Config): (CompileSource[Node], List[String]) = {
+    implicit val ev = nodeReader
+    val (source, result) = processReaders(Seq(input), config)
+    (source, result map {_.toString})
   }
 
   def headerSnippet(pkg: Option[String]): Snippet =
@@ -201,12 +215,16 @@ trait Module {
 { pkg map { "package " + _ } getOrElse {""} }</source>)
 
   def processReaders[From, To](files: Seq[From], config: Config)
-     (implicit ev: CanBeRawSchema[From, RawSchema], evTo: CanBeWriter[To]): List[To] = {
-    val snippets = ListBuffer.empty[Snippet]
-    val context = buildContext
+     (implicit ev: CanBeRawSchema[From, RawSchema], evTo: CanBeWriter[To]): (CompileSource[From], List[To]) = {
+    val source = buildCompileSource(files)
+    (source, processCompileSource(source, config))
+  }
+
+  def buildCompileSource[From, To](files: Seq[From])
+     (implicit ev: CanBeRawSchema[From, RawSchema]): CompileSource[From] = {
 
     logger.debug("%s", files.toString())
-
+    val context = buildContext
     val importables0 = ListMap[From, Importable](files map { f =>
       f -> toImportable(ev.toURI(f), ev.toRawSchema(f))}: _*)
     val importables = Seq[(Importable, From)](files map { f => importables0(f) -> f }: _*)
@@ -241,50 +259,6 @@ trait Module {
         (importable, x) })
       if (added) addMissingFiles()
     }
-
-    def toFileNamePart[From](file: From)(implicit ev: CanBeRawSchema[From, RawSchema]): String =
-      """([.]\w+)$""".r.replaceFirstIn(new File(ev.toURI(file).getPath).getName, "")
-
-    def processImportables[A](xs: List[(Importable, A)])(implicit ev: CanBeRawSchema[A, RawSchema]) = xs flatMap {
-      case (importable, file) =>
-        generate(schemas(importable), toFileNamePart(file), context, config) map { case (pkg, snippet, part) =>
-          snippets += snippet
-          val output = evTo.newInstance(pkg, part + ".scala")
-          val out = evTo.toWriter(output)
-          try {
-            printNodes(snippet.definition, out)
-          } finally {
-            out.flush()
-            out.close()
-          }
-          output
-        }
-    }
-
-    def processProtocol = {
-      val pkg = config.protocolPackageName match {
-        case Some(_) => config.protocolPackageName
-        case _ => packageName(importables0(files.head).targetNamespace, context)
-      }
-      val output = implicitly[CanBeWriter[To]].newInstance(pkg, config.protocolFileName)
-      val out = implicitly[CanBeWriter[To]].toWriter(output)
-      val config2 = config.copy(
-        protocolPackageName = pkg,
-        defaultNamespace = config.defaultNamespace match {
-          case Some(_) => config.defaultNamespace
-          case _ => importables0(files.head).targetNamespace
-        }    
-      )
-      val protocolNodes = generateProtocol(Snippet(snippets: _*), context, config2)
-      try {
-        printNodes(protocolNodes, out)
-      } finally {
-        out.flush()
-        out.close()
-      }
-      output
-    }
-
     def processUnnamedIncludes() {
       logger.debug("processUnnamedIncludes")
       import scala.collection.mutable.{ListBuffer, ListMap}
@@ -320,11 +294,66 @@ trait Module {
 
     addMissingFiles()
     processUnnamedIncludes()
-    processContext(context, schemas.valuesIterator.toSeq, config)
-    processImportables(importables.toList) :::
-    processImportables(additionalImportables.toList) :::
+    CompileSource(context, schemas, importables, additionalImportables,
+      importables0(files.head).targetNamespace)
+  }
+
+  // ev: CanBeRawSchema[From, RawSchema]
+  def processCompileSource[From, To](cs: CompileSource[From], config: Config)
+     (implicit ev: CanBeRawSchema[From, RawSchema], evTo: CanBeWriter[To]): List[To] = {
+    val snippets = ListBuffer.empty[Snippet]
+
+    def toFileNamePart[From](file: From)(implicit ev: CanBeRawSchema[From, RawSchema]): String =
+      """([.]\w+)$""".r.replaceFirstIn(new File(ev.toURI(file).getPath).getName, "")
+
+    def processImportables[A](xs: List[(Importable, A)])(implicit ev: CanBeRawSchema[A, RawSchema]) = xs flatMap {
+      case (importable, file) =>
+        generate(cs.schemas(importable), toFileNamePart(file), cs.context, config) map { case (pkg, snippet, part) =>
+          snippets += snippet
+          val output = evTo.newInstance(pkg, part + ".scala")
+          val out = evTo.toWriter(output)
+          try {
+            printNodes(snippet.definition, out)
+          } finally {
+            out.flush()
+            out.close()
+          }
+          output
+        }
+    }
+
+    def processProtocol = {
+      val pkg = config.protocolPackageName match {
+        case Some(_) => config.protocolPackageName
+        case _ => packageName(cs.firstNamespace, cs.context)
+      }
+      val output = implicitly[CanBeWriter[To]].newInstance(pkg, config.protocolFileName)
+      val out = implicitly[CanBeWriter[To]].toWriter(output)
+      val config2 = config.copy(
+        protocolPackageName = pkg,
+        defaultNamespace = config.defaultNamespace match {
+          case Some(_) => config.defaultNamespace
+          case _ => cs.firstNamespace
+        }    
+      )
+      val protocolNodes = generateProtocol(Snippet(snippets: _*), cs.context, config2)
+      try {
+        printNodes(protocolNodes, out)
+      } finally {
+        out.flush()
+        out.close()
+      }
+      output
+    }
+
+    processContext(cs.context, cs.schemas.valuesIterator.toSeq, config)
+    cs.schemas.valuesIterator.toSeq foreach { schema =>
+      processSchema(schema, cs.context, config)
+    }
+    processImportables(cs.importables.toList) :::
+    processImportables(cs.additionalImportables.toList) :::
     List(processProtocol) :::
-    (if (config.generateRuntime) generateRuntimeFiles[To](context)
+    (if (config.generateRuntime) generateRuntimeFiles[To](cs.context)
      else Nil)
   }
 
@@ -386,6 +415,8 @@ trait Module {
 
   def buildContext: Context
   
+  def processSchema(schema: Schema, context: Context, config: Config): Unit
+
   def processContext(context: Context, schemas: Seq[Schema], config: Config): Unit
 
   def packageName(namespace: Option[String], context: Context): Option[String]

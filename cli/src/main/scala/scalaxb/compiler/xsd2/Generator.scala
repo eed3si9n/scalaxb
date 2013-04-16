@@ -45,14 +45,14 @@ class Generator(val schema: ReferenceSchema,
         case x: TaggedSimpleType if containsEnumeration(x) && isRootEnumeration(x) => processSimpleType(x) map {_.toSnippet}
         case x: TaggedNamedGroup => processNamedGroup(x) map {_.toSnippet}
         case x@TaggedAttributeGroup(group: XNamedAttributeGroup, _) => processAttributeGroup(x) map {_.toSnippet}
-        case _ => Nil
+        case _ => Vector()
       }): _*)
 
   def processComplexType(decl: Tagged[XComplexType]): Seq[Trippet] =
     if (context.baseToSubs.contains(decl)) {
-      generateBaseComplexTypeTrait(buildTraitSymbol(decl), decl) :: 
-      (if (decl.abstractValue) Nil
-      else generateComplexTypeEntity(buildComplexTypeSymbol(decl), decl) :: Nil)
+      generateBaseComplexTypeTrait(buildTraitSymbol(decl), decl) +: 
+      (if (decl.abstractValue) Vector()
+      else generateComplexTypeEntity(buildComplexTypeSymbol(decl), decl) +: Vector())
     }
     else Seq(generateComplexTypeEntity(buildComplexTypeSymbol(decl), decl))
 
@@ -65,12 +65,12 @@ class Generator(val schema: ReferenceSchema,
     def compositorsR(compositor: TaggedParticle[KeyedGroup]): Seq[TaggedParticle[KeyedGroup]] =
       (compositor match {
         case x: TaggedKeyedGroup if x.value.key == AllTag => Seq(x)
-        case tagged: TaggedKeyedGroup if tagged.particles.isEmpty => Nil
+        case tagged: TaggedKeyedGroup if tagged.particles.isEmpty => Vector()
         case x: TaggedKeyedGroup if x.value.key == ChoiceTag => Seq(x)
         case tagged: TaggedKeyedGroup if tagged.value.key == SequenceTag =>
           implicit val tag = tagged.tag
           (splitIfLongSequence(tagged) filterNot { Some(_) == ps })
-        case _ => Nil
+        case _ => Vector()
       }) ++
       {
         implicit val tag = compositor.tag
@@ -94,7 +94,7 @@ class Generator(val schema: ReferenceSchema,
       (if (decl.effectiveMixed) Seq(mixedSeqRef)
       else decl.primaryCompositor map { _ => decl.splitNonEmptyParticles } getOrElse {
         if (decl.hasSimpleContent) Seq(decl.simpleContentRoot)
-        else Nil
+        else Vector()
       }) ++
       (attributes.headOption map { _ => attributeSeqRef }).toSeq
     val longAll = decl.primaryAll map {_ => true} getOrElse {false}
@@ -112,17 +112,17 @@ class Generator(val schema: ReferenceSchema,
         case tagged: TaggedKeyedGroup if tagged.value.key == SequenceTag =>
           splitLongSequence(tagged) map {
             generateLongSeqAccessors(_)
-          } getOrElse {Nil}
-        case _ => Nil
-      } getOrElse {Nil}) ++
-      (attributes.headOption map  { _ => generateAttributeAccessors(attributes, true) } getOrElse {Nil})
+          } getOrElse Vector()
+        case _ => Vector()
+      } getOrElse Vector()) ++
+      (attributes.headOption map  { _ => generateAttributeAccessors(attributes, true) } getOrElse Vector())
     val parents: Seq[Type] = 
       if (context.baseToSubs.contains(decl)) Seq(buildTraitSymbol(decl): Type)
       else complexTypeSuperTypes(decl)
 
     Trippet(
       Trippet(CASECLASSDEF(sym) withParams(
-          if (hasSequenceParam) paramList.head.varargTree :: Nil
+          if (hasSequenceParam) paramList.head.varargTree +: Vector()
           else paramList map {_.tree}) withParents(parents) :=
         (if (accessors.isEmpty) EmptyTree
         else BLOCK(accessors: _*)),
@@ -199,7 +199,7 @@ class Generator(val schema: ReferenceSchema,
     
     val dfmt = defaultFormatterSymbol(sym)
     val argsTree: Seq[Tree] =
-      (Nil match {
+      (Vector() match {
         case _ if decl.effectiveMixed   => Seq((SeqClass DOT "concat")(particleArgs))
         case _ if decl.hasSimpleContent => Seq(buildSimpleContentArg(decl.simpleContentRoot))
         case _ if hasSequenceParam      => Seq(SEQARG(particleArgs.head))
@@ -210,7 +210,7 @@ class Generator(val schema: ReferenceSchema,
         case _ => particleArgs
       }) ++ 
       (if (hasAttributes) Seq((HelperClass DOT "attributesToMap")(REF("node")))
-      else Nil)
+      else Vector())
 
     if (simpleFromXml)
       TRAITDEF(dfmt.decodedName) withParents(xmlFormatType(sym) :: (CanWriteChildNodesClass TYPE_OF sym) :: Nil) := BLOCK(List(
@@ -250,10 +250,10 @@ class Generator(val schema: ReferenceSchema,
     val attributes = decl.flattenedAttributes
     val hasAttributes = !attributes.isEmpty
     val list =
-      (if (decl.effectiveMixed) Nil
+      (if (decl.effectiveMixed) Vector()
       else decl.primaryCompositor map { _ => decl.splitNonEmptyParticles } getOrElse {
         if (decl.hasSimpleContent) Seq(decl.simpleContentRoot)
-        else Nil
+        else Vector()
       }) ++
       (attributes.headOption map { _ => attributeSeqRef }).toSeq
 
@@ -345,7 +345,7 @@ class Generator(val schema: ReferenceSchema,
 
     (decl.base match {
       case base: TaggedComplexType => Seq(buildTraitSymbol(base): Type)
-      case _ => Nil 
+      case _ => Vector() 
     }) ++
     (choices map {buildBaseType}) ++
     (decl.attributeGroups map {buildType})

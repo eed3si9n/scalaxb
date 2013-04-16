@@ -8,6 +8,7 @@ import Predef.{any2stringadd => _, _}
 case class Occurrence(minOccurs: Int, maxOccurs: Int, nillable: Boolean) {
   def isMultiple = maxOccurs > 1
   def isSingle = minOccurs == 1 && maxOccurs <= 1
+  def toSingle: Occurrence = copy(minOccurs = 1, maxOccurs = 1)
   def isOptional = minOccurs < 1 && maxOccurs <= 1
 }
 

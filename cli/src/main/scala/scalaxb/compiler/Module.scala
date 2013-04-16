@@ -231,14 +231,17 @@ trait Module {
   }
 
   def processNode(input: Node, packageName: String): List[String] =
-    processNodes(Seq(input), Config(packageNames = Map(None -> Some(packageName))))
-  
-  def processNode(input: Node, config: Config): List[String] =
-    infoNode(input, config)._2
+    processNodes(Seq(input), packageName)
 
-  def infoNode(input: Node, config: Config): (CompileSource[Node], List[String]) = {
+  def processNodes(input: Seq[Node], packageName: String): List[String] =
+    processNodes(input, Config(packageNames = Map(None -> Some(packageName))))
+  
+  def processNodes(input: Seq[Node], config: Config): List[String] =
+    infoNodes(input, config)._2
+
+  def infoNodes(input: Seq[Node], config: Config): (CompileSource[Node], List[String]) = {
     implicit val ev = nodeReader
-    val (source, result) = processReaders(Seq(input), config)
+    val (source, result) = processReaders(input, config)
     (source, result map {_.toString})
   }
 
@@ -341,7 +344,7 @@ trait Module {
     def processImportables[A](xs: List[(Importable, A)])(implicit ev: CanBeRawSchema[A, RawSchema]) =
       xs flatMap {
         case (importable, file) =>
-          generate(schemas(importable), toFileNamePart(file), context, config) map { case (pkg, snippet, part) =>
+          generate(cs.schemas(importable), toFileNamePart(file), cs.context, config) map { case (pkg, snippet, part) =>
             snippets += snippet
             val output = evTo.newInstance(pkg, part + ".scala")
             val out = evTo.toWriter(output)

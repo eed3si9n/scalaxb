@@ -459,7 +459,7 @@ class Generator(val schema: ReferenceSchema,
     val compositors = tagged.compositors
     val primary = tagged.primaryCompositor
     
-    if (primary map {_.particles.isEmpty} getOrElse {false}) Nil
+    if (primary map {_.particles.isEmpty} getOrElse {false}) Vector()
     else {
       val compositorCodes = compositors flatMap { x =>
         Vector(generateCompositor(userDefinedClassSymbol(x), x)) ++
@@ -478,12 +478,13 @@ class Generator(val schema: ReferenceSchema,
       case compositor =>
         val fmt = formatterSymbol(sym)
         val param = Param(compositor, 0)
-        val parser = buildKeyedGroupParser(compositor, Occurrence.SingleNotNillable(), false, false)
+        val o = Occurrence(compositor).toSingle
+        val parser = buildKeyedGroupParser(compositor, o, false, false)
         val (wrapperParam, wrapperParser) = compositor match {
           case x: TaggedKeyedGroup if x.key == ChoiceTag => (param, parser)
           case _ =>
             param.copy(typeSymbol = TaggedDataRecordSymbol(DataRecordSymbol(param.typeSymbol))) ->
-            buildKeyedGroupParser(compositor, Occurrence.SingleNotNillable(), false, true)
+            buildKeyedGroupParser(compositor, o, false, true)
         }
         val mixedParam = param.copy(typeSymbol = TaggedDataRecordSymbol(DataRecordSymbol(TaggedXsAnyType)))
         val subgroups = compositor.particles collect { case ref: TaggedGroupRef => resolveNamedGroup(ref) }

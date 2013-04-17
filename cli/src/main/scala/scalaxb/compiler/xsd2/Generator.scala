@@ -331,13 +331,12 @@ class Generator(val schema: ReferenceSchema,
         p <- choice.particles
       } yield p match {
         case x: TaggedLocalElement =>
-          (x.ref, x.typeValue) match {
-            case (Some(Element(elem)), _) =>
-              elem.typeValue match {
-                case Some(ComplexType(t)) if t == decl => Some(choice)
-                case _ => None
-              }  
-            case (_, Some(ComplexType(t))) if t == decl => Some(choice)
+          val elem = x.ref match {
+            case Some(Element(elem)) => elem
+            case _ => x
+          }
+          elem.typeStructure match {
+            case x: TaggedComplexType if x == decl => Some(choice)
             case _ => None
           }
         case _ => None

@@ -17,6 +17,7 @@ object EntitySpec extends Specification { def is = sequential                 ^
     "each enumerations represented as case object"                            ! enum2^
     "be referenced as the trait"                                              ! enum3^
     "generate a companion object named similarly"                             ! enum4^
+    "generate a fromString method using underlying value if it derives from QName" !enum5^
                                                                               end^
   "top-level complex types should"                                            ^
     "generate a case class named similarly"                                   ! complexType1^
@@ -85,6 +86,11 @@ object EntitySpec extends Specification { def is = sequential                 ^
         <xs:enumeration value="SKIM"/>
       </xs:restriction>
     </xs:simpleType>
+    <xs:simpleType name="QNameEnum">
+      <xs:restriction base="xs:QName">
+        <xs:enumeration value="tns:Receiver"/>
+      </xs:restriction>
+    </xs:simpleType>
     <xs:complexType name="SimpleTypeTest">
       <xs:sequence>
         <xs:element name="milk1" type="tns:MilkType"/>
@@ -107,6 +113,18 @@ object EntitySpec extends Specification { def is = sequential                 ^
 
   def enum4 = {
     enumEntitySource must contain("""object MilkType {""")
+  }
+
+  def enum5 = {
+    enumEntitySource must contain("""object QNameEnum {
+  def fromString(value: String, scope: scala.xml.NamespaceBinding): example.QNameEnum =
+    ({
+      val (ns, localPart) = scalaxb.Helper.splitQName(value, scope)
+      new javax.xml.namespace.QName(ns.orNull, localPart).toString
+    }) match {
+      case "{http://www.example.com/}Receiver" => example.U123httpu58u47u47wwwu46exampleu46comu47u125Receiver
+    }
+}""")
   }
 
   lazy val complexTypeEntitySource = module.processNode(complexTypeCardinalityXML, "example")(0)

@@ -45,7 +45,7 @@ trait Namer extends ScalaNames { self: Lookup with Splitter  =>
     }}
   }
 
-  def nameSimpleTypes(decl: Tagged[XSimpleType]) {
+  def nameSimpleTypes(decl: TaggedType[XSimpleType]) {
     if (containsEnumeration(decl)) {
       val name = makeProtectedSimpleTypeName(decl)
       logger.debug("nameSimpleTypes: named %s", name)
@@ -54,7 +54,7 @@ trait Namer extends ScalaNames { self: Lookup with Splitter  =>
     }
   }
 
-  def nameTrait(decl: Tagged[XComplexType]) {
+  def nameTrait(decl: TaggedType[XComplexType]) {
     val rawName = decl.name.get
     val initialName = if (rawName.last == 'e') rawName.dropRight(1) + "able"
                       else rawName + "able"
@@ -63,7 +63,7 @@ trait Namer extends ScalaNames { self: Lookup with Splitter  =>
     traitNames(decl) = name  
   }
 
-  def nameComplexTypes(decl: Tagged[XComplexType]) {
+  def nameComplexTypes(decl: TaggedType[XComplexType]) {
     val name = makeProtectedComplexTypeName(decl)
     logger.debug("nameComplexTypes: named %s", name)
     names(decl) = name
@@ -83,7 +83,7 @@ trait Namer extends ScalaNames { self: Lookup with Splitter  =>
     }
   }
 
-  def nameComplexTypeCompositors(decl: Tagged[XComplexType]) {
+  def nameComplexTypeCompositors(decl: TaggedType[XComplexType]) {
     val primarySequence = decl.primarySequence
     implicit val s = schema.unbound
     val cs: Seq[TaggedParticle[KeyedGroup]] = decl.toSeq collect {
@@ -127,9 +127,9 @@ trait Namer extends ScalaNames { self: Lookup with Splitter  =>
     }
   }
 
-  def nameEnumValues(decl: Tagged[XSimpleType]) {
+  def nameEnumValues(decl: TaggedType[XSimpleType]) {
     filterEnumeration(decl) map { enum =>
-      names(enum) = makeProtectedEnumTypeName(enum)
+      names(enum) = makeProtectedEnumTypeName(enum, decl)
     }
   }
 
@@ -140,14 +140,14 @@ trait Namer extends ScalaNames { self: Lookup with Splitter  =>
   def makeProtectedElementTypeName(elem: Tagged[XElement]): String =
     makeProtectedTypeName(elem.name, "", elem.tag, true)
 
-  def makeProtectedComplexTypeName(decl: Tagged[XComplexType]): String =
+  def makeProtectedComplexTypeName(decl: TaggedType[XComplexType]): String =
     makeProtectedTypeName(decl.name, "Type", decl.tag, true)
 
-  def makeProtectedSimpleTypeName(decl: Tagged[XSimpleType]): String =
+  def makeProtectedSimpleTypeName(decl: TaggedType[XSimpleType]): String =
     makeProtectedTypeName(decl.name, "Type", decl.tag, true)
 
-  def makeProtectedEnumTypeName(enum: Tagged[XNoFixedFacet]): String =
-    makeProtectedTypeName(enum.value.value, "Value", enum.tag, true)
+  def makeProtectedEnumTypeName(enum: Tagged[XNoFixedFacet], decl: TaggedType[XSimpleType]): String =
+    makeProtectedTypeName(decl.enumValue(enum).toString, "Value", enum.tag, true)
 
   def makeProtectedNamedGroup(tagged: Tagged[XNamedGroup]): String =
     makeProtectedTypeName(tagged.name.get + "Group", "", tagged.tag, true)

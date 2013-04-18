@@ -48,7 +48,7 @@ class Generator(val schema: ReferenceSchema,
         case _ => Vector()
       }): _*)
 
-  def processComplexType(decl: Tagged[XComplexType]): Seq[Trippet] =
+  def processComplexType(decl: TaggedType[XComplexType]): Seq[Trippet] =
     if (context.baseToSubs.contains(decl)) {
       generateBaseComplexTypeTrait(buildTraitSymbol(decl), decl) +: 
       (if (decl.abstractValue) Vector()
@@ -58,7 +58,7 @@ class Generator(val schema: ReferenceSchema,
 
   /** recursively return compositors.
    */
-  private def compositorsR(decl: Tagged[XComplexType]): Seq[TaggedParticle[KeyedGroup]] = {
+  private def compositorsR(decl: TaggedType[XComplexType]): Seq[TaggedParticle[KeyedGroup]] = {
     val ps = decl.primarySequence
     val singleps = ps map { tagged => Occurrence(tagged).isSingle } getOrElse {false}
 
@@ -82,7 +82,7 @@ class Generator(val schema: ReferenceSchema,
     else ps.toSeq ++ nonps 
   }
 
-  def generateComplexTypeEntity(sym: ClassSymbol, decl: Tagged[XComplexType]): Trippet = {
+  def generateComplexTypeEntity(sym: ClassSymbol, decl: TaggedType[XComplexType]): Trippet = {
     logger.debug("generateComplexTypeEntity: emitting %s" format sym.toString)
 
     lazy val attributeSeqRef: Tagged[AttributeSeqParam] = TaggedAttributeSeqParam(AttributeSeqParam(), decl.tag)
@@ -132,7 +132,7 @@ class Generator(val schema: ReferenceSchema,
       compositorCodes: _*)
   }
 
-  private def generateDefaultFormat(sym: ClassSymbol, decl: Tagged[XComplexType],
+  private def generateDefaultFormat(sym: ClassSymbol, decl: TaggedType[XComplexType],
       hasAttributes: Boolean, hasSequenceParam: Boolean, longAll: Boolean): Tree = {
     val particles = decl.splitNonEmptyParticles
     val unmixedParserList = particles map { buildParticleParser(_, decl.effectiveMixed, decl.effectiveMixed) }
@@ -242,7 +242,7 @@ class Generator(val schema: ReferenceSchema,
       ).flatten)
   }
 
-  private def generateBaseComplexTypeTrait(sym: ClassSymbol, decl: Tagged[XComplexType]): Trippet = {
+  private def generateBaseComplexTypeTrait(sym: ClassSymbol, decl: TaggedType[XComplexType]): Trippet = {
     logger.debug("generateBaseComplexTypeTrait: emitting %s" format sym.toString)
 
     lazy val attributeSeqRef: Tagged[AttributeSeqParam] = TaggedAttributeSeqParam(AttributeSeqParam(), decl.tag)
@@ -270,7 +270,7 @@ class Generator(val schema: ReferenceSchema,
       makeImplicitValue(sym))
   }
 
-  private def generateBaseComplexTypeFormat(sym: ClassSymbol, decl: Tagged[XComplexType]): Tree = {
+  private def generateBaseComplexTypeFormat(sym: ClassSymbol, decl: TaggedType[XComplexType]): Tree = {
     logger.debug("generateBaseComplexTypeFormat - ", sym)
 
     val dfmt = defaultFormatterSymbol(sym)
@@ -323,7 +323,7 @@ class Generator(val schema: ReferenceSchema,
       NEW(ANONDEF(dfmt.decodedName) := BLOCK())   
   }
 
-  def complexTypeSuperTypes(decl: Tagged[XComplexType]): Seq[Type] = {
+  def complexTypeSuperTypes(decl: TaggedType[XComplexType]): Seq[Type] = {
     def choices: List[TaggedKeyedGroup] =
       (for {
         sch <- context.schemas
@@ -409,23 +409,29 @@ class Generator(val schema: ReferenceSchema,
       Trippet(TRAITDEF(sym))
   }
 
-  def processSimpleType(decl: Tagged[XSimpleType]): Seq[Trippet] =
+  def processSimpleType(decl: TaggedType[XSimpleType]): Seq[Trippet] =
     Seq(generateSimpleType(userDefinedClassSymbol(decl), decl))
 
-  private def generateSimpleType(sym: ClassSymbol, decl: Tagged[XSimpleType]) = {
+  private def generateSimpleType(sym: ClassSymbol, decl: TaggedType[XSimpleType]) = {
     val enums = filterEnumeration(decl)
     val enumValues = enums map { enum =>
       CASEOBJECTDEF(userDefinedClassSymbol(enum)) withParents(sym) := BLOCK(
-        DEF(Any_toString) withFlags(Flags.OVERRIDE) := LIT(enum.value.value)
+        DEF(Any_toString) withFlags(Flags.OVERRIDE) := LIT(decl.enumValue(enum).toString)
       )
     }
+    val valueTree: Tree =
+      if (decl.qnameBased) PAREN(BLOCK(
+          VAL(TUPLE(ID("ns"), ID("localPart"))) := (HelperClass DOT "splitQName") APPLY(REF("value"), REF("scope")),
+          NEW(QNameClass, REF("ns") DOT "orNull", REF("localPart")) TOSTRING
+        ))
+      else REF("value")
     val companionTree: Tree = 
       if (enums.isEmpty) OBJECTDEF(sym) := BLOCK(
-        DEF("fromString", sym) withParams(PARAM("value", StringClass)) := REF(sym) APPLY()
+        DEF("fromString", sym) withParams(PARAM("value", StringClass), PARAM("scope", NamespaceBindingClass)) := REF(sym) APPLY()
         )
       else OBJECTDEF(sym) := BLOCK(
-        DEF("fromString", sym) withParams(PARAM("value", StringClass)) := REF("value") MATCH(
-          enums map { enum => CASE (LIT(enum.value.value)) ==> REF(userDefinedClassSymbol(enum)) }
+        DEF("fromString", sym) withParams(PARAM("value", StringClass), PARAM("scope", NamespaceBindingClass)) := valueTree MATCH(
+          enums map { enum => CASE (LIT(decl.enumValue(enum).toString)) ==> REF(userDefinedClassSymbol(enum)) }
         ))
     Trippet(TRAITDEF(sym).tree :: companionTree ::
       enumValues.toList, Nil,
@@ -433,13 +439,15 @@ class Generator(val schema: ReferenceSchema,
       makeImplicitValue(sym) :: Nil)
   }
 
-  private def generateSimpleTypeFormat(sym: ClassSymbol, decl: Tagged[XSimpleType]): Tree = {
+  private def generateSimpleTypeFormat(sym: ClassSymbol, decl: TaggedType[XSimpleType]): Tree = {
     val dfmt = defaultFormatterSymbol(sym)
     
     TRAITDEF(dfmt.decodedName) withParents(XMLFormatClass TYPE_OF sym) := BLOCK(List(
       DEF("reads", eitherType(StringClass, sym)) withParams(
-          PARAM("seq", NodeSeqClass), PARAM("stack", TYPE_LIST(ElemNameClass))) :=
-        RIGHT((sym DOT "fromString")(REF("seq") DOT "text")),
+          PARAM("seq", NodeSeqClass), PARAM("stack", TYPE_LIST(ElemNameClass))) := REF("seq") MATCH(
+          CASE(ID("elem") withType(ElemClass)) ==> RIGHT((sym DOT "fromString")(REF("elem") DOT "text", REF("elem") DOT "scope")),
+          CASE(WILDCARD) ==> RIGHT((sym DOT "fromString")(REF("seq") DOT "text", REF(TopScopeModule)))
+        ),
       DEF("writes", NodeSeqClass) withParams(PARAM("__obj", sym),
         PARAM("__namespace", optionType(StringClass)),
         PARAM("__elementLabel", optionType(StringClass)),

@@ -180,6 +180,31 @@ case class SimpleTypeOps(decl: TaggedType[XSimpleType]) {
       case _ => sys.error("baseType#: Unsupported content " + decl.xSimpleDerivationOption3.value.toString)
     }    
   }
+  /** this decl is a decendant of QName. */
+  def qnameBased(implicit lookup: Lookup): Boolean = {
+    import Defs._
+    import lookup.{BuiltInType, SimpleType}
+    import scalaxb.compiler.xsd.XsQName
+    decl.value.xSimpleDerivationOption3.value match {
+      case XRestriction(_, _, _, Some(base), _) =>
+        QualifiedName(base) match {
+          case BuiltInType(TaggedSymbol(XsQName, _)) => true
+          case SimpleType(tagged)                    => SimpleTypeOps(tagged).qnameBased
+          case _ => false
+        }
+      case XRestriction(_, XSimpleRestrictionModelSequence(Some(simpleType), _), _, _, _) =>
+        SimpleTypeOps(Tagged(simpleType, decl.tag)).qnameBased
+      case _ => false
+    }    
+  }
+
+  def enumValue(enum: Tagged[XNoFixedFacet])(implicit lookup: Lookup): Any =
+    if (qnameBased) {
+      import scalaxb.compiler.Module.splitTypeName
+      val (ns, localPart) = splitTypeName(enum.value.value, lookup.scopeEv)
+      QualifiedName(ns map {new URI(_)}, localPart)
+    }
+    else enum.value.value
 }
 
 /** represents attributes param */

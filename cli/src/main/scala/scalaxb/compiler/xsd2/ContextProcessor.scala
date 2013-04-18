@@ -17,7 +17,7 @@ trait ContextProcessor extends ScalaNames { self: Namer with Lookup =>
       tagged.tag.toString + "??"
     }
 
-  def getTraitName(tagged: Tagged[XComplexType]): String =
+  def getTraitName(tagged: TaggedType[XComplexType]): String =
     context.traitNames.get(tagged) getOrElse {
       error(tagged.tag.toString + "??")
     }    

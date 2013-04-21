@@ -19,6 +19,7 @@ trait Symbols {
   lazy val AnyElemNameParserClass = ScalaxbPackageClass.newClass("AnyElemNameParser")
   lazy val CanWriteChildNodesClass = ScalaxbPackageClass.newClass("CanWriteChildNodes")
   lazy val DataRecordClass     = ScalaxbPackageClass.newClass("DataRecord")
+  lazy val DataRecordModule    = DataRecordClass.module
   lazy val DataRecordAnyClass  = DataRecordClass TYPE_OF AnyClass
   lazy val DataRecordOptionAnyClass = DataRecordClass TYPE_OF TYPE_OPTION(AnyClass)
   lazy val MapStringDataRecordAnyClass =
@@ -34,7 +35,7 @@ trait Symbols {
   lazy val JavaxXmlNamespacePackage  = JavaxXmlPackageClass.newPackage("namespace")
   lazy val JavaxXmlNamespacePackageClass = JavaxXmlNamespacePackage.moduleClass
   lazy val QNameClass          = JavaxXmlNamespacePackageClass.newClass("QName")
-  
+
   def xmlFormatType(arg: Type): Type = appliedType(XMLFormatClass.typeConstructor, List(arg))
   def parserType(arg: Type): Type = appliedType(ParserClass.typeConstructor, List(arg))
 }

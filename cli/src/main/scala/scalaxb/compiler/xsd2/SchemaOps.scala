@@ -175,8 +175,7 @@ case class SimpleTypeOps(decl: TaggedType[XSimpleType]) {
         }
       case XList(_, Some(simpleType), _, _, _) =>
         Tagged(simpleType, decl.tag)
-      case x: XUnion =>
-        Tagged(XsString, HostTag(Some(XML_SCHEMA_URI), SimpleTypeHost, "string"))
+      case x: XUnion => TaggedXsString
       case _ => sys.error("baseType#: Unsupported content " + decl.xSimpleDerivationOption3.value.toString)
     }    
   }
@@ -266,6 +265,7 @@ case class TaggedComplexType(value: XComplexType, tag: HostTag) extends TaggedTy
 case class TaggedSymbol(value: XsTypeSymbol, tag: HostTag) extends TaggedType[XsTypeSymbol] {}
 object TaggedXsAnyType extends TaggedSymbol(XsAnyType, HostTag(Some(Defs.SCALAXB_URI), SimpleTypeHost, "anyType"))
 object TaggedXsNillableAny extends TaggedSymbol(XsNillableAny, HostTag(Some(Defs.SCALAXB_URI), SimpleTypeHost, "nillableAny"))
+object TaggedXsString extends TaggedSymbol(XsString, HostTag(Some(Defs.XML_SCHEMA_URI), SimpleTypeHost, "string"))
 
 case class TaggedNamedGroup(value: XNamedGroup, tag: HostTag) extends Tagged[XNamedGroup] {}
 case class TaggedAttributeGroup(value: XAttributeGroup, tag: HostTag) extends TaggedAttr[XAttributeGroup] {}
@@ -320,11 +320,11 @@ object SchemaIteration {
   def toThat(group: XNamedGroup, tag: HostTag): Option[Tagged[_]] = Some(Tagged(group, tag))
   def toThat(group: XGroupRef, tag: HostTag): Option[Tagged[_]] = Some(Tagged(group, tag))
   def toThat(group: KeyedGroup, tag: HostTag): Option[Tagged[_]] = Some(Tagged(group, tag))
-  def toThat(group: XAttributeGroup, tag: HostTag): Option[Tagged[_]] = Some(Tagged(group, tag))
+  def toThat(group: XAttributeGroup, tag: HostTag): Option[TaggedAttr[_]] = Some(Tagged(group, tag))
   def toThat(elem: XTopLevelElement, tag: HostTag): Option[Tagged[_]] = Some(Tagged(elem, tag))
   def toThat(elem: XLocalElementable, elementFormDefault: XFormChoice, tag: HostTag): Option[Tagged[_]] =
     Some(Tagged(elem, elementFormDefault, tag))
-  def toThat(attr: XAttributable, tag: HostTag): Option[Tagged[_]] = Some(Tagged(attr, tag))
+  def toThat(attr: XAttributable, tag: HostTag): Option[TaggedAttr[_]] = Some(Tagged(attr, tag))
 
   def schemaToSeq(schema: XSchema): IndexedSeq[Tagged[_]] = {
     implicit val s = schema
@@ -413,8 +413,8 @@ object SchemaIteration {
     toThat(attr, childtag).toIndexedSeq ++
     (attr.simpleType map { x => processLocalSimpleType(x, childtag / "_") } getOrElse Vector())
 
-  def processAnyAttribute(anyAttribute: XWildcardable)(implicit tag: HostTag): IndexedSeq[Tagged[_]] =
-    IndexedSeq(TaggedAnyAttribute(anyAttribute, tag))
+  def processAnyAttribute(anyAttribute: XWildcardable)(implicit tag: HostTag): Vector[TaggedAttr[_]] =
+    Vector(TaggedAnyAttribute(anyAttribute, tag))
 
   def processAttrSeq(attrSeq: XAttrDeclsSequence)(implicit tag: HostTag): IndexedSeq[Tagged[_]] =
     (Vector(attrSeq.xattrdeclsoption1: _*).zipWithIndex flatMap {
@@ -455,7 +455,7 @@ case class ComplexTypeOps(decl: Tagged[XComplexType]) {
   def flattenedGroups(implicit lookup: Lookup, splitter: Splitter, targetNamespace: Option[URI], scope: NamespaceBinding) =
     ComplexTypeIteration.complexTypeToFlattenedGroups(decl)
 
-  def flattenedAttributes(implicit lookup: Lookup, targetNamespace: Option[URI], scope: NamespaceBinding) =
+  def flattenedAttributes(implicit lookup: Lookup, targetNamespace: Option[URI], scope: NamespaceBinding): Vector[TaggedAttr[_]] =
     ComplexTypeIteration.complexTypeToMergedAttributes(decl)
 
   def attributeGroups(implicit lookup: Lookup, targetNamespace: Option[URI], scope: NamespaceBinding) =
@@ -751,30 +751,9 @@ object ComplexTypeIteration {
   // List of TaggedElement, TaggedKeyedGroup, or TaggedAny.
   def namedGroupToParticles(value :XNamedGroup, tag: HostTag)(implicit lookup: Lookup, splitter: Splitter): IndexedSeq[TaggedParticle[_]] =
     namedGroupToPrimaryCompositor(value, tag) match {
-//      case Some(tagged: TaggedKeyedGroup) if tagged.value.key == SequenceTag =>
-//        innerSequenceToParticles(tagged)
       case Some(tagged: TaggedKeyedGroup) => IndexedSeq(tagged)
       case _ => Vector()
     }
-
-  // private[scalaxb] def innerSequenceToParticles(tagged: TaggedParticle[KeyedGroup])
-  //     (implicit lookup: Lookup, splitter: Splitter): IndexedSeq[TaggedParticle[_]] =
-  //   if (tagged.value.minOccurs != 1 || tagged.value.maxOccurs != "1")
-  //     if (tagged.value.particles.length == 1) tagged.value.particles(0) match {
-  //       case TaggedWildCard(any, tag) =>
-  //         IndexedSeq(Tagged(any.copy(
-  //           minOccurs = math.min(any.minOccurs.toInt, tagged.value.minOccurs.toInt),
-  //           maxOccurs = Occurrence.max(any.maxOccurs, tagged.value.maxOccurs)
-  //         ), tag))
-  //       case TaggedKeyedGroup(value, tag) if value.key == ChoiceTag =>
-  //         IndexedSeq(Tagged(value.copy(
-  //           minOccurs = math.min(value.minOccurs.toInt, tagged.value.minOccurs.toInt),
-  //           maxOccurs = Occurrence.max(value.maxOccurs, tagged.value.maxOccurs)
-  //         ), tag))
-  //       case _ => IndexedSeq(tagged)
-  //     }
-  //     else IndexedSeq(tagged)
-  //   else splitter.splitIfLongSequence(tagged)
 
   /** returns all grouprefs involved in the given complex type,
    * including the ones from base type.
@@ -930,7 +909,7 @@ object ComplexTypeIteration {
    */
   def complexTypeToMergedAttributes(decl: Tagged[XComplexType])
                       (implicit lookup: Lookup,
-                       targetNamespace: Option[URI], scope: NamespaceBinding): Vector[Tagged[_]] = {
+                       targetNamespace: Option[URI], scope: NamespaceBinding): Vector[TaggedAttr[_]] = {
     import lookup.{ComplexType, resolveAttribute, resolveAttributeGroup}
     implicit val tag = decl.tag
 
@@ -939,7 +918,7 @@ object ComplexTypeIteration {
       case _ => Vector()
     }
     
-    def isSameAttribute(lhs: Tagged[_], rhs: Tagged[_]): Boolean = {
+    def isSameAttribute(lhs: TaggedAttr[_], rhs: TaggedAttr[_]): Boolean = {
       (lhs, rhs) match {
         case (l: TaggedAnyAttribute, r: TaggedAnyAttribute) => true
         case (l: TaggedAttribute, r: TaggedAttribute) =>
@@ -954,8 +933,8 @@ object ComplexTypeIteration {
 
     // since OO's hierarchy does not allow base members to be omitted,
     // child overrides needs to be implemented some other way.
-    def mergeAttributeSeqs(base: Vector[Tagged[_]], children: Vector[Tagged[_]]): Vector[Tagged[_]] = {
-      def mergeAttribute(base: Vector[Tagged[_]], child: Tagged[_]): Vector[Tagged[_]] =
+    def mergeAttributeSeqs(base: Vector[TaggedAttr[_]], children: Vector[TaggedAttr[_]]): Vector[TaggedAttr[_]] = {
+      def mergeAttribute(base: Vector[TaggedAttr[_]], child: TaggedAttr[_]): Vector[TaggedAttr[_]] =
         if (base exists { x => isSameAttribute(x, child) }) base
         else base :+ child
 
@@ -973,7 +952,7 @@ object ComplexTypeIteration {
         flattenAttrSeq(extension.xAttrDeclsSequence4))
 
     // move anyAttribute to the end.
-    def reorderAttributes(xs: Vector[Tagged[_]]): Vector[Tagged[_]] = {
+    def reorderAttributes(xs: Vector[TaggedAttr[_]]): Vector[TaggedAttr[_]] = {
       val (l, r) = xs partition {
         case x: TaggedAnyAttribute => true
         case _ => false
@@ -982,7 +961,7 @@ object ComplexTypeIteration {
     }
 
     // Resolve references as walking through the attributes.
-    def flattenAttrSeq(attrSeq: XAttrDeclsSequence)(implicit tag: HostTag): Vector[Tagged[_]] =
+    def flattenAttrSeq(attrSeq: XAttrDeclsSequence)(implicit tag: HostTag): Vector[TaggedAttr[_]] =
       (Vector(attrSeq.xattrdeclsoption1: _*) flatMap {
         case DataRecord(_, _, x: XAttributable)      =>
           x.ref map { ref => Vector(resolveAttribute(ref))
@@ -991,7 +970,7 @@ object ComplexTypeIteration {
           x.ref map { ref => flattenAttrSeq(resolveAttributeGroup(ref).value.xAttrDeclsSequence3)
           } getOrElse { flattenAttrSeq(x.xAttrDeclsSequence3) }
       }) ++
-      (attrSeq.anyAttribute map {SchemaIteration.processAnyAttribute} getOrElse Vector())
+      ((attrSeq.anyAttribute map {SchemaIteration.processAnyAttribute} getOrElse Vector()): Vector[TaggedAttr[_]])
 
     val retval = decl.value.xComplexTypeModelOption3.value match {
       case XComplexContent(_, DataRecord(_, _, x: XComplexRestrictionType), _, _, _) => processRestriction(x)

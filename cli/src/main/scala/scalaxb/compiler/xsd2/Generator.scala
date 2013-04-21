@@ -89,7 +89,6 @@ class Generator(val schema: ReferenceSchema,
     lazy val mixedSeqRef: Tagged[MixedSeqParam] = TaggedMixedSeqParam(MixedSeqParam(), decl.tag)
 
     val attributes = decl.flattenedAttributes
-    val hasAttributes = !attributes.isEmpty
     val list =
       (if (decl.effectiveMixed) Seq(mixedSeqRef)
       else decl.primaryCompositor map { _ => decl.splitNonEmptyParticles } getOrElse {
@@ -127,13 +126,15 @@ class Generator(val schema: ReferenceSchema,
         (if (accessors.isEmpty) EmptyTree
         else BLOCK(accessors: _*)),
         EmptyTree,
-        generateDefaultFormat(sym, decl, hasAttributes, hasSequenceParam, longAll),
+        generateDefaultFormat(sym, decl, attributes, hasSequenceParam, longAll),
         makeImplicitValue(sym)) ::
       compositorCodes: _*)
   }
 
+  private def DATARECORD(tree: Tree*): Tree = DataRecordModule APPLY(tree: _*)
+
   private def generateDefaultFormat(sym: ClassSymbol, decl: TaggedType[XComplexType],
-      hasAttributes: Boolean, hasSequenceParam: Boolean, longAll: Boolean): Tree = {
+      attributes: Vector[TaggedAttr[_]], hasSequenceParam: Boolean, longAll: Boolean): Tree = {
     val particles = decl.splitNonEmptyParticles
     val unmixedParserList = particles map { buildParticleParser(_, decl.effectiveMixed, decl.effectiveMixed) }
     val parserList = if (decl.effectiveMixed) buildTextParser +: (unmixedParserList flatMap { Seq(_, buildTextParser) })
@@ -177,7 +178,7 @@ class Generator(val schema: ReferenceSchema,
     }
 
     val makeWritesAttribute: Option[Tree] =
-      if (!hasAttributes) None
+      if (attributes.isEmpty) None
       else Some(DEF("writesAttribute", MetaDataClass) withFlags(Flags.OVERRIDE) withParams(
         PARAM("__obj", sym), PARAM("__scope", NamespaceBindingClass)
       ) := (HelperClass DOT "mapToAttributes")(REF("__obj") DOT "attributes", REF("__scope")))
@@ -198,6 +199,42 @@ class Generator(val schema: ReferenceSchema,
         formatterSymbol(buildNamedGroupSymbol(tagged)): Type })
     
     val dfmt = defaultFormatterSymbol(sym)
+    val attributeTree: Seq[Tree] =
+      if (attributes.isEmpty) Vector()
+      else {
+        val casetree: Seq[CaseDef] = (attributes collect {
+          case x@TaggedAttribute(attr: XTopLevelAttribute, _) =>
+            val ns = x.tag.namespace map {_.toString} getOrElse ""
+            CASE(ID("attr") withType(PrefixedAttributeClass),
+              IF(PAREN((REF("elem") DOT "scope" DOT "getURI")(REF("attr") DOT "pre") ANY_== LIT(ns) AND
+                 PAREN((REF("attr") DOT "key") ANY_== LIT(attr.name.get))))) ==>
+              BLOCK(
+                VAL("ns") := (REF("elem") DOT "scope" DOT "getURI")(REF("attr") DOT "pre"),
+                TUPLE(LIT("@{" + ns + "}" + attr.name.get), generateAttribute(x))
+              )
+          case x@TaggedAttribute(attr: XAttribute, _) =>
+            CASE(ID("attr") withType(UnprefixedAttributeClass),
+              IF((REF("attr") DOT "key") ANY_== LIT(attr.name.get))) ==>
+              TUPLE(LIT("@" + attr.name.get), generateAttribute(x))            
+        }) ++    
+        Seq(
+          CASE(ID("attr") withType(PrefixedAttributeClass)) ==>
+            BLOCK(
+              VAL("ns") := (REF("elem") DOT "scope" DOT "getURI")(REF("attr") DOT "pre"),
+              TUPLE(INFIX_CHAIN("+", LIT("@{"), REF("ns"), LIT("}"), REF("attr") DOT "key"),
+                DATARECORD(TYPE_OPTION(StringClass) APPLY REF("ns"), SOME(REF("attr") DOT "key"), REF("attr") DOT "value" DOT "text"))
+            ),
+          CASE(ID("attr")) ==> TUPLE(LIT("@") INFIX("+", REF("attr") DOT "key"),
+              DATARECORD(NONE, SOME(REF("attr") DOT "key"), REF("attr") DOT "value" DOT "text")))
+        
+        Seq(ListMapClass.module APPLYTYPE(StringClass, DataRecordAnyClass) APPLY SEQARG( PAREN( REF("node") MATCH (
+          CASE(ID("elem") withType(ElemClass)) ==> ((REF("elem") DOT "attributes" DOT "toList") MAP(BLOCK(
+            casetree: _*
+          ))),
+          CASE(WILDCARD) ==> NIL
+        ) // node MATCH
+        )))
+      }
     val argsTree: Seq[Tree] =
       (Vector() match {
         case _ if decl.effectiveMixed   => Seq((SeqClass DOT "concat")(particleArgs))
@@ -208,9 +245,7 @@ class Generator(val schema: ReferenceSchema,
             TYPE_TUPLE(StringClass, DataRecordAnyClass)
           ))
         case _ => particleArgs
-      }) ++ 
-      (if (hasAttributes) Seq((HelperClass DOT "attributesToMap")(REF("node")))
-      else Vector())
+      }) ++ attributeTree
 
     if (simpleFromXml)
       TRAITDEF(dfmt.decodedName) withParents(xmlFormatType(sym) :: (CanWriteChildNodesClass TYPE_OF sym) :: Nil) := BLOCK(List(
@@ -232,7 +267,7 @@ class Generator(val schema: ReferenceSchema,
         if (decl.effectiveMixed) Some(DEF("isMixed", BooleanClass) withFlags(Flags.OVERRIDE) := TRUE)
         else None,
         Some(DEF("parser", parserType(sym)) withParams(
-            PARAM("node", "scala.xml.Node"), PARAM("stack", TYPE_LIST("scalaxb.ElemName"))) :=
+            PARAM("node", NodeClass), PARAM("stack", TYPE_LIST("scalaxb.ElemName"))) :=
           INFIX_CHAIN("~", parserList) INFIX("^^") APPLY BLOCK(
             CASE(INFIX_CHAIN("~", parserVariableList)) ==> (sym APPLY argsTree)
           )
@@ -241,6 +276,19 @@ class Generator(val schema: ReferenceSchema,
         makeWritesChildNodes
       ).flatten)
   }
+
+  private def generateAttribute(attr: TaggedAttr[XAttributable]): Tree =
+    DATARECORD(
+      attr match {
+        case TaggedAttribute(attr: XTopLevelAttribute, _) => TYPE_OPTION(StringClass) APPLY REF("ns")
+        case _                                            => NONE  
+      },
+      SOME(REF("attr") DOT "key"), buildArg(
+      attr.typeValue match {
+        case Some(BuiltInType(tpe)) => tpe
+        case Some(SimpleType(tpe))  => tpe
+        case _ => TaggedXsString
+      }, REF("attr") DOT "value", false))
 
   private def generateBaseComplexTypeTrait(sym: ClassSymbol, decl: TaggedType[XComplexType]): Trippet = {
     logger.debug("generateBaseComplexTypeTrait: emitting %s" format sym.toString)

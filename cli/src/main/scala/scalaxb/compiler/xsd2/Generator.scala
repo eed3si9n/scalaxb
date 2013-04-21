@@ -168,17 +168,21 @@ class Generator(val schema: ReferenceSchema,
         case _ => SEQ(TextClass APPLY(REF("__obj") DOT "value" DOT "toString"))
       }
       def toXMLArgs: List[Tree] = REF("x") :: (REF("x") DOT "namespace").tree :: (REF("x") DOT "key").tree :: REF("__scope") :: FALSE :: Nil
-      def childTree: Tree =
+      def childTree(decl: TaggedType[XComplexType]): Tree =
         if (decl.effectiveMixed) (REF("__obj") DOT makeParamName(MIXED_PARAM) DOT "toSeq") FLATMAP LAMBDA(PARAM("x")) ==> BLOCK(
             buildToXML(DataRecordAnyClass, toXMLArgs)
           )
-        else if (decl.hasSimpleContent) simpleContentTree(decl.base)
+        else if (decl.hasSimpleContent)
+          decl.base match {
+            case tagged: TaggedComplexType => childTree(tagged)
+            case _ => simpleContentTree(decl.base)
+          }
         else if (particles.isEmpty) NIL
         else if (particles.size == 1) PAREN(buildXMLTree(Param(particles(0), 0)))
         else (SeqClass DOT "concat")(Param.fromSeq(particles) map { x => buildXMLTree(x) })
 
       Some(DEF("writesChildNodes", TYPE_SEQ(NodeClass)) withParams(PARAM("__obj", sym),
-        PARAM("__scope", NamespaceBindingClass)) := childTree)
+        PARAM("__scope", NamespaceBindingClass)) := childTree(decl))
     }
 
     val makeWritesAttribute: Option[Tree] =

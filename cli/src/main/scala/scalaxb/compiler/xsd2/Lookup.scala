@@ -233,7 +233,7 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter with Symbols =
     case _ => throw new ReferenceNotFound("element", elementRef.namespace map { _.toString }, elementRef.localPart)
   }
 
-  def resolveAttribute(attrRef: QualifiedName): Tagged[XAttributable] = attrRef match {
+  def resolveAttribute(attrRef: QualifiedName): TaggedAttr[XAttributable] = attrRef match {
     case Attribute(attr) => attr
     case _ => throw new ReferenceNotFound("attribute", attrRef.namespace map { _.toString }, attrRef.localPart)
   }

@@ -186,10 +186,28 @@ object ProtocolSpec extends Specification { def is = sequential               ^
     (p must contain("""}: _*)"""))
   }
 
+  // <xs:element name="attributeTest">
+  //   <xs:complexType>
+  //     <xs:attribute name="milk1" type="gen:MilkType"/>
+  //     <xs:attribute name="string2" type="xs:string"/>
+  //     <xs:anyAttribute namespace="##any"/>
+  //   </xs:complexType>
+  // </xs:element>
   def attribute1 = {
     val p = module.processNode(attributeXML, "example")(1)
     println(p)
 
-    p must contain("""example.AttributeTest(scalaxb.Helper.attributesToMap(node))""")
+    p must contain("""scala.collection.immutable.ListMap[String, scalaxb.DataRecord[Any]](((node match {
+        case (elem: scala.xml.Elem) => elem.attributes.toList map {
+          case (attr: scala.xml.UnprefixedAttribute) if attr.key == "milk1" => ("@milk1", scalaxb.DataRecord(None, Some(attr.key), scalaxb.fromXML[example.MilkType](attr.value, scalaxb.ElemName(node) :: stack)))
+          case (attr: scala.xml.UnprefixedAttribute) if attr.key == "string2" => ("@string2", scalaxb.DataRecord(None, Some(attr.key), scalaxb.fromXML[String](attr.value, scalaxb.ElemName(node) :: stack)))
+          case (attr: scala.xml.PrefixedAttribute) => {
+            val ns = elem.scope.getURI(attr.pre)
+            ("@{" + ns + "}" + attr.key, scalaxb.DataRecord(Option[String](ns), Some(attr.key), attr.value.text))
+          }
+          case attr => ("@" + attr.key, scalaxb.DataRecord(None, Some(attr.key), attr.value.text))
+        }
+        case _ => Nil
+      }): _*))""")
   }
 }

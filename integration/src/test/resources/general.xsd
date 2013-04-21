@@ -445,7 +445,7 @@
   <xs:element name="longAttributeTest">
     <xs:complexType>
       <xs:attribute name="milk1" type="gen:MilkType"/>
-      <xs:attribute name="string2" type="xs:string"/>
+      <xs:attribute ref="xmime:contentType"/>
       <xs:attribute name="string3" type="xs:string"/>
       <xs:attribute name="string4" type="xs:string"/>
       <xs:attribute name="string5" type="xs:string"/>

@@ -368,6 +368,7 @@ JDREVGRw==</base64Binary>
   }
   
   def testLongAttribute {
+    println("testLongAttribute")
     val subject = <foo xmlns="http://www.example.com/general"
         xmlns:xs="http://www.w3.org/2001/XMLSchema"
         milk1="SKIM" />

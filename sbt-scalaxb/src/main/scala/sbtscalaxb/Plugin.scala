@@ -50,7 +50,7 @@ object Plugin extends sbt.Plugin {
     generate in scalaxb <<= (sources in scalaxb, scalaxbConfig in scalaxb,
         sourceManaged in scalaxb, logLevel in scalaxb) map { (sources, config, outdir, ll) =>
       ScalaxbCompile(sources, config, outdir, ll == Level.Debug) },
-    sourceManaged in scalaxb <<= sourceManaged,
+    sourceManaged in scalaxb <<= sourceManaged / "sbt-scalaxb",
     sources in scalaxb <<= (xsdSource in scalaxb, wsdlSource in scalaxb) map { (xsd, wsdl) =>
       (wsdl ** "*.wsdl").get.sorted ++ (xsd ** "*.xsd").get.sorted },
     xsdSource in scalaxb <<= (sourceDirectory, configuration) { (src, config) =>

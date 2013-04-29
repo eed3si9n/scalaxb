@@ -32,24 +32,42 @@ object Plugin extends sbt.Plugin {
   }
 
   object ScalaxbCompile {
-    def apply(sources: Seq[File], packageName: String, outdir: File): Seq[File] =
-      apply(sources, sc.Config(packageNames = Map(None -> Some(packageName))), outdir, false)
+    def apply(sources: Seq[File], packageName: String, outDir: File, cacheDir: File): Seq[File] =
+      apply(sources, sc.Config(packageNames = Map(None -> Some(packageName))), outDir, cacheDir, false)
 
-    def apply(sources: Seq[File], config: sc.Config, outdir: File, verbose: Boolean = false): Seq[File] =
-      sources.headOption map { src =>
-        import sc._
-        sc.Log.configureLogger(verbose)
-        val module = Module.moduleByFileName(src)
-        module.processFiles(sources, config.copy(outdir = outdir))
-      } getOrElse {Nil}
+    def apply(sources: Seq[File], config: sc.Config, outDir: File, cacheDir: File, verbose: Boolean = false): Seq[File] = {
+      import sbinary.{DefaultProtocol,Format}
+      import DefaultProtocol.{FileFormat, immutableMapFormat, StringFormat, UnitFormat}
+      import Tracked.{inputChanged, outputChanged}
+      import Types.:+:
+      import Cache._
+      import FilesInfo.{lastModified, exists}
+
+      def compile: Seq[File] =
+        sources.headOption map { src =>
+          import sc._
+          sc.Log.configureLogger(verbose)
+          val module = Module.moduleByFileName(src)
+          module.processFiles(sources, config.copy(outdir = outDir))
+        } getOrElse {Nil}
+      def cachedCompile =
+        inputChanged(cacheDir / "scalaxb-inputs") { (inChanged, inputs: Seq[File] :+: FilesInfo[ModifiedFileInfo] :+: HNil) =>
+          outputChanged(cacheDir / "scalaxb-output") { (outChanged, outputs: FilesInfo[PlainFileInfo]) =>
+            if (inChanged || outChanged) compile
+            else outputs.files.toSeq map {_.file}
+          }
+        }
+      val inputs = sources :+: lastModified(sources.toSet) :+: HNil
+      cachedCompile(inputs)(() => exists((outDir ** "*.scala").get.toSet))
+    }
   }
 
   lazy val scalaxbSettings: Seq[Project.Setting[_]] = inConfig(Compile)(baseScalaxbSettings)
   lazy val baseScalaxbSettings: Seq[Project.Setting[_]] = Seq(
     scalaxb <<= generate in scalaxb,
     generate in scalaxb <<= (sources in scalaxb, scalaxbConfig in scalaxb,
-        sourceManaged in scalaxb, logLevel in scalaxb) map { (sources, config, outdir, ll) =>
-      ScalaxbCompile(sources, config, outdir, ll == Level.Debug) },
+        sourceManaged in scalaxb, cacheDirectory, logLevel in scalaxb) map { (sources, config, outdir, cacheDir, ll) =>
+      ScalaxbCompile(sources, config, outdir, cacheDir, ll == Level.Debug) },
     sourceManaged in scalaxb <<= sourceManaged / "sbt-scalaxb",
     sources in scalaxb <<= (xsdSource in scalaxb, wsdlSource in scalaxb) map { (xsd, wsdl) =>
       (wsdl ** "*.wsdl").get.sorted ++ (xsd ** "*.xsd").get.sorted },

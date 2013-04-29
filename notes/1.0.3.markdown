@@ -7,10 +7,13 @@
 - Includes offending data in `ParserFailure` message. [#206][206] requested by [@caoilte][@caoilte]
 - Fixes handling of QName enums. [#208][208]
 - sbt-scalaxb sorts `*.xsd` to avoid platform variance. [#207][#207] reported by [@caoilte][@caoilte]
+- sbt-scalaxb generates code only when the xsd files are modified. [#199][#199] requested by [@fommil][@fommil]
 
   [115]: https://github.com/eed3si9n/scalaxb/issues/115
+  [199]: https://github.com/eed3si9n/scalaxb/issues/199
   [206]: https://github.com/eed3si9n/scalaxb/issues/206
   [207]: https://github.com/eed3si9n/scalaxb/issues/207
   [208]: https://github.com/eed3si9n/scalaxb/issues/208
   [@caoilte]: https://github.com/caoilte
   [@idot]: https://github.com/idot
+  [@fommil]: https://github.com/fommil

@@ -572,12 +572,12 @@ abstract class GenSource(val schema: SchemaDecl,
     val formatterName = buildFormatterName(decl.namespace, localName)
     val enums = filterEnumeration(decl)
     
-    def makeEnum(enum: EnumerationDecl) =
+    def makeEnum(enum: EnumerationDecl[_]) =
       "case object " + buildTypeName(localName, enum, true) + " extends " + localName + 
-      " { override def toString = " + quote(enum.value) + " }"
+      " { override def toString = " + quote(enum.value.toString) + " }"
     
-    def makeCaseEntry(enum: EnumerationDecl) =
-      indent(2) + "case " + quote(enum.value) + " => " + buildTypeName(localName, enum, true) + newline
+    def makeCaseEntry(enum: EnumerationDecl[_]) =
+      indent(2) + "case " + quote(enum.value.toString) + " => " + buildTypeName(localName, enum, true) + newline
     
     val enumString = enums.map(makeEnum).mkString(newline)
     def valueCode: String =

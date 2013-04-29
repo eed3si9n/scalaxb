@@ -25,6 +25,7 @@ package scalaxb.compiler.xsd
 import scalashim._
 import scalaxb.compiler.{ScalaNames, Config, ReferenceNotFound, Log}
 import scala.collection.mutable
+import javax.xml.namespace.QName
 
 trait PackageName {
   def packageName(schema: SchemaDecl, context: XsdContext): Option[String] =
@@ -64,7 +65,7 @@ trait ContextProcessor extends ScalaNames with PackageName {
     
     (None :: (config.packageNames.valuesIterator.toList.distinct)) map {
       pkg =>
-        context.enumValueNames(pkg) = mutable.ListMap.empty[(String, EnumerationDecl), String]
+        context.enumValueNames(pkg) = mutable.ListMap.empty[(String, EnumerationDecl[_]), String]
     }
     
     val anonymousTypes = mutable.ListBuffer.empty[(SchemaDecl, ComplexTypeDecl)]
@@ -85,7 +86,7 @@ trait ContextProcessor extends ScalaNames with PackageName {
       else {
         context.typeNames(decl) = makeProtectedTypeName(schema.targetNamespace, initialName, postfix, context)
         logger.debug("processContent: enum %s is named %s" format(decl.name, context.typeNames(decl)))
-        makeEnumValues(decl, context)
+        makeEnumValues(decl, schema.scope, context)
       } // if-else
     }
 
@@ -252,18 +253,22 @@ trait ContextProcessor extends ScalaNames with PackageName {
     }
   }
   
-  def makeEnumValues(decl: SimpleTypeDecl, context: XsdContext) {
+  def makeEnumValues(decl: SimpleTypeDecl, scope: scala.xml.NamespaceBinding, context: XsdContext) {
     val enumValues = context.enumValueNames(packageName(decl.namespace, context))
     val name = context.typeNames(decl)
     filterEnumeration(decl) map { enum =>
-      enumValues(name -> enum) = makeProtectedTypeName(decl.namespace, enum.value, "Value", context)
+      enumValues(name -> enum) = makeProtectedTypeName(decl.namespace,
+        enum.value match {
+          case qname: QName => Option(scope.getPrefix(qname.getNamespaceURI)).getOrElse("") + qname.getLocalPart.capitalize
+          case _            => enum.value.toString
+        }, "Value", context)
     }
   }
   
   def containsEnumeration(decl: SimpleTypeDecl) = decl.content match {
     case x: SimpTypRestrictionDecl =>
       x.facets exists { f => f match {
-          case e: EnumerationDecl => true
+          case e: EnumerationDecl[_] => true
           case _ => false
         }
       }
@@ -271,10 +276,10 @@ trait ContextProcessor extends ScalaNames with PackageName {
     case _ => false
   }
   
-  def filterEnumeration(decl: SimpleTypeDecl): List[EnumerationDecl] = decl.content match {
+  def filterEnumeration(decl: SimpleTypeDecl): List[EnumerationDecl[_]] = decl.content match {
     case x: SimpTypRestrictionDecl =>
       x.facets collect {
-        case e: EnumerationDecl => e
+        case e: EnumerationDecl[_] => e
       }
     
     case _ => Nil

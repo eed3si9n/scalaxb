@@ -43,7 +43,7 @@ case class XsdContext(
   schemas: mutable.ListBuffer[SchemaDecl] = mutable.ListBuffer(),
   typeNames: mutable.ListMap[NameKey, String] = mutable.ListMap(),
   enumValueNames: mutable.ListMap[Option[String],
-      mutable.ListMap[(String, EnumerationDecl), String]] = mutable.ListMap(),
+      mutable.ListMap[(String, EnumerationDecl[_]), String]] = mutable.ListMap(),
   packageNames: mutable.ListMap[Option[String], Option[String]] = mutable.ListMap(),
   complexTypes: mutable.ListBuffer[(SchemaDecl, ComplexTypeDecl)] = mutable.ListBuffer(),
   baseToSubs: mutable.ListMap[ComplexTypeDecl, List[ComplexTypeDecl]] = mutable.ListMap(),

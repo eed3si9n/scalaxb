@@ -32,7 +32,7 @@ trait ComplexTypeContent {
 abstract class ContentTypeDecl extends Decl
 
 case class SimpContRestrictionDecl(base: XsTypeSymbol, simpleType: Option[XsTypeSymbol],
-  facets: List[Facetable],
+  facets: List[Facetable[_]],
   attributes: List[AttributeLike]) extends ContentTypeDecl with ComplexTypeContent
 
 object SimpContRestrictionDecl {
@@ -146,7 +146,7 @@ object CompContExtensionDecl {
   }  
 }
 
-case class SimpTypRestrictionDecl(base: XsTypeSymbol, facets: List[Facetable]) extends ContentTypeDecl
+case class SimpTypRestrictionDecl(base: XsTypeSymbol, facets: List[Facetable[_]]) extends ContentTypeDecl
 
 object SimpTypRestrictionDecl {  
   def fromXML(node: scala.xml.Node, family: List[String], config: ParserConfig) = {
@@ -201,18 +201,18 @@ object SimpTypUnionDecl {
   }
 }
 
-trait Facetable {
-  val value: String
+trait Facetable[A] {
+  val value: A
 }
 
 object Facetable {
-  def fromParent(node: scala.xml.Node, base: XsTypeSymbol, config: ParserConfig): List[Facetable] = 
+  def fromParent(node: scala.xml.Node, base: XsTypeSymbol, config: ParserConfig): List[Facetable[_]] = 
     node.child.toList collect {
       case x@(<enumeration>{ _* }</enumeration>) => EnumerationDecl.fromXML(x, base, config)
     }
 }
 
-case class EnumerationDecl(value: String) extends Facetable
+case class EnumerationDecl[A](value: A) extends Facetable[A]
 
 object EnumerationDecl {
   def fromXML(node: scala.xml.Node, base: XsTypeSymbol, config: ParserConfig) =
@@ -220,7 +220,7 @@ object EnumerationDecl {
       case XsQName =>
         val (ns, localPart) = TypeSymbolParser.splitTypeName((node \ "@value").text, config.scope, config.targetNamespace, config.isCameleonInclude)
         val qname = new javax.xml.namespace.QName(ns.orNull, localPart)
-        EnumerationDecl(qname.toString)
+        EnumerationDecl(qname)
       case _ => EnumerationDecl((node \ "@value").text)
     }
 }

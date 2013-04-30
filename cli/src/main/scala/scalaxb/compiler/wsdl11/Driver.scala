@@ -173,11 +173,18 @@ class Driver extends Module { driver =>
     }
   }
 
-  def generateRuntimeFiles[To](cntxt: Context)(implicit evTo: CanBeWriter[To]): List[To] =
+  val VersionPattern = """(\d+)\.(\d+)\.(\d+)""".r
+  def generateRuntimeFiles[To](cntxt: Context, config: Config)(implicit evTo: CanBeWriter[To]): List[To] =
     List(generateFromResource[To](Some("scalaxb"), "scalaxb.scala", "/scalaxb.scala.template"),
-      generateFromResource[To](Some("scalaxb"), "httpclients.scala", "/httpclients.scala.template"),
-      generateFromResource[To](Some("scalaxb"), "httpclients_dispatch.scala",
-        "/httpclients_dispatch.scala.template")) ++
+      generateFromResource[To](Some("scalaxb"), "httpclients.scala", "/httpclients.scala.template")) ++
+    List(config.dispatchVersion match {
+      case VersionPattern(x, y, z) if (x.toInt == 0) && (y.toInt < 10) =>
+        generateFromResource[To](Some("scalaxb"), "httpclients_dispatch.scala",
+          "/httpclients_dispatch.scala.template")
+      case _  =>
+        generateFromResource[To](Some("scalaxb"), "httpclients_dispatch.scala",
+          "/httpclients_dispatch0100.scala.template")
+    }) ++
     (if (cntxt.soap11) List(generateFromResource[To](Some("scalaxb"), "soap11.scala", "/soap11.scala.template"),
       generateFromResource[To](Some("soapenvelope11"), "soapenvelope11.scala",
         "/soapenvelope11.scala.template"),

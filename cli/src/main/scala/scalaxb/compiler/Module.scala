@@ -47,7 +47,8 @@ case class Config(packageNames: Map[Option[String], Option[String]] = Map(None -
   generateRuntime: Boolean = true,
   contentsSizeLimit: Int = 20,
   sequenceChunkSize: Int = 10,
-  laxAny: Boolean = false)
+  laxAny: Boolean = false,
+  dispatchVersion: String = "0.9.5")
 
 object Snippet {
   def apply(definition: Node): Snippet = Snippet(definition, Nil, Nil, Nil)
@@ -353,7 +354,7 @@ trait Module {
     processImportables(cs.importables.toList) :::
     processImportables(cs.additionalImportables.toList) :::
     List(processProtocol) :::
-    (if (config.generateRuntime) generateRuntimeFiles[To](cs.context)
+    (if (config.generateRuntime) generateRuntimeFiles[To](cs.context, config)
      else Nil)
   }
 
@@ -370,7 +371,7 @@ trait Module {
     output
   }
 
-  def generateRuntimeFiles[To](context: Context)(implicit evTo: CanBeWriter[To]): List[To]
+  def generateRuntimeFiles[To](context: Context, config: Config)(implicit evTo: CanBeWriter[To]): List[To]
 
   // returns a seq of package name, snippet, and file name part tuple
   def generate(schema: Schema, part: String, context: Context, config: Config): Seq[(Option[String], Snippet, String)]

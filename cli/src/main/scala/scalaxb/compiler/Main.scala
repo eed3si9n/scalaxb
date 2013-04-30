@@ -87,6 +87,7 @@ object Arguments {
     var contentsSizeLimit = 20
     var prependFamilyName = false
     var laxAny = false
+    var dispatchVersion = "0.9.5"
 
     packageNames(None) = None
     val paramParser = new scopt.OptionParser("scalaxb", scalaxb.BuildInfo.version) {
@@ -122,6 +123,8 @@ object Arguments {
         { generateRuntime = false })
       opt("lax-any", "relaxes namespace constraints of xs:any",
         { laxAny = true })
+      opt(None, "dispatch-version", "<version>", "version of Dispatch (default: 0.9.5)",
+        { p: String => dispatchVersion = p })
       opt("v", "verbose", "be extra verbose",
         { verbose = true })
       help(None, "version", "display this message")
@@ -143,7 +146,8 @@ object Arguments {
           contentsSizeLimit = contentsSizeLimit,
           sequenceChunkSize = sequenceChunkSize,
           prependFamilyName = prependFamilyName,
-          laxAny = laxAny)
+          laxAny = laxAny,
+          dispatchVersion = dispatchVersion)
         Some(Arguments(config, files, verbose))
     } else {
       None

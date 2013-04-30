@@ -29,6 +29,7 @@ object Plugin extends sbt.Plugin {
     lazy val protocolPackageName  = SettingKey[Option[String]]("scalaxb-protocol-package-name")
     lazy val laxAny           = SettingKey[Boolean]("scalaxb-lax-any")
     lazy val combinedPackageNames = SettingKey[Map[Option[String], Option[String]]]("scalaxb-combined-package-names")
+    lazy val dispatchVersion  = SettingKey[String]("scalaxb-dispatch-version")
   }
 
   object ScalaxbCompile {
@@ -94,6 +95,7 @@ object Plugin extends sbt.Plugin {
     protocolFileName in scalaxb := sc.Defaults.protocolFileName,
     protocolPackageName in scalaxb := None,
     laxAny in scalaxb := false,
+    dispatchVersion in scalaxb := "0.9.5",
     combinedPackageNames in scalaxb <<= (packageName in scalaxb, packageNames in scalaxb) { (x, xs) =>
       (xs map { case (k, v) => ((Some(k.toString): Option[String]), Some(v)) }) updated (None, Some(x)) },
     scalaxbConfig in scalaxb <<= Project.app((combinedPackageNames in scalaxb) :^:
@@ -108,9 +110,11 @@ object Plugin extends sbt.Plugin {
         (chunkSize in scalaxb) :^:
         (protocolFileName in scalaxb) :^:
         (protocolPackageName in scalaxb) :^:
-        (laxAny in scalaxb) :^: KNil) {
+        (laxAny in scalaxb) :^:
+        (dispatchVersion in scalaxb) :^:
+        KNil) {
           case pkg :+: pkgdir :+: cpre :+: ppre :+: apre :+: pf :+: 
-              w :+: rt :+: csl :+: cs :+: pfn :+: ppn :+: la :+: HNil =>
+              w :+: rt :+: csl :+: cs :+: pfn :+: ppn :+: la :+: dv :+: HNil =>
             ScConfig(packageNames = pkg,
               packageDir = pkgdir,
               classPrefix = cpre,
@@ -123,7 +127,8 @@ object Plugin extends sbt.Plugin {
               contentsSizeLimit = csl,
               sequenceChunkSize = cs,
               prependFamilyName = pf,
-              laxAny = la
+              laxAny = la,
+              dispatchVersion = dv
             )
           },
     logLevel in scalaxb <<= logLevel?? Level.Info

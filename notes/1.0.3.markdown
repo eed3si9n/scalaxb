@@ -4,7 +4,7 @@
 
 ## dispatchVersion
 
-A new key dispatchVersion was added to generate code for Dispatch 0.10.x compatible code [#210][210]:
+A new key dispatchVersion was added to generate Dispatch 0.10.x compatible code [#210][210]:
 
     dispatchVersion in scalaxb in Compile := "0.10.0"
 

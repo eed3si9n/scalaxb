@@ -87,6 +87,14 @@ public class ScalaxbMojoTest extends TestCase {
         assertEquals("com.example.namespace2", maplet2.getValue());
     }
 
+    public void testDispatchVersionIsConfigured() throws Exception {
+        ScalaxbMojo mojo = getMojo("dispatchVersion");
+        List<String> args = mojo.arguments();
+        int i = args.indexOf("--dispatch-version");
+        assertTrue(i > 0);
+        assertEquals("0.10.0", args.get(i + 1));
+    }
+
     /**
      * The files returned by inputFiles must be returned in alphabetical order,
      * for consistency with sbt-scalaxb.

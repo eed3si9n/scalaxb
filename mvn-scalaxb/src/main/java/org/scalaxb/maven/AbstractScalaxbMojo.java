@@ -216,6 +216,14 @@ public abstract class AbstractScalaxbMojo extends AbstractMojo {
     @Parameter(property = "scalaxb.attributePrefix")
     private String attributePrefix;
 
+    /**
+     * The version of
+     * <a href="http://dispatch.databinder.net/Dispatch.html">Dispatch</a>
+     * to be used when generating code from WSDL files.
+     */
+    @Parameter(property = "scalaxb.dispatch.version")
+    private String dispatchVersion;
+
     @Parameter(property = "scalaxb.verbose")
     private boolean verbose;
 
@@ -257,6 +265,7 @@ public abstract class AbstractScalaxbMojo extends AbstractMojo {
             .param("--class-prefix", classPrefix)
             .param("--param-prefix", parameterPrefix)
             .param("--chunk-size", chunkSize)
+            .param("--dispatch-version", dispatchVersion)
             .flag("--no-runtime", !generateRuntime)
             .intersperse("--wrap-contents", wrapContents)
             .param("--protocol-file", protocolFile)

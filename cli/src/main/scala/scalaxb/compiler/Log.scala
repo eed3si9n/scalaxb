@@ -31,7 +31,7 @@ case class Log(logger: Logger) {
       logger.info(message format (args.toSeq: _*))
     }
     catch {
-      case _ => logger.info(message)
+      case _: Throwable => logger.info(message)
     }
   }
 
@@ -41,7 +41,7 @@ case class Log(logger: Logger) {
       logger.debug(message format (args.toSeq: _*))
     }
     catch {
-      case _ => logger.debug(message)
+      case _: Throwable => logger.debug(message)
     }
   }
 
@@ -51,7 +51,7 @@ case class Log(logger: Logger) {
       logger.warn(message format (args.toSeq: _*))
     }
     catch {
-      case _ => logger.warn(message)
+      case _: Throwable => logger.warn(message)
     }
   }
 
@@ -61,7 +61,7 @@ case class Log(logger: Logger) {
       logger.error(message format (args.toSeq: _*))
     }
     catch {
-      case _ => logger.error(message)
+      case _: Throwable => logger.error(message)
     }
   }
 
@@ -71,7 +71,7 @@ case class Log(logger: Logger) {
       logger.fatal(message format (args.toSeq: _*))
     }
     catch {
-      case _ => logger.fatal(message)
+      case _: Throwable => logger.fatal(message)
     }
   }
 }

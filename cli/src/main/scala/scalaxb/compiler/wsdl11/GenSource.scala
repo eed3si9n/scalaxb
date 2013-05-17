@@ -96,12 +96,12 @@ trait GenSource {
 
     val retval = op.xoperationtypeoption match {
       case DataRecord(_, _, XOnewayoperationSequence(input)) =>
-        "def %s(%s): Unit".format(name, arg(input))
+        "def %s(%s): scala.concurrent.Future[Unit]".format(name, arg(input))
       case DataRecord(_, _, XRequestresponseoperationSequence(input, output, faults)) =>
-        "def %s(%s): Either[%s, %s]".format(name, arg(input),
+        "def %s(%s): scala.concurrent.Future[Either[%s, %s]]".format(name, arg(input),
           faultsToTypeName(faults, soap12), outputTypeName(binding, op, output, document))
       case DataRecord(_, _, XSolicitresponseoperationSequence(output, input, faults)) =>
-        "def %s(%s): Either[%s, %s]".format(name, arg(input),
+        "def %s(%s): scala.concurrent.Future[Either[%s, %s]]".format(name, arg(input),
           faultsToTypeName(faults, soap12), outputTypeName(binding, op, output, document))
       case DataRecord(_, _, XNotificationoperationSequence(output)) =>
         "def %s: %s".format(name, outputTypeName(binding, op, output, document))
@@ -206,40 +206,52 @@ trait GenSource {
     val opImpl = op.xoperationtypeoption match {
       case DataRecord(_, _, XOnewayoperationSequence(input)) =>
         // "def %s(%s): Unit".format(op.name, arg(input))
-        """soapClient.requestResponse(%s,
-          |            %s, defaultScope, %s, %s, %s) match {
-          |          case Left(x)  => sys.error(x.toString)
-          |          case Right(x) => ()
+        """for(r <- soapClient.requestResponse(%s,
+          |            %s, defaultScope, %s, %s, %s))
+          |        yield {
+          |          r match {
+          |            case Left(x)  => sys.error(x.toString)
+          |            case Right(x) => ()
+          |          }
           |        }""".stripMargin.format(bodyString(op, input, binding, document),
             headerString(op, input, binding, document), address, quotedMethod, actionString)
       case DataRecord(_, _, XRequestresponseoperationSequence(input, output, faults)) =>
         // "def %s(%s): Option[scalaxb.Fault[%s]]".format(op.name, arg(input), faultsToTypeName(faults))
-        """soapClient.requestResponse(%s,
-          |            %s, defaultScope, %s, %s, %s) match {
-          |          case Left(x)  => Left(%s)
-          |          case Right((header, body)) =>
-          |            Right(%s)
+        """for(r <- soapClient.requestResponse(%s,
+          |            %s, defaultScope, %s, %s, %s))
+          |        yield {
+          |          r match {
+          |            case Left(x)  => Left(%s)
+          |            case Right((header, body)) =>
+          |              Right(%s)
+          |          }
           |        }""".stripMargin.format(
             bodyString(op, input, binding, document),
             headerString(op, input, binding, document), address, quotedMethod, actionString,
             faultString(faults), outputString(output, binding, op, document, soap12))
       case DataRecord(_, _, XSolicitresponseoperationSequence(output, input, faults)) =>
         // "def %s(%s): Either[scalaxb.Fault[Any], %s]".format(op.name, arg(input), paramTypeName)
-        """soapClient.requestResponse(%s,
-          |            %s, defaultScope, %s, %s, %s) match {
-          |          case Left(x)  => Left(%s)
-          |          case Right((header, body)) =>
-          |            Right(%s)
+        """for(r <- soapClient.requestResponse(%s,
+          |            %s, defaultScope, %s, %s, %s))
+          |        yield {
+          |          r match {
+          |            case Left(x)  => Left(%s)
+          |            case Right((header, body)) =>
+          |              Right(%s)
+          |          }
           |        }""".format(
             bodyString(op, input, binding, document),
             headerString(op, input, binding, document), address, quotedMethod, actionString,
             faultString(faults), outputString(output, binding, op, document, soap12))
       case DataRecord(_, _, XNotificationoperationSequence(output)) =>
         // "def %s: %s".format(op.name, paramTypeName)
-        """soapClient.requestResponse(Nil, defaultScope, %s, %s, %s) match {
-          |          case Left(x)  => sys.error(x.toString)
-          |          case Right((header, body)) =>
-          |            %s
+        """for(r <- soapClient.requestResponse(Nil, defaultScope, %s, %s, %s))
+          |        yield {
+          |          r match {
+          |            case Left(x)  => sys.error(x.toString)
+          |            case Right((header, body)) =>
+          |              %s
+          |          }
           |        }""".stripMargin.format(address, quotedMethod, actionString, outputString(output, binding, op, document, soap12))
       case _ => sys.error("unsupported.")
     }
@@ -589,6 +601,8 @@ trait {interfaceTypeName} {{
 
     val bindingTrait = <source>
   trait {name}s {{ this: scalaxb.Soap11Clients =>
+    // TODO: allow this to be supplied
+    import scala.concurrent.ExecutionContext.Implicits.global
     lazy val targetNamespace: Option[String] = { xsdgenerator.quote(targetNamespace) }
     lazy val service: {interfaceTypeFQN} = new {name} {{}}
     {addressString}

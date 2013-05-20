@@ -31,9 +31,9 @@ object GeneralTest extends TestBase {
       outdir = "./tmp")
   }
   
-  "general.scala file must compile together with CustomizationUsage.scala" in {
-    (List("CustomizationUsage.allTests"),
-      custumFile :: generated) must evaluateTo(true,
-      outdir = "./tmp")
-  }
+  // "general.scala file must compile together with CustomizationUsage.scala" in {
+  //   (List("CustomizationUsage.allTests"),
+  //     custumFile :: generated) must evaluateTo(true,
+  //     outdir = "./tmp")
+  // }
 }

@@ -16,8 +16,8 @@ A new key dispatchVersion was added to generate Dispatch 0.10.x compatible code 
 
 - Includes offending data in `ParserFailure` message. [#206][206] requested by [@caoilte][@caoilte]
 - Fixes handling of QName enums. [#208][208]
-- sbt-scalaxb sorts `*.xsd` to avoid platform variance. [#207][#207] reported by [@caoilte][@caoilte]
-- sbt-scalaxb generates code only when the xsd files are modified. [#199][#199] requested by [@fommil][@fommil]
+- sbt-scalaxb sorts `*.xsd` to avoid platform variance. [#207][207] reported by [@caoilte][@caoilte]
+- sbt-scalaxb generates code only when the xsd files are modified. [#199][199] requested by [@fommil][@fommil]
 
   [115]: https://github.com/eed3si9n/scalaxb/issues/115
   [199]: https://github.com/eed3si9n/scalaxb/issues/199

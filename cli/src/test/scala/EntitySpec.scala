@@ -122,7 +122,7 @@ object EntitySpec extends Specification { def is = sequential                 ^
       val (ns, localPart) = scalaxb.Helper.splitQName(value, scope)
       new javax.xml.namespace.QName(ns.orNull, localPart).toString
     }) match {
-      case "{http://www.example.com/}Receiver" => example.U123httpu58u47u47wwwu46exampleu46comu47u125Receiver
+      case "{http://www.example.com/}Receiver" => example.TnsReceiver
     }
 }""")
   }

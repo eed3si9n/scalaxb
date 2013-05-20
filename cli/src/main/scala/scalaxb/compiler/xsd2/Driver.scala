@@ -64,7 +64,7 @@ class Driver extends Module { driver =>
       }
     }
 
-  def generateRuntimeFiles[To](implicit evTo: CanBeWriter[To]): List[To] =
+  def generateRuntimeFiles[To](cntxt: Context, config: Config)(implicit evTo: CanBeWriter[To]): List[To] =
     List(generateFromResource[To](Some("scalaxb"), "scalaxb.scala", "/scalaxb.scala.template"))
 
   def buildContext: Context = SchemaContext()

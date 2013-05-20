@@ -5,7 +5,6 @@ object Builds extends Build {
   import ls.Plugin.{LsKeys => lskeys}
   import sbtbuildinfo.Plugin._
   import sbtscalashim.Plugin._
-  import conscript.Harness.conscriptSettings
 
   lazy val buildSettings = Defaults.defaultSettings ++ customLsSettings ++ Seq(
     version := "1.1.1-SNAPSHOT",
@@ -54,6 +53,10 @@ object Builds extends Build {
   val Wsdl = config("wsdl") extend(Compile)
   val Soap11 = config("soap11") extend(Compile)
   val Soap12 = config("soap12") extend(Compile)
+  lazy val conscriptSettings: Seq[Project.Setting[_]] = Seq(
+    libraryDependencies += "org.scala-sbt" % "launcher-interface" % "0.12.0" % "provided",
+    resolvers <+= sbtResolver
+    )
   lazy val cliSettings = buildInfoSettings ++ scalaShimSettings ++ conscriptSettings ++
     buildSettings ++ Seq(
     name := "scalaxb",

@@ -40,7 +40,7 @@ trait Namer extends ScalaNames { self: Lookup with Splitter  =>
         val name = makeProtectedElementTypeName(tagged)
         logger.debug("nameElementTypes: named %s", name)
         names(x) = name
-        nameEnumValues(x)
+        nameEnumValues(x, scopeEv)
       case _ =>
     }}
   }
@@ -50,7 +50,7 @@ trait Namer extends ScalaNames { self: Lookup with Splitter  =>
       val name = makeProtectedSimpleTypeName(decl)
       logger.debug("nameSimpleTypes: named %s", name)
       names(decl) = name
-      nameEnumValues(decl)
+      nameEnumValues(decl, scopeEv)
     }
   }
 
@@ -127,9 +127,12 @@ trait Namer extends ScalaNames { self: Lookup with Splitter  =>
     }
   }
 
-  def nameEnumValues(decl: TaggedType[XSimpleType]) {
+  def nameEnumValues(decl: TaggedType[XSimpleType], scope: scala.xml.NamespaceBinding) {
     filterEnumeration(decl) map { enum =>
-      names(enum) = makeProtectedEnumTypeName(enum, decl)
+      val name = makeProtectedEnumTypeName(enum, decl, scope)
+      names(enum) = name
+      val value = decl.enumValue(enum)
+      logger.debug("nameEnumValues: named %s: %s %s", value, value.getClass, name)
     }
   }
 
@@ -146,8 +149,12 @@ trait Namer extends ScalaNames { self: Lookup with Splitter  =>
   def makeProtectedSimpleTypeName(decl: TaggedType[XSimpleType]): String =
     makeProtectedTypeName(decl.name, "Type", decl.tag, true)
 
-  def makeProtectedEnumTypeName(enum: Tagged[XNoFixedFacet], decl: TaggedType[XSimpleType]): String =
-    makeProtectedTypeName(decl.enumValue(enum).toString, "Value", enum.tag, true)
+  def makeProtectedEnumTypeName(enum: Tagged[XNoFixedFacet], decl: TaggedType[XSimpleType], scope: scala.xml.NamespaceBinding): String =
+    makeProtectedTypeName(decl.enumValue(enum) match {
+        case QualifiedName(ns, localPart, _*) => Option(scope.getPrefix(ns map {_.toString} orNull)).getOrElse("") + localPart
+        case v => v.toString
+      },
+      "Value", enum.tag, true)
 
   def makeProtectedNamedGroup(tagged: Tagged[XNamedGroup]): String =
     makeProtectedTypeName(tagged.name.get + "Group", "", tagged.tag, true)

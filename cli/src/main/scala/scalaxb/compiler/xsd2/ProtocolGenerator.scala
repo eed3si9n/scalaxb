@@ -48,6 +48,8 @@ case class ProtocolGenerator(schema: ReferenceSchema,
       }
     }
 
+    logger.debug("generateProtocol: defaultNamespace: " + config.defaultNamespace)
+    logger.debug("generateProtocol: " + (scopeSchemas map {_.unbound.elementFormDefault}))
     // including XS_URL into the default scope prints out the xsi:type, which is necessary for anyType round trip.
     val scopes = makeDistinct((
       (config.defaultNamespace match {

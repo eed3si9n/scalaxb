@@ -50,10 +50,16 @@ class Driver extends Module { driver =>
       val raw: RawSchema = rawschema
       val location: URI = alocation
 
-      def targetNamespace: Option[String] = None
-      def importNamespaces: Seq[String] = Nil
-      def importLocations: Seq[String] = Nil
-      def includeLocations: Seq[String] = Nil
+      def schemaNode: Node = (raw \\ "schema").headOption getOrElse {
+        sys.error("xsd: schema element not found: " + raw.toString)
+      }
+      def importNodes: Seq[Node] = schemaNode \ "import"
+      def includeNodes: Seq[Node] = schemaNode \ "include"
+
+      def targetNamespace: Option[String] = schemaNode.attribute("targetNamespace").headOption map { _.text }
+      def importNamespaces: Seq[String] = importNodes flatMap { node => (node \ "@namespace").headOption.toList map { _.text } }
+      def importLocations: Seq[String] = importNodes flatMap { node => (node \ "@schemaLocation").headOption.toList map { _.text } } 
+      def includeLocations: Seq[String] = includeNodes flatMap { node => (node \ "@schemaLocation").headOption.toList map { _.text } } 
 
       def toSchema(context: Context, outerNamespace: Option[String]): Schema = {
         val unbound = fromXML[XSchema](raw)

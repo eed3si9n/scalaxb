@@ -467,7 +467,6 @@ class ComplexTypeIteration(underlying: IndexedSeq[Tagged[_]]) extends scala.coll
   def apply(index: Int): Tagged[_] = seq(index)
 
   override def isEmpty = underlying.isEmpty
-  override def toIndexedSeq = underlying.toIndexedSeq
   override def toSeq = underlying.toSeq
   override def seq = underlying.seq
   override def iterator = underlying.iterator

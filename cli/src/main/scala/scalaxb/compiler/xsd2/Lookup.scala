@@ -15,6 +15,7 @@ import treehuggerDSL._
 
 case class QualifiedName(namespace: Option[URI], localPart: String, parameters: QualifiedName*) {
   override def toString: String = namespace map { ns => "{%s}%s".format(ns.toString, localPart) } getOrElse {localPart}
+  def qname: QName = new QName(namespace map {_.toString} orNull, localPart)
 }
 
 object QualifiedName {
@@ -203,12 +204,11 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter with Symbols =
     }
 
   // empty compositors are excluded from params.
-  def isEmptyCompositor(tagged: TaggedParticle[Any])
-      (implicit splitter: Splitter): Boolean =
+  def isEmptyCompositor(tagged: TaggedParticle[Any])(implicit splitter: Splitter): Boolean =
     tagged match {
       case x: TaggedGroupRef           =>
         val group = resolveNamedGroup(x)
-        group.primaryCompositor map {isEmptyCompositor} getOrElse {false}
+        group.primaryCompositor map {isEmptyCompositor} getOrElse {true}
       case x: TaggedKeyedGroup if x.key == AllTag => false
       case x: TaggedKeyedGroup if x.key == ChoiceTag =>
         if (x.particles.isEmpty) true
@@ -329,6 +329,15 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter with Symbols =
       case QualifiedName(ns, localPart) =>
         (schemasByNamespace(ns) flatMap { _.topElems.get(localPart) }).headOption
     }
+
+    def substitutionGroupMembers(tagged: Tagged[XElement]): IndexedSeq[TaggedTopLevelElement] =
+      context.schemas.toIndexedSeq flatMap {
+        _.topElems.valuesIterator.toIndexedSeq collect {
+          case elem: TaggedTopLevelElement if (elem.name == tagged.name) && (elem.tag.namespace == tagged.tag.namespace) => elem
+          case elem: TaggedTopLevelElement if (elem.substitutionGroup map {QualifiedName.apply}) == 
+            Some(QualifiedName(tagged.tag.namespace, tagged.name getOrElse "")) => elem 
+        }
+      }
   }
 
   object Attribute {

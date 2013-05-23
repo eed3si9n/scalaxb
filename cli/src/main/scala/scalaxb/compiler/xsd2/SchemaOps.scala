@@ -433,7 +433,7 @@ case class ComplexTypeOps(decl: Tagged[XComplexType]) {
     ComplexTypeIteration.complexTypeToSimpleContentRoot(decl)
   def base(implicit lookup: Lookup): TaggedType[_] =
     ComplexTypeIteration.complexTypeToBaseType(decl)
-  def particles(implicit lookup: Lookup, splitter: Splitter, targetNamespace: Option[URI], scope: NamespaceBinding) =
+  def particles(implicit lookup: Lookup, splitter: Splitter, targetNamespace: Option[URI], scope: NamespaceBinding): IndexedSeq[TaggedParticle[_]] =
     ComplexTypeIteration.complexTypeToParticles(decl)
   def splitNonEmptyParticles(implicit lookup: Lookup, splitter: Splitter, targetNamespace: Option[URI], scope: NamespaceBinding) =
     ComplexTypeIteration.complexTypeToSplitNonEmptyParticles(decl)
@@ -1041,8 +1041,28 @@ class ElementOps(val tagged: Tagged[XElement]) {
       elem.value.form map {_ == XQualified} getOrElse {elem.elementFormDefault == XQualified}
   }
 
-  // @todo implement this
-  def isSubstitutionGroup: Boolean = false
+  def isSubstitutionGroup(implicit lookup: Lookup): Boolean = resolve match {
+    case x: TaggedTopLevelElement       => substitutionGroupMembers.size > 0
+    case TaggedLocalElement(elem, _, _) =>
+      elem.ref map { _ =>
+        substitutionGroupMembers.size > 0
+      } getOrElse false
+  }
+
+  def substitutionGroupMembers(implicit lookup: Lookup) =
+    lookup.Element.substitutionGroupMembers(resolve)
+
+  def toLocal: TaggedLocalElement = tagged match {
+    case elem: TaggedLocalElement => elem
+    case TaggedTopLevelElement(elem, tag) =>
+      TaggedLocalElement(XLocalElement(
+        ref = Some(QualifiedName(tag.namespace, elem.name.getOrElse("")).qname),
+        minOccurs = 1,
+        maxOccurs = "1",
+        nillable = false,
+        abstractValue = false,
+        attributes = Map()), XQualified, tag)
+  }
 }
 
 class AttributeGroupOps(val tagged: Tagged[XAttributeGroup]) {

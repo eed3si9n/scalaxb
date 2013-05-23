@@ -136,14 +136,14 @@ class Generator(val schema: ReferenceSchema,
   private def generateDefaultFormat(sym: ClassSymbol, decl: TaggedType[XComplexType],
       attributes: Vector[TaggedAttr[_]], hasSequenceParam: Boolean, longAll: Boolean): Tree = {
     val particles = decl.splitNonEmptyParticles
-    val unmixedParserList = particles map { buildParticleParser(_, decl.effectiveMixed, decl.effectiveMixed) }
+    val unmixedParserList = particles map { buildParticleParser(_, decl.effectiveMixed, decl.effectiveMixed, false) }
     val parserList = if (decl.effectiveMixed) buildTextParser +: (unmixedParserList flatMap { Seq(_, buildTextParser) })
       else unmixedParserList
     val parserVariableList: Seq[Tree] = ( 0 to parserList.size - 1) map { i => buildSelector(i) }
 
     val particleArgs: Seq[Tree] =
       if (decl.effectiveMixed) (0 to parserList.size - 1).toList map { i =>
-        if (i % 2 == 1) buildArgForMixed(particles((i - 1) / 2), i)
+        if (i % 2 == 1) buildArgForMixed(particles((i - 1) / 2), i, false)
         else buildArgForOptTextRecord(i) }
       else decl.primaryAll map { all => 
         implicit val tag = all.tag
@@ -542,12 +542,12 @@ class Generator(val schema: ReferenceSchema,
         val fmt = formatterSymbol(sym)
         val param = Param(compositor, 0)
         val o = Occurrence(compositor).toSingle
-        val parser = buildKeyedGroupParser(compositor, o, false, false)
+        val parser = buildKeyedGroupParser(compositor, o, false, false, false)
         val (wrapperParam, wrapperParser) = compositor match {
           case x: TaggedKeyedGroup if x.key == ChoiceTag => (param, parser)
           case _ =>
             param.copy(typeSymbol = TaggedDataRecordSymbol(DataRecordSymbol(param.typeSymbol))) ->
-            buildKeyedGroupParser(compositor, o, false, true)
+            buildKeyedGroupParser(compositor, o, false, true, false)
         }
         val mixedParam = param.copy(typeSymbol = TaggedDataRecordSymbol(DataRecordSymbol(TaggedXsAnyType)))
         val subgroups = compositor.particles collect { case ref: TaggedGroupRef => resolveNamedGroup(ref) }
@@ -566,7 +566,7 @@ class Generator(val schema: ReferenceSchema,
           DEF("parsemixed" + sym.decodedName, parserType(seqType(mixedParam.baseType))) withParams(
             PARAM("node", NodeClass),
             PARAM("stack", TYPE_LIST(ElemNameClass))) :=
-            buildKeyedGroupParser(compositor, Occurrence.SingleNotNillable(), true, true)
+            buildKeyedGroupParser(compositor, Occurrence.SingleNotNillable(), true, true, false)
         ))
     } getOrElse {EmptyTree}
 

@@ -78,12 +78,12 @@ trait Args { self: Namer with Lookup with Params with Symbols =>
   def buildArg(tagged: Tagged[Any], pos: Int): Tree = buildArg(tagged, buildSelector(pos), false)
 
   def buildArg(tagged: Tagged[Any], selector: Tree, wrapForLongAll: Boolean): Tree =
-    // if ((isSubstitionGroup(elem))) selector
     tagged match {
       case x: TaggedSymbol =>
         buildTypeSymbolArg(buildType(x), selector, SingleNotNillable(), None, None, wrapForLongAll)
       case x: TaggedSimpleType =>
         buildTypeSymbolArg(buildType(x), selector, SingleNotNillable(), None, None, wrapForLongAll)
+      case elem: TaggedTopLevelElement if elem.isSubstitutionGroup => selector
       case elem: TaggedLocalElement if elem.isSubstitutionGroup => selector
       case tagged: TaggedLocalElement =>
         val o = Occurrence(tagged)
@@ -140,10 +140,10 @@ trait Args { self: Namer with Lookup with Params with Symbols =>
       case elem: XLocalElement => elem.copy(minOccurs = 0, maxOccurs = "1")
     })
 
-  def buildArgForMixed(tagged: Tagged[Any], pos: Int): Tree =
-    buildArgForMixed(tagged, buildSelector(pos))
+  def buildArgForMixed(tagged: Tagged[Any], pos: Int, ignoreSubGroup: Boolean): Tree =
+    buildArgForMixed(tagged, buildSelector(pos), ignoreSubGroup)
 
-  def buildArgForMixed(tagged: Tagged[Any], selector: Tree): Tree = {
+  def buildArgForMixed(tagged: Tagged[Any], selector: Tree, ignoreSubGroup: Boolean): Tree = {
     import Occurrence._
 
     val occcurrence = Param(tagged, 0).occurrence
@@ -151,7 +151,8 @@ trait Args { self: Namer with Lookup with Params with Symbols =>
       case x: TaggedWildCard => true
       case x: TaggedKeyedGroup => true
       case elem: Tagged[XElement] =>
-        elem.typeStructure match {
+        if (!ignoreSubGroup && elem.isSubstitutionGroup) true
+        else elem.typeStructure match {
           case x: TaggedSymbol =>
             x.value match {
               case XsAnySimpleType | XsAnyType => true

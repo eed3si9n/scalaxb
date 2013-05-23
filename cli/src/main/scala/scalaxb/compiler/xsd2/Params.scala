@@ -122,6 +122,7 @@ trait Params { self: Namer with Lookup with Splitter =>
       val elem = tagged.resolve
       val name = elem.name
       val (typeSymbol, o) = (elem.typeStructure, Occurrence(tagged.value)) match {
+        case (symbol, o) if tagged.isSubstitutionGroup => (buildSubstitionGroupType(symbol), o)
         case (AnyLike(symbol), o) if o.nillable => (TaggedXsNillableAny, o.copy(nillable = false))
         case (symbol, o) => (symbol, o) 
       }
@@ -133,6 +134,9 @@ trait Params { self: Namer with Lookup with Splitter =>
       logger.debug("buildElementParam:  " + retval.toString)
       retval
     }
+
+    private def buildSubstitionGroupType(typeStructure: TaggedType[_]) =
+      TaggedDataRecordSymbol(DataRecordSymbol(typeStructure))
 
     private def buildGroupRefParam(tagged: TaggedParticle[XGroupRef], postfix: Int): Param = {
       val group = resolveNamedGroup(tagged)

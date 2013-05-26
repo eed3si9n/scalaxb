@@ -64,11 +64,18 @@ class Driver extends Module { driver =>
       def toSchema(context: Context, outerNamespace: Option[String]): Schema = {
         val unbound = fromXML[XSchema](raw)
         // logger.debug("Driver.toSchema: " + unbound.toString())
-        val wrapped = ReferenceSchema.fromSchema(unbound, raw.scope)
+        val wrapped = ReferenceSchema.fromSchema(replaceTargetNamespace(unbound, outerNamespace), raw.scope)
         logger.debug("Driver.toSchema: " + wrapped.toString)
         wrapped
       }
     }
+
+  private def replaceTargetNamespace(schema: XSchema, tns: Option[String]): XSchema =
+    schema.copy(targetNamespace =
+      schema.targetNamespace match {
+        case Some(x) => Some(x)
+        case None    => tns map {new URI(_)} 
+      })
 
   def generateRuntimeFiles[To](cntxt: Context, config: Config)(implicit evTo: CanBeWriter[To]): List[To] =
     List(generateFromResource[To](Some("scalaxb"), "scalaxb.scala", "/scalaxb.scala.template"))
@@ -96,10 +103,6 @@ class Driver extends Module { driver =>
       val context = cntxt
       val schema = s
     }).processSchema(s)
-
-
-  def replaceTargetNamespace(schema: Schema, tns: Option[String]): Schema =
-    schema.copy(targetNamespace = tns map {new URI(_)})
 
   def readerToRawSchema(reader: Reader): RawSchema = CustomXML.load(reader)
 

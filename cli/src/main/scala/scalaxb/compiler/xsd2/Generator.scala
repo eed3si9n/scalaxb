@@ -276,9 +276,9 @@ class Generator(val schema: ReferenceSchema,
         else None,
         Some(DEF("parser", parserType(sym)) withParams(
             PARAM("node", NodeClass), PARAM("stack", TYPE_LIST("scalaxb.ElemName"))) :=
-          INFIX_CHAIN("~", parserList) INFIX("^^") APPLY BLOCK(
+          REF("phrase") APPLY (INFIX_CHAIN("~", parserList) INFIX("^^") APPLY BLOCK(
             CASE(INFIX_CHAIN("~", parserVariableList)) ==> (sym APPLY argsTree)
-          )
+          ))
         ),
         makeWritesAttribute,
         makeWritesChildNodes

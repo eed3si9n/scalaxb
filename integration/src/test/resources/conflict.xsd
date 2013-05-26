@@ -3,8 +3,8 @@
     xmlns:xs="http://www.w3.org/2001/XMLSchema"
     xmlns:ipo="http://www.example.com/conflict"
     elementFormDefault="qualified">
-  <element name="conflictTest">
-    <complexType>
-    </complexType>
-  </element>
+  <xs:element name="conflictTest">
+    <xs:complexType>
+    </xs:complexType>
+  </xs:element>
 </xs:schema>

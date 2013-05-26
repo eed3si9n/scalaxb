@@ -4,13 +4,13 @@
     xmlns:cir="http://www.example.com/circular"
     xmlns:r="http://www.example.com/Report"
     elementFormDefault="qualified">
-  <import namespace="http://www.example.com/Report"/>
+  <xs:import namespace="http://www.example.com/Report"/>
   
-  <element name="circularTest">
-    <complexType>
-      <sequence>
-        <element name="parts" type="r:PartsType"/>
-      </sequence>
-    </complexType>
-  </element>
+  <xs:element name="circularTest">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="parts" type="r:PartsType"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
 </xs:schema>

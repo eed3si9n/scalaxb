@@ -77,7 +77,6 @@
   
   <element name="Element2">
     <complexType>
-      <attribute ref="xipo:globalAttr" use="required"/>
       <sequence>
         <choice maxOccurs="unbounded">
           <element ref="xipo:Choice1"/>
@@ -85,6 +84,7 @@
           <any namespace="##other" processContents="lax" />
         </choice>
       </sequence>
+      <attribute ref="xipo:globalAttr" use="required"/>
     </complexType>
   </element>
 

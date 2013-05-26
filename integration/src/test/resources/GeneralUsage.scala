@@ -247,6 +247,7 @@ JDREVGRw==</base64Binary>
       <person5><firstName>John</firstName><lastName>Doe</lastName></person5>
         <person5><firstName>John</firstName><lastName>Doe</lastName></person5>
       <person6 xsi:nil="true"/>
+      <person7 xsi:nil="true"/>
     </foo>
     val obj = fromXML[ChoiceComplexTypeTest](subject)
     
@@ -258,7 +259,8 @@ JDREVGRw==</base64Binary>
           None,
           Seq(DataRecord(NS, Some("person5"), Person("John", "Doe")),
             DataRecord(NS, Some("person5"), Person("John", "Doe"))),
-          Seq(DataRecord(NS, Some("person6"), None)) ) =>
+          Seq(DataRecord(NS, Some("person6"), None)),
+          Seq(DataRecord(NS, Some("person7"), None)) ) =>
         case _ => sys.error("match failed: " + obj.toString)
       }
     

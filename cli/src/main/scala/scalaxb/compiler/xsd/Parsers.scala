@@ -129,8 +129,13 @@ trait Parsers extends Args with Params {
       (if (seq.particles.size == 0) "_"
       else  parserVariableList.mkString(" ~ ")) +
       (if (mixed) " => Seq.concat(" + argsString + ")"
-      else if (wrapInDataRecord) " => scalaxb.DataRecord(" + fqn + "(" + argsString + "))"
-      else " => " + fqn + "(" + argsString + ")") +
+      else {
+        val apply0 = fqn + "(" + argsString + ")"
+        val apply1 = if (wrapInDataRecord && occurrence.nillable) "scalaxb.DataRecord(Some(" + apply0 + "))"
+                     else if (wrapInDataRecord) "scalaxb.DataRecord(" + apply0 + ")"
+                     else apply0
+        " => " + apply1
+      }) +
       " }"
     }
     

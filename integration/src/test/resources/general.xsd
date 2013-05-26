@@ -105,6 +105,13 @@
         <xs:element name="person6" nillable="true" type="gen:Person"/>
         <xs:element name="address6" nillable="true" type="gen:Address"/>
       </xs:choice>
+      <xs:choice maxOccurs="unbounded">
+        <xs:element name="person7" nillable="true" type="gen:Person"/>
+        <xs:sequence>
+          <xs:element name="address7" nillable="true" type="gen:Address"/>
+          <xs:element name="address8" nillable="true" type="gen:Address"/>
+        </xs:sequence>
+      </xs:choice>
     </xs:sequence>
   </xs:complexType>
 

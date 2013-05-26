@@ -216,6 +216,10 @@ object Example {
           <xs:choice>
             <xs:element name="person1" type="gen:Person"/>
             <xs:element name="address1" type="gen:Address"/>
+            <xs:sequence>
+              <xs:element name="string1" type="xs:string"/>
+              <xs:element name="string2" type="xs:string"/>
+            </xs:sequence>
           </xs:choice>
           <xs:choice>
             <xs:element name="person2" nillable="true" type="gen:Person"/>

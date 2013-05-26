@@ -379,7 +379,7 @@ class Generator(val schema: ReferenceSchema,
       NEW(ANONDEF(dfmt.decodedName) := BLOCK())   
   }
 
-  def complexTypeSuperTypes(decl: TaggedType[XComplexType]): Seq[Type] = {
+  private def complexTypeSuperTypes(decl: TaggedType[XComplexType]): Seq[Type] = {
     def choices: List[TaggedKeyedGroup] =
       (for {
         sch <- context.schemas
@@ -406,18 +406,30 @@ class Generator(val schema: ReferenceSchema,
     (decl.attributeGroups map {buildType})
   }
 
+  private def compositorSuperTypes(tagged: TaggedParticle[KeyedGroup]): Seq[Type] = {
+    def choices: List[TaggedKeyedGroup] =
+      (for {
+        sch <- context.schemas
+        choice <- WrappedSchema.choiceList(sch.unbound)
+        p <- choice.particles
+      } yield p match {
+        case x: TaggedKeyedGroup if x == tagged => Some(choice)
+        case _ => None
+      }).flatten.toList.distinct
+
+    choices map {buildBaseType}
+  }
+
   def generateSequence(sym: ClassSymbol, tagged: TaggedParticle[KeyedGroup]): Trippet = {
     logger.debug("generateSequence: %s", tagged)
     
-//      val superNames: List[String] = buildOptions(compositor)
-//      val superString = if (superNames.isEmpty) ""
-//        else " extends " + superNames.mkString(" with ")
+    val parents: Seq[Type] = compositorSuperTypes(tagged)
     val list = splitLongSequence(tagged) getOrElse {tagged.particles}
     val paramList = Param.fromSeq(list)
     val hasSequenceParam = (paramList.size == 1) && (paramList.head.occurrence.isMultiple)    
     Trippet(CASECLASSDEF(sym) withParams(
       (if (hasSequenceParam) paramList.head.varargTree :: Nil
-      else paramList map {_.tree}): _*),
+      else paramList map {_.tree}): _*) withParents(parents),
       EmptyTree,
       generateSequenceFormat(sym, tagged),
       makeImplicitValue(sym))

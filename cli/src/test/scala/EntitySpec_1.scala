@@ -121,12 +121,13 @@ object EntitySpec_1 extends Specification { def is = sequential               ^
   }
 
   def choice3 = {
-    choiceEntitySource must contain("case class Address(street: String, city: String) extends example.ChoiceComplexTypeTestOption " +
+    (choiceEntitySource must contain("case class Address(street: String, city: String) extends example.ChoiceComplexTypeTestOption " +
       "with example.ChoiceComplexTypeTestOption2 " +
       "with example.ChoiceComplexTypeTestOption3 " +
       "with example.ChoiceComplexTypeTestOption4 " +
       "with example.ChoiceComplexTypeTestOption5 " +
-      "with example.ChoiceComplexTypeTestOption6")
+      "with example.ChoiceComplexTypeTestOption6")) and
+    (choiceEntitySource must contain("""case class ChoiceComplexTypeTestSequence(string1: String, string2: String) extends example.ChoiceComplexTypeTestOption"""))
   }
 
   def choice4 = {

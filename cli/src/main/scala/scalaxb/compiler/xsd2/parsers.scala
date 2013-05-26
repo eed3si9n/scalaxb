@@ -183,8 +183,11 @@ trait Parsers { self: Namer with Lookup with Args with Params with Symbols with 
       val pat = if (particles.isEmpty) WILDCARD
                 else INFIX_CHAIN("~", parserVariableList)
       val rhs = if (mixed) SeqClass DOT "concat" APPLY(argList)
-                else if (wrapInDataRecord) DataRecordClass APPLY simpleCase
-                else simpleCase
+                else {
+                  if (wrapInDataRecord && occurrence.nillable) DataRecordClass APPLY SOME(simpleCase)
+                  else if (wrapInDataRecord) DataRecordClass APPLY simpleCase
+                  else simpleCase
+                }
       BLOCK(
         CASE(pat) ==> rhs
       )

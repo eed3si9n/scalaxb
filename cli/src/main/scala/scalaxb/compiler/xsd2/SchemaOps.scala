@@ -34,8 +34,8 @@ import scala.annotation.tailrec
 
 object Defs {
   implicit def schemaToSchemaIteration(schema: XSchema): SchemaIteration = SchemaIteration(schema)
-  implicit def complexTypeToComplexTypeOps(tagged: Tagged[XComplexType]): ComplexTypeOps = ComplexTypeOps(tagged)
-  implicit def complexTypeToComplexTypeIteration(tagged: Tagged[XComplexType])(implicit schema: XSchema): ComplexTypeIteration =
+  implicit def complexTypeToComplexTypeOps(tagged: TaggedType[XComplexType]): ComplexTypeOps = ComplexTypeOps(tagged)
+  implicit def complexTypeToComplexTypeIteration(tagged: TaggedType[XComplexType])(implicit schema: XSchema): ComplexTypeIteration =
     ComplexTypeIteration(tagged)
   implicit def elementToElementOps(tagged: Tagged[XElement]): ElementOps = new ElementOps(tagged)
   implicit def attributeGroupToAttributeGroupOps(tagged: Tagged[XAttributeGroup]): AttributeGroupOps =
@@ -424,7 +424,7 @@ object SchemaIteration {
     (attrSeq.anyAttribute map {processAnyAttribute} getOrElse Vector())
 }
 
-case class ComplexTypeOps(decl: Tagged[XComplexType]) {
+case class ComplexTypeOps(decl: TaggedType[XComplexType]) {
   def effectiveMixed: Boolean =
     ComplexTypeIteration.complexTypeEffectiveMixed(decl)
   def hasSimpleContent: Boolean =
@@ -460,6 +460,9 @@ case class ComplexTypeOps(decl: Tagged[XComplexType]) {
 
   def attributeGroups(implicit lookup: Lookup, targetNamespace: Option[URI], scope: NamespaceBinding) =
     ComplexTypeIteration.complexTypeToAttributeGroups(decl)
+
+  def descendants(implicit lookup: Lookup): Vector[TaggedType[XComplexType]] =
+    lookup.ComplexType.descendants(decl)
 }
 
 class ComplexTypeIteration(underlying: IndexedSeq[Tagged[_]]) extends scala.collection.IndexedSeqLike[Tagged[_], ComplexTypeIteration] {
@@ -538,7 +541,7 @@ object ComplexTypeIteration {
     })
   }
 
-  def complexTypeToSplitNonEmptyParticles(decl: Tagged[XComplexType])
+  def complexTypeToSplitNonEmptyParticles(decl: TaggedType[XComplexType])
     (implicit lookup: Lookup, splitter: Splitter, targetNamespace: Option[URI], scope: NamespaceBinding): IndexedSeq[TaggedParticle[_]] =
     decl.primaryCompositor map {
       case x: TaggedGroupRef =>
@@ -564,7 +567,7 @@ object ComplexTypeIteration {
    * // <li>if the base is a builtin type, it will always return <code>Tagged[BuiltInSimpleTypeSymbol]</code></li>
    * // <li>if the base is a simple type, it will always return <code>Tagged[XSimpleType]</code></li>
    */
-  def complexTypeToParticles(decl: Tagged[XComplexType])
+  def complexTypeToParticles(decl: TaggedType[XComplexType])
     (implicit lookup: Lookup, splitter: Splitter, targetNamespace: Option[URI], scope: NamespaceBinding): IndexedSeq[TaggedParticle[_]] = {
     import lookup.{schema, ComplexType}
     implicit val tag = decl.tag
@@ -639,14 +642,14 @@ object ComplexTypeIteration {
     }
   }
 
-  private[scalaxb] def complexTypeHasSimpleContent(decl: Tagged[XComplexType]): Boolean =
+  private[scalaxb] def complexTypeHasSimpleContent(decl: TaggedType[XComplexType]): Boolean =
     decl.value.xComplexTypeModelOption3.value match {
       case x: XSimpleContent => true
       case _ => false
     }
 
   // root of simple content
-  private[scalaxb] def complexTypeToSimpleContentRoot(decl: Tagged[XComplexType])
+  private[scalaxb] def complexTypeToSimpleContentRoot(decl: TaggedType[XComplexType])
     (implicit lookup: Lookup): TaggedType[_] = {
     decl.base match {
       case x: TaggedSymbol => x: TaggedType[_]
@@ -835,25 +838,25 @@ object ComplexTypeIteration {
     }
   }
 
-  def primarySequence(decl: Tagged[XComplexType])(implicit lookup: Lookup): Option[TaggedParticle[KeyedGroup]] =
+  def primarySequence(decl: TaggedType[XComplexType])(implicit lookup: Lookup): Option[TaggedParticle[KeyedGroup]] =
     primaryCompositor(decl) flatMap { _ match {
       case x: TaggedKeyedGroup if x.value.key == SequenceTag => Some(x)
       case _ => None
     }}
 
-  def primaryChoice(decl: Tagged[XComplexType])(implicit lookup: Lookup): Option[TaggedParticle[KeyedGroup]] =
+  def primaryChoice(decl: TaggedType[XComplexType])(implicit lookup: Lookup): Option[TaggedParticle[KeyedGroup]] =
       primaryCompositor(decl) flatMap { _ match {
         case x: TaggedKeyedGroup if x.value.key == ChoiceTag => Some(x)
         case _ => None
       }}
 
-  def primaryAll(decl: Tagged[XComplexType])(implicit lookup: Lookup): Option[TaggedParticle[KeyedGroup]] =
+  def primaryAll(decl: TaggedType[XComplexType])(implicit lookup: Lookup): Option[TaggedParticle[KeyedGroup]] =
       primaryCompositor(decl) flatMap { _ match {
         case x: TaggedKeyedGroup if x.value.key == AllTag => Some(x)
         case _ => None
       }}
 
-  def primaryCompositor(decl: Tagged[XComplexType])(implicit lookup: Lookup): Option[TaggedParticle[_]] = {
+  def primaryCompositor(decl: TaggedType[XComplexType])(implicit lookup: Lookup): Option[TaggedParticle[_]] = {
     implicit val unbound = lookup.schema.unbound
     
     def extract(model: Option[DataRecord[Any]]) = model match {
@@ -881,7 +884,7 @@ object ComplexTypeIteration {
     }
   }
 
-  def complexTypeToCompositors(decl: Tagged[XComplexType])
+  def complexTypeToCompositors(decl: TaggedType[XComplexType])
                       (implicit lookup: Lookup, splitter: Splitter,
                        targetNamespace: Option[URI], scope: NamespaceBinding): IndexedSeq[TaggedParticle[KeyedGroup]] = {
     implicit val unbound = lookup.schema.unbound
@@ -894,7 +897,7 @@ object ComplexTypeIteration {
     })
   }
 
-  def complexTypeToAttributeGroups(decl: Tagged[XComplexType])
+  def complexTypeToAttributeGroups(decl: TaggedType[XComplexType])
                       (implicit lookup: Lookup,
                        targetNamespace: Option[URI], scope: NamespaceBinding): IndexedSeq[Tagged[_]] = {
     import lookup.resolveAttributeGroup
@@ -907,7 +910,7 @@ object ComplexTypeIteration {
   /** attributes of the given decl flattened one level.
    * returns list of Tagged[XAttributable], Tagged[XAttributeGroup], Tagged[XWildCardable].
    */
-  def complexTypeToMergedAttributes(decl: Tagged[XComplexType])
+  def complexTypeToMergedAttributes(decl: TaggedType[XComplexType])
                       (implicit lookup: Lookup,
                        targetNamespace: Option[URI], scope: NamespaceBinding): Vector[TaggedAttr[_]] = {
     import lookup.{ComplexType, resolveAttribute, resolveAttributeGroup}

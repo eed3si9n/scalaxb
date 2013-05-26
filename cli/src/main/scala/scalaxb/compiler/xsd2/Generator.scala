@@ -333,7 +333,7 @@ class Generator(val schema: ReferenceSchema,
 
     def makeReadsXML: Tree = {
       def caseTrees: Seq[CaseDef] =
-        (context.baseToSubs(decl) filter {_.name.isDefined} map { sub =>
+        (decl.descendants filter {_.name.isDefined} map { sub =>
           CASE(TUPLE(optionUriTree(schema.targetNamespace), optionTree(sub.name))) ==>
             RIGHT(buildFromXML(buildComplexTypeSymbol(sub), REF("node"), REF("stack"), None))
         }) ++
@@ -350,7 +350,7 @@ class Generator(val schema: ReferenceSchema,
 
     def makeWritesXML: Tree = {
       def caseTrees: Seq[CaseDef] =
-        (context.baseToSubs(decl) map { sub =>
+        (decl.descendants map { sub =>
           CASE(ID("x") withType(buildComplexTypeSymbol(sub))) ==>
             buildToXML(buildComplexTypeSymbol(sub), REF("x") :: REF("__namespace") :: REF("__elementLabel") :: REF("__scope") :: TRUE :: Nil)
         }) ++

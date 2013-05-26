@@ -318,6 +318,14 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter with Symbols =
           case _ => None
         }}).headOption
     }
+
+    def descendants(tagged: TaggedType[XComplexType]): Vector[TaggedType[XComplexType]] =
+      Vector(context.baseToSubs(tagged): _*) flatMap { child =>
+        child +: (
+          if (context.baseToSubs contains child) descendants(child)
+          else Vector()
+        )
+      }
   }
 
   object Element {

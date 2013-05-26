@@ -70,7 +70,7 @@ trait ContextProcessor extends ScalaNames { self: Namer with Lookup =>
     }
 
     schema.unbound foreach {
-      case tagged: TaggedLocalElement => nameElementTypes(tagged)
+      case tagged: TaggedLocalElement if tagged.name.isDefined => nameElementTypes(tagged)
       case _ =>
     }
   }

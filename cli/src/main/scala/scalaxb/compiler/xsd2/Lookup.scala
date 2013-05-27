@@ -105,8 +105,11 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter with Symbols =
     case TaggedAttributeSeqParam(_, _) =>
       MapStringDataRecordAnyClass
     case x: TaggedAttribute =>
-      x.value.typeValue map { ref => buildType(resolveType(ref)) } getOrElse {
-        buildSimpleTypeType(Tagged(x.value.simpleType.get, x.tag)) }
+      (x.resolve.typeValue, x.resolve.simpleType) match {
+        case (Some(ref), _) => buildType(resolveType(ref))
+        case (_, Some(typ)) => buildSimpleTypeType(Tagged(typ, x.tag))
+        case _ => sys.error("buildTypeName # unsupported: " + tagged)
+      }
     case x: TaggedAttributeGroup => buildAttributeGroupTypeSymbol(x)
     case _ => sys.error("buildTypeName # unsupported: " + tagged)
   }

@@ -151,7 +151,7 @@ trait Namer extends ScalaNames { self: Lookup with Splitter  =>
 
   def makeProtectedEnumTypeName(enum: Tagged[XNoFixedFacet], decl: TaggedType[XSimpleType], scope: scala.xml.NamespaceBinding): String =
     makeProtectedTypeName(decl.enumValue(enum) match {
-        case QualifiedName(ns, localPart, _*) => Option(scope.getPrefix(ns map {_.toString} orNull)).getOrElse("") + localPart
+        case QualifiedName(ns, localPart) => Option(scope.getPrefix(ns map {_.toString} orNull)).getOrElse("") + localPart
         case v => v.toString
       },
       "Value", enum.tag, true)

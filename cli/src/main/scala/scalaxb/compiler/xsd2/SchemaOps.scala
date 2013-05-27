@@ -42,6 +42,7 @@ object Defs {
     new AttributeGroupOps(tagged)
   implicit def namedGroupToNamedGroupOps(tagged: Tagged[XNamedGroup]): NamedGroupOps = NamedGroupOps(tagged)
   implicit def simpleTypeToSimpleTypeOps(tagged: TaggedType[XSimpleType]): SimpleTypeOps = SimpleTypeOps(tagged)
+  implicit def attributeToAttributeOps(tagged: Tagged[XAttributable]): AttributeOps = AttributeOps(tagged)
 
   val XML_SCHEMA_URI = new URI("http://www.w3.org/2001/XMLSchema")
   val XS_PREFIX = "xs"
@@ -55,6 +56,9 @@ object Defs {
 
   val XS_ANY_TYPE = QualifiedName(XML_SCHEMA_URI, "anyType")
   val XS_ANY_SIMPLE_TYPE = QualifiedName(XML_SCHEMA_URI, "anySimpleType")
+  val XS_STRING_TYPE = QualifiedName(XML_SCHEMA_URI, "string")
+  val XS_ID_TYPE = QualifiedName(XML_SCHEMA_URI, "ID")
+  val XS_ANYURI_TYPE = QualifiedName(XML_SCHEMA_URI, "anyURI") 
 }
 
 abstract class TopLevelType
@@ -1070,5 +1074,15 @@ class ElementOps(val tagged: Tagged[XElement]) {
 
 class AttributeGroupOps(val tagged: Tagged[XAttributeGroup]) {
   def flattenedAttributes: IndexedSeq[Tagged[_]] = SchemaIteration.processAttrSeq(tagged.value.xAttrDeclsSequence3)(tagged.tag)
+}
+
+case class AttributeOps(tagged: Tagged[XAttributable]) {
+  def resolve(implicit lookup: Lookup): Tagged[XAttributable] = {
+    import lookup.Attribute
+    tagged.value.ref match {
+      case Some(Attribute(x)) => x
+      case _ => tagged
+    }
+  }
 }
 

@@ -223,9 +223,8 @@ trait Params { self: Namer with Lookup with Splitter =>
     }
 
     private def buildAttributeParam(tagged: TaggedAttr[XAttributable]): Param = {
-      val attr = tagged.value
-      val name = attr.name.get
-      val retval = Param(tagged.tag.namespace, name, tagged, Occurrence(attr), true, false, false)
+      val name = tagged.resolve.name.get
+      val retval = Param(tagged.tag.namespace, name, tagged, Occurrence(tagged.value), true, false, false)
       logger.debug("buildAttributeParam:  " + retval.toString)
       retval
     }

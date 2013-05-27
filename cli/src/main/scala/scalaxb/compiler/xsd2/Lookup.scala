@@ -13,7 +13,7 @@ import treehugger.forest._
 import definitions._
 import treehuggerDSL._
 
-case class QualifiedName(namespace: Option[URI], localPart: String, parameters: QualifiedName*) {
+case class QualifiedName(namespace: Option[URI], localPart: String) {
   override def toString: String = namespace map { ns => "{%s}%s".format(ns.toString, localPart) } getOrElse {localPart}
   def qname: QName = new QName(namespace map {_.toString} orNull, localPart)
 }
@@ -354,9 +354,22 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter with Symbols =
     def unapply(qualifiedName: QualifiedName): Option[TaggedAttr[XAttributable]] = qualifiedName match {
       case QualifiedName(`targetNamespaceEv`, localPart) if schema.topAttrs contains localPart =>
         Some(schema.topAttrs(localPart))
+      case QualifiedName(Some(XML_URI), localPart) =>
+        Some(xmlAttrs(localPart))
       case QualifiedName(ns, localPart) =>
         (schemasByNamespace(ns) flatMap { _.topAttrs.get(localPart) }).headOption
     }
+
+    val xmlAttrs = Map[String, TaggedAttr[XAttributable]](
+      ("lang" -> Tagged(XTopLevelAttribute(name = Some("lang"), typeValue = Some(XS_STRING_TYPE.qname), use = XOptional, attributes = Map()),
+                   HostTag(Some(XML_URI), AttributeHost, "lang", "lang"))),
+      ("space" -> Tagged(XTopLevelAttribute(name = Some("space"), typeValue = Some(XS_STRING_TYPE.qname), use = XOptional, attributes = Map()),
+                   HostTag(Some(XML_URI), AttributeHost, "space", "space"))),
+      ("base" -> Tagged(XTopLevelAttribute(name = Some("base"), typeValue = Some(XS_ANYURI_TYPE.qname), use = XOptional, attributes = Map()),
+                   HostTag(Some(XML_URI), AttributeHost, "base", "base"))),
+      ("id" -> Tagged(XTopLevelAttribute(name = Some("id"), typeValue = Some(XS_ID_TYPE.qname), use = XOptional, attributes = Map()),
+                   HostTag(Some(XML_URI), AttributeHost, "id", "id")))
+    )
   }
 
   object NamedGroup {

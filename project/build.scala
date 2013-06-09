@@ -60,12 +60,9 @@ object Builds extends Build {
   lazy val cliSettings = buildInfoSettings ++ scalaShimSettings ++ conscriptSettings ++
     buildSettings ++ Seq(
     name := "scalaxb",
-    libraryDependencies <++= (scalaVersion) { sv => Seq(
-      sv match {
-        case "2.9.2" => "com.github.scopt" % "scopt_2.9.1" % "2.1.0"
-        case _ => "com.github.scopt" %% "scopt" % "2.1.0"
-      },
-      "log4j" % "log4j" % "1.2.17") },
+    libraryDependencies ++= Seq(
+      "com.github.scopt" %% "scopt" % "3.0.0",
+      "log4j" % "log4j" % "1.2.17"),
     unmanagedSourceDirectories in Compile <+= baseDirectory( _ / "src_managed" ),
     buildInfoPackage := "scalaxb",
     sourceGenerators in Compile <+= buildInfo,

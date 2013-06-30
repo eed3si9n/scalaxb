@@ -1,7 +1,7 @@
 package org.scalaxb.maven;
 
 /*
- * Copyright (c) 2011-2012 Martin Ellis
+ * Copyright (c) 2011-2013 Martin Ellis
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -216,6 +216,10 @@ public abstract class AbstractScalaxbMojo extends AbstractMojo {
     @Parameter(property = "scalaxb.attributePrefix")
     private String attributePrefix;
 
+    @Parameter(property = "scalaxb.prependFamily",
+            defaultValue = "false")
+    private boolean prependFamily;
+
     /**
      * The version of
      * <a href="http://dispatch.databinder.net/Dispatch.html">Dispatch</a>
@@ -271,6 +275,7 @@ public abstract class AbstractScalaxbMojo extends AbstractMojo {
             .param("--protocol-file", protocolFile)
             .param("--protocol-package", protocolPackage)
             .param("--attribute-prefix", attributePrefix)
+            .flag("--prepend-family", prependFamily)
             .flag("--lax-any", laxAny)
             .getArguments();
         return unmodifiableList(args);

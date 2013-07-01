@@ -373,6 +373,7 @@ abstract class GenSource(val schema: SchemaDecl,
     
     def defaultFormats = if (simpleFromXml) <source>  trait Default{formatterName} extends scalaxb.XMLFormat[{fqn}] with scalaxb.CanWriteChildNodes[{fqn}] {{
     val targetNamespace: Option[String] = { quote(schema.targetNamespace) }
+    import scalaxb.ElemName._
     
     def reads(seq: scala.xml.NodeSeq, stack: List[scalaxb.ElemName]): Either[String, {fqn}] = seq match {{
       case node: scala.xml.Node => Right({fqn}({argsString}))

@@ -37,6 +37,7 @@ object GeneralUsage {
     testSingularComplexType
     testChoiceComplexType
     testAny
+    testAll
     testLongAll
     testLongAttribute
     testTopLevelMultipleSeq
@@ -346,8 +347,28 @@ JDREVGRw==</base64Binary>
     }
     check(fromXML[AnyTest](scala.xml.XML.loadString(document.toString)))
   }
+
+  def testAll {
+    println("testAll")
+    val subject = <foo xmlns="http://www.example.com/general"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:xs="http://www.w3.org/2001/XMLSchema">
+      <string1>foo</string1>
+      <string3 xsi:nil="true" />
+    </foo>
+    val obj = fromXML[AllTest](subject)
+    def check(obj: Any) = obj match {
+        case AllTest(Some("foo"), None, Some(None), None) =>
+        case _ => sys.error("match failed: " + obj.toString)
+      }
+    check(obj)
+    val document = toXML[AllTest](obj, "foo", defaultScope)
+    println(document)
+    check(fromXML[AllTest](document)) 
+  }
     
   def testLongAll {
+    println("testLongAll")
     val subject = <foo xmlns="http://www.example.com/general"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xmlns:xs="http://www.w3.org/2001/XMLSchema">

@@ -606,6 +606,8 @@ object ElemName {
       elemName.node = node
       elemName
   }
+
+  implicit def toNodeSeq(elem: ElemName): scala.xml.NodeSeq = elem.node
 }
 
 trait AnyElemNameParser extends scala.util.parsing.combinator.Parsers {

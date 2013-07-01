@@ -192,6 +192,15 @@
     </xs:sequence>
   </xs:complexType>
 
+  <xs:complexType name="AllTest">
+    <xs:all>
+      <xs:element name="string1" type="xs:string"/>
+      <xs:element name="string2" minOccurs="0" type="xs:string"/>
+      <xs:element name="string3" nillable="true" type="xs:string"/>
+      <xs:element name="string4" minOccurs="0" nillable="true" type="xs:string"/>
+    </xs:all>
+  </xs:complexType>
+
   <xs:complexType name="LongAllTest">
     <xs:all>
       <xs:element name="address1" type="gen:Address"/>

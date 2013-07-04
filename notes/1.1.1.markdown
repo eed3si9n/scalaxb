@@ -1,0 +1,6 @@
+## bug fixes and minor enhancements
+
+- Fixes handling of `xs:all` with `minOccurs=0` and `nillable`. [#216][216] reported by [@minettiandrea][@minettiandrea]
+
+  [216]: https://github.com/eed3si9n/scalaxb/issues/216
+  [@minettiandrea]: https://github.com/minettiandrea

@@ -448,12 +448,14 @@ trait ContextProcessor extends ScalaNames with PackageName {
   def makeProtectedTypeName(namespace: Option[String], initialName: String, postfix: String,
       context: XsdContext): String = {
     def contains(value: String) = {
+      val l = value.toLowerCase
       val enumValueNames = context.enumValueNames(packageName(namespace, context))
       (context.typeNames exists {
         case (k: NameKey, v: String) =>
-          packageName (k.namespace, context) == packageName(namespace, context) && v == value
+          packageName (k.namespace, context) == packageName(namespace, context) &&
+          v.toLowerCase == l
       }) ||
-      enumValueNames.valuesIterator.contains(value)
+      (enumValueNames.valuesIterator exists { x => x.toLowerCase == l })
     }
     
     var name = makeTypeName(initialName)

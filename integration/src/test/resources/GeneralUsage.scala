@@ -33,6 +33,7 @@ object GeneralUsage {
     testSingularBuiltInType
     testSingularSimpleType
     testQNameEnum
+    testCaseOnly
     testList
     testSingularComplexType
     testChoiceComplexType
@@ -179,6 +180,11 @@ JDREVGRw==</base64Binary>
     val document = toXML[QNameEnum](obj, "foo", subject.scope)
     println(document)
     check(fromXML[QNameEnum](document))
+  }
+
+  def testCaseOnly {
+    println("testCaseOnly")
+    println(WholeValue)
   }
   
   def testList {

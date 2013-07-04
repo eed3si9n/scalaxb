@@ -416,6 +416,12 @@
     </xs:restriction>
   </xs:simpleType>
 
+  <xs:simpleType name="CaseOnlyTest">
+    <xs:restriction base="xs:NMTOKEN">
+      <xs:enumeration value="Whole"/>
+    </xs:restriction>
+  </xs:simpleType>
+
   <xs:complexType name="ComplexListOfBuiltInType">
     <xs:simpleContent>
       <xs:extension base="gen:ListOfBuildIntTypeDerived">

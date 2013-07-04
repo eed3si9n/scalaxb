@@ -1,5 +1,6 @@
 ## bug fixes and minor enhancements
 
+- Avoids type names that only differs in case. [#215][215] reported by [@drdozer][@drdozer]
 - Fixes handling of `xs:all` with `minOccurs=0` and `nillable`. [#216][216] reported by [@minettiandrea][@minettiandrea]
 - Fixes `xsi:nil="1"` not parsed as nil. [#217][217] reported by [@aoprisan][@aoprisan]
 
@@ -7,3 +8,4 @@
   [217]: https://github.com/eed3si9n/scalaxb/issues/217
   [@minettiandrea]: https://github.com/minettiandrea
   [@aoprisan]: https://github.com/aoprisan
+  [@drdozer]: https://github.com/drdozer

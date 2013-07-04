@@ -48,7 +48,7 @@ case class Config(packageNames: Map[Option[String], Option[String]] = Map(None -
   contentsSizeLimit: Int = 20,
   sequenceChunkSize: Int = 10,
   laxAny: Boolean = false,
-  dispatchVersion: String = "0.9.5")
+  dispatchVersion: String = "0.10.1")
 
 object Snippet {
   def apply(definition: Node): Snippet = Snippet(definition, Nil, Nil, Nil)

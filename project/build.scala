@@ -102,7 +102,8 @@ object Builds extends Build {
     libraryDependencies <++= scalaVersion { sv =>
       testDeps(sv) ++
       Seq(
-        "net.databinder.dispatch" %% "dispatch-core" % "0.9.5" % "test",
+        // "net.databinder.dispatch" %% "dispatch-core" % "0.9.5" % "test",
+        "net.databinder.dispatch" %% "dispatch-core" % "0.10.1" % "test",
         "org.scala-lang" % "scala-compiler" % sv
       )
     }

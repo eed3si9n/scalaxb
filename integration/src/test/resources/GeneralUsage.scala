@@ -144,7 +144,7 @@ JDREVGRw==</base64Binary>
     val subject = <foo xmlns="http://www.example.com/general"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
       <number1>1</number1>
-      <number2 xsi:nil="true"/>
+      <number2 xsi:nil="1"/>
       <number4>1</number4>
       <number5>2</number5><number5>1</number5>
       

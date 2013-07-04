@@ -808,7 +808,7 @@ object Helper {
     java.net.URI.create(value.trim)
 
   def isNil(node: scala.xml.Node) =
-    (node \ ("@{" + XSI_URL + "}nil")).headOption map { _.text == "true" } getOrElse {
+    (node \ ("@{" + XSI_URL + "}nil")).headOption map { case x => x.text == "true" || x.text == "1" } getOrElse {
       false
     }
 

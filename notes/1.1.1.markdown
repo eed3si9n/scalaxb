@@ -1,6 +1,9 @@
 ## bug fixes and minor enhancements
 
 - Fixes handling of `xs:all` with `minOccurs=0` and `nillable`. [#216][216] reported by [@minettiandrea][@minettiandrea]
+- Fixes `xsi:nil="1"` not parsed as nil. [#217][217] reported by [@aoprisan][@aoprisan]
 
   [216]: https://github.com/eed3si9n/scalaxb/issues/216
+  [217]: https://github.com/eed3si9n/scalaxb/issues/217
   [@minettiandrea]: https://github.com/minettiandrea
+  [@aoprisan]: https://github.com/aoprisan

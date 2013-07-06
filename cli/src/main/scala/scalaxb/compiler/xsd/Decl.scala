@@ -58,7 +58,7 @@ case class XsdContext(
 class ParserConfig {
   var scope: scala.xml.NamespaceBinding = _
   var targetNamespace: Option[String] = None
-  var isCameleonInclude = false
+  var isChameleonInclude = false
   var elementQualifiedDefault: Boolean = false
   var attributeQualifiedDefault: Boolean = false
   val topElems  = mutable.ListMap.empty[String, ElemDecl]
@@ -80,7 +80,7 @@ object TypeSymbolParser {
   val XML_URI = "http://www.w3.org/XML/1998/namespace"
   
   def fromString(name: String, scope: NamespaceBinding, config: ParserConfig): XsTypeSymbol =
-    fromString(splitTypeName(name, scope, config.targetNamespace, config.isCameleonInclude))
+    fromString(splitTypeName(name, scope, config.targetNamespace, config.isChameleonInclude))
 
   def fromQName(qname: javax.xml.namespace.QName): XsTypeSymbol =
     fromString((scalaxb.Helper.nullOrEmpty(qname.getNamespaceURI), qname.getLocalPart))
@@ -95,9 +95,9 @@ object TypeSymbolParser {
     }
   }
 
-  def splitTypeName(name: String, scope: NamespaceBinding, targetNamespace: Option[String], isCameleonInclude: Boolean): (Option[String], String) =
+  def splitTypeName(name: String, scope: NamespaceBinding, targetNamespace: Option[String], isChameleonInclude: Boolean): (Option[String], String) =
     if (name.contains('@')) (targetNamespace, name)
-    else if (isCameleonInclude) Module.splitTypeName(name, NamespaceBinding(null, targetNamespace.get, scope))
+    else if (isChameleonInclude) Module.splitTypeName(name, NamespaceBinding(null, targetNamespace.get, scope))
     else Module.splitTypeName(name, scope)
 }
 
@@ -162,7 +162,7 @@ object SchemaDecl {
         config.scope =
           scalaxb.fromScope(schema.scope) find { case (k, v) => k.isEmpty } map { _ =>
             schema.scope } getOrElse { scalaxb.toScope((scalaxb.fromScope(schema.scope) ::: List((None, ns)): _*)) }
-        config.isCameleonInclude = true
+        config.isChameleonInclude = true
       case _ =>
         config.targetNamespace = targetNamespace
         config.scope = schema.scope
@@ -295,7 +295,7 @@ case class AttributeRef(namespace: Option[String],
 object AttributeRef {
   def fromXML(node: scala.xml.Node, config: ParserConfig) = {
     val ref = (node \ "@ref").text
-    val (namespace, typeName) = TypeSymbolParser.splitTypeName(ref, node.scope, config.targetNamespace, config.isCameleonInclude)
+    val (namespace, typeName) = TypeSymbolParser.splitTypeName(ref, node.scope, config.targetNamespace, config.isChameleonInclude)
     val defaultValue = (node \ "@default").headOption map { _.text }
     val fixedValue = (node \ "@fixed").headOption map { _.text }
     val use = (node \ "@use").text match {
@@ -368,7 +368,7 @@ object AttributeGroupRef {
   def fromXML(node: scala.xml.Node,
       config: ParserConfig) = {
     val ref = (node \ "@ref").text
-    val (namespace, typeName) = TypeSymbolParser.splitTypeName(ref, node.scope, config.targetNamespace, config.isCameleonInclude)
+    val (namespace, typeName) = TypeSymbolParser.splitTypeName(ref, node.scope, config.targetNamespace, config.isChameleonInclude)
     
     AttributeGroupRef(namespace, typeName)
   }    
@@ -403,9 +403,9 @@ object ElemRef {
     val ref = (node \ "@ref").text   
     val minOccurs = CompositorDecl.buildOccurrence((node \ "@minOccurs").text)
     val maxOccurs = CompositorDecl.buildOccurrence((node \ "@maxOccurs").text)
-    val (namespace, typeName) = TypeSymbolParser.splitTypeName(ref, node.scope, config.targetNamespace, config.isCameleonInclude)
+    val (namespace, typeName) = TypeSymbolParser.splitTypeName(ref, node.scope, config.targetNamespace, config.isChameleonInclude)
     val nillable = (node \ "@nillable").headOption map { case x => x.text == "true" || x.text == "1" }
-
+    
     ElemRef(namespace, typeName, minOccurs, maxOccurs, nillable)
   }
 }
@@ -458,7 +458,7 @@ object ElemDecl {
     val maxOccurs = CompositorDecl.buildOccurrence((node \ "@maxOccurs").text)
     val nillable = (node \ "@nillable").headOption map { case x => x.text == "true" || x.text == "1" }
     val substitutionGroup = (node \ "@substitutionGroup").headOption map { x =>
-      TypeSymbolParser.splitTypeName(x.text, node.scope, config.targetNamespace, config.isCameleonInclude) }
+      TypeSymbolParser.splitTypeName(x.text, node.scope, config.targetNamespace, config.isChameleonInclude) }
     val annotation = (node \ "annotation").headOption map { x =>
       AnnotationDecl.fromXML(x, config) }
     
@@ -752,7 +752,7 @@ object GroupRef {
     val ref = (node \ "@ref").text   
     val minOccurs = CompositorDecl.buildOccurrence((node \ "@minOccurs").text)
     val maxOccurs = CompositorDecl.buildOccurrence((node \ "@maxOccurs").text)
-    val (namespace, typeName) = TypeSymbolParser.splitTypeName(ref, node.scope, config.targetNamespace, config.isCameleonInclude)
+    val (namespace, typeName) = TypeSymbolParser.splitTypeName(ref, node.scope, config.targetNamespace, config.isChameleonInclude)
     
     GroupRef(namespace, typeName, Nil, minOccurs, maxOccurs)
   }

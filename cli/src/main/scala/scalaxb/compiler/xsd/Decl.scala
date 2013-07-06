@@ -404,8 +404,8 @@ object ElemRef {
     val minOccurs = CompositorDecl.buildOccurrence((node \ "@minOccurs").text)
     val maxOccurs = CompositorDecl.buildOccurrence((node \ "@maxOccurs").text)
     val (namespace, typeName) = TypeSymbolParser.splitTypeName(ref, node.scope, config.targetNamespace, config.isCameleonInclude)
-    val nillable = (node \ "@nillable").headOption map { _.text == "true" }
-    
+    val nillable = (node \ "@nillable").headOption map { case x => x.text == "true" || x.text == "1" }
+
     ElemRef(namespace, typeName, minOccurs, maxOccurs, nillable)
   }
 }
@@ -456,7 +456,7 @@ object ElemDecl {
     val fixedValue = (node \ "@fixed").headOption map { _.text }
     val minOccurs = CompositorDecl.buildOccurrence((node \ "@minOccurs").text)
     val maxOccurs = CompositorDecl.buildOccurrence((node \ "@maxOccurs").text)
-    val nillable = (node \ "@nillable").headOption map { _.text == "true" }
+    val nillable = (node \ "@nillable").headOption map { case x => x.text == "true" || x.text == "1" }
     val substitutionGroup = (node \ "@substitutionGroup").headOption map { x =>
       TypeSymbolParser.splitTypeName(x.text, node.scope, config.targetNamespace, config.isCameleonInclude) }
     val annotation = (node \ "annotation").headOption map { x =>

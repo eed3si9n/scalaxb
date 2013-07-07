@@ -74,11 +74,13 @@ class Driver extends Module { driver =>
     }
     val includeLocations: Seq[String] = schemaLite.includes map { _.schemaLocation }
     
-    def toSchema(context: Context, outerNamespace: Option[String]): Schema = {
-      val schema = SchemaDecl.fromXML(raw, context, outerNamespace)
+    def toSchema(context: Context): Schema = {
+      val schema = SchemaDecl.fromXML(raw, context)
       logger.debug("toSchema: " + schema.toString())
       schema
     }
+    def swapTargetNamespace(outerNamespace: Option[String], n: Int): Importable =
+      toImportable(appendPostFix(alocation, n), replaceNamespace(rawschema, targetNamespace, outerNamespace))
   }
 
   def generateRuntimeFiles[To](cntxt: Context, config: Config)(implicit evTo: CanBeWriter[To]): List[To] =

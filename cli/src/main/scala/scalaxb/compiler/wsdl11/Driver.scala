@@ -157,20 +157,25 @@ class Driver extends Module { driver =>
       schemaLite.includes map { _.schemaLocation }
     }
 
-    def toSchema(context: Context, outerNamespace: Option[String]): WsdlPair = {
+    def toSchema(context: Context): WsdlPair = {
       wsdl foreach { wsdl =>
         logger.debug(wsdl.toString)
         context.definitions += wsdl
       }
 
       val xsd = xsdRawSchema map { x =>
-        val schema = SchemaDecl.fromXML(x, context.xsdcontext, outerNamespace)
+        val schema = SchemaDecl.fromXML(x, context.xsdcontext)
         logger.debug(schema.toString)
         schema
       }
 
       WsdlPair(wsdl, xsd, rawschema.scope)
     }
+    def swapTargetNamespace(outerNamespace: Option[String], n: Int): Importable =    
+      wsdl match {
+        case Some(_) => toImportable(alocation, rawschema)
+        case None    => toImportable(appendPostFix(alocation, n), replaceNamespace(rawschema, targetNamespace, outerNamespace))
+      }
   }
 
   val VersionPattern = """(\d+)\.(\d+)\.(\d+)""".r

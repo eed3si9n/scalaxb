@@ -218,7 +218,7 @@ object EnumerationDecl {
   def fromXML(node: scala.xml.Node, base: XsTypeSymbol, config: ParserConfig) =
     base match {
       case XsQName =>
-        val (ns, localPart) = TypeSymbolParser.splitTypeName((node \ "@value").text, config.scope, config.targetNamespace, config.isChameleonInclude)
+        val (ns, localPart) = TypeSymbolParser.splitTypeName((node \ "@value").text, config.scope, config.targetNamespace)
         val qname = new javax.xml.namespace.QName(ns.orNull, localPart)
         EnumerationDecl(qname)
       case _ => EnumerationDecl((node \ "@value").text)

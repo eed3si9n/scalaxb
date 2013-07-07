@@ -25,7 +25,7 @@ package scalaxb.compiler
 import scalashim._
 import scala.collection.mutable.{ListBuffer, ListMap}
 import java.net.{URI}
-import scala.xml.{Node, Elem}
+import scala.xml.{Node, Elem, UnprefixedAttribute, NamespaceBinding}
 import scala.xml.factory.{XMLLoader}
 import javax.xml.parsers.SAXParser
 import java.io.{File, PrintWriter, Reader, BufferedReader}
@@ -136,7 +136,8 @@ trait Module {
     def includeLocations: Seq[String]
     def raw: RawSchema
     def location: URI
-    def toSchema(context: Context, outerNamespace: Option[String]): Schema
+    def toSchema(context: Context): Schema
+    def swapTargetNamespace(outerNamespace: Option[String], n: Int): Importable
   }
 
   implicit val fileReader = new CanBeRawSchema[File, RawSchema] {
@@ -228,9 +229,9 @@ trait Module {
     val context = buildContext
     val importables0 = ListMap[From, Importable](files map { f =>
       f -> toImportable(ev.toURI(f), ev.toRawSchema(f))}: _*)
-    val importables = Seq[(Importable, From)](files map { f => importables0(f) -> f }: _*)
+    val importables = ListBuffer[(Importable, From)](files map { f => importables0(f) -> f }: _*)
     val schemas = ListMap[Importable, Schema](importables map { case (importable, file) =>
-      val s = parse(importable, context, None)
+      val s = parse(importable, context)
       (importable, s) }: _*)
 
     val additionalImportables = ListMap.empty[Importable, File]
@@ -255,14 +256,13 @@ trait Module {
         added = true
         val importable = toImportable(implicitly[CanBeRawSchema[File, RawSchema]].toURI(x),
           implicitly[CanBeRawSchema[File, RawSchema]].toRawSchema(x))
-        val s = parse(importable, context, None)
+        val s = parse(importable, context)
         schemas(importable) = s
         (importable, x) })
       if (added) addMissingFiles()
     }
     def processUnnamedIncludes() {
       logger.debug("processUnnamedIncludes")
-      import scala.collection.mutable.{ListBuffer, ListMap}
       val all = (importables.toList map {_._1}) ++ (additionalImportables.toList map {_._1})
       val parents: ListBuffer[Importable] = ListBuffer(all filter { !_.includeLocations.isEmpty}: _*)
       def children(importable: Importable): List[Importable] = {
@@ -270,7 +270,8 @@ trait Module {
         all filter { x => uris contains shortenUri(x.location) }
       }
       val mapping: ListMap[Importable, Option[String]] = ListMap()
-
+      val used: mutable.Set[Importable] = mutable.Set()
+      var count: Int = 0
       val len = parents.size * parents.size
       for {
         i <- 0 to len if parents.size > 0
@@ -284,11 +285,25 @@ trait Module {
               case Some(ns) =>
               case None =>
                 logger.debug("processUnnamedIncludes - setting %s's outer namespace to %s", x.location, tnsstr)
-                schemas(x) = parse(x, context, tns)
+                count += 1
+                val swap = x.swapTargetNamespace(tns, count)
+                schemas(swap) = parse(swap, context)
+                additionalImportables(swap) = new File(swap.location.getPath)
+                used += x
             }
             mapping(x) = tns
           }}
           parents.remove(i % parents.size)
+        }
+      }
+      used foreach { x =>
+        schemas -= x
+        val idx = importables.indexWhere { case (i, _) => i == x }
+        if (idx >= 0) {
+          importables remove idx
+        }
+        if (additionalImportables contains x) {
+          additionalImportables -= x
         }
       }
     }
@@ -426,11 +441,11 @@ trait Module {
 
   def nodeToRawSchema(node: Node): RawSchema
 
-  def parse(importable: Importable, context: Context, outerNamespace: Option[String]): Schema
-    = importable.toSchema(context, outerNamespace)
+  def parse(importable: Importable, context: Context): Schema
+    = importable.toSchema(context)
     
-  def parse(location: URI, in: Reader, outerNamespace: Option[String]): Schema
-    = parse(toImportable(location, readerToRawSchema(in)), buildContext, outerNamespace)
+  def parse(location: URI, in: Reader): Schema
+    = parse(toImportable(location, readerToRawSchema(in)), buildContext)
     
   def printNodes(nodes: Seq[Node], out: PrintWriter) {
     import scala.xml._
@@ -475,6 +490,18 @@ trait Module {
       snippets flatMap {_.companion},
       snippets flatMap {_.defaultFormats},
       snippets flatMap {_.implicitValue})
+
+  def appendPostFix(location: URI, n: Int): URI = new URI(shortenUri(location).replaceFirst("\\.xsd", "") + n.toString + ".xsd")
+  // replace the targetNamespace
+  def replaceNamespace(raw: Node, old: Option[String], outerNamespace: Option[String]): Node = {
+    CustomXML.load(new java.io.StringReader((raw match {
+      case elem: Elem if !old.isDefined =>
+        val x = elem.copy(attributes = new UnprefixedAttribute("targetNamespace", outerNamespace getOrElse "", elem.attributes),
+        scope = NamespaceBinding(null, outerNamespace getOrElse "", elem.scope))
+        x
+      case node => node 
+    }).toString))
+  }
 }
 
 object CustomXML extends XMLLoader[Elem] {

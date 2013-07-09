@@ -110,13 +110,13 @@ object Builds extends Build {
   ) ++ noPublish
 
 //  import ScriptedPlugin._
-  import sbt.CrossBuilding._
+//  import sbt.CrossBuilding._
   lazy val pluginSettings = buildSettings ++ Seq(
     sbtPlugin := true,
     description in lskeys.lsync := """sbt plugin to run scalaxb""",
     crossScalaVersions := Seq("2.9.2"),
-    publishMavenStyle := true,
-    crossSbtVersions := Seq("0.11.2", "0.11.3", "0.12")
+    publishMavenStyle := true
+    // crossSbtVersions := Seq("0.11.2", "0.11.3", "0.12")
   ) // ++
 //    ScriptedPlugin.scriptedSettings ++ Seq(
 //    scriptedBufferLog := false
@@ -130,7 +130,7 @@ object Builds extends Build {
   def testDeps(sv: String) = sv match {
     case "2.8.1" =>   Seq("org.specs2" %% "specs2" % "1.5" % "test")
     case x if x startsWith "2.9." => Seq("org.specs2" %% "specs2" % "1.12.3" % "test")
-    case _ => Seq("org.specs2" %% "specs2" % "1.13" % "test")
+    case _ => Seq("org.specs2" %% "specs2" % "2.0" % "test")
   }
 
   lazy val root = Project("root", file("."),

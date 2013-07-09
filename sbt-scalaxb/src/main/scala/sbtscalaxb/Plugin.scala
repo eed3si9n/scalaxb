@@ -12,6 +12,8 @@ object Plugin extends sbt.Plugin {
     lazy val scalaxb          = TaskKey[Seq[File]]("scalaxb")
     lazy val generate         = TaskKey[Seq[File]]("scalaxb-generate")
     lazy val scalaxbConfig    = SettingKey[ScConfig]("scalaxb-config")
+    lazy val scalaxbConfig1   = SettingKey[Config1]("scalaxb-config1")
+    lazy val scalaxbConfig2   = SettingKey[Config2]("scalaxb-config2")
     lazy val xsdSource        = SettingKey[File]("scalaxb-xsd-source")
     lazy val wsdlSource       = SettingKey[File]("scalaxb-wsdl-source")
     lazy val packageName      = SettingKey[String]("scalaxb-package-name")
@@ -95,42 +97,80 @@ object Plugin extends sbt.Plugin {
     protocolFileName in scalaxb := sc.Defaults.protocolFileName,
     protocolPackageName in scalaxb := None,
     laxAny in scalaxb := false,
-    dispatchVersion in scalaxb := "0.9.5",
+    dispatchVersion in scalaxb := "0.10.1",
     combinedPackageNames in scalaxb <<= (packageName in scalaxb, packageNames in scalaxb) { (x, xs) =>
       (xs map { case (k, v) => ((Some(k.toString): Option[String]), Some(v)) }) updated (None, Some(x)) },
-    scalaxbConfig in scalaxb <<= Project.app((combinedPackageNames in scalaxb) :^:
-        (packageDir in scalaxb) :^:
-        (classPrefix in scalaxb) :^:
-        (paramPrefix in scalaxb) :^:
-        (attributePrefix in scalaxb) :^:
-        (prependFamily in scalaxb) :^:
-        (wrapContents in scalaxb) :^:
-        (generateRuntime in scalaxb) :^:
-        (contentsSizeLimit in scalaxb) :^:
-        (chunkSize in scalaxb) :^:
-        (protocolFileName in scalaxb) :^:
-        (protocolPackageName in scalaxb) :^:
-        (laxAny in scalaxb) :^:
-        (dispatchVersion in scalaxb) :^:
-        KNil) {
-          case pkg :+: pkgdir :+: cpre :+: ppre :+: apre :+: pf :+: 
-              w :+: rt :+: csl :+: cs :+: pfn :+: ppn :+: la :+: dv :+: HNil =>
-            ScConfig(packageNames = pkg,
-              packageDir = pkgdir,
-              classPrefix = cpre,
-              paramPrefix = ppre,
-              attributePrefix = apre,
-              wrappedComplexTypes = w.toList,
-              protocolFileName = pfn,
-              protocolPackageName = ppn,
-              generateRuntime = rt,
-              contentsSizeLimit = csl,
-              sequenceChunkSize = cs,
-              prependFamilyName = pf,
-              laxAny = la,
-              dispatchVersion = dv
-            )
-          },
+
+
+    scalaxbConfig1 in scalaxb <<= (combinedPackageNames in scalaxb,
+        packageDir in scalaxb,
+        classPrefix in scalaxb,
+        paramPrefix in scalaxb,
+        attributePrefix in scalaxb,
+        prependFamily in scalaxb,
+        wrapContents in scalaxb) { (pkg, pkgdir, cpre, ppre, apre, pf, w) =>
+      Config1(packageNames = pkg,
+        packageDir = pkgdir,
+        classPrefix = cpre,
+        classPostfix = None,
+        paramPrefix = ppre,
+        attributePrefix = apre,
+        outdir = new File("."),
+        prependFamilyName = pf, 
+        wrappedComplexTypes = w.toList) },
+    scalaxbConfig2 in scalaxb <<= (contentsSizeLimit in scalaxb,
+        generateRuntime in scalaxb,
+        chunkSize in scalaxb,
+        protocolFileName in scalaxb,
+        protocolPackageName in scalaxb,
+        laxAny in scalaxb,
+        dispatchVersion in scalaxb) { (csl, rt, cs, pfn, ppn, la, dv) =>
+      Config2(seperateProtocol = true,
+        protocolFileName = pfn,
+        protocolPackageName = ppn,
+        defaultNamespace = None,
+        generateRuntime = rt,
+        contentsSizeLimit = csl,
+        sequenceChunkSize = cs,
+        laxAny = la,
+        dispatchVersion = dv) },
+
+    scalaxbConfig in scalaxb <<= (scalaxbConfig1 in scalaxb, scalaxbConfig2 in scalaxb) { (c1, c2) =>
+      ScConfig(packageNames = c1.packageNames,
+        packageDir = c1.packageDir,
+        classPrefix = c1.classPrefix,
+        paramPrefix = c1.paramPrefix,
+        attributePrefix = c1.attributePrefix,
+        prependFamilyName = c1.prependFamilyName,
+        wrappedComplexTypes = c1.wrappedComplexTypes,
+        contentsSizeLimit = c2.contentsSizeLimit,
+        generateRuntime = c2.generateRuntime,
+        sequenceChunkSize = c2.sequenceChunkSize,
+        protocolFileName = c2.protocolFileName,
+        protocolPackageName = c2.protocolPackageName,
+        laxAny = c2.laxAny,
+        dispatchVersion = c2.dispatchVersion) },
+
     logLevel in scalaxb <<= logLevel?? Level.Info
   )
 }
+
+case class Config1(packageNames: Map[Option[String], Option[String]],
+  classPrefix: Option[String],
+  classPostfix: Option[String],
+  paramPrefix: Option[String],
+  attributePrefix: Option[String],
+  outdir: File,
+  packageDir: Boolean,
+  wrappedComplexTypes: List[String],
+  prependFamilyName: Boolean) {}
+
+case class Config2(seperateProtocol: Boolean,
+  protocolFileName: String,
+  protocolPackageName: Option[String],
+  defaultNamespace: Option[String],
+  generateRuntime: Boolean,
+  contentsSizeLimit: Int,
+  sequenceChunkSize: Int,
+  laxAny: Boolean,
+  dispatchVersion: String) {}

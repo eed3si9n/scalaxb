@@ -11,7 +11,7 @@ and the object back to XML.
 Status
 ------
 
-The latest is 1.1.0. Some things may not work.
+The latest is 1.1.1. Some things may not work.
 I'd really appreciate if you could run it against your favorite xsd
 file and let me know the result.
 

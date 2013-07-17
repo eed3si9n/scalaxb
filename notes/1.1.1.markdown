@@ -5,8 +5,10 @@
 - Fixes `xsi:nil="1"` not parsed as nil. [#217][217] reported by [@aoprisan][@aoprisan]
 - Improves handling of chameleon schema. [#102][102]
 - Configure `dispatchVersion` to 0.10.1 by default.
+- Updates sbt-scalaxb for sbt 0.13.
 
   [102]: https://github.com/eed3si9n/scalaxb/issues/102
+  [215]: https://github.com/eed3si9n/scalaxb/issues/215
   [216]: https://github.com/eed3si9n/scalaxb/issues/216
   [217]: https://github.com/eed3si9n/scalaxb/issues/217
   [@minettiandrea]: https://github.com/minettiandrea

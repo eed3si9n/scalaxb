@@ -4,7 +4,7 @@
 - Fixes handling of `xs:all` with `minOccurs=0` and `nillable`. [#216][216] reported by [@minettiandrea][@minettiandrea]
 - Fixes `xsi:nil="1"` not parsed as nil. [#217][217] reported by [@aoprisan][@aoprisan]
 - Improves handling of chameleon schema. [#102][102]
-- Configure `dispatchVersion` to 0.10.1 by default.
+- Configures `dispatchVersion` to 0.10.1 by default.
 - Updates sbt-scalaxb for sbt 0.13.
 
   [102]: https://github.com/eed3si9n/scalaxb/issues/102

@@ -61,21 +61,16 @@ class Driver extends Module { driver =>
       def importLocations: Seq[String] = importNodes flatMap { node => (node \ "@schemaLocation").headOption.toList map { _.text } } 
       def includeLocations: Seq[String] = includeNodes flatMap { node => (node \ "@schemaLocation").headOption.toList map { _.text } } 
 
-      def toSchema(context: Context, outerNamespace: Option[String]): Schema = {
+      def toSchema(context: Context): Schema = {
         val unbound = fromXML[XSchema](raw)
         // logger.debug("Driver.toSchema: " + unbound.toString())
-        val wrapped = ReferenceSchema.fromSchema(replaceTargetNamespace(unbound, outerNamespace), raw.scope)
+        val wrapped = ReferenceSchema.fromSchema(unbound, raw.scope)
         logger.debug("Driver.toSchema: " + wrapped.toString)
         wrapped
       }
+      def swapTargetNamespace(outerNamespace: Option[String], n: Int): Importable =
+        toImportable(appendPostFix(alocation, n), replaceNamespace(rawschema, targetNamespace, outerNamespace))
     }
-
-  private def replaceTargetNamespace(schema: XSchema, tns: Option[String]): XSchema =
-    schema.copy(targetNamespace =
-      schema.targetNamespace match {
-        case Some(x) => Some(x)
-        case None    => tns map {new URI(_)} 
-      })
 
   def generateRuntimeFiles[To](cntxt: Context, config: Config)(implicit evTo: CanBeWriter[To]): List[To] =
     List(generateFromResource[To](Some("scalaxb"), "scalaxb.scala", "/scalaxb.scala.template"))

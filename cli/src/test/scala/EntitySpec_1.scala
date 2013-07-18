@@ -241,9 +241,9 @@ object EntitySpec_1 extends Specification { def is = sequential               ^
 
   def attributegroup1 = {
     println(attributeGroupEntitySource)
-    attributeGroupEntitySource.lines.toList must contain(
+    attributeGroupEntitySource.lines.toList must contain(allOf(
       """trait Coreattrs {""",
-      """  def id: Option[String]""").inOrder
+      """  def id: Option[String]""")).inOrder
   }
 
   def attributegroup2 = {

@@ -47,7 +47,7 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <scala.version>2.10.0</scala.version>
+    <scala.version>2.10.1</scala.version>
     <binary.version>2.10</binary.version>
     <maven.version>2.0.9</maven.version>
     <junit.version>4.11</junit.version>

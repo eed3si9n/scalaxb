@@ -265,7 +265,7 @@ public abstract class AbstractScalaxbMojo extends AbstractMojo {
             .flag("--package-dir", packageDir)
             .param("-d", outputDirectory.getPath())
             .param("-p", packageName)
-            .map("-p:", packageNameMap())
+            .map("--package:", packageNameMap())
             .param("--class-prefix", classPrefix)
             .param("--param-prefix", parameterPrefix)
             .param("--chunk-size", chunkSize)

@@ -72,10 +72,10 @@ object ProtocolSpec extends Specification { def is = sequential               ^
 
   def complexType1 = {
     println(addressProtocol)
-    addressProtocol.lines.toList must contain (
+    addressProtocol.lines.toList must contain (allOf(
       """implicit lazy val Example1AddressFormat: scalaxb.XMLFormat[example1.Address] = new DefaultExample1AddressFormat {""",
       """trait DefaultExample1AddressFormat extends scalaxb.ElemNameParser[example1.Address] {"""
-    )
+    ))
   }
 
   def parser1 = {
@@ -152,9 +152,11 @@ object ProtocolSpec extends Specification { def is = sequential               ^
     (choiceProtocol must contain (
       """(((scalaxb.ElemName(None, "person1")) ^^ ({ x =>
     scalaxb.DataRecord(x.namespace, Some(x.name), scalaxb.fromXML[example.Person](x, scalaxb.ElemName(node) :: stack))
-  })) | ((scalaxb.ElemName(None, "address1")) ^^ ({ x =>
+  })) ||| ((scalaxb.ElemName(None, "address1")) ^^ ({ x =>
     scalaxb.DataRecord(x.namespace, Some(x.name), scalaxb.fromXML[example.Address](x, scalaxb.ElemName(node) :: stack))
-  })))"""))
+  })) ||| (((scalaxb.ElemName(None, "string1")) ~ (scalaxb.ElemName(None, "string2"))) ^^ {
+    case p1 ~ p2 => scalaxb.DataRecord(example.ChoiceComplexTypeTestSequence(scalaxb.fromXML[String](p1, scalaxb.ElemName(node) :: stack), scalaxb.fromXML[String](p2, scalaxb.ElemName(node) :: stack)))
+  }))"""))
   }
 
   def all1 = {
@@ -169,7 +171,7 @@ object ProtocolSpec extends Specification { def is = sequential               ^
 
     println(p)
     (p must contain("""trait DefaultExampleArrayTypeFormat extends scalaxb.ElemNameParser[example.ArrayType] with example.ExampleArrayGroupFormat {""")) and
-    (p must contain("""def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[example.ArrayType] = opt(parseArrayGroup(node, scalaxb.ElemName(node) :: stack)) ^^ {"""))
+    (p must contain("""def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[example.ArrayType] = phrase(opt(parseArrayGroup(node, scalaxb.ElemName(node) :: stack)) ^^ {"""))
   }
 
   def wildcard1 = {

@@ -189,10 +189,10 @@ object EntitySpec_1 extends Specification { def is = sequential               ^
     val entitySource = module.processNode(seqParamXML, "example")(0)
 
     println(entitySource)
-    entitySource.lines.toList must contain(
+    entitySource.lines.toList must contain(allOf(
       """case class SeqParamTest(foo: String*)""",
       """case class NillableSeqParamTest(foo: Option[String]*)"""
-    )
+    ))
   }
 
   lazy val mixedEntitySource = module.processNode(mixedXML, "example")(0)

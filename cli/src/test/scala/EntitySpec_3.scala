@@ -109,10 +109,10 @@ object EntitySpec_3 extends Specification { def is = sequential               ^
 
   def derivation4 = {
     println(addressEntitySource)
-    (addressEntitySource.lines.toList must contain(
+    (addressEntitySource.lines.toList must contain(allOf(
       """trait Addressable {""",
       """  def street: String""",
-      """}""")) and
+      """}"""))) and
     (addressEntitySource.lines.toList must contain(
       """case class Address(street: String, city: String, state: String) extends example.Addressable""")) and
     (addressEntitySource.lines.toList must contain(
@@ -126,10 +126,10 @@ object EntitySpec_3 extends Specification { def is = sequential               ^
     println(importSources(0))
     println(importSources(1))
     
-    (importSources(0).lines.toList must contain(
+    (importSources(0).lines.toList must contain(allOf(
       """trait Arrayable {""",
       """  def arrayGroup: Option[example.ArrayGroup]""",
-      """}""")) and
+      """}"""))) and
     (importSources(1).lines.toList must contain(
       """case class RestrictedArray(arrayGroup: Option[example.ArrayGroup]) extends example.Arrayable"""))
   }

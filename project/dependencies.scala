@@ -34,6 +34,7 @@ object Dependencies {
     launcherInterface % "provided",
     scopt,
     treehugger,
+    specs2(sv) % "test",
     log4j
   ) ++ (sv match {
     case x if sv startsWith "2.10." => Nil

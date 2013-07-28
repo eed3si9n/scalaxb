@@ -257,6 +257,7 @@ class Generator(val schema: ReferenceSchema,
 
     if (simpleFromXml)
       TRAITDEF(dfmt.decodedName) withParents(xmlFormatType(sym) :: (CanWriteChildNodesClass TYPE_OF sym) :: Nil) := BLOCK(List(
+        Some(IMPORT(ElemNameClass, "_")),
         Some(VAL("targetNamespace", TYPE_OPTION(StringClass)) := optionUriTree(schema.targetNamespace)),
         Some(DEF("reads", eitherType(StringClass, sym)) withParams(
           PARAM("seq", NodeSeqClass), PARAM("stack", TYPE_LIST(ElemNameClass))) := REF("seq") MATCH(

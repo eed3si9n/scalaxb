@@ -63,7 +63,7 @@ trait Params { self: Namer with Lookup with Splitter =>
       generateImpl match {
         case true =>
           LAZYVAL(toTraitScalaCode(targetNamespace, lookup)) := (occurrence match {
-            case SingleNotNillable(_) =>
+            case SingleNotNillable(_) | SingleNillable(_) =>
               REF(wrapper) APPLY(LIT(buildNodeName)) DOT "as" APPLYTYPE singleType
             case _ =>
               (REF(wrapper) DOT "get" APPLY(LIT(buildNodeName))) MAP (

@@ -163,6 +163,13 @@ object ProtocolSpec extends Specification { def is = sequential               ^
     val p = module.processNode(allXML, "example")(1)
     println(p)
     (p must contain("""example.AllComplexTypeTest(scala.collection.immutable.ListMap((List(""")) and
+    (p must contain("""((node \ "string5").headOption.map({
+        { (x: scala.xml.Node) =>
+          x.nilOption map { (e: scalaxb.ElemName) =>
+            scalaxb.DataRecord(x, scalaxb.fromXML[String](x, scalaxb.ElemName(node) :: stack))
+          } getOrElse scalaxb.DataRecord(x, None)
+        }
+      }))""")) and
     (p must contain(""").flatten[(String, scalaxb.DataRecord[Any])]: _*))))"""))
   }
 

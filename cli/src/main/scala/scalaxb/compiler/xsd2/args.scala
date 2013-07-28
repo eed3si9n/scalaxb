@@ -46,15 +46,33 @@ trait Args { self: Namer with Lookup with Params with Symbols =>
     def fromX = buildFromXML(typ, REF("x"), stackTree, formatter)
     def lambdaX = LAMBDA(PARAM("x")) ==> BLOCK(fromX)
     def fromValue(x: String) = buildFromXML(typ, TextClass APPLY LIT(x), stackTree, formatter)
+    def lambdaXForLongAll = LAMBDA(PARAM("x", NodeClass)) ==> BLOCK(
+      DataRecordClass APPLY(REF("x"), REF("node"), buildFromXML(typ, REF("x"), stackTree, formatter))
+    )
+    def lambdaXForLongAll2 = LAMBDA(PARAM("e", ElemNameClass)) ==> BLOCK(
+      DataRecordClass APPLY(REF("x"), REF("node"), buildFromXML(typ, REF("x"), stackTree, formatter))
+    )
+    def lambdaXForLongAll3 = LAMBDA(PARAM("x", NodeClass)) ==> BLOCK(
+      DataRecordClass APPLY(REF("x"), buildFromXML(typ, REF("x"), stackTree, formatter))
+    )
+    def lambdaXForLongAll4 = LAMBDA(PARAM("e", ElemNameClass)) ==> BLOCK(
+      DataRecordClass APPLY(REF("x"), buildFromXML(typ, REF("x"), stackTree, formatter))
+    )
 
     val retval: Tree = if (wrapForLongAll) {
       // PrefixedAttribute only contains pre, so you need to pass in node to get the namespace.
-      if (treeToString(selector).contains("@")) (selector DOT "headOption") MAP LAMBDA(PARAM("x", NodeClass)) ==> BLOCK(
-          DataRecordClass APPLY(REF("x"), REF("node"), buildFromXML(typ, REF("x"), stackTree, formatter))
-        )
-      else (selector DOT "headOption") MAP LAMBDA(PARAM("x", NodeClass)) ==> BLOCK(
-            DataRecordClass APPLY(REF("x"), buildFromXML(typ, REF("x"), stackTree, formatter))
-        )
+      if (treeToString(selector).contains("@")) 
+        if (!occurrence.nillable) (selector DOT "headOption") MAP lambdaXForLongAll
+        else (selector DOT "headOption") MAP BLOCK(LAMBDA(PARAM("x", NodeClass)) ==> BLOCK(
+          REF("x") DOT "nilOption" MAP lambdaXForLongAll2 INFIX("getOrElse") APPLY(
+            DataRecordClass APPLY(REF("x"), NONE)
+          )))
+      else 
+        if (!occurrence.nillable) (selector DOT "headOption") MAP lambdaXForLongAll3
+        else (selector DOT "headOption") MAP BLOCK(LAMBDA(PARAM("x", NodeClass)) ==> BLOCK(
+          REF("x") DOT "nilOption" MAP lambdaXForLongAll4 INFIX("getOrElse") APPLY(
+            DataRecordClass APPLY(REF("x"), NONE)
+          )))
     } else occurrence match {
       case UnboundedNillable(_)    => (selector DOT "toSeq") MAP BLOCK((WILDCARD DOT "nilOption") MAP lambdaX)
       case UnboundedNotNillable(_) => (selector DOT "toSeq") MAP lambdaX

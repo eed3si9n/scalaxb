@@ -378,7 +378,12 @@ JDREVGRw==</base64Binary>
     </foo>
     val obj = fromXML[AllTest](subject)
     def check(obj: Any) = obj match {
-        case AllTest(Some("foo"), None, Some(None), None) =>
+        case x: AllTest =>
+          if (x.string1 == "foo" &&
+            x.string2 == None &&
+            x.string3 == None &&
+            x.string4 == None) ()
+          else sys.error("match failed: " + x.string1 + ", " + x.string2 + ", " + x.string3 + ", " + x.string4)
         case _ => sys.error("match failed: " + obj.toString)
       }
     check(obj)

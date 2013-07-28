@@ -16,8 +16,8 @@ object ImportTest extends TestBase {
       packageDir = true, outdir = tmp) )
     
   "report.xsd must generate report.scala file" in {
-    generated(0) must exist
-    generated(1) must exist
+    (generated(0) must exist) and
+    (generated(1) must exist)
   }
 
   "report.scala file must compile so that PurchaseReport can be used" in {

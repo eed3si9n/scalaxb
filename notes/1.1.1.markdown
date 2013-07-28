@@ -1,3 +1,7 @@
+## breaking change to commanline
+
+scalaxb cli used `-p` and `--package` to specify both the default package name and namespace-specific package names. scalaxb 1.1.1 uses `-p` and `--default-package` for the default package; and `--package` for namespace-specific package names.
+
 ## bug fixes and minor enhancements
 
 - Avoids type names that only differs in case. [#215][215] reported by [@drdozer][@drdozer]

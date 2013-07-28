@@ -185,7 +185,7 @@ JDREVGRw==</base64Binary>
 
   def testCaseOnly {
     println("testCaseOnly")
-    // println(WholeValue)
+    // println(CaseOnlyTestWhole)
   }
   
   def testList {

@@ -166,8 +166,10 @@ trait Namer extends ScalaNames { self: Lookup with Splitter  =>
     makeProtectedTypeName(initialName getOrElse {sys.error("name is required.")}, postfix, tag, appendHost)
 
   def makeProtectedTypeName(initialName: String, postfix: String, tag: HostTag, appendHost: Boolean): String = {
-    def contains(s: String) = names.valuesIterator.contains(s)
-
+    def contains(s: String) = {
+      val l = s.toLowerCase
+      names.valuesIterator.exists { x => x.toLowerCase == l }
+    }
     var name = makeTypeName(initialName)
     if (!contains(name)) name
     else {

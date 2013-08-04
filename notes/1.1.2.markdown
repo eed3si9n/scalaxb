@@ -1,0 +1,6 @@
+  [220]: https://github.com/eed3si9n/scalaxb/issues/220
+  [@FranklinChen]: https://github.com/FranklinChen
+
+## bug fixes and minor enhancements
+
+- Fixes blank `xs:enumeration` value generating broken case object. [#220][220] reported by [@FranklinChen][@FranklinChen] and others.

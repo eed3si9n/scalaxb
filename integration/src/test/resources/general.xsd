@@ -371,11 +371,13 @@
     </xs:restriction>
   </xs:simpleType>
 
+  <!-- #181, #220 -->
   <xs:simpleType name="SymbolType">
     <xs:restriction base="xs:NMTOKEN">
       <xs:enumeration value="+"/>
       <xs:enumeration value="-"/>
       <xs:enumeration value=" "/>
+      <xs:enumeration value=""/>
     </xs:restriction>
   </xs:simpleType>
 

@@ -543,7 +543,8 @@ trait ContextProcessor extends ScalaNames with PackageName {
       
   def identifier(value: String) = {
     val nonspace = 
-      if (value.trim != "") """\s""".r.replaceAllIn(value, "")
+      if (value == "") "blank" // treat "" as "blank" but " " as "u32"
+      else if (value.trim != "") """\s""".r.replaceAllIn(value, "")
       else value    
     if ("""\W""".r.findFirstIn(nonspace).isDefined) {
       (nonspace.toSeq map { c =>

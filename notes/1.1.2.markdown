@@ -1,6 +1,9 @@
   [220]: https://github.com/eed3si9n/scalaxb/issues/220
+  [221]: https://github.com/eed3si9n/scalaxb/issues/221
   [@FranklinChen]: https://github.com/FranklinChen
+  [@lyle-janrain]: https://github.com/lyle-janrain
 
 ## bug fixes and minor enhancements
 
 - Fixes blank `xs:enumeration` value generating broken case object. [#220][220] reported by [@FranklinChen][@FranklinChen] and others.
+- Fixes generated field for an attribute named `value` conflicting with the `value` field for `xs:simpleContent`. [#221][221] reported by [@lyle-janrain][@lyle-janrain]

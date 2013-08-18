@@ -363,6 +363,15 @@
     </xs:complexContent>
   </xs:complexType>
 
+  <!-- #221 -->
+  <xs:complexType name="FieldOption">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute name="value" type="xs:string" use="optional"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+
   <!-- #208 -->
   <xs:simpleType name="QNameEnum">
     <xs:restriction base="xs:QName">

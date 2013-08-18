@@ -109,6 +109,11 @@ trait ScalaNames {
     case _ => false
   }
   
+  def isSpecialAttributeWord(str: String) =
+    str match {
+      case "value" => true
+      case _ => false
+    }
   
   def isKeyword(str: String) =
     str match {

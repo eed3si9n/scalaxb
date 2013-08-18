@@ -401,7 +401,7 @@ JDREVGRw==</base64Binary>
         xmlns:xs="http://www.w3.org/2001/XMLSchema"
         milk1="SKIM" />
     val obj = fromXML[LongAttributeTest](subject)
-    obj.attr_milk1 match {
+    obj.milk1 match {
       case Some(SKIM) =>
       case _ => sys.error("match failed: " + obj.toString)
     }

@@ -15,7 +15,7 @@ object GeneralTest extends TestBase {
     Config(packageNames = Map(None -> Some("general"),
         Some("http://www.w3.org/2005/05/xmlmime") -> Some("xmlmime"),
         Some("http://www.example.com/general_import") -> Some("gimport")),
-      attributePrefix = Some("attr_"),
+      attributePrefix = None,
       outdir = tmp))
   copyFileFromResource("GeneralUsage.scala", usageFile)
   copyFileFromResource("CustomizationUsage.scala", custumFile)

@@ -29,8 +29,7 @@ There are currently four ways of running scalaxb:
 
 To call scalaxb from sbt 0.12.x, put this in your `project/plugins.sbt`:
 
-    resolvers ++= Seq(
-      "sonatype-public" at "https://oss.sonatype.org/content/groups/public")
+    resolvers += Resolver.sonatypeRepo("public")
 
     addSbtPlugin("org.scalaxb" % "sbt-scalaxb" % "X.X")
     

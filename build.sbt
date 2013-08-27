@@ -4,14 +4,14 @@ import Common._
 val commonSettings = Seq(
     version := "1.1.2",
     organization := "org.scalaxb",
-  homepage := Some(url("http://scalaxb.org")),
+    homepage := Some(url("http://scalaxb.org")),
     licenses := Seq("MIT License" -> url("https://github.com/eed3si9n/scalaxb/blob/master/LICENSE")),
     description := """scalaxb is an XML data-binding tool for Scala that supports W3C XML Schema (xsd) and wsdl.""",
     scalaVersion := "2.10.2",
     crossScalaVersions := Seq("2.10.2", "2.9.2", "2.9.1"),
     scalacOptions := Seq("-deprecation", "-unchecked"),
     parallelExecution in Test := false
-  ) ++ sonatypeSettings
+  ) ++ sonatypeSettings ++ lsSettings
 
 val app = Project("app", file("cli")).
   settings(commonSettings: _*).

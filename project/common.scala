@@ -47,14 +47,14 @@ object Common {
     sourceGenerators in Compile <+= scalaShim 
   )
 
-  val customLsSettings: Seq[Def.Setting[_]] = Nil
-  // val customLsSettings: Seq[Def.Setting[_]] = {
-  //   import ls.Plugin.{LsKeys => lskeys}
-  //   _root_.ls.Plugin.lsSettings ++ Seq(
-  //     lskeys.tags in lskeys.lsync := Seq("xml", "soap", "wsdl", "code-generation"),
-  //     (externalResolvers in lskeys.lsync) := Seq(Resolver.sonatypeRepo("public"))
-  //   )
-  // }
+  // val customLsSettings: Seq[Def.Setting[_]] = Nil
+  val customLsSettings: Seq[Def.Setting[_]] = {
+    import ls.Plugin.{LsKeys => lskeys}
+    _root_.ls.Plugin.lsSettings ++ Seq(
+      lskeys.tags in lskeys.lsync := Seq("xml", "soap", "wsdl", "code-generation"),
+      (externalResolvers in lskeys.lsync) := Seq(Resolver.sonatypeRepo("public"))
+    )
+  }
 
   val sonatypeSettings: Seq[Def.Setting[_]] = Seq(
     pomExtra := (<scm>

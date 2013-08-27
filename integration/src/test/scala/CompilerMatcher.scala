@@ -97,9 +97,15 @@ trait CompilerMatcher {
     import scala.tools.nsc.{GenericRunnerSettings}
     
     val currentcp = if (usecurrentcp) {
-      java.lang.Thread.currentThread.getContextClassLoader match {
+      val currentLoader = java.lang.Thread.currentThread.getContextClassLoader
+       currentLoader match {
         case cl: java.net.URLClassLoader => cl.getURLs.toList map {_.toString}
-        case _ => sys.error("classloader is not a URLClassLoader")
+        case x =>
+          // sbt 0.13 wraps classloader with ClasspathFilter
+          x.getParent match {
+            case cl: java.net.URLClassLoader => cl.getURLs.toList map {_.toString}
+            case x => sys.error("classloader is not a URLClassLoader: " + x.getClass)
+          }
       }
     } else Nil
     val classpathList = classpath ++ currentcp

@@ -13,7 +13,7 @@ trait XMLOutputs { self: Args with Params with Lookup with Namer =>
     import Occurrence._
 
     val ns = elementNamespaceTree(param.topLevelElement, param.namespace, param.qualified)
-    val name: Tree = REF("__obj") DOT makeParamName(param.name)
+    val name: Tree = REF("__obj") DOT param.paramName
     
     val typeAttribute = param.typeSymbol match {
       case AnyLike(_) => TRUE

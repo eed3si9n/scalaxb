@@ -169,7 +169,7 @@ class Generator(val schema: ReferenceSchema,
       }
       def toXMLArgs: List[Tree] = REF("x") :: (REF("x") DOT "namespace").tree :: (REF("x") DOT "key").tree :: REF("__scope") :: FALSE :: Nil
       def childTree(decl: TaggedType[XComplexType]): Tree =
-        if (decl.effectiveMixed) (REF("__obj") DOT makeParamName(MIXED_PARAM) DOT "toSeq") FLATMAP LAMBDA(PARAM("x")) ==> BLOCK(
+        if (decl.effectiveMixed) (REF("__obj") DOT makeParamName(MIXED_PARAM, false) DOT "toSeq") FLATMAP LAMBDA(PARAM("x")) ==> BLOCK(
             buildToXML(DataRecordAnyClass, toXMLArgs)
           )
         else if (decl.hasSimpleContent)
@@ -594,7 +594,7 @@ class Generator(val schema: ReferenceSchema,
   def generateAllAccessors(tagged: TaggedParticle[KeyedGroup]): Seq[Tree] = {
     implicit val tag = tagged.tag
     val paramList = Param.fromSeq(tagged.particles)
-    paramList map {_.toDataRecordMapAccessor(makeParamName(ALL_PARAM), true)}
+    paramList map {_.toDataRecordMapAccessor(makeParamName(ALL_PARAM, false), true)}
   }
 
   def generateLongSeqAccessors(splits: Seq[TaggedParticle[KeyedGroup]]): Seq[Tree] =
@@ -606,7 +606,7 @@ class Generator(val schema: ReferenceSchema,
     }
 
   def generateAttributeAccessors(attributes: Seq[Tagged[_]], generateImpl: Boolean): Seq[Tree] =
-    Param.fromAttributes(attributes) map {_.toDataRecordMapAccessor(makeParamName(ATTRS_PARAM), generateImpl)}
+    Param.fromAttributes(attributes) map {_.toDataRecordMapAccessor(makeParamName(ATTRS_PARAM, false), generateImpl)}
 
   def packageCode: Seq[Node] =
     (packageNameByURI(schema.targetNamespace, context) map { pkg =>

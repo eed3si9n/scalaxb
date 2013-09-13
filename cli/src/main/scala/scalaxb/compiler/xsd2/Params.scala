@@ -39,7 +39,7 @@ trait Params { self: Namer with Lookup with Splitter =>
       case _ => TYPE_SEQ(singleType)
     }
 
-    def paramName: String = makeParamName(name)
+    def paramName: String = makeParamName(name, attribute)
 
     def toTraitScalaCode(implicit targetNamespace: Option[URI], lookup: Lookup): String =
       paramName + ": " + typ
@@ -74,8 +74,8 @@ trait Params { self: Namer with Lookup with Splitter =>
       }
 
     def toLongSeqAccessor(wrapper: String): Tree =
-      LAZYVAL(toTraitScalaCode) := REF(wrapper) DOT makeParamName(name)
-      // """lazy val %s = %s.%s""" format(toTraitScalaCode, wrapper, makeParamName(name))
+      LAZYVAL(toTraitScalaCode) := REF(wrapper) DOT makeParamName(name, attribute)
+      // """lazy val %s = %s.%s""" format(toTraitScalaCode, wrapper, makeParamName(name, attribute))
 
     def buildNodeName: String = typeSymbol match {
       case TaggedAttribute(x: XTopLevelAttribute, _) => "@" + QualifiedName(namespace, name).toString

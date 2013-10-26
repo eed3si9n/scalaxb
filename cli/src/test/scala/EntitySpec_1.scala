@@ -2,57 +2,56 @@ package scalaxb.specs
 
 import org.specs2._
 
-object EntitySpec_1 extends Specification { def is = sequential               ^
-  "sequences in a complex type should"                                        ^
-    "generate a case class named FooSequence* for non-primary sequences"      ! seq1^
-    "be referenced as fooSequence within the type"                            ! seq2^
-    "not generate anything it is empty, and skipped from the parameters"      ! seq3^
-    "generate a case class if the primary sequence is either optional or multiple" ! seq4^
-    "be split into chunks of case classes when it exceeds 20 particles"       ! seq5^
-    "generate accessors for elements within the wrapped sequence"             ! seq6^
-                                                                              end^
-  "choices in a complex type should"                                          ^
-    "generate a trait named FooOption*"                                       ! choice1^
-    "mixin FooOption to choice candidates"                                    ! choice3^
-    "not generate anything if it is empty, and skipped from the parameters"   ! choice4^
-    "be referenced as DataRecord[X] if it's made of non-nillable complex type elements" ! choice2^
-    "be referenced as DataRecord[Option[X]] if it includes nillable elements" ! choice2^
-    "be referenced as DataRecord[Option[X]] if it includes empty compositor"  ! choice2^
-    "be referenced as DataRecord[Int] if it's made of xs:int"                 ! choice2^
-                                                                              end^
-  "an all in a complex type should"                                           ^
-    "be referenced as Map[String, scalaxb.DataRecord[Any]]"                   ! all1^
-                                                                              end^
-  "a groupref in a complex type should"                                       ^
-    "be referenced as the group's non-empty primary compositor named FooGroup" ! groupref1^
-    "be referenced as Option[scalaxb.DataRecord[X]] if underlying choice includes empty compositor" ! groupref2^
-    "be referenced as scalaxb.DataRecord[Option[X]] if underlying choice includes nillable element" ! groupref3^
-                                                                              end^
-  "wildcards should"                                                          ^
-    "be referenced as DataRecord[Any] named any* if it's made of non-nillable elements" ! wildcard1^
-    "be referenced as DataRecord[Option[Any]] it includes nillable elements"  ! wildcard2^
-    "be referenced as Option[DataRecord[Any]] if optional"                    ! wildcard2^
-    "be referenced as Seq[DataRecord[Any]] if maxOccurs >1"                   ! wildcard2^
-                                                                              end^
-  "a single particle with maxOccurs >1 should"                                ^
-    "be referenced as A*"                                                     ! param1^
-                                                                              end^
-  "mixed contents in a complex type should"                                   ^
-    "generate a parameter named mixed in place of normal parameters"          ! mixed1^
-    "except when it hold simple contents"                                     ! mixed2^
-                                                                              end^
-  "substitution groups should"                                                ^
-    "be referenced as the group head's type"                                  ! sub1^
-                                                                              end^
-  "attriubtes should"                                                         ^
-    "be referenced as Map[String, scalaxb.DataRecord[Any]]"                   ! attr1^
-    "generate an accessor"                                                    ! attr2^
-                                                                              end^
-  "attribute groups should"                                                   ^
-    "generate a trait with attribute accessor signatures"                     ! attributegroup1^
-    "generate accessors in the referencing complex type"                      ! attributegroup2^
-    "be extended by the referencing complex types"                            ! attributegroup3^
-                                                                              end
+object EntitySpec_1 extends Specification { def is =                          s2"""
+  sequences in a complex type should
+    generate a case class named FooSequence* for non-primary sequences        $seq1
+    be referenced as fooSequence within the type                              $seq2
+    not generate anything it is empty, and skipped from the parameters        $seq3
+    generate a case class if the primary sequence is either optional or multiple $seq4
+    be split into chunks of case classes when it exceeds 20 particles         $seq5
+    generate accessors for elements within the wrapped sequence               $seq6
+  
+  choices in a complex type should
+    generate a trait named FooOption*                                         $choice1
+    mixin FooOption to choice candidates                                      $choice3
+    not generate anything if it is empty, and skipped from the parameters     $choice4
+    be referenced as DataRecord[X] if it's made of non-nillable complex type elements $choice2
+    be referenced as DataRecord[Option[X]] if it includes nillable elements   $choice2
+    be referenced as DataRecord[Option[X]] if it includes empty compositor    $choice2
+    be referenced as DataRecord[Int] if it's made of xs:int                   $choice2
+  
+  an all in a complex type should
+    be referenced as Map[String, scalaxb.DataRecord[Any]]                     $all1
+  
+  a groupref in a complex type should
+    be referenced as the group's non-empty primary compositor named FooGroup   $groupref1
+    be referenced as Option[scalaxb.DataRecord[X]] if underlying choice includes empty compositor $groupref2
+    be referenced as scalaxb.DataRecord[Option[X]] if underlying choice includes nillable element $groupref3
+  
+  wildcards should
+    be referenced as DataRecord[Any] named any* if it's made of non-nillable elements $wildcard1
+    be referenced as DataRecord[Option[Any]] it includes nillable elements    $wildcard2
+    be referenced as Option[DataRecord[Any]] if optional                      $wildcard2
+    be referenced as Seq[DataRecord[Any]] if maxOccurs >1                     $wildcard2
+  
+  a single particle with maxOccurs >1 should
+    be referenced as A*                                                       $param1
+  
+  mixed contents in a complex type should
+    generate a parameter named mixed in place of normal parameters            $mixed1
+    except when it hold simple contents                                       $mixed2
+  
+  substitution groups should
+    be referenced as the group head's type                                    $sub1
+  
+  attriubtes should
+    be referenced as Map[String, scalaxb.DataRecord[Any]]                     $attr1
+    generate an accessor                                                      $attr2
+  
+  attribute groups should
+    generate a trait with attribute accessor signatures                       $attributegroup1
+    generate accessors in the referencing complex type                        $attributegroup2
+    be extended by the referencing complex types                              $attributegroup3"""
 
   import Example._
   // scalaxb.compiler.Module.configureLogger(true)

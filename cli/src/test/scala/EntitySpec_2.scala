@@ -2,14 +2,13 @@ package scalaxb.specs
 
 import org.specs2._
 
-object EntitySpec_2 extends Specification { def is = sequential               ^
-  "xs:string should"                                                          ^
-    "be referenced as String"                                                 ! builtin1^
-                                                                              end^
-  "xs:anyType should"                                                         ^
-    "be referenced as DataRecord[Any] if it's non-nillable"                   ! anytype1^
-    "be referenced as DataRecord[Option[Any]] if it's nillable"               ! anytype1^
-                                                                              end
+object EntitySpec_2 extends Specification { def is =                          s2"""
+  xs:string should
+    be referenced as String                                                   $builtin1
+  
+  xs:anyType should
+    be referenced as DataRecord[Any] if it's non-nillable                     $anytype1
+    be referenced as DataRecord[Option[Any]] if it's nillable                 $anytype1"""
 
   import Example._
   // scalaxb.compiler.Module.configureLogger(true)

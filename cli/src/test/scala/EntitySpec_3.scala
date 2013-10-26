@@ -2,30 +2,29 @@ package scalaxb.specs
 
 import org.specs2._
 
-object EntitySpec_3 extends Specification { def is = sequential               ^
-  "this is a specification to check the generated entity source"              ^
-                                                                              p^
-  "restrictions of a built-in should"                                         ^
-    "be referenced as the corresponding built-in type"                        ! restriction1^
-                                                                              end^
-  "restrictions of simple type should"                                        ^
-    "be referenced as its base built-in type"                                 ! restriction2^
-                                                                              end^
-  "lists of a simple type should"                                             ^
-    "be referenced as Seq of its base type"                                   ! derivation1^
-                                                                              end^
-  "complex derivation of a simple type should"                                ^
-    "generate a case class named similarly with a parameter named value"      ! derivation2^
-                                                                              end^
-  "complex derivation of a complex type with simple content should"           ^
-    "generate a case class named similarly with a parameter named value"      ! derivation3^
-                                                                              end^
-  "complex derivation of a complex type with complex content should"          ^
-    "generate a trait which the case classes extend"                          ! derivation4^
-                                                                              end^
-  "complex derivation of a complex type from another schema should"           ^
-    "generate a trait which the case classes extend"                          ! derivation5^
-                                                                              end
+object EntitySpec_3 extends Specification { def is =                          s2"""
+  this is a specification to check the generated entity source
+  
+  restrictions of a built-in should
+    be referenced as the corresponding built-in type                          $restriction1
+  
+  restrictions of simple type should
+    be referenced as its base built-in type                                   $restriction2
+  
+  lists of a simple type should
+    be referenced as Seq of its base type                                     $derivation1
+  
+  complex derivation of a simple type should
+    generate a case class named similarly with a parameter named value        $derivation2
+  
+  complex derivation of a complex type with simple content should
+    generate a case class named similarly with a parameter named value        $derivation3
+  
+  complex derivation of a complex type with complex content should
+    generate a trait which the case classes extend                            $derivation4
+  
+  complex derivation of a complex type from another schema should
+    generate a trait which the case classes extend                            $derivation5"""
 
   import Example._
   // scalaxb.compiler.Module.configureLogger(true)

@@ -2,14 +2,14 @@ package scalaxb.specs
 
 import org.specs2._
 
-object ProtocolSpec_2 extends Specification { def is = sequential             ^
-  "this is a specification to check the generated protocol source"            ^
-                                                                              p^
-  "xs:anyType should"                                                         ^
-    "generate combinator parser"                                              ! anytype1^
-  "substitution group should"                                                 ^
-    "generate combinator parser"                                              ! sub1^
-                                                                              end
+object ProtocolSpec_2 extends Specification { def is =                        s2"""             
+  this is a specification to check the generated protocol source
+  
+  xs:anyType should
+    generate combinator parser                                                $anytype1
+  
+  substitution group should
+    generate combinator parser                                                $sub1"""
 
   import Example._
   lazy val module = new scalaxb.compiler.xsd2.Driver

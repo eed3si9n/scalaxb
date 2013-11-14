@@ -98,7 +98,7 @@ trait Params { self: Namer with Lookup with Splitter =>
     }
     
     // called by generateAccessors
-    def fromAttributes(attributes: Seq[Tagged[_]]): Seq[Param] = attributes collect {
+    def fromAttributes(attributes: Vector[TaggedAttr[_]]): Seq[Param] = attributes collect {
       case x: TaggedLocalAttribute => buildAttributeParam(x)
     }
 
@@ -224,7 +224,8 @@ trait Params { self: Namer with Lookup with Splitter =>
 
     private def buildAttributeParam(tagged: TaggedAttr[XAttributable]): Param = {
       val name = tagged.resolve.name.get
-      val retval = Param(tagged.tag.namespace, name, tagged, Occurrence(tagged.value), true, false, false)
+      val typeSymbol = tagged.taggedType
+      val retval = Param(tagged.tag.namespace, name, typeSymbol, Occurrence(tagged.value), true, false, false)
       logger.debug("buildAttributeParam:  " + retval.toString)
       retval
     }

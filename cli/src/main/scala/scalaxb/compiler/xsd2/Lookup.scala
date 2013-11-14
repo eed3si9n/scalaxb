@@ -104,18 +104,6 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter with Symbols =
     case TaggedMixedSeqParam(_, _)  => wildCardType
     case TaggedAttributeSeqParam(_, _) =>
       MapStringDataRecordAnyClass
-    case x: TaggedTopLevelAttribute =>
-      (x.resolve.typeValue, x.resolve.simpleType) match {
-        case (Some(ref), _) => buildType(resolveType(ref))
-        case (_, Some(typ)) => buildSimpleTypeType(Tagged(typ, x.tag))
-        case _ => sys.error("buildTypeName # unsupported: " + tagged)
-      }
-    case x: TaggedLocalAttribute =>
-      (x.resolve.typeValue, x.resolve.simpleType) match {
-        case (Some(ref), _) => buildType(resolveType(ref))
-        case (_, Some(typ)) => buildSimpleTypeType(Tagged(typ, x.tag))
-        case _ => sys.error("buildTypeName # unsupported: " + tagged)
-      }
     case x: TaggedAttributeGroup => buildAttributeGroupTypeSymbol(x)
     case _ => sys.error("buildTypeName # unsupported: " + tagged)
   }
@@ -242,10 +230,16 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter with Symbols =
     case _ => throw new ReferenceNotFound("element", elementRef.namespace map { _.toString }, elementRef.localPart)
   }
 
+  def resolveAttribute(tagged: TaggedAttr[XAttributable]): TaggedAttr[XAttributable] =
+    tagged.ref map { resolveAttribute(_) } getOrElse tagged
+
   def resolveAttribute(attrRef: QualifiedName): TaggedAttr[XAttributable] = attrRef match {
     case Attribute(attr) => attr
     case _ => throw new ReferenceNotFound("attribute", attrRef.namespace map { _.toString }, attrRef.localPart)
   }
+
+  def resolveAttributeGroup(tagged: TaggedAttr[XAttributeGroup]): TaggedAttr[XAttributeGroup] =
+    tagged.ref map { resolveAttributeGroup(_) } getOrElse tagged
 
   def resolveAttributeGroup(groupRef: QualifiedName): TaggedAttr[XAttributeGroup] = groupRef match {
     case AttributeGroup(group) => group

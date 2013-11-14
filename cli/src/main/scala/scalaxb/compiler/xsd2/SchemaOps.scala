@@ -38,7 +38,7 @@ object Defs {
   implicit def complexTypeToComplexTypeIteration(tagged: TaggedType[XComplexType])(implicit schema: XSchema): ComplexTypeIteration =
     ComplexTypeIteration(tagged)
   implicit def elementToElementOps(tagged: Tagged[XElement]): ElementOps = new ElementOps(tagged)
-  implicit def attributeGroupToAttributeGroupOps(tagged: Tagged[XAttributeGroup]): AttributeGroupOps =
+  implicit def attributeGroupToAttributeGroupOps(tagged: TaggedAttr[XAttributeGroup]): AttributeGroupOps =
     new AttributeGroupOps(tagged)
   implicit def namedGroupToNamedGroupOps(tagged: Tagged[XNamedGroup]): NamedGroupOps = NamedGroupOps(tagged)
   implicit def simpleTypeToSimpleTypeOps(tagged: TaggedType[XSimpleType]): SimpleTypeOps = SimpleTypeOps(tagged)
@@ -273,9 +273,9 @@ object TaggedXsAnyType extends TaggedSymbol(XsAnyType, HostTag(Some(Defs.SCALAXB
 object TaggedXsNillableAny extends TaggedSymbol(XsNillableAny, HostTag(Some(Defs.SCALAXB_URI), SimpleTypeHost, "nillableAny"))
 object TaggedXsString extends TaggedSymbol(XsString, HostTag(Some(Defs.XML_SCHEMA_URI), SimpleTypeHost, "string"))
 
+case class TaggedTopLevelElement(value: XTopLevelElement, tag: HostTag) extends Tagged[XTopLevelElement] {}
 case class TaggedNamedGroup(value: XNamedGroup, tag: HostTag) extends Tagged[XNamedGroup] {}
 case class TaggedAttributeGroup(value: XAttributeGroup, tag: HostTag) extends TaggedAttr[XAttributeGroup] {}
-case class TaggedTopLevelElement(value: XTopLevelElement, tag: HostTag) extends Tagged[XTopLevelElement] {}
 case class TaggedTopLevelAttribute(value: XTopLevelAttribute, tag: HostTag) extends TaggedAttr[XTopLevelAttribute] {}
 case class TaggedLocalAttribute(value: XAttribute, tag: HostTag) extends TaggedAttr[XAttribute] {}
 case class TaggedAnyAttribute(value: XWildcardable, tag: HostTag) extends TaggedAttr[XWildcardable] {}
@@ -426,7 +426,7 @@ object SchemaIteration {
 
   def processAttrSeq(attrSeq: XAttrDeclsSequence)(implicit tag: HostTag): IndexedSeq[Tagged[_]] =
     (Vector(attrSeq.xattrdeclsoption1: _*).zipWithIndex flatMap {
-      case (DataRecord(_, _, x: XAttribute), i)      => processLocalAttribute(x, tag / i.toString)
+      case (DataRecord(_, _, x: XAttribute), i)         => processLocalAttribute(x, tag / i.toString)
       case (DataRecord(_, _, x: XAttributeGroupRef), i) => processAttributeGroup(x)
     }) ++
     (attrSeq.anyAttribute map {processAnyAttribute} getOrElse Vector())
@@ -981,7 +981,9 @@ object ComplexTypeIteration {
           x.ref map { ref => Vector(resolveAttribute(ref))
           } getOrElse { Vector(Tagged(x, tag)) }
         case DataRecord(_, _, x: XAttributeGroupRef) =>
-          x.ref map { ref => flattenAttrSeq(resolveAttributeGroup(ref).value.xAttrDeclsSequence3)
+          x.ref map { ref => 
+            val group = resolveAttributeGroup(ref)
+            group.flattenedAttributes
           } getOrElse { flattenAttrSeq(x.xAttrDeclsSequence3) }
       }) ++
       ((attrSeq.anyAttribute map {SchemaIteration.processAnyAttribute} getOrElse Vector()): Vector[TaggedAttr[_]])
@@ -1079,23 +1081,38 @@ class ElementOps(val tagged: Tagged[XElement]) {
   }
 }
 
-class AttributeGroupOps(val tagged: Tagged[XAttributeGroup]) {
-  def flattenedAttributes: IndexedSeq[Tagged[_]] = SchemaIteration.processAttrSeq(tagged.value.xAttrDeclsSequence3)(tagged.tag)
+class AttributeGroupOps(val tagged: TaggedAttr[XAttributeGroup]) {
+  import Defs._
+  def flattenedAttributes(implicit lookup: Lookup): Vector[TaggedAttr[_]] =
+    (SchemaIteration.processAttrSeq(tagged.value.xAttrDeclsSequence3)(tagged.tag) collect {
+      case x: TaggedTopLevelAttribute => x
+      case x: TaggedAnyAttribute      => x
+      case x: TaggedAttributeGroup    => x.resolve
+      case x: TaggedLocalAttribute    => x.resolve
+    }).toVector
+
+  def resolve(implicit lookup: Lookup): TaggedAttr[XAttributeGroup] =
+    lookup.resolveAttributeGroup(tagged) 
 }
 
 case class AttributeOps(tagged: TaggedAttr[XAttributable]) {
+  import Defs._
+  def taggedType(implicit lookup: Lookup): TaggedType[_] = {
+    val x = resolve
+    (x.typeValue, x.simpleType) match {
+      case (Some(ref), _) => lookup.resolveType(ref)
+      case (_, Some(tpe)) => taggedSimpleType.get
+      case _              => sys.error("taggedType # unsupported: " + tagged)
+    }
+  }
+
   def taggedSimpleType: Option[TaggedType[XSimpleType]] = {
     tagged.value.simpleType map { tpe =>
       Tagged(tpe, tagged.tag / "_")
     }
   }
 
-  def resolve(implicit lookup: Lookup): TaggedAttr[XAttributable] = {
-    import lookup.Attribute
-    tagged.value.ref match {
-      case Some(Attribute(x)) => x
-      case _ => tagged
-    }
-  }
+  def resolve(implicit lookup: Lookup): TaggedAttr[XAttributable] =
+    lookup.resolveAttribute(tagged)
 }
 

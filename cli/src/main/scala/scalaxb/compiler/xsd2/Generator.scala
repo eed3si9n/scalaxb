@@ -583,10 +583,10 @@ class Generator(val schema: ReferenceSchema,
         ))
     } getOrElse {EmptyTree}
 
-  def processAttributeGroup(tagged: Tagged[XAttributeGroup]): Seq[Trippet] =
+  def processAttributeGroup(tagged: TaggedAttr[XAttributeGroup]): Seq[Trippet] =
     Seq(generateAttributeGroup(buildAttributeGroupTypeSymbol(tagged), tagged))
 
-  def generateAttributeGroup(sym: ClassSymbol, tagged: Tagged[XAttributeGroup]): Trippet = {
+  def generateAttributeGroup(sym: ClassSymbol, tagged: TaggedAttr[XAttributeGroup]): Trippet = {
     val accessors = generateAttributeAccessors(tagged.flattenedAttributes, false)
     Trippet(TRAITDEF(sym) := BLOCK(accessors: _*))
   }
@@ -605,7 +605,7 @@ class Generator(val schema: ReferenceSchema,
       paramList map { _.toLongSeqAccessor(wrapper.paramName) }
     }
 
-  def generateAttributeAccessors(attributes: Seq[Tagged[_]], generateImpl: Boolean): Seq[Tree] =
+  def generateAttributeAccessors(attributes: Vector[TaggedAttr[_]], generateImpl: Boolean): Seq[Tree] =
     Param.fromAttributes(attributes) map {_.toDataRecordMapAccessor(makeParamName(ATTRS_PARAM, false), generateImpl)}
 
   def packageCode: Seq[Node] =

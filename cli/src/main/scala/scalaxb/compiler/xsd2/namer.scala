@@ -54,6 +54,17 @@ trait Namer extends ScalaNames { self: Lookup with Splitter  =>
     }
   }
 
+  def nameAttribute(tagged: TaggedAttr[XAttributable]): Unit = {
+    tagged.taggedSimpleType map { simpleType =>
+      if (containsEnumeration(simpleType)) {
+        val name = makeProtectedTypeName(tagged.name, "Type", simpleType.tag, true)
+        logger.debug("nameAttribute: named %s", name)
+        names(simpleType) = name
+        nameEnumValues(simpleType, scopeEv)
+      } // if
+    }
+  }
+
   def nameTrait(decl: TaggedType[XComplexType]) {
     val rawName = decl.name.get
     val initialName = if (rawName.last == 'e') rawName.dropRight(1) + "able"

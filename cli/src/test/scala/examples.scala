@@ -651,4 +651,22 @@ object Example {
         </xs:sequence>
       </xs:complexType>
     </xs:schema>
+
+  val attrGroupXML = <xs:schema targetNamespace="http://www.example.com/general"
+        xmlns:xs="http://www.w3.org/2001/XMLSchema"
+        xmlns:gen="http://www.example.com/general">
+      <xs:attributeGroup name="i18n">
+        <xs:attribute name="lang" type="xs:string"/>
+        <xs:attribute ref="xml:lang"/>
+        <xs:attribute name="dir">
+          <xs:simpleType>
+            <xs:restriction base="xs:token">
+              <xs:enumeration value="ltr"/>
+              <xs:enumeration value="rtl"/>
+            </xs:restriction>
+          </xs:simpleType>
+        </xs:attribute>
+      </xs:attributeGroup>
+    </xs:schema>
+
 }

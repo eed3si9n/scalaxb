@@ -78,8 +78,8 @@ trait Params { self: Namer with Lookup with Splitter =>
       // """lazy val %s = %s.%s""" format(toTraitScalaCode, wrapper, makeParamName(name, attribute))
 
     def buildNodeName: String = typeSymbol match {
-      case TaggedAttribute(x: XTopLevelAttribute, _) => "@" + QualifiedName(namespace, name).toString
-      case TaggedAttribute(_, _) => "@" + QualifiedName(None, name).toString
+      case TaggedTopLevelAttribute(x: XTopLevelAttribute, _) => "@" + QualifiedName(namespace, name).toString
+      case TaggedLocalAttribute(_, _) => "@" + QualifiedName(None, name).toString
       case _ => QualifiedName(None, name).toString
     }
   }
@@ -99,7 +99,7 @@ trait Params { self: Namer with Lookup with Splitter =>
     
     // called by generateAccessors
     def fromAttributes(attributes: Seq[Tagged[_]]): Seq[Param] = attributes collect {
-      case x: TaggedAttribute => buildAttributeParam(x)
+      case x: TaggedLocalAttribute => buildAttributeParam(x)
     }
 
     // tagged can be Tagged[XSimpleType], Tagged[BuiltInSymbol], Tagged[XLocalElementable], Tagged[KeyedGroup],

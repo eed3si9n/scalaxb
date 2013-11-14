@@ -19,7 +19,7 @@ trait ContextProcessor extends ScalaNames { self: Namer with Lookup =>
 
   def getTraitName(tagged: TaggedType[XComplexType]): String =
     context.traitNames.get(tagged) getOrElse {
-      error(tagged.tag.toString + "??")
+      sys.error(tagged.tag.toString + "??")
     }    
 
   def processContext() {
@@ -46,31 +46,34 @@ trait ContextProcessor extends ScalaNames { self: Namer with Lookup =>
     }
   }
 
-  def processSchema(schema: ReferenceSchema) {
+  def processSchema(schema: ReferenceSchema): Unit = {
     logger.debug("processSchema")
     schema.unbound foreach {
       case tagged: TaggedTopLevelElement =>  nameElementTypes(tagged)
-      case tagged: TaggedSimpleType =>
+      case tagged: TaggedSimpleType      =>
         tagged.value match {
-          case x: XTopLevelSimpleType => nameSimpleTypes(tagged)
+          case x: XTopLevelSimpleType    => nameSimpleTypes(tagged)
           case _ =>
         }
-      case tagged: TaggedComplexType =>
+      case tagged: TaggedComplexType     =>
         tagged.value match {
-          case x: XTopLevelComplexType => nameComplexTypes(tagged)
+          case x: XTopLevelComplexType   => nameComplexTypes(tagged)
           case _ =>
         }
-      case tagged: TaggedNamedGroup => nameNamedGroup(tagged)
-      case tagged: TaggedAttributeGroup =>
+      case tagged: TaggedNamedGroup      => nameNamedGroup(tagged)
+      case tagged: TaggedAttributeGroup  =>
         tagged.value match {
-          case x: XNamedAttributeGroup => nameAttributeGroup(tagged)
+          case x: XNamedAttributeGroup   => nameAttributeGroup(tagged)
           case _ =>
         }
+      case tagged: TaggedTopLevelAttribute if tagged.name.isDefined && tagged.simpleType.isDefined =>
+        nameAttribute(tagged)
       case _ =>
     }
-
     schema.unbound foreach {
       case tagged: TaggedLocalElement if tagged.name.isDefined => nameElementTypes(tagged)
+      case tagged: TaggedLocalAttribute if tagged.name.isDefined && tagged.simpleType.isDefined =>
+        nameAttribute(tagged)
       case _ =>
     }
   }

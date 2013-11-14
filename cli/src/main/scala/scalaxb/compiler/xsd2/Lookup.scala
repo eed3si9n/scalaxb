@@ -104,7 +104,13 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter with Symbols =
     case TaggedMixedSeqParam(_, _)  => wildCardType
     case TaggedAttributeSeqParam(_, _) =>
       MapStringDataRecordAnyClass
-    case x: TaggedAttribute =>
+    case x: TaggedTopLevelAttribute =>
+      (x.resolve.typeValue, x.resolve.simpleType) match {
+        case (Some(ref), _) => buildType(resolveType(ref))
+        case (_, Some(typ)) => buildSimpleTypeType(Tagged(typ, x.tag))
+        case _ => sys.error("buildTypeName # unsupported: " + tagged)
+      }
+    case x: TaggedLocalAttribute =>
       (x.resolve.typeValue, x.resolve.simpleType) match {
         case (Some(ref), _) => buildType(resolveType(ref))
         case (_, Some(typ)) => buildSimpleTypeType(Tagged(typ, x.tag))

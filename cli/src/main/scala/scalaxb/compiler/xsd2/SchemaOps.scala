@@ -42,7 +42,7 @@ object Defs {
     new AttributeGroupOps(tagged)
   implicit def namedGroupToNamedGroupOps(tagged: Tagged[XNamedGroup]): NamedGroupOps = NamedGroupOps(tagged)
   implicit def simpleTypeToSimpleTypeOps(tagged: TaggedType[XSimpleType]): SimpleTypeOps = SimpleTypeOps(tagged)
-  implicit def attributeToAttributeOps(tagged: Tagged[XAttributable]): AttributeOps = AttributeOps(tagged)
+  implicit def attributeToAttributeOps(tagged: TaggedAttr[XAttributable]): AttributeOps = AttributeOps(tagged)
 
   val XML_SCHEMA_URI = new URI("http://www.w3.org/2001/XMLSchema")
   val XS_PREFIX = "xs"
@@ -234,7 +234,8 @@ object Tagged {
   def apply(value: XTopLevelElement, tag: HostTag): Tagged[XTopLevelElement] = TaggedTopLevelElement(value, tag)
   def apply(value: XLocalElementable, elementFormDefault: XFormChoice, tag: HostTag): TaggedParticle[XLocalElementable] =
     TaggedLocalElement(value, elementFormDefault, tag)
-  def apply(value: XAttributable, tag: HostTag): TaggedAttr[XAttributable] = TaggedAttribute(value, tag)
+  def apply(value: XTopLevelAttribute, tag: HostTag): TaggedAttr[XTopLevelAttribute] = TaggedTopLevelAttribute(value, tag)
+  def apply(value: XAttribute, tag: HostTag): TaggedAttr[XAttribute] = TaggedLocalAttribute(value, tag)
   def apply(value: XAny, tag: HostTag): TaggedParticle[XAny] = TaggedWildCard(value, tag)
   def apply(value: XsTypeSymbol, tag: HostTag): TaggedType[XsTypeSymbol] = TaggedSymbol(value, tag)
   def apply(value: XNoFixedFacet, tag: HostTag): Tagged[XNoFixedFacet] = TaggedEnum(value, tag)
@@ -246,7 +247,8 @@ object Tagged {
   implicit def box(value: XNamedGroup)(implicit tag: HostTag) = Tagged(value, tag)
   implicit def box(value: XAttributeGroup)(implicit tag: HostTag) = Tagged(value, tag)
   implicit def box(value: XTopLevelElement)(implicit tag: HostTag) = Tagged(value, tag)
-  implicit def box(value: XAttributable)(implicit tag: HostTag) = Tagged(value, tag)
+  implicit def box(value: XTopLevelAttribute)(implicit tag: HostTag) = Tagged(value, tag)
+  implicit def box(value: XAttribute)(implicit tag: HostTag) = Tagged(value, tag)
   implicit def box(value: XsTypeSymbol)(implicit tag: HostTag) = Tagged(value, tag)
   implicit def box(value: XNoFixedFacet)(implicit tag: HostTag) = Tagged(value, tag)
   implicit def box(value: AttributeSeqParam)(implicit tag: HostTag) = Tagged(value, tag)
@@ -274,7 +276,8 @@ object TaggedXsString extends TaggedSymbol(XsString, HostTag(Some(Defs.XML_SCHEM
 case class TaggedNamedGroup(value: XNamedGroup, tag: HostTag) extends Tagged[XNamedGroup] {}
 case class TaggedAttributeGroup(value: XAttributeGroup, tag: HostTag) extends TaggedAttr[XAttributeGroup] {}
 case class TaggedTopLevelElement(value: XTopLevelElement, tag: HostTag) extends Tagged[XTopLevelElement] {}
-case class TaggedAttribute(value: XAttributable, tag: HostTag) extends TaggedAttr[XAttributable] {}
+case class TaggedTopLevelAttribute(value: XTopLevelAttribute, tag: HostTag) extends TaggedAttr[XTopLevelAttribute] {}
+case class TaggedLocalAttribute(value: XAttribute, tag: HostTag) extends TaggedAttr[XAttribute] {}
 case class TaggedAnyAttribute(value: XWildcardable, tag: HostTag) extends TaggedAttr[XWildcardable] {}
 case class TaggedEnum(value: XNoFixedFacet, tag: HostTag) extends Tagged[XNoFixedFacet] {}
 case class TaggedDataRecordSymbol(value: DataRecordSymbol) extends Tagged[DataRecordSymbol] {
@@ -328,7 +331,8 @@ object SchemaIteration {
   def toThat(elem: XTopLevelElement, tag: HostTag): Option[Tagged[_]] = Some(Tagged(elem, tag))
   def toThat(elem: XLocalElementable, elementFormDefault: XFormChoice, tag: HostTag): Option[Tagged[_]] =
     Some(Tagged(elem, elementFormDefault, tag))
-  def toThat(attr: XAttributable, tag: HostTag): Option[TaggedAttr[_]] = Some(Tagged(attr, tag))
+  def toThat(attr: XTopLevelAttribute, tag: HostTag): Option[TaggedAttr[_]] = Some(Tagged(attr, tag))
+  def toThat(attr: XAttribute, tag: HostTag): Option[TaggedAttr[_]] = Some(Tagged(attr, tag))
 
   def schemaToSeq(schema: XSchema): IndexedSeq[Tagged[_]] = {
     implicit val s = schema
@@ -413,7 +417,7 @@ object SchemaIteration {
     toThat(attr, tag).toIndexedSeq ++
     (attr.simpleType map { x => processLocalSimpleType(x, tag / "_") } getOrElse Vector())
 
-  def processLocalAttribute(attr: XAttributable, childtag: HostTag): IndexedSeq[Tagged[_]] =
+  def processLocalAttribute(attr: XAttribute, childtag: HostTag): IndexedSeq[Tagged[_]] =
     toThat(attr, childtag).toIndexedSeq ++
     (attr.simpleType map { x => processLocalSimpleType(x, childtag / "_") } getOrElse Vector())
 
@@ -422,7 +426,7 @@ object SchemaIteration {
 
   def processAttrSeq(attrSeq: XAttrDeclsSequence)(implicit tag: HostTag): IndexedSeq[Tagged[_]] =
     (Vector(attrSeq.xattrdeclsoption1: _*).zipWithIndex flatMap {
-      case (DataRecord(_, _, x: XAttributable), i)      => processLocalAttribute(x, tag / i.toString)
+      case (DataRecord(_, _, x: XAttribute), i)      => processLocalAttribute(x, tag / i.toString)
       case (DataRecord(_, _, x: XAttributeGroupRef), i) => processAttributeGroup(x)
     }) ++
     (attrSeq.anyAttribute map {processAnyAttribute} getOrElse Vector())
@@ -928,7 +932,10 @@ object ComplexTypeIteration {
     def isSameAttribute(lhs: TaggedAttr[_], rhs: TaggedAttr[_]): Boolean = {
       (lhs, rhs) match {
         case (l: TaggedAnyAttribute, r: TaggedAnyAttribute) => true
-        case (l: TaggedAttribute, r: TaggedAttribute) =>
+        case (l: TaggedTopLevelAttribute, r: TaggedTopLevelAttribute) =>
+          QualifiedName(decl.tag.namespace, l.value.name, l.value.ref) ==
+          QualifiedName(decl.tag.namespace, r.value.name, r.value.ref)
+        case (l: TaggedLocalAttribute, r: TaggedLocalAttribute) =>
           QualifiedName(decl.tag.namespace, l.value.name, l.value.ref) ==
           QualifiedName(decl.tag.namespace, r.value.name, r.value.ref)
         case (l: TaggedAttributeGroup, r: TaggedAttributeGroup) =>
@@ -970,7 +977,7 @@ object ComplexTypeIteration {
     // Resolve references as walking through the attributes.
     def flattenAttrSeq(attrSeq: XAttrDeclsSequence)(implicit tag: HostTag): Vector[TaggedAttr[_]] =
       (Vector(attrSeq.xattrdeclsoption1: _*) flatMap {
-        case DataRecord(_, _, x: XAttributable)      =>
+        case DataRecord(_, _, x: XAttribute)      =>
           x.ref map { ref => Vector(resolveAttribute(ref))
           } getOrElse { Vector(Tagged(x, tag)) }
         case DataRecord(_, _, x: XAttributeGroupRef) =>
@@ -1076,8 +1083,14 @@ class AttributeGroupOps(val tagged: Tagged[XAttributeGroup]) {
   def flattenedAttributes: IndexedSeq[Tagged[_]] = SchemaIteration.processAttrSeq(tagged.value.xAttrDeclsSequence3)(tagged.tag)
 }
 
-case class AttributeOps(tagged: Tagged[XAttributable]) {
-  def resolve(implicit lookup: Lookup): Tagged[XAttributable] = {
+case class AttributeOps(tagged: TaggedAttr[XAttributable]) {
+  def taggedSimpleType: Option[TaggedType[XSimpleType]] = {
+    tagged.value.simpleType map { tpe =>
+      Tagged(tpe, tagged.tag / "_")
+    }
+  }
+
+  def resolve(implicit lookup: Lookup): TaggedAttr[XAttributable] = {
     import lookup.Attribute
     tagged.value.ref match {
       case Some(Attribute(x)) => x

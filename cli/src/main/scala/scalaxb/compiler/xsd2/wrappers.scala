@@ -107,9 +107,10 @@ object WrappedSchema {
       case tagged: TaggedLocalElement    => (tagged: Tagged[XElement])
     }
 
-  def attrList(schema: XSchema): Seq[TaggedAttribute] =
+  def attrList(schema: XSchema): Seq[TaggedAttr[XAttributable]] =
     schema.toSeq collect {
-      case tagged: TaggedAttribute => tagged
+      case tagged: TaggedTopLevelAttribute => tagged
+      case tagged: TaggedLocalAttribute    => tagged
     }
 
   def choiceList(schema: XSchema): Seq[TaggedKeyedGroup] =

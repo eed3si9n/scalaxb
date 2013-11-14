@@ -10,6 +10,9 @@ object EntitySpec_3 extends Specification { def is =                          s2
   
   restrictions of simple type should
     be referenced as its base built-in type                                   $restriction2
+
+  enumeration based on a simple type should
+    be referenced as a trait                                                  $enum1
   
   lists of a simple type should
     be referenced as Seq of its base type                                     $derivation1
@@ -86,6 +89,13 @@ object EntitySpec_3 extends Specification { def is =                          s2
 
     println(entitySource)
     entitySource must contain("""comment: String""") and contain("""comment2: String""")
+  }
+
+  lazy val attrGroupSource = module.processNode(attrGroupXML, "example")(0)  
+
+  def enum1 = {
+    println(attrGroupSource)
+    (attrGroupSource must contain("""trait Dir"""))
   }
 
   lazy val derivEntitySource = module.processNode(derivationXML, "example")(0)

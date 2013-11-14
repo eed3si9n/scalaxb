@@ -211,7 +211,7 @@ class Generator(val schema: ReferenceSchema,
       if (attributes.isEmpty) Vector()
       else {
         val casetree: Seq[CaseDef] = (attributes collect {
-          case x@TaggedAttribute(attr: XTopLevelAttribute, _) =>
+          case x@TaggedTopLevelAttribute(attr: XTopLevelAttribute, _) =>
             val ns = x.tag.namespace map {_.toString} getOrElse ""
             CASE(ID("attr") withType(PrefixedAttributeClass),
               IF(PAREN((REF("elem") DOT "scope" DOT "getURI")(REF("attr") DOT "pre") ANY_== LIT(ns) AND
@@ -220,7 +220,7 @@ class Generator(val schema: ReferenceSchema,
                 VAL("ns") := (REF("elem") DOT "scope" DOT "getURI")(REF("attr") DOT "pre"),
                 TUPLE(LIT("@{" + ns + "}" + attr.name.get), generateAttribute(x))
               )
-          case x@TaggedAttribute(attr: XAttribute, _) =>
+          case x@TaggedLocalAttribute(attr: XAttribute, _) =>
             CASE(ID("attr") withType(UnprefixedAttributeClass),
               IF((REF("attr") DOT "key") ANY_== LIT(attr.name.get))) ==>
               TUPLE(LIT("@" + attr.name.get), generateAttribute(x))            
@@ -289,7 +289,7 @@ class Generator(val schema: ReferenceSchema,
   private def generateAttribute(attr: TaggedAttr[XAttributable]): Tree =
     DATARECORD(
       attr match {
-        case TaggedAttribute(attr: XTopLevelAttribute, _) => TYPE_OPTION(StringClass) APPLY REF("ns")
+        case TaggedTopLevelAttribute(attr: XTopLevelAttribute, _) => TYPE_OPTION(StringClass) APPLY REF("ns")
         case _                                            => NONE  
       },
       SOME(REF("attr") DOT "key"), buildArg(

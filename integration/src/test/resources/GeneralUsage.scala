@@ -752,7 +752,12 @@ JDREVGRw==</base64Binary>
                   </gen:loopCharacteristics>
     val characteristics = scalaxb.fromXML[MixedExtensionTestB](subject)
     def check(obj: MixedExtensionTestB) = obj match {
-      case MixedExtensionTestB(_, Some(x), _) if x.toString contains "10" =>
+      case MixedExtensionTestB(Seq(_,
+        DataRecord(_, Some("loopCardinality"),
+          MixedExtensionTestA(Seq(
+            DataRecord(None, None, "10")
+          ), _)),
+        _), _) =>
       case _ => sys.error("match failed: " + obj.toString)
     }
     check(characteristics)

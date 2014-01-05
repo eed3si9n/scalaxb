@@ -94,11 +94,7 @@ abstract class GenSource(val schema: SchemaDecl,
     val fqn = buildTypeName(decl, false)
     val formatterName = buildFormatterName(decl.namespace, localName)
     logger.debug("makeTrait: emitting " + fqn)
-    val effectiveMixed = decl.content match {
-      case x: SimpleContentDecl => false
-      case _ => decl.mixed
-    }
-    
+    val effectiveMixed = buildEffectiveMixed(decl)    
     val childElements = if (effectiveMixed) Nil
       else flattenElements(decl)
     val list = List.concat[Decl](childElements, flattenAttributes(decl))
@@ -215,11 +211,7 @@ abstract class GenSource(val schema: SchemaDecl,
       case ComplexContentDecl(CompContExtensionDecl(_, x, _)) => x
       case _ => None
     }
-    val effectiveMixed = decl.content match {
-      case x: SimpleContentDecl => false
-      case _ => decl.mixed
-    }
-    
+    val effectiveMixed = buildEffectiveMixed(decl)
     val superNames: List[String] =
       if (context.baseToSubs.contains(decl)) List(buildTypeName(decl, true))
       else buildSuperNames(decl)
@@ -629,6 +621,17 @@ object {localName} {{
   }}</source>,
       makeImplicitValue(fqn, formatterName))
   }
+
+  def buildEffectiveMixed(decl: ComplexTypeDecl): Boolean =
+    decl.content match {
+      case x: ComplexContentDecl if decl.mixed => true
+      case x: SimpleContentDecl                => false
+      case x: ComplexContentDecl =>
+        x.content.base match {
+          case ReferenceTypeSymbol(base: ComplexTypeDecl) => buildEffectiveMixed(base)
+          case _ => false
+        }
+    }
     
   def buildSuperNames(decl: ComplexTypeDecl) =
     buildSuperName(decl) ::: buildOptions(decl)
@@ -951,7 +954,7 @@ object {localName} {{
     pf(decl.content.content)
   }
 
-  def flattenMixed(decl: ComplexTypeDecl) = if (decl.mixed)
+  def flattenMixed(decl: ComplexTypeDecl) = if (buildEffectiveMixed(decl))
     List(ElemDecl(Some(INTERNAL_NAMESPACE), MIXED_PARAM, XsMixed,
       None, None, 0, Integer.MAX_VALUE))
   else Nil

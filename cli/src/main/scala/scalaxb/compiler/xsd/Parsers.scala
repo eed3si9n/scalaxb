@@ -45,8 +45,8 @@ trait Parsers extends Args with Params {
   def buildAnyParser(namespaceConstraint: List[String], occurrence: Occurrence, mixed: Boolean,
                      wrapInDataRecord: Boolean, laxAny: Boolean): String = {
     val converter = if (occurrence.nillable) buildFromXML("scalaxb.DataRecord[Option[Any]]", "_",
-        "scalaxb.ElemName(node) :: stack", None)
-      else buildFromXML(buildTypeName(XsWildcard(namespaceConstraint)), "_", "scalaxb.ElemName(node) :: stack", None)
+        Some("node"), None)
+      else buildFromXML(buildTypeName(XsWildcard(namespaceConstraint)), "_", Some("node"), None)
     val parser = "any(%s)".format(
       if (laxAny) "_ => true"
       else namespaceConstraint match {
@@ -234,8 +234,8 @@ trait Parsers extends Args with Params {
   def buildElemParser(elem: ElemDecl, occurrence: Occurrence, mixed: Boolean, wrapInDataRecord: Boolean,
                       ignoreSubGroup: Boolean): String = {
     def buildConverter(typeSymbol: XsTypeSymbol, occurrence: Occurrence): String = {
-      val record = "scalaxb.DataRecord(x.namespace, Some(x.name), " + buildArg("x", typeSymbol) + ")"
-      val nillableRecord = "scalaxb.DataRecord(x.namespace, Some(x.name), x.nilOption map {" + buildArg("_", typeSymbol) + "})"
+      val record = "scalaxb.DataRecord(x.namespace, Some(x.name), " + buildArg("x", typeSymbol, Some("node")) + ")"
+      val nillableRecord = "scalaxb.DataRecord(x.namespace, Some(x.name), x.nilOption map {" + buildArg("_", typeSymbol, Some("node")) + "})"
       
       (toCardinality(occurrence), occurrence.nillable) match {
         case (Multiple, true)   => "(_.toSeq map { x => " + nillableRecord + " })"        

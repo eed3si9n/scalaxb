@@ -111,7 +111,7 @@ abstract class GenSource(val schema: SchemaDecl,
     
     def makeCaseEntry(decl: ComplexTypeDecl) =
       "case (" + quoteNamespace(decl.namespace) + ", " + quote(Some(decl.family.head)) + ") => " +
-        "Right(" + buildFromXML(buildTypeName(decl, false), "node", "stack", None) + ")"
+        "Right(" + buildFromXML(buildTypeName(decl, false), "node", Some("stack"), None) + ")"
     
     def makeToXmlCaseEntry(decl: ComplexTypeDecl) =
       "case x: " + buildTypeName(decl, false) + " => " + 
@@ -147,7 +147,7 @@ abstract class GenSource(val schema: SchemaDecl,
               yield makeCaseEntry(sub)
             cases.mkString(newline + indent(4 + compDepth))        
           }
-          { if (!decl.abstractValue) "case _ => Right(" + buildFromXML(defaultType, "node", "stack", None) + ")"
+          { if (!decl.abstractValue) "case _ => Right(" + buildFromXML(defaultType, "node", Some("stack"), None) + ")"
             else """case x => Left("Unknown type: " + x)""" }
         }}
       case _ => Left("reads failed: seq must be scala.xml.Node")  
@@ -304,7 +304,7 @@ abstract class GenSource(val schema: SchemaDecl,
               val nonAnyString = if (notAnyAttributes.isEmpty) ""
                 else "List(" + newline + 
                   indent(4) + (notAnyAttributes map { x => 
-                    buildArgForAttribute(x, longAttribute) }).mkString("," + newline + indent(4)) + newline +
+                    buildArgForAttribute(x, Some("node"), longAttribute) }).mkString("," + newline + indent(4)) + newline +
                   indent(4)  + ").flatten[(String, scalaxb.DataRecord[Any])]"
               val anyString = if (anyAttributes.isEmpty) ""
                 else "(" + buildArgForAnyAttribute(decl, longAttribute) + ")"
@@ -314,7 +314,7 @@ abstract class GenSource(val schema: SchemaDecl,
             } 
             else (attributes map {
                     case any: AnyAttributeDecl => buildArgForAnyAttribute(decl, longAttribute)
-                    case x => buildArgForAttribute(x, longAttribute) 
+                    case x => buildArgForAttribute(x, Some("node"), longAttribute) 
                  }).mkString("," + newline + indent(4))              
           } // if-else
           

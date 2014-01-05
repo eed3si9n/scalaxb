@@ -376,7 +376,7 @@ trait GenSource {
       val multipart = isMultiPart(output, binding.output)
       val fromXmls = (parts map { p =>
         val v =
-          if (b.literal && p.element.isDefined) "body.headOption getOrElse {body}"
+          if (b.literal && p.element.isDefined) "(body.headOption getOrElse {body})"
           else if (b.literal) """scala.xml.Elem("", "Body", scala.xml.Null, defaultScope, body.toSeq: _*)"""
           else if (!soap12) """(scalaxb.Helper.resolveSoap11Refs(body.head) \ "%s").head""" format (p.name.get)
           else """(body.head \ "%s").head""" format (p.name.get)
@@ -387,15 +387,14 @@ trait GenSource {
             "." + param.toParamName
           } getOrElse {""}
           else ""
-
-        "scalaxb.fromXML[%s](%s)%s".format(partTypeName(p), v, post)
+        buildPartArg(p, v) + post
       }) ++ (headerBindings(binding.output) flatMap { b =>
         val message = context.messages(splitTypeName(b.message))
         message.part find {_.name == Some(b.part)} map { p =>
           val v =
             if (b.literal && p.element.isDefined) """(<x>{header}</x> \ "%s").head""" format (p.element.get.getLocalPart)
             else """(<x>{header}</x> \ "%s").head""" format (p.name.get)
-          "scalaxb.fromXML[%s](%s)".format(partTypeName(p), v)
+          buildPartArg(p, v)
         }
       })
 
@@ -404,6 +403,17 @@ trait GenSource {
         fromXmls.mkString("," + NL + "              "))
     }
   }
+
+  def buildPartArg(part: XPartType, selector: String): String =
+    (part.typeValue, part.element) match {
+      case (Some(typeValueQName), _) =>
+        val typeSymbol = toTypeSymbol(typeValueQName)
+        xsdgenerator.buildArg(selector, typeSymbol, None)
+      case (_, Some(elementQName)) =>
+        val elem = xsdgenerator.elements(splitTypeName(elementQName))
+        xsdgenerator.buildArg(elem, selector, None, false)
+      case _  => sys.error("part does not have either type or element: " + part.toString)
+    }
 
   def paramMessage(input: XParamType): XMessageType = context.messages(splitTypeName(input.message))
 
@@ -594,6 +604,7 @@ trait {interfaceTypeName} {{
     {addressString}
 
     trait {name} extends {interfaceTypeFQN} {{
+      import scalaxb.ElemName._
       {bindingOps.mkString(NL + "      ")}
     }}
   }}
@@ -642,6 +653,7 @@ trait {interfaceTypeName} {{
     {addressString}
 
     trait {name} extends {interfaceTypeFQN} {{
+      import scalaxb.ElemName._
       {bindingOps.mkString(NL + "      ")}
     }}
   }}

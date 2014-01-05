@@ -1,6 +1,9 @@
   [228]: https://github.com/eed3si9n/scalaxb/issues/228
+  [229]: https://github.com/eed3si9n/scalaxb/issues/229
   [@choffmeister]: https://github.com/choffmeister
+  [@barnesjd]: https://github.com/barnesjd
 
 ## bug fixes and minor enhancements
 
 - Fixes "mixed" attribute not being inherited when extending a complex type. [#228][228] reported by [@choffmeister][@choffmeister]
+- Fixes hanldling of nillable elements appearing in SOAP. [#229] reported by [@barnesjd][@barnesjd]

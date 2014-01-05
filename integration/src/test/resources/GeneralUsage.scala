@@ -58,6 +58,7 @@ object GeneralUsage {
     testCrossNamespaceExtension
     testInnerSimpleType
     testAbstractExtension
+    testMixedAbtractExtension
     testLiteralBoolean
     true
   }
@@ -184,7 +185,7 @@ JDREVGRw==</base64Binary>
 
   def testCaseOnly {
     println("testCaseOnly")
-    println(WholeValue)
+    // println(WholeValue)
   }
   
   def testList {
@@ -740,6 +741,24 @@ JDREVGRw==</base64Binary>
     val document = scalaxb.toXML[BaseEvent](event, Some("http://www.example.com/general"), Some("event"), subject.scope)
     println(document)
     check(fromXML[BaseEvent](document))
+  }
+
+  // #228
+  def testMixedAbtractExtension {
+    println("testMixedAbtractExtension")
+    val subject = <gen:loopCharacteristics xmlns:gen="http://www.example.com/general"
+                          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                    <gen:loopCardinality>10</gen:loopCardinality>
+                  </gen:loopCharacteristics>
+    val characteristics = scalaxb.fromXML[MixedExtensionTestB](subject)
+    def check(obj: MixedExtensionTestB) = obj match {
+      case MixedExtensionTestB(_, Some(x), _) if x.toString contains "10" =>
+      case _ => sys.error("match failed: " + obj.toString)
+    }
+    check(characteristics)
+    val document = scalaxb.toXML[MixedExtensionTestB](characteristics, Some("http://www.example.com/general"), Some("loopCharacteristics"), subject.scope)
+    println(document)
+    check(fromXML[MixedExtensionTestB](document))
   }
 
   def testLiteralBoolean {

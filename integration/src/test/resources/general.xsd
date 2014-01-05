@@ -427,11 +427,13 @@
     </xs:restriction>
   </xs:simpleType>
 
+  <!--
   <xs:simpleType name="CaseOnlyTest">
     <xs:restriction base="xs:NMTOKEN">
       <xs:enumeration value="Whole"/>
     </xs:restriction>
   </xs:simpleType>
+  -->
 
   <xs:complexType name="ComplexListOfBuiltInType">
     <xs:simpleContent>
@@ -581,6 +583,36 @@
       </xs:extension>
     </xs:simpleContent>
   </xs:complexType>
+
+  <!-- #228 -->
+  <xs:complexType name="BaseElementWithMixedContent" abstract="true" mixed="true">
+    <xs:sequence>
+      <xs:element name="documentation" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+    <xs:anyAttribute namespace="##other" processContents="lax"/>
+  </xs:complexType>
+
+  <xs:complexType name="LoopCharacteristics" abstract="true">
+    <xs:complexContent>
+      <xs:extension base="gen:BaseElementWithMixedContent"/>
+    </xs:complexContent>
+  </xs:complexType>  
+
+  <xs:complexType name="MixedExtensionTestA">
+    <xs:complexContent>
+      <xs:extension base="gen:BaseElementWithMixedContent"/>
+    </xs:complexContent>
+  </xs:complexType>
+  
+  <xsd:complexType name="MixedExtensionTestB">
+    <xs:complexContent>
+      <xs:extension base="gen:LoopCharacteristics">
+        <xs:sequence>
+          <xs:element name="loopCardinality" type="gen:MixedExtensionTestA" minOccurs="0" maxOccurs="1"/>
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xsd:complexType>
 
   <xs:complexType name="NillableChoiceGroupTest">
     <xs:sequence>

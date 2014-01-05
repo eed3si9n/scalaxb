@@ -36,8 +36,8 @@ val scalaxbPlugin = (project in file("sbt-scalaxb")).
   settings(
     sbtPlugin := true,
     name := "sbt-scalaxb",
-    description := """sbt plugin to run scalaxb""",
-    sbtVersion in Global := "0.12.4",
-    scalaVersion in Global := "2.9.2" 
+    // sbtVersion in Global := "0.12.4",
+    // scalaVersion in Global := "2.9.2",
+    description := """sbt plugin to run scalaxb"""
   ).
   dependsOn(app)

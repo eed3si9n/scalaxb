@@ -3,6 +3,7 @@ package sbtscalaxb
 import sbt._
 import scalaxb.{compiler => sc}
 import scalaxb.compiler.{Config => ScConfig}
+import scalaxb.BuildInfo
 
 object Plugin extends sbt.Plugin {
   import Keys._
@@ -54,13 +55,13 @@ object Plugin extends sbt.Plugin {
           module.processFiles(sources, config.copy(outdir = outDir))
         } getOrElse {Nil}
       def cachedCompile =
-        inputChanged(cacheDir / "scalaxb-inputs") { (inChanged, inputs: Seq[File] :+: FilesInfo[ModifiedFileInfo] :+: HNil) =>
+        inputChanged(cacheDir / "scalaxb-inputs") { (inChanged, inputs: Seq[File] :+: FilesInfo[ModifiedFileInfo] :+: String :+: HNil) =>
           outputChanged(cacheDir / "scalaxb-output") { (outChanged, outputs: FilesInfo[PlainFileInfo]) =>
             if (inChanged || outChanged) compile
             else outputs.files.toSeq map {_.file}
           }
         }
-      val inputs = sources :+: lastModified(sources.toSet) :+: HNil
+      def inputs = sources :+: lastModified(sources.toSet) :+: BuildInfo.version :+: HNil
       cachedCompile(inputs)(() => exists((outDir ** "*.scala").get.toSet))
     }
   }

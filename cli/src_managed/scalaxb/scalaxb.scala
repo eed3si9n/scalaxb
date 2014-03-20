@@ -763,6 +763,10 @@ object XMLCalendar {
   def unapply(value: XMLGregorianCalendar): Option[String] = Some(value.toXMLFormat)
 }
 
+object DataTypeFactory extends ThreadLocal[javax.xml.datatype.DatatypeFactory] {
+  override def initialValue() = javax.xml.datatype.DatatypeFactory.newInstance()
+}
+
 object Helper {
   val XML_SCHEMA_URI = "http://www.w3.org/2001/XMLSchema"
   val XSI_URL = "http://www.w3.org/2001/XMLSchema-instance"
@@ -773,17 +777,14 @@ object Helper {
       "%s:%s" format (_, value.getLocalPart)} getOrElse {value.getLocalPart}
 
   def toCalendar(value: String): XMLGregorianCalendar = {
-    import javax.xml.datatype._
-    val typeFactory = javax.xml.datatype.DatatypeFactory.newInstance()
-    typeFactory.newXMLGregorianCalendar(value)
+    DataTypeFactory.get().newXMLGregorianCalendar(value)
   }
 
   def toCalendar(value: java.util.GregorianCalendar): XMLGregorianCalendar = {
     import javax.xml.datatype._
     import java.util.{GregorianCalendar, Calendar => JCalendar}
 
-    val typeFactory = javax.xml.datatype.DatatypeFactory.newInstance()
-    val xmlGregorian = typeFactory.newXMLGregorianCalendar()
+    val xmlGregorian = DataTypeFactory.get().newXMLGregorianCalendar()
     if (value.getTimeZone != null) {
       xmlGregorian.setTimezone(value.getTimeZone.getRawOffset / 60000)
     }
@@ -800,8 +801,7 @@ object Helper {
   }
 
   def toDuration(value: String) = {
-    val typeFactory = javax.xml.datatype.DatatypeFactory.newInstance()
-    typeFactory.newDuration(value)
+    DataTypeFactory.get().newDuration(value)
   }
 
   def toURI(value: String) =

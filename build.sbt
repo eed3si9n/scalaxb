@@ -18,6 +18,7 @@ val app = (project in file("cli")).
   settings(codegenSettings: _*).
   settings(
     name := "scalaxb",
+    resolvers <+= sbtResolver,
     libraryDependencies ++= appDependencies
   )
 

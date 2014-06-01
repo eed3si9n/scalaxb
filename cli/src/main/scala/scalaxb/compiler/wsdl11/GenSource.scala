@@ -377,7 +377,7 @@ trait GenSource {
       val fromXmls = (parts map { p =>
         val v =
           if (b.literal && p.element.isDefined) "(body.headOption getOrElse {body})"
-          else if (b.literal) """scala.xml.Elem("", "Body", scala.xml.Null, defaultScope, body.toSeq: _*)"""
+          else if (b.literal) """scala.xml.Elem(null, "Body", scala.xml.Null, defaultScope, body.toSeq: _*)"""
           else if (!soap12) """(scalaxb.Helper.resolveSoap11Refs(body.head) \ "%s").head""" format (p.name.get)
           else """(body.head \ "%s").head""" format (p.name.get)
 

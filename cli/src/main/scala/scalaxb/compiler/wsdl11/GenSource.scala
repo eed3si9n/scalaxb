@@ -333,11 +333,13 @@ trait GenSource {
 
     lazy val args = paramMessage(input).part map { p =>
       val v =
-        if (document) {
-          if (isMultiPart(input, binding.input)) "value"
-          else entity
-        }
-        else p.name.getOrElse {"in"}
+        escapeKeyWord(
+          if (document) {
+            if (isMultiPart(input, binding.input)) "value"
+            else entity
+          }
+          else p.name.getOrElse {"in"}
+        )
       val label =
         if (b.literal && p.element.isDefined) "\"%s\"".format(toElement(p).name)
         else if (b.literal && document) """"Body""""  // """
@@ -417,7 +419,53 @@ trait GenSource {
 
   def paramMessage(input: XParamType): XMessageType = context.messages(splitTypeName(input.message))
 
-  case class ParamCache(toParamName: String, typeName: String, seqParam: Boolean) {
+  lazy val scalaKeyWords =
+      Set(
+        "abstract",
+        "case",
+        "catch",
+        "class",
+        "def",
+        "do",
+        "else",
+        "extends",
+        "false",
+        "final",
+        "finally",
+        "for",
+        "forSome",
+        "if",
+        "implicit",
+        "import",
+        "lazy",
+        "match",
+        "new",
+        "null",
+        "object",
+        "override",
+        "package",
+        "private",
+        "protected",
+        "return",
+        "sealed",
+        "super",
+        "this",
+        "throw",
+        "trait",
+        "try",
+        "true",
+        "type",
+        "val",
+        "var",
+        "while",
+        "with",
+        "yield"
+      )
+
+  def escapeKeyWord(name: String) = if(scalaKeyWords.contains(name)) s"`$name`" else name
+
+  case class ParamCache(paramName: String, typeName: String, seqParam: Boolean) {
+    def toParamName = escapeKeyWord(paramName)
     def toScalaCode: String = "%s: %s" format(toParamName, typeName)
     def toVarg: String =
       if (seqParam) toParamName + ": _*"

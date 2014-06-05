@@ -1,0 +1,10 @@
+package scalaxb
+
+trait HttpClientsAsync {
+  def httpClient: HttpClient
+
+  trait HttpClient {
+    import dispatch._
+    def request(in: String, address: java.net.URI, headers: Map[String, String]): Future[String]
+  }
+}

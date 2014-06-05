@@ -1,16 +1,16 @@
 /*
  * Copyright (c) 2010 e.e d3si9n
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -19,7 +19,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
- 
+
 package scalaxb.compiler
 
 import scalashim._
@@ -48,6 +48,7 @@ case class Config(packageNames: Map[Option[String], Option[String]] = Map(None -
   contentsSizeLimit: Int = 20,
   sequenceChunkSize: Int = 10,
   laxAny: Boolean = false,
+  async: Boolean = false,
   dispatchVersion: String = "0.10.1")
 
 object Snippet {
@@ -125,10 +126,10 @@ trait Module {
 
   private val logger = Log.forName("module")
   def verbose: Boolean = false
-  
+
   val encoding = "UTF-8"
   val newline = System.getProperty("line.separator")
-  
+
   trait Importable {
     def targetNamespace: Option[String]
     def importNamespaces: Seq[String]
@@ -155,13 +156,13 @@ trait Module {
 
   def process(file: File, packageName: String, outdir: File): List[File] =
     process(file, Config(packageNames = Map(None -> Some(packageName)), outdir = outdir) )
-  
+
   def process(file: File, config: Config): List[File] =
     processFiles(List(file), config)
-  
+
   def processFiles(files: Seq[File], config: Config): List[File] = {
     val (source, outfiles) = infoFiles(files, config)
-    outfiles map { x => 
+    outfiles map { x =>
       println("generated " + x + ".")
       logger.info("generated " + x + ".") }
     outfiles
@@ -180,7 +181,7 @@ trait Module {
     }
 
     files.foreach(file => if (!file.exists)
-      sys.error("file not found: " + file.toString))  
+      sys.error("file not found: " + file.toString))
     processReaders(files, config)
   }
 
@@ -350,7 +351,7 @@ trait Module {
         defaultNamespace = config.defaultNamespace match {
           case Some(_) => config.defaultNamespace
           case _ => cs.firstNamespace
-        }    
+        }
       )
       val protocolNodes = generateProtocol(Snippet(snippets: _*), cs.context, config2)
       try {
@@ -390,10 +391,10 @@ trait Module {
 
   // returns a seq of package name, snippet, and file name part tuple
   def generate(schema: Schema, part: String, context: Context, config: Config): Seq[(Option[String], Snippet, String)]
-    
+
   def generateProtocol(snippet: Snippet,
     context: Context, config: Config): Seq[Node]
-    
+
   def toImportable(location: URI, rawschema: RawSchema): Importable
 
   def shortenUri(uri: URI): String = {
@@ -430,7 +431,7 @@ trait Module {
   }
 
   def buildContext: Context
-  
+
   def processSchema(schema: Schema, context: Context, config: Config): Unit
 
   def processContext(context: Context, schemas: Seq[Schema], config: Config): Unit
@@ -443,13 +444,13 @@ trait Module {
 
   def parse(importable: Importable, context: Context): Schema
     = importable.toSchema(context)
-    
+
   def parse(location: URI, in: Reader): Schema
     = parse(toImportable(location, readerToRawSchema(in)), buildContext)
-    
+
   def printNodes(nodes: Seq[Node], out: PrintWriter) {
     import scala.xml._
-        
+
     def printNode(n: Node): Unit = n match {
       case Text(s)          => out.print(s)
       case EntityRef("lt")  => out.print('<')
@@ -465,7 +466,7 @@ trait Module {
       case _                => logger.error("error in Module: encountered "
         + n.getClass() + " " + n.toString)
     }
-    
+
     for (node <- nodes) { printNode(node) }
   }
 
@@ -499,7 +500,7 @@ trait Module {
         val x = elem.copy(attributes = new UnprefixedAttribute("targetNamespace", outerNamespace getOrElse "", elem.attributes),
         scope = NamespaceBinding(null, outerNamespace getOrElse "", elem.scope))
         x
-      case node => node 
+      case node => node
     }).toString))
   }
 }

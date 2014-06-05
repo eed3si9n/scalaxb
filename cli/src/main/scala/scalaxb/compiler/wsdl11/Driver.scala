@@ -65,7 +65,7 @@ class Driver extends Module { driver =>
     }
 
   override def processSchema(schema: Schema, context: Context, cnfg: Config) {}
-  
+
   def processDefinition(definition: XDefinitionsType, context: Context) {
     val ns = definition.targetNamespace map {_.toString}
 
@@ -88,6 +88,7 @@ class Driver extends Module { driver =>
     }
 
     val generator = new GenSource {
+      val config = cnfg
       val context = cntxt
       val scope = pair.scope
       val xsdgenerator = new scalaxb.compiler.xsd.GenSource(
@@ -171,7 +172,7 @@ class Driver extends Module { driver =>
 
       WsdlPair(wsdl, xsd, rawschema.scope)
     }
-    def swapTargetNamespace(outerNamespace: Option[String], n: Int): Importable =    
+    def swapTargetNamespace(outerNamespace: Option[String], n: Int): Importable =
       wsdl match {
         case Some(_) => toImportable(alocation, rawschema)
         case None    => toImportable(appendPostFix(alocation, n), replaceNamespace(rawschema, targetNamespace, outerNamespace))
@@ -180,24 +181,50 @@ class Driver extends Module { driver =>
 
   val VersionPattern = """(\d+)\.(\d+)\.(\d+)""".r
   def generateRuntimeFiles[To](cntxt: Context, config: Config)(implicit evTo: CanBeWriter[To]): List[To] =
-    List(generateFromResource[To](Some("scalaxb"), "scalaxb.scala", "/scalaxb.scala.template"),
-      generateFromResource[To](Some("scalaxb"), "httpclients.scala", "/httpclients.scala.template")) ++
-    List(config.dispatchVersion match {
-      case VersionPattern(x, y, z) if (x.toInt == 0) && (y.toInt < 10) =>
+    List(
+      generateFromResource[To](Some("scalaxb"), "scalaxb.scala",
+        "/scalaxb.scala.template"),
+      (if (config.async)
+        generateFromResource[To](Some("scalaxb"), "httpclients_async.scala",
+          "/httpclients_async.scala.template")
+      else
+        generateFromResource[To](Some("scalaxb"), "httpclients.scala",
+          "/httpclients.scala.template"))) ++
+    List((config.dispatchVersion, config.async) match {
+      case (VersionPattern(x, y, z), false) if (x.toInt == 0) && (y.toInt < 10) =>
         generateFromResource[To](Some("scalaxb"), "httpclients_dispatch.scala",
           "/httpclients_dispatch.scala.template")
-      case _  =>
+      case (VersionPattern(x, y, z), true) if (x.toInt == 0) && (y.toInt < 10) =>
+        generateFromResource[To](Some("scalaxb"), "httpclients_dispatch_async.scala",
+          "/httpclients_dispatch_async.scala.template")
+      case (_, false)  =>
         generateFromResource[To](Some("scalaxb"), "httpclients_dispatch.scala",
           "/httpclients_dispatch0100.scala.template")
+      case (_, true)  =>
+        generateFromResource[To](Some("scalaxb"), "httpclients_dispatch_async.scala",
+           "/httpclients_dispatch0100_async.scala.template")
     }) ++
-    (if (cntxt.soap11) List(generateFromResource[To](Some("scalaxb"), "soap11.scala", "/soap11.scala.template"),
+    (if (cntxt.soap11) List(
+      (if (config.async)
+        generateFromResource[To](Some("scalaxb"), "soap11_async.scala",
+          "/soap11_async.scala.template")
+      else
+        generateFromResource[To](Some("scalaxb"), "soap11.scala",
+          "/soap11.scala.template")),
       generateFromResource[To](Some("soapenvelope11"), "soapenvelope11.scala",
         "/soapenvelope11.scala.template"),
       generateFromResource[To](Some("soapenvelope11"), "soapenvelope11_xmlprotocol.scala",
         "/soapenvelope11_xmlprotocol.scala.template"))
     else Nil) ++
-    (if (cntxt.soap12) List(generateFromResource[To](Some("scalaxb"), "soap12.scala", "/soap12.scala.template"),
-      generateFromResource[To](Some("soapenvelope12"), "soapenvelope12.scala", "/soapenvelope12.scala.template"),
+    (if (cntxt.soap12) List(
+      (if (config.async)
+        generateFromResource[To](Some("scalaxb"), "soap12_async.scala",
+          "/soap12_async.scala.template")
+      else
+        generateFromResource[To](Some("scalaxb"), "soap12.scala",
+          "/soap12.scala.template")),
+      generateFromResource[To](Some("soapenvelope12"), "soapenvelope12.scala",
+        "/soapenvelope12.scala.template"),
       generateFromResource[To](Some("soapenvelope12"), "soapenvelope12_xmlprotocol.scala",
         "/soapenvelope12_xmlprotocol.scala.template"))
     else Nil)

@@ -4,7 +4,6 @@ trait HttpClients {
   def httpClient: HttpClient
 
   trait HttpClient {
-    import dispatch._
-    def request(in: String, address: java.net.URI, headers: Map[String, String]): Future[String]
+    def request(in: String, address: java.net.URI, headers: Map[String, String]): String
   }
 }

@@ -33,6 +33,7 @@ object Plugin extends sbt.Plugin {
     lazy val laxAny           = SettingKey[Boolean]("scalaxb-lax-any")
     lazy val combinedPackageNames = SettingKey[Map[Option[String], Option[String]]]("scalaxb-combined-package-names")
     lazy val dispatchVersion  = SettingKey[String]("scalaxb-dispatch-version")
+    lazy val async            = SettingKey[Boolean]("scalaxb-async")
   }
 
   object ScalaxbCompile {
@@ -99,6 +100,7 @@ object Plugin extends sbt.Plugin {
     protocolPackageName in scalaxb := None,
     laxAny in scalaxb := false,
     dispatchVersion in scalaxb := "0.10.1",
+    async in scalaxb := false,
     combinedPackageNames in scalaxb <<= (packageName in scalaxb, packageNames in scalaxb) { (x, xs) =>
       (xs map { case (k, v) => ((Some(k.toString): Option[String]), Some(v)) }) updated (None, Some(x)) },
 
@@ -117,7 +119,7 @@ object Plugin extends sbt.Plugin {
         paramPrefix = ppre,
         attributePrefix = apre,
         outdir = new File("."),
-        prependFamilyName = pf, 
+        prependFamilyName = pf,
         wrappedComplexTypes = w.toList) },
     scalaxbConfig2 in scalaxb <<= (contentsSizeLimit in scalaxb,
         generateRuntime in scalaxb,
@@ -125,7 +127,8 @@ object Plugin extends sbt.Plugin {
         protocolFileName in scalaxb,
         protocolPackageName in scalaxb,
         laxAny in scalaxb,
-        dispatchVersion in scalaxb) { (csl, rt, cs, pfn, ppn, la, dv) =>
+        dispatchVersion in scalaxb,
+        async in scalaxb) { (csl, rt, cs, pfn, ppn, la, dv, a) =>
       Config2(seperateProtocol = true,
         protocolFileName = pfn,
         protocolPackageName = ppn,
@@ -134,7 +137,8 @@ object Plugin extends sbt.Plugin {
         contentsSizeLimit = csl,
         sequenceChunkSize = cs,
         laxAny = la,
-        dispatchVersion = dv) },
+        dispatchVersion = dv,
+        async = a) },
 
     scalaxbConfig in scalaxb <<= (scalaxbConfig1 in scalaxb, scalaxbConfig2 in scalaxb) { (c1, c2) =>
       ScConfig(packageNames = c1.packageNames,
@@ -150,7 +154,8 @@ object Plugin extends sbt.Plugin {
         protocolFileName = c2.protocolFileName,
         protocolPackageName = c2.protocolPackageName,
         laxAny = c2.laxAny,
-        dispatchVersion = c2.dispatchVersion) },
+        dispatchVersion = c2.dispatchVersion,
+        async = c2.async) },
 
     logLevel in scalaxb <<= logLevel?? Level.Info
   )
@@ -174,4 +179,5 @@ case class Config2(seperateProtocol: Boolean,
   contentsSizeLimit: Int,
   sequenceChunkSize: Int,
   laxAny: Boolean,
-  dispatchVersion: String) {}
+  dispatchVersion: String,
+  async: Boolean) {}

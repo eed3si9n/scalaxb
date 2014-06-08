@@ -115,6 +115,19 @@
     </xs:sequence>
   </xs:complexType>
 
+  <xs:complexType name="EmptyRepTest">
+    <xs:choice>
+      <xs:element maxOccurs="unbounded" name="p" type="xs:string" />
+      <xs:sequence>
+        <xs:choice maxOccurs="unbounded">
+          <xs:element name="person" type="xs:string" />
+          <xs:element name="persongrp" type="xs:string" />
+        </xs:choice>
+        <xs:element minOccurs="0" name="particlinks" type="xs:string" />
+      </xs:sequence>
+    </xs:choice>
+  </xs:complexType>
+
   <xs:complexType name="SingularSimpleTypeTest">
     <xs:sequence>      
       <xs:element name="number1" type="xs:unsignedInt"/>

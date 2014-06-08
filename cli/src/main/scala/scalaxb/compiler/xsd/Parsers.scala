@@ -287,7 +287,7 @@ trait Parsers extends Args with Params {
       occurrence)
 
   def buildParserString(base: String, occurrence: Occurrence) =
-    if (occurrence.maxOccurs > 1) "rep(" + base + ")"
+    if (occurrence.maxOccurs > 1) "safeRep(" + base + ")"
     else if (occurrence.minOccurs == 0) "opt(" + base + ")"
     else "(" + base + ")"
     

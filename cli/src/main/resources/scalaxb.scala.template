@@ -611,6 +611,8 @@ object ElemName {
 }
 
 trait AnyElemNameParser extends scala.util.parsing.combinator.Parsers {
+  import scala.collection.mutable.ListBuffer
+  import scala.annotation.tailrec
   type Elem = ElemName
 
   // we need this so treat ElemName as NodeSeq for fromXML etc.
@@ -624,6 +626,36 @@ trait AnyElemNameParser extends scala.util.parsing.combinator.Parsers {
 
   def text: Parser[ElemName] =
     accept("text", { case x: ElemName if x.name == "" => x })
+
+  def safeRep[T](p: => Parser[T]): Parser[List[T]] = safeRep1(p) | success(List())
+
+  def safeRep1[T](first: => Parser[T], p0: => Parser[T]): Parser[List[T]] = Parser { in =>
+    lazy val p = p0 // lazy argument
+    val elems = new ListBuffer[T]
+
+    def continue(in: Input): ParseResult[List[T]] = {
+      val p0 = p    // avoid repeatedly re-evaluating by-name parser
+      @tailrec def applyp(in0: Input): ParseResult[List[T]] = p0(in0) match {
+        case Success(x, rest) =>
+          if (!(in0.pos < rest.pos) || in0.atEnd) Success(elems.toList, in0)
+          else {
+            elems += x
+            applyp(rest)
+          }
+        case e @ Error(_, _)  => e  // still have to propagate error
+        case _                => Success(elems.toList, in0)
+      }
+      applyp(in)
+    }
+    first(in) match {
+      case Success(x, rest) =>
+        elems += x
+        continue(rest)
+      case ns: NoSuccess    => ns
+    }
+  }
+
+  def safeRep1[T](p: => Parser[T]): Parser[List[T]] = safeRep1(p, p)
 }
 
 trait CanWriteChildNodes[A] extends CanWriteXML[A] {

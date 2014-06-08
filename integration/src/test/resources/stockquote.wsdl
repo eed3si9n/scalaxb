@@ -53,6 +53,12 @@
       <wsdl:input message="tns:GetQuoteSoapIn" />
       <wsdl:output message="tns:GetQuoteSoapOut" />
     </wsdl:operation>
+
+    <wsdl:operation name="New">
+      <wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Get Stock quote for a company Symbol</wsdl:documentation>
+      <wsdl:input message="tns:GetQuoteSoapIn" />
+      <wsdl:output message="tns:GetQuoteSoapOut" />
+    </wsdl:operation>
   </wsdl:portType>
   <wsdl:portType name="StockQuoteHttpGet">
     <wsdl:operation name="GetQuote">
@@ -83,6 +89,16 @@
   <wsdl:binding name="StockQuoteSoap12" type="tns:StockQuoteSoap">
     <soap12:binding transport="http://schemas.xmlsoap.org/soap/http" />
     <wsdl:operation name="GetQuote">
+      <soap12:operation soapAction="http://www.webserviceX.NET/GetQuote" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+
+    <wsdl:operation name="New">
       <soap12:operation soapAction="http://www.webserviceX.NET/GetQuote" style="document" />
       <wsdl:input>
         <soap12:body use="literal" />

@@ -26,7 +26,7 @@ trait GenSource {
   import scalashim._
   import wsdl11._
   import scalaxb.{DataRecord}
-  import scalaxb.compiler.{Config, Snippet, ReferenceNotFound, Module, Log}
+  import scalaxb.compiler.{Config, Snippet, ReferenceNotFound, Module, Log, ScalaNames}
   import Module.{NL, indent, camelCase}
   import scala.xml.Node
   import scalaxb.compiler.xsd.{ReferenceTypeSymbol, SimpleTypeDecl, ComplexTypeDecl, BuiltInSimpleTypeSymbol,
@@ -46,6 +46,7 @@ trait GenSource {
   def xsdgenerator: scalaxb.compiler.xsd.GenSource
   lazy val targetNamespace: Option[String] = xsdgenerator.schema.targetNamespace
   lazy val pkg = xsdgenerator.packageName(targetNamespace, xsdgenerator.context)
+  lazy val scalaNames: ScalaNames = new ScalaNames {} 
 
   def generate(definition: XDefinitionsType, bindings: Seq[XBindingType]): Snippet = {
     logger.debug("generate")
@@ -92,7 +93,7 @@ trait GenSource {
       }
       else buildRPCStyleArgs(input) map {_.toScalaCode} mkString(", ")
 
-    val name = camelCase(op.name)
+    val name = escapeKeyWord(camelCase(op.name))
     logger.debug("makeOperation: " + name)
 
     val retval = (op.xoperationtypeoption, config.async) match {
@@ -479,50 +480,7 @@ trait GenSource {
 
   def paramMessage(input: XParamType): XMessageType = context.messages(splitTypeName(input.message))
 
-  lazy val scalaKeyWords =
-      Set(
-        "abstract",
-        "case",
-        "catch",
-        "class",
-        "def",
-        "do",
-        "else",
-        "extends",
-        "false",
-        "final",
-        "finally",
-        "for",
-        "forSome",
-        "if",
-        "implicit",
-        "import",
-        "lazy",
-        "match",
-        "new",
-        "null",
-        "object",
-        "override",
-        "package",
-        "private",
-        "protected",
-        "return",
-        "sealed",
-        "super",
-        "this",
-        "throw",
-        "trait",
-        "try",
-        "true",
-        "type",
-        "val",
-        "var",
-        "while",
-        "with",
-        "yield"
-      )
-
-  def escapeKeyWord(name: String) = if(scalaKeyWords.contains(name)) s"`$name`" else name
+  def escapeKeyWord(name: String) = if(scalaNames.isKeyword(name)) s"`$name`" else name
 
   case class ParamCache(paramName: String, typeName: String, seqParam: Boolean) {
     def toParamName = escapeKeyWord(paramName)

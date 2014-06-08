@@ -106,7 +106,7 @@ object Arguments {
         c.copy(generateRuntime = false) }
       opt[Unit]("lax-any") text("relaxes namespace constraints of xs:any") action { (_, c) =>
         c.copy(laxAny = true) }
-      opt[String]("dispatch-version") valueName("<version>") text("version of Dispatch (default: 0.9.5)") action { (x, c) =>
+      opt[String]("dispatch-version") valueName("<version>") text("version of Dispatch (default: " + scalaxb.BuildInfo.defaultDispatchVersion + ")") action { (x, c) =>
         c.copy(dispatchVersion = x) }
       opt[Unit]('v', "verbose") text("be extra verbose") action { (_, c) =>
         verbose = true

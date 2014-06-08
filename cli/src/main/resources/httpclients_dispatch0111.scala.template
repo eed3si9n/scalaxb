@@ -1,0 +1,17 @@
+package scalaxb
+
+trait DispatchHttpClients extends HttpClients {
+  lazy val httpClient = new DispatchHttpClient {}
+
+  trait DispatchHttpClient extends HttpClient {
+    import dispatch._, Defaults._
+    val http = new Http()
+
+    def request(in: String, address: java.net.URI, headers0: Map[String, String]): String = {
+      val headers = headers0 filterNot { case(k, v) => k == "Content-Type" }
+      val req = url(address.toString).setContentType("text/xml, "UTF-8") << in <:< headers
+      val s = http(req > as.String)
+      s()
+    }
+  }
+}

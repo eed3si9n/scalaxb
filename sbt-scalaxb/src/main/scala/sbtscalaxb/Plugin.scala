@@ -99,7 +99,7 @@ object Plugin extends sbt.Plugin {
     protocolFileName in scalaxb := sc.Defaults.protocolFileName,
     protocolPackageName in scalaxb := None,
     laxAny in scalaxb := false,
-    dispatchVersion in scalaxb := "0.10.1",
+    dispatchVersion in scalaxb := "0.11.1",
     async in scalaxb := false,
     combinedPackageNames in scalaxb <<= (packageName in scalaxb, packageNames in scalaxb) { (x, xs) =>
       (xs map { case (k, v) => ((Some(k.toString): Option[String]), Some(v)) }) updated (None, Some(x)) },

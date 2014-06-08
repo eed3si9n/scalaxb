@@ -31,14 +31,15 @@ trait SoapClientsAsync { this: HttpClientsAsync =>
       val contentType = "application/soap+xml; charset=utf-8" +
         (action map {"""; action="%s"""" format(_)} getOrElse {""})
       val headers = Map[String, String]("Content-Type" -> contentType)
-      val s = httpClient.request(r map {_.toString} getOrElse {""}, address, headers)
-
-      try {
-        val response = s.map(z => scala.xml.XML.loadString(z))
-        response.map(r => scalaxb.fromXML[Envelope](r))
-      }
-      catch {
-        case e: Exception => sys.error(e.toString + ": " + s)
+      val ftr: Future[String] = httpClient.request(r map {_.toString} getOrElse {""}, address, headers)
+      ftr map { s: String =>
+        try {
+          val response = scala.xml.XML.loadString(s)
+          scalaxb.fromXML[Envelope](response)
+        }
+        catch {
+          case e: Exception => sys.error(e.toString + ": " + s)
+        }
       }
     }
 

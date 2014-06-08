@@ -2,7 +2,7 @@ import Dependencies._
 import Common._
 
 val commonSettings = Seq(
-    version := "1.1.3-ASYNC",
+    version := "1.2.0-SNAPSHOT",
     organization := "org.scalaxb",
     homepage := Some(url("http://scalaxb.org")),
     licenses := Seq("MIT License" -> url("https://github.com/eed3si9n/scalaxb/blob/master/LICENSE")),

@@ -37,6 +37,7 @@ object GeneralUsage {
     testList
     testSingularComplexType
     testChoiceComplexType
+    testEmptyRep
     testAny
     testAll
     testLongAll
@@ -276,6 +277,19 @@ JDREVGRw==</base64Binary>
     val document = toXML[ChoiceComplexTypeTest](obj, "foo", defaultScope)
     check(fromXML[ChoiceComplexTypeTest](document))
     println(document)
+  }
+
+  def testEmptyRep {
+    println("testEmptyRepTest")
+    val subject = <foo xmlns="http://www.example.com/general"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    </foo>
+    val obj = fromXML[EmptyRepTest](subject)
+    def check(obj: Any) = obj match {
+        case EmptyRepTest(_) =>
+        case _ => sys.error("match failed: " + obj.toString)
+      }
+    check(obj)
   }
 
   /*

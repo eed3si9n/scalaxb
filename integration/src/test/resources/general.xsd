@@ -417,6 +417,20 @@
     </xs:restriction>
   </xs:simpleType>
 
+  <!-- #247 -->
+  <xs:element name="xCondUso">
+    <xs:annotation>
+        <xs:documentation>Texto Fixo com as condições de uso da Carta de Correção</xs:documentation>
+    </xs:annotation>
+    <xs:simpleType>
+        <xs:restriction base="xs:string">
+            <xs:whiteSpace value="preserve"/>
+            <xs:enumeration value="A Carta de Correção é disciplinada pelo § 1º-A do art."/>
+            <xs:enumeration value="A Carta de Correcao e disciplinada pelo paragrafo 1o-A do art."/>
+        </xs:restriction>
+  </xs:simpleType>
+  </xs:element>
+
   <xs:simpleType name="ListOfMilk">
     <xs:list itemType="gen:MilkType"/>
   </xs:simpleType>

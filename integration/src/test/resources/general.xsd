@@ -376,6 +376,13 @@
     </xs:complexContent>
   </xs:complexType>
 
+  <!-- #239 -->
+  <xs:complexType name="KeywordTest">
+    <xs:sequence>
+      <xs:element name="wait" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+
   <!-- #221 -->
   <xs:complexType name="FieldOption">
     <xs:simpleContent>

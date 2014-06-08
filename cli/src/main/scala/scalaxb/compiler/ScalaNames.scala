@@ -105,6 +105,15 @@ trait ScalaNames {
     | "TreeSet"
     | "Unit"
     | "WeakHashMap"
+    | "clone"
+    | "equals"
+    | "finalize"
+    | "getClass"
+    | "hashCode"
+    | "notify"
+    | "notifyAll"
+    | "toString"
+    | "wait"
      => true
     case _ => false
   }

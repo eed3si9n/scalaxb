@@ -531,7 +531,7 @@ trait ContextProcessor extends ScalaNames with PackageName {
       else p + name.capitalize
     } getOrElse { name }
     
-    if (isKeyword(base)) identifier(base + "Value")
+    if (isKeyword(base) || isCommonlyUsedWord(base)) identifier(base + "Value")
     else if (attribute && isSpecialAttributeWord(base)) identifier(base + "Attribute")
     else if (startsWithNumber(base)) identifier("number" + base)
     else identifier(base)

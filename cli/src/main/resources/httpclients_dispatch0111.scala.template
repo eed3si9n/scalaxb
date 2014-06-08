@@ -9,7 +9,7 @@ trait DispatchHttpClients extends HttpClients {
 
     def request(in: String, address: java.net.URI, headers0: Map[String, String]): String = {
       val headers = headers0 filterNot { case(k, v) => k == "Content-Type" }
-      val req = url(address.toString).setContentType("text/xml, "UTF-8") << in <:< headers
+      val req = url(address.toString).setContentType("text/xml", "utf-8") << in <:< headers
       val s = http(req > as.String)
       s()
     }

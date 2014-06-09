@@ -46,8 +46,13 @@ trait GenSource {
   def xsdgenerator: scalaxb.compiler.xsd.GenSource
   lazy val targetNamespace: Option[String] = xsdgenerator.schema.targetNamespace
   lazy val pkg = xsdgenerator.packageName(targetNamespace, xsdgenerator.context)
-  lazy val scalaNames: ScalaNames = new ScalaNames {} 
+  lazy val scalaNames: ScalaNames = new ScalaNames {}
 
+  trait SoapBindingStyle {}
+  case object DocumentStyle extends SoapBindingStyle
+  case object RpcStyle extends SoapBindingStyle
+
+  // this is the top-level entry point for wsdl code generation.
   def generate(definition: XDefinitionsType, bindings: Seq[XBindingType]): Snippet = {
     logger.debug("generate")
     Snippet(
@@ -72,6 +77,143 @@ trait GenSource {
       }
     }
 
+  // called by generate.
+  def makeSoap11Binding(binding: XBindingType): Snippet = {
+    val name = makeBindingName(binding)
+    logger.debug("makeSoap11Binding: " + name)
+
+    val interfaceType = context.interfaces(splitTypeName(binding.typeValue))
+    val interfaceTypeName = interfaceType.name.capitalize
+    val interfaceTypeFQN = xsdgenerator.buildFullyQualifiedNameFromPackage(pkg, interfaceTypeName)
+    val port = findPort(binding).headOption
+    val address = port flatMap {_.any flatMap {
+      case DataRecord(_, _, node: Node) if node.scope.getURI((node.prefix)) == WSDL_SOAP11 =>
+        Some((node \ "@location").text)
+      case _ => None
+    }}
+
+    val soapBindingStyle = parseSoapBindingStyle(binding.any.headOption, DocumentStyle)
+    val addressString = address map {"""def baseAddress = new java.net.URI("%s")""".format(_)} getOrElse {""}
+
+    val operationOutputs = binding.operation flatMap { makeOperationOutput(_, interfaceType, soapBindingStyle, false) }
+    val operations = binding.operation map { opBinding => makeOperation(opBinding, interfaceType, soapBindingStyle, false) }
+    val bindingOps = binding.operation map { opBinding => makeSoapOpBinding(opBinding, interfaceType, soapBindingStyle, false) }
+    val importFutureString = if (config.async) "import scala.concurrent.Future" + NL else ""
+    val clientTraitName = if (config.async) "Soap11ClientsAsync" else "Soap11Clients"
+
+    val interfaceTrait = <source>
+{importFutureString}
+
+trait {interfaceTypeName} {{
+  {operations.mkString(NL + "  ")}
+}}
+
+{operationOutputs.mkString(NL + NL)}
+</source>
+
+    val bindingTrait = <source>
+  trait {name}s {{ this: scalaxb.{clientTraitName} =>
+    lazy val targetNamespace: Option[String] = { xsdgenerator.quote(targetNamespace) }
+    lazy val service: {interfaceTypeFQN} = new {name} {{}}
+    {addressString}
+
+    trait {name} extends {interfaceTypeFQN} {{
+      import scalaxb.ElemName._
+      {bindingOps.mkString(NL + "      ")}
+    }}
+  }}
+</source>
+    Snippet(interfaceTrait, <source/>, bindingTrait, <source/>)
+  }
+
+  // http://www.w3.org/TR/2007/REC-wsdl20-adjuncts-20070626/#soap-binding
+  // http://www.w3.org/TR/2007/REC-soap12-part2-20070427/
+  def makeSoap12Binding(binding: XBindingType): Snippet = {
+    val name = makeBindingName(binding)
+    val interfaceType = context.interfaces(splitTypeName(binding.typeValue))
+    val interfaceTypeName = interfaceType.name.capitalize
+    val interfaceTypeFQN = xsdgenerator.buildFullyQualifiedNameFromPackage(pkg, interfaceTypeName)
+    val port = findPort(binding).headOption
+    val address = port flatMap {_.any flatMap {
+      case DataRecord(_, _, node: Node) if node.scope.getURI((node.prefix)) == WSDL_SOAP12 =>
+        Some((node \ "@location").text)
+      case _ => None
+    }}
+
+    val soapBindingStyle = parseSoapBindingStyle(binding.any.headOption, DocumentStyle)
+    val addressString = address map {"""def baseAddress = new java.net.URI("%s")""".format(_)} getOrElse {""}
+
+    val operationOutputs = binding.operation flatMap { makeOperationOutput(_, interfaceType, soapBindingStyle, true) }
+    val operations = binding.operation map { opBinding => makeOperation(opBinding, interfaceType, soapBindingStyle, true) }
+    val bindingOps = binding.operation map { opBinding => makeSoapOpBinding(opBinding, interfaceType, soapBindingStyle, true) }
+    val importFutureString = if (config.async) "import scala.concurrent.Future" + NL else ""
+    val clientTraitName = if (config.async) "SoapClientsAsync" else "SoapClients"
+
+    val interfaceTrait = <source>
+{importFutureString}
+
+trait {interfaceTypeName} {{
+  {operations.mkString(NL + "  ")}
+}}
+
+{operationOutputs.mkString(NL + NL)}
+</source>
+
+    val bindingTrait = <source>
+  trait {name}s {{ this: scalaxb.{clientTraitName} =>
+    lazy val targetNamespace: Option[String] = { xsdgenerator.quote(targetNamespace) }
+    lazy val service: {interfaceTypeFQN} = new {name} {{}}
+    {addressString}
+
+    trait {name} extends {interfaceTypeFQN} {{
+      import scalaxb.ElemName._
+      {bindingOps.mkString(NL + "      ")}
+    }}
+  }}
+</source>
+    Snippet(interfaceTrait, <source/>, bindingTrait, <source/>)
+  }
+
+  // generate case class for op binding in case the soap header is bound.
+  def makeOperationOutput(binding: XBinding_operationType, intf: XPortTypeType,
+                          defaultSoapBindingStyle: SoapBindingStyle, soap12: Boolean): Option[String] = {
+    val op = boundOperation(binding, intf)
+    val soapBindingStyle = parseSoapBindingStyle(binding.any.headOption, defaultSoapBindingStyle)
+    val outputOpt: Option[XParamType] = operationParts(op)._2
+
+    def makeOperationOutputArgs: Seq[ParamCache] = {
+      val headers = headerBindings(binding.output)
+      val output = outputOpt.getOrElse {sys.error("expected ouput: " + op.name)} 
+      val parts = paramMessage(output).part
+      val bodyParams = parts map toParamCache
+      makeOperationWrapperParams(op, headers, bodyParams)
+    }
+
+    outputOpt flatMap { output: XParamType =>
+      isMultiPart(output, binding.output) map { _ =>
+        "case class %s(%s)" format(
+          makeOperationOutputWrapperName(op),
+          makeOperationOutputArgs map {_.toScalaCode} mkString(", ")
+        )
+      }
+    }
+  }
+
+  // return type of an operation
+  def outputTypeName(binding: XBinding_operationType, op: XOperationType,
+                     output: XParamType, soapBindingStyle: SoapBindingStyle): String =
+    if (isMultiPart(output, binding.output)) xsdgenerator.buildFullyQualifiedNameFromPackage(pkg, makeOperationOutputWrapperName(op))
+    else {
+      singleOutputType(output, soapBindingStyle) map { elem =>
+        val param = xsdgenerator.buildParam(elem)
+        param.typeName
+      } getOrElse {
+        val parts = paramMessage(output).part
+        if (parts.isEmpty) "Unit"
+        else partTypeName(parts.head)
+      }
+    }
+
   def isMultiPart(param: XParamType, bindingOption: Option[XStartWithExtensionsTypable]): Boolean =
     (paramMessage(param).part.size > 1) ||
     (!headerBindings(bindingOption).isEmpty)
@@ -81,18 +223,19 @@ trait GenSource {
 
   // generate method signature
   def makeOperation(binding: XBinding_operationType, intf: XPortTypeType,
-                    defaultDocument: Boolean, soap12: Boolean): String = {
+                    defaultSoapBindingStyle: SoapBindingStyle, soap12: Boolean): String = {
     val op = boundOperation(binding, intf)
-    val document = isDocument(binding, defaultDocument)
+    val soapBindingStyle = parseSoapBindingStyle(binding.any.headOption, defaultSoapBindingStyle)
 
     def arg(input: XParamType): String =
-      if (document) {
-        if (isEmptyPart(input, binding.input)) ""
-        else if (!isMultiPart(input, binding.input)) buildIRIStyleArgs(input) map {_.toScalaCode} mkString(", ")
-        else makeOperationInputArgs(binding, intf) map {_.toScalaCode} mkString(", ")
+      soapBindingStyle match {
+        case DocumentStyle =>
+          if (isEmptyPart(input, binding.input)) ""
+          else if (!isMultiPart(input, binding.input)) buildIRIStyleArgs(input) map {_.toScalaCode} mkString(", ")
+          else makeOperationInputArgs(binding, intf) map {_.toScalaCode} mkString(", ")
+        case RpcStyle => 
+          buildRPCStyleArgs(input) map {_.toScalaCode} mkString(", ")
       }
-      else buildRPCStyleArgs(input) map {_.toScalaCode} mkString(", ")
-
     val name = escapeKeyWord(camelCase(op.name))
     logger.debug("makeOperation: " + name)
 
@@ -102,25 +245,25 @@ trait GenSource {
 
       case (DataRecord(_, _, XRequestresponseoperationSequence(input, output, faults)), true) =>
         "def %s(%s): Future[Either[%s, %s]]".format(name, arg(input),
-          faultsToTypeName(faults, soap12), outputTypeName(binding, op, output, document))
+          faultsToTypeName(faults, soap12), outputTypeName(binding, op, output, soapBindingStyle))
 
       case (DataRecord(_, _, XRequestresponseoperationSequence(input, output, faults)), false) =>
         "def %s(%s): Either[%s, %s]".format(name, arg(input),
-          faultsToTypeName(faults, soap12), outputTypeName(binding, op, output, document))
+          faultsToTypeName(faults, soap12), outputTypeName(binding, op, output, soapBindingStyle))
 
       case (DataRecord(_, _, XSolicitresponseoperationSequence(output, input, faults)), true) =>
         "def %s(%s): Future[Either[%s, %s]]".format(name, arg(input),
-          faultsToTypeName(faults, soap12), outputTypeName(binding, op, output, document))
+          faultsToTypeName(faults, soap12), outputTypeName(binding, op, output, soapBindingStyle))
 
       case (DataRecord(_, _, XSolicitresponseoperationSequence(output, input, faults)), false) =>
         "def %s(%s): Either[%s, %s]".format(name, arg(input),
-          faultsToTypeName(faults, soap12), outputTypeName(binding, op, output, document))
+          faultsToTypeName(faults, soap12), outputTypeName(binding, op, output, soapBindingStyle))
 
       case (DataRecord(_, _, XNotificationoperationSequence(output)), true) =>
-        "def %s: Future[%s]".format(name, outputTypeName(binding, op, output, document))
+        "def %s: Future[%s]".format(name, outputTypeName(binding, op, output, soapBindingStyle))
 
       case (DataRecord(_, _, XNotificationoperationSequence(output)), false) =>
-        "def %s: %s".format(name, outputTypeName(binding, op, output, document))
+        "def %s: %s".format(name, outputTypeName(binding, op, output, soapBindingStyle))
 
       case _ => sys.error("unsupported.")
     }
@@ -145,47 +288,21 @@ trait GenSource {
     xsdgenerator.makeTypeName(op.name + "Output")
 
   def makeOperationWrapperParams(op: XOperationType, headers: Seq[HeaderBinding],
-                                 symbol: XsTypeSymbol): Seq[ParamCache] = {
-    val param = ParamCache("value", xsdgenerator.buildTypeName(symbol), false)
+                                 bodyParams: Seq[ParamCache]): Seq[ParamCache] = {
     val headerParams = headers flatMap { header =>
       val message = context.messages(splitTypeName(header.message))
       message.part find {_.name == Some(header.part)} map {toParamCache}
     }
-    param +: headerParams
+    bodyParams ++ headerParams
   }
 
   def makeOperationInputArgs(binding: XBinding_operationType, intf: XPortTypeType): Seq[ParamCache] = {
     val op = boundOperation(binding, intf)
     val headers = headerBindings(binding.input)
-    val symbol =  operationParts(op) match {
-      case (Some(input), _, _) => toTypeSymbol(input)
-      case _ => sys.error("expected input:" + op.name)
-    }
-    makeOperationWrapperParams(op, headers, symbol)
-  }
-
-  def makeOperationOutputArgs(binding: XBinding_operationType, intf: XPortTypeType): Seq[ParamCache] = {
-    val op = boundOperation(binding, intf)
-    val headers = headerBindings(binding.output)
-    val symbol =  operationParts(op) match {
-      case (_, Some(ouput), _) => toTypeSymbol(ouput)
-      case _ => sys.error("expected ouput: " + op.name)
-    }
-    makeOperationWrapperParams(op, headers, symbol)
-  }
-
-  // generate case class for op binding in case the soap header is bound.
-  def makeOperationOutput(binding: XBinding_operationType, intf: XPortTypeType): Option[String] = {
-    val op = boundOperation(binding, intf)
-    operationParts(op)._2 flatMap { output =>
-      isMultiPart(output, binding.output) map { _ =>
-        val op = boundOperation(binding, intf)
-        "case class %s(%s)" format(
-          makeOperationOutputWrapperName(op),
-          makeOperationOutputArgs(binding, intf) map {_.toScalaCode} mkString(", ")
-        )
-      }
-    }
+    val input = operationParts(op)._1.getOrElse { sys.error("expected input:" + op.name) }
+    val parts = paramMessage(input).part
+    val bodyParams = parts map toParamCache
+    makeOperationWrapperParams(op, headers, bodyParams)
   }
 
   def boundOperation(binding: XBinding_operationType, intf: XPortTypeType) =
@@ -193,16 +310,20 @@ trait GenSource {
       sys.error("operation %s was not found in %s".format(binding.name, intf.name))
     }
 
-  def isDocument(binding: XBinding_operationType, defaultDocument: Boolean) =
-    binding.any.headOption match {
-      case Some(DataRecord(_, _, node: Node)) => (node \ "@style").headOption map {
-        _.text == "document"} getOrElse {defaultDocument}
-      case _ => defaultDocument
+  def parseSoapBindingStyle(anyHeadOption: Option[scalaxb.DataRecord[Any]], defaultSoapBindingStyle: SoapBindingStyle): SoapBindingStyle =
+    anyHeadOption match {
+      case Some(DataRecord(_, _, node: Node)) =>
+        (node \ "@style").headOption match {
+          case Some(x) if x.toString == "document" => DocumentStyle
+          case Some(x) if x.toString == "rpc"      => RpcStyle
+          case _                                   => defaultSoapBindingStyle
+        }
+      case _ => defaultSoapBindingStyle
     }
 
   // generate method impl
   def makeSoapOpBinding(binding: XBinding_operationType, intf: XPortTypeType,
-                           defaultDocument: Boolean, soap12: Boolean): String = {
+                           defaultSoapBindingStyle: SoapBindingStyle, soap12: Boolean): String = {
     val op = boundOperation(binding, intf)
     logger.debug("makeSoap12OpBinding: " + op.name)
 
@@ -212,7 +333,7 @@ trait GenSource {
       case Some(DataRecord(_, _, node: Node)) => (node \ "@soapAction").headOption map {_.text}
       case _ => None
     }
-    val document = isDocument(binding, defaultDocument)
+    val soapBindingStyle = parseSoapBindingStyle(binding.any.headOption, defaultSoapBindingStyle)
     val actionString = action map {"Some(new java.net.URI(\"%s\"))".format(_)} getOrElse {"None"}
 
     def faultString(faults: Seq[XFaultType]): String = faultsToFaultParamTypeName(faults) match {
@@ -227,8 +348,8 @@ trait GenSource {
           |            %s, defaultScope, %s, %s, %s).map(_ match {
           |          case Left(x)  => sys.error(x.toString)
           |          case Right(x) => ()
-          |        })""".stripMargin.format(bodyString(op, input, binding, document),
-            headerString(op, input, binding, document), address, quotedMethod, actionString)
+          |        })""".stripMargin.format(bodyString(op, input, binding, soapBindingStyle),
+            headerString(op, input, binding, soapBindingStyle), address, quotedMethod, actionString)
 
       case (DataRecord(_, _, XOnewayoperationSequence(input)), false) =>
         // "def %s(%s): Unit".format(op.name, arg(input))
@@ -236,8 +357,8 @@ trait GenSource {
           |            %s, defaultScope, %s, %s, %s) match {
           |          case Left(x)  => sys.error(x.toString)
           |          case Right(x) => ()
-          |        }""".stripMargin.format(bodyString(op, input, binding, document),
-            headerString(op, input, binding, document), address, quotedMethod, actionString)
+          |        }""".stripMargin.format(bodyString(op, input, binding, soapBindingStyle),
+            headerString(op, input, binding, soapBindingStyle), address, quotedMethod, actionString)
 
       case (DataRecord(_, _, XRequestresponseoperationSequence(input, output, faults)), true) =>
         // "def %s(%s): Option[scalaxb.Fault[%s]]".format(op.name, arg(input), faultsToTypeName(faults))
@@ -247,9 +368,9 @@ trait GenSource {
           |          case Right((header, body)) =>
           |            Right(%s)
           |        })""".stripMargin.format(
-            bodyString(op, input, binding, document),
-            headerString(op, input, binding, document), address, quotedMethod, actionString,
-            faultString(faults), outputString(output, binding, op, document, soap12))
+            bodyString(op, input, binding, soapBindingStyle),
+            headerString(op, input, binding, soapBindingStyle), address, quotedMethod, actionString,
+            faultString(faults), outputString(output, binding, op, soapBindingStyle, soap12))
 
       case (DataRecord(_, _, XRequestresponseoperationSequence(input, output, faults)), false) =>
         // "def %s(%s): Option[scalaxb.Fault[%s]]".format(op.name, arg(input), faultsToTypeName(faults))
@@ -259,9 +380,9 @@ trait GenSource {
           |          case Right((header, body)) =>
           |            Right(%s)
           |        }""".stripMargin.format(
-            bodyString(op, input, binding, document),
-            headerString(op, input, binding, document), address, quotedMethod, actionString,
-            faultString(faults), outputString(output, binding, op, document, soap12))
+            bodyString(op, input, binding, soapBindingStyle),
+            headerString(op, input, binding, soapBindingStyle), address, quotedMethod, actionString,
+            faultString(faults), outputString(output, binding, op, soapBindingStyle, soap12))
 
       case (DataRecord(_, _, XSolicitresponseoperationSequence(output, input, faults)), true) =>
         // "def %s(%s): Either[scalaxb.Fault[Any], %s]".format(op.name, arg(input), paramTypeName)
@@ -271,9 +392,9 @@ trait GenSource {
           |          case Right((header, body)) =>
           |            Right(%s)
           |        })""".format(
-            bodyString(op, input, binding, document),
-            headerString(op, input, binding, document), address, quotedMethod, actionString,
-            faultString(faults), outputString(output, binding, op, document, soap12))
+            bodyString(op, input, binding, soapBindingStyle),
+            headerString(op, input, binding, soapBindingStyle), address, quotedMethod, actionString,
+            faultString(faults), outputString(output, binding, op, soapBindingStyle, soap12))
 
       case (DataRecord(_, _, XSolicitresponseoperationSequence(output, input, faults)), false) =>
         // "def %s(%s): Either[scalaxb.Fault[Any], %s]".format(op.name, arg(input), paramTypeName)
@@ -283,9 +404,9 @@ trait GenSource {
           |          case Right((header, body)) =>
           |            Right(%s)
           |        }""".format(
-            bodyString(op, input, binding, document),
-            headerString(op, input, binding, document), address, quotedMethod, actionString,
-            faultString(faults), outputString(output, binding, op, document, soap12))
+            bodyString(op, input, binding, soapBindingStyle),
+            headerString(op, input, binding, soapBindingStyle), address, quotedMethod, actionString,
+            faultString(faults), outputString(output, binding, op, soapBindingStyle, soap12))
 
       case (DataRecord(_, _, XNotificationoperationSequence(output)), true) =>
         // "def %s: %s".format(op.name, paramTypeName)
@@ -293,7 +414,7 @@ trait GenSource {
           |          case Left(x)  => sys.error(x.toString)
           |          case Right((header, body)) =>
           |            %s
-          |        })""".stripMargin.format(address, quotedMethod, actionString, outputString(output, binding, op, document, soap12))
+          |        })""".stripMargin.format(address, quotedMethod, actionString, outputString(output, binding, op, soapBindingStyle, soap12))
 
       case (DataRecord(_, _, XNotificationoperationSequence(output)), false) =>
         // "def %s: %s".format(op.name, paramTypeName)
@@ -301,11 +422,11 @@ trait GenSource {
           |          case Left(x)  => sys.error(x.toString)
           |          case Right((header, body)) =>
           |            %s
-          |        }""".stripMargin.format(address, quotedMethod, actionString, outputString(output, binding, op, document, soap12))
+          |        }""".stripMargin.format(address, quotedMethod, actionString, outputString(output, binding, op, soapBindingStyle, soap12))
       case _ => sys.error("unsupported.")
     }
 
-    val retval = makeOperation(binding, intf, defaultDocument, soap12) + " = " + NL +
+    val retval = makeOperation(binding, intf, defaultSoapBindingStyle, soap12) + " = " + NL +
       "        " + opImpl
     logger.debug(retval)
     retval
@@ -348,7 +469,7 @@ trait GenSource {
     }
   }
 
-  def headerString(op: XOperationType, input: XParamType, binding: XBinding_operationType, document: Boolean): String =
+  def headerString(op: XOperationType, input: XParamType, binding: XBinding_operationType, soapBindingStyle: SoapBindingStyle): String =
     headerBindings(binding.input).toList flatMap { b =>
       val message = context.messages(splitTypeName(b.message))
       message.part find {_.name == Some(b.part)} map { p =>
@@ -359,11 +480,11 @@ trait GenSource {
           else "\"%s\"".format(p.name.getOrElse {"in"})
         val namespace =
           if (b.literal && p.element.isDefined) toElement(p).namespace
-          else if (b.literal && document) None
+          else if (b.literal && (soapBindingStyle == DocumentStyle)) None
           else b.namespace
         val nsString = namespace map {"Some(\"%s\")".format(_)} getOrElse {"None"}
         val post =
-          if (b.literal && document && !p.element.isDefined) """ match {
+          if (b.literal && (soapBindingStyle == DocumentStyle) && !p.element.isDefined) """ match {
   case e: scala.xml.Elem => e.child
   case _ => sys.error("Elem not found!")
 }"""
@@ -379,78 +500,90 @@ trait GenSource {
   // http://www.w3.org/TR/wsdl#_soap:body
   // "If use is literal, then each part references a concrete schema definition using either the element or type attribute."
   // http://www.w3.org/TR/soap12-part0/#L1185
-  def bodyString(op: XOperationType, input: XParamType, binding: XBinding_operationType, document: Boolean): String = {
+  def bodyString(op: XOperationType, input: XParamType, binding: XBinding_operationType, soapBindingStyle: SoapBindingStyle): String = {
     val b = bodyBinding(binding.input)
-    lazy val entity = toTypeSymbol(input) match {
+    val parts = paramMessage(input).part
+    // called only for DocumentStyle
+    def entity(part: XPartType) = toTypeSymbol(part) match {
       case AnyType(_) => (buildIRIStyleArgs(input) map {_.toParamName}).head
       case symbol: BuiltInSimpleTypeSymbol => (buildIRIStyleArgs(input) map {_.toParamName}).head
       case ReferenceTypeSymbol(decl: SimpleTypeDecl) => (buildIRIStyleArgs(input) map {_.toParamName}).head
       case _ =>
-        "%s(%s)".format(paramTypeName(input), buildIRIStyleArgs(input) map {_.toVarg} mkString(", "))
+        "%s(%s)".format(partTypeName(parts.head), buildIRIStyleArgs(input) map {_.toVarg} mkString(", "))
     }
 
     lazy val opLabel = "\"%s\"".format(op.name)
     lazy val prefix = "targetNamespace map {defaultScope.getPrefix(_)} getOrElse {\"\"}"
 
-    lazy val args = paramMessage(input).part map { p =>
-      val v =
-        escapeKeyWord(
-          if (document) {
-            if (isMultiPart(input, binding.input)) "value"
-            else entity
-          }
-          else p.name.getOrElse {"in"}
-        )
-      val label =
-        if (b.literal && p.element.isDefined) "\"%s\"".format(toElement(p).name)
-        else if (b.literal && document) """"Body""""  // """
-        else "\"%s\"".format(p.name.getOrElse {"in"})
-      val namespace =
-        if (b.literal && p.element.isDefined) toElement(p).namespace
-        else if (b.literal && document) None
-        else b.namespace
+    lazy val args = parts map { p =>
+      val v = escapeKeyWord(soapBindingStyle match {
+        case DocumentStyle => if (isMultiPart(input, binding.input)) "value"
+                              else entity(p)
+        case RpcStyle      => p.name.getOrElse {"in"}
+      })
+
+      val (label, namespace) = (b.literal, soapBindingStyle) match {
+        // If the operation style is document there are no additional wrappers, and the message parts appear directly under the SOAP Body element.
+        case (true, DocumentStyle) =>
+          ("\"Body\"", None)
+        case (true, _) if p.element.isDefined =>
+          ("\"%s\"".format(toElement(p).name), toElement(p).namespace)
+        case _ =>
+          ("\"%s\"".format(p.name.getOrElse {"in"}), b.namespace)
+      }
+
       val nsString = namespace map {"Some(\"%s\")".format(_)} getOrElse {"None"}
-      val post =
-        if (b.literal && document && !p.element.isDefined) """ match {
+      
+      "scalaxb.toXML(%s, %s, %s, defaultScope)".format(v, nsString, label) +
+      ((b.literal, soapBindingStyle) match {
+        case (true, DocumentStyle) if !p.element.isDefined =>
+          """ match {
+      }
   case e: scala.xml.Elem => e.child
   case _ => sys.error("Elem not found!")
 }"""
-        else ""
-
-      "scalaxb.toXML(%s, %s, %s, defaultScope)%s".format(v, nsString, label, post)
+        case _ => ""
+      })
     }
     lazy val argsString =
       args.headOption map { _ => args.mkString("  ++ " + NL + "          ") } getOrElse {"Nil"}
-
-    if (document) args match {
-      case x :: xs => x
-      case _ => "Nil"
-    }
-    else """scala.xml.Elem(%s, %s, scala.xml.Null, defaultScope,
+    (soapBindingStyle, args) match {
+      case (DocumentStyle, x :: xs) => x
+      case (DocumentStyle, _)       => "Nil"
+      case _ =>
+        """scala.xml.Elem(%s, %s, scala.xml.Null, defaultScope,
           %s: _*)""".format(prefix, opLabel, argsString)
+    }
   }
 
   def outputString(output: XParamType, binding: XBinding_operationType,
-                   op: XOperationType, document: Boolean, soap12: Boolean): String = {
+                   op: XOperationType, soapBindingStyle: SoapBindingStyle, soap12: Boolean): String = {
     val parts = paramMessage(output).part
     if (parts.isEmpty) "()"
     else {
       val b = bodyBinding(binding.output)
       val multipart = isMultiPart(output, binding.output)
       val fromXmls = (parts map { p =>
-        val v =
-          if (b.literal && p.element.isDefined) "(body.headOption getOrElse {body})"
-          else if (b.literal) """scala.xml.Elem(null, "Body", scala.xml.Null, defaultScope, body.toSeq: _*)"""
-          else if (!soap12) """(scalaxb.Helper.resolveSoap11Refs(body.head) \ "%s").head""" format (p.name.get)
-          else """(body.head \ "%s").head""" format (p.name.get)
-
-        val post =
-          if (document) singleOutputType(output, document) map { elem =>
-            val param = xsdgenerator.buildParam(elem)
-            "." + param.toParamName
-          } getOrElse {""}
-          else ""
-        buildPartArg(p, v) + post
+        val v = (b.literal, soapBindingStyle) match {
+          // If the operation style is document there are no additional wrappers, and the message parts appear directly under the SOAP Body element.
+          case (true, DocumentStyle) =>
+            """scala.xml.Elem(null, "Body", scala.xml.Null, defaultScope, body.toSeq: _*)"""
+          case (true, RpcStyle) if p.element.isDefined =>
+            "(body.headOption getOrElse {body})"
+          case (true, RpcStyle) =>
+            """(body.head \ "%s").head""" format (p.name.get)
+          case (false, _) if !soap12 =>
+            """(scalaxb.Helper.resolveSoap11Refs(body.head) \ "%s").head""" format (p.name.get)
+          case _ => """(body.head \ "%s").head""" format (p.name.get)
+        }
+        buildPartArg(p, v) + (soapBindingStyle match {
+          case DocumentStyle =>
+            singleOutputType(output, soapBindingStyle) map { elem =>
+              val param = xsdgenerator.buildParam(elem)
+              "." + param.toParamName
+            } getOrElse {""}
+          case _ => ""
+        })
       }) ++ (headerBindings(binding.output) flatMap { b =>
         val message = context.messages(splitTypeName(b.message))
         message.part find {_.name == Some(b.part)} map { p =>
@@ -533,12 +666,7 @@ trait GenSource {
     "%s: %s".format(part.name getOrElse {"in"}, partTypeName(part))
   }).mkString(", ")
 
-  def paramTypeName(param: XParamType): String = xsdgenerator.buildTypeName(toTypeSymbol(param), false)
-
   def partTypeName(part: XPartType): String = xsdgenerator.buildTypeName(toTypeSymbol(part), false)
-
-  def toTypeSymbol(param: XParamType): XsTypeSymbol =
-    paramMessage(param).part.headOption map { toTypeSymbol(_) } getOrElse {XsAnyType}
 
   def toParamCache(part: XPartType): ParamCache =
     part.typeValue map { typeValue =>
@@ -573,39 +701,30 @@ trait GenSource {
     xsdgenerator.elements(splitTypeName(element))
   } getOrElse {sys.error("part does not have an element: " + part.toString)}
 
-  def outputTypeName(binding: XBinding_operationType, op: XOperationType,
-                     output: XParamType, document: Boolean): String =
-    if (headerBindings(binding.output).isEmpty) {
-      singleOutputType(output, document) map { elem =>
-        val param = xsdgenerator.buildParam(elem)
-        param.typeName
-      } getOrElse {
-        if (paramMessage(output).part.isEmpty) "Unit"
-        else paramTypeName(output)
-      }}
-    else xsdgenerator.buildFullyQualifiedNameFromPackage(pkg, makeOperationOutputWrapperName(op))
-
   def singleOutputPart(output: XParamType): Option[XPartType] =
     paramMessage(output).part.headOption
 
-  def singleOutputType(output: XParamType, document: Boolean): Option[scalaxb.compiler.xsd.ElemDecl] =
-    if (document) paramMessage(output).part.headOption map { part =>
-      import scalaxb.compiler.xsd.{ReferenceTypeSymbol, ComplexTypeDecl, Single}
-      toTypeSymbol(part) match {
-        case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
-          val flatParticles = xsdgenerator.flattenElements(decl)
-          val attributes = xsdgenerator.flattenAttributes(decl)
-          if (decl.mixed) None
-          else if (flatParticles.size == 1 && attributes.size == 0) {
-            val head = flatParticles.head
-            if (xsdgenerator.buildParam(head).cardinality == Single) Some(head)
-            else None
+  def singleOutputType(output: XParamType, soapBindingStyle: SoapBindingStyle): Option[scalaxb.compiler.xsd.ElemDecl] =
+    soapBindingStyle match {
+      case DocumentStyle =>
+        paramMessage(output).part.headOption map { part =>
+          import scalaxb.compiler.xsd.{ReferenceTypeSymbol, ComplexTypeDecl, Single}
+          toTypeSymbol(part) match {
+            case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
+              val flatParticles = xsdgenerator.flattenElements(decl)
+              val attributes = xsdgenerator.flattenAttributes(decl)
+              if (decl.mixed) None
+              else if (flatParticles.size == 1 && attributes.size == 0) {
+                val head = flatParticles.head
+                if (xsdgenerator.buildParam(head).cardinality == Single) Some(head)
+                else None
+              }
+              else None
+            case x => None
           }
-          else None
-        case x => None
-      }
-    } getOrElse {None}
-    else None
+        } getOrElse {None}
+      case RpcStyle => None
+    }
 
   def faultsToTypeName(faults: Seq[XFaultType], soap12: Boolean): String =
     "%s[%s]" format (if (soap12) "scalaxb.Fault"
@@ -627,112 +746,6 @@ trait GenSource {
     val name = xsdgenerator.makeTypeName(binding.name)
     if (name.endsWith("Binding")) name
     else name + "Binding"
-  }
-
-  def makeSoap11Binding(binding: XBindingType): Snippet = {
-    val name = makeBindingName(binding)
-    logger.debug("makeSoap11Binding: " + name)
-
-    val interfaceType = context.interfaces(splitTypeName(binding.typeValue))
-    val interfaceTypeName = interfaceType.name.capitalize
-    val interfaceTypeFQN = xsdgenerator.buildFullyQualifiedNameFromPackage(pkg, interfaceTypeName)
-    val port = findPort(binding).headOption
-    val address = port flatMap {_.any flatMap {
-      case DataRecord(_, _, node: Node) if node.scope.getURI((node.prefix)) == WSDL_SOAP11 =>
-        Some((node \ "@location").text)
-      case _ => None
-    }}
-
-    val document = binding.any.headOption map {
-      case DataRecord(_, _, node: Node) =>
-        val style = (node \ "@style").text
-        style == "" || style == "document"
-    } getOrElse {true}
-
-    val addressString = address map {"""def baseAddress = new java.net.URI("%s")""".format(_)} getOrElse {""}
-
-    val operationOutputs = binding.operation flatMap { makeOperationOutput(_, interfaceType) }
-    val operations = binding.operation map { opBinding => makeOperation(opBinding, interfaceType, document, false) }
-    val bindingOps = binding.operation map { opBinding => makeSoapOpBinding(opBinding, interfaceType, document, false) }
-    val importFutureString = if (config.async) "import scala.concurrent.Future" + NL else ""
-    val clientTraitName = if (config.async) "Soap11ClientsAsync" else "Soap11Clients"
-
-    val interfaceTrait = <source>
-{importFutureString}
-
-trait {interfaceTypeName} {{
-  {operations.mkString(NL + "  ")}
-}}
-
-{operationOutputs.mkString(NL + NL)}
-</source>
-
-    val bindingTrait = <source>
-  trait {name}s {{ this: scalaxb.{clientTraitName} =>
-    lazy val targetNamespace: Option[String] = { xsdgenerator.quote(targetNamespace) }
-    lazy val service: {interfaceTypeFQN} = new {name} {{}}
-    {addressString}
-
-    trait {name} extends {interfaceTypeFQN} {{
-      import scalaxb.ElemName._
-      {bindingOps.mkString(NL + "      ")}
-    }}
-  }}
-</source>
-    Snippet(interfaceTrait, <source/>, bindingTrait, <source/>)
-  }
-
-  // http://www.w3.org/TR/2007/REC-wsdl20-adjuncts-20070626/#soap-binding
-  // http://www.w3.org/TR/2007/REC-soap12-part2-20070427/
-  def makeSoap12Binding(binding: XBindingType): Snippet = {
-    val name = makeBindingName(binding)
-    val interfaceType = context.interfaces(splitTypeName(binding.typeValue))
-    val interfaceTypeName = interfaceType.name.capitalize
-    val interfaceTypeFQN = xsdgenerator.buildFullyQualifiedNameFromPackage(pkg, interfaceTypeName)
-    val port = findPort(binding).headOption
-    val address = port flatMap {_.any flatMap {
-      case DataRecord(_, _, node: Node) if node.scope.getURI((node.prefix)) == WSDL_SOAP12 =>
-        Some((node \ "@location").text)
-      case _ => None
-    }}
-
-    val document = binding.any.headOption map {
-      case DataRecord(_, _, node: Node) =>
-        val style = (node \ "@style").text
-        style == "" || style == "document"
-    } getOrElse {true}
-
-    val addressString = address map {"""def baseAddress = new java.net.URI("%s")""".format(_)} getOrElse {""}
-
-    val operationOutputs = binding.operation flatMap { makeOperationOutput(_, interfaceType) }
-    val operations = binding.operation map { opBinding => makeOperation(opBinding, interfaceType, document, true) }
-    val bindingOps = binding.operation map { opBinding => makeSoapOpBinding(opBinding, interfaceType, document, true) }
-    val importFutureString = if (config.async) "import scala.concurrent.Future" + NL else ""
-    val clientTraitName = if (config.async) "SoapClientsAsync" else "SoapClients"
-
-    val interfaceTrait = <source>
-{importFutureString}
-
-trait {interfaceTypeName} {{
-  {operations.mkString(NL + "  ")}
-}}
-
-{operationOutputs.mkString(NL + NL)}
-</source>
-
-    val bindingTrait = <source>
-  trait {name}s {{ this: scalaxb.{clientTraitName} =>
-    lazy val targetNamespace: Option[String] = { xsdgenerator.quote(targetNamespace) }
-    lazy val service: {interfaceTypeFQN} = new {name} {{}}
-    {addressString}
-
-    trait {name} extends {interfaceTypeFQN} {{
-      import scalaxb.ElemName._
-      {bindingOps.mkString(NL + "      ")}
-    }}
-  }}
-</source>
-    Snippet(interfaceTrait, <source/>, bindingTrait, <source/>)
   }
 
   def findPort(binding: XBindingType) =

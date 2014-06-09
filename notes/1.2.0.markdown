@@ -6,10 +6,16 @@
   [@barnesjd]: https://github.com/barnesjd
   [@jcranky]: https://github.com/jcranky
   [@rcgoodfellow]: https://github.com/rcgoodfellow
+  [@romainreuillon]: https://github.com/romainreuillon
+
+
+## SOAP bug fixes
+
+- Fixes handling of nillable elements appearing in SOAP. [#229][229] reported by [@barnesjd][@barnesjd]
+- Escapes reserve words appearing as operation name in SOAP. [#241][241] reported by [@rcgoodfellow][@rcgoodfellow] 
+- Fixes response parsing for literal RPC style. [#260][260] reported by [@romainreuillon][@romainreuillon]
 
 ## bug fixes and minor enhancements
 
 - Fixes "mixed" attribute not being inherited when extending a complex type. [#228][228] reported by [@choffmeister][@choffmeister]
-- Fixes handling of nillable elements appearing in SOAP. [#229][229] reported by [@barnesjd][@barnesjd]
-- Escapes reserve words appearing as operation name in SOAP. [#241][241] reported by [@rcgoodfellow][@rcgoodfellow] 
 - Fixes handling of very long `xs:enumeration` value. [#247][247] reported by [@jcranky][@jcranky]

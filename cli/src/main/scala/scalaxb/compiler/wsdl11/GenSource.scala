@@ -524,9 +524,11 @@ trait {interfaceTypeName} {{
 
       val (label, namespace) = (b.literal, soapBindingStyle) match {
         // If the operation style is document there are no additional wrappers, and the message parts appear directly under the SOAP Body element.
+        case (true, DocumentStyle) if p.element.isDefined =>
+          ("\"%s\"".format(toElement(p).name), toElement(p).namespace)
         case (true, DocumentStyle) =>
           ("\"Body\"", None)
-        case (true, _) if p.element.isDefined =>
+        case (true, RpcStyle) if p.element.isDefined =>
           ("\"%s\"".format(toElement(p).name), toElement(p).namespace)
         case _ =>
           ("\"%s\"".format(p.name.getOrElse {"in"}), b.namespace)
@@ -566,6 +568,8 @@ trait {interfaceTypeName} {{
       val fromXmls = (parts map { p =>
         val v = (b.literal, soapBindingStyle) match {
           // If the operation style is document there are no additional wrappers, and the message parts appear directly under the SOAP Body element.
+          case (true, DocumentStyle) if p.element.isDefined =>
+            "(body.headOption getOrElse {body})"
           case (true, DocumentStyle) =>
             """scala.xml.Elem(null, "Body", scala.xml.Null, defaultScope, body.toSeq: _*)"""
           case (true, RpcStyle) if p.element.isDefined =>

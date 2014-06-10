@@ -8,7 +8,7 @@ trait DispatchHttpClientsAsync extends HttpClientsAsync {
 
     val http = new Http()
     def request(in: String, address: java.net.URI, headers: Map[String, String]): Future[String] = {
-      val req = url(address.toString).setBodyEncoding("UTF-8") <:< headers << in
+      val req = url(address.toString).underlying(_.setBodyEncoding("UTF-8")) <:< headers << in
       http(req > as.String)
     }
   }

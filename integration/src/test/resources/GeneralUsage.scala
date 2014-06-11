@@ -363,7 +363,7 @@ JDREVGRw==</base64Binary>
     println(document.toString)
     //  actually xml library can print <x:something/>  as <x:something></x:something>
     //  so check only for 1-st part
-    (document.toString contains   """<x:other xmlns:x="http://www.example.com/x"><x:something""") match {
+    (document.toString contains   """<x:other xmlns:x="http://www.example.com/x" """) match {
       case true =>
       case _ => sys.error("x:other includes outer namespace bindings: " + document.toString)
     }

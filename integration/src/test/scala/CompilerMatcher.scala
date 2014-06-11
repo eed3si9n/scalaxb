@@ -39,8 +39,10 @@ class Holder {
 }
 
 trait CompilerMatcher {  
-  private lazy val bootPathList = List(jarPathOfClass("scala.tools.nsc.Interpreter"),
-                                   jarPathOfClass("scala.ScalaObject"))
+  private lazy val bootPathList = List(jarPathOfClass("scala.tools.nsc.Main"),
+                                   jarPathOfClass("scala.Option"),
+                                   jarPathOfClass("scala.xml.Elem"),
+                                   jarPathOfClass("scala.util.parsing.combinator.Parsers"))
   
   /** evaluteTo matches a pair of code list and files against the expected value 
    * after evaluating the files and the given code list.

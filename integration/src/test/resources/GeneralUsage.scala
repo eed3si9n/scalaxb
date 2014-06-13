@@ -158,7 +158,7 @@ JDREVGRw==</base64Binary>
     val obj = fromXML[SingularSimpleTypeTest](subject)
     
     def check(obj: Any) = obj match {
-        case SingularSimpleTypeTest(1, None, None, Some(Some(1)), Seq(2, 1), Seq(), 
+        case SingularSimpleTypeTest(1, None, None, Some(Some(1)), Seq(2, 1), Seq(), Some(1),
           WHOLE, None, None, None, Seq(WHOLE, SKIM), Seq(),
           None, None) =>
         case _ => sys.error("match failed: " + obj.toString)

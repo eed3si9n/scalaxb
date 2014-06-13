@@ -49,19 +49,21 @@ object CustomizationUsage {
         opt(scalaxb.ElemName(targetNamespace, "number4")) ~
         rep(scalaxb.ElemName(targetNamespace, "number5")) ~
         rep(scalaxb.ElemName(targetNamespace, "number6")) ~
+        (scalaxb.ElemName(targetNamespace, "number7")) ~
         (scalaxb.ElemName(targetNamespace, "milk1")) ~
         (scalaxb.ElemName(targetNamespace, "milk2")) ~
         opt(scalaxb.ElemName(targetNamespace, "milk3")) ~
         opt(scalaxb.ElemName(targetNamespace, "milk4")) ~
         rep(scalaxb.ElemName(targetNamespace, "milk5")) ~
         rep(scalaxb.ElemName(targetNamespace, "milk6")) ^^
-        { case p1 ~ p2 ~ p3 ~ p4 ~ p5 ~ p6 ~ p7 ~ p8 ~ p9 ~ p10 ~ p11 ~ p12 =>
+        { case p1 ~ p2 ~ p3 ~ p4 ~ p5 ~ p6 ~ p7 ~ p8 ~ p9 ~ p10 ~ p11 ~ p12 ~ p13 =>
         general.SingularSimpleTypeTest(fromXML[Long](p1, scalaxb.ElemName(node) :: stack),
           p2.nilOption map { fromXML[Long](_, scalaxb.ElemName(node) :: stack) },
           p3.headOption map { fromXML[Long](_, scalaxb.ElemName(node) :: stack) },
           p4.headOption map { _.nilOption map { fromXML[Long](_, scalaxb.ElemName(node) :: stack) }},
           p5.toSeq map { fromXML[Long](_, scalaxb.ElemName(node) :: stack) },
           p6.toSeq map { _.nilOption map { fromXML[Long](_, scalaxb.ElemName(node) :: stack) }},
+          p7.nilOption map { fromXML[Long](_, scalaxb.ElemName(node) :: stack) },
           SKIM,
           p8.nilOption map { fromXML[general.MilkType](_, scalaxb.ElemName(node) :: stack) },
           p9.headOption map { fromXML[general.MilkType](_, scalaxb.ElemName(node) :: stack) },
@@ -101,7 +103,7 @@ object CustomizationUsage {
     val obj = fromXML[SingularSimpleTypeTest](subject)
     
     def check(obj: Any) = obj match {
-        case SingularSimpleTypeTest(2, None, None, Some(Some(2)), Seq(3, 2), Seq(), 
+        case SingularSimpleTypeTest(2, None, None, Some(Some(2)), Seq(3, 2), Seq(), Some(1),
           SKIM, None, None, None, Seq(WHOLE, SKIM), Seq(),
           None, None) =>
         case _ => sys.error("match failed: " + obj.toString)

@@ -136,6 +136,7 @@
       <xs:element name="number4" minOccurs="0" nillable="true" type="xs:unsignedInt"/>
       <xs:element name="number5" maxOccurs="unbounded" type="xs:unsignedInt"/>
       <xs:element name="number6" maxOccurs="unbounded" nillable="true" type="xs:unsignedInt"/>
+      <xs:element name="number7" nillable="true" default="1" type="xs:unsignedInt"/>
       
       <xs:element name="milk1" type="gen:MilkType"/>
       <xs:element name="milk2" nillable="true" type="gen:MilkType"/>

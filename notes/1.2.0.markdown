@@ -11,6 +11,7 @@
   [@romainreuillon]: https://github.com/romainreuillon
   [@alboko]: https://github.com/alboko
   [@romangarcia]: https://github.com/romangarcia
+  [@choeger]: https://github.com/choeger
 
 ## SOAP bug fixes
 
@@ -25,3 +26,4 @@
 - Fixes handling of `xs:element` with `default` with `minOccurs = 1`. [#245][245] reported by [@alboko][@alboko]
 - Fixes handling of very long `xs:enumeration` value. [#247][247] reported by [@jcranky][@jcranky]
 - Fixes handling of `xs:element` names with symbols when `--class-prefix` is passed. [#251][251] reported by [@romangarcia][@romangarcia]
+- Fixes `xs:group` parser getting inherited twice. [#238][238] reported by [@choeger][@choeger]

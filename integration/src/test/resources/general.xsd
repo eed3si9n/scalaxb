@@ -432,6 +432,30 @@
   </xs:simpleType>
   </xs:element>
 
+  <!-- #238 -->
+  <xs:complexType name="part-list">
+      <xs:sequence>
+          <xs:group ref="gen:part-group" minOccurs="0" maxOccurs="unbounded"/>
+          <xs:group ref="gen:score-part"/>
+          <xs:choice minOccurs="0" maxOccurs="unbounded">
+              <xs:group ref="gen:part-group"/>
+              <xs:group ref="gen:score-part"/>
+          </xs:choice>
+      </xs:sequence>
+  </xs:complexType>
+
+  <xs:group name="part-group">
+    <xs:sequence>
+      <xs:element name="part" type="xs:string"/>
+    </xs:sequence>
+  </xs:group>
+
+  <xs:group name="score-part">
+    <xs:sequence>
+      <xs:element name="score" type="xs:string"/>
+    </xs:sequence>
+  </xs:group>
+
   <xs:simpleType name="ListOfMilk">
     <xs:list itemType="gen:MilkType"/>
   </xs:simpleType>

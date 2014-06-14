@@ -356,7 +356,7 @@ abstract class GenSource(val schema: SchemaDecl,
 
     val groups = filterGroup(decl).distinct filter { g => primaryCompositor(g).particles.size > 0 }
     val defaultFormatSuperNames: List[String] = "scalaxb.ElemNameParser[" + fqn + "]" :: groups.map(g =>
-      buildFormatterName(g.namespace, groupTypeName(g)))
+      buildFormatterName(g.namespace, groupTypeName(g))).distinct
     
     val caseClassCode = <source>{ buildComment(decl) }case class {localName}({paramsString}){extendString}{ if (accessors.size == 0) ""
       else " {" + newline +

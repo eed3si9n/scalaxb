@@ -150,7 +150,8 @@ JDREVGRw==</base64Binary>
       <number2 xsi:nil="1"/>
       <number4>1</number4>
       <number5>2</number5><number5>1</number5>
-      
+      <number7 xsi:nil="1"/>
+
       <milk1>WHOLE</milk1>
       <milk2 xsi:nil="true"/>
       <milk5>WHOLE</milk5><milk5>SKIM</milk5>
@@ -158,7 +159,7 @@ JDREVGRw==</base64Binary>
     val obj = fromXML[SingularSimpleTypeTest](subject)
     
     def check(obj: Any) = obj match {
-        case SingularSimpleTypeTest(1, None, None, Some(Some(1)), Seq(2, 1), Seq(), Some(1),
+        case SingularSimpleTypeTest(1, None, None, Some(Some(1)), Seq(2, 1), Seq(), None,
           WHOLE, None, None, None, Seq(WHOLE, SKIM), Seq(),
           None, None) =>
         case _ => sys.error("match failed: " + obj.toString)

@@ -81,14 +81,13 @@ trait Args extends Params {
       nillable: Boolean, defaultValue: Option[String],
       fixedValue: Option[String], formatter: Option[String]): String = {
     def fromValue(x: String) = buildFromXML(typeName, "scala.xml.Text(" + quote(x) + ")", stackItem, formatter)
-    def fromU = buildFromXML(typeName, "_", stackItem, formatter)
-    def fromSelector = buildFromXML(typeName, selector, stackItem, formatter)
+    def fromX(x: String) = buildFromXML(typeName, x, stackItem, formatter)
 
     (nillable, defaultValue, fixedValue) match { 
-      case ( _, _, Some(x)) => fromValue(x)
-      case (_, Some(x), _)  => selector + ".headOption map { " + fromU + " } getOrElse { " + fromValue(x) + " }"
-      case (true, _, _)     => selector + ".nilOption map { " + fromU + " }"
-      case (false, _, _)    => fromSelector
+      case ( _, _, Some(x))   => fromValue(x)
+      case (true, _, _)       => selector + ".nilOption map { " + fromX("_") + " }"
+      case (_, Some(x), _)    => selector + ".headOption map { " + fromX("_") + " } getOrElse { " + fromValue(x) + " }"
+      case (false, _, _)      => fromX(selector)
     }
   }
       

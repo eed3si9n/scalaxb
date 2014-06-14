@@ -65,11 +65,11 @@ object CustomizationUsage {
           p6.toSeq map { _.nilOption map { fromXML[Long](_, scalaxb.ElemName(node) :: stack) }},
           p7.nilOption map { fromXML[Long](_, scalaxb.ElemName(node) :: stack) },
           SKIM,
-          p8.nilOption map { fromXML[general.MilkType](_, scalaxb.ElemName(node) :: stack) },
-          p9.headOption map { fromXML[general.MilkType](_, scalaxb.ElemName(node) :: stack) },
-          p10.headOption map { _.nilOption map { fromXML[general.MilkType](_, scalaxb.ElemName(node) :: stack) }},
-          p11.toSeq map { fromXML[general.MilkType](_, scalaxb.ElemName(node) :: stack) },
-          p12.toSeq map { _.nilOption map { fromXML[general.MilkType](_, scalaxb.ElemName(node) :: stack) }},
+          p9.nilOption map { fromXML[general.MilkType](_, scalaxb.ElemName(node) :: stack) },
+          p10.headOption map { fromXML[general.MilkType](_, scalaxb.ElemName(node) :: stack) },
+          p11.headOption map { _.nilOption map { fromXML[general.MilkType](_, scalaxb.ElemName(node) :: stack) }},
+          p12.toSeq map { fromXML[general.MilkType](_, scalaxb.ElemName(node) :: stack) },
+          p13.toSeq map { _.nilOption map { fromXML[general.MilkType](_, scalaxb.ElemName(node) :: stack) }},
           (node \ "@attr1").headOption map { fromXML[Long](_, scalaxb.ElemName(node) :: stack) },
           (node \ "@attr2").headOption map { fromXML[general.MilkType](_, scalaxb.ElemName(node) :: stack) }) }
     }
@@ -95,6 +95,7 @@ object CustomizationUsage {
       <number2 xsi:nil="true"/>
       <number4>1</number4>
       <number5>2</number5><number5>1</number5>
+      <number7 xsi:nil="true"/>
       
       <milk1>WHOLE</milk1>
       <milk2 xsi:nil="true"/>
@@ -103,7 +104,8 @@ object CustomizationUsage {
     val obj = fromXML[SingularSimpleTypeTest](subject)
     
     def check(obj: Any) = obj match {
-        case SingularSimpleTypeTest(2, None, None, Some(Some(2)), Seq(3, 2), Seq(), Some(1),
+        // custom parser adds 1.
+        case SingularSimpleTypeTest(2, None, None, Some(Some(2)), Seq(3, 2), Seq(), None,
           SKIM, None, None, None, Seq(WHOLE, SKIM), Seq(),
           None, None) =>
         case _ => sys.error("match failed: " + obj.toString)

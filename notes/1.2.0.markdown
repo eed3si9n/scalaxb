@@ -20,6 +20,7 @@
 
 ## bug fixes and minor enhancements
 
+- Dropping Scala 2.9.0 and removing deprecated warnings.
 - Fixes "mixed" attribute not being inherited when extending a complex type. [#228][228] reported by [@choffmeister][@choffmeister]
 - Fixes handling of `xs:element` with `default` with `minOccurs = 1`. [#245][245] reported by [@alboko][@alboko]
 - Fixes handling of very long `xs:enumeration` value. [#247][247] reported by [@jcranky][@jcranky]

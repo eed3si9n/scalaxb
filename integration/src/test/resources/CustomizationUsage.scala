@@ -8,7 +8,7 @@ import general._
 object CustomizationUsage {
   val NS = Some("http://www.example.com/general")
   
-  def main(args: Array[String]) = {
+  def main(args: Array[String]): Unit = {
     allTests
   }
   

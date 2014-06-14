@@ -553,7 +553,7 @@ trait {interfaceTypeName} {{
       case (DocumentStyle, x :: xs) => x
       case (DocumentStyle, _)       => "Nil"
       case _ =>
-        """scala.xml.Elem(%s, %s, scala.xml.Null, defaultScope,
+        """scala.xml.Elem(%s, %s, scala.xml.Null, defaultScope, true,
           %s: _*)""".format(prefix, opLabel, argsString)
     }
   }
@@ -571,7 +571,7 @@ trait {interfaceTypeName} {{
           case (true, DocumentStyle) if p.element.isDefined =>
             "(body.headOption getOrElse {body})"
           case (true, DocumentStyle) =>
-            """scala.xml.Elem(null, "Body", scala.xml.Null, defaultScope, body.toSeq: _*)"""
+            """scala.xml.Elem(null, "Body", scala.xml.Null, defaultScope, true, body.toSeq: _*)"""
           case (true, RpcStyle) if p.element.isDefined =>
             "(body.headOption getOrElse {body})"
           case (true, RpcStyle) =>

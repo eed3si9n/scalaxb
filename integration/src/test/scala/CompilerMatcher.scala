@@ -22,7 +22,7 @@
 
 import org.specs2.matcher._
 import java.io.{File}
-import scala.tools.nsc.{Settings}
+import scala.tools.nsc.{Settings, GenericRunnerSettings}
 import scala.tools.nsc.util.{SourceFile, BatchSourceFile}
 import scala.tools.nsc.io.{PlainFile} 
 import scala.tools.nsc.reporters.{ConsoleReporter}
@@ -59,7 +59,8 @@ trait CompilerMatcher {
       outdir: String = ".",
       classpath: List[String] = Nil,
       usecurrentcp: Boolean = false,
-      unchecked: Boolean = true) = new Matcher[(Seq[String], Seq[File])] {
+      unchecked: Boolean = true,
+      deprecation: Boolean = true) = new Matcher[(Seq[String], Seq[File])] {
 
     def apply[A <: (Seq[String], Seq[File])](pair: Expectable[A]) = {
       import scala.tools.nsc.interpreter.{IMain, Results => IR}
@@ -71,7 +72,7 @@ trait CompilerMatcher {
       if (code.size < 1)
         sys.error("At least one line of code is required.")
       
-      val s = settings(outdir, classpath, usecurrentcp, unchecked)
+      val s = settings(outdir, classpath, usecurrentcp, unchecked, deprecation)
       val main = new IMain(s) {
         def lastReq = prevRequestList.last
       }
@@ -94,9 +95,9 @@ trait CompilerMatcher {
   }
   
   private def settings(outdir: String, classpath: List[String],
-      usecurrentcp: Boolean, unchecked: Boolean) = {
+      usecurrentcp: Boolean, unchecked: Boolean,
+      deprecation: Boolean): GenericRunnerSettings = {
     import java.io.{PrintWriter, BufferedWriter, BufferedReader, StringReader, OutputStreamWriter}
-    import scala.tools.nsc.{GenericRunnerSettings}
     
     val currentcp = if (usecurrentcp) {
       val currentLoader = java.lang.Thread.currentThread.getContextClassLoader
@@ -114,17 +115,18 @@ trait CompilerMatcher {
     val in = new BufferedReader(new StringReader(""))
     val out = new PrintWriter(new BufferedWriter(
       new OutputStreamWriter(System.out)))        
-    val settings = new GenericRunnerSettings(out.println _)
-    val origBootclasspath = settings.bootclasspath.value
+    val grs = new GenericRunnerSettings(out.println _)
+    val origBootclasspath = grs.bootclasspath.value
     
-    settings.bootclasspath.value = 
+    grs.bootclasspath.value = 
       (origBootclasspath :: bootPathList).mkString(java.io.File.pathSeparator)
     
-    val originalClasspath = settings.classpath.value
-    settings.classpath.value = classpathList.distinct.mkString(java.io.File.pathSeparator)
-    settings.outdir.value = outdir
-    settings.unchecked.value = unchecked
-    settings    
+    val originalClasspath = grs.classpath.value
+    grs.classpath.value = classpathList.distinct.mkString(java.io.File.pathSeparator)
+    grs.outdir.value = outdir
+    grs.unchecked.value = unchecked
+    grs.deprecation.value = deprecation
+    grs    
   }
   
   /** compile checks if the given list of files compiles without an error.
@@ -133,12 +135,13 @@ trait CompilerMatcher {
   def compile(outdir: String = ".",
     classpath: List[String] = Nil,
     usecurrentcp: Boolean = false,
-    unchecked: Boolean = true) = new Matcher[Seq[File]]() {
+    unchecked: Boolean = true,
+    deprecation: Boolean = true) = new Matcher[Seq[File]]() {
 
     def apply[A <: Seq[File]](files: Expectable[A]) = {
       import scala.tools.nsc.{Global}
       
-      val s = settings(outdir, classpath, usecurrentcp, unchecked)
+      val s = settings(outdir, classpath, usecurrentcp, unchecked, deprecation)
       val reporter = new ConsoleReporter(s)
       val compiler = new Global(s, reporter)
       val run = (new compiler.Run)

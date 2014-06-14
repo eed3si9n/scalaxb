@@ -25,7 +25,7 @@ object GeneralUsage {
     Some("xsi") -> "http://www.w3.org/2001/XMLSchema-instance",
     Some("xs") -> "http://www.w3.org/2001/XMLSchema")
     
-  def main(args: Array[String]) = {
+  def main(args: Array[String]): Unit = {
     allTests
   }
 
@@ -606,8 +606,8 @@ JDREVGRw==</base64Binary>
   }
 
   def testDefaultScope {
-    if (defaultScope.getURI(null) == "http://www.example.com/general") true
-    else sys.error("default scope is missing.")
+    val x = if (defaultScope.getURI(null) == "http://www.example.com/general") true
+            else sys.error("default scope is missing.")
   }
 
   def testUnmarshallBaseComplexType {
@@ -663,7 +663,7 @@ JDREVGRw==</base64Binary>
       val x = scalaxb.fromXML[Person](subject)
     }
     catch {
-      case _ => return
+      case _: Throwable => return
     }
     sys.error("extra element did not raise error")
   }

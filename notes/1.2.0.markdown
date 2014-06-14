@@ -3,12 +3,14 @@
   [241]: https://github.com/eed3si9n/scalaxb/issues/241
   [245]: https://github.com/eed3si9n/scalaxb/issues/245
   [247]: https://github.com/eed3si9n/scalaxb/issues/247
+  [251]: https://github.com/eed3si9n/scalaxb/issues/251
   [@choffmeister]: https://github.com/choffmeister
   [@barnesjd]: https://github.com/barnesjd
   [@jcranky]: https://github.com/jcranky
   [@rcgoodfellow]: https://github.com/rcgoodfellow
   [@romainreuillon]: https://github.com/romainreuillon
   [@alboko]: https://github.com/alboko
+  [@romangarcia]: https://github.com/romangarcia
 
 ## SOAP bug fixes
 
@@ -21,3 +23,4 @@
 - Fixes "mixed" attribute not being inherited when extending a complex type. [#228][228] reported by [@choffmeister][@choffmeister]
 - Fixes handling of `xs:element` with `default` with `minOccurs = 1`. [#245][245] reported by [@alboko][@alboko]
 - Fixes handling of very long `xs:enumeration` value. [#247][247] reported by [@jcranky][@jcranky]
+- Fixes handling of `xs:element` names with symbols when `--class-prefix` is passed. [#251][251] reported by [@romangarcia][@romangarcia]

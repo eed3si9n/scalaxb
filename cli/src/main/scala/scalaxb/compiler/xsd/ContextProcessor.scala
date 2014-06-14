@@ -501,8 +501,8 @@ trait ContextProcessor extends ScalaNames with PackageName {
     case s if (s.startsWith("java.") || s.startsWith("javax.")) => s
     case _ =>
       val prefixed = config.classPrefix map { p =>
-        if (p.endsWith("_"))  p.capitalize + name
-        else p.capitalize + name.capitalize
+        if (p.endsWith("_"))  p.capitalize + identifier(name)
+        else p.capitalize + identifier(name).capitalize
       } getOrElse { identifier(name).capitalize }
       val base = config.classPostfix map { p =>
         prefixed + p

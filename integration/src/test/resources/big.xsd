@@ -128,4 +128,11 @@
       </xs:all>
     </xs:complexType>
   </xs:element>
+
+  <!-- #251 -->
+  <xs:complexType name="Name-with-dash">
+    <xs:sequence>
+      <xs:element name="string1" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
 </xs:schema>

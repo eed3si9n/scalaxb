@@ -21,9 +21,21 @@
     </dependency>
 
     <dependency>
+      <groupId>org.scala-lang.modules</groupId>
+      <artifactId>scala-xml_${binary.version}</artifactId>
+      <version>@scala.xml.version@</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.scala-lang.modules</groupId>
+      <artifactId>scala-parser-combinators_${binary.version}</artifactId>
+      <version>@scala.parser.version@</version>
+    </dependency>
+
+    <dependency>
       <groupId>net.databinder.dispatch</groupId>
       <artifactId>dispatch-core_${binary.version}</artifactId>
-      <version>0.10.1</version>
+      <version>0.11.1</version>
     </dependency>
 
   </dependencies>

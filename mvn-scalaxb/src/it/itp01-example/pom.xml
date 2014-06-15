@@ -21,6 +21,18 @@
     </dependency>
 
     <dependency>
+      <groupId>org.scala-lang.modules</groupId>
+      <artifactId>scala-xml_${binary.version}</artifactId>
+      <version>@scala.xml.version@</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.scala-lang.modules</groupId>
+      <artifactId>scala-parser-combinators_${binary.version}</artifactId>
+      <version>@scala.parser.version@</version>
+    </dependency>
+
+    <dependency>
       <groupId>org.scalatest</groupId>
       <artifactId>scalatest_${binary.version}</artifactId>
       <version>@scalatest.version@</version>

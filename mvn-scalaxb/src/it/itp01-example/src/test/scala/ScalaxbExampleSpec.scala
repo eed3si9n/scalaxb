@@ -1,17 +1,16 @@
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
-import org.scalatest.WordSpec
-import org.scalatest.matchers.{MustMatchers,ShouldMatchers}
+import org.scalatest.{WordSpec,Matchers}
 import scala.xml.Utility.trim
 import scalaxb._
 
 @RunWith(classOf[JUnitRunner])
-class ScalaxbExampleSpec extends WordSpec with ShouldMatchers with MustMatchers {
+class ScalaxbExampleSpec extends WordSpec with Matchers {
 
   "The XML in the example" should {
 
     "be parsed correctly" in {
-      scalaxb.fromXML[ipo.Address](example.subject) must be === example.address
+      scalaxb.fromXML[ipo.Address](example.subject) should be === example.address
     }
 
   }
@@ -20,7 +19,7 @@ class ScalaxbExampleSpec extends WordSpec with ShouldMatchers with MustMatchers 
     "be serialized into XML correctly" in {
       val shipTo = example.address
       val document = scalaxb.toXML[ipo.Address](shipTo.copy(name = "Bar"), None, Some("foo"), ipo.defaultScope)
-      document must be === trim(
+      document should be === trim(
         <foo xmlns="http://www.example.com/IPO"
              xmlns:xs="http://www.w3.org/2001/XMLSchema"
              xmlns:ipo="http://www.example.com/IPO"

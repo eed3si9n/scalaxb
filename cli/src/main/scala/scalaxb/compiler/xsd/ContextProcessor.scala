@@ -71,6 +71,7 @@ trait ContextProcessor extends ScalaNames with PackageName {
     val anonymousTypes = mutable.ListBuffer.empty[(SchemaDecl, ComplexTypeDecl)]
     
     for (schema <- schemas) {
+      logger.debug("processContext - " + schema.targetNamespace)
       context.typeNames(schema) =  makeProtectedTypeName(schema, context)
       resolveType(schema, context)
     }

@@ -271,7 +271,7 @@ trait Module {
         all filter { x => uris contains shortenUri(x.location) }
       }
       val mapping: ListMap[Importable, Option[String]] = ListMap()
-      val used: mutable.Set[Importable] = mutable.Set()
+      val used: ListBuffer[Importable] = ListBuffer()
       var count: Int = 0
       val len = parents.size * parents.size
       for {
@@ -297,8 +297,9 @@ trait Module {
           parents.remove(i % parents.size)
         }
       }
-      used foreach { x =>
+      used.toList.distinct foreach { x =>
         schemas -= x
+        logger.debug("processUnnamedIncludes - removing %s", x.location)
         val idx = importables.indexWhere { case (i, _) => i == x }
         if (idx >= 0) {
           importables remove idx
@@ -495,13 +496,23 @@ trait Module {
   def appendPostFix(location: URI, n: Int): URI = new URI(shortenUri(location).replaceFirst("\\.xsd", "") + n.toString + ".xsd")
   // replace the targetNamespace
   def replaceNamespace(raw: Node, old: Option[String], outerNamespace: Option[String]): Node = {
-    CustomXML.load(new java.io.StringReader((raw match {
+    def fixScope(scope: NamespaceBinding): NamespaceBinding =
+      NamespaceBinding(null, outerNamespace getOrElse null, scope)
+    def fixSeq(ns: Seq[Node]): Seq[Node] =
+      for { node <- ns } yield node match {
+        case elem: Elem => 
+          elem.copy(scope = fixScope(elem.scope),
+               child = fixSeq(elem.child))
+        case other => other
+      }
+    val xml = CustomXML.load(new java.io.StringReader((raw match {
       case elem: Elem if !old.isDefined =>
-        val x = elem.copy(attributes = new UnprefixedAttribute("targetNamespace", outerNamespace getOrElse "", elem.attributes),
-        scope = NamespaceBinding(null, outerNamespace getOrElse "", elem.scope))
+        val x = elem.copy(attributes = new UnprefixedAttribute("targetNamespace", outerNamespace getOrElse null, elem.attributes),
+          scope = fixScope(elem.scope), child = fixSeq(elem.child))
         x
       case node => node
     }).toString))
+    xml
   }
 }
 

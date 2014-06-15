@@ -22,14 +22,14 @@ val app = (project in file("cli")).
   settings(
     name := "scalaxb",
     resolvers <+= sbtResolver,
-    libraryDependencies ++= appDependencies
+    libraryDependencies ++= appDependencies(scalaVersion.value)
   )
 
 val integration = (project in file("integration")).
   settings(commonSettings: _*).
   settings(
     publishArtifact := false,
-    libraryDependencies <<= scalaVersion(integrationDependencies)
+    libraryDependencies ++= integrationDependencies(scalaVersion.value)
     // fork in test := true,
     // javaOptions in test ++= Seq("-Xmx2G", "-XX:MaxPermSize=512M")
   ).

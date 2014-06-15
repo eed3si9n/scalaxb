@@ -19,13 +19,14 @@ object Dependencies {
     case _ => "org.specs2" %% "specs2" % specs2Version
   }
 
-  val appDependencies = Seq(
+  def appDependencies(sv: String) = Seq(
     launcherInterface % "provided",
-    scalaXml,
-    scalaParser,
     scopt,
     log4j
-  )
+  ) ++ (sv match {
+    case x if sv startsWith "2.10." => Nil
+    case _ => Seq(scalaXml, scalaParser)
+  })
   def integrationDependencies(sv: String) = Seq(
     dispatch % "test",
     scalaCompiler(sv),

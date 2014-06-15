@@ -35,7 +35,7 @@ scalaxb 1.2.0 generates non-blocking SOAP code by default. Instead of `Either[X,
     // default
     def getQuote(symbol: Option[String]): Future[stockquote.GetQuoteResponse]
 
-    // async in scalaxb := false
+    // async in (Compile, scalaxb) := false
     def getQuote(symbol: Option[String]): Either[scalaxb.Fault[Any], stockquote.GetQuoteResponse]
 
 This feature was contributed by [@jlavallee][@jlavallee] and [@hoff2][@hoff2] as [#213][213]/[#259][259].

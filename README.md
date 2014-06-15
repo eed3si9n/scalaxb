@@ -11,7 +11,7 @@ and the object back to XML.
 Status
 ------
 
-The latest is 1.1.2. Some things may not work.
+The latest is 1.2.0. Some things may not work.
 I'd really appreciate if you could run it against your favorite xsd
 file and let me know the result.
 
@@ -27,7 +27,7 @@ There are currently four ways of running scalaxb:
 
 ### sbt-scalaxb
 
-To call scalaxb from sbt 0.12.x or 0.13.x, put this in your `project/scalaxb.sbt`:
+To call scalaxb from sbt 0.13.x, put this in your `project/scalaxb.sbt`:
 
     resolvers += Resolver.sonatypeRepo("public")
 
@@ -40,6 +40,8 @@ and this in `scalaxb.sbt`:
     packageName in scalaxb in Compile := "xxx"
 
     sourceGenerators in Compile <+= scalaxb in Compile
+
+    dispatchVersion in scalaxb in Compile := "0.11.1"
 
 ### command line app scalaxb
 

@@ -1,0 +1,17 @@
+{
+  "organization" : "org.scalaxb",
+  "name" : "sbt-scalaxb",
+  "version" : "1.2.0",
+  "description" : "sbt plugin to run scalaxb",
+  "site" : "http://scalaxb.org",
+  "tags" : [ ],
+  "docs" : "",
+  "resolvers" : [ "https://oss.sonatype.org/content/repositories/releases" ],
+  "dependencies" : [ ],
+  "scalas" : [ "2.11.1", "2.10.4" ],
+  "licenses" : [ {
+    "name" : "MIT License",
+    "url" : "https://github.com/eed3si9n/scalaxb/blob/master/LICENSE"
+  } ],
+  "sbt" : true
+}

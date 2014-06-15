@@ -1,10 +1,18 @@
   [228]: https://github.com/eed3si9n/scalaxb/issues/228
   [229]: https://github.com/eed3si9n/scalaxb/issues/229
+  [230]: https://github.com/eed3si9n/scalaxb/issues/230
+  [231]: https://github.com/eed3si9n/scalaxb/issues/231
+  [238]: https://github.com/eed3si9n/scalaxb/issues/238
   [241]: https://github.com/eed3si9n/scalaxb/issues/241
   [245]: https://github.com/eed3si9n/scalaxb/issues/245
   [247]: https://github.com/eed3si9n/scalaxb/issues/247
   [251]: https://github.com/eed3si9n/scalaxb/issues/251
+  [252]: https://github.com/eed3si9n/scalaxb/issues/252
+  [253]: https://github.com/eed3si9n/scalaxb/issues/253
   [213]: https://github.com/eed3si9n/scalaxb/pull/213
+  [243]: https://github.com/eed3si9n/scalaxb/pull/243
+  [255]: https://github.com/eed3si9n/scalaxb/pull/255
+  [256]: https://github.com/eed3si9n/scalaxb/pull/256
   [259]: https://github.com/eed3si9n/scalaxb/pull/259
   [@choffmeister]: https://github.com/choffmeister
   [@barnesjd]: https://github.com/barnesjd
@@ -16,10 +24,13 @@
   [@choeger]: https://github.com/choeger
   [@jlavallee]: https://github.com/jlavallee
   [@hoff2]: https://github.com/hoff2
+  [@FranklinChen]: https://github.com/FranklinChen
+  [@hedefalk]: https://github.com/hedefalk
+  [@malaporte]: https://github.com/malaporte
 
 ## non-blocking SOAP
 
-scalaxb 1.2.0 generates non-blocking SOAP code. Instead of `Either`, now the SOAP call returns `Future[A]` and fault is thrown as `Future`'s failure semantics.
+scalaxb 1.2.0 generates non-blocking SOAP code by default. Instead of `Either[X, A]`, the SOAP call returns `Future[A]` and the fault, if any, is thrown as `Future`'s failure semantics.
 
     // default
     def getQuote(symbol: Option[String]): Future[stockquote.GetQuoteResponse]
@@ -27,18 +38,24 @@ scalaxb 1.2.0 generates non-blocking SOAP code. Instead of `Either`, now the SOA
     // async in scalaxb := false
     def getQuote(symbol: Option[String]): Either[scalaxb.Fault[Any], stockquote.GetQuoteResponse]
 
-This feature was contributed independently by [@jlavallee][@jlavallee] and [@hoff2][@hoff2] as [#213][213]/[#259][259].
+This feature was contributed by [@jlavallee][@jlavallee] and [@hoff2][@hoff2] as [#213][213]/[#259][259].
 
 ## SOAP bug fixes
 
+- Escapes reserve words appearing as a parameter in SOAP. [#252][252]/[#256][256] contributed by [@romainreuillon][@romainreuillon]
+- Escapes reserve words appearing as an operation name in SOAP. [#241][241] reported by [@rcgoodfellow][@rcgoodfellow]
 - Fixes handling of nillable elements appearing in SOAP. [#229][229] reported by [@barnesjd][@barnesjd]
-- Escapes reserve words appearing as operation name in SOAP. [#241][241] reported by [@rcgoodfellow][@rcgoodfellow] 
+- Fixes string encoding problems while posting SOAP. [#231][231] reported by [@hedefalk][@hedefalk]
+- Supports Dispatch 0.11.1.
 - Fixes response parsing for literal RPC style. [#260][260] reported by [@romainreuillon][@romainreuillon]
 
 ## bug fixes and minor enhancements
 
-- Dropping Scala 2.9.0 and removing deprecated warnings.
-- Fixes "mixed" attribute not being inherited when extending a complex type. [#228][228] reported by [@choffmeister][@choffmeister]
+- Drops Scala 2.9.0 and removing deprecated warnings.
+- Caches `DatatypeFactory` instance to `ThreadLocal`. [#243][243] contributed by [@malaporte][@malaporte]
+- Fixes handing of zero-length prefix. [#253][253]/[#255][255] contributed by [@romainreuillon][@romainreuillon]
+- Fixes `mixed` attribute not being inherited when extending a complex type. [#228][228] reported by [@choffmeister][@choffmeister]
+- Fixes non-terminating parser when `unbounded` is nested. [#230][230] reported by [@FranklinChen][@FranklinChen]
 - Fixes handling of `xs:element` with `default` with `minOccurs = 1`. [#245][245] reported by [@alboko][@alboko]
 - Fixes handling of very long `xs:enumeration` value. [#247][247] reported by [@jcranky][@jcranky]
 - Fixes handling of `xs:element` names with symbols when `--class-prefix` is passed. [#251][251] reported by [@romangarcia][@romangarcia]

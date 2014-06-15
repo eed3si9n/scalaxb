@@ -1,7 +1,7 @@
 package scalaxb
 import scala.concurrent.Future
 
-case class Soap11Fault[+A](original: Any, detail: Option[A], headers: scala.xml.NodeSeq) {
+case class Soap11Fault[+A](original: Any, detail: Option[A], headers: scala.xml.NodeSeq) extends Exception {
   def asFault[B: scalaxb.XMLFormat] = Soap11Fault(original, detail map {
     case x: soapenvelope11.Detail => x.any.head.value match {
       case node: scala.xml.Node => scalaxb.fromXML[B](node)
@@ -45,7 +45,7 @@ trait Soap11ClientsAsync { this: HttpClientsAsync =>
 
     def requestResponse(body: scala.xml.NodeSeq, headers: scala.xml.NodeSeq, scope: scala.xml.NamespaceBinding,
                         address: java.net.URI, webMethod: String, action: Option[java.net.URI]):
-        Future[Either[Soap11Fault[Detail], (scala.xml.NodeSeq, scala.xml.NodeSeq)]] = {
+        Future[(scala.xml.NodeSeq, scala.xml.NodeSeq)] = {
       val bodyRecords = body.toSeq map { DataRecord(None, None, _) }
       val headerOption = headers.toSeq.headOption map { _ =>
         Header(headers.toSeq map {DataRecord(None, None, _)}, Map())
@@ -56,12 +56,12 @@ trait Soap11ClientsAsync { this: HttpClientsAsync =>
 
     def soapResponse(location: Option[String], params: Map[String, Any],
                      address: java.net.URI, webMethod: String, action: Option[java.net.URI]):
-        Future[Either[Soap11Fault[Detail], (scala.xml.NodeSeq, scala.xml.NodeSeq)]] = {
+        Future[(scala.xml.NodeSeq, scala.xml.NodeSeq)] = {
       buildResponse(soapRequest(None, scala.xml.TopScope, address, webMethod, action))
     }
 
     def buildResponse(futureSoapResponse: Future[Envelope]):
-        Future[Either[Soap11Fault[Detail], (scala.xml.NodeSeq, scala.xml.NodeSeq)]] = {
+        Future[(scala.xml.NodeSeq, scala.xml.NodeSeq)] = {
       futureSoapResponse.map( soapResponse => {
         val header: scala.xml.NodeSeq =
           soapResponse.Header.toSeq flatMap { header =>
@@ -73,9 +73,9 @@ trait Soap11ClientsAsync { this: HttpClientsAsync =>
           case Some(DataRecord(_, _, x: scala.xml.Elem)) if (x.label == "Fault") &&
               (x.scope.getURI(x.prefix) == SOAP_ENVELOPE11_URI) =>
             val fault = scalaxb.fromXML[soapenvelope11.Fault](x)
-            Left(Soap11Fault(fault, fault.detail, header))
+            throw Soap11Fault(fault, fault.detail, header)
           case _ =>
-            Right(header, soapResponse.Body.any collect {
+            (header, soapResponse.Body.any collect {
               case DataRecord(_, _, x: scala.xml.Node) => x
             })
         }

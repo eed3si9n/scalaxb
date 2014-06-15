@@ -4,6 +4,8 @@
   [245]: https://github.com/eed3si9n/scalaxb/issues/245
   [247]: https://github.com/eed3si9n/scalaxb/issues/247
   [251]: https://github.com/eed3si9n/scalaxb/issues/251
+  [213]: https://github.com/eed3si9n/scalaxb/pull/213
+  [259]: https://github.com/eed3si9n/scalaxb/pull/259
   [@choffmeister]: https://github.com/choffmeister
   [@barnesjd]: https://github.com/barnesjd
   [@jcranky]: https://github.com/jcranky
@@ -12,6 +14,20 @@
   [@alboko]: https://github.com/alboko
   [@romangarcia]: https://github.com/romangarcia
   [@choeger]: https://github.com/choeger
+  [@jlavallee]: https://github.com/jlavallee
+  [@hoff2]: https://github.com/hoff2
+
+## non-blocking SOAP
+
+scalaxb 1.2.0 generates non-blocking SOAP code. Instead of `Either`, now the SOAP call returns `Future[A]` and fault is thrown as `Future`'s failure semantics.
+
+    // default
+    def getQuote(symbol: Option[String]): Future[stockquote.GetQuoteResponse]
+
+    // async in scalaxb := false
+    def getQuote(symbol: Option[String]): Either[scalaxb.Fault[Any], stockquote.GetQuoteResponse]
+
+This feature was contributed independently by [@jlavallee][@jlavallee] and [@hoff2][@hoff2] as [#213][213]/[#259][259].
 
 ## SOAP bug fixes
 

@@ -7,7 +7,7 @@ object Wsdl11Soap11Test extends TestBase {
 
   lazy val generated = module.process(inFile,
     Config(packageNames = Map(None -> Some(packageName)),
-      packageDir = true, outdir = tmp))
+      packageDir = true, outdir = tmp, async = false))
 
   val packageName = "genericbarcode"
   val inFile  = new File("integration/src/test/resources/genericbarcode.wsdl")

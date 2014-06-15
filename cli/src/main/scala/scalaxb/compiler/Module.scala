@@ -48,7 +48,7 @@ case class Config(packageNames: Map[Option[String], Option[String]] = Map(None -
   contentsSizeLimit: Int = 20,
   sequenceChunkSize: Int = 10,
   laxAny: Boolean = false,
-  async: Boolean = false,
+  async: Boolean = true,
   dispatchVersion: String = scalaxb.BuildInfo.defaultDispatchVersion)
 
 object Snippet {

@@ -30,7 +30,7 @@ trait GenSource {
   import Module.{NL, indent, camelCase}
   import scala.xml.Node
   import scalaxb.compiler.xsd.{ReferenceTypeSymbol, SimpleTypeDecl, ComplexTypeDecl, BuiltInSimpleTypeSymbol,
-    XsTypeSymbol, AnyType, XsAnyType}
+    XsTypeSymbol, AnyType, XsAnyType, Single}
 
   val WSDL_SOAP11 = "http://schemas.xmlsoap.org/wsdl/soap/"
   val WSDL_SOAP12 = "http://schemas.xmlsoap.org/wsdl/soap12/"
@@ -599,7 +599,7 @@ trait {interfaceTypeName} {{
     (part.typeValue, part.element) match {
       case (Some(typeValueQName), _) =>
         val typeSymbol = toTypeSymbol(typeValueQName)
-        xsdgenerator.buildArg(selector, typeSymbol, None)
+        xsdgenerator.buildArg(xsdgenerator.buildTypeName(typeSymbol), selector, Single, None)
       case (_, Some(elementQName)) =>
         val elem = xsdgenerator.elements(splitTypeName(elementQName))
         xsdgenerator.buildArg(elem, selector, None, false)

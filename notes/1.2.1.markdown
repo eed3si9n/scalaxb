@@ -1,0 +1,6 @@
+  [265]: https://github.com/eed3si9n/scalaxb/issues/265
+
+## SOAP bug fixes
+
+- Fixes xs:AnyType handling. [#265][265]
+

@@ -43,7 +43,7 @@ trait Args extends Params {
   def buildFromString(typeName: String, selector: String): String =
     typeName + ".fromString(" + selector + ")"
   
-  // called by buildConverter and buildPartArg
+  // called by buildConverter
   def buildArg(selector: String, typeSymbol: XsTypeSymbol, stackItem: Option[String]): String = typeSymbol match {
     case AnyType(symbol)                            => selector
     case symbol: BuiltInSimpleTypeSymbol            => buildArg(buildTypeName(symbol), selector, Single, stackItem)

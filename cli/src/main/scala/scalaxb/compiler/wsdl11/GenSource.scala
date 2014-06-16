@@ -340,6 +340,9 @@ trait {interfaceTypeName} {{
       case "Any" => "x"
       case x => "x.asFault[%s]".format(x)
     }
+    def faultTypeName: String =
+      if (soap12) "scalaxb.Fault[_]"
+      else "scalaxb.Soap11Fault[_]"
 
     val opImpl = (op.xoperationtypeoption, config.async) match {
       case (DataRecord(_, _, XOnewayoperationSequence(input)), true) =>
@@ -361,11 +364,14 @@ trait {interfaceTypeName} {{
         // "def %s(%s): Option[scalaxb.Fault[%s]]".format(op.name, arg(input), faultsToTypeName(faults))
         """soapClient.requestResponse(%s,
           |            %s, defaultScope, %s, %s, %s).transform({ case (header, body) => 
-          |            %s }, { x => %s })""".stripMargin.format(
+          |            %s }, {
+          |              case x: %s => %s
+          |              case x => x
+          |            })""".stripMargin.format(
             bodyString(op, input, binding, soapBindingStyle),
             headerString(op, input, binding, soapBindingStyle), address, quotedMethod, actionString,
             outputString(output, binding, op, soapBindingStyle, soap12),
-            faultString(faults))
+            faultTypeName, faultString(faults))
 
       case (DataRecord(_, _, XRequestresponseoperationSequence(input, output, faults)), false) =>
         // "def %s(%s): Option[scalaxb.Fault[%s]]".format(op.name, arg(input), faultsToTypeName(faults))
@@ -383,11 +389,14 @@ trait {interfaceTypeName} {{
         // "def %s(%s): Either[scalaxb.Fault[Any], %s]".format(op.name, arg(input), paramTypeName)
         """soapClient.requestResponse(%s,
           |            %s, defaultScope, %s, %s, %s).transform({ case (header, body) => 
-          |            %s }, { x => %s })""".format(
+          |            %s }, {
+          |              case x: %s => %s
+          |              case x => x
+          |            })""".format(
             bodyString(op, input, binding, soapBindingStyle),
             headerString(op, input, binding, soapBindingStyle), address, quotedMethod, actionString,
             outputString(output, binding, op, soapBindingStyle, soap12),
-            faultString(faults))
+            faultTypeName, faultString(faults))
 
       case (DataRecord(_, _, XSolicitresponseoperationSequence(output, input, faults)), false) =>
         // "def %s(%s): Either[scalaxb.Fault[Any], %s]".format(op.name, arg(input), paramTypeName)

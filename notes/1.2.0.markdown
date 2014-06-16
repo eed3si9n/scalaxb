@@ -9,6 +9,7 @@
   [251]: https://github.com/eed3si9n/scalaxb/issues/251
   [252]: https://github.com/eed3si9n/scalaxb/issues/252
   [253]: https://github.com/eed3si9n/scalaxb/issues/253
+  [260]: https://github.com/eed3si9n/scalaxb/issues/260
   [213]: https://github.com/eed3si9n/scalaxb/pull/213
   [243]: https://github.com/eed3si9n/scalaxb/pull/243
   [255]: https://github.com/eed3si9n/scalaxb/pull/255

@@ -143,7 +143,7 @@ trait XMLProtocol extends scalaxb.XMLStandardTypes {
       { case p1 ~ p2 ~ p3 ~ p4 =>
       soapenvelope11.Fault(scalaxb.fromXML[javax.xml.namespace.QName](p1, scalaxb.ElemName(node) :: stack),
         scalaxb.fromXML[String](p2, scalaxb.ElemName(node) :: stack),
-        p3.headOption map { scalaxb.fromXML[java.net.URI](_, scalaxb.ElemName(node) :: stack) },
+        p3.headOption map { scalaxb.fromXML[String](_, scalaxb.ElemName(node) :: stack) },
         p4.headOption map { scalaxb.fromXML[soapenvelope11.Detail](_, scalaxb.ElemName(node) :: stack) }) })
     
     def writesChildNodes(__obj: soapenvelope11.Fault, __scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node] =

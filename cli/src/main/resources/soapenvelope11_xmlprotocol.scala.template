@@ -149,7 +149,7 @@ trait XMLProtocol extends scalaxb.XMLStandardTypes {
     def writesChildNodes(__obj: soapenvelope11.Fault, __scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node] =
       Seq.concat(scalaxb.toXML[javax.xml.namespace.QName](__obj.faultcode, None, Some("faultcode"), __scope, false),
         scalaxb.toXML[String](__obj.faultstring, None, Some("faultstring"), __scope, false),
-        __obj.faultactor map { scalaxb.toXML[java.net.URI](_, None, Some("faultactor"), __scope, false) } getOrElse {Nil},
+        __obj.faultactor map { scalaxb.toXML[String](_, None, Some("faultactor"), __scope, false) } getOrElse {Nil},
         __obj.detail map { scalaxb.toXML[soapenvelope11.Detail](_, None, Some("detail"), __scope, false) } getOrElse {Nil})
 
   }

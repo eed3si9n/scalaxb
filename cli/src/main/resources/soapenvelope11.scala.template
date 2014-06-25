@@ -22,7 +22,7 @@ case class Body(any: Seq[scalaxb.DataRecord[Any]] = Nil,
 */
 case class Fault(faultcode: javax.xml.namespace.QName,
   faultstring: String,
-  faultactor: Option[java.net.URI] = None,
+  faultactor: Option[String] = None,
   detail: Option[soapenvelope11.Detail] = None)
 
 

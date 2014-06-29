@@ -5,11 +5,9 @@ trait DispatchHttpClientsAsync extends HttpClientsAsync {
 
   trait DispatchHttpClient extends HttpClient {
     import dispatch._, Defaults._
-
     val http = new Http()
-    //val http = new thread.Http()
 
-    def request(in: String, address: java.net.URI, headers: Map[String, String]): Future[String] = {
+    def request(in: String, address: java.net.URI, headers: Map[String, String]): concurrent.Future[String] = {
       val req = url(address.toString) << in <:< headers
       http(req > as.String)
     }

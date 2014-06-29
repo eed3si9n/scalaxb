@@ -1,8 +1,11 @@
   [264]: https://github.com/eed3si9n/scalaxb/issues/264
   [265]: https://github.com/eed3si9n/scalaxb/issues/265
+  [269]: https://github.com/eed3si9n/scalaxb/issues/269
   [@romainreuillon]: https://github.com/romainreuillon
+  [@hedefalk]: https://github.com/hedefalk
 
 ## SOAP bug fixes
 
 - Fixes `xs:AnyType` handling. [#265][265]
 - Fixes `asFault` not `Throwable` error. [#264][264] reported by [@romainreuillon][@romainreuillon]
+- Fixes the definition of `HttpClientsAsync` to use `concurrent.Future`. [#269][269] reported by [@hedefalk][@hedefalk]

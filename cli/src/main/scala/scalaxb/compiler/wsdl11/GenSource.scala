@@ -517,7 +517,7 @@ trait {interfaceTypeName} {{
 
     lazy val args = parts map { p =>
       val v = escapeKeyWord(soapBindingStyle match {
-        case DocumentStyle => if (isMultiPart(input, binding.input)) "value"
+        case DocumentStyle => if (isMultiPart(input, binding.input)) toParamCache(p).toParamName
                               else entity(p)
         case RpcStyle      => p.name.getOrElse {"in"}
       })

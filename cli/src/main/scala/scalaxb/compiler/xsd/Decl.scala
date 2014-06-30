@@ -82,7 +82,7 @@ object TypeSymbolParser {
     fromString(splitTypeName(name, scope, config.targetNamespace))
 
   def fromQName(qname: javax.xml.namespace.QName): XsTypeSymbol =
-    fromString((scalaxb.Helper.nullOrEmpty(qname.getNamespaceURI), qname.getLocalPart))
+    fromString((masked.scalaxb.Helper.nullOrEmpty(qname.getNamespaceURI), qname.getLocalPart))
 
   def fromString(pair: (Option[String], String)): XsTypeSymbol = {
     val (namespace, localPart) = pair

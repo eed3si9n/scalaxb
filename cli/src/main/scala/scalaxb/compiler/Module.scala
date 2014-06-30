@@ -97,7 +97,7 @@ object Module {
     }
   }
 
-  def splitTypeName(value: String, scope: scala.xml.NamespaceBinding) = scalaxb.Helper.splitQName(value, scope)
+  def splitTypeName(value: String, scope: scala.xml.NamespaceBinding) = masked.scalaxb.Helper.splitQName(value, scope)
 
   def indent(n: Int) = "  " * n
 

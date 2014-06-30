@@ -1,4 +1,6 @@
-package scalaxb
+package masked.scalaxb
+
+import masked.scalaxb
 
 import scala.xml.{Node, NodeSeq, NamespaceBinding, Elem, UnprefixedAttribute, PrefixedAttribute}
 import javax.xml.datatype.{XMLGregorianCalendar}
@@ -270,7 +272,7 @@ trait XMLStandardTypes {
       case node: scala.xml.Node =>
         try {
           val xs = Helper.splitBySpace(node.text).toSeq
-          Right(xs map { x => fromXML[A](scala.xml.Elem(node.prefix, node.label, scala.xml.Null, node.scope, scala.xml.Text(x)), stack) })
+          Right(xs map { x => fromXML[A](scala.xml.Elem(node.prefix, node.label, scala.xml.Null, node.scope, true, scala.xml.Text(x)), stack) })
         } catch { case e: Exception => Left(e.toString) }
       case _ => Left("Node expected: " + seq.toString)
     }
@@ -669,7 +671,7 @@ trait CanWriteChildNodes[A] extends CanWriteXML[A] {
     val elem =  scala.xml.Elem(Helper.getPrefix(namespace, scope).orNull,
       elementLabel getOrElse { sys.error("missing element label.") },
       writesAttribute(obj, scope),
-      scope,
+      scope, true,
       writesChildNodes(obj, scope): _*)
     if (typeAttribute && typeName.isDefined && scope.getPrefix(Helper.XSI_URL) != null)
       elem % scala.xml.Attribute(scope.getPrefix(Helper.XSI_URL), "type",
@@ -848,7 +850,7 @@ object Helper {
       scope: scala.xml.NamespaceBinding) =
     scala.xml.Elem(getPrefix(namespace, scope).orNull, elementLabel,
       scala.xml.Attribute(scope.getPrefix(XSI_URL), "nil", "true", scala.xml.Null),
-      scope)
+      scope, true)
 
   def splitBySpace(text: String) = text.split(' ').filter("" !=)
 
@@ -893,7 +895,7 @@ object Helper {
     elementLabel map { label =>
       scala.xml.Elem(getPrefix(namespace, scope).orNull, label,
         scala.xml.Null,
-        scope, scala.xml.Text(obj.toString))
+        scope, true, scala.xml.Text(obj.toString))
     } getOrElse { scala.xml.Text(obj) }
   }
 
@@ -944,7 +946,7 @@ object Helper {
     val rule = new RewriteRule {
       override def transform(n: Node): Seq[Node] = n match {
         case x@Elem(prefix, label, attr, scope, _*) if attr exists(p => p.key == "href") =>
-          Elem(prefix, label, attr remove("href"), scope, lookupRef((x \ "@href").text.tail): _*)
+          Elem(prefix, label, attr remove("href"), scope, true, lookupRef((x \ "@href").text.tail): _*)
         case x@Elem(prefix, label, attr, scope, _*) if attr exists(p => p.key == "id") =>
           Nil
         case other => other

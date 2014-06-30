@@ -25,7 +25,7 @@ package scalaxb.compiler.wsdl11
 import scalashim._
 import scala.collection.mutable
 import scalaxb.compiler.{Module, Config, Snippet, CustomXML, CanBeWriter, Log}
-import scalaxb.{DataRecord}
+import masked.scalaxb.{DataRecord}
 import wsdl11._
 import java.io.{Reader}
 import java.net.{URI}
@@ -122,7 +122,7 @@ class Driver extends Module { driver =>
     val raw = rawschema
     lazy val (wsdl: Option[XDefinitionsType], xsdRawSchema: Seq[Node]) = alocation.toString match {
       case FileExtension(".wsdl") =>
-        val w = scalaxb.fromXML[XDefinitionsType](rawschema)
+        val w = masked.scalaxb.fromXML[XDefinitionsType](rawschema)
         val x: Seq[Node] = extractChildren(w, "types") { t: XTypesType => t } flatMap { _.any collect {
           case DataRecord(_, _, node: Node) => node
         }}

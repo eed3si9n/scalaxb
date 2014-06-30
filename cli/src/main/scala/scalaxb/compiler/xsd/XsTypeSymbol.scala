@@ -73,7 +73,7 @@ object ReferenceTypeSymbol {
 }
 
 class ReferenceTypeSymbol(val qname: QName) extends XsTypeSymbol {
-  val namespace = scalaxb.Helper.nullOrEmpty(qname.getNamespaceURI)
+  val namespace = masked.scalaxb.Helper.nullOrEmpty(qname.getNamespaceURI)
   val localPart = qname.getLocalPart
   val name: String = (namespace map {"{%s}" format _} getOrElse("")) + localPart
 

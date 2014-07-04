@@ -228,6 +228,12 @@ public abstract class AbstractScalaxbMojo extends AbstractMojo {
     @Parameter(property = "scalaxb.dispatch.version")
     private String dispatchVersion;
 
+    /**
+     * Generate non-blocking client code from WSDL sources. 
+     */
+    @Parameter(property = "scalaxb.async", defaultValue = "true")
+    private boolean async;
+
     @Parameter(property = "scalaxb.verbose")
     private boolean verbose;
 
@@ -276,6 +282,7 @@ public abstract class AbstractScalaxbMojo extends AbstractMojo {
             .param("--protocol-package", protocolPackage)
             .param("--attribute-prefix", attributePrefix)
             .flag("--prepend-family", prependFamily)
+            .flag("--blocking", !async)
             .flag("--lax-any", laxAny)
             .getArguments();
         return unmodifiableList(args);

@@ -12,7 +12,8 @@
 - Fixes `asFault` not `Throwable` error. [#264][264] reported by [@romainreuillon][@romainreuillon]
 - Fixes the generated code for multipart SOAP message. [#267][267] reported by [@tomhaigh][@tomhaigh]
 - Fixes the definition of `HttpClientsAsync` to use `concurrent.Future`. [#269][269] reported by [@hedefalk][@hedefalk]
+- Adds `--blocking` command line option to generate blocking SOAP client.
 
 ## minor enhancements
 
-- Mask `scalaxb` package that's used internally to generate code.
+- Masks `scalaxb` package that's used internally to generate code.

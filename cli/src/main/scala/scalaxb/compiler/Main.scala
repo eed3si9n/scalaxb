@@ -106,7 +106,7 @@ object Arguments {
         c.copy(generateRuntime = false) }
       opt[Unit]("lax-any") text("relaxes namespace constraints of xs:any") action { (_, c) =>
         c.copy(laxAny = true) }
-      opt[Unit]("blocking") text("generate blocking HTTP client") action { (_, c) =>
+      opt[Unit]("blocking") text("generates blocking SOAP client") action { (_, c) =>
         c.copy(async = false) }
       opt[String]("dispatch-version") valueName("<version>") text("version of Dispatch (default: " + scalaxb.BuildInfo.defaultDispatchVersion + ")") action { (x, c) =>
         c.copy(dispatchVersion = x) }

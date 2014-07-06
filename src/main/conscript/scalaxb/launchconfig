@@ -1,5 +1,5 @@
 [app]
-  version: 1.2.0
+  version: 1.2.1
   org: org.scalaxb
   name: scalaxb_2.10
   class: scalaxb.compiler.SbtApp

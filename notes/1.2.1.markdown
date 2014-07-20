@@ -6,6 +6,8 @@
   [@hedefalk]: https://github.com/hedefalk
   [@tomhaigh]: https://github.com/tomhaigh
 
+This is a bug fix release focused on fixing the SOAP code generation. See [using SOAP](http://scalaxb.org/wsdl-support) for more details.
+
 ## SOAP bug fixes
 
 - Fixes `xs:AnyType` handling. [#265][265]

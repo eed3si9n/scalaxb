@@ -302,10 +302,8 @@ trait {interfaceTypeName} {{
     val op = boundOperation(binding, intf)
     val headers = headerBindings(binding.input)
     val headerParts = headers.map(_.part).toSet
-    println(headerParts)
     val input = operationParts(op)._1.getOrElse { sys.error("expected input:" + op.name) }
     val parts = paramMessage(input).part.filterNot { p => headerParts(p.name.getOrElse("")) }
-    println(parts)
     val bodyParams = parts map toParamCache
     makeOperationWrapperParams(op, headers, bodyParams)
   }

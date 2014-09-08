@@ -33,7 +33,7 @@ object `package` {
   def toXML[A](obj: A, elementLabel: String, scope: NamespaceBinding)(implicit format: CanWriteXML[A]): NodeSeq =
     toXML(obj, None, Some(elementLabel), scope, false)
 
-  /** @returns - maps from prefix to namespace URI.
+  /** @return - maps from prefix to namespace URI.
    */
   def fromScope(scope: NamespaceBinding): List[(Option[String], String)] = {
     def doFromScope(s: NamespaceBinding): List[(Option[String], String)] = {

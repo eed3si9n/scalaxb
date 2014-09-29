@@ -5,7 +5,9 @@ trait DispatchHttpClientsAsync extends HttpClientsAsync {
 
   trait DispatchHttpClient extends HttpClient {
     import dispatch._, Defaults._
-    val http = new Http()
+    
+    // Keep it lazy. See https://github.com/eed3si9n/scalaxb/pull/279
+    lazy val http = new Http()
 
     def request(in: String, address: java.net.URI, headers: Map[String, String]): concurrent.Future[String] = {
       val req = url(address.toString) << in <:< headers

@@ -1,9 +1,16 @@
 package scalaxb
 
 case class Fault[+A](original: Any, detail: Option[A], headers: scala.xml.NodeSeq) {
-  def asFault[B: scalaxb.XMLFormat] = Fault(original, detail map {
+  def asFault[B: scalaxb.XMLFormat]: Fault[B] = Fault(original, detail map {
     case x: soapenvelope12.Detail => x.any.head.value match {
       case node: scala.xml.Node => scalaxb.fromXML[B](node)
+      case _ => sys.error("unsupported fault: " + toString)
+    }
+    case _ => sys.error("unsupported fault: " + toString)
+  }, headers)
+  def asNillableFault[B: scalaxb.XMLFormat]: Fault[Option[B]] = Fault(original, detail map {
+      case node: scala.xml.Node if scalaxb.Helper.isNil(node) => None 
+      case node: scala.xml.Node                               => Some(scalaxb.fromXML[B](node))
       case _ => sys.error("unsupported fault: " + toString)
     }
     case _ => sys.error("unsupported fault: " + toString)

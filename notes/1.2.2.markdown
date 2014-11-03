@@ -1,0 +1,5 @@
+  [284]: https://github.com/eed3si9n/scalaxb/issues/284
+
+### SOAP changes
+
+- nillable fault support. [#284][284]

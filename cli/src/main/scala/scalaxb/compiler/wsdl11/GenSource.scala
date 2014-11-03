@@ -336,10 +336,12 @@ trait {interfaceTypeName} {{
     val soapBindingStyle = parseSoapBindingStyle(binding.any.headOption, defaultSoapBindingStyle)
     val actionString = action map {"Some(new java.net.URI(\"%s\"))".format(_)} getOrElse {"None"}
 
-    def faultString(faults: Seq[XFaultType]): String = faultsToFaultParamTypeName(faults) match {
-      case "Any" => "x"
-      case x => "x.asFault[%s]".format(x)
-    }
+    def faultString(faults: Seq[XFaultType]): String =
+      faultsToFaultParamTypeName(faults) match {
+        case ("Any", _) => "x"
+        case (x, true)  => s"""x.asNillableFault[$x]"""
+        case (x, _)     => s"""x.asFault[$x]"""
+      }
     def faultTypeName: String =
       if (soap12) "scalaxb.Fault[_]"
       else "scalaxb.Soap11Fault[_]"
@@ -365,13 +367,15 @@ trait {interfaceTypeName} {{
         """soapClient.requestResponse(%s,
           |            %s, defaultScope, %s, %s, %s).transform({ case (header, body) => 
           |            %s }, {
-          |              case x: %s => %s
-          |              case x => x
-          |            })""".stripMargin.format(
+          |""".stripMargin.format(
             bodyString(op, input, binding, soapBindingStyle),
             headerString(op, input, binding, soapBindingStyle), address, quotedMethod, actionString,
-            outputString(output, binding, op, soapBindingStyle, soap12),
-            faultTypeName, faultString(faults))
+            outputString(output, binding, op, soapBindingStyle, soap12)) +
+          // TODO: handle multiple faults
+       """|              case x: %s => %s
+          |""".stripMargin.format(faultTypeName, faultString(faults)) +
+       """|              case x => x
+          |            })""".stripMargin
 
       case (DataRecord(_, _, XRequestresponseoperationSequence(input, output, faults)), false) =>
         // "def %s(%s): Option[scalaxb.Fault[%s]]".format(op.name, arg(input), faultsToTypeName(faults))
@@ -390,13 +394,15 @@ trait {interfaceTypeName} {{
         """soapClient.requestResponse(%s,
           |            %s, defaultScope, %s, %s, %s).transform({ case (header, body) => 
           |            %s }, {
-          |              case x: %s => %s
-          |              case x => x
-          |            })""".format(
+          |""".stripMargin.format(
             bodyString(op, input, binding, soapBindingStyle),
             headerString(op, input, binding, soapBindingStyle), address, quotedMethod, actionString,
-            outputString(output, binding, op, soapBindingStyle, soap12),
-            faultTypeName, faultString(faults))
+            outputString(output, binding, op, soapBindingStyle, soap12)) +
+          // TODO: handle multiple faults
+       """|              case x: %s => %s
+          |""".stripMargin.format(faultTypeName, faultString(faults)) +
+       """|              case x => x
+          |            })""".stripMargin
 
       case (DataRecord(_, _, XSolicitresponseoperationSequence(output, input, faults)), false) =>
         // "def %s(%s): Either[scalaxb.Fault[Any], %s]".format(op.name, arg(input), paramTypeName)
@@ -405,7 +411,7 @@ trait {interfaceTypeName} {{
           |          case Left(x)  => Left(%s)
           |          case Right((header, body)) =>
           |            Right(%s)
-          |        }""".format(
+          |        }""".stripMargin.format(
             bodyString(op, input, binding, soapBindingStyle),
             headerString(op, input, binding, soapBindingStyle), address, quotedMethod, actionString,
             faultString(faults), outputString(output, binding, op, soapBindingStyle, soap12))
@@ -746,16 +752,20 @@ trait {interfaceTypeName} {{
   def faultsToTypeName(faults: Seq[XFaultType], soap12: Boolean): String =
     "%s[%s]" format (if (soap12) "scalaxb.Fault"
       else "scalaxb.Soap11Fault",
-    faultsToFaultParamTypeName(faults))
-
-  def faultsToFaultParamTypeName(faults: Seq[XFaultType]): String =
+    faultsToFaultParamTypeName(faults) match {
+      case (x, true) => s"""Option[$x]"""
+      case (x, _)    => x
+    })
+  // param type and nillable
+  def faultsToFaultParamTypeName(faults: Seq[XFaultType]): (String, Boolean) =
     faults.toList match {
       case x :: xs =>
         val msg = context.messages(splitTypeName(x.message))
         msg.part.headOption map { part =>
-          toParamCache(part).typeName
-        } getOrElse {"Any"}
-      case _ => "Any"
+          val pc = toParamCache(part)
+          (pc.baseTypeName, pc.nillable)
+        } getOrElse ("Any", false)
+      case _ => ("Any", false)
     }
 
   def makeBindingName(binding: XBindingType): String = {

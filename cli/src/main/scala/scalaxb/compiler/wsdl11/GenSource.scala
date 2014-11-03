@@ -30,7 +30,7 @@ trait GenSource {
   import Module.{NL, indent, camelCase}
   import scala.xml.Node
   import scalaxb.compiler.xsd.{ReferenceTypeSymbol, SimpleTypeDecl, ComplexTypeDecl, BuiltInSimpleTypeSymbol,
-    XsTypeSymbol, AnyType, XsAnyType, Single}
+    XsTypeSymbol, AnyType, XsAnyType, Single, Multiple, Optional, Cardinality }
 
   val WSDL_SOAP11 = "http://schemas.xmlsoap.org/wsdl/soap/"
   val WSDL_SOAP12 = "http://schemas.xmlsoap.org/wsdl/soap12/"
@@ -210,7 +210,7 @@ trait {interfaceTypeName} {{
       } getOrElse {
         val parts = paramMessage(output).part
         if (parts.isEmpty) "Unit"
-        else partTypeName(parts.head)
+        else toParamCache(parts.head).typeName
       }
     }
 
@@ -504,12 +504,12 @@ trait {interfaceTypeName} {{
     val b = bodyBinding(binding.input)
     val parts = paramMessage(input).part
     // called only for DocumentStyle
-    def entity(part: XPartType) = toTypeSymbol(part) match {
+    def entity(part: XPartType) = toParamCache(part).typeSymbol match {
       case AnyType(_) => (buildIRIStyleArgs(input) map {_.toParamName}).head
       case symbol: BuiltInSimpleTypeSymbol => (buildIRIStyleArgs(input) map {_.toParamName}).head
       case ReferenceTypeSymbol(decl: SimpleTypeDecl) => (buildIRIStyleArgs(input) map {_.toParamName}).head
       case _ =>
-        "%s(%s)".format(partTypeName(parts.head), buildIRIStyleArgs(input) map {_.toVarg} mkString(", "))
+        "%s(%s)".format(toParamCache(parts.head).baseTypeName, buildIRIStyleArgs(input) map {_.toVarg} mkString(", "))
     }
 
     lazy val opLabel = "\"%s\"".format(op.name)
@@ -523,13 +523,13 @@ trait {interfaceTypeName} {{
       })
 
       val (label, namespace) = (b.literal, soapBindingStyle) match {
+        case (true, RpcStyle) if p.element.isDefined =>
+          ("\"%s\"".format(toElement(p).name), toElement(p).namespace)
         // If the operation style is document there are no additional wrappers, and the message parts appear directly under the SOAP Body element.
         case (true, DocumentStyle) if p.element.isDefined =>
           ("\"%s\"".format(toElement(p).name), toElement(p).namespace)
         case (true, DocumentStyle) =>
           ("\"Body\"", None)
-        case (true, RpcStyle) if p.element.isDefined =>
-          ("\"%s\"".format(toElement(p).name), toElement(p).namespace)
         case _ =>
           ("\"%s\"".format(p.name.getOrElse {"in"}), b.namespace)
       }
@@ -558,6 +558,11 @@ trait {interfaceTypeName} {{
     }
   }
 
+  // body contains Seq[Node] collected by running 
+  // Right(header, soapResponse.Body.any collect {
+  //   case DataRecord(_, _, x: scala.xml.Node) => x
+  // })
+  // http://www.ibm.com/developerworks/library/ws-whichwsdl/
   def outputString(output: XParamType, binding: XBinding_operationType,
                    op: XOperationType, soapBindingStyle: SoapBindingStyle, soap12: Boolean): String = {
     val parts = paramMessage(output).part
@@ -566,17 +571,23 @@ trait {interfaceTypeName} {{
       val b = bodyBinding(binding.output)
       val multipart = isMultiPart(output, binding.output)
       val fromXmls = (parts map { p =>
-        val v = (b.literal, soapBindingStyle) match {
+        val v = (b.literal, soapBindingStyle, p.element) match {
           // If the operation style is document there are no additional wrappers, and the message parts appear directly under the SOAP Body element.
-          case (true, DocumentStyle) if p.element.isDefined =>
-            "(body.headOption getOrElse {body})"
-          case (true, DocumentStyle) =>
-            """scala.xml.Elem(null, "Body", scala.xml.Null, defaultScope, true, body.toSeq: _*)"""
-          case (true, RpcStyle) if p.element.isDefined =>
-            "(body.headOption getOrElse {body})"
-          case (true, RpcStyle) =>
+          // <soap:body>
+          //   <xElement>5</xElement>
+          //   <yElement>5.0</yElement>
+          // </soap:body>
+          case (true, DocumentStyle, Some(elementQName)) =>
+            val elem = xsdgenerator.elements(splitTypeName(elementQName))
+            """(scala.xml.Elem(null, "Body", scala.xml.Null, defaultScope, true, body.toSeq: _*) \ "%s").head""" format (elem.name)
+          case (true, DocumentStyle, None) =>
+            """body.head"""
+          case (true, RpcStyle, Some(elementQName)) =>
+            val elem = xsdgenerator.elements(splitTypeName(elementQName))
+            """(body.head \ "%s").head""" format (elem.name)
+          case (true, RpcStyle, None) =>
             """(body.head \ "%s").head""" format (p.name.get)
-          case (false, _) if !soap12 =>
+          case (false, _, _) if !soap12 =>
             """(scalaxb.Helper.resolveSoap11Refs(body.head) \ "%s").head""" format (p.name.get)
           case _ => """(body.head \ "%s").head""" format (p.name.get)
         }
@@ -619,7 +630,17 @@ trait {interfaceTypeName} {{
 
   def escapeKeyWord(name: String) = if(scalaNames.isKeyword(name)) s"`$name`" else name
 
-  case class ParamCache(paramName: String, typeName: String, seqParam: Boolean) {
+  case class ParamCache(paramName: String, typeSymbol: XsTypeSymbol, cardinality: Cardinality, nillable: Boolean, seqParam: Boolean) {
+    def singleTypeName: String =
+      if (nillable) "Option[" + baseTypeName + "]"
+      else baseTypeName      
+    def typeName: String =
+      cardinality match {
+        case Single   => singleTypeName
+        case Optional => "Option[" + singleTypeName + "]"
+        case Multiple => "Seq[" + singleTypeName + "]"
+      }
+    def baseTypeName: String = xsdgenerator.buildTypeName(typeSymbol)
     def toParamName = escapeKeyWord(paramName)
     def toScalaCode: String = "%s: %s" format(toParamName, typeName)
     def toVarg: String =
@@ -627,18 +648,18 @@ trait {interfaceTypeName} {{
       else toParamName
   }
 
-  def buildRPCStyleArg(part: XPartType): ParamCache =
-    ParamCache(part.name getOrElse {"in"}, xsdgenerator.buildTypeName(toTypeSymbol(part)), false)
+  def buildRPCStyleArg(part: XPartType): ParamCache = toParamCache(part)
 
   def buildRPCStyleArgs(input: XParamType): List[ParamCache] = paramMessage(input).part.toList map {buildRPCStyleArg}
 
   def buildIRIStyleArgs(input: XParamType): List[ParamCache] = paramMessage(input).part.headOption map { part =>
     val paramName = part.name getOrElse {"in"}
-    toTypeSymbol(part) match {
+    val pc = toParamCache(part)
+    pc.typeSymbol match {
       case symbol: BuiltInSimpleTypeSymbol =>
-        List(ParamCache(paramName, xsdgenerator.buildTypeName(symbol), false))
+        List(pc)
       case symbol@ReferenceTypeSymbol(decl: SimpleTypeDecl) =>
-        List(ParamCache(paramName, xsdgenerator.buildTypeName(symbol), false))
+        List(pc)
       case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
         import scalaxb.compiler.xsd.{Multiple, AllDecl, ComplexContentDecl, CompContRestrictionDecl, CompContExtensionDecl}
         val flatParticles = xsdgenerator.flattenElements(decl)
@@ -658,34 +679,26 @@ trait {interfaceTypeName} {{
           val param = xsdgenerator.buildParam(x) map {camelCase}
           val seqParam = (list.size == 1) && (param.cardinality == Multiple) &
             (attributes.size == 0) && (!decl.mixed) && (!longAll)
-          ParamCache(param.toParamName, param.typeName, seqParam)
+          ParamCache(param.toParamName, param.typeSymbol, param.cardinality, param.nillable, seqParam)
         }
       case AnyType(symbol) =>
-        List(ParamCache(paramName, xsdgenerator.buildTypeName(symbol), false))
+        List(pc)
       case x => sys.error("unexpected type: " + x)
     }
   } getOrElse {sys.error("unexpected input: " + input)}
 
   def buildPartsArg(input: XParamType): String = (paramMessage(input).part map { part =>
-    "%s: %s".format(part.name getOrElse {"in"}, partTypeName(part))
+    "%s: %s".format(part.name getOrElse {"in"}, toParamCache(part).typeName)
   }).mkString(", ")
-
-  def partTypeName(part: XPartType): String = xsdgenerator.buildTypeName(toTypeSymbol(part), false)
 
   def toParamCache(part: XPartType): ParamCache =
     part.typeValue map { typeValue =>
-      val name = camelCase(part.name.get)
-      ParamCache(name, xsdgenerator.buildTypeName(toTypeSymbol(typeValue)), false)
+      val name = camelCase(part.name getOrElse "in")
+      ParamCache(name, toTypeSymbol(typeValue), Single, false, false)
     } getOrElse {
       part.element map { element =>
         val param = xsdgenerator.buildParam(xsdgenerator.elements(splitTypeName(element))) map {camelCase}
-        ParamCache(param.toParamName, param.typeName, false)
-      } getOrElse {sys.error("part does not have either type or element: " + part.toString)}
-    }
-
-  def toTypeSymbol(part: XPartType): XsTypeSymbol =
-    part.typeValue map { toTypeSymbol(_) } getOrElse {
-      part.element map { element => xsdgenerator.elements(splitTypeName(element)).typeSymbol
+        ParamCache(param.toParamName, param.typeSymbol, param.cardinality, param.nillable, false)
       } getOrElse {sys.error("part does not have either type or element: " + part.toString)}
     }
 
@@ -713,7 +726,7 @@ trait {interfaceTypeName} {{
       case DocumentStyle =>
         paramMessage(output).part.headOption map { part =>
           import scalaxb.compiler.xsd.{ReferenceTypeSymbol, ComplexTypeDecl, Single}
-          toTypeSymbol(part) match {
+          toParamCache(part).typeSymbol match {
             case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
               val flatParticles = xsdgenerator.flattenElements(decl)
               val attributes = xsdgenerator.flattenAttributes(decl)
@@ -740,8 +753,7 @@ trait {interfaceTypeName} {{
       case x :: xs =>
         val msg = context.messages(splitTypeName(x.message))
         msg.part.headOption map { part =>
-          val symbol = toTypeSymbol(part)
-          xsdgenerator.buildTypeName(symbol, false)
+          toParamCache(part).typeName
         } getOrElse {"Any"}
       case _ => "Any"
     }

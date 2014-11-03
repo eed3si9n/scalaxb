@@ -59,7 +59,7 @@ class Driver extends Module { driver =>
       context: Context, cnfg: Config): Seq[Node] =
     (new GenProtocol(context) {
       val config = cnfg
-    }).generateProtocol(snippet)
+    }).generateProtocol(snippet, Seq())
   
   override def toImportable(alocation: URI, rawschema: RawSchema): Importable = new Importable {
     val location = alocation

@@ -105,7 +105,7 @@ The name and trademarks of copyright holders may NOT be used in advertising or p
     <xs:sequence>
       <xs:element name="faultcode" type="xs:QName" />
       <xs:element name="faultstring" type="xs:string" />
-      <xs:element name="faultactor" type="xs:anyURI" minOccurs="0" />
+      <xs:element name="faultactor" type="xs:string" minOccurs="0" />
       <xs:element name="detail" type="tns:detail" minOccurs="0" />      
     </xs:sequence>
   </xs:complexType>

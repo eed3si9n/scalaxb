@@ -2,4 +2,5 @@
 
 ### SOAP changes
 
+- Dropping RPC/encoded support.
 - nillable fault support. [#284][284]

@@ -37,6 +37,7 @@ trait GenSource {
   val WSDL_HTTP = "http://schemas.xmlsoap.org/wsdl/http"
   val SOAP_MEP_REQUEST_RESPONSE = "http://www.w3.org/2003/05/soap/mep/request-response"
   val SOAP_MEP_SOAP_RESPONSE = "http://www.w3.org/2003/05/soap/mep/soap-response"
+  val encodedErrorMessage = "rpc/encoded wsdls are not supported in scalaxb"
 
   private val logger = Log.forName("wsdl.GenSource")
   def config: Config
@@ -48,7 +49,7 @@ trait GenSource {
   lazy val pkg = xsdgenerator.packageName(targetNamespace, xsdgenerator.context)
   lazy val scalaNames: ScalaNames = new ScalaNames {}
 
-  trait SoapBindingStyle {}
+  sealed trait SoapBindingStyle {}
   case object DocumentStyle extends SoapBindingStyle
   case object RpcStyle extends SoapBindingStyle
 
@@ -438,7 +439,7 @@ trait {interfaceTypeName} {{
     retval
   }
 
-  case class BodyBinding(literal: Boolean, encodingStyle: Option[String], namespace: Option[String])
+  case class BodyBinding(encodingStyle: Option[String], namespace: Option[String])
 
   // http://www.w3.org/TR/wsdl#_soap:body
   def bodyBinding(spec: Option[XStartWithExtensionsTypable]): BodyBinding = {
@@ -447,15 +448,20 @@ trait {interfaceTypeName} {{
         case DataRecord(_, Some("body"), node: Node) => node
       } headOption
     }
-    BodyBinding(b flatMap { node =>
+    val literal = 
+      b flatMap { node =>
         (node \ "@use").headOption map {_.text == "literal"}
-      } getOrElse {true},
+      } getOrElse {true}
+    if (!literal) {
+      sys.error(encodedErrorMessage)
+    } // if    
+    BodyBinding(
       b flatMap { node => (node \ "@encodingStyle").headOption map {_.text} },
       b flatMap { node => (node \ "@namespace").headOption map {_.text} }
     )
   }
 
-  case class HeaderBinding(literal: Boolean, message: javax.xml.namespace.QName, part: String,
+  case class HeaderBinding(message: javax.xml.namespace.QName, part: String,
                            encodingStyle: Option[String], namespace: Option[String])
 
   // http://www.w3.org/TR/wsdl#_soap:header
@@ -466,8 +472,11 @@ trait {interfaceTypeName} {{
       }
     }
     b map { node =>
-      HeaderBinding((node \ "@use").headOption map {_.text == "literal"} getOrElse {true},
-        masked.scalaxb.fromXML[javax.xml.namespace.QName](node \ "@message")(masked.scalaxb.XMLStandardTypes.qnameXMLFormat(node.scope)),
+      val literal = (node \ "@use").headOption map {_.text == "literal"} getOrElse {true}
+      if (!literal) {
+        sys.error(encodedErrorMessage)
+      } // if
+      HeaderBinding(masked.scalaxb.fromXML[javax.xml.namespace.QName](node \ "@message")(masked.scalaxb.XMLStandardTypes.qnameXMLFormat(node.scope)),
         (node \ "@part").text,
         (node \ "@encodingStyle").headOption map {_.text},
         (node \ "@namespace").headOption map {_.text}
@@ -482,15 +491,15 @@ trait {interfaceTypeName} {{
         val param = toParamCache(p)
         val v = param.toParamName
         val label =
-          if (b.literal && p.element.isDefined) "\"%s\"".format(toElement(p).name)
+          if (p.element.isDefined) "\"%s\"".format(toElement(p).name)
           else "\"%s\"".format(p.name.getOrElse {"in"})
         val namespace =
-          if (b.literal && p.element.isDefined) toElement(p).namespace
-          else if (b.literal && (soapBindingStyle == DocumentStyle)) None
+          if (p.element.isDefined) toElement(p).namespace
+          else if (soapBindingStyle == DocumentStyle) None
           else b.namespace
         val nsString = namespace map {"Some(\"%s\")".format(_)} getOrElse {"None"}
         val post =
-          if (b.literal && (soapBindingStyle == DocumentStyle) && !p.element.isDefined) """ match {
+          if ((soapBindingStyle == DocumentStyle) && !p.element.isDefined) """ match {
   case e: scala.xml.Elem => e.child
   case _ => sys.error("Elem not found!")
 }"""
@@ -527,24 +536,23 @@ trait {interfaceTypeName} {{
                               else entity(p)
         case RpcStyle      => p.name.getOrElse {"in"}
       })
-
-      val (label, namespace) = (b.literal, soapBindingStyle) match {
-        case (true, RpcStyle) if p.element.isDefined =>
+      val (label, namespace) = soapBindingStyle match {
+        case RpcStyle if p.element.isDefined =>
           ("\"%s\"".format(toElement(p).name), toElement(p).namespace)
+        case RpcStyle =>
+          ("\"%s\"".format(p.name.getOrElse {"in"}), b.namespace)        
         // If the operation style is document there are no additional wrappers, and the message parts appear directly under the SOAP Body element.
-        case (true, DocumentStyle) if p.element.isDefined =>
+        case DocumentStyle if p.element.isDefined =>
           ("\"%s\"".format(toElement(p).name), toElement(p).namespace)
-        case (true, DocumentStyle) =>
+        case DocumentStyle =>
           ("\"Body\"", None)
-        case _ =>
-          ("\"%s\"".format(p.name.getOrElse {"in"}), b.namespace)
       }
 
       val nsString = namespace map {"Some(\"%s\")".format(_)} getOrElse {"None"}
       
       "scalaxb.toXML(%s, %s, %s, defaultScope)".format(v, nsString, label) +
-      ((b.literal, soapBindingStyle) match {
-        case (true, DocumentStyle) if !p.element.isDefined =>
+      (soapBindingStyle match {
+        case DocumentStyle if !p.element.isDefined =>
           """ match {
       }
   case e: scala.xml.Elem => e.child
@@ -577,25 +585,22 @@ trait {interfaceTypeName} {{
       val b = bodyBinding(binding.output)
       val multipart = isMultiPart(output, binding.output)
       val fromXmls = (parts map { p =>
-        val v = (b.literal, soapBindingStyle, p.element) match {
+        val v = (soapBindingStyle, p.element) match {
           // If the operation style is document there are no additional wrappers, and the message parts appear directly under the SOAP Body element.
           // <soap:body>
           //   <xElement>5</xElement>
           //   <yElement>5.0</yElement>
           // </soap:body>
-          case (true, DocumentStyle, Some(elementQName)) =>
+          case (DocumentStyle, Some(elementQName)) =>
             val elem = xsdgenerator.elements(splitTypeName(elementQName))
             """(scala.xml.Elem(null, "Body", scala.xml.Null, defaultScope, true, body.toSeq: _*) \ "%s").head""" format (elem.name)
-          case (true, DocumentStyle, None) =>
+          case (DocumentStyle, None) =>
             """body.head"""
-          case (true, RpcStyle, Some(elementQName)) =>
+          case (RpcStyle, Some(elementQName)) =>
             val elem = xsdgenerator.elements(splitTypeName(elementQName))
             """(body.head \ "%s").head""" format (elem.name)
-          case (true, RpcStyle, None) =>
+          case (RpcStyle, None) =>
             """(body.head \ "%s").head""" format (p.name.get)
-          case (false, _, _) if !soap12 =>
-            """(scalaxb.Helper.resolveSoap11Refs(body.head) \ "%s").head""" format (p.name.get)
-          case _ => """(body.head \ "%s").head""" format (p.name.get)
         }
         buildPartArg(p, v) + (soapBindingStyle match {
           case DocumentStyle =>
@@ -609,7 +614,7 @@ trait {interfaceTypeName} {{
         val message = context.messages(splitTypeName(b.message))
         message.part find {_.name == Some(b.part)} map { p =>
           val v =
-            if (b.literal && p.element.isDefined) """(<x>{header}</x> \ "%s").head""" format (p.element.get.getLocalPart)
+            if (p.element.isDefined) """(<x>{header}</x> \ "%s").head""" format (p.element.get.getLocalPart)
             else """(<x>{header}</x> \ "%s").head""" format (p.name.get)
           buildPartArg(p, v)
         }

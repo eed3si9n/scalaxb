@@ -2,6 +2,9 @@ import sbt._
 import Keys._
 
 object Dependencies {
+  val scala211 = "2.11.4"
+  val scala210 = "2.10.4"
+
   val scopt = "com.github.scopt" %% "scopt" % "3.2.0"
   val log4j = "log4j" % "log4j" % "1.2.17"
   val defaultDispatchVersion = "0.11.1"
@@ -9,6 +12,10 @@ object Dependencies {
   val launcherInterface = "org.scala-sbt" % "launcher-interface" % "0.12.0"
   val scalaXml = "org.scala-lang.modules" %% "scala-xml" % "1.0.2"
   val scalaParser = "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.1"
+  val cxfVersion = "3.0.2"
+  val cxfFrontendJaxws = "org.apache.cxf" % "cxf-rt-frontend-jaxws" % cxfVersion
+  val cxfTransportsHttp = "org.apache.cxf" % "cxf-rt-transports-http" % cxfVersion
+  val cxfTrapsportsHttpJetty = "org.apache.cxf" % "cxf-rt-transports-http-jetty" % cxfVersion
 
   def scalaCompiler(sv: String) = "org.scala-lang" % "scala-compiler" % sv
 
@@ -30,6 +37,9 @@ object Dependencies {
   def integrationDependencies(sv: String) = Seq(
     dispatch % "test",
     scalaCompiler(sv),
-    specs2(sv) % "test"
+    specs2(sv) % "test",
+    cxfFrontendJaxws % "test",
+    cxfTransportsHttp % "test",
+    cxfTrapsportsHttpJetty % "test"
   )
 }

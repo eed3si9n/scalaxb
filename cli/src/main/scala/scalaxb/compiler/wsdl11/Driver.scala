@@ -30,7 +30,7 @@ import wsdl11._
 import java.io.{Reader}
 import java.net.{URI}
 import scala.xml.{Node}
-import scalaxb.compiler.xsd.{SchemaLite, SchemaDecl, XsdContext}
+import scalaxb.compiler.xsd.{SchemaLite, SchemaDecl, XsdContext, GenProtocol}
 
 class Driver extends Module { driver =>
   private val logger = Log.forName("wsdl")
@@ -77,16 +77,25 @@ class Driver extends Module { driver =>
 
   override def generateProtocol(snippet: Snippet,
       context: Context, cnfg: Config): Seq[Node] =
-    xsddriver.generateProtocol(snippet, context.xsdcontext, cnfg)
+    (new GenProtocol(context.xsdcontext) {
+      val config = cnfg
+    }).generateProtocol(snippet, {
+      (for {
+        dfn <- context.definitions.toList
+        tns <- dfn.targetNamespace.toList
+      } yield tns.toString).distinct
+    })
 
-  override def generate(pair: WsdlPair, part: String, cntxt: Context, cnfg: Config):
-      Seq[(Option[String], Snippet, String)] = {
-    val ns = (pair.definition, pair.schemas) match {
+  def namespaceFromPair(pair: WsdlPair): Option[String] =
+    (pair.definition, pair.schemas) match {
       case (Some(wsdl), _) => wsdl.targetNamespace map {_.toString}
       case (_, x :: xs) => x.targetNamespace
       case _ => None
-    }
+    }    
 
+  override def generate(pair: WsdlPair, part: String, cntxt: Context, cnfg: Config):
+      Seq[(Option[String], Snippet, String)] = {
+    val ns = namespaceFromPair(pair)
     val generator = new GenSource {
       val config = cnfg
       val context = cntxt

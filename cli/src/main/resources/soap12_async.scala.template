@@ -1,7 +1,7 @@
 package scalaxb
 import scala.concurrent.Future
 
-case class Fault[+A](original: Any, detail: Option[A], headers: scala.xml.NodeSeq) {
+case class Fault[+A](original: Any, detail: Option[A], headers: scala.xml.NodeSeq) extends Exception {
   def asFault[B: scalaxb.XMLFormat]: Fault[B] = Fault(original, detail map {
     case x: soapenvelope12.Detail => x.any.head.value match {
       case node: scala.xml.Node => scalaxb.fromXML[B](node)
@@ -10,12 +10,14 @@ case class Fault[+A](original: Any, detail: Option[A], headers: scala.xml.NodeSe
     case _ => sys.error("unsupported fault: " + toString)
   }, headers)
   def asNillableFault[B: scalaxb.XMLFormat]: Fault[Option[B]] = Fault(original, detail map {
+    case x: soapenvelope12.Detail => x.any.head.value match {
       case node: scala.xml.Node if scalaxb.Helper.isNil(node) => None 
       case node: scala.xml.Node                               => Some(scalaxb.fromXML[B](node))
       case _ => sys.error("unsupported fault: " + toString)
     }
     case _ => sys.error("unsupported fault: " + toString)
   }, headers)
+  override def toString: String = s"""Fault($original, $detail, $headers)"""
 }
 
 trait SoapClientsAsync { this: HttpClientsAsync =>

@@ -17,6 +17,7 @@ case class Soap11Fault[+A](original: Any, detail: Option[A], headers: scala.xml.
     }
     case _ => sys.error("unsupported fault: " + toString)
   }, headers)
+  override def toString: String = s"""Soap11Fault($original, $detail, $headers)"""
 }
 
 trait Soap11ClientsAsync { this: HttpClientsAsync =>

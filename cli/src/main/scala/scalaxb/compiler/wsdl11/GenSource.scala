@@ -185,7 +185,7 @@ trait {interfaceTypeName} {{
     def makeOperationOutputArgs: Seq[ParamCache] = {
       val output: XParamType = outputOpt.getOrElse {sys.error("expected ouput: " + op.name)}
       val (headerParts, bodyParts) = splitParamToParts(output, binding.output)
-      (headerParts map toParamCache) ++ (bodyParts map toParamCache)
+      (bodyParts map toParamCache) ++ (headerParts map toParamCache)
     }
     outputOpt flatMap { output: XParamType =>
       isMultiPart(output, binding.output) map { _ =>
@@ -297,7 +297,7 @@ trait {interfaceTypeName} {{
     val op = boundOperation(binding, intf)
     val input: XParamType = operationParts(op)._1.getOrElse { sys.error("expected input:" + op.name) }
     val (headerParts, bodyParts) = splitParamToParts(input, binding.input)
-    (headerParts map toParamCache) ++ (bodyParts map toParamCache)
+    (bodyParts map toParamCache) ++ (headerParts map toParamCache)
   }
 
   def boundOperation(binding: XBinding_operationType, intf: XPortTypeType) =

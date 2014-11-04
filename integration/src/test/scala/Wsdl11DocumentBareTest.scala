@@ -26,10 +26,14 @@ object Wsdl11DocumentBareTest extends TestBase with JaxwsTestBase {
     (List("""import stockquote._
       import scala.concurrent._, duration._""",
       """val service = (new DocumentLiteralBareServiceSoapBindings with scalaxb.Soap11ClientsAsync with scalaxb.DispatchHttpClientsAsync {}).service""",
-      """val fresponse = service.price(Some("GOOG"))
-      val response = Await.result(fresponse, 5 seconds)
-      if (response != Some(42.0)) sys.error(response.toString)""",
-      """response.toString.contains("42")"""), generated) must evaluateTo(true,
+      """val fresponse = service.price(Some("GOOG"))""",
+      """val response = Await.result(fresponse, 5 seconds)""",
+      """if (response != Some(42.0)) sys.error(response.toString)""",
+      
+      """val fresponse2 = service.useHeader(Some("GOOG"))""",
+      """val response2 = Await.result(fresponse2, 5 seconds)""",
+
+      """true"""), generated) must evaluateTo(true,
       outdir = "./tmp", usecurrentcp = true)
   }
 

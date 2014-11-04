@@ -6,7 +6,7 @@ import scalaxb.stockquote.server._
 object Wsdl11DocumentWrappedTest extends TestBase with JaxwsTestBase {
   override val module = new Driver // with Verbose
 
-  def serviceImpl:DocumentLiteralService = new DocumentLiteralService()
+  def serviceImpl:DocumentWrappedService = new DocumentWrappedService()
   def serviceAddress: String = "document-wrapped"
 
   step {
@@ -25,11 +25,11 @@ object Wsdl11DocumentWrappedTest extends TestBase with JaxwsTestBase {
   "document-wrapped service works" in {
     (List("""import stockquote._
       import scala.concurrent._, duration._""",
-      """val service = (new DocumentLiteralServiceSoapBindings with scalaxb.Soap11ClientsAsync with scalaxb.DispatchHttpClientsAsync {}).service""",
-      """val fresponse = service.price(Some("GOOG"))
-      val response = Await.result(fresponse, 5 seconds)
-      if (response != 42.0) sys.error(response.toString)""",
-      """response.toString.contains("42")"""), generated) must evaluateTo(true,
+      """val service = (new DocumentWrappedServiceSoapBindings with scalaxb.Soap11ClientsAsync with scalaxb.DispatchHttpClientsAsync {}).service""",
+      """val fresponse = service.price(Some("GOOG"))""",
+      """val response = Await.result(fresponse, 5 seconds)""",
+      """if (response != 42.0) sys.error(response.toString) else ()""",      
+      """true"""), generated) must evaluateTo(true,
       outdir = "./tmp", usecurrentcp = true)
   }
 

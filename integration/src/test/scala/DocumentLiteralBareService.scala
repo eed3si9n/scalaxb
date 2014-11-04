@@ -1,6 +1,6 @@
 package scalaxb.stockquote.server
 
-import javax.jws.{ WebService, WebMethod }
+import javax.jws.{ WebService, WebMethod, WebParam, WebResult }
 import javax.jws.soap.SOAPBinding
 import javax.jws.soap.SOAPBinding.{Style, Use, ParameterStyle}
 import collection.mutable
@@ -15,6 +15,10 @@ class DocumentLiteralBareService {
 
   def update(symbol: String, price: Double): Unit =
     buffer(symbol) = price
+
+  @WebMethod(operationName = "useHeader", action = "useHeader")
+  @WebResult(header = true)
+  def useHeader(@WebParam(header = true) symbol: String): Double = price(symbol)
 
   def infos: Array[String] = Array("x")
 }

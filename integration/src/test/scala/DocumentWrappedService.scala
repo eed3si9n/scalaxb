@@ -1,13 +1,13 @@
 package scalaxb.stockquote.server
 
-import javax.jws.{ WebService, WebMethod }
+import javax.jws.{ WebService, WebMethod, WebParam, WebResult }
 import javax.jws.soap.SOAPBinding
 import javax.jws.soap.SOAPBinding.{Style, Use, ParameterStyle}
 import collection.mutable
 
-@WebService(name = "DocumentLiteralService", serviceName = "DocumentLiteralService")
+@WebService(name = "DocumentWrappedService", serviceName = "DocumentWrappedService")
 @SOAPBinding(style = Style.DOCUMENT, use = Use.LITERAL, parameterStyle = ParameterStyle.WRAPPED)
-class DocumentLiteralService {
+class DocumentWrappedService {
   private val buffer = mutable.Map[String, Double]()
 
   def price(symbol: String): Double =

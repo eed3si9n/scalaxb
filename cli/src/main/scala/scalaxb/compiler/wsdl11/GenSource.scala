@@ -183,13 +183,10 @@ trait {interfaceTypeName} {{
     val outputOpt: Option[XParamType] = operationParts(op)._2
 
     def makeOperationOutputArgs: Seq[ParamCache] = {
-      val headers = headerBindings(binding.output)
-      val output = outputOpt.getOrElse {sys.error("expected ouput: " + op.name)} 
-      val parts = paramMessage(output).part
-      val bodyParams = parts map toParamCache
-      makeOperationWrapperParams(op, headers, bodyParams)
+      val output: XParamType = outputOpt.getOrElse {sys.error("expected ouput: " + op.name)}
+      val (headerParts, bodyParts) = splitParamToParts(output, binding.output)
+      (headerParts map toParamCache) ++ (bodyParts map toParamCache)
     }
-
     outputOpt flatMap { output: XParamType =>
       isMultiPart(output, binding.output) map { _ =>
         "case class %s(%s)" format(
@@ -288,22 +285,19 @@ trait {interfaceTypeName} {{
   def makeOperationOutputWrapperName(op: XOperationType): String =
     xsdgenerator.makeTypeName(op.name + "Output")
 
-  def makeOperationWrapperParams(op: XOperationType, headers: Seq[HeaderBinding],
-                                 bodyParams: Seq[ParamCache]): Seq[ParamCache] = {
-    val headerParams = headers flatMap { header =>
-      val message = context.messages(splitTypeName(header.message))
-      message.part find {_.name == Some(header.part)} map {toParamCache}
-    }
-    bodyParams ++ headerParams
+  def splitParamToParts(paramType: XParamType, paramBinding: Option[XStartWithExtensionsTypable]): (Seq[XPartType], Seq[XPartType]) = {
+    val headers = headerBindings(paramBinding)
+    val headerPartNames = (headers map { _.part }).toSet
+    val parts = paramMessage(paramType).part
+    val (headerParts, bodyParts) = parts partition { p => headerPartNames(p.name.getOrElse("")) }
+    (headerParts, bodyParts)
   }
 
   def makeOperationInputArgs(binding: XBinding_operationType, intf: XPortTypeType): Seq[ParamCache] = {
     val op = boundOperation(binding, intf)
-    val headers = headerBindings(binding.input)
-    val input = operationParts(op)._1.getOrElse { sys.error("expected input:" + op.name) }
-    val parts = paramMessage(input).part
-    val bodyParams = parts map toParamCache
-    makeOperationWrapperParams(op, headers, bodyParams)
+    val input: XParamType = operationParts(op)._1.getOrElse { sys.error("expected input:" + op.name) }
+    val (headerParts, bodyParts) = splitParamToParts(input, binding.input)
+    (headerParts map toParamCache) ++ (bodyParts map toParamCache)
   }
 
   def boundOperation(binding: XBinding_operationType, intf: XPortTypeType) =
@@ -351,7 +345,8 @@ trait {interfaceTypeName} {{
       case (DataRecord(_, _, XOnewayoperationSequence(input)), true) =>
         // "def %s(%s): Unit".format(op.name, arg(input))
         """soapClient.requestResponse(%s,
-          |            %s, defaultScope, %s, %s, %s).map({ case x => () })""".stripMargin.format(bodyString(op, input, binding, soapBindingStyle),
+          |            %s, defaultScope, %s, %s, %s).map({ case x => () })""".stripMargin.format(
+            bodyString(op, input, binding, soapBindingStyle),
             headerString(op, input, binding, soapBindingStyle), address, quotedMethod, actionString)
 
       case (DataRecord(_, _, XOnewayoperationSequence(input)), false) =>
@@ -360,7 +355,8 @@ trait {interfaceTypeName} {{
           |            %s, defaultScope, %s, %s, %s) match {
           |          case Left(x)  => sys.error(x.toString)
           |          case Right(x) => ()
-          |        }""".stripMargin.format(bodyString(op, input, binding, soapBindingStyle),
+          |        }""".stripMargin.format(
+            bodyString(op, input, binding, soapBindingStyle),
             headerString(op, input, binding, soapBindingStyle), address, quotedMethod, actionString)
 
       case (DataRecord(_, _, XRequestresponseoperationSequence(input, output, faults)), true) =>
@@ -517,20 +513,20 @@ trait {interfaceTypeName} {{
   // http://www.w3.org/TR/soap12-part0/#L1185
   def bodyString(op: XOperationType, input: XParamType, binding: XBinding_operationType, soapBindingStyle: SoapBindingStyle): String = {
     val b = bodyBinding(binding.input)
-    val parts = paramMessage(input).part
+    val (headerParts, bodyParts) = splitParamToParts(input, binding.input)
     // called only for DocumentStyle
     def entity(part: XPartType) = toParamCache(part).typeSymbol match {
       case AnyType(_) => (buildIRIStyleArgs(input) map {_.toParamName}).head
       case symbol: BuiltInSimpleTypeSymbol => (buildIRIStyleArgs(input) map {_.toParamName}).head
       case ReferenceTypeSymbol(decl: SimpleTypeDecl) => (buildIRIStyleArgs(input) map {_.toParamName}).head
       case _ =>
-        "%s(%s)".format(toParamCache(parts.head).baseTypeName, buildIRIStyleArgs(input) map {_.toVarg} mkString(", "))
+        "%s(%s)".format(toParamCache(bodyParts.head).baseTypeName, buildIRIStyleArgs(input) map {_.toVarg} mkString(", "))
     }
 
     lazy val opLabel = "\"%s\"".format(op.name)
     lazy val prefix = "targetNamespace map {defaultScope.getPrefix(_)} getOrElse {\"\"}"
 
-    lazy val args = parts map { p =>
+    lazy val args = bodyParts map { p =>
       val v = escapeKeyWord(soapBindingStyle match {
         case DocumentStyle => if (isMultiPart(input, binding.input)) toParamCache(p).toParamName
                               else entity(p)
@@ -584,7 +580,8 @@ trait {interfaceTypeName} {{
     else {
       val b = bodyBinding(binding.output)
       val multipart = isMultiPart(output, binding.output)
-      val fromXmls = (parts map { p =>
+      val (headerParts, bodyParts) = splitParamToParts(output, binding.output)
+      val fromXmls = (bodyParts map { p =>
         val v = (soapBindingStyle, p.element) match {
           // If the operation style is document there are no additional wrappers, and the message parts appear directly under the SOAP Body element.
           // <soap:body>
@@ -593,7 +590,9 @@ trait {interfaceTypeName} {{
           // </soap:body>
           case (DocumentStyle, Some(elementQName)) =>
             val elem = xsdgenerator.elements(splitTypeName(elementQName))
-            """(scala.xml.Elem(null, "Body", scala.xml.Null, defaultScope, true, body.toSeq: _*) \ "%s").head""" format (elem.name)
+            """({
+              scala.xml.Elem(null, "Body", scala.xml.Null, defaultScope, true, body.toSeq: _*)
+            } \ "%s").head""" format (elem.name)
           case (DocumentStyle, None) =>
             """body.head"""
           case (RpcStyle, Some(elementQName)) =>
@@ -610,14 +609,11 @@ trait {interfaceTypeName} {{
             } getOrElse {""}
           case _ => ""
         })
-      }) ++ (headerBindings(binding.output) flatMap { b =>
-        val message = context.messages(splitTypeName(b.message))
-        message.part find {_.name == Some(b.part)} map { p =>
-          val v =
-            if (p.element.isDefined) """(<x>{header}</x> \ "%s").head""" format (p.element.get.getLocalPart)
-            else """(<x>{header}</x> \ "%s").head""" format (p.name.get)
-          buildPartArg(p, v)
-        }
+      }) ++ (headerParts map { p =>
+        val v =
+          if (p.element.isDefined) """(<x>{header}</x> \ "%s").head""" format (p.element.get.getLocalPart)
+          else """(<x>{header}</x> \ "%s").head""" format (p.name.get)
+        buildPartArg(p, v)
       })
 
       if (!multipart) fromXmls.head

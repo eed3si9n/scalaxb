@@ -1,11 +1,17 @@
   [284]: https://github.com/eed3si9n/scalaxb/issues/284
   [279]: https://github.com/eed3si9n/scalaxb/pull/279
   [268]: https://github.com/eed3si9n/scalaxb/pull/268
+  [285]: https://github.com/eed3si9n/scalaxb/issues/285
   [@rubbish]: https://github.com/rubbish
+  [@@plaflamme]: https://github.com/plaflamme
+
+### breaking SOAP changes
+
+- Dropping RPC/encoded support.
+- Makes `faultactor` a `String`. [#268][268] by [@rubbish][@rubbish]
 
 ### SOAP changes
 
-- Dropping RPC/encoded support.
-- Make `faultactor` a `String`. [#268][268] by [@rubbish][@rubbish]
-- nillable fault support. [#284][284]
-- Make http instances lazy. [#279][279] by [@rubbish][@rubbish]
+- Fixes the handling of message parts involving headers. [#285][285] by [@plaflamme][@plaflamme]
+- Fixes `nillable` fault support. [#284][284]
+- Makes `http` instances lazy. [#279][279] by [@rubbish][@rubbish]

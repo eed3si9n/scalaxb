@@ -184,8 +184,9 @@ trait {interfaceTypeName} {{
 
     def makeOperationOutputArgs: Seq[ParamCache] = {
       val headers = headerBindings(binding.output)
+      val headerNames = headers.map(_.part).toSet
       val output = outputOpt.getOrElse {sys.error("expected ouput: " + op.name)} 
-      val parts = paramMessage(output).part
+      val parts = paramMessage(output).part.filterNot { p => headerNames(p.name.getOrElse("")) }
       val bodyParams = parts map toParamCache
       makeOperationWrapperParams(op, headers, bodyParams)
     }
@@ -296,12 +297,14 @@ trait {interfaceTypeName} {{
     }
     bodyParams ++ headerParams
   }
+  
 
   def makeOperationInputArgs(binding: XBinding_operationType, intf: XPortTypeType): Seq[ParamCache] = {
     val op = boundOperation(binding, intf)
     val headers = headerBindings(binding.input)
+    val headerParts = headers.map(_.part).toSet
     val input = operationParts(op)._1.getOrElse { sys.error("expected input:" + op.name) }
-    val parts = paramMessage(input).part
+    val parts = paramMessage(input).part.filterNot { p => headerParts(p.name.getOrElse("")) }
     val bodyParams = parts map toParamCache
     makeOperationWrapperParams(op, headers, bodyParams)
   }
@@ -517,7 +520,8 @@ trait {interfaceTypeName} {{
   // http://www.w3.org/TR/soap12-part0/#L1185
   def bodyString(op: XOperationType, input: XParamType, binding: XBinding_operationType, soapBindingStyle: SoapBindingStyle): String = {
     val b = bodyBinding(binding.input)
-    val parts = paramMessage(input).part
+    val headerNames = headerBindings(binding.input).map(_.part).toSet
+    val parts = paramMessage(input).part.filterNot { p => headerNames(p.name.getOrElse("")) }
     // called only for DocumentStyle
     def entity(part: XPartType) = toParamCache(part).typeSymbol match {
       case AnyType(_) => (buildIRIStyleArgs(input) map {_.toParamName}).head
@@ -579,7 +583,8 @@ trait {interfaceTypeName} {{
   // http://www.ibm.com/developerworks/library/ws-whichwsdl/
   def outputString(output: XParamType, binding: XBinding_operationType,
                    op: XOperationType, soapBindingStyle: SoapBindingStyle, soap12: Boolean): String = {
-    val parts = paramMessage(output).part
+    val headerNames = headerBindings(binding.input).map(_.part).toSet
+    val parts = paramMessage(output).part.filterNot { p => headerNames(p.name.getOrElse("")) }
     if (parts.isEmpty) "()"
     else {
       val b = bodyBinding(binding.output)
@@ -637,7 +642,9 @@ trait {interfaceTypeName} {{
       case _  => sys.error("part does not have either type or element: " + part.toString)
     }
 
-  def paramMessage(input: XParamType): XMessageType = context.messages(splitTypeName(input.message))
+  def paramMessage(input: XParamType): XMessageType = {
+    context.messages(splitTypeName(input.message))
+  }
 
   def escapeKeyWord(name: String) = if(scalaNames.isKeyword(name)) s"`$name`" else name
 

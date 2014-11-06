@@ -900,16 +900,8 @@ object {localName} {{
         "lazy val " + makeParamName(buildParam(attr).name, true) + " = " +
           wrapperName + ".get(" +  quote(buildNodeName(attr, false)) + ") map { _.as[" + buildTypeName(attr.typeSymbol, true) + "] }"
       case (attr: AttributeDecl, Single) =>
-        attr.defaultValue match {
-          case Some(dv) =>
-            val typeName = buildTypeName(attr.typeSymbol, true)
-            "lazy val " + makeParamName(buildParam(attr).name, true) + " = " +
-              wrapperName + ".get(" +  quote(buildNodeName(attr, false)) + ").map( _.as[" + typeName +
-                s"""] ).getOrElse(scalaxb.fromXML[$typeName](<x>$dv</x>))"""
-          case None =>
-            "lazy val " + makeParamName(buildParam(attr).name, true) + " = " +
-              wrapperName + "(" +  quote(buildNodeName(attr, false)) + ").as[" + buildTypeName(attr.typeSymbol, true) + "]"
-        }
+        "lazy val " + makeParamName(buildParam(attr).name, true) + " = " +
+          wrapperName + "(" +  quote(buildNodeName(attr, false)) + ").as[" + buildTypeName(attr.typeSymbol, true) + "]"
     }
   }
   

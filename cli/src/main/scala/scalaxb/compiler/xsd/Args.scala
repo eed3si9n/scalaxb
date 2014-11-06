@@ -58,11 +58,22 @@ trait Args extends Params {
       wrapForLongAll: Boolean = false, formatter: Option[String] = None): String = {
     val stack = "scalaxb.ElemName(node) :: stack"
     def fromU = buildFromXML(typeName, "_", stackItem, formatter)
-    
+    def fromValue(x: String) = buildFromXML(typeName, "scala.xml.Text(" + quote(x) + ")", stackItem, formatter)
+
     val retval = if (wrapForLongAll) {
       // PrefixedAttribute only contains pre, so you need to pass in node to get the namespace.
-      if (selector.contains("@")) selector + ".headOption map { x => scalaxb.DataRecord(x, node, " +
-        buildFromXML(typeName, "x", stackItem, formatter) + ") }"
+      if (selector.contains("@")) 
+        (defaultValue, fixedValue) match {
+          case (_, Some(x)) =>
+            "Some(scalaxb.DataRecord(None, None, " + fromValue(x) + "))"
+          case (Some(x), _) =>
+            selector + ".headOption map { x => scalaxb.DataRecord(x, node, " +
+              buildFromXML(typeName, "x", stackItem, formatter) + ") } orElse " +
+              "Some(scalaxb.DataRecord(None, None, " + fromValue(x) + "))"
+          case _ =>
+            selector + ".headOption map { x => scalaxb.DataRecord(x, node, " +
+              buildFromXML(typeName, "x", stackItem, formatter) + ") }"
+        }
       else selector + ".headOption map { x => scalaxb.DataRecord(x, " +
         buildFromXML(typeName, "x", stackItem, formatter) + ") }"
     } else (cardinality, nillable) match {
@@ -102,12 +113,14 @@ trait Args extends Params {
   def buildArgForAttribute(decl: AttributeLike, stackItem: Option[String], longAttribute: Boolean): String =
     if (longAttribute) {
       decl match {
-        case attr: AttributeDecl   => 
+        case attr: AttributeDecl   =>
           val o = attr.copy(use = OptionalUse)
           val arg = buildArg(o, buildSelector(o), stackItem, longAttribute)
-          if (longAttribute) arg + " map { " + quote(buildNodeName(o, false)) + " -> _ }"
+          if (longAttribute) {
+            arg + " map { " + quote(buildNodeName(o, false)) + " -> _ }"
+          }
           else arg
-        case ref: AttributeRef     => buildArgForAttribute(buildAttribute(ref), stackItem, longAttribute)
+        case ref: AttributeRef         => buildArgForAttribute(buildAttribute(ref), stackItem, longAttribute)
         case group: AttributeGroupDecl => buildAttributeGroupArg(group, longAttribute)
       }
     } else buildArg(decl)

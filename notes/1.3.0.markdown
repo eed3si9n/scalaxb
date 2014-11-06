@@ -24,10 +24,12 @@
 
 ### case class >22 and attributes change
 
-Starting scalaxb 1.3.0, the generated code will be >22 by default. In addition, all attributes will be handled via `attributes` field. 
+Starting scalaxb 1.3.0, the generated code will be >22 by default. In addition, all attributes will be handled via `attributes` field.
 
-To bring back the older behavior
+To bring back the older behavior:
 
     contentsSizeLimit in (Compile, scalaxb) := 20
   
     namedAttributes in (Compile, scalaxb) := true
+
+Related, 1.3.0 fixes attribute's default value handling [#288][288].

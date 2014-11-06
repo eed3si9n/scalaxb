@@ -70,12 +70,12 @@ object PurchaseOrderUsage {
     val One = BigInt(1)
     val item = fromXML[Item](subject)
     item match {
-      case Item("Olive Soap",
+      case x@Item("Olive Soap",
         One,
         usPrice,
         None,
         Some(XMLCalendar("2010-02-06Z")),
-        "639-OS") =>
+        _) if x.partNum == "639-OS" =>
           if (usPrice != BigDecimal(4.00))
             sys.error("values don't match: " + item.toString)
       case _ => sys.error("match failed: " + item.toString)
@@ -134,12 +134,12 @@ object PurchaseOrderUsage {
     
     val purchaseOrder = fromXML[PurchaseOrderType](subject)
     purchaseOrder match {
-      case PurchaseOrderType(
+      case x@PurchaseOrderType(
         shipTo: UKAddress,
         billTo: USAddress,
         None,
         Items(_),
-        Some(XMLCalendar("1999-12-01Z"))) =>
+        _) if x.orderDate == Some(XMLCalendar("1999-12-01Z")) =>
       case _ => sys.error("match failed: " + purchaseOrder.toString)
     }    
     println(purchaseOrder.toString)  
@@ -150,8 +150,7 @@ object PurchaseOrderUsage {
     
     val timeOlson = fromXML[TimeOlson](subject)
     timeOlson match {
-      case TimeOlson(XMLCalendar("00:00:00"),
-        "") =>
+      case x@TimeOlson(XMLCalendar("00:00:00"), _) if x.olsonTZ == "" =>
       case _ => sys.error("match failed: " + timeOlson.toString)
     }
     
@@ -163,7 +162,7 @@ object PurchaseOrderUsage {
     
     val intWithAttr = fromXML[IntWithAttr](subject)
     intWithAttr match {
-      case IntWithAttr(1, "test") =>
+      case x@IntWithAttr(1, _) if x.foo == "test" =>
       case _ => sys.error("match failed: " + intWithAttr.toString)
     }
     
@@ -190,7 +189,7 @@ object PurchaseOrderUsage {
     val subject = <Choice1 xml:lang="en" xmlns="http://www.example.com/IPO"></Choice1>
     val obj = fromXML[Choice1](subject)
     obj match {
-      case Choice1(_, "en", _) =>
+      case x@Choice1(_, _) if x.xmllang == "en" =>
       case _ => sys.error("match failed: " + obj.toString)
     }
     
@@ -257,8 +256,9 @@ object PurchaseOrderUsage {
     </choice1>
     val obj = fromXML[Choice1](subject)
     obj match {
-      case Choice1(_, "en", attributes) if attributes("@{http://www.w3.org/1999/xhtml}href") ==
-        DataRecord(Some("http://www.w3.org/1999/xhtml"), Some("href"), "4Q99.html") =>
+      case x@Choice1(_, attributes) if (attributes("@{http://www.w3.org/1999/xhtml}href") ==
+        DataRecord(Some("http://www.w3.org/1999/xhtml"), Some("href"), "4Q99.html")) &&
+        (x.xmllang == "en") =>
       case _ => sys.error("match failed: " + obj.toString)
     }
     
@@ -319,11 +319,10 @@ object PurchaseOrderUsage {
     </foo>
     val obj = fromXML[DatedData](subject)
     obj match {
-      case DatedData(XMLCalendar("2010-02-06Z"),
+      case x@DatedData(XMLCalendar("2010-02-06Z"),
         HexBinary(15),
         Base64Binary('A', 'B', 'C', 'D', 'E', 'F', 'G'),
-        Some("foo"),
-        None) =>
+        _) if (x.id == Some("foo")) && (x.classValue == None) =>
       case _ => sys.error("match failed: " + obj.toString)
     }
     val document = toXML(obj, None, Some("foo"), subject.scope)
@@ -364,7 +363,7 @@ object PurchaseOrderUsage {
     </foo>
     val obj = fromXML[AllTest](subject)
     obj match {
-      case AllTest(Some(""), Some(""), Some("bar"), _, None) =>
+      case x@AllTest(Some(""), Some(""), Some("bar"), _, _) if x.id == None =>
       case _ => sys.error("match failed: " + obj.toString)
     }
     
@@ -384,10 +383,10 @@ object PurchaseOrderUsage {
     </head>
     val obj = fromXML[Head](subject)
     obj match {
-      case Head(Seq(DataRecord(Some("http://www.example.com/IPO"), Some("script"), ""),
+      case x@Head(Seq(DataRecord(Some("http://www.example.com/IPO"), Some("script"), ""),
         DataRecord(Some("http://www.example.com/IPO"), Some("script"), "")),
         DataRecord(None, None, HeadSequence1("bar", Seq(DataRecord(Some("http://www.example.com/IPO"), Some("script"), "")) )),
-        None, None, Some(Ltr), None, None) =>
+        _) if (x.dir == Some(Ltr)) =>
       case _ => sys.error("match failed: " + obj.toString)
     }
     

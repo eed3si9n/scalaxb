@@ -303,6 +303,7 @@ trait ContextProcessor extends ScalaNames with PackageName {
   
   lazy val sequenceChunkSize = config.sequenceChunkSize
   lazy val contentsSizeLimit = config.contentsSizeLimit
+  lazy val namedAttributes = config.namedAttributes
 
   def isWrapped(decl: ComplexTypeDecl): Boolean = isWrapped(decl.namespace, decl.family)
   def isWrapped(namespace: Option[String], family: List[String]): Boolean =

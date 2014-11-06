@@ -158,7 +158,7 @@ JDREVGRw==</base64Binary>
     def check(obj: Any) = obj match {
         case SingularSimpleTypeTest(1, None, None, Some(Some(1)), Seq(2, 1), Seq(), None,
           WHOLE, None, None, None, Seq(WHOLE, SKIM), Seq(),
-          None, None) =>
+          attrs) =>
         case _ => sys.error("match failed: " + obj.toString)
       }
     check(obj)
@@ -209,7 +209,7 @@ JDREVGRw==</base64Binary>
     def check(obj: Any) = obj match {
         case ListTest(Seq(1, 2, 3), None, None, Some(Some(Seq(1))), Seq(Seq(), Seq(1)), Seq(None), Seq(1, 2, 3),
           Seq(WHOLE), None, None, None, Seq(Seq(), Seq(SKIM)), Seq(None), Seq(WHOLE),
-          None, None) =>
+          attr) =>
         case _ => sys.error("match failed: " + obj.toString)
       }
     check(obj)
@@ -621,7 +621,7 @@ JDREVGRw==</base64Binary>
     val shipTo = scalaxb.fromXML[Addressable](subject)
 
     def check(obj: Addressable) = obj match {
-      case USAddress(_, _, _, _, _, _) =>
+      case USAddress(_, _, _, _, _) =>
       case _ => sys.error("match failed: " + obj.toString)
     }
     val document = scalaxb.toXML[Addressable](shipTo, Some("http://www.example.com/general"), Some("shipTo"), subject.scope)
@@ -788,7 +788,7 @@ JDREVGRw==</base64Binary>
     val withBoolean = scalaxb.fromXML[LiteralBoolean](subject)
     System.err.println("received:"+withBoolean)
     def check(obj: LiteralBoolean) = obj match {
-      case LiteralBoolean(true,Some("xxx")) =>
+      case b@LiteralBoolean(attrs) if b.avail && (b.reason == Some("xxx")) =>
       case _ => sys.error("match failed: " + obj.toString)
     }
     check(withBoolean)

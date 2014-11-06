@@ -23,7 +23,7 @@ object ImportTest extends TestBase {
   "report.scala file must compile so that PurchaseReport can be used" in {
     (List("import ipo._",
           "import org.report._",
-          "PurchaseReport(RegionsType(), PartsType(), None, None).toString"),
-     generated) must evaluateTo("PurchaseReport(RegionsType(List()),PartsType(List()),None,None)", outdir = "./tmp")
+          "PurchaseReport(RegionsType(), PartsType(), Map()).toString"),
+     generated) must evaluateTo("PurchaseReport(RegionsType(List()),PartsType(List()),Map())", outdir = "./tmp")
   }
 }

@@ -92,10 +92,12 @@ object Arguments {
         c.copy(prependFamilyName = true) }    
       opt[String]("wrap-contents") valueName("<complexType>") text("wraps inner contents into a seperate case class") action { (x, c) =>
         c.copy(wrappedComplexTypes = c.wrappedComplexTypes :+ x) }
-      opt[Int]("contents-limit") valueName("<size>") text("defines long contents to be segmented (default: 20)") action { (x, c) =>
+      opt[Int]("contents-limit") valueName("<size>") text("defines long contents to be segmented (default: max)") action { (x, c) =>
         c.copy(contentsSizeLimit = x) }
       opt[Int]("chunk-size") valueName("<size>") text("segments long sequences into chunks (default: 10)") action { (x, c) =>
         c.copy(sequenceChunkSize = x) }
+      opt[Unit]("named-attributes") text("generates named fields for attributes") action { (_, c) =>
+        c.copy(namedAttributes = true) }
       opt[Unit]("package-dir") text("generates package directories") action { (_, c) =>
         c.copy(packageDir = true) }
       opt[String]("protocol-file") valueName("<name.scala>") text("protocol file name (xmlprotocol.scala)") action { (x, c) =>
@@ -126,5 +128,4 @@ object Arguments {
       else Some(Arguments(c, files, verbose)) 
     }
   }
-
 }

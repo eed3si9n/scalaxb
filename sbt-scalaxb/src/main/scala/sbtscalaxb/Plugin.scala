@@ -113,6 +113,7 @@ object Plugin extends sbt.Plugin {
     wrapContents            := Nil,
     contentsSizeLimit       := Int.MaxValue,
     chunkSize               := 10,
+    namedAttributes         := false,
     packageDir              := true,
     generateRuntime         := true,
     protocolFileName        := sc.Defaults.protocolFileName,

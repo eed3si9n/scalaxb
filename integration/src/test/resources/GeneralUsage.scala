@@ -124,16 +124,13 @@ JDREVGRw==</base64Binary>
     val obj = fromXML[SingularBuiltInTypeTest](subject)
     def check(obj: Any) = obj match {
         case SingularBuiltInTypeTest(
-          SingularBuiltInTypeTestSequence1("foo", false, Int_(1), 1.0F, 1.0, du, dt, t, d, ym),
-          SingularBuiltInTypeTestSequence2(y, md, dd, m,
-            HexBinary(15), Base64Binary('A', 'B', 'C', 'D', 'E', 'F', 'G'),
-            uri, qname, notaton, "foo"),
-          SingularBuiltInTypeTestSequence3("foo", "en-US", "foo",  Seq("foo"), "foo",
-            "foo", "foo", "foo", Seq("foo"), "foo"),
-          SingularBuiltInTypeTestSequence4(Seq("foo"), Int_(1), Int_(-1), Int_(-1), 1,
-            1, 1, 1, Int_(1), Int_(1)),
-          SingularBuiltInTypeTestSequence5(1, 1, 1, Int_(1),
-            DataRecord(_, _, "foo"), DataRecord(_, _, "foo"))) =>
+          "foo", false, Int_(1), 1.0F, 1.0, du, dt, t, d, ym,
+          y, md, dd, m, HexBinary(15), Base64Binary('A', 'B', 'C', 'D', 'E', 'F', 'G'),
+          uri, qname, notaton, "foo",
+          "foo", "en-US", "foo",  Seq("foo"), "foo", "foo", "foo", "foo", Seq("foo"), "foo",
+          Seq("foo"), Int_(1), Int_(-1), Int_(-1), 1, 1, 1, 1, Int_(1), Int_(1),
+          1, 1, 1, Int_(1),
+          DataRecord(_, _, "foo"), DataRecord(_, _, "foo")) =>
         case _ => sys.error("match failed: " + obj.toString)
       }
     check(obj)
@@ -403,8 +400,8 @@ JDREVGRw==</base64Binary>
       <string26></string26><string27></string27><string28></string28><string29></string29><string30></string30>
     </foo>
     val obj = fromXML[LongAllTest](subject)
-    obj.address1.street match {
-      case "1 Plaza" =>
+    obj.address1 match {
+      case Some(address) if address.street == "1 Plaza" =>
       case _ => sys.error("match failed: " + obj.toString)
     }
     

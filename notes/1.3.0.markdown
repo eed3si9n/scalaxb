@@ -2,14 +2,16 @@
   [279]: https://github.com/eed3si9n/scalaxb/pull/279
   [268]: https://github.com/eed3si9n/scalaxb/pull/268
   [278]: https://github.com/eed3si9n/scalaxb/issues/278
+  [280]: https://github.com/eed3si9n/scalaxb/issues/280
   [285]: https://github.com/eed3si9n/scalaxb/issues/285
   [@rubbish]: https://github.com/rubbish
   [@@plaflamme]: https://github.com/plaflamme
 
-### breaking SOAP changes
+### breaking changes
 
-- Dropping RPC/encoded support.
-- Makes `faultactor` a `String`. [#268][268] by [@rubbish][@rubbish]
+- Dropping SOAP RPC/encoded support.
+- Makes SOAP `faultactor` a `String`. [#268][268] by [@rubbish][@rubbish]
+- Generates >22 case classes by default. [#280][280]
 
 ### SOAP changes
 
@@ -17,3 +19,9 @@
 - Fixes `nillable` fault support. [#284][284]
 - Makes `http` instances lazy. [#279][279] by [@rubbish][@rubbish]
 - Implements `toString` methods for faults. [#278][279]
+
+### case class >22 change
+
+Starting scalaxb 1.3.0, the generated code will be >22 by default. To bring back the older behavior
+
+    contentsSizeLimit in (Compile, scalaxb) := 20

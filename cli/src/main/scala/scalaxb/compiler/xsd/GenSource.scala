@@ -225,8 +225,6 @@ abstract class GenSource(val schema: SchemaDecl,
       childElements.size + 1 <= contentsSizeLimit)
     val list = if (longAttribute) List.concat[Decl](childElements, List(buildLongAttributeRef))
       else List.concat[Decl](childElements, attributes)
-    if (list.size > 22) throw new CaseClassTooLong(fqn, (decl.namespace map { "{" + _ + "}" } getOrElse {""}) + decl.family.head)
-
     val paramList = list map { buildParam }
     // val dependents = ((flatParticles flatMap { buildDependentType } collect {
     //   case ReferenceTypeSymbol(d: ComplexTypeDecl) if d != decl => d

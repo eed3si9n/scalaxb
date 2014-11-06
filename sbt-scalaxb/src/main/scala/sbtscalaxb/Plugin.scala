@@ -92,7 +92,7 @@ object Plugin extends sbt.Plugin {
     attributePrefix in scalaxb := None,
     prependFamily in scalaxb := false,
     wrapContents in scalaxb := Nil,
-    contentsSizeLimit in scalaxb := 20,
+    contentsSizeLimit in scalaxb := Int.MaxValue,
     chunkSize in scalaxb := 10,
     packageDir in scalaxb := true,
     generateRuntime in scalaxb := true,

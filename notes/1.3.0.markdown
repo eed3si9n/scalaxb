@@ -5,8 +5,9 @@
   [280]: https://github.com/eed3si9n/scalaxb/issues/280
   [285]: https://github.com/eed3si9n/scalaxb/issues/285
   [286]: https://github.com/eed3si9n/scalaxb/issues/286
+  [288]: https://github.com/eed3si9n/scalaxb/issues/288
   [@rubbish]: https://github.com/rubbish
-  [@@plaflamme]: https://github.com/plaflamme
+  [@plaflamme]: https://github.com/plaflamme
 
 ### breaking changes
 

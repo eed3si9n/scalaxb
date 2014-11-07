@@ -221,7 +221,8 @@ abstract class GenSource(val schema: SchemaDecl,
     val childElements = if (effectiveMixed) flattenMixed(decl)
       else flatParticles 
     val attributes = flattenAttributes(decl)
-    val longAttribute = (attributes.size + childElements.size > contentsSizeLimit &&
+    val longAttribute = (!namedAttributes && !attributes.isEmpty) ||
+      (attributes.size + childElements.size > contentsSizeLimit &&
       childElements.size + 1 <= contentsSizeLimit)
     val list = if (longAttribute) List.concat[Decl](childElements, List(buildLongAttributeRef))
       else List.concat[Decl](childElements, attributes)
@@ -895,10 +896,12 @@ object {localName} {{
         (attr, toCardinality(attr))
       case group: AttributeGroupDecl => (group, Single)
     } collect {
-      case (attr: AttributeDecl, Optional) => "lazy val " + makeParamName(buildParam(attr).name, true) + " = " +
-        wrapperName + ".get(" +  quote(buildNodeName(attr, false)) + ") map { _.as[" + buildTypeName(attr.typeSymbol, true) + "] }"
-      case (attr: AttributeDecl, Single) => "lazy val " + makeParamName(buildParam(attr).name, true) + " = " +
-        wrapperName + "(" +  quote(buildNodeName(attr, false)) + ").as[" + buildTypeName(attr.typeSymbol, true) + "]"
+      case (attr: AttributeDecl, Optional) =>
+        "lazy val " + makeParamName(buildParam(attr).name, true) + " = " +
+          wrapperName + ".get(" +  quote(buildNodeName(attr, false)) + ") map { _.as[" + buildTypeName(attr.typeSymbol, true) + "] }"
+      case (attr: AttributeDecl, Single) =>
+        "lazy val " + makeParamName(buildParam(attr).name, true) + " = " +
+          wrapperName + "(" +  quote(buildNodeName(attr, false)) + ").as[" + buildTypeName(attr.typeSymbol, true) + "]"
     }
   }
   

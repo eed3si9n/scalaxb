@@ -50,5 +50,6 @@
     <xs:sequence minOccurs="0">
       <xs:element name="string1" type="xs:string" />
     </xs:sequence>
+    <xs:attribute name="attr1" type="xs:anyURI" default="urn:foo" /> 
   </xs:complexType>
 </xs:schema>

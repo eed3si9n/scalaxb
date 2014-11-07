@@ -37,7 +37,7 @@ object MixedUsage {
           DataRecord(Some("http://www.example.com/mixed"), Some("itemname"), ""),
           DataRecord(Some("http://www.example.com/mixed"), Some("itemcode"), ""),
           DataRecord(Some("http://www.example.com/mixed"), Some("option1"), "")
-        ), None) =>
+        ), _) =>
       case _ => sys.error("match failed: " + obj.toString)
     }
     val document = toXML[MixedTest](obj, "foo", defaultScope)

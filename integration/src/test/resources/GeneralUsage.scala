@@ -42,6 +42,7 @@ object GeneralUsage {
     testAll
     testLongAll
     testLongAttribute
+    testAnyAttribute
     testTopLevelMultipleSeq
     testTopLevelOptionalSeq
     testTopLevelMustipleSeqAny
@@ -156,9 +157,9 @@ JDREVGRw==</base64Binary>
     val obj = fromXML[SingularSimpleTypeTest](subject)
     
     def check(obj: Any) = obj match {
-        case SingularSimpleTypeTest(1, None, None, Some(Some(1)), Seq(2, 1), Seq(), None,
+        case x@SingularSimpleTypeTest(1, None, None, Some(Some(1)), Seq(2, 1), Seq(), None,
           WHOLE, None, None, None, Seq(WHOLE, SKIM), Seq(),
-          None, None) =>
+          attrs) if x.attr3 == WHOLE =>
         case _ => sys.error("match failed: " + obj.toString)
       }
     check(obj)
@@ -209,7 +210,7 @@ JDREVGRw==</base64Binary>
     def check(obj: Any) = obj match {
         case ListTest(Seq(1, 2, 3), None, None, Some(Some(Seq(1))), Seq(Seq(), Seq(1)), Seq(None), Seq(1, 2, 3),
           Seq(WHOLE), None, None, None, Seq(Seq(), Seq(SKIM)), Seq(None), Seq(WHOLE),
-          None, None) =>
+          attr) =>
         case _ => sys.error("match failed: " + obj.toString)
       }
     check(obj)
@@ -422,6 +423,29 @@ JDREVGRw==</base64Binary>
     val document = toXML[LongAttributeTest](obj, "foo", defaultScope)
     println(document)    
   }
+
+  def testAnyAttribute {
+    println("testAnyAttribute")
+    val subject = <foo xmlns="http://www.example.com/general"
+        xmlns:xmime="http://www.w3.org/2005/05/xmlmime"
+        milk1="SKIM"
+        xmime:contentType="foo" />
+    val obj = fromXML[AnyAttributeTest](subject)
+    def check(obj: AnyAttributeTest): Unit = {
+      obj.attributes("@milk1") match {
+        case DataRecord(_, _, "SKIM") =>
+        case _ => sys.error("match failed: " + obj.attributes("@milk1").toString + " " + obj.toString)
+      }
+      obj.attributes("@{http://www.w3.org/2005/05/xmlmime}contentType") match {
+        case DataRecord(_, _, "foo") =>
+        case _ => sys.error("match failed: " + obj.attributes("@{http://www.w3.org/2005/05/xmlmime}contentType").toString + " " + obj.toString)
+      } 
+    }
+    check(obj)
+    val document = toXML[AnyAttributeTest](obj, "foo", defaultScope)
+    println(document)
+    check(fromXML[AnyAttributeTest](document))  
+  }
   
   def testTopLevelMultipleSeq {
     println("testTopLevelMultipleSeq")
@@ -621,7 +645,7 @@ JDREVGRw==</base64Binary>
     val shipTo = scalaxb.fromXML[Addressable](subject)
 
     def check(obj: Addressable) = obj match {
-      case USAddress(_, _, _, _, _, _) =>
+      case USAddress(_, _, _, _, _) =>
       case _ => sys.error("match failed: " + obj.toString)
     }
     val document = scalaxb.toXML[Addressable](shipTo, Some("http://www.example.com/general"), Some("shipTo"), subject.scope)
@@ -788,7 +812,7 @@ JDREVGRw==</base64Binary>
     val withBoolean = scalaxb.fromXML[LiteralBoolean](subject)
     System.err.println("received:"+withBoolean)
     def check(obj: LiteralBoolean) = obj match {
-      case LiteralBoolean(true,Some("xxx")) =>
+      case b@LiteralBoolean(attrs) if b.avail && (b.reason == Some("xxx")) =>
       case _ => sys.error("match failed: " + obj.toString)
     }
     check(withBoolean)

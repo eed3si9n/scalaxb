@@ -147,7 +147,8 @@
     </xs:sequence>
     
     <xs:attribute name="attr1" type="xs:unsignedInt"/>
-    <xs:attribute name="attr2" type="gen:MilkType"/>   
+    <xs:attribute name="attr2" type="gen:MilkType"/>
+    <xs:attribute name="attr3" type="gen:MilkType" default="WHOLE" /> 
   </xs:complexType>
   
   <xs:complexType name="ListTest">
@@ -569,6 +570,12 @@
       <xs:attribute name="string29" type="xs:string"/>
       <xs:attribute name="string30" type="xs:string"/>
       <xs:attributeGroup ref="gen:coreattrs"/>
+      <xs:anyAttribute namespace="##any"/>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="anyAttributeTest">
+    <xs:complexType>
       <xs:anyAttribute namespace="##any"/>
     </xs:complexType>
   </xs:element>

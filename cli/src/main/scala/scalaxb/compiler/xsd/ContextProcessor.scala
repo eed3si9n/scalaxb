@@ -26,6 +26,7 @@ import scalashim._
 import scalaxb.compiler.{ScalaNames, Config, ReferenceNotFound, Log}
 import scala.collection.mutable
 import javax.xml.namespace.QName
+import masked.scalaxb.DataRecord
 
 trait PackageName {
   def packageName(schema: SchemaDecl, context: XsdContext): Option[String] =

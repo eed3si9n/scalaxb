@@ -5,6 +5,7 @@ import scala.collection.mutable
 import xmlschema._
 import Defs._
 import scalaxb._
+import masked.scalaxb.DataRecord
 
 trait ContextProcessor extends ScalaNames { self: Namer with Lookup =>
   private val logger = Log.forName("xsd2.ContextProcessor")

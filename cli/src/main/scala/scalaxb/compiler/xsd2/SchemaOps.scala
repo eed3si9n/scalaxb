@@ -31,6 +31,7 @@ import xmlschema._
 import scala.collection.mutable.{Builder, ArrayBuffer}
 import scala.collection.generic.CanBuildFrom
 import scala.annotation.tailrec
+import masked.scalaxb.DataRecord
 
 object Defs {
   implicit def schemaToSchemaIteration(schema: XSchema): SchemaIteration = SchemaIteration(schema)
@@ -147,7 +148,7 @@ case class KeyedGroup(key: CompositorKey,
   ref: Option[javax.xml.namespace.QName] = None,
   minOccurs: BigInt,
   maxOccurs: String,
-  attributes: Map[String, scalaxb.DataRecord[Any]] = Map())
+  attributes: Map[String, DataRecord[Any]] = Map())
 
 case class NamedGroupOps(tagged: Tagged[XNamedGroup]) extends GroupOps {
   def value = tagged.value

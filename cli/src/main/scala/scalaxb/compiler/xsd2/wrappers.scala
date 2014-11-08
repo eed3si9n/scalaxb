@@ -27,6 +27,7 @@ import scalaxb._
 import xmlschema._
 import Defs._
 import java.net.{URI}
+import masked.scalaxb.DataRecord
 
 case class ReferenceSchema(targetNamespace: Option[URI],
                            topElems: immutable.ListMap[String, Tagged[XElement]],

@@ -25,8 +25,8 @@ package scalaxb.compiler.xsd2
 import java.io.{Reader, PrintWriter}
 import java.net.{URI}
 import scala.xml.{Node, Elem}
-import scalaxb._
-import compiler._
+import masked.scalaxb.fromXML
+import scalaxb.compiler._
 import xmlschema._
 
 class Driver extends Module { driver =>  

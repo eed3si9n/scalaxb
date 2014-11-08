@@ -1,6 +1,6 @@
 package scalaxb.compiler.xsd2
 
-import scalaxb.DataRecord
+import masked.scalaxb.DataRecord
 import xmlschema._
 import Defs._
 import Predef.{any2stringadd => _, _}

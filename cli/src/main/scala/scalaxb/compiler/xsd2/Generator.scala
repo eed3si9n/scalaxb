@@ -31,7 +31,7 @@ class Generator(val schema: ReferenceSchema,
     val context: SchemaContext, val config: Config) extends Params with PackageNamer
     with Namer with Lookup with Splitter with Parsers with Args with XMLOutputs with Symbols {
   import Predef.{any2stringadd => _}
-  import scalaxb.DataRecord
+  import masked.scalaxb.DataRecord
   import treehugger.forest._
   import definitions._
   import treehuggerDSL._

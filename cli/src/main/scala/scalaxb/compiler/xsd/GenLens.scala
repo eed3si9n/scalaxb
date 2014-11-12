@@ -63,3 +63,4 @@ class GenScalazLens (val config: Config) extends GenLens{
       "implicit def lens2" + {localName} + "W[A](l: Lens[A, " + {localName} + "]): " + {localName} + "W[A] = new " + {localName} + "W(l)" +
       newline + "}" + newline
   }
+}

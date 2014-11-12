@@ -260,6 +260,12 @@ public abstract class AbstractScalaxbMojo extends AbstractMojo {
     public File getOutputDirectory() {
         return outputDirectory;
     }
+    /**
+     * When this option is activated, lenses are generated for each case class allowing the user to modify easily
+     * an XML file.
+     */
+    @Parameter
+    private boolean generateLens;
 
     /**
      * Returns the command line options to be used for scalaxb, excluding the
@@ -284,6 +290,7 @@ public abstract class AbstractScalaxbMojo extends AbstractMojo {
             .flag("--prepend-family", prependFamily)
             .flag("--blocking", !async)
             .flag("--lax-any", laxAny)
+	    .flag("--generate-lens", generateLens)
             .getArguments();
         return unmodifiableList(args);
     }

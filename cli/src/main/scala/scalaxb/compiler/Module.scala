@@ -49,7 +49,8 @@ case class Config(packageNames: Map[Option[String], Option[String]] = Map(None -
   sequenceChunkSize: Int = 10,
   laxAny: Boolean = false,
   async: Boolean = true,
-  dispatchVersion: String = scalaxb.BuildInfo.defaultDispatchVersion)
+  dispatchVersion: String = scalaxb.BuildInfo.defaultDispatchVersion,
+  generateLens: Boolean = false)
 
 object Snippet {
   def apply(definition: Node): Snippet = Snippet(definition, Nil, Nil, Nil)

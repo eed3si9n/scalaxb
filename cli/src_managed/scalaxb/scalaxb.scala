@@ -7,6 +7,10 @@ import javax.xml.datatype.{XMLGregorianCalendar}
 import javax.xml.namespace.QName
 import javax.xml.bind.DatatypeConverter
 
+import scala.language.postfixOps
+import scala.language.implicitConversions
+import scala.language.existentials
+
 object `package` {
   import annotation.implicitNotFound
 

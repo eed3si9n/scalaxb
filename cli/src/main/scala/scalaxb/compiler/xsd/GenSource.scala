@@ -269,8 +269,10 @@ abstract class GenSource(val schema: SchemaDecl,
       (!paramList.head.attribute) && (!effectiveMixed) && (!longAll)
     
     def paramsString = if (hasSequenceParam) makeParamName(paramList.head.name, false) + ": " +
-        paramList.head.singleTypeName + "*"
-      else paramList.map(_.toScalaCode).mkString("," + newline + indent(1))
+                                  { if (config.generateLens) "Seq["+paramList.head.singleTypeName + "]"
+                                                      else  paramList.head.singleTypeName + "*"  }
+
+    else paramList.map(_.toScalaCode).mkString("," + newline + indent(1))
 
     val defLenses = config.generateLens match {
       case true => paramList.map( param => genLens.buildDefLens(localName, param)).mkString(newline + indent(1))
@@ -288,7 +290,7 @@ abstract class GenSource(val schema: SchemaDecl,
         case _ => false
       }
     
-    def argsString = if (hasSequenceParam) particleArgs.head + ": _*"
+    def argsString = if (hasSequenceParam) particleArgs.head + (if (config.generateLens) "" else ": _*")
       else {
         val particleString = if (effectiveMixed) "Seq.concat(" + particleArgs.mkString("," + newline + indent(4)) + ")"
           else if (longAll) "scala.collection.immutable.ListMap(List(" + newline + 

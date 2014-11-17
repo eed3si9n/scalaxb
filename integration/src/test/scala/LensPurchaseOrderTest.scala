@@ -3,10 +3,6 @@ import org.specs2.matcher.ValueCheck.valueIsTypedValueCheck
 
 import scalaxb.compiler.Config
 
-case class SuperMy(a : String,  opr : String*)
-
-def hello(superMy : SuperMy) : SuperMy = superMy.copy(a= "hello")
-
 object LensPurchaseOrderTest extends TestBase {
   val inFile    = new File("integration/src/test/resources/ipo.xsd")
   val usageFile = new File(tmp, "PurchaseOrderUsage.scala")
@@ -18,7 +14,7 @@ object LensPurchaseOrderTest extends TestBase {
       outdir = tmp,
       generateLens = true
     ))
-  /*
+
   "ipo.scala file must compile so Address can be used" in {
     (List("import ipo._",
           "Address(\"\", \"\", \"\").toString"), 
@@ -29,5 +25,5 @@ object LensPurchaseOrderTest extends TestBase {
     (List("import ipo._",
           "PurchaseOrderUsage.allTests"),
      usageFile :: generated) must evaluateTo(true, outdir = "./tmp", usecurrentcp = true)
-  }*/
+  }
 }

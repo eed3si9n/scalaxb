@@ -50,6 +50,7 @@ case class Config(packageNames: Map[Option[String], Option[String]] = Map(None -
   laxAny: Boolean = false,
   async: Boolean = true,
   dispatchVersion: String = scalaxb.BuildInfo.defaultDispatchVersion,
+  useVarArg   : Boolean = true,
   generateLens: Boolean = false)
 
 object Snippet {

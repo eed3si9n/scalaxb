@@ -17,8 +17,8 @@ object LensPurchaseOrderTest extends TestBase {
 
   "ipo.scala file must compile so Address can be used" in {
     (List("import ipo._",
-          "Address(\"\", \"\", \"\").toString"), 
-     generated) must evaluateTo("Address(,,)", outdir = "./tmp", usecurrentcp = true)
+          "Address.name.set(Address(\"\", \"\", \"\"), \"hello\").toString"),
+     generated) must evaluateTo("Address(hello,,)", outdir = "./tmp", usecurrentcp = true)
   }
   
   "ipo.scala file must compile together with PurchaseOrderUsage.scala" in {

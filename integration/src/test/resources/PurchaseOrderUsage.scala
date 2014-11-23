@@ -179,6 +179,7 @@ object PurchaseOrderUsage {
     val obj = fromXML[Element1](subject)
     obj match {
       case Element1(DataRecord(Some("http://www.example.com/IPO"), Some("Choice2"), 1)) =>
+      case Element1(List(DataRecord(Some("http://www.example.com/IPO"), Some("Choice2"), 1))) =>
       case _ => sys.error("match failed: " + obj.toString)
     }
 
@@ -283,6 +284,7 @@ object PurchaseOrderUsage {
     val obj2 = fromXML[Element1](document)
     obj2 match {
       case Element1(DataRecord(Some("http://www.w3.org/1998/Math/MathML"), Some("math"), _)) =>
+      case Element1(List(DataRecord(Some("http://www.w3.org/1998/Math/MathML"), Some("math"), _))) =>
       case _ => sys.error("match failed: " + document.toString)
     }    
   }

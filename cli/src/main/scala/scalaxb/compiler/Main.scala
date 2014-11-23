@@ -116,6 +116,10 @@ object Arguments {
         verbose = true
         c
       }
+      opt[Unit]("use-varargs") text("use var arguments") action { (_, c) =>
+        c.copy(useVarArg = true) }
+      opt[Unit]("generate-lens") text("Generate lenses") action { (_, c) =>
+        c.copy(generateLens = true) }
       help("help") text("display this message")
       version("version") text("display version info")
       arg[File]("<schema_file>...") unbounded() text("input schema to be converted") action { (x, c) =>

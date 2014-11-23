@@ -76,12 +76,14 @@ trait Args extends Params {
         }
       else selector + ".headOption map { x => scalaxb.DataRecord(x, " +
         buildFromXML(typeName, "x", stackItem, formatter) + ") }"
-    } else (cardinality, nillable) match {
-      case (Multiple, true)  => selector + ".toSeq map { _.nilOption map { " + fromU + " }}"
-      case (Multiple, false) => selector + ".toSeq map { " + fromU + " }"
-      case (Optional, true)  => selector + ".headOption map { _.nilOption map { " + fromU + " }}"
-      case (Optional, false) => selector + ".headOption map { " + fromU + " }"
-      case (Single, _) =>
+    } else (cardinality, nillable, (!config.useVarArg) || config.generateLens) match {
+      case (Multiple, true, true)  => selector + " map { _.nilOption map { " + fromU + " }}"
+      case (Multiple, false, true) => selector + " map { " + fromU + " }"
+      case (Multiple, true, false)  => selector + ".toSeq map { _.nilOption map { " + fromU + " }}"
+      case (Multiple, false, false) => selector + ".toSeq map { " + fromU + " }"
+      case (Optional, true, _)  => selector + ".headOption map { _.nilOption map { " + fromU + " }}"
+      case (Optional, false, _) => selector + ".headOption map { " + fromU + " }"
+      case (Single, _, _) =>
         buildSingleArg(typeName, selector, stackItem, nillable, defaultValue, fixedValue, formatter)
     }
     
@@ -155,7 +157,7 @@ trait Args extends Params {
       case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
         if (compositorWrapper.contains(decl))
           (toCardinality(elem.minOccurs, elem.maxOccurs), elem.nillable getOrElse {false}) match {
-            case (Multiple, _)    => selector + ".toSeq"
+            case (Multiple, _) if config.useVarArg && !config.generateLens    => selector + ".toSeq"
             case (Optional, true) => selector + " getOrElse { None }"
             case _ => selector
           }

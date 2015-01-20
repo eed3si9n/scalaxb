@@ -288,7 +288,7 @@ trait {interfaceTypeName} {{
   def splitParamToParts(paramType: XParamType, paramBinding: Option[XStartWithExtensionsTypable]): (Seq[XPartType], Seq[XPartType]) = {
     val headers = headerBindings(paramBinding)
     val headerPartNames = (headers map { _.part }).toSet
-    val parts = paramMessage(paramType).part
+    val parts = paramMessage(paramType).part.map(x => x.copy(name = x.name.map(camelCase)))
     val (headerParts, bodyParts) = parts partition { p => headerPartNames(p.name.getOrElse("")) }
     (headerParts, bodyParts)
   }

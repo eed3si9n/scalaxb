@@ -119,14 +119,27 @@ trait CompilerMatcher {
     val origBootclasspath = grs.bootclasspath.value
     
     grs.bootclasspath.value = 
-      (origBootclasspath :: bootPathList).mkString(java.io.File.pathSeparator)
+      mkClasspath(origBootclasspath :: bootPathList)
     
     val originalClasspath = grs.classpath.value
-    grs.classpath.value = classpathList.distinct.mkString(java.io.File.pathSeparator)
+    grs.classpath.value = mkClasspath(classpathList)
     grs.outdir.value = outdir
     grs.unchecked.value = unchecked
     grs.deprecation.value = deprecation
     grs    
+  }
+  
+  private def mkClasspath(entries:List[String]):String = {
+    def windowsFix(path:String):String = 
+      if(java.io.File.separatorChar != '\\') path
+      else { // Windows
+        (if(path.startsWith("file:")) path.substring(6) else path)
+        .replace('/', java.io.File.separatorChar)
+      }
+    
+    entries.distinct
+    .map(windowsFix)
+    .mkString(java.io.File.pathSeparator)
   }
   
   /** compile checks if the given list of files compiles without an error.

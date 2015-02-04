@@ -588,7 +588,7 @@ abstract class GenSource(val schema: SchemaDecl,
     val localName = buildTypeName(decl, true)
     val fqn = buildTypeName(decl, false)
     val formatterName = buildFormatterName(decl.namespace, localName)
-    val enums = filterEnumeration(decl)
+    val enums = filterEnumeration(decl).distinct
     
     def makeEnum(enum: EnumerationDecl[_]) =
       "case object " + buildTypeName(localName, enum, true) + " extends " + localName + 

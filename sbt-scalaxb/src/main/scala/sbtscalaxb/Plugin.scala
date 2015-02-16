@@ -33,6 +33,7 @@ object Plugin extends sbt.Plugin {
     lazy val combinedPackageNames = SettingKey[Map[Option[String], Option[String]]]("scalaxb-combined-package-names")
     lazy val dispatchVersion  = SettingKey[String]("scalaxb-dispatch-version")
     lazy val async            = SettingKey[Boolean]("scalaxb-async")
+    lazy val ignoreUnknown    = SettingKey[Boolean]("scalaxb-ignore-unknown")
   }
 
   object ScalaxbCompile {
@@ -121,6 +122,7 @@ object Plugin extends sbt.Plugin {
     laxAny                  := false,
     dispatchVersion         := "0.11.1",
     async in scalaxb        := true,
+    ignoreUnknown           := false,
     scalaxbConfig :=
       ScConfig(packageNames = combinedPackageNames.value,
         packageDir          = packageDir.value,
@@ -141,6 +143,8 @@ object Plugin extends sbt.Plugin {
         namedAttributes     = namedAttributes.value,
         laxAny              = laxAny.value,
         dispatchVersion     = dispatchVersion.value,
-        async               = async.value)
+        async               = async.value,
+        flags               = Map("ignoreUnknown" -> ignoreUnknown.value)
+      )
   ))
 }

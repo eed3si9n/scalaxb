@@ -29,10 +29,13 @@ import scala.collection.immutable
 
 trait Parsers extends Args with Params {
   private val logger = Log.forName("xsd.Parsers")
+
+  lazy val (follow, phrase) = if (config.ignoreUnknown) ("~|~", "optPhrase") else ("~", "phrase")
+
   // called by makeCaseClassWithType and buildSeqParser
   def buildParser(particle: Particle, mixed: Boolean, wrapInDataRecord: Boolean, ignoreSubGroup: Boolean): String =
     buildParser(particle, buildOccurrence(particle), mixed, wrapInDataRecord, ignoreSubGroup)
-    
+
   def buildParser(particle: Particle, occurrence: Occurrence,
       mixed: Boolean, wrapInDataRecord: Boolean, ignoreSubGroup: Boolean): String = particle match {
     case elem: ElemDecl           => buildElemParser(elem, occurrence, mixed, wrapInDataRecord, ignoreSubGroup)
@@ -60,9 +63,9 @@ trait Parsers extends Args with Params {
           }).mkString("List(", ", ", ")")
       })
     
-    buildParserString(if (mixed) "((" + parser + " ^^ (" + converter + ")) ~ " + newline +
+    buildParserString(if (mixed) "((" + parser + " ^^ (" + converter + ")) " + follow + newline +
         indent(3) + buildTextParser + ") ^^ " + newline +
-        indent(3) + "{ case p1 ~ p2 => Seq.concat(Seq(p1), p2.toList) }"
+        indent(3) + s"{ case p1 $follow p2 => Seq.concat(Seq(p1), p2.toList) }"
       else if (wrapInDataRecord) "(" + parser + " ^^ (" + converter + "))"
       else parser,
       occurrence)
@@ -127,7 +130,7 @@ trait Parsers extends Args with Params {
 
       "{ case " +
       (if (seq.particles.size == 0) "_"
-      else  parserVariableList.mkString(" ~ ")) +
+      else  parserVariableList.mkString(s" $follow ")) +
       (if (mixed) " => Seq.concat(" + argsString + ")"
       else {
         val apply0 = fqn + "(" + argsString + ")"
@@ -139,7 +142,7 @@ trait Parsers extends Args with Params {
       " }"
     }
     
-    val base = parserList.mkString("(", " ~ " + newline + indent(3), ")") + " ^^ " + newline +
+    val base = parserList.mkString("(", " " + follow + " " + newline + indent(3), ")") + " ^^ " + newline +
       indent(4) + buildSeqConverter(seq, mixed, wrapInDataRecord)
     val retval = buildParserString(base, occurrence)
     logger.debug("buildSeqParser:  " + seq + newline + retval)
@@ -153,7 +156,7 @@ trait Parsers extends Args with Params {
       "{ case p => foo()}"
     }
     
-    val base = parserList.mkString("(", " ~ " + newline + indent(3), ")") + " ^^ " + newline +
+    val base = parserList.mkString("(", " " + follow + " " + newline + indent(3), ")") + " ^^ " + newline +
       indent(3) + buildAllConverter(all)
     buildParserString(base, occurrence)   
   }
@@ -178,7 +181,7 @@ trait Parsers extends Args with Params {
     val singleOccurrence = occurrence.copy(minOccurs = 1, maxOccurs = 1) 
     
     // expand substitution groups into elements
-    var options = choice.particles flatMap { _ match {
+    val options = choice.particles flatMap { _ match {
       case any: AnyDecl => Nil
       case compositor: HasParticle if isEmptyCompositor(compositor) => Nil
       case elem: ElemDecl =>

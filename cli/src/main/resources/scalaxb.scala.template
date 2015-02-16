@@ -619,8 +619,65 @@ trait AnyElemNameParser extends scala.util.parsing.combinator.Parsers {
   import scala.annotation.tailrec
   type Elem = ElemName
 
+  implicit class ReaderExt(reader: scala.util.parsing.input.Reader[ElemName]) {
+
+    def erased(from: Int, to: Int): scala.util.parsing.input.Reader[ElemName] = {
+      reader match {
+        case r: ElemNameSeqReader =>
+          new ElemNameSeqReader(r.seq.take(from) ++ r.seq.drop(to))
+        case other =>
+          throw new UnsupportedOperationException("Incompatible reader")
+      }
+    }
+
+  }
+
+  implicit class ParserExt[+T, P <% Parser[T] with (Input => ParseResult[T])](current: P) {
+
+    private def parseIterable[P, T](source: Input, in: Input, p: Parser[P], res: ParseResult[P]): ParseResult[P] = {
+      res match {
+        case s@Success(v: Option[_], n) if v.isEmpty =>
+          if (!n.atEnd) parseIterable(source, in.rest, p, p(in.rest)) else s.copy(next = source)
+        case s@Success(v: Iterable[_], n) if v.isEmpty && !n.atEnd =>
+          if (!n.atEnd) parseIterable(source, in.rest, p, p(in.rest)) else s.copy(next = source)
+        case s@Success(v, n) =>
+          s.copy(next = n.erased(in.pos.column - 1, n.pos.column - 1))
+        case other =>
+          other
+      }
+    }
+
+    private def lookupSuccess[P](p: Parser[P], input: Input): ParseResult[P] = p(input) match {
+      case s@Success(v, next) =>
+        parseIterable(input, input, p, s)
+      case n@NoSuccess(b, next) =>
+        if (next.atEnd) n
+        else lookupSuccess(p, input.rest)
+    }
+
+    def ~|~[U](nextParser: => Parser[U]): Parser[~|~[T, U]] =
+      Parser {
+        in =>
+          lookupSuccess(current, in) match {
+            case s@Success(currentResult, afterFirstInput) =>
+              lookupSuccess(nextParser, afterFirstInput) match {
+                case qs@Success(nextResult, afterSecondInput) =>
+                  Success(new ~|~(currentResult, nextResult), afterSecondInput)
+                case n: NoSuccess => n
+              }
+            case n: NoSuccess => n
+          }
+      }
+  }
+
+  case class ~|~[+A, +B](a : A, b : B) {
+    override def toString() = s"$a ~|~ $b"
+  }
+
   // we need this so treat ElemName as NodeSeq for fromXML etc.
   implicit def toNodeSeq(elem: Elem): scala.xml.NodeSeq = elem.node
+
+  def optPhrase[U](p: Parser[U]): Parser[U] = p ~|~ opt(any(_ => true)) ^^ {case p1 ~|~ p2 => p1}
 
   def any(f: ElemName => Boolean): Parser[ElemName] =
     accept("any", { case x: ElemName if x.name != "" && f(x) => x })
@@ -719,7 +776,7 @@ trait ElemNameParser[A] extends AnyElemNameParser with XMLFormat[A] with CanWrit
     else in collect { case x: scala.xml.Elem => ElemName(x) }
 }
 
-class ElemNameSeqReader(seq: Seq[ElemName],
+class ElemNameSeqReader(val seq: Seq[ElemName],
     override val offset: Int) extends scala.util.parsing.input.Reader[ElemName] {
   import scala.util.parsing.input._
 

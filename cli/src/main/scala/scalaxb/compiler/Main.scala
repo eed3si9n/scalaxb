@@ -116,8 +116,8 @@ object Arguments {
         verbose = true
         c
       }
-      opt[Unit]("use-varargs") text("use var arguments") action { (_, c) =>
-        c.copy(useVarArg = true) }
+      opt[Boolean]("use-varargs") text("use var arguments") action { (x, c) =>
+        c.copy(useVarArg = x) }
       opt[Unit]("generate-lens") text("Generate lenses") action { (_, c) =>
         c.copy(generateLens = true) }
       help("help") text("display this message")

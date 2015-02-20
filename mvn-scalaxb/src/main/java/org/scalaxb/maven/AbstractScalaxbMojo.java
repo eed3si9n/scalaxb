@@ -268,6 +268,11 @@ public abstract class AbstractScalaxbMojo extends AbstractMojo {
     private boolean generateLens;
 
     /**
+     * Generate case class repeated parameters as varargs if true or Seq if false
+     */
+    @Parameter(defaultValue = "true")
+    private boolean useVarArgs;
+    /**
      * Returns the command line options to be used for scalaxb, excluding the
      * input file names.
      */
@@ -291,6 +296,7 @@ public abstract class AbstractScalaxbMojo extends AbstractMojo {
             .flag("--blocking", !async)
             .flag("--lax-any", laxAny)
 	    .flag("--generate-lens", generateLens)
+	    .flag("--use-varargs", useVarArgs)
             .getArguments();
         return unmodifiableList(args);
     }

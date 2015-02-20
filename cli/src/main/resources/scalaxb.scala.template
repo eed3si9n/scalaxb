@@ -632,13 +632,13 @@ trait AnyElemNameParser extends scala.util.parsing.combinator.Parsers {
 
   }
 
-  implicit class ParserExt[+T, P <% Parser[T] with (Input => ParseResult[T])](current: P) {
+  implicit class ParserExt[+T, P <% Parser[T]](current: P) {
 
     private def parseIterable[P, T](source: Input, in: Input, p: Parser[P], res: ParseResult[P]): ParseResult[P] = {
       res match {
         case s@Success(v: Option[_], n) if v.isEmpty =>
           if (!n.atEnd) parseIterable(source, in.rest, p, p(in.rest)) else s.copy(next = source)
-        case s@Success(v: Iterable[_], n) if v.isEmpty && !n.atEnd =>
+        case s@Success(v: Iterable[_], n) if v.isEmpty =>
           if (!n.atEnd) parseIterable(source, in.rest, p, p(in.rest)) else s.copy(next = source)
         case s@Success(v, n) =>
           s.copy(next = n.erased(in.pos.column - 1, n.pos.column - 1))
@@ -677,7 +677,7 @@ trait AnyElemNameParser extends scala.util.parsing.combinator.Parsers {
   // we need this so treat ElemName as NodeSeq for fromXML etc.
   implicit def toNodeSeq(elem: Elem): scala.xml.NodeSeq = elem.node
 
-  def optPhrase[U](p: Parser[U]): Parser[U] = p ~|~ opt(any(_ => true)) ^^ {case p1 ~|~ p2 => p1}
+  def optPhrase[U](p: Parser[U]): Parser[U] = phrase(p ~|~ safeRep(any(_ => true)) ^^ {case p1 ~|~ p2 => p1})
 
   def any(f: ElemName => Boolean): Parser[ElemName] =
     accept("any", { case x: ElemName if x.name != "" && f(x) => x })

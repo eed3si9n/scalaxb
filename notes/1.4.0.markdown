@@ -1,0 +1,10 @@
+  [291]: https://github.com/eed3si9n/scalaxb/issues/291
+  [298]: https://github.com/eed3si9n/scalaxb/issues/298
+
+### SOAP changes
+
+  - Fixes namespace duplication. [#291][291], [#298][298]
+
+### minor enhancements
+
+  - Adds `--ignore-unknown` command line option to ignore unknown XML elements, as well as order in which they are arrived.

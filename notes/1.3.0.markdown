@@ -6,8 +6,6 @@
   [285]: https://github.com/eed3si9n/scalaxb/issues/285
   [286]: https://github.com/eed3si9n/scalaxb/issues/286
   [288]: https://github.com/eed3si9n/scalaxb/issues/288
-  [291]: https://github.com/eed3si9n/scalaxb/issues/291
-  [298]: https://github.com/eed3si9n/scalaxb/issues/298
   [@rubbish]: https://github.com/rubbish
   [@plaflamme]: https://github.com/plaflamme
 
@@ -24,7 +22,6 @@
 - Fixes `nillable` fault support. [#284][284]
 - Makes `http` instances lazy. [#279][279] by [@rubbish][@rubbish]
 - Implements `toString` methods for faults. [#278][279]
-- Fixes namespace duplication. [#291][291], [#298][298]
 
 ### case class >22 and attributes change
 

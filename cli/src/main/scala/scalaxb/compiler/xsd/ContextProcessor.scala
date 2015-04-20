@@ -551,7 +551,9 @@ trait ContextProcessor extends ScalaNames with PackageName {
       else if (value.trim != "") """\s""".r.replaceAllIn(value, "")
       else value    
     if ("""\W""".r.findFirstIn(nonspace).isDefined) {
-      (nonspace.toSeq map { c =>
+      ("""-([a-zA-Z\d])""".r.replaceAllIn(nonspace, { m =>
+        m.group(1).toUpperCase()
+      }).toSeq map { c =>
         if ("""\W""".r.findFirstIn(c.toString).isDefined) "u" + c.toInt.toString
         else c.toString
       }).mkString

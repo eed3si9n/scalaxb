@@ -64,7 +64,7 @@ abstract class GenProtocol(val context: XsdContext) extends ContextProcessor {
         case Some(ns) if scopeSchemas.toList forall {_.elementQualifiedDefault} => List(None -> ns)
         case _ => Nil }) :::
       (scopeSchemas.toList flatMap {makeScope _}) :::
-      (serviceTargetNamespaces.toList.zipWithIndex map { case (ns, idx) => Some("tns" + idx.toString) -> ns }) :::
+      (serviceTargetNamespaces.toList.zipWithIndex map { case (ns, idx) => Some("tns") -> ns }) :::
       List((Some(XSI_PREFIX) -> XSI_URL), (Some(XS_PREFIX) -> XS_URL))).distinct, 0)
     val packageString = config.protocolPackageName map { "package " + _ + newline } getOrElse{""}
     val importFutureString = if (config.async)

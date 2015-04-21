@@ -52,7 +52,13 @@ case class Config(packageNames: Map[Option[String], Option[String]] = Map(None -
   async: Boolean = true,
   dispatchVersion: String = scalaxb.BuildInfo.defaultDispatchVersion,
   useVarArg   : Boolean = true,
-  generateLens: Boolean = false)
+  flags: Map[String, Boolean] = Map()) {
+
+  def generateLens: Boolean = flags.getOrElse("generateLens", false)
+
+  def ignoreUnknown: Boolean = flags.getOrElse("ignoreUnknown", false)
+
+}
 
 object Snippet {
   def apply(definition: Node): Snippet = Snippet(definition, Nil, Nil, Nil)

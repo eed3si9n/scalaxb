@@ -12,7 +12,7 @@ object LensPurchaseOrderTest extends TestBase {
   lazy val generated = module.process(inFile,
       Config(packageNames = Map(None -> Some("ipo")),
       outdir = tmp,
-      generateLens = true
+      flags = Map("generateLens" -> true)
     ))
 
   "ipo.scala file must compile so Address can be used" in {

@@ -272,6 +272,14 @@ public abstract class AbstractScalaxbMojo extends AbstractMojo {
      */
     @Parameter(defaultValue = "true")
     private boolean useVarArgs;
+    
+    /**
+     * When this option is activated, XML parser ignores unknown elements and tries
+     * to find elements in any order.
+     */
+    @Parameter(defaultValue = "false")
+    private boolean ignoreUnknown;
+
     /**
      * Returns the command line options to be used for scalaxb, excluding the
      * input file names.
@@ -295,8 +303,9 @@ public abstract class AbstractScalaxbMojo extends AbstractMojo {
             .flag("--prepend-family", prependFamily)
             .flag("--blocking", !async)
             .flag("--lax-any", laxAny)
-	    .flag("--generate-lens", generateLens)
-	    .flag("--use-varargs", useVarArgs)
+	        .flag("--generate-lens", generateLens)
+	        .flag("--use-varargs", useVarArgs)
+            .flag("--ignore-unknown", ignoreUnknown)
             .getArguments();
         return unmodifiableList(args);
     }

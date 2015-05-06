@@ -634,7 +634,7 @@ trait AnyElemNameParser extends scala.util.parsing.combinator.Parsers {
 
   implicit class ParserExt[+T, P <% Parser[T]](current: P) {
 
-    private def parseIterable[P, T](source: Input, in: Input, p: Parser[P], res: ParseResult[P]): ParseResult[P] = {
+    private def parseIterable[U](source: Input, in: Input, p: Parser[U], res: ParseResult[U]): ParseResult[U] = {
       res match {
         case s@Success(v: Option[_], n) if v.isEmpty =>
           if (!n.atEnd) parseIterable(source, in.rest, p, p(in.rest)) else s.copy(next = source)
@@ -647,7 +647,7 @@ trait AnyElemNameParser extends scala.util.parsing.combinator.Parsers {
       }
     }
 
-    private def lookupSuccess[P](p: Parser[P], input: Input): ParseResult[P] = p(input) match {
+    private def lookupSuccess[U](p: Parser[U], input: Input): ParseResult[U] = p(input) match {
       case s@Success(v, next) =>
         parseIterable(input, input, p, s)
       case n@NoSuccess(b, next) =>
@@ -768,7 +768,7 @@ trait ElemNameParser[A] extends AnyElemNameParser with XMLFormat[A] with CanWrit
   def parser(node: scala.xml.Node, stack: List[ElemName]): Parser[A]
   def isMixed: Boolean = false
 
-  def parse[A](p: Parser[A], in: Seq[scala.xml.Node]): ParseResult[A] =
+  def parse[B](p: Parser[B], in: Seq[scala.xml.Node]): ParseResult[B] =
     p(new ElemNameSeqReader(elementNames(in)))
 
   def elementNames(in: Seq[scala.xml.Node]): Seq[ElemName] =

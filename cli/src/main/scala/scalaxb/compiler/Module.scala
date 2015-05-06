@@ -50,6 +50,7 @@ class Config(val packageNames: Map[Option[String], Option[String]] = Map(None ->
   val namedAttributes: Boolean = false,
   val laxAny: Boolean = false,
   val async: Boolean = true,
+  val enableDispatchClient: Boolean = true,
   val dispatchVersion: String = scalaxb.BuildInfo.defaultDispatchVersion,
   val useVarArg: Boolean = true,
   val flags: Map[String, Boolean] = Map()) {
@@ -77,6 +78,7 @@ class Config(val packageNames: Map[Option[String], Option[String]] = Map(None ->
            namedAttributes: Boolean = namedAttributes,
            laxAny: Boolean = laxAny,
            async: Boolean = async,
+           enableDispatchClient: Boolean = enableDispatchClient,
            dispatchVersion: String = dispatchVersion,
            useVarArg: Boolean = useVarArg,
            flags: Map[String, Boolean] = flags) = {
@@ -100,6 +102,7 @@ class Config(val packageNames: Map[Option[String], Option[String]] = Map(None ->
       namedAttributes = namedAttributes,
       laxAny = laxAny,
       async = async,
+      enableDispatchClient = enableDispatchClient,
       dispatchVersion = dispatchVersion,
       useVarArg = useVarArg,
       flags = flags)
@@ -129,6 +132,7 @@ class Config(val packageNames: Map[Option[String], Option[String]] = Map(None ->
         namedAttributes == that.namedAttributes &&
         laxAny == that.laxAny &&
         async == that.async &&
+        enableDispatchClient == that.enableDispatchClient &&
         dispatchVersion == that.dispatchVersion &&
         useVarArg == that.useVarArg &&
         flags == that.flags
@@ -156,6 +160,7 @@ class Config(val packageNames: Map[Option[String], Option[String]] = Map(None ->
       namedAttributes,
       laxAny,
       async,
+      enableDispatchClient,
       dispatchVersion,
       useVarArg,
       flags)

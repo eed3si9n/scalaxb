@@ -221,6 +221,13 @@ public abstract class AbstractScalaxbMojo extends AbstractMojo {
     private boolean prependFamily;
 
     /**
+     * If true generate Dispatch client code.
+     */
+    @Parameter(property = "scalaxb.enableDispatchClient",
+            defaultValue = "true")
+    private boolean enableDispatchClient;
+
+    /**
      * The version of
      * <a href="http://dispatch.databinder.net/Dispatch.html">Dispatch</a>
      * to be used when generating code from WSDL files.
@@ -294,6 +301,7 @@ public abstract class AbstractScalaxbMojo extends AbstractMojo {
             .param("--class-prefix", classPrefix)
             .param("--param-prefix", parameterPrefix)
             .param("--chunk-size", chunkSize)
+            .flag("--no-dispatch-client", !enableDispatchClient)
             .param("--dispatch-version", dispatchVersion)
             .flag("--no-runtime", !generateRuntime)
             .intersperse("--wrap-contents", wrapContents)

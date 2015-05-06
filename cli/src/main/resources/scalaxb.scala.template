@@ -826,7 +826,7 @@ object HexBinary {
     apply(array: _*)
   }
 
-  def unapplySeq[Byte](x: HexBinary) = Some(x.vector)
+  def unapplySeq(x: HexBinary) = Some(x.vector)
 }
 
 class Base64Binary(_vector: Vector[Byte]) extends scala.collection.IndexedSeq[Byte] {
@@ -848,7 +848,7 @@ object Base64Binary {
     apply(array: _*)
   }
 
-  def unapplySeq[Byte](x: Base64Binary) = Some(x.vector)
+  def unapplySeq(x: Base64Binary) = Some(x.vector)
 }
 
 object XMLCalendar {

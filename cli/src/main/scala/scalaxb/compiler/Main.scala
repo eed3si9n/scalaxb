@@ -107,6 +107,8 @@ object Arguments {
         c.update(ProtocolPackageName(Some(x))) }
       opt[Unit]("no-runtime") text("skips runtime files") action { (_, c) =>
         c.remove(GenerateRuntime) }
+      opt[Unit]("no-dispatch-client") text("disables generation of Dispatch client") action { (_, c) =>
+        c.remove(GenerateDispatchClient) }
       opt[Unit]("lax-any") text("relaxes namespace constraints of xs:any") action { (_, c) =>
         c.update(LaxAny) }
       opt[Unit]("blocking") text("generates blocking SOAP client") action { (_, c) =>

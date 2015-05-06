@@ -567,7 +567,7 @@ object DataRecord extends XMLStandardTypes {
   }
 
   def unapply[A](record: DataRecord[A]): Option[(Option[String], Option[String], A)] =
-    Some(record.namespace, record.key, record.value)
+    Some((record.namespace, record.key, record.value))
 
   def toXML[A](obj: DataRecord[A], namespace: Option[String], elementLabel: Option[String],
       scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq = obj match {

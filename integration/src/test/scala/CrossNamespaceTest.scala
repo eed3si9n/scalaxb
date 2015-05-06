@@ -7,7 +7,7 @@ object CrossNamespaceTest extends TestBase {
 
   lazy val generated = module.processFiles(
     List(ipoxsd, xnxsd),
-    Config(packageNames = Map(None -> Some("ipo") ),
+    new Config(packageNames = Map(None -> Some("ipo") ),
       outdir = tmp) )
 
   "xn.scala must compile so that CrossNamespaceChoice can be used" in {

@@ -11,7 +11,7 @@ object ImportTest extends TestBase {
 
   lazy val generated = module.processFiles(
     List(ipoxsd, reportxsd, circularxsd, conflictxsd, includexsd),
-    Config(packageNames = Map(None -> Some("ipo"),
+    new Config(packageNames = Map(None -> Some("ipo"),
       Some("http://www.example.com/Report") -> Some("org.report") ),
       packageDir = true, outdir = tmp) )
     

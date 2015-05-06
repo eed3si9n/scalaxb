@@ -10,7 +10,7 @@ object LensPurchaseOrderTest extends TestBase {
 
   // override val module = new scalaxb.compiler.xsd.Driver with Verbose
   lazy val generated = module.process(inFile,
-      Config(packageNames = Map(None -> Some("ipo")),
+      new Config(packageNames = Map(None -> Some("ipo")),
       outdir = tmp,
       flags = Map("generateLens" -> true)
     ))

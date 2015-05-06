@@ -8,7 +8,7 @@ object IgnoreUnknownPurchaseOrderTest extends TestBase {
   copyFileFromResource("PurchaseOrderIgnoreUnknownUsage.scala", ignoreUnknownUsageFile)
 
   lazy val generated = module.process(inFile,
-    Config(packageNames = Map(None -> Some("ipo")),
+    new Config(packageNames = Map(None -> Some("ipo")),
       outdir = tmp,
       flags = Map("ignoreUnknown" -> true)
     ))

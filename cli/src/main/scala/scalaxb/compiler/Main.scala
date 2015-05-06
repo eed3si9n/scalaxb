@@ -129,7 +129,7 @@ object Arguments {
         c
       }
     }
-    paramParser.parse(args, Config()) flatMap { c => 
+    paramParser.parse(args, new Config()) flatMap { c =>
       if (files.isEmpty) None
       else Some(Arguments(c, files, verbose)) 
     }

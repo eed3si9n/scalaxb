@@ -18,7 +18,7 @@ object Wsdl11DocumentBareTest extends TestBase with JaxwsTestBase {
   lazy val generated = {
     writeStringToFile(retrieveWsdl, wsdlFile)
     module.process(wsdlFile,
-      Config(packageNames = Map(None -> Some(packageName)),
+      new Config(packageNames = Map(None -> Some(packageName)),
       packageDir = true, outdir = tmp, async = true))
   }
 

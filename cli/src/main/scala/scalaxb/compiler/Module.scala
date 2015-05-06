@@ -31,33 +31,136 @@ import javax.xml.parsers.SAXParser
 import java.io.{File, PrintWriter, Reader, BufferedReader}
 import collection.{mutable, Map, Set}
 
-case class Config(packageNames: Map[Option[String], Option[String]] = Map(None -> None),
-  classPrefix: Option[String] = None,
-  classPostfix: Option[String] = None,
-  paramPrefix: Option[String] = None,
-  attributePrefix: Option[String] = None,
-  outdir: File = new File("."),
-  packageDir: Boolean = false,
-  wrappedComplexTypes: List[String] = Nil,
-  prependFamilyName: Boolean = false,
-  seperateProtocol: Boolean = true,
-  protocolFileName: String = "xmlprotocol.scala",
-  protocolPackageName: Option[String] = None,
-  defaultNamespace: Option[String] = None,
-  generateRuntime: Boolean = true,
-  contentsSizeLimit: Int = Int.MaxValue,
-  sequenceChunkSize: Int = 10,
-  namedAttributes: Boolean = false,
-  laxAny: Boolean = false,
-  async: Boolean = true,
-  dispatchVersion: String = scalaxb.BuildInfo.defaultDispatchVersion,
-  useVarArg   : Boolean = true,
-  flags: Map[String, Boolean] = Map()) {
+class Config(val packageNames: Map[Option[String], Option[String]] = Map(None -> None),
+  val classPrefix: Option[String] = None,
+  val classPostfix: Option[String] = None,
+  val paramPrefix: Option[String] = None,
+  val attributePrefix: Option[String] = None,
+  val outdir: File = new File("."),
+  val packageDir: Boolean = false,
+  val wrappedComplexTypes: List[String] = Nil,
+  val prependFamilyName: Boolean = false,
+  val seperateProtocol: Boolean = true,
+  val protocolFileName: String = "xmlprotocol.scala",
+  val protocolPackageName: Option[String] = None,
+  val defaultNamespace: Option[String] = None,
+  val generateRuntime: Boolean = true,
+  val contentsSizeLimit: Int = Int.MaxValue,
+  val sequenceChunkSize: Int = 10,
+  val namedAttributes: Boolean = false,
+  val laxAny: Boolean = false,
+  val async: Boolean = true,
+  val dispatchVersion: String = scalaxb.BuildInfo.defaultDispatchVersion,
+  val useVarArg: Boolean = true,
+  val flags: Map[String, Boolean] = Map()) {
 
   def generateLens: Boolean = flags.getOrElse("generateLens", false)
 
   def ignoreUnknown: Boolean = flags.getOrElse("ignoreUnknown", false)
 
+  def copy(packageNames: Map[Option[String], Option[String]] = packageNames,
+           classPrefix: Option[String] = classPrefix,
+           classPostfix: Option[String] = classPostfix,
+           paramPrefix: Option[String] = paramPrefix,
+           attributePrefix: Option[String] = attributePrefix,
+           outdir: File = outdir,
+           packageDir: Boolean = packageDir,
+           wrappedComplexTypes: List[String] = wrappedComplexTypes,
+           prependFamilyName: Boolean = prependFamilyName,
+           seperateProtocol: Boolean = seperateProtocol,
+           protocolFileName: String = protocolFileName,
+           protocolPackageName: Option[String] = protocolPackageName,
+           defaultNamespace: Option[String] = defaultNamespace,
+           generateRuntime: Boolean = generateRuntime,
+           contentsSizeLimit: Int = contentsSizeLimit,
+           sequenceChunkSize: Int = sequenceChunkSize,
+           namedAttributes: Boolean = namedAttributes,
+           laxAny: Boolean = laxAny,
+           async: Boolean = async,
+           dispatchVersion: String = dispatchVersion,
+           useVarArg: Boolean = useVarArg,
+           flags: Map[String, Boolean] = flags) = {
+    new Config(
+      packageNames = packageNames,
+      classPrefix = classPrefix,
+      classPostfix = classPostfix,
+      paramPrefix = paramPrefix,
+      attributePrefix = attributePrefix,
+      outdir = outdir,
+      packageDir = packageDir,
+      wrappedComplexTypes = wrappedComplexTypes,
+      prependFamilyName = prependFamilyName,
+      seperateProtocol = seperateProtocol,
+      protocolFileName = protocolFileName,
+      protocolPackageName = protocolPackageName,
+      defaultNamespace = defaultNamespace,
+      generateRuntime = generateRuntime,
+      contentsSizeLimit = contentsSizeLimit,
+      sequenceChunkSize = sequenceChunkSize,
+      namedAttributes = namedAttributes,
+      laxAny = laxAny,
+      async = async,
+      dispatchVersion = dispatchVersion,
+      useVarArg = useVarArg,
+      flags = flags)
+  }
+
+  def canEqual(other: Any): Boolean = other.isInstanceOf[Config]
+
+  override def equals(other: Any): Boolean = other match {
+    case that: Config =>
+      (that canEqual this) &&
+        packageNames == that.packageNames &&
+        classPrefix == that.classPrefix &&
+        classPostfix == that.classPostfix &&
+        paramPrefix == that.paramPrefix &&
+        attributePrefix == that.attributePrefix &&
+        outdir == that.outdir &&
+        packageDir == that.packageDir &&
+        wrappedComplexTypes == that.wrappedComplexTypes &&
+        prependFamilyName == that.prependFamilyName &&
+        seperateProtocol == that.seperateProtocol &&
+        protocolFileName == that.protocolFileName &&
+        protocolPackageName == that.protocolPackageName &&
+        defaultNamespace == that.defaultNamespace &&
+        generateRuntime == that.generateRuntime &&
+        contentsSizeLimit == that.contentsSizeLimit &&
+        sequenceChunkSize == that.sequenceChunkSize &&
+        namedAttributes == that.namedAttributes &&
+        laxAny == that.laxAny &&
+        async == that.async &&
+        dispatchVersion == that.dispatchVersion &&
+        useVarArg == that.useVarArg &&
+        flags == that.flags
+    case _ => false
+  }
+
+  override def hashCode(): Int = {
+    val state = Seq(
+      packageNames,
+      classPrefix,
+      classPostfix,
+      paramPrefix,
+      attributePrefix,
+      outdir,
+      packageDir,
+      wrappedComplexTypes,
+      prependFamilyName,
+      seperateProtocol,
+      protocolFileName,
+      protocolPackageName,
+      defaultNamespace,
+      generateRuntime,
+      contentsSizeLimit,
+      sequenceChunkSize,
+      namedAttributes,
+      laxAny,
+      async,
+      dispatchVersion,
+      useVarArg,
+      flags)
+    state.map(_.hashCode()).foldLeft(0)((a, b) => 31 * a + b)
+  }
 }
 
 object Snippet {
@@ -164,7 +267,7 @@ trait Module {
   }
 
   def process(file: File, packageName: String, outdir: File): List[File] =
-    process(file, Config(packageNames = Map(None -> Some(packageName)), outdir = outdir) )
+    process(file, new Config(packageNames = Map(None -> Some(packageName)), outdir = outdir) )
 
   def process(file: File, config: Config): List[File] =
     processFiles(List(file), config)
@@ -199,7 +302,7 @@ trait Module {
   } getOrElse {dir}
 
   def processString(input: String, packageName: String): List[String] =
-    processString(input, Config(packageNames = Map(None -> Some(packageName))))
+    processString(input, new Config(packageNames = Map(None -> Some(packageName))))
 
   def processString(input: String, config: Config): List[String] =
     infoString(input, config)._2
@@ -211,7 +314,7 @@ trait Module {
   }
 
   def processNode(input: Node, packageName: String): List[String] =
-    processNode(input, Config(packageNames = Map(None -> Some(packageName))))
+    processNode(input, new Config(packageNames = Map(None -> Some(packageName))))
 
   def processNode(input: Node, config: Config): List[String] =
     infoNode(input, config)._2

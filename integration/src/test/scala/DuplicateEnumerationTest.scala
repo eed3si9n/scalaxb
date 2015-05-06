@@ -1,7 +1,7 @@
 import scalaxb.compiler.Config
 
 object DuplicateEnumerationTest extends TestBase {
-  val config = Config(
+  val config = new Config(
     packageNames = Map(None -> Some("dupenum")),
     packageDir = true,
     outdir = tmp,

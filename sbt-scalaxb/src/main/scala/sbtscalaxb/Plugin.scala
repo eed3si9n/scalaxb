@@ -38,7 +38,7 @@ object Plugin extends sbt.Plugin {
 
   object ScalaxbCompile {
     def apply(sources: Seq[File], packageName: String, outDir: File, cacheDir: File): Seq[File] =
-      apply(sources, sc.Config(packageNames = Map(None -> Some(packageName))), outDir, cacheDir, false)
+      apply(sources, new sc.Config(packageNames = Map(None -> Some(packageName))), outDir, cacheDir, false)
 
     def apply(sources: Seq[File], config: sc.Config, outDir: File, cacheDir: File, verbose: Boolean = false): Seq[File] = {
       import sbinary.{DefaultProtocol,Format}
@@ -124,7 +124,7 @@ object Plugin extends sbt.Plugin {
     async in scalaxb        := true,
     ignoreUnknown           := false,
     scalaxbConfig :=
-      ScConfig(packageNames = combinedPackageNames.value,
+      new ScConfig(packageNames = combinedPackageNames.value,
         packageDir          = packageDir.value,
         classPrefix         = classPrefix.value,
         classPostfix        = None,

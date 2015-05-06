@@ -5,7 +5,7 @@ object BigTest extends TestBase {
   val inFile  = new File("integration/src/test/resources/big.xsd")
   // override val module = new scalaxb.compiler.xsd.Driver with Verbose
   lazy val generated = module.process(inFile,
-    Config(packageNames = Map(None -> Some("big") ),
+    new Config(packageNames = Map(None -> Some("big") ),
       outdir = tmp,
       classPrefix = Some("X"),
       paramPrefix = Some("m_"),

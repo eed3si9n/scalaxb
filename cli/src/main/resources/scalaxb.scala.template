@@ -632,7 +632,7 @@ trait AnyElemNameParser extends scala.util.parsing.combinator.Parsers {
 
   }
 
-  implicit class ParserExt[+T, P <% Parser[T]](current: P) {
+  implicit class ParserExt[+T, P](current: P)(implicit ev: P => Parser[T]) {
 
     private def parseIterable[U](source: Input, in: Input, p: Parser[U], res: ParseResult[U]): ParseResult[U] = {
       res match {

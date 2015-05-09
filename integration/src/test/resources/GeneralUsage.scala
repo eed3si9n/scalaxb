@@ -62,6 +62,7 @@ object GeneralUsage {
     testAbstractExtension
     testMixedAbtractExtension
     testLiteralBoolean
+    testUnderscoreSuffix
     true
   }
   
@@ -818,6 +819,22 @@ JDREVGRw==</base64Binary>
     check(withBoolean)
   }
 
+  def testUnderscoreSuffix {
+    println("testUnderscoreSuffix")
+    val subject =
+      <UnderscoreSuffix xmlns="http://www.example.com/general"
+                      xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           at_="1" >
+           <el_>blabla</el_>
+      </UnderscoreSuffix>
+    val us = scalaxb.fromXML[UnderscoreSuffix](subject)
+    System.err.println("received:"+us)
+    def check(obj: UnderscoreSuffix) = obj match {
+      case b@UnderscoreSuffix("blabla", attrs) if b.`at_` =>
+      case _ => sys.error("match failed: " + obj.toString)
+    }
+    check(us)
+  }
 
 
 }

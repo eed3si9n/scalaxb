@@ -550,13 +550,15 @@ trait ContextProcessor extends ScalaNames with PackageName {
       if (value == "") "blank" // treat "" as "blank" but " " as "u32"
       else if (value.trim != "") """\s""".r.replaceAllIn(value, "")
       else value    
-    if ("""\W""".r.findFirstIn(nonspace).isDefined) {
-      (nonspace.toSeq map { c =>
-        if ("""\W""".r.findFirstIn(c.toString).isDefined) "u" + c.toInt.toString
-        else c.toString
-      }).mkString
-    }
-    else nonspace
+    val onlywordchars =
+      if ("""\W""".r.findFirstIn(nonspace).isDefined)
+        (nonspace.toSeq map { c =>
+          if ("""\W""".r.findFirstIn(c.toString).isDefined) "u" + c.toInt.toString
+          else c.toString
+        }).mkString
+      else nonspace
+    if (onlywordchars.endsWith("_")) "`" + onlywordchars + "`"
+    else onlywordchars
   }
 
   def quote(value: Option[String]): String = value map {

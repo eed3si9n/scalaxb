@@ -13,7 +13,7 @@ lazy val commonSettings = Seq(
   ) ++ sonatypeSettings ++ lsSettings
 
 lazy val root = (project in file(".")).
-  aggregate(app, integration, scalaxbPlugin).
+  aggregate(app_2_10, app_2_11, integration, scalaxbPlugin).
   settings(
     scalaVersion := scala211,
     publishArtifact := false
@@ -24,11 +24,14 @@ lazy val app = (project in file("cli")).
   settings(codegenSettings: _*).
   settings(
     name := "scalaxb",
-    crossScalaVersions := Seq(scala211, scala210),
-    scalaVersion := scala211,
     resolvers <+= sbtResolver,
     libraryDependencies ++= appDependencies(scalaVersion.value)
-  )
+  ).
+  cross
+
+lazy val app_2_10 = app(scala210)
+
+lazy val app_2_11 = app(scala211)
 
 lazy val integration = (project in file("integration")).
   settings(commonSettings: _*).
@@ -40,7 +43,7 @@ lazy val integration = (project in file("integration")).
     // fork in test := true,
     // javaOptions in test ++= Seq("-Xmx2G", "-XX:MaxPermSize=512M")
   ).
-  dependsOn(app)
+  dependsOn(app_2_11)
 
 lazy val scalaxbPlugin = (project in file("sbt-scalaxb")).
   settings(commonSettings: _*).
@@ -53,4 +56,4 @@ lazy val scalaxbPlugin = (project in file("sbt-scalaxb")).
     // scalaVersion in Global := "2.9.2",
     description := """sbt plugin to run scalaxb"""
   ).
-  dependsOn(app)
+  dependsOn(app_2_10)

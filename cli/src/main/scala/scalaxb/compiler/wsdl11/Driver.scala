@@ -193,6 +193,8 @@ class Driver extends Module { driver =>
     List(
       generateFromResource[To](Some("scalaxb"), "scalaxb.scala",
         "/scalaxb.scala.template"),
+      generateFromResource[To](Some("dispatch.as"), "scalaxb.scala",
+        "/dispatch_as_scalaxb.scala.template"),
       (if (config.async)
         generateFromResource[To](Some("scalaxb"), "httpclients_async.scala",
           "/httpclients_async.scala.template")

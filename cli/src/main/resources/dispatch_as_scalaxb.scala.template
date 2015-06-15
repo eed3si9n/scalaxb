@@ -1,0 +1,10 @@
+package dispatch.as
+
+import com.ning.http.client.Response
+
+import _root_.scalaxb.XMLFormat
+
+object scalaxb {
+  def apply[T: XMLFormat]: (Response => T) =
+    dispatch.as.xml.Elem andThen (el => _root_.scalaxb.fromXML(el))
+}

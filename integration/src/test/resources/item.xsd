@@ -1,0 +1,9 @@
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" attributeFormDefault="unqualified" elementFormDefault="unqualified">
+    <xs:element name="StoreItem" type="StoreItem"/>
+    <xs:complexType name="StoreItem">
+        <xs:sequence>
+            <xs:element name="price" type="xs:double"/>
+            <xs:element name="symbol" type="xs:string"/>
+        </xs:sequence>
+    </xs:complexType>
+</xs:schema>

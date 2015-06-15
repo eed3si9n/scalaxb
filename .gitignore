@@ -4,6 +4,7 @@ doc
 tags
 tests/tmp
 target/
+target-*/
 lib_managed/
 project/boot/
 tmp/

@@ -7,7 +7,7 @@ lazy val commonSettings = Seq(
     homepage in ThisBuild := Some(url("http://scalaxb.org")),
     licenses in ThisBuild := Seq("MIT License" -> url("https://github.com/eed3si9n/scalaxb/blob/master/LICENSE")),
     description in ThisBuild := """scalaxb is an XML data-binding tool for Scala that supports W3C XML Schema (xsd) and wsdl.""",
-    scalacOptions := Seq("-deprecation", "-unchecked"),
+    scalacOptions := Seq("-deprecation", "-unchecked", "-feature", "-language:implicitConversions", "-language:postfixOps"),
     parallelExecution in Test := false,
     resolvers += Resolver.typesafeIvyRepo("releases")
   ) ++ sonatypeSettings ++ lsSettings

@@ -2,7 +2,7 @@ import sbt._
 import Keys._
 
 object Dependencies {
-  val scala211 = "2.11.4"
+  val scala211 = "2.11.7"
   val scala210 = "2.10.4"
 
   val scopt = "com.github.scopt" %% "scopt" % "3.2.0"
@@ -11,12 +11,12 @@ object Dependencies {
   val dispatch = "net.databinder.dispatch" %% "dispatch-core" % defaultDispatchVersion
   val launcherInterface = "org.scala-sbt" % "launcher-interface" % "0.12.0"
   val scalaXml = "org.scala-lang.modules" %% "scala-xml" % "1.0.2"
-  val scalaParser = "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.1"
+  val scalaParser = "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.4"
   val cxfVersion = "3.0.2"
   val cxfFrontendJaxws = "org.apache.cxf" % "cxf-rt-frontend-jaxws" % cxfVersion
   val cxfTransportsHttp = "org.apache.cxf" % "cxf-rt-transports-http" % cxfVersion
   val cxfTrapsportsHttpJetty = "org.apache.cxf" % "cxf-rt-transports-http-jetty" % cxfVersion
-  val scalaz = "org.scalaz" %% "scalaz-core" % "7.0.6"
+  val scalaz = "org.scalaz" %% "scalaz-core" % "7.1.3"
 
   def scalaCompiler(sv: String) = "org.scala-lang" % "scala-compiler" % sv
 

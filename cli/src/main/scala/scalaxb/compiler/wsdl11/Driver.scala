@@ -30,6 +30,7 @@ import wsdl11._
 import java.io.{Reader}
 import java.net.{URI}
 import scala.xml.{Node}
+import scala.reflect.ClassTag
 import scalaxb.compiler.xsd.{SchemaLite, SchemaDecl, XsdContext, GenProtocol}
 
 class Driver extends Module { driver =>
@@ -59,9 +60,9 @@ class Driver extends Module { driver =>
     context.definitions foreach {processDefinition(_, context)}
   }
 
-  def extractChildren[A, B](definition: XDefinitionsType, elementName: String)(f: A => B): Seq[B] =
+  def extractChildren[A : ClassTag, B](definition: XDefinitionsType, elementName: String)(f: A => B): Seq[B] =
     definition.xdefinitionstypeoption collect {
-      case DataRecord(WSDL_NS, Some(`elementName`), x: A) => f(x)
+      case DataRecord(WSDL_NS, Some(`elementName`), x : A) => f(x)
     }
 
   override def processSchema(schema: Schema, context: Context, cnfg: Config) {}

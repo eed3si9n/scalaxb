@@ -94,10 +94,10 @@ trait ContextProcessor extends ScalaNames with PackageName {
     for {
       schema <- schemas
       elem <- schema.elemList
-      val typeSymbol = elem.typeSymbol
+      typeSymbol = elem.typeSymbol
       if typeSymbol.name.contains("@")
       if typeSymbol.isInstanceOf[ReferenceTypeSymbol]
-      val ref = typeSymbol.asInstanceOf[ReferenceTypeSymbol]
+      ref = typeSymbol.asInstanceOf[ReferenceTypeSymbol]
     } ref.decl match {
       case decl: ComplexTypeDecl =>
         anonymousTypes += ((schema, decl))
@@ -213,15 +213,15 @@ trait ContextProcessor extends ScalaNames with PackageName {
         throw new ReferenceNotFound("type" , namespace, typeName)
       }
 
-  def resolveType(schema: SchemaDecl, context: XsdContext) {
+  def resolveType(schema: SchemaDecl, context: XsdContext) : Unit = {
     def containsTypeLocally(namespace: Option[String], typeName: String): Boolean =
       (namespace == schema.targetNamespace && schema.topTypes.contains(typeName))
 
     // try to resolve the symbol using local schema first
-    def resolveTypeSymbol(typeSymbol: XsTypeSymbol) {
+    def resolveTypeSymbol(typeSymbol: XsTypeSymbol) : Unit = {
       typeSymbol match {
         case symbol: ReferenceTypeSymbol =>
-          if (symbol.decl != null) symbol.decl
+          if (symbol.decl != null) ()
           else {
             if (containsTypeLocally(symbol.namespace, symbol.localPart)) symbol.decl = schema.topTypes(symbol.localPart)
             else symbol.decl = getTypeGlobally(symbol.namespace, symbol.localPart, context)
@@ -254,7 +254,7 @@ trait ContextProcessor extends ScalaNames with PackageName {
     }
   }
   
-  def makeEnumValues(decl: SimpleTypeDecl, scope: scala.xml.NamespaceBinding, context: XsdContext) {
+  def makeEnumValues(decl: SimpleTypeDecl, scope: scala.xml.NamespaceBinding, context: XsdContext) : Unit = {
     val enumValues = context.enumValueNames(packageName(decl.namespace, context))
     val name = context.typeNames(decl)
     filterEnumeration(decl) map { enum =>

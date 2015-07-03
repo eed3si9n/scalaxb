@@ -306,7 +306,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
         __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
       scala.xml.Elem(scalaxb.Helper.getPrefix(__namespace, __scope).orNull, 
         __elementLabel getOrElse { sys.error("missing element label.") },
-        scala.xml.Null, __scope, scala.xml.Text(__obj.toString))
+        scala.xml.Null, __scope, true, scala.xml.Text(__obj.toString))
   }
 
   def buildXmlschemaXReducedDerivationControlFormat = new DefaultXmlschemaXReducedDerivationControlFormat {}
@@ -322,7 +322,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
         __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
       scala.xml.Elem(scalaxb.Helper.getPrefix(__namespace, __scope).orNull, 
         __elementLabel getOrElse { sys.error("missing element label.") },
-        scala.xml.Null, __scope, scala.xml.Text(__obj.toString))
+        scala.xml.Null, __scope, true, scala.xml.Text(__obj.toString))
   }
 
   def buildXmlschemaXTypeDerivationControlFormat = new DefaultXmlschemaXTypeDerivationControlFormat {}
@@ -338,7 +338,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
         __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
       scala.xml.Elem(scalaxb.Helper.getPrefix(__namespace, __scope).orNull, 
         __elementLabel getOrElse { sys.error("missing element label.") },
-        scala.xml.Null, __scope, scala.xml.Text(__obj.toString))
+        scala.xml.Null, __scope, true, scala.xml.Text(__obj.toString))
   }
 
   trait DefaultXmlschemaXSchemaFormat extends scalaxb.ElemNameParser[xmlschema.XSchema] with XmlschemaXSchemaTopGroupFormat {
@@ -435,7 +435,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
         __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
       scala.xml.Elem(scalaxb.Helper.getPrefix(__namespace, __scope).orNull, 
         __elementLabel getOrElse { sys.error("missing element label.") },
-        scala.xml.Null, __scope, scala.xml.Text(__obj.toString))
+        scala.xml.Null, __scope, true, scala.xml.Text(__obj.toString))
   }
 
   trait DefaultXmlschemaXAttributableFormat extends scalaxb.XMLFormat[xmlschema.XAttributable] {
@@ -1651,7 +1651,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
         __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
       scala.xml.Elem(scalaxb.Helper.getPrefix(__namespace, __scope).orNull, 
         __elementLabel getOrElse { sys.error("missing element label.") },
-        scala.xml.Null, __scope, scala.xml.Text(__obj.toString))
+        scala.xml.Null, __scope, true, scala.xml.Text(__obj.toString))
   }
 
   def buildXmlschemaXMaxOccursFormat = new DefaultXmlschemaXMaxOccursFormat {}
@@ -1667,7 +1667,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
         __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
       scala.xml.Elem(scalaxb.Helper.getPrefix(__namespace, __scope).orNull, 
         __elementLabel getOrElse { sys.error("missing element label.") },
-        scala.xml.Null, __scope, scala.xml.Text(__obj.toString))
+        scala.xml.Null, __scope, true, scala.xml.Text(__obj.toString))
   }
 
   trait DefaultXmlschemaXNarrowMaxMinFormat extends scalaxb.ElemNameParser[xmlschema.XNarrowMaxMin] with XmlschemaXIdentityConstraintGroupFormat {
@@ -1768,7 +1768,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
         __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
       scala.xml.Elem(scalaxb.Helper.getPrefix(__namespace, __scope).orNull, 
         __elementLabel getOrElse { sys.error("missing element label.") },
-        scala.xml.Null, __scope, scala.xml.Text(__obj.toString))
+        scala.xml.Null, __scope, true, scala.xml.Text(__obj.toString))
   }
 
   def buildXmlschemaXMaxOccursTypeFormat = new DefaultXmlschemaXMaxOccursTypeFormat {}
@@ -1784,7 +1784,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
         __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
       scala.xml.Elem(scalaxb.Helper.getPrefix(__namespace, __scope).orNull, 
         __elementLabel getOrElse { sys.error("missing element label.") },
-        scala.xml.Null, __scope, scala.xml.Text(__obj.toString))
+        scala.xml.Null, __scope, true, scala.xml.Text(__obj.toString))
   }
 
   trait DefaultXmlschemaXAllableFormat extends scalaxb.XMLFormat[xmlschema.XAllable] {
@@ -1869,7 +1869,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
         __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
       scala.xml.Elem(scalaxb.Helper.getPrefix(__namespace, __scope).orNull, 
         __elementLabel getOrElse { sys.error("missing element label.") },
-        scala.xml.Null, __scope, scala.xml.Text(__obj.toString))
+        scala.xml.Null, __scope, true, scala.xml.Text(__obj.toString))
   }
 
   trait DefaultXmlschemaXWildcardableFormat extends scalaxb.XMLFormat[xmlschema.XWildcardable] {
@@ -2623,7 +2623,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
         __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
       scala.xml.Elem(scalaxb.Helper.getPrefix(__namespace, __scope).orNull, 
         __elementLabel getOrElse { sys.error("missing element label.") },
-        scala.xml.Null, __scope, scala.xml.Text(__obj.toString))
+        scala.xml.Null, __scope, true, scala.xml.Text(__obj.toString))
   }
 
   trait DefaultXmlschemaXSimpleTypeFormat extends scalaxb.XMLFormat[xmlschema.XSimpleType] {
@@ -3097,7 +3097,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
         __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
       scala.xml.Elem(scalaxb.Helper.getPrefix(__namespace, __scope).orNull, 
         __elementLabel getOrElse { sys.error("missing element label.") },
-        scala.xml.Null, __scope, scala.xml.Text(__obj.toString))
+        scala.xml.Null, __scope, true, scala.xml.Text(__obj.toString))
   }
 
   trait DefaultXmlschemaXWhiteSpaceFormat extends scalaxb.ElemNameParser[xmlschema.XWhiteSpace] {

@@ -31,6 +31,7 @@ object Plugin extends sbt.Plugin {
     lazy val protocolPackageName  = SettingKey[Option[String]]("scalaxb-protocol-package-name")
     lazy val laxAny           = SettingKey[Boolean]("scalaxb-lax-any")
     lazy val combinedPackageNames = SettingKey[Map[Option[String], Option[String]]]("scalaxb-combined-package-names")
+    lazy val enableDispatchClient = SettingKey[Boolean]("scalaxb-enable-dispatch-client")
     lazy val dispatchVersion  = SettingKey[String]("scalaxb-dispatch-version")
     lazy val async            = SettingKey[Boolean]("scalaxb-async")
     lazy val ignoreUnknown    = SettingKey[Boolean]("scalaxb-ignore-unknown")
@@ -38,7 +39,7 @@ object Plugin extends sbt.Plugin {
 
   object ScalaxbCompile {
     def apply(sources: Seq[File], packageName: String, outDir: File, cacheDir: File): Seq[File] =
-      apply(sources, sc.Config(packageNames = Map(None -> Some(packageName))), outDir, cacheDir, false)
+      apply(sources, new sc.Config(packageNames = Map(None -> Some(packageName))), outDir, cacheDir, false)
 
     def apply(sources: Seq[File], config: sc.Config, outDir: File, cacheDir: File, verbose: Boolean = false): Seq[File] = {
       import sbinary.{DefaultProtocol,Format}
@@ -120,31 +121,33 @@ object Plugin extends sbt.Plugin {
     protocolFileName        := sc.Defaults.protocolFileName,
     protocolPackageName     := None,
     laxAny                  := false,
+    enableDispatchClient    := true,
     dispatchVersion         := "0.11.1",
     async in scalaxb        := true,
     ignoreUnknown           := false,
     scalaxbConfig :=
-      ScConfig(packageNames = combinedPackageNames.value,
-        packageDir          = packageDir.value,
-        classPrefix         = classPrefix.value,
-        classPostfix        = None,
-        paramPrefix         = paramPrefix.value,
-        attributePrefix     = attributePrefix.value,
-        outdir              = new File("."),
-        prependFamilyName   = prependFamily.value,
-        wrappedComplexTypes = wrapContents.value.toList,
-        seperateProtocol    = true,
-        protocolFileName    = protocolFileName.value,
-        protocolPackageName = protocolPackageName.value,
-        defaultNamespace    = None,
-        generateRuntime     = generateRuntime.value,
-        contentsSizeLimit   = contentsSizeLimit.value,
-        sequenceChunkSize   = chunkSize.value,
-        namedAttributes     = namedAttributes.value,
-        laxAny              = laxAny.value,
-        dispatchVersion     = dispatchVersion.value,
-        async               = async.value,
-        flags               = Map("ignoreUnknown" -> ignoreUnknown.value)
+      new ScConfig(packageNames = combinedPackageNames.value,
+        packageDir           = packageDir.value,
+        classPrefix          = classPrefix.value,
+        classPostfix         = None,
+        paramPrefix          = paramPrefix.value,
+        attributePrefix      = attributePrefix.value,
+        outdir               = new File("."),
+        prependFamilyName    = prependFamily.value,
+        wrappedComplexTypes  = wrapContents.value.toList,
+        seperateProtocol     = true,
+        protocolFileName     = protocolFileName.value,
+        protocolPackageName  = protocolPackageName.value,
+        defaultNamespace     = None,
+        generateRuntime      = generateRuntime.value,
+        contentsSizeLimit    = contentsSizeLimit.value,
+        sequenceChunkSize    = chunkSize.value,
+        namedAttributes      = namedAttributes.value,
+        laxAny               = laxAny.value,
+        enableDispatchClient = enableDispatchClient.value,
+        dispatchVersion      = dispatchVersion.value,
+        async                = async.value,
+        flags                = Map("ignoreUnknown" -> ignoreUnknown.value)
       )
   ))
 }

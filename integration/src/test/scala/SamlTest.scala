@@ -11,7 +11,7 @@ object SamlTest extends TestBase {
   
   lazy val generated = module.processFiles(
     List(xmldsigcoreschemaxsd, xencschemaxsd, samlschemaassertion2xsd, samlschemametadata2xsd),
-    Config(packageNames = Map(None -> Some("saml"),
+    new Config(packageNames = Map(None -> Some("saml"),
       Some("http://www.w3.org/2000/09/xmldsig#") -> Some("org.w3.xmldsig"),
       Some("http://www.w3.org/2001/04/xmlenc#") -> Some("org.w3.xmlenc"),
       Some("urn:oasis:names:tc:SAML:2.0:assertion") -> Some("org.xml.saml2.assertion"),

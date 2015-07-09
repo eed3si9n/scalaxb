@@ -110,6 +110,8 @@ object Arguments {
         c.copy(laxAny = true) }
       opt[Unit]("blocking") text("generates blocking SOAP client") action { (_, c) =>
         c.copy(async = false) }
+      opt[Unit]("no-dispatch-client") text("disables generation of Dispatch client") action { (_, c) =>
+        c.copy(enableDispatchClient = false) }
       opt[String]("dispatch-version") valueName("<version>") text("version of Dispatch (default: " + scalaxb.BuildInfo.defaultDispatchVersion + ")") action { (x, c) =>
         c.copy(dispatchVersion = x) }
       opt[Unit]('v', "verbose") text("be extra verbose") action { (_, c) =>
@@ -129,7 +131,7 @@ object Arguments {
         c
       }
     }
-    paramParser.parse(args, Config()) flatMap { c => 
+    paramParser.parse(args, new Config()) flatMap { c =>
       if (files.isEmpty) None
       else Some(Arguments(c, files, verbose)) 
     }

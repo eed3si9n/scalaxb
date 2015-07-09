@@ -12,7 +12,7 @@ object GeneralTest extends TestBase {
   val custumFile = new File(tmp, "CustomizationUsage.scala")
   
   lazy val generated = module.processFiles(Seq(inFile, mimeFile, importFile),
-    Config(packageNames = Map(None -> Some("general"),
+    new Config(packageNames = Map(None -> Some("general"),
         Some("http://www.w3.org/2005/05/xmlmime") -> Some("xmlmime"),
         Some("http://www.example.com/general_import") -> Some("gimport")),
       attributePrefix = None,

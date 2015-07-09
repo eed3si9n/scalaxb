@@ -6,7 +6,7 @@ object XmlSchemaTest extends TestBase {
   // override val module = new Driver with Verbose
   val inFile  = new File("integration/src/test/resources/xmlschema.xsd")
   lazy val generated = module.process(inFile,
-    Config(packageNames = Map(Some("http://www.w3.org/2001/XMLSchema") -> Some("org.w3.xmlschema")),
+    new Config(packageNames = Map(Some("http://www.w3.org/2001/XMLSchema") -> Some("org.w3.xmlschema")),
       outdir = tmp,
       classPrefix = Some("X"),
       paramPrefix = Some("m")

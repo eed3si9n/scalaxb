@@ -6,7 +6,7 @@ object ZuoraTest extends TestBase {
   override val module = new Driver // with Verbose
 
   lazy val generated = module.process(inFile,
-    Config(packageNames = Map(None -> Some(packageName)),
+    new Config(packageNames = Map(None -> Some(packageName)),
       packageDir = true, outdir = tmp, async = true))
 
   val packageName = "zuora"

@@ -200,7 +200,7 @@ class Driver extends Module { driver =>
       else
         generateFromResource[To](Some("scalaxb"), "httpclients.scala",
           "/httpclients.scala.template"))) ++
-    List((config.dispatchVersion, config.async) match {
+    (if (config.enableDispatchClient) List((config.dispatchVersion, config.async) match {
       case (VersionPattern(x, y, z), false) if (x.toInt == 0) && (y.toInt < 10) =>
         generateFromResource[To](Some("scalaxb"), "httpclients_dispatch.scala",
           "/httpclients_dispatch_classic.scala.template")
@@ -223,7 +223,7 @@ class Driver extends Module { driver =>
       case (_, true)  =>
         generateFromResource[To](Some("scalaxb"), "httpclients_dispatch_async.scala",
            "/httpclients_dispatch0111_async.scala.template")
-    }) ++
+    }) else Nil) ++
     (if (cntxt.soap11) List(
       (if (config.async)
         generateFromResource[To](Some("scalaxb"), "soap11_async.scala",

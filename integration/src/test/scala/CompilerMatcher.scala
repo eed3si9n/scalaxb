@@ -1,16 +1,16 @@
 /*
  * Copyright (c) 2010 e.e d3si9n
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -20,38 +20,36 @@
  * THE SOFTWARE.
  */
 
+import scala.language.reflectiveCalls
 import org.specs2.matcher._
 import java.io.{File}
 import scala.tools.nsc.{Settings, GenericRunnerSettings}
-import scala.tools.nsc.util.{SourceFile, BatchSourceFile}
-import scala.tools.nsc.io.{PlainFile} 
+import scala.reflect.internal.util.{SourceFile, BatchSourceFile}
+import scala.tools.nsc.io.{PlainFile}
 import scala.tools.nsc.reporters.{ConsoleReporter}
 
 class Holder {
   var value: Any = _
-  
   override def toString: String = value match {
     case s: String => s
     case ref: AnyRef => ref.toString
     case _ => super.toString
   }
-  
 }
 
-trait CompilerMatcher {  
+trait CompilerMatcher {
   private lazy val bootPathList = List(jarPathOfClass("scala.tools.nsc.Main"),
                                    jarPathOfClass("scala.Option"),
                                    jarPathOfClass("scala.xml.Elem"),
                                    jarPathOfClass("scala.util.parsing.combinator.Parsers"))
-  
-  /** evaluteTo matches a pair of code list and files against the expected value 
+  /** evaluteTo matches a pair of code list and files against the expected value
    * after evaluating the files and the given code list.
    * @param expected: Any - expected value
    * @param outdir: String - output dir for the interpreter
-   * 
+   *
    * <code>
    * (List("import ipo._",
-   *       "Address(\"\", \"\", \"\").toString"), 
+   *       "Address(\"\", \"\", \"\").toString"),
    *   List(generated)) must evaluateTo("Address(,,)")
    * </code>
    */
@@ -68,37 +66,36 @@ trait CompilerMatcher {
 
       val code = pair.value._1
       val files = pair.value._2
-        
       if (code.size < 1)
         sys.error("At least one line of code is required.")
-      
       val s = settings(outdir, classpath, usecurrentcp, unchecked, deprecation)
       val main = new IMain(s) {
         def lastReq = prevRequestList.last
       }
-      main.compileSources(files.map(toSourceFile(_)): _*)
+      if (!main.compileSources(files.map(toSourceFile(_)): _*)) {
+        sys.error(s"""Error compiling: ${ files.mkString(",") }""")
+      }
       code map { c => main.interpret(c) match {
         case IR.Error => sys.error("Error interpreting %s" format (c))
-        case _ => 
+        case _ =>
       }}
       val holder = allCatch opt {
         main.lastReq.lineRep.call("$result")
       }
       if (holder != Some(expected))
         println("actual: %s" format(holder.map(_.toString).getOrElse{"None"}))
-      
       result(holder == Some(expected),
         code + " evaluates as expected",
         code + " does not evaluate as expected",
         pair)
-    }    
+    }
   }
-  
+
   private def settings(outdir: String, classpath: List[String],
       usecurrentcp: Boolean, unchecked: Boolean,
       deprecation: Boolean): GenericRunnerSettings = {
     import java.io.{PrintWriter, BufferedWriter, BufferedReader, StringReader, OutputStreamWriter}
-    
+
     val currentcp = if (usecurrentcp) {
       val currentLoader = java.lang.Thread.currentThread.getContextClassLoader
        currentLoader match {
@@ -114,34 +111,33 @@ trait CompilerMatcher {
     val classpathList = classpath ++ currentcp
     val in = new BufferedReader(new StringReader(""))
     val out = new PrintWriter(new BufferedWriter(
-      new OutputStreamWriter(System.out)))        
+      new OutputStreamWriter(System.out)))
     val grs = new GenericRunnerSettings(out.println _)
     val origBootclasspath = grs.bootclasspath.value
-    
-    grs.bootclasspath.value = 
+
+    grs.bootclasspath.value =
       mkClasspath(origBootclasspath :: bootPathList)
-    
+
     val originalClasspath = grs.classpath.value
     grs.classpath.value = mkClasspath(classpathList)
     grs.outdir.value = outdir
     grs.unchecked.value = unchecked
     grs.deprecation.value = deprecation
-    grs    
+    grs
   }
-  
+
   private def mkClasspath(entries:List[String]):String = {
-    def windowsFix(path:String):String = 
+    def windowsFix(path:String):String =
       if(java.io.File.separatorChar != '\\') path
       else { // Windows
         (if(path.startsWith("file:")) path.substring(6) else path)
         .replace('/', java.io.File.separatorChar)
       }
-    
+
     entries.distinct
     .map(windowsFix)
     .mkString(java.io.File.pathSeparator)
   }
-  
   /** compile checks if the given list of files compiles without an error.
    * @param outdir: String - output dir for the interpreter
    */
@@ -153,7 +149,6 @@ trait CompilerMatcher {
 
     def apply[A <: Seq[File]](files: Expectable[A]) = {
       import scala.tools.nsc.{Global}
-      
       val s = settings(outdir, classpath, usecurrentcp, unchecked, deprecation)
       val reporter = new ConsoleReporter(s)
       val compiler = new Global(s, reporter)
@@ -189,7 +184,6 @@ trait CompilerMatcher {
     in.close
     out.flush
   }
-  
   private def jarPathOfClass(className: String) = {
     val resource = className.split('.').mkString("/", "/", ".class")
     val path = getClass.getResource(resource).getPath
@@ -197,12 +191,11 @@ trait CompilerMatcher {
     val indexOfSeparator = path.lastIndexOf('!')
     if (indexOfFile == -1 || indexOfSeparator == -1) {
       val indexOfSlash = path.lastIndexOf('/')
-      path.substring(0, indexOfSlash) 
+      path.substring(0, indexOfSlash)
     } else {
       path.substring(indexOfFile, indexOfSeparator)
     }
   }
-  
-  private def toSourceFile(file: File): SourceFile = 
+  private def toSourceFile(file: File): SourceFile =
     new BatchSourceFile(new PlainFile(file))
 }

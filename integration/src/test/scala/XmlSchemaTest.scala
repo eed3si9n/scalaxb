@@ -4,14 +4,13 @@ import scalaxb.compiler.xsd.{Driver}
 
 object XmlSchemaTest extends TestBase {
   // override val module = new Driver with Verbose
-  val inFile  = new File("integration/src/test/resources/xmlschema.xsd")
+  val inFile  = new File("integration/src/test/resources/XMLSchema.xsd")
   lazy val generated = module.process(inFile,
     Config(packageNames = Map(Some("http://www.w3.org/2001/XMLSchema") -> Some("org.w3.xmlschema")),
       outdir = tmp,
       classPrefix = Some("X"),
       paramPrefix = Some("m")
     ))
-    
   "XMLSchema.scala file must compile so that Schema can be used" in {
     (List("import scalaxb._",
       "import org.w3.xmlschema._",

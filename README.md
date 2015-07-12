@@ -32,7 +32,7 @@ To call scalaxb from sbt 0.13.x, put this in your `project/scalaxb.sbt`:
     resolvers += Resolver.sonatypeRepo("public")
 
     addSbtPlugin("org.scalaxb" % "sbt-scalaxb" % "X.X")
-    
+
 and this in `scalaxb.sbt`:
 
     scalaxbSettings
@@ -65,7 +65,7 @@ Licensing
 ---------
 
 It's the MIT License. See the file called LICENSE.
-     
+
 Contacts
 --------
 

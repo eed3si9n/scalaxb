@@ -16,7 +16,7 @@ object Dependencies {
   val cxfFrontendJaxws = "org.apache.cxf" % "cxf-rt-frontend-jaxws" % cxfVersion
   val cxfTransportsHttp = "org.apache.cxf" % "cxf-rt-transports-http" % cxfVersion
   val cxfTrapsportsHttpJetty = "org.apache.cxf" % "cxf-rt-transports-http-jetty" % cxfVersion
-  val scalaz = "org.scalaz" %% "scalaz-core" % "7.1.3"
+  val scalaz = "org.scalaz" %% "scalaz-core" % "7.0.6"
 
   def scalaCompiler(sv: String) = "org.scala-lang" % "scala-compiler" % sv
 

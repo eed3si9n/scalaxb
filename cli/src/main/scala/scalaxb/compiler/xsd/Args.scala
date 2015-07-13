@@ -76,7 +76,7 @@ trait Args extends Params {
         }
       else selector + ".headOption map { x => scalaxb.DataRecord(x, " +
         buildFromXML(typeName, "x", stackItem, formatter) + ") }"
-    } else (cardinality, nillable, (!config.useVarArg) || config.generateLens) match {
+    } else (cardinality, nillable, (!config.useVarArg) /*|| config.generateLens*/) match {
       case (Multiple, true, true)  => selector + " map { _.nilOption map { " + fromU + " }}"
       case (Multiple, false, true) => selector + " map { " + fromU + " }"
       case (Multiple, true, false)  => selector + ".toSeq map { _.nilOption map { " + fromU + " }}"
@@ -157,7 +157,7 @@ trait Args extends Params {
       case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
         if (compositorWrapper.contains(decl))
           (toCardinality(elem.minOccurs, elem.maxOccurs), elem.nillable getOrElse {false}) match {
-            case (Multiple, _) if config.useVarArg && !config.generateLens    => selector + ".toSeq"
+            case (Multiple, _) if config.useVarArg /*&& !config.generateLens*/ => selector + ".toSeq"
             case (Optional, true) => selector + " getOrElse { None }"
             case _ => selector
           }

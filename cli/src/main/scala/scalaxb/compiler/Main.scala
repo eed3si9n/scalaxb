@@ -118,8 +118,6 @@ object Arguments {
       }
       opt[Boolean]("use-varargs") text("use var arguments") action { (x, c) =>
         c.copy(useVarArg = x) }
-      opt[Unit]("generate-lens") text("Generate lenses") action { (_, c) =>
-        c.copy(flags = c.flags + ("generateLens" -> true)) }
       opt[Unit]("ignore-unknown") text("Ignore Unknown Elements") action { (_, c) =>
         c.copy(flags = c.flags + ("ignoreUnknown" -> true)) }
       help("help") text("display this message")

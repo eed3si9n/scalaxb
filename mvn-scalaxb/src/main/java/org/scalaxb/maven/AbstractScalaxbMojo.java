@@ -260,19 +260,13 @@ public abstract class AbstractScalaxbMojo extends AbstractMojo {
     public File getOutputDirectory() {
         return outputDirectory;
     }
-    /**
-     * When this option is activated, lenses are generated for each case class allowing the user to modify easily
-     * an XML file.
-     */
-    @Parameter
-    private boolean generateLens;
 
     /**
      * Generate case class repeated parameters as varargs if true or Seq if false
      */
     @Parameter(defaultValue = "true")
     private boolean useVarArgs;
-    
+
     /**
      * When this option is activated, XML parser ignores unknown elements and tries
      * to find elements in any order.
@@ -303,7 +297,6 @@ public abstract class AbstractScalaxbMojo extends AbstractMojo {
             .flag("--prepend-family", prependFamily)
             .flag("--blocking", !async)
             .flag("--lax-any", laxAny)
-	        .flag("--generate-lens", generateLens)
 	        .flag("--use-varargs", useVarArgs)
             .flag("--ignore-unknown", ignoreUnknown)
             .getArguments();

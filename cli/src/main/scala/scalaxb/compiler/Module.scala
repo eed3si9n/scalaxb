@@ -54,8 +54,6 @@ case class Config(packageNames: Map[Option[String], Option[String]] = Map(None -
   useVarArg   : Boolean = true,
   flags: Map[String, Boolean] = Map()) {
 
-  def generateLens: Boolean = flags.getOrElse("generateLens", false)
-
   def ignoreUnknown: Boolean = flags.getOrElse("ignoreUnknown", false)
 
 }

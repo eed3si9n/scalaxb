@@ -36,7 +36,6 @@ abstract class GenSource(val schema: SchemaDecl,
   val topElems = schema.topElems
   val elemList = schema.elemList
   val MIXED_PARAM = "mixed"
-  val genLens = new GenScalazLens(config)
 
   def run: Snippet = {
     logger.debug("run")
@@ -44,9 +43,6 @@ abstract class GenSource(val schema: SchemaDecl,
     val snippets = mutable.ListBuffer.empty[Snippet]
     snippets += Snippet(makeSchemaComment, Nil, Nil, Nil)
 
-    if(config.generateLens){
-      snippets += Snippet(<source>{genLens.buildImport}</source>, Nil, Nil, Nil)
-    }
     schema.typeList map {
       case decl: ComplexTypeDecl if !context.duplicatedTypes.contains((schema, decl)) =>
         if (context.baseToSubs.contains(decl)) {
@@ -267,21 +263,12 @@ abstract class GenSource(val schema: SchemaDecl,
       else " extends " + superNames.mkString(" with ")
     
     val hasSequenceParam = (paramList.size == 1) && (paramList.head.cardinality == Multiple) &&
-      (!paramList.head.attribute) && (!effectiveMixed) && (!longAll) && (config.useVarArg) && (!config.generateLens)
+      (!paramList.head.attribute) && (!effectiveMixed) && (!longAll) && (config.useVarArg)
     
     def paramsString = if (hasSequenceParam) makeParamName(paramList.head.name, false) + ": " +
                                               paramList.head.singleTypeName + "*"
 
                        else paramList.map(_.toScalaCode).mkString("," + newline + indent(1))
-
-    val defLenses = config.generateLens match {
-      case true => paramList.map( param => genLens.buildDefLens(localName, param)).mkString(newline + indent(1))
-      case false => ""
-    }
-    val defComposeLenses = config.generateLens match {
-      case true => paramList.map( param => genLens.buildDefComposeLens(localName, param)).mkString(newline + indent(1))
-      case false => ""
-    }
 
     val simpleFromXml: Boolean = if (flatParticles.isEmpty && !effectiveMixed) true
       else (decl.content, primary) match {
@@ -375,7 +362,6 @@ abstract class GenSource(val schema: SchemaDecl,
       else " {" + newline +
         indent(1) + accessors.mkString(newline + indent(1)) + newline +
         "}" + newline}
-      {if(config.generateLens){genLens.buildObjectLens(localName, defLenses, defComposeLenses)}}
       </source>
 
     def defaultFormats = if (simpleFromXml) <source>  trait Default{formatterName} extends scalaxb.XMLFormat[{fqn}] with scalaxb.CanWriteChildNodes[{fqn}] {{
@@ -463,14 +449,6 @@ abstract class GenSource(val schema: SchemaDecl,
     // since the sequence is already split at this point, it does not require resplitting.
     val particles = flattenElements(schema.targetNamespace, List(localName), seq, 0, false)
     val paramList = particles map { buildParam }
-    val defLenses = config.generateLens match {
-      case true => paramList.map( param => genLens.buildDefLens(localName, param)).mkString(newline + indent(1))
-      case false => ""
-    }
-    val defComposeLenses = config.generateLens match {
-      case true => paramList.map( param => genLens.buildDefComposeLens(localName, param)).mkString(newline + indent(1))
-      case false => ""
-    }
 
     val hasSequenceParam = (paramList.size == 1) &&
       (paramList.head.cardinality == Multiple) &&
@@ -489,8 +467,7 @@ abstract class GenSource(val schema: SchemaDecl,
     val superString = if (superNames.isEmpty) ""
       else " extends " + superNames.mkString(" with ")
     
-    Snippet(<source>{ buildComment(seq) }case class {localName}({paramsString}){superString}
-      {if(config.generateLens){genLens.buildObjectLens(localName, defLenses, defComposeLenses)}}</source>,
+    Snippet(<source>{ buildComment(seq) }case class {localName}({paramsString}){superString}</source>,
       <source/>,
       <source>  trait Default{formatterName} extends scalaxb.XMLFormat[{fqn}] {{
     def reads(seq: scala.xml.NodeSeq, stack: List[scalaxb.ElemName]): Either[String, {fqn}] = Left("don't call me.")

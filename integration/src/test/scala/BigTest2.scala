@@ -1,17 +1,18 @@
 import java.io.{File}
 import scalaxb.compiler.Config
+import scalaxb.compiler.ConfigEntry._
 
 object BigTest2 extends TestBase {
   val inFile  = new File("integration/src/test/resources/big.xsd")
   // override val module = new scalaxb.compiler.xsd.Driver with Verbose
   lazy val generated = module.process(inFile,
-    Config(packageNames = Map(None -> Some("big") ),
-      outdir = tmp,
-      classPrefix = Some("X"),
-      paramPrefix = Some("m_"),
-      wrappedComplexTypes = List("barOne"),
-      contentsSizeLimit = 20) )
-    
+    Config.default.update(PackageNames(Map(None -> Some("big")))).
+      update(Outdir(tmp)).
+      update(ClassPrefix("X")).
+      update(ParamPrefix("m_")).
+      update(WrappedComplexTypes(List("barOne"))).
+      update(ContentsSizeLimit(10)))
+
   "big.scala file must compile so that Foo can be used" in {
     (List("val subject = <foo xmlns:o=\"http://www.example.com/other\">" +
     "<string1></string1><string2></string2><string3></string3><string4></string4><string5></string5>" +

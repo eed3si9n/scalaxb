@@ -263,7 +263,7 @@ abstract class GenSource(val schema: SchemaDecl,
       else " extends " + superNames.mkString(" with ")
     
     val hasSequenceParam = (paramList.size == 1) && (paramList.head.cardinality == Multiple) &&
-      (!paramList.head.attribute) && (!effectiveMixed) && (!longAll) && (config.useVarArg)
+      (!paramList.head.attribute) && (!effectiveMixed) && (!longAll) && (config.varArg)
     
     def paramsString = if (hasSequenceParam) makeParamName(paramList.head.name, false) + ": " +
                                               paramList.head.singleTypeName + "*"

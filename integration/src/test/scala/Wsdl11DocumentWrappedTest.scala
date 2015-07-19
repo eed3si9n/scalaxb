@@ -1,6 +1,7 @@
 import scalaxb.compiler.wsdl11.Driver
 import java.io.File
 import scalaxb.compiler.Config
+import scalaxb.compiler.ConfigEntry._
 import scalaxb.stockquote.server._
 
 object Wsdl11DocumentWrappedTest extends TestBase with JaxwsTestBase {
@@ -15,11 +16,12 @@ object Wsdl11DocumentWrappedTest extends TestBase with JaxwsTestBase {
 
   val packageName = "stockquote"
   val wsdlFile = new File(s"integration/target/$serviceAddress.wsdl")
+  val config =  Config.default.update(PackageNames(Map(None -> Some(packageName)))).
+      update(Outdir(tmp)).
+      update(GeneratePackageDir)
   lazy val generated = {
     writeStringToFile(retrieveWsdl, wsdlFile)
-    module.process(wsdlFile,
-      Config(packageNames = Map(None -> Some(packageName)),
-      packageDir = true, outdir = tmp, async = true))
+    module.process(wsdlFile, config)
   }
 
   "document-wrapped service works" in {

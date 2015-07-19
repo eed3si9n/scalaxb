@@ -1,16 +1,18 @@
-import scalaxb.compiler.wsdl11.{Driver}
-import java.io.{File}
-import scalaxb.compiler.{Config}
+import scalaxb.compiler.wsdl11.Driver
+import java.io.File
+import scalaxb.compiler.Config
+import scalaxb.compiler.ConfigEntry._
 
 object Wsdl11Soap12AsyncTest extends TestBase {
   override val module = new Driver // with Verbose
 
-  lazy val generated = module.process(inFile,
-    Config(packageNames = Map(None -> Some(packageName)),
-      packageDir = true, outdir = tmp, async = true))
+  lazy val generated = module.process(inFile, config)
 
   val packageName = "stockquote"
   val inFile  = new File("integration/src/test/resources/stockquote.wsdl")
+  val config =  Config.default.update(PackageNames(Map(None -> Some(packageName)))).
+      update(Outdir(tmp)).
+      update(GeneratePackageDir)
   "stockquote.scala file must compile" in {
     (List("""import scala.concurrent.ExecutionContext.Implicits.global
       import scala.concurrent._

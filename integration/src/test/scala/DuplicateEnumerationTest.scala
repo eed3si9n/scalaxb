@@ -1,12 +1,11 @@
 import scalaxb.compiler.Config
+import scalaxb.compiler.ConfigEntry._
 
 object DuplicateEnumerationTest extends TestBase {
-  val config = Config(
-    packageNames = Map(None -> Some("dupenum")),
-    packageDir = true,
-    outdir = tmp,
-    prependFamilyName = true
-  )
+  val config = Config.default.update(PackageNames(Map(None -> Some("dupenum")))).
+    update(Outdir(tmp)).
+    update(GeneratePackageDir).
+    update(PrependFamilyName)
   lazy val generated = module.processNode(dupeEnums, config)
 
   "dupenum.scala file should compile" in {

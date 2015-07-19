@@ -10,7 +10,7 @@ import org.xml.saml2.metadata._
 import java.net.URI
 
 object SamlUsage {
-  def main(args: Array[String]) = {
+  def main(args: Array[String]): Unit = {
     allTests
   }
 

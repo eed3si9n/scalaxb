@@ -33,7 +33,7 @@ object Defaults {
 object Main {
   private val log = Log.forName("main")
 
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
     // change this change SbtApp too.
     try { start(args); }
     catch {
@@ -42,7 +42,7 @@ object Main {
       case e: CaseClassTooLong =>
         log.error(e.getMessage)
       case e: Exception =>
-        log.error(e.getStackTraceString)
+        log.error(e.getStackTrace.mkString("", Module.NL, Module.NL))
     }
   }
 

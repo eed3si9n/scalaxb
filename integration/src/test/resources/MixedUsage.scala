@@ -6,7 +6,7 @@ import scalaxb._
 import mixed._
 
 object MixedUsage {
-  def main(args: Array[String]) = {
+  def main(args: Array[String]): Unit = {
     allTests
   }
 

@@ -36,13 +36,13 @@ trait Args extends Params {
         case x       => "scalaxb.ElemName(" + x + ") :: stack"
       } getOrElse {"Nil"},
       formatter map {"(" + _ + ")"} getOrElse {""})
-  
+
   def buildToXML(typeName: String, args: String): String =
     "scalaxb.toXML[" + typeName + "](" + args + ")"
-        
+
   def buildFromString(typeName: String, selector: String): String =
     typeName + ".fromString(" + selector + ")"
-  
+
   // called by buildConverter
   def buildArg(selector: String, typeSymbol: XsTypeSymbol, stackItem: Option[String]): String = typeSymbol match {
     case AnyType(symbol)                            => selector

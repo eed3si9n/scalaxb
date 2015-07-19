@@ -58,7 +58,9 @@ trait CompilerMatcher {
       classpath: List[String] = Nil,
       usecurrentcp: Boolean = false,
       unchecked: Boolean = true,
-      deprecation: Boolean = true) = new Matcher[(Seq[String], Seq[File])] {
+      deprecation: Boolean = true,
+      feature: Boolean = true,
+      fatalWarnings: Boolean = true) = new Matcher[(Seq[String], Seq[File])] {
 
     def apply[A <: (Seq[String], Seq[File])](pair: Expectable[A]) = {
       import scala.tools.nsc.interpreter.{IMain, Results => IR}
@@ -68,7 +70,8 @@ trait CompilerMatcher {
       val files = pair.value._2
       if (code.size < 1)
         sys.error("At least one line of code is required.")
-      val s = settings(outdir, classpath, usecurrentcp, unchecked, deprecation)
+      val s = settings(outdir, classpath, usecurrentcp, unchecked,
+        deprecation, feature, fatalWarnings)
       val main = new IMain(s) {
         def lastReq = prevRequestList.last
       }
@@ -93,7 +96,7 @@ trait CompilerMatcher {
 
   private def settings(outdir: String, classpath: List[String],
       usecurrentcp: Boolean, unchecked: Boolean,
-      deprecation: Boolean): GenericRunnerSettings = {
+      deprecation: Boolean, feature: Boolean, fatalWarnings: Boolean): GenericRunnerSettings = {
     import java.io.{PrintWriter, BufferedWriter, BufferedReader, StringReader, OutputStreamWriter}
 
     val currentcp = if (usecurrentcp) {
@@ -123,6 +126,8 @@ trait CompilerMatcher {
     grs.outdir.value = outdir
     grs.unchecked.value = unchecked
     grs.deprecation.value = deprecation
+    grs.feature.value = feature
+    grs.fatalWarnings.value = fatalWarnings
     grs
   }
 
@@ -145,11 +150,14 @@ trait CompilerMatcher {
     classpath: List[String] = Nil,
     usecurrentcp: Boolean = false,
     unchecked: Boolean = true,
-    deprecation: Boolean = true) = new Matcher[Seq[File]]() {
+    deprecation: Boolean = true,
+    feature: Boolean = true,
+    fatalWarnings: Boolean = true) = new Matcher[Seq[File]]() {
 
     def apply[A <: Seq[File]](files: Expectable[A]) = {
       import scala.tools.nsc.{Global}
-      val s = settings(outdir, classpath, usecurrentcp, unchecked, deprecation)
+      val s = settings(outdir, classpath, usecurrentcp, unchecked,
+        deprecation, feature, fatalWarnings)
       val reporter = new ConsoleReporter(s)
       val compiler = new Global(s, reporter)
       val run = (new compiler.Run)

@@ -16,7 +16,7 @@ class SbtApp extends xsbti.AppMain {
         logger.error(e.getMessage)
         Exit(1)
       case e: Exception =>
-        logger.error(e.getStackTraceString)
+        logger.error(e.getStackTrace.mkString("", Module.NL, Module.NL))
         Exit(1)
     }
   }

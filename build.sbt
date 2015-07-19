@@ -27,7 +27,14 @@ lazy val app = (project in file("cli")).
     crossScalaVersions := Seq(scala211, scala210),
     scalaVersion := scala211,
     resolvers <+= sbtResolver,
-    libraryDependencies ++= appDependencies(scalaVersion.value)
+    libraryDependencies ++= appDependencies(scalaVersion.value),
+    scalacOptions := {
+      val prev = scalacOptions.value
+      if (scalaVersion.value == scala211) {
+        prev :+ "-Xfatal-warnings"
+      }
+      else prev
+    }
   )
 
 lazy val integration = (project in file("integration")).

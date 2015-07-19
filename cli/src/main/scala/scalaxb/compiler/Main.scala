@@ -42,7 +42,7 @@ object Main {
       case e: CaseClassTooLong =>
         log.error(e.getMessage)
       case e: Exception =>
-        log.error(e.getStackTraceString)
+        log.error(e.getStackTrace.mkString("", Module.NL, Module.NL))
     }
   }
 

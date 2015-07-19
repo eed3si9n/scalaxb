@@ -1,10 +1,39 @@
+  [@carl297r]: https://github.com/carl297r
+  [@joescii]: https://github.com/joescii
+  [@donderom]: https://github.com/donderom
+  [@jet-black]: https://github.com/jet-black
+  [@liff]: https://github.com/liff
+  [@justjoheinz]: https://github.com/justjoheinz
+  [@eed3si9n]: https://github.com/eed3si9n
+
   [291]: https://github.com/eed3si9n/scalaxb/issues/291
   [298]: https://github.com/eed3si9n/scalaxb/issues/298
+  [294]: https://github.com/eed3si9n/scalaxb/pull/294
+  [307]: https://github.com/eed3si9n/scalaxb/pull/307
+  [310]: https://github.com/eed3si9n/scalaxb/pull/310
+  [321]: https://github.com/eed3si9n/scalaxb/pull/321
+  [335]: https://github.com/eed3si9n/scalaxb/pull/335
+  [342]: https://github.com/eed3si9n/scalaxb/pull/342
+  [343]: https://github.com/eed3si9n/scalaxb/pull/343
 
 ### SOAP changes
 
-  - Fixes namespace duplication. [#291][291], [#298][298]
+- Fixes namespace duplication. [#310][310]/[#291][291]/[#298][298] by [@jet-black][@jet-black]
 
 ### minor enhancements
 
-  - Adds `--ignore-unknown` command line option to ignore unknown XML elements, as well as order in which they are arrived.
+- Adds `--ignore-unknown` option to ignore unknown XML elements, as well as order in which they are arrived. [#310][310] by [@jet-black][@jet-black]
+- Improves handling of duplicate enumeration values. [#308][308] by [@donderom][@donderom]
+- Refactors configuration into a sequence of case classes. [#342][342] by [@eed3si9n][@eed3si9n]
+
+### bug fixes
+
+- Fixes Windows filename and path handling for the `CompilerMatcher`. [#307][307] by [@joescii][@joescii]
+
+### compiler warnings
+
+- Adds SIP-18 imports to the generated code. [#294][294] by [@carl297r][@carl297r]
+- Removes "adapting argument list" and other compiler warnings from the generetad code. [#321][321] by [@liff][@liff]
+- Removes compiler warnings from the scalaxb code. [#335][335] by [@justjoheinz][@justjoheinz]
+- Removes postfix usages in the generated code.
+- Adds `-Xfatal-warnings` during the integration tests. [#343][343] by [@eed3si9n][@eed3si9n]

@@ -6,7 +6,7 @@ import scalaxb._
 import ipo._
 
 object PurchaseOrderIgnoreUnknownUsage {
-  def main(args: Array[String]) = {
+  def main(args: Array[String]): Unit = {
     allTests
   }
 

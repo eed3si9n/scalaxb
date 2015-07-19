@@ -19,7 +19,7 @@ object Wsdl11Soap12AsyncTest extends TestBase {
       import scala.concurrent.duration._""",
       """val service = (new stockquote.StockQuoteSoap12Bindings with scalaxb.SoapClientsAsync with scalaxb.DispatchHttpClientsAsync {}).service
        val fresponse = service.getQuote(Some("GOOG"))
-       val response = Await.result(fresponse, 5 seconds)""",
+       val response = Await.result(fresponse, 5.seconds)""",
        """response.toString.contains("<Symbol>GOOG</Symbol>")"""), generated) must evaluateTo(true,
       outdir = "./tmp", usecurrentcp = true)
   }

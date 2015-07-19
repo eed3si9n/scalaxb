@@ -6,7 +6,7 @@ import scalaxb._
 import anycontent._
 
 object AnyUsage {
-  def main(args: Array[String]) = {
+  def main(args: Array[String]): Unit = {
     allTests
   }
 

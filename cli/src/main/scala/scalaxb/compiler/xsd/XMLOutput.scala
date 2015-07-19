@@ -40,7 +40,7 @@ trait XMLOutput extends Args {
       case AnyType(symbol)      => xToXMLCode
       case XsNillableAny        => xToXMLCode
       case XsDataRecord(member) => xToXMLCode
-      case _ => buildToXML(param.baseTypeName, "_, " + ns + ", " + quote(Some(param.name)) + 
+      case _ => buildToXML(param.baseTypeName, "_, " + ns + ", " + quote(Some(param.name)) +
         ", __scope, " + typeAttribute)
     }
 
@@ -53,23 +53,23 @@ trait XMLOutput extends Args {
     }
 
     lazy val singleToXMLCode = param.typeSymbol match {
-      case AnyType(symbol)      => "Some(" + name + ") map {" + xToXMLCode + "} get"
-      case XsNillableAny        => "Some(" + name + ") map {" + xToXMLCode + "} get"
-      case XsDataRecord(member) => "Some(" + name + ") map {" + xToXMLCode + "} get"
+      case AnyType(symbol)      => s"(Some($name) map {$xToXMLCode}).get"
+      case XsNillableAny        => s"(Some($name) map {$xToXMLCode}).get"
+      case XsDataRecord(member) => s"(Some($name) map {$xToXMLCode}).get"
       case _ => buildToXML(param.baseTypeName, name + ", " + ns + ", " + quote(Some(param.name)) + ", __scope, " + typeAttribute)
     }
 
     lazy val singleOptionalToXMLCode = param.typeSymbol match {
-      case AnyType(symbol)      => "Some(" + name + ") map {" + optionalToXMLCode + "} get"
-      case XsNillableAny        => "Some(" + name + ") map {" + optionalToXMLCode + "} get"
-      case XsDataRecord(member) => "Some(" + name + ") map {" + optionalToXMLCode + "} get"
+      case AnyType(symbol)      => s"(Some($name) map {$optionalToXMLCode}).get"
+      case XsNillableAny        => s"(Some($name) map {$optionalToXMLCode}).get"
+      case XsDataRecord(member) => s"(Some($name) map {$optionalToXMLCode}).get"
       case _ => buildToXML(optionalType, name + ", " + ns + ", " + quote(Some(param.name)) + ", __scope, " + typeAttribute)
     }
     
     val retval = (param.cardinality, param.nillable) match {
       case (Multiple, true)  => name + " flatMap { " + optionalToXMLCode + " }"
       case (Multiple, false) => name + " flatMap { " + toXMLCode + " }"
-      case (Optional, true)  => name + " map { " +  optionalToXMLCode + " } getOrElse {Nil}" 
+      case (Optional, true)  => name + " map { " +  optionalToXMLCode + " } getOrElse {Nil}"
       case (Optional, false) => name + " map { " + toXMLCode + " } getOrElse {Nil}"
       case (Single, true)    => singleOptionalToXMLCode
       case (Single, false)   => singleToXMLCode

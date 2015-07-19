@@ -29,11 +29,11 @@ object Wsdl11RpcTest extends TestBase with JaxwsTestBase {
       import scala.concurrent._, duration._""",
       """val service = (new RpcLiteralServiceSoapBindings with scalaxb.Soap11ClientsAsync with scalaxb.DispatchHttpClientsAsync {}).service""",
       """val fresponse = service.price("GOOG")""",
-      """val response = Await.result(fresponse, 5 seconds)""",
+      """val response = Await.result(fresponse, 5.seconds)""",
       """if (response != 42.0) sys.error(response.toString)""",
       
       """val fresponse2 = service.useHeader(Some("GOOG"))""",
-      """val response2 = Await.result(fresponse2, 5 seconds)""",
+      """val response2 = Await.result(fresponse2, 5.seconds)""",
       """if (response2 != UseHeaderOutput(Some(42))) sys.error(response2.toString)""",
 
       """true"""), generated) must evaluateTo(true,

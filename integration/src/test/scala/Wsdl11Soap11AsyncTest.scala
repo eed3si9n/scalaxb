@@ -20,7 +20,7 @@ object Wsdl11Soap11AsyncTest extends TestBase {
        val data = BarCodeData(120, 120, 0, 1, 1, 20, 20, true, None, None, None, 10.0f, Both, CodeEAN128B, NoneType, BottomCenter, PNG)
        println(scalaxb.toXML(data, "BarCodeParam", defaultScope))
        val fresponse = service.generateBarCode(data, Some("1234"))
-       val response = Await.result(fresponse, 5 seconds)
+       val response = Await.result(fresponse, 5.seconds)
        println(response)""",
        """response.toString.contains("iVB")"""), generated) must evaluateTo(true,
       outdir = "./tmp", usecurrentcp = true)

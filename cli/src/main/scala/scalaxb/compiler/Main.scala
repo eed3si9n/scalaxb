@@ -33,7 +33,7 @@ object Defaults {
 object Main {
   private val log = Log.forName("main")
 
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
     // change this change SbtApp too.
     try { start(args); }
     catch {

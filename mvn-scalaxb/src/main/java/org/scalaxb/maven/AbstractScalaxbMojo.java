@@ -265,7 +265,7 @@ public abstract class AbstractScalaxbMojo extends AbstractMojo {
      * Generate case class repeated parameters as varargs if true or Seq if false
      */
     @Parameter(defaultValue = "true")
-    private boolean useVarArgs;
+    private boolean varArgs;
 
     /**
      * When this option is activated, XML parser ignores unknown elements and tries
@@ -297,7 +297,7 @@ public abstract class AbstractScalaxbMojo extends AbstractMojo {
             .flag("--prepend-family", prependFamily)
             .flag("--blocking", !async)
             .flag("--lax-any", laxAny)
-	        .flag("--use-varargs", useVarArgs)
+	        .flag("--no-varargs", !varArgs)
             .flag("--ignore-unknown", ignoreUnknown)
             .getArguments();
         return unmodifiableList(args);

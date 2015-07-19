@@ -1,5 +1,6 @@
 import java.io.{File}
 import scalaxb.compiler.{Config, Log}
+import scalaxb.compiler.ConfigEntry._
 
 object ImportTest extends TestBase {
   // Log.configureLogger(true)
@@ -9,12 +10,14 @@ object ImportTest extends TestBase {
   val conflictxsd = new File("integration/src/test/resources/conflict.xsd")
   val includexsd = new File("integration/src/test/resources/include.xsd")
 
+  val config = Config.default.update(PackageNames(
+      Map(None -> Some("ipo"),
+        Some("http://www.example.com/Report") -> Some("org.report")))).
+    update(Outdir(tmp)).
+    update(GeneratePackageDir)
   lazy val generated = module.processFiles(
     List(ipoxsd, reportxsd, circularxsd, conflictxsd, includexsd),
-    Config(packageNames = Map(None -> Some("ipo"),
-      Some("http://www.example.com/Report") -> Some("org.report") ),
-      packageDir = true, outdir = tmp) )
-    
+    config)
   "report.xsd must generate report.scala file" in {
     (generated(0) must exist) and
     (generated(1) must exist)

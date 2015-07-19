@@ -23,40 +23,14 @@
 package scalaxb.compiler
 
 import scalashim._
-import scala.collection.mutable.{ListBuffer, ListMap}
 import java.net.{URI}
 import scala.xml.{Node, Elem, UnprefixedAttribute, NamespaceBinding}
 import scala.xml.factory.{XMLLoader}
 import javax.xml.parsers.SAXParser
 import java.io.{File, PrintWriter, Reader, BufferedReader}
-import collection.{mutable, Map, Set}
-
-case class Config(packageNames: Map[Option[String], Option[String]] = Map(None -> None),
-  classPrefix: Option[String] = None,
-  classPostfix: Option[String] = None,
-  paramPrefix: Option[String] = None,
-  attributePrefix: Option[String] = None,
-  outdir: File = new File("."),
-  packageDir: Boolean = false,
-  wrappedComplexTypes: List[String] = Nil,
-  prependFamilyName: Boolean = false,
-  seperateProtocol: Boolean = true,
-  protocolFileName: String = "xmlprotocol.scala",
-  protocolPackageName: Option[String] = None,
-  defaultNamespace: Option[String] = None,
-  generateRuntime: Boolean = true,
-  contentsSizeLimit: Int = Int.MaxValue,
-  sequenceChunkSize: Int = 10,
-  namedAttributes: Boolean = false,
-  laxAny: Boolean = false,
-  async: Boolean = true,
-  dispatchVersion: String = scalaxb.BuildInfo.defaultDispatchVersion,
-  useVarArg   : Boolean = true,
-  flags: Map[String, Boolean] = Map()) {
-
-  def ignoreUnknown: Boolean = flags.getOrElse("ignoreUnknown", false)
-
-}
+import scala.collection.mutable
+import scala.collection.mutable.{ListBuffer, ListMap}
+import ConfigEntry._
 
 object Snippet {
   def apply(definition: Node): Snippet = Snippet(definition, Nil, Nil, Nil)
@@ -162,7 +136,9 @@ trait Module {
   }
 
   def process(file: File, packageName: String, outdir: File): List[File] =
-    process(file, Config(packageNames = Map(None -> Some(packageName)), outdir = outdir) )
+    process(file, Config.default.
+      update(PackageNames(Map(None -> Some(packageName)))).
+      update(Outdir(outdir)))
 
   def process(file: File, config: Config): List[File] =
     processFiles(List(file), config)
@@ -197,7 +173,7 @@ trait Module {
   } getOrElse {dir}
 
   def processString(input: String, packageName: String): List[String] =
-    processString(input, Config(packageNames = Map(None -> Some(packageName))))
+    processString(input, Config.default.update(PackageNames(Map(None -> Some(packageName)))))
 
   def processString(input: String, config: Config): List[String] =
     infoString(input, config)._2
@@ -209,7 +185,7 @@ trait Module {
   }
 
   def processNode(input: Node, packageName: String): List[String] =
-    processNode(input, Config(packageNames = Map(None -> Some(packageName))))
+    processNode(input, Config.default.update(PackageNames(Map(None -> Some(packageName)))))
 
   def processNode(input: Node, config: Config): List[String] =
     infoNode(input, config)._2
@@ -354,13 +330,11 @@ trait Module {
       }
       val output = implicitly[CanBeWriter[To]].newInstance(pkg, config.protocolFileName)
       val out = implicitly[CanBeWriter[To]].toWriter(output)
-      val config2 = config.copy(
-        protocolPackageName = pkg,
-        defaultNamespace = config.defaultNamespace match {
+      val config2 = config.update(ProtocolPackageName(pkg)).
+        update(DefaultNamespace(config.defaultNamespace match {
           case Some(_) => config.defaultNamespace
           case _ => cs.firstNamespace
-        }
-      )
+        }))
       val protocolNodes = generateProtocol(Snippet(snippets: _*), cs.context, config2)
       try {
         printNodes(protocolNodes, out)

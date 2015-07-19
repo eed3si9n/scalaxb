@@ -1,9 +1,13 @@
 import scalaxb.compiler.{Config}
+import scalaxb.compiler.ConfigEntry._
 
 object EncloseTest extends TestBase {
-  lazy val generated = module.processNode(dupeChildTypes,
-    Config(packageNames = Map(None -> Some("enclose")),
-      packageDir = true, outdir = tmp, prependFamilyName = true))
+  val config = Config.default.update(PackageNames(Map(None -> Some("enclose")))).
+    update(Outdir(tmp)).
+    update(GeneratePackageDir).
+    update(PrependFamilyName)
+
+  lazy val generated = module.processNode(dupeChildTypes, config)
 
   "enclose.scala file" in {
     println(generated(0))

@@ -4,6 +4,8 @@ import sbt._
 import scalaxb.{compiler => sc}
 import scalaxb.compiler.{Config => ScConfig}
 import scalaxb.BuildInfo
+import scala.collection.immutable
+import sc.ConfigEntry._
 
 object Plugin extends sbt.Plugin {
   import Keys._
@@ -38,7 +40,7 @@ object Plugin extends sbt.Plugin {
 
   object ScalaxbCompile {
     def apply(sources: Seq[File], packageName: String, outDir: File, cacheDir: File): Seq[File] =
-      apply(sources, sc.Config(packageNames = Map(None -> Some(packageName))), outDir, cacheDir, false)
+      apply(sources, sc.Config.default.update(PackageNames(Map(None -> Some(packageName)))), outDir, cacheDir, false)
 
     def apply(sources: Seq[File], config: sc.Config, outDir: File, cacheDir: File, verbose: Boolean = false): Seq[File] = {
       import sbinary.{DefaultProtocol,Format}
@@ -53,7 +55,7 @@ object Plugin extends sbt.Plugin {
           import sc._
           sc.Log.configureLogger(verbose)
           val module = Module.moduleByFileName(src)
-          module.processFiles(sources, config.copy(outdir = outDir))
+          module.processFiles(sources.toVector, config.update(Outdir(outDir)))
         } getOrElse {Nil}
       def cachedCompile =
         inputChanged(cacheDir / "scalaxb-inputs") { (inChanged, inputs: Seq[File] :+: FilesInfo[ModifiedFileInfo] :+: String :+: HNil) =>
@@ -120,31 +122,40 @@ object Plugin extends sbt.Plugin {
     protocolFileName        := sc.Defaults.protocolFileName,
     protocolPackageName     := None,
     laxAny                  := false,
-    dispatchVersion         := "0.11.1",
+    dispatchVersion         := ScConfig.defaultDispatchVersion.value,
     async in scalaxb        := true,
     ignoreUnknown           := false,
     scalaxbConfig :=
-      ScConfig(packageNames = combinedPackageNames.value,
-        packageDir          = packageDir.value,
-        classPrefix         = classPrefix.value,
-        classPostfix        = None,
-        paramPrefix         = paramPrefix.value,
-        attributePrefix     = attributePrefix.value,
-        outdir              = new File("."),
-        prependFamilyName   = prependFamily.value,
-        wrappedComplexTypes = wrapContents.value.toList,
-        seperateProtocol    = true,
-        protocolFileName    = protocolFileName.value,
-        protocolPackageName = protocolPackageName.value,
-        defaultNamespace    = None,
-        generateRuntime     = generateRuntime.value,
-        contentsSizeLimit   = contentsSizeLimit.value,
-        sequenceChunkSize   = chunkSize.value,
-        namedAttributes     = namedAttributes.value,
-        laxAny              = laxAny.value,
-        dispatchVersion     = dispatchVersion.value,
-        async               = async.value,
-        flags               = Map("ignoreUnknown" -> ignoreUnknown.value)
+      ScConfig(
+        Vector(PackageNames(combinedPackageNames.value)) ++
+        (if (packageDir.value) Vector(GeneratePackageDir) else Vector()) ++
+        (classPrefix.value match {
+          case Some(x) => Vector(ClassPrefix(x))
+          case None    => Vector()
+        }) ++
+        (paramPrefix.value match {
+          case Some(x) => Vector(ParamPrefix(x))
+          case None    => Vector()
+        }) ++
+        (attributePrefix.value match {
+          case Some(x) => Vector(AttributePrefix(x))
+          case None    => Vector()
+        }) ++
+        Vector(ScConfig.defaultOutdir) ++
+        (if (prependFamily.value) Vector(PrependFamilyName) else Vector()) ++
+        Vector(WrappedComplexTypes(wrapContents.value.toList)) ++
+        Vector(SeperateProtocol) ++
+        Vector(ProtocolFileName(protocolFileName.value)) ++
+        Vector(ProtocolPackageName(protocolPackageName.value)) ++
+        Vector(ScConfig.defaultDefaultNamespace) ++
+        (if (generateRuntime.value) Vector(GenerateRuntime) else Vector()) ++
+        Vector(ContentsSizeLimit(contentsSizeLimit.value)) ++
+        Vector(SequenceChunkSize(chunkSize.value)) ++
+        (if (namedAttributes.value) Vector(NamedAttributes) else Vector()) ++
+        (if (laxAny.value) Vector(LaxAny) else Vector()) ++
+        Vector(DispatchVersion(dispatchVersion.value)) ++
+        (if (async.value) Vector(GenerateAsync) else Vector()) ++
+        (if (ignoreUnknown.value) Vector(IgnoreUnknown) else Vector())
       )
   ))
 }

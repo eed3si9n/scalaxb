@@ -194,14 +194,15 @@ class Driver extends Module { driver =>
     List(
       generateFromResource[To](Some("scalaxb"), "scalaxb.scala",
         "/scalaxb.scala.template"),
-      generateFromResource[To](Some("dispatch.as"), "scalaxb.scala",
-        "/dispatch_as_scalaxb.scala.template"),
       (if (config.async)
         generateFromResource[To](Some("scalaxb"), "httpclients_async.scala",
           "/httpclients_async.scala.template")
       else
         generateFromResource[To](Some("scalaxb"), "httpclients.scala",
           "/httpclients.scala.template"))) ++
+    (if (config.generateDispatchAs) List(generateFromResource[To](Some("dispatch.as"), "dispatch_as_scalaxb.scala",
+        "/dispatch_as_scalaxb.scala.template"))
+     else Nil) ++
     (if (config.generateDispatchClient) List((config.dispatchVersion, config.async) match {
       case (VersionPattern(x, y, z), false) if (x.toInt == 0) && (y.toInt < 10) =>
         generateFromResource[To](Some("scalaxb"), "httpclients_dispatch.scala",

@@ -14,6 +14,7 @@ object Dependencies {
   val scalaParser = "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.4"
   val cxfVersion = "3.0.2"
   val cxfFrontendJaxws = "org.apache.cxf" % "cxf-rt-frontend-jaxws" % cxfVersion
+  val cxfFrontendJaxrs = "org.apache.cxf" % "cxf-rt-frontend-jaxrs" % cxfVersion
   val cxfTransportsHttp = "org.apache.cxf" % "cxf-rt-transports-http" % cxfVersion
   val cxfTrapsportsHttpJetty = "org.apache.cxf" % "cxf-rt-transports-http-jetty" % cxfVersion
 
@@ -39,6 +40,7 @@ object Dependencies {
     scalaCompiler(sv),
     specs2(sv) % "test",
     cxfFrontendJaxws % "test",
+    cxfFrontendJaxrs % "test",
     cxfTransportsHttp % "test",
     cxfTrapsportsHttpJetty % "test"
   )

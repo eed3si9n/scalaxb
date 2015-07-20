@@ -2,7 +2,7 @@ import Dependencies._
 import Common._
 
 lazy val commonSettings = Seq(
-    version in ThisBuild := "1.3.0-SNAPSHOT",
+    version in ThisBuild := "1.4.0-SNAPSHOT",
     organization in ThisBuild := "org.scalaxb",
     homepage in ThisBuild := Some(url("http://scalaxb.org")),
     licenses in ThisBuild := Seq("MIT License" -> url("https://github.com/eed3si9n/scalaxb/blob/master/LICENSE")),
@@ -58,6 +58,12 @@ lazy val scalaxbPlugin = (project in file("sbt-scalaxb")).
     name := "sbt-scalaxb",
     // sbtVersion in Global := "0.12.4",
     // scalaVersion in Global := "2.9.2",
-    description := """sbt plugin to run scalaxb"""
+    description := """sbt plugin to run scalaxb""",
+    ScriptedPlugin.scriptedSettings,
+    scriptedLaunchOpts := { scriptedLaunchOpts.value ++
+      Seq("-Xmx1024M", "-XX:MaxPermSize=256M", "-Dplugin.version=" + version.value)
+    },
+    scriptedBufferLog := false,
+    scripted <<= scripted.dependsOn(publishLocal in app)
   ).
   dependsOn(app)

@@ -1,1 +1,7 @@
-addSbtPlugin("org.scalaxb" % "sbt-scalaxb" % "0.6.5-SNAPSHOT")
+{
+  val pluginVersion = System.getProperty("plugin.version")
+  if(pluginVersion == null)
+    throw new RuntimeException("""|The system property 'plugin.version' is not defined.
+                                  |Specify this property using the scriptedLaunchOpts -D.""".stripMargin)
+  else addSbtPlugin("org.scalaxb" % "sbt-scalaxb" % pluginVersion)
+}

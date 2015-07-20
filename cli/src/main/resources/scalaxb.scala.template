@@ -632,8 +632,12 @@ trait AnyElemNameParser extends scala.util.parsing.combinator.Parsers {
 
   }
 
-  implicit class ParserExt[+T, P](current: P)(implicit ev: P => Parser[T]) {
-
+  implicit def parserViewToParserExt[T, P](current: P)(implicit ev: P => Parser[T]): ParserExt[T, P] =
+    new ParserExt[T, P](current, ev)
+  implicit def parserToParserExt[T](current: Parser[T]): ParserExt[T, Parser[T]] =
+    new ParserExt[T, Parser[T]](current, identity)
+  class ParserExt[+T, P](current: P, ev0: P => Parser[T]) {
+    implicit val ev: P => Parser[T] = ev0
     private def parseIterable[U](source: Input, in: Input, p: Parser[U], res: ParseResult[U]): ParseResult[U] = {
       res match {
         case s@Success(v: Option[_], n) if v.isEmpty =>

@@ -13,6 +13,7 @@
   [307]: https://github.com/eed3si9n/scalaxb/pull/307
   [310]: https://github.com/eed3si9n/scalaxb/pull/310
   [321]: https://github.com/eed3si9n/scalaxb/pull/321
+  [322]: https://github.com/eed3si9n/scalaxb/pull/322
   [335]: https://github.com/eed3si9n/scalaxb/pull/335
   [342]: https://github.com/eed3si9n/scalaxb/pull/342
   [343]: https://github.com/eed3si9n/scalaxb/pull/343
@@ -21,6 +22,7 @@
 
 - Fixes namespace duplication. [#310][310]/[#291][291]/[#298][298] by [@jet-black][@jet-black]
 - Adds `requestTimeout` and `connectionTimeout` to `DispatchHttpClients`. [#304][304] by [@eed3si9n][@eed3si9n]
+- Adds `--no-dispatch-client` option. [#322][322] by [@liff][@liff]
 
 ### minor enhancements
 

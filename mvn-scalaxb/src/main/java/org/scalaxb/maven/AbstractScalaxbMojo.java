@@ -151,6 +151,13 @@ public abstract class AbstractScalaxbMojo extends AbstractMojo {
     private boolean generateRuntime;
 
     /**
+     * If true generate Dispatch client code.
+     */
+    @Parameter(property = "scalaxb.generateDispatchClient",
+            defaultValue = "true")
+    private boolean generateDispatchClient;
+
+    /**
      * Maximum number of parameters to use in generated case class constructors.
      * This allows parameters sequences to be separated into chunks of the given
      * size.
@@ -288,6 +295,7 @@ public abstract class AbstractScalaxbMojo extends AbstractMojo {
             .param("--class-prefix", classPrefix)
             .param("--param-prefix", parameterPrefix)
             .param("--chunk-size", chunkSize)
+            .flag("--no-dispatch-client", !generateDispatchClient)
             .param("--dispatch-version", dispatchVersion)
             .flag("--no-runtime", !generateRuntime)
             .intersperse("--wrap-contents", wrapContents)

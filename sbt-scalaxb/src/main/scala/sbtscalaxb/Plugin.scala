@@ -33,6 +33,7 @@ object Plugin extends sbt.Plugin {
     lazy val protocolPackageName  = SettingKey[Option[String]]("scalaxb-protocol-package-name")
     lazy val laxAny           = SettingKey[Boolean]("scalaxb-lax-any")
     lazy val combinedPackageNames = SettingKey[Map[Option[String], Option[String]]]("scalaxb-combined-package-names")
+    lazy val generateDispatchClient = SettingKey[Boolean]("scalaxb-generate-dispatch-client")
     lazy val dispatchVersion  = SettingKey[String]("scalaxb-dispatch-version")
     lazy val async            = SettingKey[Boolean]("scalaxb-async")
     lazy val ignoreUnknown    = SettingKey[Boolean]("scalaxb-ignore-unknown")
@@ -119,6 +120,7 @@ object Plugin extends sbt.Plugin {
     namedAttributes         := false,
     packageDir              := true,
     generateRuntime         := true,
+    generateDispatchClient  := true,
     protocolFileName        := sc.Defaults.protocolFileName,
     protocolPackageName     := None,
     laxAny                  := false,
@@ -149,6 +151,7 @@ object Plugin extends sbt.Plugin {
         Vector(ProtocolPackageName(protocolPackageName.value)) ++
         Vector(ScConfig.defaultDefaultNamespace) ++
         (if (generateRuntime.value) Vector(GenerateRuntime) else Vector()) ++
+        (if (generateDispatchClient.value) Vector(GenerateDispatchClient) else Vector()) ++
         Vector(ContentsSizeLimit(contentsSizeLimit.value)) ++
         Vector(SequenceChunkSize(chunkSize.value)) ++
         (if (namedAttributes.value) Vector(NamedAttributes) else Vector()) ++

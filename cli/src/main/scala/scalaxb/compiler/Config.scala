@@ -54,6 +54,7 @@ case class Config(items: Map[String, ConfigEntry]) {
   def defaultNamespace: Option[String] =
     (get[DefaultNamespace] getOrElse defaultDefaultNamespace).value
   def generateRuntime: Boolean = values contains GenerateRuntime
+  def generateDispatchClient: Boolean = values contains GenerateDispatchClient
   def contentsSizeLimit: Int =
     (get[ContentsSizeLimit] getOrElse defaultContentsSizeLimit).value
   def sequenceChunkSize: Int =
@@ -92,7 +93,8 @@ object Config {
   val default = Config(
     Vector(defaultPackageNames, defaultOutdir, defaultWrappedComplexTypes,
       SeperateProtocol, defaultProtocolFileName, defaultProtocolPackageName,
-      GenerateRuntime, defaultContentsSizeLimit, defaultSequenceChunkSize,
+      GenerateRuntime, GenerateDispatchClient,
+      defaultContentsSizeLimit, defaultSequenceChunkSize,
       GenerateAsync, defaultDispatchVersion, VarArg)
   )
 }
@@ -115,6 +117,7 @@ object ConfigEntry {
   case class ProtocolPackageName(value: Option[String]) extends ConfigEntry
   case class DefaultNamespace(value: Option[String]) extends ConfigEntry
   case object GenerateRuntime extends ConfigEntry
+  case object GenerateDispatchClient extends ConfigEntry
   case class ContentsSizeLimit(value: Int) extends ConfigEntry
   case class SequenceChunkSize(value: Int) extends ConfigEntry
   case object NamedAttributes extends ConfigEntry

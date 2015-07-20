@@ -16,6 +16,10 @@ User documentation
 Building
 --------
 
+http://stackoverflow.com/questions/17519808/maven-plugin-plugin-helpmojo-breaking-change
+
+Currently requires Maven 3.1.x.
+
 To build with integration tests:
 
     mvn install -Pit

@@ -154,7 +154,7 @@ object Plugin extends sbt.Plugin {
         Vector(ScConfig.defaultDefaultNamespace) ++
         (if (generateRuntime.value) Vector(GenerateRuntime) else Vector()) ++
         (if (generateDispatchClient.value) Vector(GenerateDispatchClient) else Vector()) ++
-        (if (generateDispatchAs) Vector(GenerateDispatchAs) else Vector()) ++
+        (if (generateDispatchAs.value) Vector(GenerateDispatchAs) else Vector()) ++
         Vector(ContentsSizeLimit(contentsSizeLimit.value)) ++
         Vector(SequenceChunkSize(chunkSize.value)) ++
         (if (namedAttributes.value) Vector(NamedAttributes) else Vector()) ++

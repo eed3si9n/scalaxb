@@ -109,6 +109,8 @@ object Arguments {
         c.remove(GenerateRuntime) }
       opt[Unit]("no-dispatch-client") text("disables generation of Dispatch client") action { (_, c) =>
         c.remove(GenerateDispatchClient) }
+      opt[Unit]("dispatch-as") text("generates of Dispatch \"as\"") action { (_, c) =>
+        c.update(GenerateDispatchAs) }
       opt[Unit]("lax-any") text("relaxes namespace constraints of xs:any") action { (_, c) =>
         c.update(LaxAny) }
       opt[Unit]("blocking") text("generates blocking SOAP client") action { (_, c) =>

@@ -55,6 +55,7 @@ case class Config(items: Map[String, ConfigEntry]) {
     (get[DefaultNamespace] getOrElse defaultDefaultNamespace).value
   def generateRuntime: Boolean = values contains GenerateRuntime
   def generateDispatchClient: Boolean = values contains GenerateDispatchClient
+  def generateDispatchAs: Boolean = values contains GenerateDispatchAs
   def contentsSizeLimit: Int =
     (get[ContentsSizeLimit] getOrElse defaultContentsSizeLimit).value
   def sequenceChunkSize: Int =
@@ -118,6 +119,7 @@ object ConfigEntry {
   case class DefaultNamespace(value: Option[String]) extends ConfigEntry
   case object GenerateRuntime extends ConfigEntry
   case object GenerateDispatchClient extends ConfigEntry
+  case object GenerateDispatchAs extends ConfigEntry
   case class ContentsSizeLimit(value: Int) extends ConfigEntry
   case class SequenceChunkSize(value: Int) extends ConfigEntry
   case object NamedAttributes extends ConfigEntry

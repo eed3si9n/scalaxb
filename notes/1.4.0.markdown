@@ -5,6 +5,7 @@
   [@liff]: https://github.com/liff
   [@justjoheinz]: https://github.com/justjoheinz
   [@eed3si9n]: https://github.com/eed3si9n
+  [@arkadius]: https://github.com/arkadius
 
   [291]: https://github.com/eed3si9n/scalaxb/issues/291
   [298]: https://github.com/eed3si9n/scalaxb/issues/298
@@ -14,6 +15,7 @@
   [310]: https://github.com/eed3si9n/scalaxb/pull/310
   [321]: https://github.com/eed3si9n/scalaxb/pull/321
   [322]: https://github.com/eed3si9n/scalaxb/pull/322
+  [332]: https://github.com/eed3si9n/scalaxb/pull/332
   [335]: https://github.com/eed3si9n/scalaxb/pull/335
   [342]: https://github.com/eed3si9n/scalaxb/pull/342
   [343]: https://github.com/eed3si9n/scalaxb/pull/343
@@ -22,9 +24,10 @@
 
 - Fixes namespace duplication. [#310][310]/[#291][291]/[#298][298] by [@jet-black][@jet-black]
 - Adds `requestTimeout` and `connectionTimeout` to `DispatchHttpClients`. [#304][304] by [@eed3si9n][@eed3si9n]
-- Adds `--no-dispatch-client` option. [#322][322] by [@liff][@liff]
+- Adds `--no-dispatch-client` option (`generateDispatchClient := false`). [#322][322] by [@liff][@liff]
+- Adds `--dispatch-as` option (`generateDispatchAs := true`) for Dispatch's `Http(request > as.scalaxb[A])` support. [#332][332] by [@arkadius][@arkadius]
 
-### minor enhancements
+### other enhancements
 
 - Adds `--ignore-unknown` option to ignore unknown XML elements, as well as order in which they are arrived. [#310][310] by [@jet-black][@jet-black]
 - Improves handling of duplicate enumeration values. [#308][308] by [@donderom][@donderom]

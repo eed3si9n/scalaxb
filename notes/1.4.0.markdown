@@ -9,6 +9,7 @@
   [291]: https://github.com/eed3si9n/scalaxb/issues/291
   [298]: https://github.com/eed3si9n/scalaxb/issues/298
   [294]: https://github.com/eed3si9n/scalaxb/pull/294
+  [304]: https://github.com/eed3si9n/scalaxb/pull/304
   [307]: https://github.com/eed3si9n/scalaxb/pull/307
   [310]: https://github.com/eed3si9n/scalaxb/pull/310
   [321]: https://github.com/eed3si9n/scalaxb/pull/321
@@ -19,6 +20,7 @@
 ### SOAP changes
 
 - Fixes namespace duplication. [#310][310]/[#291][291]/[#298][298] by [@jet-black][@jet-black]
+- Adds `requestTimeout` and `connectionTimeout` to `DispatchHttpClients`. [#304][304] by [@eed3si9n][@eed3si9n]
 
 ### minor enhancements
 

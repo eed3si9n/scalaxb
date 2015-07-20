@@ -7,7 +7,7 @@ object Dependencies {
 
   val scopt = "com.github.scopt" %% "scopt" % "3.2.0"
   val log4j = "log4j" % "log4j" % "1.2.17"
-  val defaultDispatchVersion = "0.11.1"
+  val defaultDispatchVersion = "0.11.2"
   val dispatch = "net.databinder.dispatch" %% "dispatch-core" % defaultDispatchVersion
   val launcherInterface = "org.scala-sbt" % "launcher-interface" % "0.12.0"
   val scalaXml = "org.scala-lang.modules" %% "scala-xml" % "1.0.2"

@@ -92,7 +92,7 @@ class Driver extends Module { driver =>
       case (Some(wsdl), _) => wsdl.targetNamespace map {_.toString}
       case (_, x :: xs) => x.targetNamespace
       case _ => None
-    }    
+    }
 
   override def generate(pair: WsdlPair, part: String, cntxt: Context, cnfg: Config):
       Seq[(Option[String], Snippet, String)] = {
@@ -220,12 +220,19 @@ class Driver extends Module { driver =>
         generateFromResource[To](Some("scalaxb"), "httpclients_dispatch_async.scala",
           "/httpclients_dispatch0100_async.scala.template")
 
-      case (_, false)  =>
+      case (VersionPattern(x, y, z), false) if (x.toInt == 0) && (y.toInt == 11) && ((z.toInt == 1) || (z.toInt == 2)) =>
         generateFromResource[To](Some("scalaxb"), "httpclients_dispatch.scala",
           "/httpclients_dispatch0111.scala.template")
-      case (_, true)  =>
+      case (VersionPattern(x, y, z), true) if (x.toInt == 0) && (y.toInt == 11) && ((z.toInt == 1) || (z.toInt == 2))  =>
         generateFromResource[To](Some("scalaxb"), "httpclients_dispatch_async.scala",
-           "/httpclients_dispatch0111_async.scala.template")
+          "/httpclients_dispatch0111_async.scala.template")
+
+      case (VersionPattern(x, y, z), false) if (x.toInt == 0) && (y.toInt == 11) && (z.toInt == 3) =>
+        generateFromResource[To](Some("scalaxb"), "httpclients_dispatch.scala",
+          "/httpclients_dispatch0113.scala.template")
+      case (VersionPattern(x, y, z), true) if (x.toInt == 0) && (y.toInt == 11) && (z.toInt == 3)  =>
+        generateFromResource[To](Some("scalaxb"), "httpclients_dispatch_async.scala",
+           "/httpclients_dispatch0113_async.scala.template")
     }) else Nil) ++
     (if (cntxt.soap11) List(
       (if (config.async)

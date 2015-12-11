@@ -23,14 +23,13 @@
 package scalaxb.compiler.wsdl11
 
 trait GenSource {
-  import scalashim._
+  import masked.scalaxb.DataRecord
   import wsdl11._
-  import masked.scalaxb.{DataRecord}
-  import scalaxb.compiler.{Config, Snippet, ReferenceNotFound, Module, Log, ScalaNames}
-  import Module.{NL, indent, camelCase}
+
+  import scalaxb.compiler.{Config, Log, Module, ReferenceNotFound, ScalaNames, Snippet}
+  import Module.{NL, camelCase}
   import scala.xml.Node
-  import scalaxb.compiler.xsd.{ReferenceTypeSymbol, SimpleTypeDecl, ComplexTypeDecl, BuiltInSimpleTypeSymbol,
-    XsTypeSymbol, AnyType, XsAnyType, Single, Multiple, Optional, Cardinality }
+  import scalaxb.compiler.xsd.{AnyType, BuiltInSimpleTypeSymbol, Cardinality, ComplexTypeDecl, Multiple, Optional, ReferenceTypeSymbol, SimpleTypeDecl, Single, XsTypeSymbol}
 
   val WSDL_SOAP11 = "http://schemas.xmlsoap.org/wsdl/soap/"
   val WSDL_SOAP12 = "http://schemas.xmlsoap.org/wsdl/soap12/"
@@ -287,11 +286,22 @@ trait {interfaceTypeName} {{
 
   def splitParamToParts(paramType: XParamType, paramBinding: Option[XStartWithExtensionsTypable]): (Seq[XPartType], Seq[XPartType]) = {
     val headers = headerBindings(paramBinding)
-    val headerPartNames = (headers map { _.part }).toSet
+    val headerPartNames = (headers map {
+      _.part
+    }).toSet
     val parts = paramMessage(paramType).part.map(x => x.copy(name = x.name.map(camelCase)))
-    val (headerParts, bodyParts) = parts partition { p => headerPartNames(p.name.getOrElse("")) }
-    (headerParts, bodyParts)
+    val (explicitHeaderParts, bodyParts) = parts partition { p => headerPartNames(p.name.getOrElse("")) }
+    (headerParts(headers, explicitHeaderParts), bodyParts)
   }
+
+  private def headerParts(headers: Seq[HeaderBinding], explicitHeaderParts: Seq[XPartType]) =
+    if (explicitHeaderParts.isEmpty && headers.nonEmpty) implicitHeaderParts(headers)
+    else explicitHeaderParts
+
+  private def implicitHeaderParts(headers: Seq[HeaderBinding]): Seq[XPartType] =
+    headers.flatMap { header =>
+      context.messages(splitTypeName(header.message)).part.map(x => x.copy(name = x.name.map(camelCase)))
+    }
 
   def makeOperationInputArgs(binding: XBinding_operationType, intf: XPortTypeType): Seq[ParamCache] = {
     val op = boundOperation(binding, intf)
@@ -550,7 +560,6 @@ trait {interfaceTypeName} {{
       (soapBindingStyle match {
         case DocumentStyle if !p.element.isDefined =>
           """ match {
-      }
   case e: scala.xml.Elem => e.child
   case _ => sys.error("Elem not found!")
 }"""
@@ -668,7 +677,7 @@ trait {interfaceTypeName} {{
       case symbol@ReferenceTypeSymbol(decl: SimpleTypeDecl) =>
         List(pc)
       case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
-        import scalaxb.compiler.xsd.{Multiple, AllDecl, ComplexContentDecl, CompContRestrictionDecl, CompContExtensionDecl}
+        import scalaxb.compiler.xsd.{AllDecl, CompContExtensionDecl, CompContRestrictionDecl, ComplexContentDecl, Multiple}
         val flatParticles = xsdgenerator.flattenElements(decl)
         val attributes = xsdgenerator.flattenAttributes(decl)
         val list = List.concat(flatParticles, attributes)
@@ -710,7 +719,7 @@ trait {interfaceTypeName} {{
     }
 
   def toTypeSymbol(qname: javax.xml.namespace.QName): XsTypeSymbol = {
-    import scalaxb.compiler.xsd.{TypeSymbolParser, ReferenceTypeSymbol}
+    import scalaxb.compiler.xsd.{ReferenceTypeSymbol, TypeSymbolParser}
     val symbol = TypeSymbolParser.fromQName(qname)
     symbol match {
       case symbol: ReferenceTypeSymbol =>
@@ -732,7 +741,7 @@ trait {interfaceTypeName} {{
     soapBindingStyle match {
       case DocumentStyle =>
         paramMessage(output).part.headOption map { part =>
-          import scalaxb.compiler.xsd.{ReferenceTypeSymbol, ComplexTypeDecl, Single}
+          import scalaxb.compiler.xsd.{ComplexTypeDecl, ReferenceTypeSymbol, Single}
           toParamCache(part).typeSymbol match {
             case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
               val flatParticles = xsdgenerator.flattenElements(decl)

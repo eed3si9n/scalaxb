@@ -1,6 +1,5 @@
 import java.io.File
 import scalaxb.compiler.Config
-import scalaxb.compiler.xsd.Driver
 import scalaxb.compiler.ConfigEntry._
 
 object XmlSchemaTest extends TestBase {
@@ -16,6 +15,7 @@ object XmlSchemaTest extends TestBase {
   "XMLSchema.scala file must compile so that Schema can be used" in {
     (List("import scalaxb._",
       "import org.w3.xmlschema._",
+      "import org.w3.xmlschema.XXMLProtocol._",
       """val document = <xs:schema targetNamespace="http://www.example.com/IPO"
               xmlns:xs="http://www.w3.org/2001/XMLSchema"
               xmlns:ipo="http://www.example.com/IPO">
@@ -27,7 +27,7 @@ object XmlSchemaTest extends TestBase {
           </xs:sequence>
           <xs:attribute name="attr" type="xs:string"/>
         </xs:complexType>
-      </xs:schema>""", // "
+      </xs:schema>""",
       """toXML[XSchema](fromXML[XSchema](document),
         Some("http://www.w3.org/2001/XMLSchema"), Some("schema"), document.scope).toString""" // "
      ),

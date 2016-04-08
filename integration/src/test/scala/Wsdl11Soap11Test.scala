@@ -16,6 +16,7 @@ object Wsdl11Soap11Test extends TestBase {
       remove(GenerateAsync)
   "stockquote.scala file must compile" in {
     (List("""import genericbarcode._""",
+      "import XMLProtocol._",
        """val service = (new BarCodeSoapBindings with scalaxb.Soap11Clients with scalaxb.DispatchHttpClients {}).service
        val data = BarCodeData(120, 120, 0, 1, 1, 20, 20, true, None, None, None, 10.0f, Both, CodeEAN128B, NoneType, BottomCenter, PNG)
        println(scalaxb.toXML(data, "BarCodeParam", defaultScope))

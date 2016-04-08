@@ -1,12 +1,13 @@
-import java.io.{File}
-import scalaxb.compiler.{Config}
+import java.io.File
 
 object UnqualifiedLocalTest extends TestBase {
   val inFile  = new File("integration/src/test/resources/unqualified.xsd")
   lazy val generated = module.process(inFile, "unqualified", tmp)
 
   "unqualified.scala file must compile so that Foo can be used" in {
-    (List("""scalaxb.toXML[unqualified.Foo](scalaxb.fromXML[unqualified.Foo](""" +
+    (List(
+    "import unqualified.XMLProtocol._",
+    """scalaxb.toXML[unqualified.Foo](scalaxb.fromXML[unqualified.Foo](""" +
     """<unq:foo xmlns:unq="http://www.example.com/unqualified" attribute1="bar">""" +
     "<string1></string1>" +
     """<unq:bar>bar</unq:bar>""" +
@@ -20,7 +21,9 @@ object UnqualifiedLocalTest extends TestBase {
   }
 
   "unqualified.scala file must compiled with an alternative toXML" in {
-    (List("""scalaxb.toXML[unqualified.Foo](scalaxb.fromXML[unqualified.Foo](""" +
+    (List(
+    "import unqualified.XMLProtocol._",
+    """scalaxb.toXML[unqualified.Foo](scalaxb.fromXML[unqualified.Foo](""" +
     """<unq:foo xmlns:unq="http://www.example.com/unqualified" attribute1="bar">""" +
     "<string1></string1>" +
     """<unq:bar>bar</unq:bar>""" +
@@ -34,7 +37,8 @@ object UnqualifiedLocalTest extends TestBase {
   }
 
   "unqualified.scala file must compile so that Foo can be used without toplevel prefix" in {
-    (List("""scalaxb.toXML[unqualified.Foo](scalaxb.fromXML[unqualified.Foo](""" +
+    (List("import unqualified.XMLProtocol._",
+      """scalaxb.toXML[unqualified.Foo](scalaxb.fromXML[unqualified.Foo](""" +
     """<unq:foo xmlns:unq="http://www.example.com/unqualified" attribute1="bar">""" +
     "<string1></string1>" +
     """<unq:bar>bar</unq:bar>""" +
@@ -47,8 +51,9 @@ object UnqualifiedLocalTest extends TestBase {
   }
 
   "unqualified.scala file must compile so that USAddress can roundtrip" in {
-    (List("""val usaddress = unqualified.USAddress("123", "New York", "NY", 10000, Map())""",
-      """val xml = scalaxb.toXML[unqualified.Addressable](usaddress, None, Some("shipTo"), unqualified.defaultScope)""",
+    (List("import unqualified.XMLProtocol._",
+      """val usaddress = unqualified.USAddress("123", "New York", "NY", 10000, Map())""",
+      """val xml = scalaxb.toXML[unqualified.Addressable](usaddress, None, Some("shipTo"), unqualified.XMLProtocol.defaultScope)""",
       """val x = scalaxb.fromXML[unqualified.Addressable](xml).toString""",
       """x"""),
      generated) must evaluateTo ("""USAddress(123,New York,NY,10000,Map(@{http://www.w3.org/2001/XMLSchema-instance}type -> DataRecord({http://www.w3.org/2001/XMLSchema-instance}type,tns:USAddress)))""",

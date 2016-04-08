@@ -18,7 +18,8 @@ object Wsdl11Soap12AsyncTest extends TestBase {
     (List("""import scala.concurrent.ExecutionContext.Implicits.global
       import scala.concurrent._
       import scala.concurrent.duration._""",
-      """val service = (new stockquote.StockQuoteSoap12Bindings with scalaxb.SoapClientsAsync with scalaxb.DispatchHttpClientsAsync {}).service
+      "import stockquote.XMLProtocol._",
+      """val service = (new stockquote.XMLProtocol.StockQuoteSoap12Bindings with scalaxb.SoapClientsAsync with scalaxb.DispatchHttpClientsAsync {}).service
        val fresponse = service.getQuote(Some("GOOG"))
        val response = Await.result(fresponse, 5.seconds)""",
       """response.toString.contains("exception")"""), generated) must evaluateTo(true,

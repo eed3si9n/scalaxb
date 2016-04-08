@@ -32,6 +32,7 @@ object TimeoutTest extends TestBase with JaxwsTestBase {
 
   "request timeout times out" in {
     (List(s"""import stockquote._
+      import XMLProtocol._
       import scala.concurrent._, duration._
       import java.util.concurrent.ExecutionException
       import java.util.NoSuchElementException""",

@@ -8,7 +8,7 @@ usage:
 val obj = scalaxb.fromXML[wsdl11.Foo](node)
 val document = scalaxb.toXML[wsdl11.Foo](obj, "foo", wsdl11.defaultScope)
 **/
-object `package` extends XXMLProtocol { }
+object XXMLProtocol extends XXMLProtocol
 
 trait XXMLProtocol extends scalaxb.XMLStandardTypes {
   val defaultScope = scalaxb.toScope(None -> "http://schemas.xmlsoap.org/wsdl/",

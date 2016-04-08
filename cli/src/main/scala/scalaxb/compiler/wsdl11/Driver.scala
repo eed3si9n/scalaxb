@@ -126,6 +126,7 @@ class Driver extends Module { driver =>
   override def toImportable(alocation: URI, rawschema: RawSchema): Importable = new Importable {
     import scalaxb.compiler.Module.FileExtension
     import scalaxb.compiler.xsd.{ImportDecl}
+    import XXMLProtocol._
 
     logger.debug("toImportable: " + alocation.toString)
     val location = alocation

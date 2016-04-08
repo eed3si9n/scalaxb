@@ -6,7 +6,7 @@ usage:
 val obj = scalaxb.fromXML[soapenvelope11.Foo](node)
 val document = scalaxb.toXML[soapenvelope11.Foo](obj, "foo", soapenvelope11.defaultScope)
 **/
-object `package` extends XMLProtocol { }
+object XMLProtocol extends XMLProtocol
 
 trait XMLProtocol extends scalaxb.XMLStandardTypes {
   val defaultScope = scalaxb.toScope(Some("tns") -> "http://schemas.xmlsoap.org/soap/envelope/",

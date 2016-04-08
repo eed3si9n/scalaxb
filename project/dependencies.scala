@@ -1,7 +1,7 @@
 import sbt._
 
 object Dependencies {
-  val scala211 = "2.11.7"
+  val scala211 = "2.11.8"
   val scala210 = "2.10.4"
 
   val scopt = "com.github.scopt" %% "scopt" % "3.2.0"

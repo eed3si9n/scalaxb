@@ -4,6 +4,7 @@
 
 import scalaxb._
 import anycontent._
+import XMLProtocol._
 
 object AnyUsage {
   def main(args: Array[String]): Unit = {

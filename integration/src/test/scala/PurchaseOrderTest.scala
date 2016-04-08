@@ -10,12 +10,14 @@ object PurchaseOrderTest extends TestBase {
   
   "ipo.scala file must compile so Address can be used" in {
     (List("import ipo._",
+          "import XMLProtocol._",
           "Address(\"\", \"\", \"\").toString"), 
      generated) must evaluateTo("Address(,,)", outdir = "./tmp")
   }
   
   "ipo.scala file must compile together with PurchaseOrderUsage.scala" in {
     (List("import ipo._",
+          "import XMLProtocol._",
           "PurchaseOrderUsage.allTests"),
      usageFile :: generated) must evaluateTo(true, outdir = "./tmp")
   }

@@ -8,6 +8,7 @@ import org.w3.xmlenc._
 import org.xml.saml2.assertion._
 import org.xml.saml2.metadata._
 import java.net.URI
+import XMLProtocol._
 
 object SamlUsage {
   def main(args: Array[String]): Unit = {

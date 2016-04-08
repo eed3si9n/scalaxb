@@ -17,7 +17,9 @@ object Wsdl11Soap12Test extends TestBase {
     lazy val generated = module.process(inFile, config)
 
     // fixme: temp fix - getquote service returns always "exception"
-    (List("""val service = (new stockquote.StockQuoteSoap12Bindings with scalaxb.SoapClients with scalaxb.DispatchHttpClients {}).service
+    (List(
+      "import stockquote.XMLProtocol._",
+      """val service = (new StockQuoteSoap12Bindings with scalaxb.SoapClients with scalaxb.DispatchHttpClients {}).service
        val response = service.getQuote(Some("GOOG"))""",
        """response.toString.contains("exception")"""), generated) must evaluateTo(true,
       outdir = "./tmp", usecurrentcp = true)
@@ -34,8 +36,9 @@ object Wsdl11Soap12Test extends TestBase {
     lazy val generated = module.process(inFile, config)
 
     (List(
+      "import implicitheader.XMLProtocol._",
       """
-        |val service = new implicitheader.UserBindings with scalaxb.SoapClients with scalaxb.HttpClients {
+        |val service = new UserBindings with scalaxb.SoapClients with scalaxb.HttpClients {
         |      override def httpClient = new HttpClient {
         |        override def request(in: String, address: java.net.URI, headers: Map[String, String]): String = {
         |          val expectedReq =
@@ -88,8 +91,9 @@ object Wsdl11Soap12Test extends TestBase {
     lazy val generated = module.process(inFile, config)
 
     (List(
+      "import explicitheader.XMLProtocol._",
       """
-        |val service = new explicitheader.UserBindings with scalaxb.SoapClients with scalaxb.HttpClients {
+        |val service = new UserBindings with scalaxb.SoapClients with scalaxb.HttpClients {
         |      override def httpClient = new HttpClient {
         |        override def request(in: String, address: java.net.URI, headers: Map[String, String]): String = {
         |          val expectedReq =

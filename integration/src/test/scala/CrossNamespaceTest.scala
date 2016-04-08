@@ -1,4 +1,4 @@
-import java.io.{File}
+import java.io.File
 import scalaxb.compiler.Config
 import scalaxb.compiler.ConfigEntry._
 
@@ -12,7 +12,8 @@ object CrossNamespaceTest extends TestBase {
       update(Outdir(tmp)))
 
   "xn.scala must compile so that CrossNamespaceChoice can be used" in {
-    (List("""scalaxb.fromXML[ipo.CrossNamespaceChoice](<xn:foo xmlns:xn="http://www.example.com/xn">
+    (List("import ipo.XMLProtocol._",
+      """scalaxb.fromXML[ipo.CrossNamespaceChoice](<xn:foo xmlns:xn="http://www.example.com/xn">
       <xn:human>
         <xn:name/>
       </xn:human>

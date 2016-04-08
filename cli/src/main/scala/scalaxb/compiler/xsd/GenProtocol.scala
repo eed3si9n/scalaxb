@@ -82,7 +82,7 @@ usage:
 val obj = scalaxb.fromXML[{packageValueString}.Foo](node)
 val document = scalaxb.toXML[{packageValueString}.Foo](obj, "foo", {packageValueString}.defaultScope)
 **/
-object `package` extends { buildDefaultProtocolName(name) } {{ }}
+object { buildDefaultProtocolName(name) } extends { buildDefaultProtocolName(name) }
 
 trait { buildDefaultProtocolName(name) } extends scalaxb.XMLStandardTypes {{
   {executionContextString}

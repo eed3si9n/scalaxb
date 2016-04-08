@@ -1,5 +1,7 @@
 package scalaxb
 
+import soapenvelope11.XMLProtocol._
+
 case class Soap11Fault[+A](original: Any, detail: Option[A], headers: scala.xml.NodeSeq) extends Exception {
   def asFault[B: scalaxb.XMLFormat]: Soap11Fault[B] = Soap11Fault(original, detail map {
     case x: soapenvelope11.Detail => x.any.head.value match {

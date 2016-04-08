@@ -13,7 +13,8 @@ object BigTest extends TestBase {
       update(WrappedComplexTypes(List("barOne"))))
 
   "big.scala file must compile so that Foo can be used" in {
-    (List("val subject = <foo xmlns:o=\"http://www.example.com/other\">" +
+    (List("import big.XXMLProtocol._",
+    "val subject = <foo xmlns:o=\"http://www.example.com/other\">" +
     "<string1></string1><string2></string2><string3></string3><string4></string4><string5></string5>" +
     "<string6></string6><string7></string7><string8></string8><string9></string9><string10></string10>" + 
     "<string11></string11><string12></string12><string13></string13><string14></string14><string15></string15>" + 
@@ -35,6 +36,7 @@ object BigTest extends TestBase {
   "big.scala file must compile so that XBaz can be used" in {
     (List("import scalaxb._",
       "import big._",
+      "import XXMLProtocol._",
       "toXML[big.XBaz](fromXML[big.XBaz](<foo>" +
     "<string1>123</string1><string2></string2><string3></string3><string4></string4><string5></string5>" +
     "<string6></string6><string7></string7><string8></string8><string9></string9><string10></string10>" + 

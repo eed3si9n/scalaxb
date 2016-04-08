@@ -4,6 +4,7 @@
 
 import scalaxb._
 import ipo._
+import XMLProtocol._
 
 object PurchaseOrderIgnoreUnknownUsage {
   def main(args: Array[String]): Unit = {

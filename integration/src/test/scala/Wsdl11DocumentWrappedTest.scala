@@ -29,6 +29,7 @@ object Wsdl11DocumentWrappedTest extends TestBase with JaxwsTestBase {
   "document-wrapped service works" in {
     (List("""import stockquote._
       import scala.concurrent._, duration._""",
+      "import XMLProtocol._",
       """val service = (new DocumentWrappedServiceSoapBindings with scalaxb.Soap11ClientsAsync with scalaxb.DispatchHttpClientsAsync {}).service""",
       """val fresponse = service.price(Some("GOOG"))""",
       """val response = Await.result(fresponse, 5.seconds)""",

@@ -8,7 +8,7 @@ usage:
 val obj = scalaxb.fromXML[xmlschema.Foo](node)
 val document = scalaxb.toXML[xmlschema.Foo](obj, "foo", xmlschema.defaultScope)
 **/
-object `package` extends XXMLProtocol { }
+object XXMLProtocol extends XXMLProtocol
 
 trait XXMLProtocol extends scalaxb.XMLStandardTypes {
   val defaultScope = scalaxb.toScope(None -> "http://www.w3.org/2001/XMLSchema",

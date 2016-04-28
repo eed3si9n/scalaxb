@@ -233,6 +233,13 @@ class Driver extends Module { driver =>
       case (VersionPattern(x, y, z), true) if (x.toInt == 0) && (y.toInt == 11) && (z.toInt == 3)  =>
         generateFromResource[To](Some("scalaxb"), "httpclients_dispatch_async.scala",
            "/httpclients_dispatch0113_async.scala.template")
+
+      case (VersionPattern(x, y, z), false) if (x.toInt == 0) && (y.toInt == 11) && (z.toInt == 4) =>
+        generateFromResource[To](Some("scalaxb"), "httpclients_dispatch.scala",
+          "/httpclients_dispatch0114.scala.template")
+      case (VersionPattern(x, y, z), true) if (x.toInt == 0) && (y.toInt == 11) && (z.toInt == 4)  =>
+        generateFromResource[To](Some("scalaxb"), "httpclients_dispatch_async.scala",
+           "/httpclients_dispatch0114_async.scala.template")
     }) else Nil) ++
     (if (cntxt.soap11) List(
       (if (config.async)

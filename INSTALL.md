@@ -19,6 +19,21 @@ Install a SNAPSHOT version of scalaxb.
 
     $ cs eed3si9n/scalaxb/x.x.x-SNAPSHOT
 
+
+Notes for conscript on Mac
+==========================
+
+Make sure `wget` has been installed
+
+    brew install wget
+
+Download and run install script
+
+    curl https://raw.githubusercontent.com/foundweekends/conscript/master/setup.sh >setup-conscript.sh
+    chmod u+x setup-conscript.sh
+    ./setup-conscript.sh
+
+
 Build from source
 =================================
 
@@ -48,6 +63,7 @@ Finally, install it using conscript.
 
     $ cs --local eed3si9n/scalaxb/local-SNAPSHOT
 
+
 Don't use sbaz
 ==============
 
@@ -55,3 +71,51 @@ NOTE: If you have previously installed scalaxb using sbaz, remove it
 because it interferes with your code:
 
     $ sudo sbaz remove scalaxb
+
+TBD
+===
+
+For local development&testing, change version number to 1.4.1-SNAPSHOT
+
+In build.sbt:
+    version in ThisBuild := "1.4.1-SNAPSHOT",
+    ...
+    crossScalaVersions := Seq(scala210),
+    scalaVersion := scala210,
+
+In pom.xml:
+  <version>1.4.1-SNAPSHOT</version>
+
+Initially `sbt compile` may result in
+
+    [error] (scalaxbPlugin/*:update) sbt.ResolveException: unresolved dependency: org.scalaxb#scalaxb_2.10;1.4.1-SNAPSHOT: not found
+
+Then overcome this by temporarily removing `scalaxbPlugin` from
+
+    lazy val root = (project in file(".")).
+    aggregate(app, integration, scalaxbPlugin).
+
+as in
+
+    aggregate(app, integration). //, scalaxbPlugin).
+
+
+Then do in sbt: `publish-local`.
+You may have to do first
+    find ~/.ivy2/ -type d -name "*scalaxb*" -print0 | xargs -0 rm -rf
+
+Note: during `publish-local` it is possible to get errors such as
+    ...
+    [info] 	published ivy to /Users/andrevandelft/.ivy2/local/org.scalaxb/scalaxb_2.11/1.4.1-SNAPSHOT/ivys/ivy.xml
+    [error] /Users/andrevandelft/Documents/workspaces/scalaxb/sbt-scalaxb/src/main/scala/sbtscalaxb/Plugin.scala:90: can't expand macros compiled by previous versions of Scala
+    [error]     logLevel in scalaxb <<= logLevel?? Level.Info
+    [error]                                              ^
+
+Then make sure in build.sbt all scala versions are 210:
+    scalaVersion := scala210,
+
+Run conscript to get a proper `scalaxb`. Make sure ~/.conscript/bin is in the PATH; then:
+    cs eed3si9n/scalaxb
+
+Check
+    /Users/andrevandelft/.conscript/eed3si9n/scalaxb/scalaxb/launchconfig

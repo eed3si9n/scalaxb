@@ -10,7 +10,7 @@
 
   <groupId>org.scalaxb</groupId>
   <artifactId>scalaxb-maven-plugin</artifactId>
-  <version>1.4.0</version>
+  <version>1.4.1-SNAPSHOT</version>
   <packaging>maven-plugin</packaging>
 
   <name>scalaxb Maven Plugin</name>
@@ -50,7 +50,7 @@
     <scala.version>2.11.1</scala.version>
     <scala.xml.version>1.0.2</scala.xml.version>
     <scala.parser.version>1.0.1</scala.parser.version>
-    <binary.version>2.11</binary.version>
+    <binary.version>2.10</binary.version>
     <maven.version>2.0.9</maven.version>
     <junit.version>4.11</junit.version>
     <scalatest.version>2.2.0</scalatest.version>

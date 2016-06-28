@@ -25,54 +25,35 @@ import org.apache.log4j.{Logger, Level, ConsoleAppender, EnhancedPatternLayout}
 import org.apache.log4j.spi.LoggingEvent
 
 case class Log(logger: Logger) {
+
   def info(message: String, args: Any*) {
-    if (args.toSeq.isEmpty) logger.info(message)
-    else try {
-      logger.info(message format (args.toSeq: _*))
-    }
-    catch {
-      case _: Throwable => logger.info(message)
-    }
+    if (args.toSeq.isEmpty)     logger.info(message)
+    else try {                  logger.info(message format (args.toSeq: _*))}
+    catch {case _: Throwable => logger.info(message)}
   }
 
   def debug(message: String, args: Any*) {
-    if (args.toSeq.isEmpty) logger.debug(message)
-    else try {
-      logger.debug(message format (args.toSeq: _*))
-    }
-    catch {
-      case _: Throwable => logger.debug(message)
-    }
+    if (args.toSeq.isEmpty)     logger.debug(message)
+    else try {                  logger.debug(message format (args.toSeq: _*))}
+    catch {case _: Throwable => logger.debug(message)}
   }
 
   def warn(message: String, args: Any*) {
-    if (args.toSeq.isEmpty) logger.warn(message)
-    else try {
-      logger.warn(message format (args.toSeq: _*))
-    }
-    catch {
-      case _: Throwable => logger.warn(message)
-    }
+    if (args.toSeq.isEmpty)     logger.warn(message)
+    else try {                  logger.warn(message format (args.toSeq: _*))}
+    catch {case _: Throwable => logger.warn(message)}
   }
 
   def error(message: String, args: Any*) {
-    if (args.toSeq.isEmpty) logger.error(message)
-    else try {
-      logger.error(message format (args.toSeq: _*))
-    }
-    catch {
-      case _: Throwable => logger.error(message)
-    }
+    if (args.toSeq.isEmpty)     logger.error(message)
+    else try {                  logger.error(message format (args.toSeq: _*))}
+    catch {case _: Throwable => logger.error(message)}
   }
 
   def fatal(message: String, args: Any*) {
-    if (args.toSeq.isEmpty) logger.fatal(message)
-    else try {
-      logger.fatal(message format (args.toSeq: _*))
-    }
-    catch {
-      case _: Throwable => logger.fatal(message)
-    }
+    if (args.toSeq.isEmpty)     logger.fatal(message)
+    else try {                  logger.fatal(message format (args.toSeq: _*))}
+    catch {case _: Throwable => logger.fatal(message)}
   }
 }
 

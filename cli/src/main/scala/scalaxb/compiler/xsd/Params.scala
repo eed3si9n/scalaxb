@@ -29,7 +29,7 @@ import scalaxb.compiler.Module.camelCase
 
 sealed abstract class Cardinality
 case object Optional extends Cardinality { override def toString: String = "Optional" }
-case object Single extends Cardinality { override def toString: String = "Single" }
+case object Single   extends Cardinality { override def toString: String = "Single" }
 case object Multiple extends Cardinality { override def toString: String = "Multiple" }
 
 trait Params extends Lookup {
@@ -83,7 +83,7 @@ trait Params extends Lookup {
       case _ => false
     })
 
-    def toTraitScalaCode: String = toParamName + ": " + typeName
+    def toTraitScalaCode: String = s"${if (config.generateMutable) "var " else ""}$toParamName : $typeName"
 
     def toScalaCode: String =
       toTraitScalaCode + (cardinality match {

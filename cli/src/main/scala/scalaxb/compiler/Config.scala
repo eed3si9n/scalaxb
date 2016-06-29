@@ -41,22 +41,23 @@ case class Config(items: Map[String, ConfigEntry]) {
   def sequenceChunkSize     : Int                 = (get[SequenceChunkSize  ] getOrElse defaultSequenceChunkSize  ).value
   def dispatchVersion       : String              = (get[DispatchVersion    ] getOrElse defaultDispatchVersion    ).value
 
-  def    classPrefix        : Option[String] =  get[   ClassPrefix ] map {_.value}
-  def    classPostfix       : Option[String] =  get[   ClassPostfix] map {_.value}
-  def     paramPrefix       : Option[String] =  get[   ParamPrefix ] map {_.value}
-  def attributePrefix       : Option[String] =  get[AttributePrefix] map {_.value}
+  def    classPrefix        : Option[String]      =  get[   ClassPrefix ] map {_.value}
+  def    classPostfix       : Option[String]      =  get[   ClassPostfix] map {_.value}
+  def     paramPrefix       : Option[String]      =  get[   ParamPrefix ] map {_.value}
+  def attributePrefix       : Option[String]      =  get[AttributePrefix] map {_.value}
 
-  def packageDir            : Boolean = values contains GeneratePackageDir
-  def prependFamilyName     : Boolean = values contains PrependFamilyName
-  def seperateProtocol      : Boolean = values contains SeperateProtocol
-  def generateRuntime       : Boolean = values contains GenerateRuntime
-  def generateDispatchClient: Boolean = values contains GenerateDispatchClient
-  def generateDispatchAs    : Boolean = values contains GenerateDispatchAs
-  def namedAttributes       : Boolean = values contains NamedAttributes
-  def laxAny                : Boolean = values contains LaxAny
-  def async                 : Boolean = values contains GenerateAsync
-  def varArg                : Boolean = values contains VarArg
-  def ignoreUnknown         : Boolean = values contains IgnoreUnknown
+  def packageDir            : Boolean             = values contains GeneratePackageDir
+  def prependFamilyName     : Boolean             = values contains PrependFamilyName
+  def seperateProtocol      : Boolean             = values contains SeperateProtocol
+  def generateRuntime       : Boolean             = values contains GenerateRuntime
+  def generateDispatchClient: Boolean             = values contains GenerateDispatchClient
+  def generateDispatchAs    : Boolean             = values contains GenerateDispatchAs
+  def generateMutable       : Boolean             = values contains GenerateMutable
+  def namedAttributes       : Boolean             = values contains NamedAttributes
+  def laxAny                : Boolean             = values contains LaxAny
+  def async                 : Boolean             = values contains GenerateAsync
+  def varArg                : Boolean             = values contains VarArg
+  def ignoreUnknown         : Boolean             = values contains IgnoreUnknown
 
   private def get[A <: ConfigEntry: Manifest]: Option[A] = items.get(implicitly[Manifest[A]].runtimeClass.getName).asInstanceOf[Option[A]]
   def update(item: ConfigEntry): Config = copy(items = items.updated(item.name, item))
@@ -105,14 +106,15 @@ object ConfigEntry {
   case class  SequenceChunkSize  (value:            Int     ) extends ConfigEntry
   case class  DispatchVersion    (value:            String  ) extends ConfigEntry
   case object GeneratePackageDir                              extends ConfigEntry
-  case object PrependFamilyName                               extends ConfigEntry
-  case object SeperateProtocol                                extends ConfigEntry
   case object GenerateRuntime                                 extends ConfigEntry
   case object GenerateDispatchClient                          extends ConfigEntry
   case object GenerateDispatchAs                              extends ConfigEntry
+  case object GenerateAsync                                   extends ConfigEntry
+  case object GenerateMutable                                 extends ConfigEntry
+  case object PrependFamilyName                               extends ConfigEntry
+  case object SeperateProtocol                                extends ConfigEntry
   case object NamedAttributes                                 extends ConfigEntry
   case object LaxAny                                          extends ConfigEntry
-  case object GenerateAsync                                   extends ConfigEntry
   case object VarArg                                          extends ConfigEntry
   case object IgnoreUnknown                                   extends ConfigEntry
 }

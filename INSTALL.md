@@ -111,7 +111,7 @@ Note: during `publish-local` it is possible to get errors such as
 
     ...
     [info] 	published ivy to /Users/andrevandelft/.ivy2/local/org.scalaxb/scalaxb_2.11/1.4.1-SNAPSHOT/ivys/ivy.xml
-    [error] /Users/andrevandelft/Documents/workspaces/scalaxb/sbt-scalaxb/src/main/scala/sbtscalaxb/Plugin.scala:90: can't expand macros compiled by previous versions of Scala
+    [error] .../scalaxb/sbt-scalaxb/src/main/scala/sbtscalaxb/Plugin.scala:90: can't expand macros compiled by previous versions of Scala
     [error]     logLevel in scalaxb <<= logLevel?? Level.Info
     [error]                                              ^
 
@@ -125,4 +125,4 @@ Run conscript to get a proper `scalaxb`. Make sure ~/.conscript/bin is in the PA
 
 Check
 
-    /Users/andrevandelft/.conscript/eed3si9n/scalaxb/scalaxb/launchconfig
+    ~/.conscript/eed3si9n/scalaxb/scalaxb/launchconfig

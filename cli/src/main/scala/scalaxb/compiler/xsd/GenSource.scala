@@ -250,10 +250,16 @@ abstract class GenSource(val schema: SchemaDecl,
         case _ => (0 to flatParticles.size - 1).toList map { i => buildArg(flatParticles(i), i) }
       }
     
-    val accessors = (primary match {
-        case Some(all: AllDecl) if longAll => generateAccessors(all)
-        case _ => generateAccessors(paramList, splitSequences(decl))
-      }) ::: (if (longAttribute) generateAccessors(attributes) else Nil)
+    def gettersAndIfMutableSetters: List[(String, Option[String])] =
+        (primary match {
+          case Some(all: AllDecl) if longAll => generateAccessors(all)
+          case _ => generateAccessors(paramList, splitSequences(decl))
+        }) :::
+        (if (longAttribute) generateAccessors(attributes) else Nil)
+
+    // There should be a better way to flatten a List[(String, Option[String])] to List[String]
+    val accessors: List[String] = gettersAndIfMutableSetters.map{ p => List(List(p._1), p._2.toList)}.flatten.flatten
+
     logger.debug("makeCaseClassWithType: generateAccessors " + accessors)
 
     val compositors = context.compositorParents.filter(
@@ -478,22 +484,21 @@ abstract class GenSource(val schema: SchemaDecl,
   }
     
   def makeGroup(group: GroupDecl): Snippet = {
-    val compositors = context.compositorParents.filter(
-      x => x._2 == makeGroupComplexType(group)).keysIterator.toList
-    val localName = makeTypeName(context.compositorNames(group))
-    val fqn = buildFullyQualifiedNameFromNS(schema.targetNamespace, localName)
+    val compositors   = context.compositorParents.filter(x => x._2 == makeGroupComplexType(group)).keysIterator.toList
+    val localName     = makeTypeName(context.compositorNames(group))
+    val fqn           = buildFullyQualifiedNameFromNS(schema.targetNamespace, localName)
     val formatterName = buildFormatterName(group.namespace, localName)
     logger.debug("makeGroup: emitting " + fqn)
 
-    val compositor = primaryCompositor(group)
-    val param = buildParam(compositor)
-    val o = buildOccurrence(compositor).toSingle
-    val wrapperParam = compositor match {
+    val compositor    = primaryCompositor(group)
+    val param         = buildParam(compositor)
+    val o             = buildOccurrence(compositor).toSingle
+    val wrapperParam  = compositor match {
       case choice: ChoiceDecl => param
       case _ => param.copy(typeSymbol = XsDataRecord(param.typeSymbol))
     }
-    val mixedParam = param.copy(typeSymbol = XsDataRecord(XsAnyType))
-    val parser = buildCompositorParser(compositor, o, false, false, false)
+    val mixedParam    = param.copy(typeSymbol = XsDataRecord(XsAnyType))
+    val parser        = buildCompositorParser(compositor, o, false, false, false)
     val wrapperParser = compositor match {
       case choice: ChoiceDecl => parser
       case _ => buildCompositorParser(compositor, o, false, true, false)
@@ -862,68 +867,88 @@ object {localName} {{
     (all.particles.size > contentsSizeLimit || isWrapped(namespace, family))
   
   val buildSimpleTypeRef: ComplexTypeContent =>? List[ElemDecl] = {
-    case content: ComplexTypeContent
-        if content.base.isInstanceOf[BuiltInSimpleTypeSymbol] =>
+    case content: ComplexTypeContent if content.base.isInstanceOf[BuiltInSimpleTypeSymbol] =>
       val symbol = content.base.asInstanceOf[BuiltInSimpleTypeSymbol]
       List(buildSymbolElement(symbol))
-    case content: ComplexTypeContent
-        if content.base.isInstanceOf[ReferenceTypeSymbol] &&
-        content.base.asInstanceOf[ReferenceTypeSymbol].decl.isInstanceOf[SimpleTypeDecl] =>
+    case content: ComplexTypeContent if content.base.isInstanceOf[ReferenceTypeSymbol] &&
+                                        content.base.asInstanceOf[ReferenceTypeSymbol].decl.isInstanceOf[SimpleTypeDecl] =>
       val symbol = content.base.asInstanceOf[ReferenceTypeSymbol]
       List(buildSymbolElement(symbol))
   } 
-  
-  def generateAccessors(all: AllDecl): List[String] = {
-    val wrapperName = makeParamName("all", false)
-    
+
+  def lazyValOrDef = if (config.generateMutable) "def" else "lazy val"
+
+  def accessorDeclaration(paramName: String, wrapperName: String, quotedNodeName: String, typeName: String, isOptional: Boolean) =
+    if (isOptional) s"$lazyValOrDef $paramName = $wrapperName.get($quotedNodeName) map { _.as[$typeName]}"
+    else            s"$lazyValOrDef $paramName = $wrapperName($quotedNodeName).as[$typeName]"
+
+  def generateAccessors(all: AllDecl): List[(String, Option[String])] = {
     // by spec, there are only elements under <all>
+    val wrapperName = makeParamName("all", false)
     all.particles collect {
       case elem: ElemDecl => elem
-      case ref: ElemRef   => buildElement(ref)
-    } map { elem => toCardinality(elem.minOccurs, elem.maxOccurs) match {
-        case Optional => "lazy val " + makeParamName(elem.name, false) + " = " +
-          wrapperName + ".get(" +  quote(buildNodeName(elem, true)) + ") map { _.as[" + buildTypeName(elem.typeSymbol) + "] }"
-        case _        => "lazy val " + makeParamName(elem.name, false) + " = " +
-          wrapperName + "(" +  quote(buildNodeName(elem, true)) + ").as[" + buildTypeName(elem.typeSymbol) + "]"
-      }
+      case ref : ElemRef  => buildElement(ref)
+    } map { elem => val      paramName =       makeParamName(elem.name, false)
+                    val quotedNodeName = quote(buildNodeName(elem     , true ))
+                    val       typeName =       buildTypeName(elem.typeSymbol)
+                    val isOptional     = toCardinality(elem.minOccurs, elem.maxOccurs) == Optional
+
+                    ( accessorDeclaration(paramName, wrapperName, quotedNodeName, typeName, isOptional)
+                    , if (config.generateMutable) Some("/*TBD: setter*/") else None )
+
+        //s"lazy val ${makeParamName(elem.name, false)} = $wrapperName.get(${quote(buildNodeName(elem, true))}) map { _.as[${buildTypeName(elem.typeSymbol)}] }"
+        //s"lazy val ${makeParamName(elem.name, false)} = $wrapperName    (${quote(buildNodeName(elem, true))})        .as[${buildTypeName(elem.typeSymbol)}]"
+        //case Optional => "lazy val " + makeParamName(elem.name, false) + " = " +
+        //  wrapperName + ".get(" +  quote(buildNodeName(elem, true)) + ") map { _.as[" + buildTypeName(elem.typeSymbol) + "] }"
+        //case _        => "lazy val " + makeParamName(elem.name, false) + " = " +
+        //  wrapperName + "(" +  quote(buildNodeName(elem, true)) + ").as[" + buildTypeName(elem.typeSymbol) + "]"
+      //}
     }
   }
   
-  def generateAccessors(attributes: List[AttributeLike]): List[String] = {
+  def generateAccessors(attributes: List[AttributeLike]): List[(String, Option[String])] = {
     val wrapperName = makeParamName(ATTRS_PARAM, false)
 
     attributes collect {
-      case attr: AttributeDecl   => (attr, toCardinality(attr))
-      case ref: AttributeRef     =>
-        val attr = buildAttribute(ref)
-        (attr, toCardinality(attr))
+      case  attr: AttributeDecl   =>                                 (attr, toCardinality(attr))
+      case   ref: AttributeRef    => val attr = buildAttribute(ref); (attr, toCardinality(attr))
       case group: AttributeGroupDecl => (group, Single)
-    } collect {
-      case (attr: AttributeDecl, Optional) =>
-        "lazy val " + makeParamName(buildParam(attr).name, true) + " = " +
-          wrapperName + ".get(" +  quote(buildNodeName(attr, false)) + ") map { _.as[" + buildTypeName(attr.typeSymbol, true) + "] }"
-      case (attr: AttributeDecl, Single) =>
-        "lazy val " + makeParamName(buildParam(attr).name, true) + " = " +
-          wrapperName + "(" +  quote(buildNodeName(attr, false)) + ").as[" + buildTypeName(attr.typeSymbol, true) + "]"
+    } collect { case (attr: AttributeDecl, cardinality: Cardinality) =>
+                    val      paramName =       makeParamName(buildParam(attr).name, true)
+                    val quotedNodeName = quote(buildNodeName(attr , false ))
+                    val       typeName =       buildTypeName(attr.typeSymbol, true)
+                    val isOptional     = cardinality == Optional
+
+                    ( accessorDeclaration(paramName, wrapperName, quotedNodeName, typeName, isOptional)
+                    , if (config.generateMutable) Some("/*TBD: setter*/") else None)
+
+
+      //case (attr: AttributeDecl, Optional) =>
+      //  "lazy val " + makeParamName(buildParam(attr).name, true) + " = " +
+      //    wrapperName + ".get(" +  quote(buildNodeName(attr, false)) + ") map { _.as[" + buildTypeName(attr.typeSymbol, true) + "] }"
+      //case (attr: AttributeDecl, Single) =>
+      //  "lazy val " + makeParamName(buildParam(attr).name, true) + " = " +
+      //    wrapperName + "(" +  quote(buildNodeName(attr, false)) + ").as[" + buildTypeName(attr.typeSymbol, true) + "]"
     }
   }
   
-  def generateAccessors(params: List[Param], splits: List[SequenceDecl]) = params flatMap {
+  def generateAccessors(params: List[Param], splits: List[SequenceDecl]): List[(String, Option[String])] = params flatMap {
     case param@Param(_, _, ReferenceTypeSymbol(decl@ComplexTypeDecl(_, _, _, _, _, _, _, _)), _, _, _, _, _) if
         compositorWrapper.contains(decl) &&
         splits.contains(compositorWrapper(decl)) =>  
       val wrapperName = makeParamName(param.name, false)
-      val particles = compositorWrapper(decl).particles.zipWithIndex flatMap {
+      val particles   = compositorWrapper(decl).particles.zipWithIndex flatMap {
         case (ref: GroupRef, i: Int)            => List(buildCompositorRef(ref, i))
         case (compositor2: HasParticle, i: Int) => List(buildCompositorRef(compositor2, i))
         case (elem: ElemDecl, i: Int)           => List(elem)
         case (ref: ElemRef, i: Int)             => List(buildElement(ref))
-        case (any: AnyDecl, i: Int)             => List(buildAnyRef(any))
+        case (any: AnyDecl, i: Int)             => List(buildAnyRef (any))
       }
       
       val paramList = particles map { buildParam }
-      paramList map { p =>
-        "lazy val " + makeParamName(p.name, false) + " = " + wrapperName + "." +  makeParamName(p.name, false)
+      paramList map { p => val paramName = makeParamName(p.name, false)
+                           ( s"$lazyValOrDef $paramName = $wrapperName.$paramName"
+                           , if (config.generateMutable) Some("/*TBD: setter*/") else None)
       }
     case _ => Nil
   }
@@ -931,29 +956,19 @@ object {localName} {{
   def buildParticles(decl: ComplexTypeDecl, name: String): List[ElemDecl] = {
     anyNumbers.clear()
     
+    // complex content means 1. has child elements 2. has attributes
     val build: ComplexTypeContent =>? List[ElemDecl] = {
-      case SimpContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _, _) =>
-        buildParticles(base, makeTypeName(base.name))
-      
-      case SimpContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _) =>
-        buildParticles(base, makeTypeName(base.name))
-      
-      // complex content means 1. has child elements 2. has attributes
-      case CompContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
-        buildParticles(base, makeTypeName(base.name))        
-      case res@CompContRestrictionDecl(XsAnyType, _, _) =>
-        buildParticles(res.compositor, name)
-      
-      case ext@CompContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
-        buildParticles(base, makeTypeName(base.name)) :::
-          buildParticles(ext.compositor, name)
-      case ext@CompContExtensionDecl(XsAnyType, _, _) =>
-        buildParticles(ext.compositor, name)
-        
-      case _ => Nil
+      case SimpContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _, _) => buildParticles(base, makeTypeName(base.name))
+      case SimpContExtensionDecl  (ReferenceTypeSymbol(base: ComplexTypeDecl)      , _) => buildParticles(base, makeTypeName(base.name))
+      case CompContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl)   , _, _) => buildParticles(base, makeTypeName(base.name))
+      case res@CompContRestrictionDecl(XsAnyType                                , _, _) => buildParticles(res.compositor,         name)
+      case ext@CompContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl) , _, _) => buildParticles(base, makeTypeName(base.name)) :::
+                                                                                           buildParticles(ext.compositor,         name)
+      case ext@CompContExtensionDecl(XsAnyType                                  , _, _) => buildParticles(ext.compositor,         name)
+      case                                                                            _ => Nil
     }
     
-    val pf = buildSimpleTypeRef orElse  build
+    val pf = buildSimpleTypeRef orElse build
     
     pf(decl.content.content)
   }
@@ -993,11 +1008,8 @@ object {localName} {{
   
   def makeAnnotation(anno: Option[AnnotationDecl]) = anno match {
     case Some(annotation) =>
-      newline + "/** " +
-      (for (doc <- annotation.documentations;
-        x <- doc.any)
-          yield x.toString).mkString + newline +
-      "*/"
+      newline + "/** " + (for (doc <- annotation.documentations; x <- doc.any) yield x.toString).mkString +
+      newline +  "*/"
     case None => ""    
   }
 }

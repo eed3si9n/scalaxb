@@ -93,6 +93,7 @@ object Arguments {
 
       opt[ Unit  ]("prepend-family"      ) text("prepends family name to class names"    ) action { (_,c) => c.update(PrependFamilyName     ) }
       opt[ Unit  ]("named-attributes"    ) text("generates named fields for attributes"  ) action { (_,c) => c.update(NamedAttributes       ) }
+      opt[ Unit  ]("mutable"             ) text("generates mutable classes"              ) action { (_,c) => c.update(GenerateMutable       ) }
       opt[ Unit  ]("package-dir"         ) text("generates package directories"          ) action { (_,c) => c.update(GeneratePackageDir    ) }
       opt[ Unit  ]("no-runtime"          ) text("skips runtime files"                    ) action { (_,c) => c.remove(GenerateRuntime       ) }
       opt[ Unit  ]("no-dispatch-client"  ) text("disables generation of Dispatch client" ) action { (_,c) => c.remove(GenerateDispatchClient) }

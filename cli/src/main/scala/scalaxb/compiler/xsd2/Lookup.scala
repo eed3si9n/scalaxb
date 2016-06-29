@@ -104,6 +104,8 @@ trait Lookup extends ContextProcessor { self: Namer with Splitter with Symbols =
     case TaggedMixedSeqParam(_, _)  => wildCardType
     case TaggedAttributeSeqParam(_, _) =>
       MapStringDataRecordAnyClass
+    case x: TaggedTopLevelAttribute => buildType(x.taggedType)
+    case x: TaggedLocalAttribute => buildType(x.taggedType)
     case x: TaggedAttributeGroup => buildAttributeGroupTypeSymbol(x)
     case _ => sys.error("buildTypeName # unsupported: " + tagged)
   }

@@ -39,7 +39,10 @@ trait Params { self: Namer with Lookup with Splitter =>
       case _ => TYPE_SEQ(singleType)
     }
 
-    def paramName: String = makeParamName(name, attribute)
+    // HACK: are there other special XML_URI prefixes we need to match/prefix/etc?
+    def paramName: String = {
+      (if (namespace.exists{ _ == XML_URI }) XML_PREFIX else "") + makeParamName(name, attribute)
+    }
 
     def toTraitScalaCode(implicit targetNamespace: Option[URI], lookup: Lookup): String =
       paramName + ": " + typ
@@ -59,28 +62,36 @@ trait Params { self: Namer with Lookup with Splitter =>
         else "")
 
     def toDataRecordMapAccessor(wrapper: String, generateImpl: Boolean)
-                               (implicit targetNamespace: Option[URI], lookup: Lookup): Tree =
+                               (implicit targetNamespace: Option[URI], lookup: Lookup): Tree = {
+
+      logger.debug(s"toDataRecordMapAccessor($wrapper, $generateImpl), namespace: $namespace, targetNamespace: $targetNamespace, typeSymbol: $typeSymbol")
       generateImpl match {
         case true =>
-          LAZYVAL(toTraitScalaCode(targetNamespace, lookup)) := (occurrence match {
+          LAZYVAL(toTraitScalaCode(namespace.orElse(targetNamespace), lookup)) := (occurrence match {
             case SingleNotNillable(_) | SingleNillable(_) =>
               REF(wrapper) APPLY(LIT(buildNodeName)) DOT "as" APPLYTYPE singleType
             case _ =>
               (REF(wrapper) DOT "get" APPLY(LIT(buildNodeName))) MAP (
                 WILDCARD DOT "as" APPLYTYPE singleType
-              )
+                )
           })
-        case _ => DEF(toTraitScalaCode(targetNamespace, lookup))
+        case _ => DEF(toTraitScalaCode(namespace.orElse(targetNamespace), lookup))
       }
+
+    }
 
     def toLongSeqAccessor(wrapper: String): Tree =
       LAZYVAL(toTraitScalaCode) := REF(wrapper) DOT makeParamName(name, attribute)
       // """lazy val %s = %s.%s""" format(toTraitScalaCode, wrapper, makeParamName(name, attribute))
 
-    def buildNodeName: String = typeSymbol match {
-      case TaggedTopLevelAttribute(x: XTopLevelAttribute, _) => "@" + QualifiedName(namespace, name).toString
-      case TaggedLocalAttribute(_, _) => "@" + QualifiedName(None, name).toString
-      case _ => QualifiedName(None, name).toString
+    def buildNodeName: String = {
+      val retval = typeSymbol match {
+        case TaggedTopLevelAttribute(_, _) => "@" + QualifiedName(namespace, name).toString
+        case TaggedLocalAttribute(_, _) => "@" + QualifiedName(None, name).toString
+        case _ => QualifiedName(None, name).toString
+      }
+      logger.debug(s"buildNodeName(typeSymbol: $typeSymbol, namespace: $namespace, name: $name): $retval")
+      retval
     }
   }
 
@@ -99,6 +110,7 @@ trait Params { self: Namer with Lookup with Splitter =>
     
     // called by generateAccessors
     def fromAttributes(attributes: Vector[TaggedAttr[_]]): Seq[Param] = attributes collect {
+      case x: TaggedTopLevelAttribute => buildAttributeParam(x)
       case x: TaggedLocalAttribute => buildAttributeParam(x)
     }
 
@@ -224,9 +236,9 @@ trait Params { self: Namer with Lookup with Splitter =>
 
     private def buildAttributeParam(tagged: TaggedAttr[XAttributable]): Param = {
       val name = tagged.resolve.name.get
-      val typeSymbol = tagged.taggedType
-      val retval = Param(tagged.tag.namespace, name, typeSymbol, Occurrence(tagged.value), true, false, false)
-      logger.debug("buildAttributeParam:  " + retval.toString)
+      //val typeSymbol = tagged.taggedType
+      val retval = Param(tagged.tag.namespace, name, tagged, Occurrence(tagged.value), true, false, false)
+      logger.debug(s"buildAttributeParam($tagged), name: $name, retval: ${retval}")
       retval
     }
   } // object Param

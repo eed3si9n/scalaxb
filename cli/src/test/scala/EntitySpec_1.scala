@@ -8,8 +8,7 @@ object EntitySpec_1 extends Specification { def is =                          s2
     be referenced as fooSequence within the type                              $seq2
     not generate anything it is empty, and skipped from the parameters        $seq3
     generate a case class if the primary sequence is either optional or multiple $seq4
-    be split into chunks of case classes when it exceeds 20 particles         $seq5
-    generate accessors for elements within the wrapped sequence               $seq6
+    generate a case class for sequences with length > 22                      $seq5
   
   choices in a complex type should
     generate a trait named FooOption*                                         $choice1
@@ -54,7 +53,7 @@ object EntitySpec_1 extends Specification { def is =                          s2
     be extended by the referencing complex types                              $attributegroup3"""
 
   import Example._
-  // scalaxb.compiler.Module.configureLogger(true)
+  //scalaxb.compiler.Log.configureLogger(true)
   lazy val module = new scalaxb.compiler.xsd2.Driver
   
   lazy val seqEntitySource = module.processNode(sequenceXML, "example")(0)
@@ -87,15 +86,8 @@ object EntitySpec_1 extends Specification { def is =                          s2
       """multipleSequenceComplexTypeTestSequence: example.MultipleSequenceComplexTypeTestSequence*)""")
   }
 
-  val seqExpectedLongSequenceTest = 
-    """case class LongSequenceComplexTypeTest(longSequenceComplexTypeTestSequence: example.LongSequenceComplexTypeTestSequence, """
-
-  def seq5 =
-    (seqEntitySource must contain(seqExpectedLongSequenceTest)) and
-    (seqEntitySource must contain("""case class LongSequenceComplexTypeTestSequence(int1: Int"""))
-
-  def seq6 = {
-    seqEntitySource must contain("""case class LongSequenceComplexTypeTestSequence(int1: Int""")
+  def seq5 = {
+    seqEntitySource must contain("""case class LongSequenceComplexTypeTest(int1: Int""")
   }
 
   lazy val choiceEntitySource = module.processNode(choiceXML, "example")(0)

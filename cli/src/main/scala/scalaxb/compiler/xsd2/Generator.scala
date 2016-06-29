@@ -98,7 +98,7 @@ class Generator(val schema: ReferenceSchema,
       (attributes.headOption map { _ => attributeSeqRef }).toSeq
     val longAll = decl.primaryAll map {_ => true} getOrElse {false}
     
-    logger.debug("generateComplexTypeEntity: list: %s", list map {getName})
+    logger.debug(s"generateComplexTypeEntity: list: ${list map {getName}}, attributes: $attributes")
 
     val paramList: Seq[Param] = Param.fromSeq(list)
     val compositors = compositorsR(decl)
@@ -114,10 +114,12 @@ class Generator(val schema: ReferenceSchema,
           } getOrElse Vector()
         case _ => Vector()
       } getOrElse Vector()) ++
-      (attributes.headOption map  { _ => generateAttributeAccessors(attributes, true) } getOrElse Vector())
+      (attributes.headOption map { _ => generateAttributeAccessors(attributes, true) } getOrElse Vector())
     val parents: Seq[Type] = 
       if (context.baseToSubs.contains(decl)) Seq(buildTraitSymbol(decl): Type)
       else complexTypeSuperTypes(decl)
+
+    logger.debug(s"generateComplexTypeEntity: accessors: ${accessors}")
 
     Trippet(
       Trippet(CASECLASSDEF(sym) withParams(
@@ -594,7 +596,9 @@ class Generator(val schema: ReferenceSchema,
   def generateAllAccessors(tagged: TaggedParticle[KeyedGroup]): Seq[Tree] = {
     implicit val tag = tagged.tag
     val paramList = Param.fromSeq(tagged.particles)
-    paramList map {_.toDataRecordMapAccessor(makeParamName(ALL_PARAM, false), true)}
+    val retval = paramList map {_.toDataRecordMapAccessor(makeParamName(ALL_PARAM, false), true)}
+    logger.debug("generateAllAccessors:  " + retval.toString)
+    retval
   }
 
   def generateLongSeqAccessors(splits: Seq[TaggedParticle[KeyedGroup]]): Seq[Tree] =
@@ -605,8 +609,12 @@ class Generator(val schema: ReferenceSchema,
       paramList map { _.toLongSeqAccessor(wrapper.paramName) }
     }
 
-  def generateAttributeAccessors(attributes: Vector[TaggedAttr[_]], generateImpl: Boolean): Seq[Tree] =
-    Param.fromAttributes(attributes) map {_.toDataRecordMapAccessor(makeParamName(ATTRS_PARAM, false), generateImpl)}
+  def generateAttributeAccessors(attributes: Vector[TaggedAttr[_]], generateImpl: Boolean): Seq[Tree] = {
+    val retval = Param.fromAttributes(attributes) map {_.toDataRecordMapAccessor(makeParamName(ATTRS_PARAM, false), generateImpl)}
+    logger.debug(s"generateAttributeAccessors($attributes, $generateImpl): $retval")
+    retval
+  }
+
 
   def packageCode: Seq[Node] =
     (packageNameByURI(schema.targetNamespace, context) map { pkg =>

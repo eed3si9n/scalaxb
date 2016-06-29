@@ -365,7 +365,14 @@ object PurchaseOrderUsage {
     </foo>
     val obj = fromXML[AllTest](subject)
     obj match {
-      case x@AllTest(Some(""), Some(""), Some("bar"), _, _) if x.id == None =>
+      case x@AllTest(_, _)
+        if (
+          x.title == Some("bar") &&
+          x.style == None &&
+          x.script == None &&
+          x.id == None
+        )
+      =>
       case _ => sys.error("match failed: " + obj.toString)
     }
     
@@ -385,10 +392,12 @@ object PurchaseOrderUsage {
     </head>
     val obj = fromXML[Head](subject)
     obj match {
-      case x@Head(Seq(DataRecord(Some("http://www.example.com/IPO"), Some("script"), ""),
+      case x@Head(
+        Seq(DataRecord(Some("http://www.example.com/IPO"), Some("script"), ""),
         DataRecord(Some("http://www.example.com/IPO"), Some("script"), "")),
-        DataRecord(None, None, HeadSequence1("bar", Seq(DataRecord(Some("http://www.example.com/IPO"), Some("script"), "")) )),
-        _) if (x.dir == Some(Ltr)) =>
+        DataRecord(None, None, HeadSequence(DataRecord(Some("bar"), Some("title"), ""), Headu46miscGroup(Seq((DataRecord(Some("http://www.example.com/IPO"), Some("script"), "")) )) )),
+        _
+      ) if (x.dir == Some(Ltr)) =>
       case _ => sys.error("match failed: " + obj.toString)
     }
     

@@ -164,7 +164,7 @@ trait Args { self: Namer with Lookup with Params with Symbols =>
   def buildArgForMixed(tagged: Tagged[Any], selector: Tree, ignoreSubGroup: Boolean): Tree = {
     import Occurrence._
 
-    val occcurrence = Param(tagged, 0).occurrence
+    val occurrence = Param(tagged, 0).occurrence
     val isCompositor = tagged match {
       case x: TaggedWildCard => true
       case x: TaggedKeyedGroup => true
@@ -181,11 +181,12 @@ trait Args { self: Namer with Lookup with Params with Symbols =>
                 }
               case _ => false
             }
+
           case _ => false
         }
     }
 
-    val retval: Tree = occcurrence match {
+    val retval: Tree = occurrence match {
       case Multiple(o) =>
         if (isCompositor) selector DOT "flatten"
         else selector
@@ -197,7 +198,7 @@ trait Args { self: Namer with Lookup with Params with Symbols =>
         else SEQ(selector)
     }
 
-    logger.debug("buildArgForMixed: " + occcurrence.toString + ": " + tagged.toString + ": " + retval)
+    logger.debug("buildArgForMixed: " + occurrence.toString + ": " + tagged.toString + ": " + retval)
     retval
   }
 

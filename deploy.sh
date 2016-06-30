@@ -19,3 +19,4 @@ mv "$ASSEMBLY_DIR/$ASSEMBLY_FILE" $DEPLOY_DIR
 # Create the launch script for the app
 echo -e '#!/bin/bash\njava -jar '$ASSEMBLY_FILE' $@' > "$DEPLOY_DIR/$LAUNCH_FILE"
 chmod +x "$DEPLOY_DIR/$LAUNCH_FILE"
+echo "Created launch file: $DEPLOY_DIR/$LAUNCH_FILE"

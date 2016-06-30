@@ -143,6 +143,7 @@ trait ScalaNames {
       | "implicit"
       | "import"
       | "lazy"
+      | "macro"
       | "match"
       | "new"
       | "null"

@@ -69,8 +69,8 @@ trait XMLOutput extends Args {
     val retval = (param.cardinality, param.nillable) match {
       case (Multiple, true)  => name + " flatMap { " + optionalToXMLCode + " }"
       case (Multiple, false) => name + " flatMap { " + toXMLCode + " }"
-      case (Optional, true)  => name + " map { " +  optionalToXMLCode + " } getOrElse {Nil}"
-      case (Optional, false) => name + " map { " + toXMLCode + " } getOrElse {Nil}"
+      case (Optional, true)  => name + " map { " +  optionalToXMLCode + " } getOrElse {List()}"
+      case (Optional, false) => name + " map { " + toXMLCode + " } getOrElse {List()}"
       case (Single, true)    => singleOptionalToXMLCode
       case (Single, false)   => singleToXMLCode
     }

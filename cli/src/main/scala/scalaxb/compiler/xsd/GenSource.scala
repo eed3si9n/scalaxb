@@ -128,11 +128,12 @@ abstract class GenSource(val schema: SchemaDecl,
     //   val name = context.typeNames(pkg)(sch)
     //   "import " + pkg.map(_ + ".").getOrElse("") + buildDefaultProtocolName(name) + "._"
     // }  
-    
+
+    def valOrVar = if (config.generateMutable) "var" else "val"
+
     val traitCode = <source>{ buildComment(decl) }trait {localName}{extendString} {{
   {
-  val vals = for (param <- paramList)
-    yield  "val " + param.toTraitScalaCode
+  val vals = for (param <- paramList) yield  s"$valOrVar ${param.toTraitScalaCode(false)}"
   vals.mkString(newline + indent(1))}
 }}</source>
     
@@ -274,7 +275,7 @@ abstract class GenSource(val schema: SchemaDecl,
     def paramsString = if (hasSequenceParam) makeParamName(paramList.head.name, false) + ": " +
                                               paramList.head.singleTypeName + "*"
 
-                       else paramList.map(_.toScalaCode).mkString("," + newline + indent(1))
+                       else paramList.map(_.toScalaCode_possiblyMutable).mkString("," + newline + indent(1))
 
     val simpleFromXml: Boolean = if (flatParticles.isEmpty && !effectiveMixed) true
       else (decl.content, primary) match {
@@ -350,7 +351,7 @@ abstract class GenSource(val schema: SchemaDecl,
           case SimpContRestrictionDecl(base: XsTypeSymbol, _, _, _) => simpleContentString(base)
           case SimpContExtensionDecl(base: XsTypeSymbol, _)         => simpleContentString(base)
           case _ =>
-            if (childElemParams.isEmpty) "Nil"
+            if (childElemParams.isEmpty) "List()" //"Nil"
             else if (childElemParams.size == 1) "(" + buildXMLString(childElemParams(0)) + ")"
             else childElemParams.map(x =>
               buildXMLString(x)).mkString("Seq.concat(", "," + newline + indent(4), ")")
@@ -461,11 +462,11 @@ abstract class GenSource(val schema: SchemaDecl,
       (!paramList.head.attribute)
     val paramsString = if (hasSequenceParam)
         makeParamName(paramList.head.name, false) + ": " + paramList.head.singleTypeName + "*"
-      else paramList.map(_.toScalaCode).mkString("," + newline + indent(1))    
+      else paramList.map(_.toScalaCode_possiblyMutable).mkString("," + newline + indent(1))
     def makeWritesXML = <source>    def writes(__obj: {fqn}, __namespace: Option[String], __elementLabel: Option[String], 
         __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
       {childString}</source>
-    def childString = if (paramList.isEmpty) "Nil"
+    def childString = if (paramList.isEmpty)  "List()" //"Nil"
       else if (paramList.size == 1) buildXMLString(paramList(0))
       else paramList.map(x => 
         buildXMLString(x)).mkString("Seq.concat(", "," + newline + indent(4), ")")
@@ -539,9 +540,8 @@ abstract class GenSource(val schema: SchemaDecl,
         case any: AnyAttributeDecl => buildArgForAnyAttribute(group, false)
         case x => buildArg(x) 
       }
-    val paramsString = paramList.map(
-      _.toScalaCode).mkString("," + newline + indent(1))
-    val argsString = argList.mkString("," + newline + indent(3))  
+    val paramsString    = paramList.map(_.toScalaCode_possiblyMutable).mkString("," + newline + indent(1))
+    val argsString      = argList.mkString("," + newline + indent(3))
     val attributeString = attributes.map(x => buildAttributeString(x)).mkString(newline + indent(2))
     
     val caseClassCode = <source>{ buildComment(group) }case class {localName}({paramsString})</source>
@@ -776,12 +776,12 @@ object {localName} {{
       case CompContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
         flattenElements(base)        
       case res@CompContRestrictionDecl(XsAnyType, _, _) =>
-        res.compositor map { flattenElements(decl.namespace, decl.family, _, index, true) } getOrElse { Nil }
+        res.compositor map { flattenElements(decl.namespace, decl.family, _, index, true) } getOrElse { List() }
       case ext@CompContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
         flattenElements(base) :::
-          (ext.compositor map { flattenElements(decl.namespace, decl.family, _, index, true) } getOrElse { Nil })
+          (ext.compositor map { flattenElements(decl.namespace, decl.family, _, index, true) } getOrElse { List() })
       case ext@CompContExtensionDecl(XsAnyType, _, _) =>
-        ext.compositor map { flattenElements(decl.namespace, decl.family, _, index, true) } getOrElse { Nil }
+        ext.compositor map { flattenElements(decl.namespace, decl.family, _, index, true) } getOrElse { List() }
       case _ => Nil
     }
     
@@ -802,12 +802,12 @@ object {localName} {{
     // complex content means 1. has child elements 2. has attributes
     case CompContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) => splitSequences(base)        
     case res@CompContRestrictionDecl(XsAnyType, _, _) =>
-      res.compositor map { splitSequences(decl.namespace, decl.family, _) } getOrElse { Nil }
+      res.compositor map { splitSequences(decl.namespace, decl.family, _) } getOrElse { List() }
     case ext@CompContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
       splitSequences(base) :::
-        (ext.compositor map { splitSequences(decl.namespace, decl.family, _) } getOrElse { Nil })
+        (ext.compositor map { splitSequences(decl.namespace, decl.family, _) } getOrElse { List() })
     case ext@CompContExtensionDecl(XsAnyType, _, _) =>
-      ext.compositor map { splitSequences(decl.namespace, decl.family, _) } getOrElse { Nil }
+      ext.compositor map { splitSequences(decl.namespace, decl.family, _) } getOrElse { List() }
     case _ => Nil
   }
   
@@ -878,9 +878,16 @@ object {localName} {{
 
   def lazyValOrDef = if (config.generateMutable) "def" else "lazy val"
 
-  def accessorDeclaration(paramName: String, wrapperName: String, quotedNodeName: String, typeName: String, isOptional: Boolean) =
+  def getterDeclaration(paramName: String, wrapperName: String, quotedNodeName: String, typeName: String, isOptional: Boolean) =
     if (isOptional) s"$lazyValOrDef $paramName = $wrapperName.get($quotedNodeName) map { _.as[$typeName]}"
     else            s"$lazyValOrDef $paramName = $wrapperName($quotedNodeName).as[$typeName]"
+
+  def setterDeclaration(paramName: String, wrapperName: String, quotedNodeName: String, typeName: String, isOptional: Boolean): Option[String] =
+    if (config.generateMutable) {
+      val t = if (isOptional) s"Option[$typeName]" else typeName
+      Some(s"def ${paramName}_=(_value: $t) = { /*TBD: implement setter*/ }")
+    }
+    else None
 
   def generateAccessors(all: AllDecl): List[(String, Option[String])] = {
     // by spec, there are only elements under <all>
@@ -893,8 +900,8 @@ object {localName} {{
                     val       typeName =       buildTypeName(elem.typeSymbol)
                     val isOptional     = toCardinality(elem.minOccurs, elem.maxOccurs) == Optional
 
-                    ( accessorDeclaration(paramName, wrapperName, quotedNodeName, typeName, isOptional)
-                    , if (config.generateMutable) Some("/*TBD: setter*/") else None )
+                    ( getterDeclaration(paramName, wrapperName, quotedNodeName, typeName, isOptional)
+                    , setterDeclaration(paramName, wrapperName, quotedNodeName, typeName, isOptional))
 
         //s"lazy val ${makeParamName(elem.name, false)} = $wrapperName.get(${quote(buildNodeName(elem, true))}) map { _.as[${buildTypeName(elem.typeSymbol)}] }"
         //s"lazy val ${makeParamName(elem.name, false)} = $wrapperName    (${quote(buildNodeName(elem, true))})        .as[${buildTypeName(elem.typeSymbol)}]"
@@ -919,8 +926,8 @@ object {localName} {{
                     val       typeName =       buildTypeName(attr.typeSymbol, true)
                     val isOptional     = cardinality == Optional
 
-                    ( accessorDeclaration(paramName, wrapperName, quotedNodeName, typeName, isOptional)
-                    , if (config.generateMutable) Some("/*TBD: setter*/") else None)
+                    ( getterDeclaration(paramName, wrapperName, quotedNodeName, typeName, isOptional)
+                    , setterDeclaration(paramName, wrapperName, quotedNodeName, typeName, isOptional))
 
 
       //case (attr: AttributeDecl, Optional) =>
@@ -948,7 +955,7 @@ object {localName} {{
       val paramList = particles map { buildParam }
       paramList map { p => val paramName = makeParamName(p.name, false)
                            ( s"$lazyValOrDef $paramName = $wrapperName.$paramName"
-                           , if (config.generateMutable) Some("/*TBD: setter*/") else None)
+                           , if (config.generateMutable) Some("/*TBD: setter */") else None)
       }
     case _ => Nil
   }

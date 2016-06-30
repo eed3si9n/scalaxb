@@ -17,3 +17,6 @@ tmp/
 .settings
 Version.scala
 project/plugins/project/build.properties
+
+# Project-specific
+/install/

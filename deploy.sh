@@ -5,6 +5,7 @@ DEPLOY_DIR='./install'  # The directory to deploy the ready app to
 ASSEMBLY_DIR='./cli/target/scala-2.10'
 ASSEMBLY_FILE='scalaxb-app.jar'
 LAUNCH_FILE='scalaxb'
+ROUTINES_DIR='routines'
 
 # Build the app
 sbt app/assembly
@@ -20,3 +21,6 @@ mv "$ASSEMBLY_DIR/$ASSEMBLY_FILE" $DEPLOY_DIR
 echo -e '#!/bin/bash\njava -jar '$ASSEMBLY_FILE' $@' > "$DEPLOY_DIR/$LAUNCH_FILE"
 chmod +x "$DEPLOY_DIR/$LAUNCH_FILE"
 echo "Created launch file: $DEPLOY_DIR/$LAUNCH_FILE"
+
+# Copy the routines to the deployment directory
+cp $ROUTINES_DIR/* $DEPLOY_DIR

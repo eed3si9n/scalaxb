@@ -1,1 +1,0 @@
-find msoffice/ -type f -name "*.xsd" -print0 | time xargs -0 ./scalaxb -v --mutable -d classfiles

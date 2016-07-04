@@ -21,6 +21,3 @@ mv "$ASSEMBLY_DIR/$ASSEMBLY_FILE" $DEPLOY_DIR
 echo -e '#!/bin/bash\njava -jar '$ASSEMBLY_FILE' $@' > "$DEPLOY_DIR/$LAUNCH_FILE"
 chmod +x "$DEPLOY_DIR/$LAUNCH_FILE"
 echo "Created launch file: $DEPLOY_DIR/$LAUNCH_FILE"
-
-# Copy the routines to the deployment directory
-cp $ROUTINES_DIR/* $DEPLOY_DIR

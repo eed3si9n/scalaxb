@@ -28,8 +28,8 @@ import scala.collection.mutable
 import scala.collection.{Map}
 import scala.xml._
 
-abstract class GenSource(val schema: SchemaDecl,
-    val context: XsdContext) extends Parsers with XMLOutput {
+class GenSource(val schema: SchemaDecl,
+    val context: XsdContext, var config: Config) extends Parsers with XMLOutput {
   private val logger = Log.forName("xsd.GenSource")
   type =>?[A, B] = PartialFunction[A, B]
   

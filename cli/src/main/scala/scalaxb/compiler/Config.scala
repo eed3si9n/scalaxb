@@ -58,6 +58,8 @@ case class Config(items: Map[String, ConfigEntry]) {
   def async                 : Boolean             = values contains GenerateAsync
   def varArg                : Boolean             = values contains VarArg
   def ignoreUnknown         : Boolean             = values contains IgnoreUnknown
+  def autoPackages          : Boolean             = values contains AutoPackages
+
 
   private def get[A <: ConfigEntry: Manifest]: Option[A] = items.get(implicitly[Manifest[A]].runtimeClass.getName).asInstanceOf[Option[A]]
   def update(item: ConfigEntry): Config = copy(items = items.updated(item.name, item))
@@ -117,4 +119,5 @@ object ConfigEntry {
   case object LaxAny                                          extends ConfigEntry
   case object VarArg                                          extends ConfigEntry
   case object IgnoreUnknown                                   extends ConfigEntry
+  case object AutoPackages                                    extends ConfigEntry
 }

@@ -91,18 +91,20 @@ object Arguments {
       opt[ String]("dispatch-version"    ) valueName("<version>"    ) text("version of Dispatch (default: "
                                                                           + scalaxb.BuildInfo.defaultDispatchVersion + ")"       ) action { (x,c) => c.update(DispatchVersion(x)) }
 
-      opt[ Unit  ]("prepend-family"      ) text("prepends family name to class names"    ) action { (_,c) => c.update(PrependFamilyName     ) }
-      opt[ Unit  ]("named-attributes"    ) text("generates named fields for attributes"  ) action { (_,c) => c.update(NamedAttributes       ) }
-      opt[ Unit  ]("mutable"             ) text("generates mutable classes"              ) action { (_,c) => c.update(GenerateMutable       ) }
-      opt[ Unit  ]("package-dir"         ) text("generates package directories"          ) action { (_,c) => c.update(GeneratePackageDir    ) }
-      opt[ Unit  ]("no-runtime"          ) text("skips runtime files"                    ) action { (_,c) => c.remove(GenerateRuntime       ) }
-      opt[ Unit  ]("no-dispatch-client"  ) text("disables generation of Dispatch client" ) action { (_,c) => c.remove(GenerateDispatchClient) }
-      opt[ Unit  ]("dispatch-as"         ) text("generates of Dispatch \"as\""           ) action { (_,c) => c.update(GenerateDispatchAs    ) }
-      opt[ Unit  ]("lax-any"             ) text("relaxes namespace constraints of xs:any") action { (_,c) => c.update(LaxAny                ) }
-      opt[ Unit  ]("blocking"            ) text("generates blocking SOAP client"         ) action { (_,c) => c.remove(GenerateAsync         ) }
-      opt[ Unit  ]("no-varargs"          ) text("use Seq instead of the varargs"         ) action { (_,c) => c.remove(VarArg                ) }
-      opt[ Unit  ]("ignore-unknown"      ) text("Ignore Unknown Elements"                ) action { (_,c) => c.update(IgnoreUnknown         ) }
-      opt[ Unit  ]('v', "verbose"        ) text("be extra verbose"                       ) action { (_,c) => verbose = true; c                }
+      opt[ Unit  ]("prepend-family"      ) text("prepends family name to class names"                      ) action { (_,c) => c.update(PrependFamilyName     ) }
+      opt[ Unit  ]("named-attributes"    ) text("generates named fields for attributes"                    ) action { (_,c) => c.update(NamedAttributes       ) }
+      opt[ Unit  ]("mutable"             ) text("generates mutable classes"                                ) action { (_,c) => c.update(GenerateMutable       ) }
+      opt[ Unit  ]("package-dir"         ) text("generates package directories"                            ) action { (_,c) => c.update(GeneratePackageDir    ) }
+      opt[ Unit  ]("no-runtime"          ) text("skips runtime files"                                      ) action { (_,c) => c.remove(GenerateRuntime       ) }
+      opt[ Unit  ]("no-dispatch-client"  ) text("disables generation of Dispatch client"                   ) action { (_,c) => c.remove(GenerateDispatchClient) }
+      opt[ Unit  ]("dispatch-as"         ) text("generates of Dispatch \"as\""                             ) action { (_,c) => c.update(GenerateDispatchAs    ) }
+      opt[ Unit  ]("lax-any"             ) text("relaxes namespace constraints of xs:any"                  ) action { (_,c) => c.update(LaxAny                ) }
+      opt[ Unit  ]("blocking"            ) text("generates blocking SOAP client"                           ) action { (_,c) => c.remove(GenerateAsync         ) }
+      opt[ Unit  ]("no-varargs"          ) text("use Seq instead of the varargs"                           ) action { (_,c) => c.remove(VarArg                ) }
+      opt[ Unit  ]("ignore-unknown"      ) text("Ignore Unknown Elements"                                  ) action { (_,c) => c.update(IgnoreUnknown         ) }
+      opt[ Unit  ]('v', "verbose"        ) text("be extra verbose"                                         ) action { (_,c) => verbose = true; c                }
+      opt[ Unit  ]("autopackages"        ) text("generate packages for different namespaces automatically.") action { (_,c) => c.update(AutoPackages          ) }
+
       arg[ File  ]("<schema_file>...") unbounded() text("input schema to be converted"   ) action { (x,c) => files append x; c                }
 
       help   ("help"   )                   text("display this message")

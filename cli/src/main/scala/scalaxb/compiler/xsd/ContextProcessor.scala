@@ -48,7 +48,7 @@ trait PackageName {
 
 trait ContextProcessor extends ScalaNames with PackageName {
   private val logger = Log.forName("xsd.ContextProcessor")
-  def config: Config
+  var config: Config
   val newline = System.getProperty("line.separator")
   val XSI_URL = "http://www.w3.org/2001/XMLSchema-instance"
   val XSI_PREFIX = "xsi"
@@ -62,6 +62,7 @@ trait ContextProcessor extends ScalaNames with PackageName {
 
     context.schemas ++= schemas
     context.packageNames ++= config.packageNames
+    if (config.autoPackages) context.packageNames ++= generateAutoPackages(schemas)
     
     (None :: (config.packageNames.valuesIterator.toList.distinct)) map {
       pkg =>
@@ -113,10 +114,10 @@ trait ContextProcessor extends ScalaNames with PackageName {
           name
         })
 
-// simple types are handled later.
-//      case decl: SimpleTypeDecl if containsEnumeration(decl) =>
-//        logger.debug("processContent: %s's %s" format(elem.name, decl.name))
-//        nameEnumSimpleType(schema, decl, elem.name, "")
+    // simple types are handled later.
+    //      case decl: SimpleTypeDecl if containsEnumeration(decl) =>
+    //        logger.debug("processContent: %s's %s" format(elem.name, decl.name))
+    //        nameEnumSimpleType(schema, decl, elem.name, "")
       case _ =>
     }
 
@@ -204,6 +205,12 @@ trait ContextProcessor extends ScalaNames with PackageName {
 
     makeCompositorNames(context)
   }
+
+  def generateAutoPackages(schemas: Seq[SchemaDecl]): Map[Option[String], Option[String]] =
+    schemas.map {s =>
+      val ns = s.targetNamespace
+      ns -> ns
+    }.toMap
 
   def getTypeGlobally(namespace: Option[String], typeName: String, context: XsdContext): TypeDecl =
     (for (schema <- context.schemas;

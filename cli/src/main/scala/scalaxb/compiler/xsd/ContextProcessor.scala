@@ -61,7 +61,7 @@ trait ContextProcessor extends ScalaNames with PackageName {
   def processContext(context: XsdContext, schemas: Seq[SchemaDecl]) {
     logger.debug("processContext")
 
-    if (config.autoPackages) config = generateAutoPackages(schemas).toList.foldLeft(config) {case (cfg, (uri, pkg)) =>
+    if (config.autoPackages) config = generateAutoPackages(schemas).foldLeft(config) {case (cfg, (uri, pkg)) =>
       cfg.update(ConfigEntry.PackageNames(cfg.packageNames updated (uri, pkg)))
     }
     context.schemas ++= schemas
@@ -209,11 +209,24 @@ trait ContextProcessor extends ScalaNames with PackageName {
     makeCompositorNames(context)
   }
 
-  def generateAutoPackages(schemas: Seq[SchemaDecl]): Map[Option[String], Option[String]] =
-    schemas.map {s =>
-      val ns = s.targetNamespace
-      ns -> ns
-    }.toMap
+  def generateAutoPackages(schemas: Seq[SchemaDecl]): Seq[(Option[String], Option[String])] = {
+    val numbers = ('0' to '9').toSet
+
+    val allowedChars = (  // What can be in a package name
+      ('a' to 'z') ++
+      ('A' to 'Z')
+    ).toSet ++ numbers ++ Set(
+      '.'
+    )
+
+    schemas.map {s => s.targetNamespace -> s.targetNamespace.map(_
+      .split("[:/]")                                           // Split the namespace URI into fragments
+      .map {_.filter(allowedChars)}                            // Package name must be valid
+      .filter(!_.isEmpty)                                      // Drop empty fragments
+      .map {str => if (numbers(str.head)) 'n' + str else str}  // Package name can't start with a number
+      .mkString(".")                                           // Concat the fragments
+    )}
+  }
 
   def getTypeGlobally(namespace: Option[String], typeName: String, context: XsdContext): TypeDecl =
     (for (schema <- context.schemas;

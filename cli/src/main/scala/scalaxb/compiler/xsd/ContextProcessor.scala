@@ -20,7 +20,8 @@
  * THE SOFTWARE.
  */
 
-package scalaxb.compiler.xsd
+package scalaxb.compiler
+package xsd
 
 import scalashim._
 import scalaxb.compiler.{ScalaNames, Config, ReferenceNotFound, Log}
@@ -60,9 +61,11 @@ trait ContextProcessor extends ScalaNames with PackageName {
   def processContext(context: XsdContext, schemas: Seq[SchemaDecl]) {
     logger.debug("processContext")
 
+    if (config.autoPackages) config = generateAutoPackages(schemas).toList.foldLeft(config) {case (cfg, (uri, pkg)) =>
+      cfg.update(ConfigEntry.PackageNames(cfg.packageNames updated (uri, pkg)))
+    }
     context.schemas ++= schemas
     context.packageNames ++= config.packageNames
-    if (config.autoPackages) context.packageNames ++= generateAutoPackages(schemas)
     
     (None :: (config.packageNames.valuesIterator.toList.distinct)) map {
       pkg =>

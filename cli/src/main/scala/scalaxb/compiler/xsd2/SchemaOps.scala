@@ -663,7 +663,7 @@ object ComplexTypeIteration {
     decl.base match {
       case x: TaggedSymbol => x: TaggedType[_]
       case x: TaggedSimpleType => x: TaggedType[_]
-      case x: TaggedType[XComplexType] => complexTypeToSimpleContentRoot(x)
+      case x: TaggedComplexType => complexTypeToSimpleContentRoot(x)
       case _ => TaggedXsAnyType
     }
   }

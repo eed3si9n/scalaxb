@@ -169,7 +169,7 @@ trait Args extends Params {
           else buildTypeName(symbol), selector,
         toCardinality(elem.minOccurs, elem.maxOccurs), stackItem,
         false, elem.defaultValue, elem.fixedValue, wrapForLongAll)
-      
+
       case symbol: ReferenceTypeSymbol =>
         if (symbol.decl == null) sys.error("GenSource#buildArg: " + elem.toString + " Invalid type " + symbol.getClass.toString + ": " +
             symbol.toString + " with null decl")

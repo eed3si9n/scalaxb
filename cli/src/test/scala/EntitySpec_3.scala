@@ -1,5 +1,7 @@
 package scalaxb.specs
 
+import scalaxb.compiler._
+import scalaxb.compiler.ConfigEntry._
 import org.specs2._
 
 object EntitySpec_3 extends Specification { def is =                          s2"""
@@ -129,7 +131,7 @@ object EntitySpec_3 extends Specification { def is =                          s2
   }
 
   lazy val importSources = module.processNodes(Seq(addressXML, importXML),
-    scalaxb.compiler.Config(packageNames = Map(None -> Some("example"))))
+    Config.default.update(PackageNames(Map(None -> Some("example")))))
 
   def derivation5 = {
     println(importSources(0))

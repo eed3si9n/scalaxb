@@ -55,7 +55,7 @@ trait Params { self: Namer with Lookup with Splitter =>
 
     def toScalaCode(implicit targetNamespace: Option[URI], lookup: Lookup): String =
       toTraitScalaCode(targetNamespace, lookup) + (
-        if (occurrence == OptionalNotNillable && attribute) " = None"
+        if (occurrence == OptionalNotNillable() && attribute) " = None"
         else "")
 
     def toDataRecordMapAccessor(wrapper: String, generateImpl: Boolean)

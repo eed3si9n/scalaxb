@@ -168,17 +168,21 @@ trait Args { self: Namer with Lookup with Params with Symbols =>
     val isCompositor = tagged match {
       case x: TaggedWildCard => true
       case x: TaggedKeyedGroup => true
-      case elem: Tagged[XElement] =>
-        if (!ignoreSubGroup && elem.isSubstitutionGroup) true
-        else elem.typeStructure match {
-          case x: TaggedSymbol =>
-            x.value match {
-              case XsAnySimpleType | XsAnyType => true
-              case symbol: BuiltInSimpleTypeSymbol => false
+      case x: Tagged[_] =>
+        x.value match {
+          case elem0: XElement =>
+            val elem = x match { case x: Tagged[XElement] @unchecked => x }
+            if (!ignoreSubGroup && elem.isSubstitutionGroup) true
+            else elem.typeStructure match {
+              case x: TaggedSymbol =>
+                x.value match {
+                  case XsAnySimpleType | XsAnyType => true
+                  case symbol: BuiltInSimpleTypeSymbol => false
+                }
+              case _ => false
             }
           case _ => false
         }
-      case _ => false
     }
 
     val retval: Tree = occcurrence match {

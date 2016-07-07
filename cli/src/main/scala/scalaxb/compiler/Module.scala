@@ -31,29 +31,8 @@ import java.io.{File, PrintWriter, Reader, BufferedReader}
 import scala.collection.mutable
 import scala.collection.mutable.{ListBuffer, ListMap}
 import ConfigEntry._
-import collection.{mutable, Map, Set}
+import collection.{mutable, Set}
 import treehugger.forest.{Tree, treeToString}
-
-case class Config(packageNames: Map[Option[String], Option[String]] = Map(None -> None),
-  classPrefix: Option[String] = None,
-  classPostfix: Option[String] = None,
-  paramPrefix: Option[String] = None,
-  attributePrefix: Option[String] = None,
-  outdir: File = new File("."),
-  packageDir: Boolean = false,
-  wrappedComplexTypes: List[String] = Nil,
-  prependFamilyName: Boolean = false,
-  seperateProtocol: Boolean = true,
-  protocolFileName: String = "xmlprotocol.scala",
-  protocolPackageName: Option[String] = None,
-  defaultNamespace: Option[String] = None,
-  generateRuntime: Boolean = true,
-  contentsSizeLimit: Int = Int.MaxValue,
-  sequenceChunkSize: Int = 10,
-  namedAttributes: Boolean = false,
-  laxAny: Boolean = false,
-  async: Boolean = true,
-  dispatchVersion: String = scalaxb.BuildInfo.defaultDispatchVersion)
 
 object Snippet {
   def apply(definition: Node): Snippet = Snippet(definition, Nil, Nil, Nil)
@@ -241,10 +220,10 @@ trait Module {
     processNode(input, Config.default.update(PackageNames(Map(None -> Some(packageName)))))
 
   def processNode(input: Node, config: Config): List[String] =
-    infoNode(input, config)._2
+    infoNodes(input, config)._2
 
   def processNodes(input: Seq[Node], packageName: String): List[String] =
-    processNodes(input, Config(packageNames = Map(None -> Some(packageName))))
+    processNodes(input, Config.default.update(PackageNames(Map(None -> Some(packageName)))))
 
   def processNodes(input: Seq[Node], config: Config): List[String] =
     infoNodes(input, config)._2

@@ -1,3 +1,5 @@
+package scalaxb.specs
+
 import scalaxb.compiler.wsdl11.Driver
 import java.io.File
 import scalaxb.compiler.Config

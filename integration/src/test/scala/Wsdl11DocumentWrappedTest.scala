@@ -1,9 +1,11 @@
-import scalaxb.compiler.wsdl11.Driver
+package scalaxb.specs
+
 import java.io.File
+import scala.concurrent._, duration.Duration
 import scalaxb.compiler.Config
 import scalaxb.compiler.ConfigEntry._
+import scalaxb.compiler.wsdl11.Driver
 import scalaxb.stockquote.server._
-import scala.concurrent._, duration.Duration
 
 object Wsdl11DocumentWrappedTest extends TestBase with JaxwsTestBase {
   override val module = new Driver // with Verbose

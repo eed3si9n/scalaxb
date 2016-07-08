@@ -1,3 +1,5 @@
+package scalaxb.specs
+
 import scalaxb.compiler.Config
 import scalaxb.compiler.ConfigEntry._
 

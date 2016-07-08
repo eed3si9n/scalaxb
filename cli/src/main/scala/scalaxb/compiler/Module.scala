@@ -28,10 +28,8 @@ import scala.xml.{Node, Elem, UnprefixedAttribute, NamespaceBinding}
 import scala.xml.factory.{XMLLoader}
 import javax.xml.parsers.SAXParser
 import java.io.{File, PrintWriter, Reader, BufferedReader}
-import scala.collection.mutable
 import scala.collection.mutable.{ListBuffer, ListMap}
 import ConfigEntry._
-import collection.{mutable, Set}
 import treehugger.forest.{Tree, treeToString}
 
 object Snippet {

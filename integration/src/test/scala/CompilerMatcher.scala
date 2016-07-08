@@ -103,7 +103,7 @@ trait CompilerMatcher {
 
     val currentcp = if (usecurrentcp) {
       val currentLoader = java.lang.Thread.currentThread.getContextClassLoader
-       currentLoader match {
+      currentLoader match {
         case cl: java.net.URLClassLoader => cl.getURLs.toList map {_.toString}
         case x =>
           // sbt 0.13 wraps classloader with ClasspathFilter
@@ -210,5 +210,4 @@ trait CompilerMatcher {
 
   private def toSourceFile(file: File): SourceFile =
     new BatchSourceFile(new PlainFile(file))
-  }
 }

@@ -1,6 +1,7 @@
+package scalaxb.specs
+
 import javax.ws.rs.{GET, Path, PathParam, Produces}
 import javax.xml.bind.annotation.XmlRootElement
-
 import scala.beans.BeanProperty
 
 class RestService {

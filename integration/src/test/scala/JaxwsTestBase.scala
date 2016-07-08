@@ -1,3 +1,5 @@
+package scalaxb.specs
+
 import org.apache.cxf.endpoint.Server
 import org.apache.cxf.jaxws.JaxWsServerFactoryBean
 import org.apache.cxf.transport.http_jetty.JettyHTTPServerEngineFactory

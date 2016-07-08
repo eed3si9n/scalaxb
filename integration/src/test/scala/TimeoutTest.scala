@@ -1,7 +1,9 @@
-import scalaxb.compiler.wsdl11.Driver
+package scalaxb.specs
+
 import java.io.File
 import scalaxb.compiler.Config
 import scalaxb.compiler.ConfigEntry._
+import scalaxb.compiler.wsdl11.Driver
 import scalaxb.stockquote.server._
 import scala.concurrent._, duration.Duration
 

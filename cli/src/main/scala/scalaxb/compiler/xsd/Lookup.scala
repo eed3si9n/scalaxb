@@ -201,7 +201,7 @@ trait Lookup extends ContextProcessor {
     val pkg = packageName(namespace, context) getOrElse {""}
     val lastPart = pkg.split('.').reverse.head
     
-    lastPart.capitalize + name + "Format"
+    pkg.filter(_ != '.').capitalize + "_" + name + "Format"
   }
 
   def baseType(decl: SimpleTypeDecl): XsTypeSymbol = decl.content match {

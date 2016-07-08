@@ -198,9 +198,7 @@ trait Lookup extends ContextProcessor {
     buildFormatterName(group.namespace, buildTypeName(group, true))
   
   def buildFormatterName(namespace: Option[String], name: String): String = {
-    val pkg = packageName(namespace, context) getOrElse {""}
-    val lastPart = pkg.split('.').reverse.head
-    
+    val pkg = packageName(namespace, context) getOrElse {""}    
     pkg.filter(_ != '.').capitalize + "_" + name + "Format"
   }
 

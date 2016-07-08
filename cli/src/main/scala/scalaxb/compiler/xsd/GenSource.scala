@@ -577,7 +577,7 @@ class GenSource(val schema: SchemaDecl,
       " { override def toString = " + quote(enum.value.toString) + " }"
     
     def makeCaseEntry(enum: EnumerationDecl[_]) =
-      indent(2) + "case " + quote(enum.value.toString) + " => " + buildTypeName(localName, enum, true) + newline
+      indent(2) + "case " + quote(enum.value.toString.drop("EnumValue_".length)) + " => " + buildTypeName(localName, enum, true) + newline
     
     val enumString = enums.map(makeEnum).mkString(newline)
     def valueCode: String =

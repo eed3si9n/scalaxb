@@ -43,6 +43,12 @@ class GenSource(val schema: SchemaDecl,
     val snippets = mutable.ListBuffer.empty[Snippet]
     snippets += Snippet(makeSchemaComment, Nil, Nil, Nil)
 
+    // When setting attributes, they should be wrapped in scalaxb.DataRecord, which
+    // is also generated. DataRecord[A] requires a XMLFormat[A] in scope on construction time.
+    // The import below imports xmlprotocol with all the implicit XMLFormats in scope.
+    // TBD: WARNING: if --protocol-package is not set, the import will not be generated. To be fixed.
+    for (pkg <- config.protocolPackageName) snippets += Snippet(makeImport(s"$pkg._"))
+
     schema.typeList map {
       case decl: ComplexTypeDecl if !context.duplicatedTypes.contains((schema, decl)) =>
         if (context.baseToSubs.contains(decl)) {
@@ -888,7 +894,7 @@ object {localName} {{
   def setterDeclaration(paramName: String, wrapperName: String, quotedNodeName: String, typeName: String, isOptional: Boolean): Option[String] =
     if (config.generateMutable) {
       val t = if (isOptional) s"Option[$typeName]" else typeName
-      Some(s"def ${paramName}_=(_value: $t) = { /*TBD: implement setter*/ }")
+      Some(s"def ${paramName}_=(_value: $t) = $wrapperName += $quotedNodeName -> scalaxb.DataRecord(_value)")
     }
     else None
 
@@ -1016,6 +1022,8 @@ object {localName} {{
 
   def makeSchemaComment = <source>{makeAnnotation(schema.annotation)}</source>
   
+  def makeImport(what: String) = <source>{s"import $what"}</source>
+
   def makeAnnotation(anno: Option[AnnotationDecl]) = anno match {
     case Some(annotation) =>
       newline + "/** " + (for (doc <- annotation.documentations; x <- doc.any) yield x.toString).mkString +

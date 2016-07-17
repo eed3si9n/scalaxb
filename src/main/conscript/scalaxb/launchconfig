@@ -1,11 +1,11 @@
 [app]
-  version: 1.4.0
+  version: 1.4.1
   org: org.scalaxb
   name: scalaxb_2.11
   class: scalaxb.compiler.SbtApp
   cross-versioned: false
 [scala]
-  version: 2.11.7
+  version: 2.11.8
 [repositories]
   sonatype-public: https://oss.sonatype.org/content/repositories/public/
   maven-central

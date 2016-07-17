@@ -1,12 +1,12 @@
 import sbt._
 
 object Dependencies {
-  val scala211 = "2.11.7"
-  val scala210 = "2.10.4"
+  val scala211 = "2.11.8"
+  val scala210 = "2.10.6"
 
   val scopt = "com.github.scopt" %% "scopt" % "3.2.0"
   val log4j = "log4j" % "log4j" % "1.2.17"
-  val defaultDispatchVersion = "0.11.2"
+  val defaultDispatchVersion = "0.11.3"
   val dispatch = "net.databinder.dispatch" %% "dispatch-core" % defaultDispatchVersion
   val launcherInterface = "org.scala-sbt" % "launcher-interface" % "0.12.0"
   val scalaXml = "org.scala-lang.modules" %% "scala-xml" % "1.0.2"

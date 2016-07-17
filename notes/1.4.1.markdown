@@ -1,0 +1,12 @@
+### breaking changes
+
+- Adds Dispatch 0.11.3 support, and `defaultDispatchVersion` is bumped up to it. [#352][352] by [@DustinChaloupka][@DustinChaloupka]
+
+### fixes
+
+- Fixes handling of implicit and explicit soap headers. [#366][366] by [@coutoPL][@coutoPL]
+
+  [352]: https://github.com/eed3si9n/scalaxb/pull/352
+  [366]: https://github.com/eed3si9n/scalaxb/pull/366
+  [@coutoPL]: https://github.com/coutoPL
+  [@DustinChaloupka]: https://github.com/DustinChaloupka

@@ -32,18 +32,14 @@ There are currently four ways of running scalaxb:
 To call scalaxb from sbt 0.13.x, put this in your `project/scalaxb.sbt`:
 
     resolvers += Resolver.sonatypeRepo("public")
-
     addSbtPlugin("org.scalaxb" % "sbt-scalaxb" % "X.X")
 
 and this in `scalaxb.sbt`:
 
     scalaxbSettings
-
     packageName in scalaxb in Compile := "xxx"
-
     sourceGenerators in Compile <+= scalaxb in Compile
-
-    dispatchVersion in scalaxb in Compile := "0.11.1"
+    dispatchVersion in scalaxb in Compile := "0.11.3"
 
 ### command line app scalaxb
 

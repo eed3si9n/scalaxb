@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<wsdl:definitions
+        xmlns:tns="http://tempuri.org/"
+        xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/"
+        xmlns:s="http://www.w3.org/2001/XMLSchema"
+        xmlns:http="http://schemas.xmlsoap.org/wsdl/http/"
+        targetNamespace="http://tempuri.org/"
+        xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">
+    <wsdl:types>
+        <s:schema elementFormDefault="qualified" targetNamespace="http://tempuri.org/">
+            <s:element name="QuoteResponse">
+                <s:complexType>
+                    <s:sequence>
+                        <s:element minOccurs="0" maxOccurs="1" name="Message" type="s:string"/>
+                    </s:sequence>
+                </s:complexType>
+            </s:element>
+            <s:element name="string" nillable="true" type="s:string"/>
+            <s:element name="Session">
+                <s:complexType>
+                    <s:sequence>
+                        <s:element name="sessionId" type="s:string" />
+                    </s:sequence>
+                </s:complexType>
+            </s:element>
+            <s:element name="AnotherPart">
+                <s:complexType>
+                    <s:sequence>
+                        <s:element name="someElement" type="s:string" />
+                    </s:sequence>
+                </s:complexType>
+            </s:element>
+        </s:schema>
+    </wsdl:types>
+    <wsdl:message name="CreateUserRequestHeader">
+        <wsdl:part name="session" element="tns:Session"/>
+        <wsdl:part name="anotherPart" element="tns:AnotherPart"/>
+    </wsdl:message>
+    <wsdl:message name="CreateUserRequest">
+        <wsdl:part name="username" type="s:string"/>
+    </wsdl:message>
+    <wsdl:message name="CreateUserResponse">
+        <wsdl:part name="parameters" element="tns:QuoteResponse"/>
+    </wsdl:message>
+
+    <wsdl:portType name="UserEndPoint">
+        <wsdl:operation name="CreateUser">
+            <wsdl:input message="tns:CreateUserRequest"/>
+            <wsdl:output message="tns:CreateUserResponse"/>
+        </wsdl:operation>
+    </wsdl:portType>
+
+    <wsdl:binding name="UserBinding" type="tns:UserEndPoint">
+        <soap12:binding style="document"
+                        transport="http://schemas.xmlsoap.org/soap/http"/>
+        <wsdl:operation name="CreateUser">
+            <soap12:operation soapAction="http://example.com/CreateUser"/>
+            <wsdl:input>
+                <soap12:body use="literal"/>
+                <soap12:header use="literal" part="session" message="tns:CreateUserRequestHeader"/>
+                <soap12:header use="literal" part="anotherPart" message="tns:CreateUserRequestHeader"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap12:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
+    </wsdl:binding>
+
+</wsdl:definitions>

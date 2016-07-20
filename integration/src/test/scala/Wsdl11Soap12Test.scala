@@ -38,7 +38,6 @@ object Wsdl11Soap12Test extends TestBase {
         |val service = new implicitheader.UserBindings with scalaxb.SoapClients with scalaxb.HttpClients {
         |      override def httpClient = new HttpClient {
         |        override def request(in: String, address: java.net.URI, headers: Map[String, String]): String = {
-        |        println("!!!" + in)
         |          val expectedReq =
         |            <soap12:Envelope xmlns:soap12="http://www.w3.org/2003/05/soap-envelope"
         |                             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"

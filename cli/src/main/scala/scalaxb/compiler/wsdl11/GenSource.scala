@@ -301,7 +301,7 @@ trait {interfaceTypeName} {{
   private def implicitHeaderParts(headers: Seq[HeaderBinding]): Seq[XPartType] =
     headers.flatMap { header =>
       context.messages(splitTypeName(header.message)).part
-        .filter(_.name.contains(header.part))
+        .filter(_.name == Some(header.part))
         .map(x => x.copy(name = x.name.map(camelCase)))
     }
 

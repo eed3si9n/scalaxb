@@ -300,7 +300,9 @@ trait {interfaceTypeName} {{
 
   private def implicitHeaderParts(headers: Seq[HeaderBinding]): Seq[XPartType] =
     headers.flatMap { header =>
-      context.messages(splitTypeName(header.message)).part.map(x => x.copy(name = x.name.map(camelCase)))
+      context.messages(splitTypeName(header.message)).part
+        .filter(_.name.contains(header.part))
+        .map(x => x.copy(name = x.name.map(camelCase)))
     }
 
   def makeOperationInputArgs(binding: XBinding_operationType, intf: XPortTypeType): Seq[ParamCache] = {
@@ -506,7 +508,7 @@ trait {interfaceTypeName} {{
         val nsString = namespace map {"Some(\"%s\")".format(_)} getOrElse {"None"}
         val post =
           if ((soapBindingStyle == DocumentStyle) && !p.element.isDefined) """ match {
-  case e: scala.xml.Elem => e.child
+  case e: scala.xml.Elem => e
   case _ => sys.error("Elem not found!")
 }"""
           else ""
@@ -551,7 +553,7 @@ trait {interfaceTypeName} {{
         case DocumentStyle if p.element.isDefined =>
           ("\"%s\"".format(toElement(p).name), toElement(p).namespace)
         case DocumentStyle =>
-          ("\"Body\"", None)
+          (p.name.map(n => s"""\"$n\"""").getOrElse("\"Body\""), None)
       }
 
       val nsString = namespace map {"Some(\"%s\")".format(_)} getOrElse {"None"}
@@ -560,7 +562,7 @@ trait {interfaceTypeName} {{
       (soapBindingStyle match {
         case DocumentStyle if !p.element.isDefined =>
           """ match {
-  case e: scala.xml.Elem => e.child
+  case e: scala.xml.Elem => e
   case _ => sys.error("Elem not found!")
 }"""
         case _ => ""

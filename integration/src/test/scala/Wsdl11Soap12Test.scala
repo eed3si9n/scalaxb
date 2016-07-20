@@ -19,7 +19,7 @@ object Wsdl11Soap12Test extends TestBase {
     (List("""val service = (new stockquote.StockQuoteSoap12Bindings with scalaxb.SoapClients with scalaxb.DispatchHttpClients {}).service
        val response = service.getQuote(Some("GOOG"))""",
        // The service is flaky. Running several times succeeds.
-       """response.toString.contains("<Symbol>GOOG</Symbol>") || response.toString.contains("exception")"""), generated) must evaluateTo(true,
+       """response.toString.cosntains("<Symbol>GOOG</Symbol>") || response.toString.contains("exception")"""), generated) must evaluateTo(true,
       outdir = "./tmp", usecurrentcp = true)
   }
 
@@ -38,14 +38,18 @@ object Wsdl11Soap12Test extends TestBase {
         |val service = new implicitheader.UserBindings with scalaxb.SoapClients with scalaxb.HttpClients {
         |      override def httpClient = new HttpClient {
         |        override def request(in: String, address: java.net.URI, headers: Map[String, String]): String = {
+        |        println("!!!" + in)
         |          val expectedReq =
         |            <soap12:Envelope xmlns:soap12="http://www.w3.org/2003/05/soap-envelope"
         |                             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         |                             xmlns:xs="http://www.w3.org/2001/XMLSchema"
         |                             xmlns:tns="http://tempuri.org/"
         |                             xmlns="http://tempuri.org/">
-        |              <soap12:Header>header</soap12:Header>
-        |              <soap12:Body>User</soap12:Body>
+        |              <soap12:Header>
+        |                 <sessionId>session</sessionId>
+        |                 <correlationId>10001</correlationId>
+        |              </soap12:Header>
+        |              <soap12:Body><username>User</username></soap12:Body>
         |            </soap12:Envelope>
         |          val currentReq = scala.xml.XML.loadString(in)
         |          if(scala.xml.Utility.trim(currentReq) != scala.xml.Utility.trim(expectedReq) ) {
@@ -69,7 +73,7 @@ object Wsdl11Soap12Test extends TestBase {
         |      override def baseAddress: java.net.URI = new java.net.URI("mock")
         |
         |    }.service
-        |    service.createUser("User", "header") match {
+        |    service.createUser("User", "session", 10001) match {
         |      case Right(implicitheader.QuoteResponse(Some("User created"))) => true
         |      case _ => false
         |    }
@@ -98,8 +102,8 @@ object Wsdl11Soap12Test extends TestBase {
         |                             xmlns:xs="http://www.w3.org/2001/XMLSchema"
         |                             xmlns:tns="http://tempuri.org/"
         |                             xmlns="http://tempuri.org/">
-        |              <soap12:Header>header</soap12:Header>
-        |              <soap12:Body>User</soap12:Body>
+        |              <soap12:Header><requestHeader>header</requestHeader></soap12:Header>
+        |              <soap12:Body><username>User</username></soap12:Body>
         |            </soap12:Envelope>
         |          val currentReq = scala.xml.XML.loadString(in)
         |          if(scala.xml.Utility.trim(currentReq) != scala.xml.Utility.trim(expectedReq) ) {

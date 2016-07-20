@@ -19,7 +19,7 @@ object Wsdl11Soap12Test extends TestBase {
     (List("""val service = (new stockquote.StockQuoteSoap12Bindings with scalaxb.SoapClients with scalaxb.DispatchHttpClients {}).service
        val response = service.getQuote(Some("GOOG"))""",
        // The service is flaky. Running several times succeeds.
-       """response.toString.cosntains("<Symbol>GOOG</Symbol>") || response.toString.contains("exception")"""), generated) must evaluateTo(true,
+       """response.toString.contains("<Symbol>GOOG</Symbol>") || response.toString.contains("exception")"""), generated) must evaluateTo(true,
       outdir = "./tmp", usecurrentcp = true)
   }
 
@@ -110,7 +110,7 @@ object Wsdl11Soap12Test extends TestBase {
         |                  <someElement>anotherPart</someElement>
         |                </AnotherPart>
         |              </soap12:Header>
-        |              <soap12:Body>User</soap12:Body>
+        |              <soap12:Body><username>User</username></soap12:Body>
         |            </soap12:Envelope>
         |          val currentReq = scala.xml.XML.loadString(in)
         |          if(scala.xml.Utility.trim(currentReq) != scala.xml.Utility.trim(expectedReq) ) {

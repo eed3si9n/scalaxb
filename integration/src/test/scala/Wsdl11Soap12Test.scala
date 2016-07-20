@@ -44,8 +44,11 @@ object Wsdl11Soap12Test extends TestBase {
         |                             xmlns:xs="http://www.w3.org/2001/XMLSchema"
         |                             xmlns:tns="http://tempuri.org/"
         |                             xmlns="http://tempuri.org/">
-        |              <soap12:Header>header</soap12:Header>
-        |              <soap12:Body>User</soap12:Body>
+        |              <soap12:Header>
+        |                 <sessionId>session</sessionId>
+        |                 <correlationId>10001</correlationId>
+        |              </soap12:Header>
+        |              <soap12:Body><username>User</username></soap12:Body>
         |            </soap12:Envelope>
         |          val currentReq = scala.xml.XML.loadString(in)
         |          if(scala.xml.Utility.trim(currentReq) != scala.xml.Utility.trim(expectedReq) ) {
@@ -69,7 +72,7 @@ object Wsdl11Soap12Test extends TestBase {
         |      override def baseAddress: java.net.URI = new java.net.URI("mock")
         |
         |    }.service
-        |    service.createUser("User", "header") match {
+        |    service.createUser("User", "session", 10001) match {
         |      case Right(implicitheader.QuoteResponse(Some("User created"))) => true
         |      case _ => false
         |    }
@@ -106,7 +109,7 @@ object Wsdl11Soap12Test extends TestBase {
         |                  <someElement>anotherPart</someElement>
         |                </AnotherPart>
         |              </soap12:Header>
-        |              <soap12:Body>User</soap12:Body>
+        |              <soap12:Body><username>User</username></soap12:Body>
         |            </soap12:Envelope>
         |          val currentReq = scala.xml.XML.loadString(in)
         |          if(scala.xml.Utility.trim(currentReq) != scala.xml.Utility.trim(expectedReq) ) {
@@ -159,8 +162,8 @@ object Wsdl11Soap12Test extends TestBase {
         |                             xmlns:xs="http://www.w3.org/2001/XMLSchema"
         |                             xmlns:tns="http://tempuri.org/"
         |                             xmlns="http://tempuri.org/">
-        |              <soap12:Header>header</soap12:Header>
-        |              <soap12:Body>User</soap12:Body>
+        |              <soap12:Header><requestHeader>header</requestHeader></soap12:Header>
+        |              <soap12:Body><username>User</username></soap12:Body>
         |            </soap12:Envelope>
         |          val currentReq = scala.xml.XML.loadString(in)
         |          if(scala.xml.Utility.trim(currentReq) != scala.xml.Utility.trim(expectedReq) ) {

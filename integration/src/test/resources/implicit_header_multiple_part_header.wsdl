@@ -8,13 +8,6 @@
         xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">
     <wsdl:types>
         <s:schema elementFormDefault="qualified" targetNamespace="http://tempuri.org/">
-            <s:element name="QuoteRequest">
-                <s:complexType>
-                    <s:sequence>
-                        <s:element minOccurs="0" maxOccurs="1" name="Username" type="s:string"/>
-                    </s:sequence>
-                </s:complexType>
-            </s:element>
             <s:element name="QuoteResponse">
                 <s:complexType>
                     <s:sequence>
@@ -23,11 +16,25 @@
                 </s:complexType>
             </s:element>
             <s:element name="string" nillable="true" type="s:string"/>
+            <s:element name="Session">
+                <s:complexType>
+                    <s:sequence>
+                        <s:element name="sessionId" type="s:string" />
+                    </s:sequence>
+                </s:complexType>
+            </s:element>
+            <s:element name="AnotherPart">
+                <s:complexType>
+                    <s:sequence>
+                        <s:element name="someElement" type="s:string" />
+                    </s:sequence>
+                </s:complexType>
+            </s:element>
         </s:schema>
     </wsdl:types>
     <wsdl:message name="CreateUserRequestHeader">
-        <wsdl:part name="sessionId" type="s:string"/>
-        <wsdl:part name="correlationId" type="s:int"/>
+        <wsdl:part name="session" element="tns:Session"/>
+        <wsdl:part name="anotherPart" element="tns:AnotherPart"/>
     </wsdl:message>
     <wsdl:message name="CreateUserRequest">
         <wsdl:part name="username" type="s:string"/>
@@ -45,13 +52,13 @@
 
     <wsdl:binding name="UserBinding" type="tns:UserEndPoint">
         <soap12:binding style="document"
-                      transport="http://schemas.xmlsoap.org/soap/http"/>
+                        transport="http://schemas.xmlsoap.org/soap/http"/>
         <wsdl:operation name="CreateUser">
             <soap12:operation soapAction="http://example.com/CreateUser"/>
             <wsdl:input>
                 <soap12:body use="literal"/>
-                <soap12:header use="literal" part="sessionId" message="tns:CreateUserRequestHeader"/>
-                <soap12:header use="literal" part="correlationId" message="tns:CreateUserRequestHeader"/>
+                <soap12:header use="literal" part="session" message="tns:CreateUserRequestHeader"/>
+                <soap12:header use="literal" part="anotherPart" message="tns:CreateUserRequestHeader"/>
             </wsdl:input>
             <wsdl:output>
                 <soap12:body use="literal"/>

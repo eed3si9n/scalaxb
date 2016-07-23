@@ -2,7 +2,7 @@ import Dependencies._
 import Common._
 
 lazy val commonSettings = Seq(
-    version in ThisBuild := "1.4.1-SNAPSHOT",
+    version in ThisBuild := "1.4.1",
     organization in ThisBuild := "org.scalaxb",
     homepage in ThisBuild := Some(url("http://scalaxb.org")),
     licenses in ThisBuild := Seq("MIT License" -> url("https://github.com/eed3si9n/scalaxb/blob/master/LICENSE")),
@@ -13,9 +13,9 @@ lazy val commonSettings = Seq(
   ) ++ sonatypeSettings ++ lsSettings
 
 lazy val root = (project in file(".")).
-  aggregate(app, integration).//, scalaxbPlugin).
+  aggregate(app, integration, scalaxbPlugin).
   settings(
-    scalaVersion := scala210,
+    scalaVersion := scala211,
     publishArtifact := false
   )
 
@@ -25,7 +25,7 @@ lazy val app = (project in file("cli")).
   settings(
     name := "scalaxb",
     crossScalaVersions := Seq(scala211, scala210),
-    scalaVersion := scala210,
+    scalaVersion := scala211,
     resolvers <+= sbtResolver,
     libraryDependencies ++= appDependencies(scalaVersion.value),
     scalacOptions := {
@@ -44,7 +44,7 @@ lazy val integration = (project in file("integration")).
   settings(commonSettings: _*).
   settings(
     crossScalaVersions := Seq(scala211),
-    scalaVersion := scala210,
+    scalaVersion := scala211,
     publishArtifact := false,
     libraryDependencies ++= integrationDependencies(scalaVersion.value)
     // fork in test := true,

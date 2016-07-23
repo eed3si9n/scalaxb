@@ -2,7 +2,7 @@
 # Deploys the application to the $DEPLOY_DIR with a script to run it
 
 DEPLOY_DIR='./install'  # The directory to deploy the ready app to
-ASSEMBLY_DIR='./cli/target/scala-2.10'
+ASSEMBLY_DIR='./cli/target/scala-2.11'
 ASSEMBLY_FILE='scalaxb-app.jar'
 LAUNCH_FILE='scalaxb'
 ROUTINES_DIR='routines'

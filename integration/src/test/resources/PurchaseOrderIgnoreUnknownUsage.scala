@@ -53,7 +53,7 @@ object PurchaseOrderIgnoreUnknownUsage {
       case USAddress("Foo",
         "1537 Paper Street",
         "Wilmington",
-        DE,
+        EnumValue_DE,
         Zipcode) =>
       case _ => sys.error("match failed: " + address.toString)
     }
@@ -401,7 +401,7 @@ object PurchaseOrderIgnoreUnknownUsage {
       case x@Head(Seq(DataRecord(Some("http://www.example.com/IPO"), Some("script"), ""),
         DataRecord(Some("http://www.example.com/IPO"), Some("script"), "")),
         DataRecord(None, None, HeadSequence1("bar", Seq(DataRecord(Some("http://www.example.com/IPO"), Some("script"), "")) )),
-        _) if (x.dir == Some(Ltr)) =>
+        _) if (x.dir == Some(EnumValue_Ltr)) =>
       case _ => sys.error("match failed: " + obj.toString)
     }
     

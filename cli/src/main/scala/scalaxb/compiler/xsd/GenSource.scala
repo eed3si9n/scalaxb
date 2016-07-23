@@ -60,6 +60,9 @@ class GenSource(val schema: SchemaDecl,
         if (containsEnumeration(decl)) snippets += makeEnumType(decl)
       case _ =>
     }
+
+    snippets ++= schema.topElems.toList.map {case (str: String, elem: ElemDecl) =>
+      makeElemToTypeClause(str, elem)}
     
     for ((sch, group) <- context.groups if sch == this.schema)
       snippets += makeGroup(group)
@@ -67,6 +70,11 @@ class GenSource(val schema: SchemaDecl,
       snippets += makeAttributeGroup(group)
     
     Snippet(snippets: _*)
+  }
+
+  def makeElemToTypeClause(str: String, elem: ElemDecl): Snippet = {
+    val src = <source>{indent(4)}{str} -> {elem}</source>
+    Snippet(elemToTypeClauses = Seq(src))
   }
     
   def makeSuperType(decl: ComplexTypeDecl): Snippet = {

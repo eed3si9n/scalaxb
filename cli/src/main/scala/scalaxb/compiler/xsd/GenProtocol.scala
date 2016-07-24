@@ -100,14 +100,10 @@ trait { buildDefaultProtocolName(name) } extends scalaxb.XMLStandardTypes {{
     // println(s"elem: $elem; ns: $ns; key: $key; xsns: $xsns; xstype: $xstype\n")
 
     (key, ns) match {{
-      // case (Some("tbl"), _) => DataRecord(ns, key, xsns, xstype, fromXML[http.simple.main.CT_Table](elem))
+      {snippet.elemToTypeClauses}
       
       case _ => DataRecord(ns, key, xsns, xstype, elem)
     }}
-
-    /*
-{snippet.elemToTypeClauses}
-    */
   }}
 
 {snippet.defaultFormats}

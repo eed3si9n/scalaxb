@@ -72,8 +72,8 @@ class GenSource(val schema: SchemaDecl,
     Snippet(snippets: _*)
   }
 
-  def makeElemToTypeClause(str: String, elem: ElemDecl): Snippet = {
-    val src = <source>{indent(4)}{str} -> {elem}</source>
+  def makeElemToTypeClause(name: String, elem: ElemDecl): Snippet = {
+    val src = <source>{indent(4)}case (Some("{name}"), _) => DataRecord(ns, key, xsns, xstype, fromXML[{buildTypeName(elem.typeSymbol)}](elem))</source>
     Snippet(elemToTypeClauses = Seq(src))
   }
     

@@ -67,6 +67,7 @@ trait ScalaNames {
     | "Long"
     | "Map"
     | "MutableList"
+    | "Nil"
     | "None"
     | "NoSuccess"
     | "NumericRange"

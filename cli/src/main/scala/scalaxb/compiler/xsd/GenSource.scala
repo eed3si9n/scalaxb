@@ -590,7 +590,10 @@ class GenSource(val schema: SchemaDecl,
     val baseType: Option[String      ] = baseSym.map(buildTypeName(_))
 
     def enumName(localName: String, enum: EnumerationDecl[_]) =
-      "EnumValue_" + buildTypeName(localName, enum, true)
+      // Avoid collisions between generated enum value names and built-it Scala types and keywords
+      if (isCommonlyUsedWord(localName) || isSpecialAttributeWord(localName) || isKeyword(localName))
+        "EnumValue_" + buildTypeName(localName, enum, true)
+      else buildTypeName(localName, enum, true)
 
     def makeEnum(enum: EnumerationDecl[_]) =
       "case object " + enumName(localName, enum) + " extends " + localName + 

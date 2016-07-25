@@ -73,7 +73,7 @@ class GenSource(val schema: SchemaDecl,
   }
 
   def makeElemToTypeClause(name: String, elem: ElemDecl): Snippet = {
-    val src = <source>{indent(4)}case (Some("{name}"), _) => DataRecord(ns, key, xsns, xstype, fromXML[{buildTypeName(elem.typeSymbol)}](elem))</source>
+    val src = <source>{indent(3)}case (Some("{name}"), {elem.namespace.map(ns => s"""Some("$ns") | None""").getOrElse("None")}) => DataRecord(ns, key, xsns, xstype, fromXML[{buildTypeName(elem.typeSymbol)}](elem))</source>
     Snippet(elemToTypeClauses = Seq(src))
   }
     

@@ -80,16 +80,11 @@ class Driver extends Module { driver =>
   }
 
   def generateRuntimeFiles[To](cntxt: Context, config: Config)(implicit evTo: CanBeWriter[To]): List[To] = {
-    // Before outputting the file, scan it for placeholders #{placeholder}, replace them
-    // by values from a placeholder collection
-    val pattern = """#\{([\w\d_]+)\}""".r
     val placeholders = Map[String, String](
       "maybeProtocolPackage" -> config.protocolPackageName.map {_ + "."}.getOrElse("")
     )
-    val map: String => String = pattern.replaceAllIn(_, m => placeholders(m.group(1)))
-
     List(
-      generateFromResource[To](Some("scalaxb"), "scalaxb.scala", "/scalaxb.scala.template", map)
+      generateFromResource[To](Some("scalaxb"), "scalaxb.scala", "/scalaxb.scala.template", placeholders)
     ) ++
     (if (config.generateDispatchAs) List(generateFromResource[To](Some("dispatch.as"), "dispatch_as_scalaxb.scala",
         "/dispatch_as_scalaxb.scala.template"))

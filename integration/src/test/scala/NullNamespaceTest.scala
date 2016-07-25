@@ -9,7 +9,7 @@ object NullNamespaceTest extends TestBase {
   lazy val generated = module.process(inFile, config)
 
   "nullnamespace.scala file must compile so that Foo can be used" in {
-    (List("scalaxb.fromXML[Foo](<foo><bar>a</bar><baz>b</baz></foo>).toString"),
+    (List("import scalaxb.protocol._", "scalaxb.fromXML[Foo](<foo><bar>a</bar><baz>b</baz></foo>).toString"),
      generated) must evaluateTo("Foo(a,b)", outdir = "./tmp")
   }
 }

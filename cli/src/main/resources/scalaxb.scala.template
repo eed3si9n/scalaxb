@@ -490,7 +490,7 @@ object DataRecord extends XMLStandardTypes {
 
           case _          => DataRecord(ns, key, XS, xstype, elem)
         }
-      case _ => #{protocolPackageName}.fromAnySchemaType(elem)
+      case _ => _root_.#{protocolPackageName}.fromAnySchemaType(elem)
     }
   }
 

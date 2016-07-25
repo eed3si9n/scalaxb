@@ -356,12 +356,12 @@ trait Module {
      else Nil)
   }
 
-  def generateFromResource[To](packageName: Option[String], fileName: String, resourcePath: String)
+  def generateFromResource[To](packageName: Option[String], fileName: String, resourcePath: String, map: String => String = identity)
                               (implicit evTo: CanBeWriter[To]) = {
     val output = implicitly[CanBeWriter[To]].newInstance(packageName, fileName)
     val out = implicitly[CanBeWriter[To]].toWriter(output)
     try {
-      printFromResource(resourcePath, out)
+      printFromResource(resourcePath, out, map)
     } finally {
       out.flush()
       out.close()
@@ -452,13 +452,13 @@ trait Module {
     for (node <- nodes) { printNode(node) }
   }
 
-  def printFromResource(source: String, out: PrintWriter) {
+  def printFromResource(source: String, out: PrintWriter, map: String => String = identity) {
     val in = getClass.getResourceAsStream(source)
     val reader = new java.io.BufferedReader(new java.io.InputStreamReader(in))
     var line: Option[String] = None
     line = Option[String](reader.readLine)
     while (line != None) {
-      line foreach { out.println }
+      line.map(map) foreach { out.println }
       line = Option[String](reader.readLine)
     }
     in.close

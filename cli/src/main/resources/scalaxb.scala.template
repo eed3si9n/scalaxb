@@ -490,9 +490,7 @@ object DataRecord extends XMLStandardTypes {
 
           case _          => DataRecord(ns, key, XS, xstype, elem)
         }
-      case _ =>
-        val (xsns, xstype) = instanceType(elem)
-        DataRecord(ns, key, xsns, xstype, elem)
+      case _ => #{maybeProtocolPackage}fromAnySchemaType(elem)
     }
   }
 

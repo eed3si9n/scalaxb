@@ -35,7 +35,13 @@ case class Config(items: Map[String, ConfigEntry]) {
   def wrappedComplexTypes   : List[String]        = (get[WrappedComplexTypes] getOrElse defaultWrappedComplexTypes).value
   def outdir                :     File            = (get[Outdir             ] getOrElse defaultOutdir             ).value
   def protocolFileName      : String              = (get[ProtocolFileName   ] getOrElse defaultProtocolFileName   ).value
-  def protocolPackageName   : Option[String]      = (get[ProtocolPackageName] getOrElse defaultProtocolPackageName).value
+
+  // Protocol package can't be empty, since protocol is generated as "object `package`".
+  // The resolution goes as follows:
+  // 1. If ProtocolPackageName is set, use it
+  // 2. Else, if packageNames(None) is set, use it (i.e. use the default package name)
+  // 3. Else, use a reasonable default - `scalaxb.package`
+  def protocolPackageName   : String              =  get[ProtocolPackageName].map(_.value) getOrElse packageNames.get(None).flatMap(identity).getOrElse(defaultProtocolPackageName)
   def defaultNamespace      : Option[String]      = (get[DefaultNamespace   ] getOrElse defaultDefaultNamespace   ).value
   def contentsSizeLimit     : Int                 = (get[ContentsSizeLimit  ] getOrElse defaultContentsSizeLimit  ).value
   def sequenceChunkSize     : Int                 = (get[SequenceChunkSize  ] getOrElse defaultSequenceChunkSize  ).value
@@ -74,7 +80,7 @@ object Config {
   val defaultOutdir              = Outdir(new File("."))
   val defaultWrappedComplexTypes = WrappedComplexTypes(Nil)
   val defaultProtocolFileName    = ProtocolFileName("xmlprotocol.scala")
-  val defaultProtocolPackageName = ProtocolPackageName(None)
+  val defaultProtocolPackageName = "scalaxb.protocol"
   val defaultDefaultNamespace    = DefaultNamespace(None)
   val defaultContentsSizeLimit   = ContentsSizeLimit(Int.MaxValue)
   val defaultSequenceChunkSize   = SequenceChunkSize(10)
@@ -82,7 +88,7 @@ object Config {
 
   val default = Config(
     Vector(defaultPackageNames, defaultOutdir, defaultWrappedComplexTypes,
-      SeperateProtocol, defaultProtocolFileName, defaultProtocolPackageName,
+      SeperateProtocol, defaultProtocolFileName, ProtocolPackageName(defaultProtocolPackageName),
       GenerateRuntime, GenerateDispatchClient,
       defaultContentsSizeLimit, defaultSequenceChunkSize,
       GenerateAsync, defaultDispatchVersion, VarArg)
@@ -102,7 +108,7 @@ object ConfigEntry {
   case class  Outdir             (value:            File    ) extends ConfigEntry
   case class  WrappedComplexTypes(value:       List[String] ) extends ConfigEntry
   case class  ProtocolFileName   (value:            String  ) extends ConfigEntry
-  case class  ProtocolPackageName(value:     Option[String] ) extends ConfigEntry
+  case class  ProtocolPackageName(value:            String  ) extends ConfigEntry
   case class  DefaultNamespace   (value:     Option[String] ) extends ConfigEntry
   case class  ContentsSizeLimit  (value:            Int     ) extends ConfigEntry
   case class  SequenceChunkSize  (value:            Int     ) extends ConfigEntry

@@ -84,10 +84,10 @@ object Arguments {
       opt[ String]("param-prefix"        ) valueName("<prefix>"     ) text("prefixes generated parameter names"                  ) action { (x,c) => c.update(    ParamPrefix(x)) }
       opt[ String]("attribute-prefix"    ) valueName("<prefix>"     ) text("prefixes generated attribute parameters"             ) action { (x,c) => c.update(AttributePrefix(x)) }
       opt[ String]("wrap-contents"       ) valueName("<complexType>") text("wraps inner contents into a seperate case class"     ) action { (x,c) => c.update(WrappedComplexTypes(c.wrappedComplexTypes :+ x)) }
-      opt[ Int   ]("contents-limit"      ) valueName("<size>"       ) text("defines long contents to be segmented (default: max)") action { (x,c) => c.update(ContentsSizeLimit(x)) }
-      opt[ Int   ]("chunk-size"          ) valueName("<size>"       ) text("segments long sequences into chunks (default: 10)"   ) action { (x,c) => c.update(SequenceChunkSize(x)) }
-      opt[ String]("protocol-file"       ) valueName("<name.scala>" ) text("protocol file name (xmlprotocol.scala)"              ) action { (x,c) => c.update(ProtocolFileName (x)) }
-      opt[ String]("protocol-package"    ) valueName("<package>"    ) text("package for protocols"                               ) action { (x,c) => c.update(ProtocolPackageName(Some(x))) }
+      opt[ Int   ]("contents-limit"      ) valueName("<size>"       ) text("defines long contents to be segmented (default: max)") action { (x,c) => c.update(ContentsSizeLimit  (x))}
+      opt[ Int   ]("chunk-size"          ) valueName("<size>"       ) text("segments long sequences into chunks (default: 10)"   ) action { (x,c) => c.update(SequenceChunkSize  (x))}
+      opt[ String]("protocol-file"       ) valueName("<name.scala>" ) text("protocol file name (xmlprotocol.scala)"              ) action { (x,c) => c.update(ProtocolFileName   (x))}
+      opt[ String]("protocol-package"    ) valueName("<package>"    ) text("package for protocols"                               ) action { (x,c) => c.update(ProtocolPackageName(x))}
       opt[ String]("dispatch-version"    ) valueName("<version>"    ) text("version of Dispatch (default: "
                                                                           + scalaxb.BuildInfo.defaultDispatchVersion + ")"       ) action { (x,c) => c.update(DispatchVersion(x)) }
 

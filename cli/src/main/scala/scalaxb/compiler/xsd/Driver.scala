@@ -80,9 +80,7 @@ class Driver extends Module { driver =>
   }
 
   def generateRuntimeFiles[To](cntxt: Context, config: Config)(implicit evTo: CanBeWriter[To]): List[To] = {
-    val placeholders = Map[String, String](
-      "maybeProtocolPackage" -> config.protocolPackageName.map {_ + "."}.getOrElse("")
-    )
+    val placeholders = Map[String, String]("protocolPackageName" -> config.protocolPackageName)
     List(
       generateFromResource[To](Some("scalaxb"), "scalaxb.scala", "/scalaxb.scala.template", placeholders)
     ) ++

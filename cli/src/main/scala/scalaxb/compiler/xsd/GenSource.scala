@@ -43,11 +43,11 @@ class GenSource(val schema: SchemaDecl,
     val snippets = mutable.ListBuffer.empty[Snippet]
     snippets += Snippet(makeSchemaComment, Nil, Nil, Nil)
 
+    // The snippet below is needed when generating with --mutable flag.
     // When setting attributes, they should be wrapped in scalaxb.DataRecord, which
     // is also generated. DataRecord[A] requires a XMLFormat[A] in scope on construction time.
     // The import below imports xmlprotocol with all the implicit XMLFormats in scope.
-    // TBD: WARNING: if --protocol-package is not set, the import will not be generated. To be fixed.
-    for (pkg <- config.protocolPackageName) snippets += Snippet(makeImport(s"$pkg._"))
+    snippets += Snippet(makeImport(s"${config.protocolPackageName}._"))
 
     schema.typeList map {
       case decl: ComplexTypeDecl if !context.duplicatedTypes.contains((schema, decl)) =>

@@ -189,7 +189,7 @@ class Driver extends Module { driver =>
   def generateRuntimeFiles[To](cntxt: Context, config: Config)(implicit evTo: CanBeWriter[To]): List[To] =
     List(
       generateFromResource[To](Some("scalaxb"), "scalaxb.scala",
-        "/scalaxb.scala.template"),
+        "/scalaxb.scala.template", Map[String, String]("maybeProtocolPackage" -> config.protocolPackageName.map {_ + "."}.getOrElse(""))),
       (if (config.async)
         generateFromResource[To](Some("scalaxb"), "httpclients_async.scala",
           "/httpclients_async.scala.template")

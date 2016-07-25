@@ -88,7 +88,7 @@ object Config {
 
   val default = Config(
     Vector(defaultPackageNames, defaultOutdir, defaultWrappedComplexTypes,
-      SeperateProtocol, defaultProtocolFileName, ProtocolPackageName(defaultProtocolPackageName),
+      SeperateProtocol, defaultProtocolFileName,
       GenerateRuntime, GenerateDispatchClient,
       defaultContentsSizeLimit, defaultSequenceChunkSize,
       GenerateAsync, defaultDispatchVersion, VarArg)

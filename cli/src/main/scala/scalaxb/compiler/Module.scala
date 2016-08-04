@@ -362,7 +362,6 @@ trait Module {
       """#\{([\w\d_]+)\}""".r.replaceAllIn(_, m => placeholders.get(m.group(1)).getOrElse(m.matched))
 
     try {
-      // if (fileName == "scalaxb.scala") {println(s"\nMARKER: $packageName $fileName; Thread: ${Thread.currentThread()}"); Thread.dumpStack(); println("\n")}
       printFromResource(resourcePath, out, map)
     } finally {
       out.flush()

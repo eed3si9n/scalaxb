@@ -97,8 +97,6 @@ trait { buildDefaultProtocolName(name) } extends scalaxb.XMLStandardTypes {{
     val key = Some(elem.label)
     val (xsns, xstype) = Helper.instanceType(elem)
 
-    // println(s"elem: $elem; ns: $ns; key: $key; xsns: $xsns; xstype: $xstype\n")
-
     (key, ns) match {{
 {snippet.elemToTypeClauses}
       case _ => DataRecord(ns, key, xsns, xstype, elem)

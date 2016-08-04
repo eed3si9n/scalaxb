@@ -42,6 +42,26 @@ trait CompilerMatcher {
                                    jarPathOfClass("scala.Option"),
                                    jarPathOfClass("scala.xml.Elem"),
                                    jarPathOfClass("scala.util.parsing.combinator.Parsers"))
+
+  // For some reason, there's a `java.net.URLClassLoader` in the
+  // classloader hierarchy only for the first specs2 example in the suite.
+  // This is most probably due to the sequential order of test execution, see
+  // `testOptions in Test += Tests.Argument("sequential")` in `build.sbt`.
+  // We assume that the current classpath doesn't change from example to
+  // example in a single test suite.
+  private lazy val currentcp = {
+    val currentLoader = java.lang.Thread.currentThread.getContextClassLoader
+     currentLoader match {
+      case cl: java.net.URLClassLoader => cl.getURLs.toList map {_.toString}
+      case x =>
+        // sbt 0.13 wraps classloader with ClasspathFilter
+        x.getParent match {
+          case cl: java.net.URLClassLoader => cl.getURLs.toList map {_.toString}
+          case x => sys.error("classloader is not a URLClassLoader: " + x.getClass)
+        }
+    }
+  }
+
   /** evaluteTo matches a pair of code list and files against the expected value
    * after evaluating the files and the given code list.
    * @param expected: Any - expected value
@@ -99,19 +119,7 @@ trait CompilerMatcher {
       deprecation: Boolean, feature: Boolean, fatalWarnings: Boolean): GenericRunnerSettings = {
     import java.io.{PrintWriter, BufferedWriter, BufferedReader, StringReader, OutputStreamWriter}
 
-    val currentcp = if (usecurrentcp) {
-      val currentLoader = java.lang.Thread.currentThread.getContextClassLoader
-       currentLoader match {
-        case cl: java.net.URLClassLoader => cl.getURLs.toList map {_.toString}
-        case x =>
-          // sbt 0.13 wraps classloader with ClasspathFilter
-          x.getParent match {
-            case cl: java.net.URLClassLoader => cl.getURLs.toList map {_.toString}
-            case x => sys.error("classloader is not a URLClassLoader: " + x.getClass)
-          }
-      }
-    } else Nil
-    val classpathList = classpath ++ currentcp
+    val classpathList = classpath ++ (if (usecurrentcp) currentcp else Nil)
     val in = new BufferedReader(new StringReader(""))
     val out = new PrintWriter(new BufferedWriter(
       new OutputStreamWriter(System.out)))

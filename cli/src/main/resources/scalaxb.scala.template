@@ -334,6 +334,15 @@ trait XMLStandardTypes {
       DataRecord.toXML(obj, namespace, elementLabel, scope, typeAttribute)
   }
 
+  lazy val __DataRecordAnyDontResolveUnknownXMLFormat: XMLFormat[DataRecord[Any]] = new XMLFormat[DataRecord[Any]] {
+    def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, DataRecord[Any]] = try {
+      Right(DataRecord.fromAnyDontResolveUnknown(seq)) } catch { case e: Exception => Left(e.toString) }
+
+    def writes(obj: DataRecord[Any], namespace: Option[String], elementLabel: Option[String],
+        scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
+      DataRecord.toXML(obj, namespace, elementLabel, scope, typeAttribute)
+  }
+
   implicit lazy val __DataRecordOptionAnyXMLFormat: XMLFormat[DataRecord[Option[Any]]] =
     new XMLFormat[DataRecord[Option[Any]]] {
       def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, DataRecord[Option[Any]]] = try {
@@ -429,14 +438,29 @@ object DataRecord extends XMLStandardTypes {
   // this is for any.
   def apply(elemName: ElemName): DataRecord[Any] = fromAny(elemName.node)
 
-  def fromAny(seq: NodeSeq): DataRecord[Any] = {
-    seq match {
-      case elem: Elem => fromAny(elem)
-      case _ => DataRecord(None, None, None, None, seq.text)
-    }
+  def fromAny(seq: NodeSeq): DataRecord[Any] = seq match {
+    case elem: Elem => fromAny(elem)
+    case _ => DataRecord(None, None, None, None, seq.text)
   }
 
-  def fromAny(elem: Elem): DataRecord[Any] = {
+  /** Will try to resolve unknown elements to schema-specific classes based on their label names. */
+  def fromAny(elem: Elem): DataRecord[Any]  = fromAnyBase(elem, _root_.#{protocolPackageName}.fromAnySchemaType)
+  
+  /** Don't try to resolve to schema-specific classes, resolve only standard types. */
+  def fromAnyDontResolveUnknown(seq: NodeSeq): DataRecord[Any] = seq match {
+    case elem: Elem => fromAnyDontResolveUnknown(elem)
+    case _ => DataRecord(None, None, None, None, seq.text)
+  }
+
+  /** Don't try to resolve to schema-specific classes, resolve only standard types. */
+  def fromAnyDontResolveUnknown(elem: Elem): DataRecord[Any] = fromAnyBase(elem, {e =>
+    val ns = scalaxb.Helper.nullOrEmpty(e.scope.getURI(e.prefix))
+    val key = Some(e.label)
+    val (xsns, xstype) = instanceType(e)
+    DataRecord(ns, key, xsns, xstype, e)
+  })
+
+  def fromAnyBase(elem: Elem, handleUnknown: Elem => DataRecord[Any]): DataRecord[Any] = {
     val ns = scalaxb.Helper.nullOrEmpty(elem.scope.getURI(elem.prefix))
     val key = Some(elem.label)
     val XS = Some(XML_SCHEMA_URI)
@@ -490,7 +514,7 @@ object DataRecord extends XMLStandardTypes {
 
           case _          => DataRecord(ns, key, XS, xstype, elem)
         }
-      case _ => _root_.#{protocolPackageName}.fromAnySchemaType(elem)
+      case _ => handleUnknown(elem)
     }
   }
 

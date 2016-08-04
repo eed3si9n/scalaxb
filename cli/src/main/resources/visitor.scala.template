@@ -1,0 +1,103 @@
+package scalaxb
+
+import scala.reflect.Manifest
+
+/**
+ * Visitor utility for ScalaXB structures.
+ *
+ * Apparently these structures are not always simply trees;
+ * they may contain cycles, against which this visitor has protection
+ * by maintaining a `visited` collection.
+ *
+ *
+ * These cycles were found after processing MS Office Open XML schemata
+ * ECMA-376 4th edition Part 4
+ * http://www.ecma-international.org/publications/standards/Ecma-376.htm
+ */
+
+trait VisitorTrait {
+  import Visitor._
+
+  val tree: Any
+  
+  var parents       : List[Any]        = Nil
+  var visited       : Set [Any]        = Set()
+  var doSkipChildren: Boolean          = false
+
+  /**
+   * Runs `f` on each node of the `tree`.
+   */
+  def visit(f: PartialFunction[Any, Unit]): Unit = {
+    parents        = Nil
+    visited        = Set()
+    doSkipChildren = false
+
+    visitBody(tree, f)
+  }
+
+  /**
+   * This method brings `visitor` object into scope, in case
+   * you need access to the visitor variables like `parents` from
+   * the visiting function. Allows for the following syntax:
+   *
+   * Visitor(tree) {visitor => 
+   *   {case _ => println(visitor.parents)}
+   * }
+   *
+   * instead of:
+   *
+   * val visitor = Visitor(tree)
+   * visitor {case _ => println(visitor.parents)}
+   *
+   * i.e. allows you to define the `visitor` variable and call the visitor
+   * function at the same time.
+   */
+  def apply(fGenerator: VisitorTrait => PartialFunction[Any, Unit]): Unit =
+    visit(fGenerator(this))
+
+  /**
+   * Finds all the nodes matching a given `predicate` and
+   * returns them in a Seq in order of encounter.
+   */
+  def collect(predicate: Any => Boolean): Seq[Any] = {
+    var collected: List[Any] = Nil
+    visit {case x if predicate(x) => collected :+= x}
+    collected
+  }
+
+  /**
+   * Collects all the nodes of a given class.
+   */
+  def collect[T]: Seq[T] =
+    collect(implicitly[Manifest[T]].runtimeClass.isInstance(_)).asInstanceOf[Seq[T]]
+
+
+  /**
+   * Don't traverse the children of the given node.
+   */
+  def skipChildren: Unit = doSkipChildren = true
+
+
+  protected def visitBody(node: Any, f: PartialFunction[Any, Unit]): Unit = {
+    visited += node
+    doSkipChildren = false
+    if (f isDefinedAt node) f(node)
+
+    if (!doSkipChildren) {
+      parents ::= node
+      children(node).filter(!visited(_)).foreach(visitBody(_, f))
+      parents = parents.tail
+    }
+  }
+
+  /** Extracts the children of the given node. */
+  def children(node: Any): Seq[Any] = node match {
+    case x: Option[_]     => x.map(Seq(_)).getOrElse(Nil)
+    case x: Seq[_]        => x
+    case x: DataRecord[_] => Seq(x.value)
+    case x: Product       => x.productIterator.toSeq
+    case _ => Nil
+  }
+}
+
+case class Visitor(tree: Any) extends MSVisitor

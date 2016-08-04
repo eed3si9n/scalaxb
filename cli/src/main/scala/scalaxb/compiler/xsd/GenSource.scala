@@ -599,11 +599,15 @@ class GenSource(val schema: SchemaDecl,
       "case object " + enumName(localName, enum) + " extends " + localName + 
       " { override def toString = " + quote(enum.value.toString) + " }"
     
-    def makeCaseEntry(enum: EnumerationDecl[_]) = baseType.map {tpe =>
-      s"${indent(2)}case x: $tpe if x == scalaxb.fromXML[$tpe](scala.xml.Text(${quote(enum.value.toString)})) => ${enumName(localName, enum)}\n"
-    }.getOrElse {
-      s"${indent(2)}case ${quote(enum.value.toString)} => ${enumName(localName, enum)}\n" 
+    def makeCaseEntry(enum: EnumerationDecl[_]) = baseSym match {
+      case Some(XsQName) => s"${indent(2)}case ${quote(enum.value.toString)} => ${enumName(localName, enum)}\n"
+      case _ => baseType.map {tpe =>
+        s"${indent(2)}case x: $tpe if x == scalaxb.fromXML[$tpe](scala.xml.Text(${quote(enum.value.toString)})) => ${enumName(localName, enum)}\n"
+      }.getOrElse {
+        s"${indent(2)}case ${quote(enum.value.toString)} => ${enumName(localName, enum)}\n" 
+      }
     }
+
     
     val enumString = enums.map(makeEnum).mkString(newline)
 

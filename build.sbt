@@ -49,8 +49,8 @@ lazy val integration = (project in file("integration")).
     libraryDependencies ++= integrationDependencies(scalaVersion.value)
     // fork in test := true,
     // javaOptions in test ++= Seq("-Xmx2G", "-XX:MaxPermSize=512M")
-  // , parallelExecution in Test := false
-  // , testOptions in Test += Tests.Argument("sequential")  
+  , parallelExecution in Test := false
+  , testOptions in Test += Tests.Argument("sequential")  
   ).
   dependsOn(app)
 

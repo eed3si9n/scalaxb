@@ -355,13 +355,14 @@ trait Module {
                               (implicit evTo: CanBeWriter[To]) = {
     val output = implicitly[CanBeWriter[To]].newInstance(packageName, fileName)
     val out = implicitly[CanBeWriter[To]].toWriter(output)
-    
+
     // Placeholder replacement mechanics: find placeholders of the #{name}
     // form, resolve the names in the map and replace them.
     val map: String => String =
       """#\{([\w\d_]+)\}""".r.replaceAllIn(_, m => placeholders.get(m.group(1)).getOrElse(m.matched))
 
     try {
+      // if (fileName == "scalaxb.scala") {println(s"\nMARKER: $packageName $fileName; Thread: ${Thread.currentThread()}"); Thread.dumpStack(); println("\n")}
       printFromResource(resourcePath, out, map)
     } finally {
       out.flush()

@@ -11,4 +11,8 @@ trait TestBase extends Specification with CompilerMatcher with matcher.FileMatch
 
   if (tmp.exists) deleteAll(tmp)
   tmp.mkdirs() // you need this for copyFileFromResource
+
+  /** Compile the `generated` files, execute `replLines` in the REPL, check whether the result is `expectedResult`.*/
+  def repl(generated: Seq[File])(replLines: String, expectedResult: String) =
+    (Seq(replLines), generated) must evaluateTo(expectedResult, "./tmp")
 }

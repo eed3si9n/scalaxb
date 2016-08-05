@@ -68,8 +68,8 @@ trait VisitorTrait {
   /**
    * Collects all the nodes of a given class.
    */
-  def collect[T]: Seq[T] =
-    collect(implicitly[Manifest[T]].runtimeClass.isInstance(_)).asInstanceOf[Seq[T]]
+  def collect[T](implicit m: Manifest[T]): Seq[T] =
+    collect(m.runtimeClass.isInstance(_)).asInstanceOf[Seq[T]]
 
 
   /**
@@ -100,4 +100,4 @@ trait VisitorTrait {
   }
 }
 
-case class Visitor(tree: Any) extends MSVisitor
+case class Visitor(tree: Any) extends VisitorTrait

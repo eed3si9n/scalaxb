@@ -365,7 +365,7 @@ class GenSource(val schema: SchemaDecl,
           case SimpContRestrictionDecl(base: XsTypeSymbol, _, _, _) => simpleContentString(base)
           case SimpContExtensionDecl(base: XsTypeSymbol, _)         => simpleContentString(base)
           case _ =>
-            if (childElemParams.isEmpty) "List()" //"Nil"
+            if (childElemParams.isEmpty) "Nil"
             else if (childElemParams.size == 1) "(" + buildXMLString(childElemParams(0)) + ")"
             else childElemParams.map(x =>
               buildXMLString(x)).mkString("Seq.concat(", "," + newline + indent(4), ")")
@@ -480,7 +480,7 @@ class GenSource(val schema: SchemaDecl,
     def makeWritesXML = <source>    def writes(__obj: {fqn}, __namespace: Option[String], __elementLabel: Option[String], 
         __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
       {childString}</source>
-    def childString = if (paramList.isEmpty)  "List()" //"Nil"
+    def childString = if (paramList.isEmpty)  "Nil"
       else if (paramList.size == 1) buildXMLString(paramList(0))
       else paramList.map(x => 
         buildXMLString(x)).mkString("Seq.concat(", "," + newline + indent(4), ")")
@@ -803,12 +803,12 @@ object {localName} {{
       case CompContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
         flattenElements(base)        
       case res@CompContRestrictionDecl(XsAnyType, _, _) =>
-        res.compositor map { flattenElements(decl.namespace, decl.family, _, index, true) } getOrElse { List() }
+        res.compositor map { flattenElements(decl.namespace, decl.family, _, index, true) } getOrElse { Nil }
       case ext@CompContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
         flattenElements(base) :::
-          (ext.compositor map { flattenElements(decl.namespace, decl.family, _, index, true) } getOrElse { List() })
+          (ext.compositor map { flattenElements(decl.namespace, decl.family, _, index, true) } getOrElse { Nil })
       case ext@CompContExtensionDecl(XsAnyType, _, _) =>
-        ext.compositor map { flattenElements(decl.namespace, decl.family, _, index, true) } getOrElse { List() }
+        ext.compositor map { flattenElements(decl.namespace, decl.family, _, index, true) } getOrElse { Nil }
       case _ => Nil
     }
     
@@ -829,12 +829,12 @@ object {localName} {{
     // complex content means 1. has child elements 2. has attributes
     case CompContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) => splitSequences(base)        
     case res@CompContRestrictionDecl(XsAnyType, _, _) =>
-      res.compositor map { splitSequences(decl.namespace, decl.family, _) } getOrElse { List() }
+      res.compositor map { splitSequences(decl.namespace, decl.family, _) } getOrElse { Nil }
     case ext@CompContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) =>
       splitSequences(base) :::
-        (ext.compositor map { splitSequences(decl.namespace, decl.family, _) } getOrElse { List() })
+        (ext.compositor map { splitSequences(decl.namespace, decl.family, _) } getOrElse { Nil })
     case ext@CompContExtensionDecl(XsAnyType, _, _) =>
-      ext.compositor map { splitSequences(decl.namespace, decl.family, _) } getOrElse { List() }
+      ext.compositor map { splitSequences(decl.namespace, decl.family, _) } getOrElse { Nil }
     case _ => Nil
   }
   

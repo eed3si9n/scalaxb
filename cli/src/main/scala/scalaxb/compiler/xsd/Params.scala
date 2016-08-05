@@ -91,17 +91,7 @@ trait Params extends Lookup {
       toTraitScalaCode(doMutable) + (cardinality match {
         case Single if typeSymbol == XsLongAttribute => " = Map()"
         case Optional => " = None"
-
-// Bug in Scalac 2.10 ?
-
-// shared-documentPropertiesVariantTypes.scala:117: error: type mismatch;
-// found   : Nil.type
-// required: Seq[scalaxb.DataRecord[Any]]
-//case class CT_Array(var ct_arrayoption: Seq[scalaxb.DataRecord[Any]] = Nil,
-
-// Workaround: "List()" instead of "Nil"
-
-        case Multiple =>  if (config.generateMutable) " = List()" else " = Nil"
+        case Multiple => " = Nil"
         case Single if nillable => " = None"
         case _ => ""
       })

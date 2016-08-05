@@ -310,7 +310,7 @@ trait Args extends Params {
         if (isCompositor(particle)) selector + ".flatten"
         else selector
       case Optional =>
-        if (isCompositor(particle)) selector + " getOrElse {List()}"
+        if (isCompositor(particle)) selector + " getOrElse {Nil}"
         else selector + ".toList"
       case Single =>
         if (isCompositor(particle)) selector

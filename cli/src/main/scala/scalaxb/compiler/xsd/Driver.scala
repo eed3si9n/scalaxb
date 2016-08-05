@@ -83,6 +83,7 @@ class Driver extends Module { driver =>
     val placeholders = Map[String, String]("protocolPackageName" -> config.protocolPackageName)
     List(
       generateFromResource[To](Some("scalaxb"), "scalaxb.scala", "/scalaxb.scala.template", placeholders)
+    , generateFromResource[To](Some("scalaxb"), "Visitor.scala", "/Visitor.scala.template")
     ) ++
     (if (config.generateDispatchAs) List(generateFromResource[To](Some("dispatch.as"), "dispatch_as_scalaxb.scala",
         "/dispatch_as_scalaxb.scala.template"))

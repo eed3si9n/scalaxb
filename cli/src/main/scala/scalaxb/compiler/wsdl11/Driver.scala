@@ -190,6 +190,7 @@ class Driver extends Module { driver =>
     List(
       generateFromResource[To](Some("scalaxb"), "scalaxb.scala",
         "/scalaxb.scala.template", Map[String, String]("protocolPackageName" -> config.protocolPackageName)),
+      generateFromResource[To](Some("scalaxb"), "Visitor.scala", "/Visitor.scala.template"),
       (if (config.async)
         generateFromResource[To](Some("scalaxb"), "httpclients_async.scala",
           "/httpclients_async.scala.template")

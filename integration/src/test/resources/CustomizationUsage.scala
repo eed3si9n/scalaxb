@@ -38,7 +38,7 @@ object CustomizationUsage {
   }
   
   trait CustomXMLProtocol extends XMLProtocol {
-    trait CustomGeneralSingularSimpleTypeTestFormat extends DefaultGeneralSingularSimpleTypeTestFormat {
+    trait CustomGeneralSingularSimpleTypeTestFormat extends DefaultGeneral_SingularSimpleTypeTestFormat {
       override def typeName: Option[String] = Some("SingularSimpleTypeTest")
       
       // hardcode to SKIM.

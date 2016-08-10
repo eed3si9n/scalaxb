@@ -567,6 +567,9 @@ abstract class GenSource(val schema: SchemaDecl,
     val formatterName = buildFormatterName(decl.namespace, localName)
     val enums = filterEnumeration(decl).distinct
 
+    val baseSym : Option[XsTypeSymbol] = decl.content match {case SimpTypRestrictionDecl(base, _) => Some(base) case _ => None}
+    val baseType: Option[String      ] = baseSym.map(buildTypeName(_))
+
     def enumName(localName: String, enum: EnumerationDecl[_]) =
       // Avoid collisions between generated enum value names and built-it Scala types and keywords
       if (isCommonlyUsedWord(localName) || isSpecialAttributeWord(localName) || isKeyword(localName))
@@ -577,19 +580,23 @@ abstract class GenSource(val schema: SchemaDecl,
       "case object " + enumName(localName, enum) + " extends " + localName + 
       " { override def toString = " + quote(enum.value.toString) + " }"
     
-    def makeCaseEntry(enum: EnumerationDecl[_]) =
-      indent(2) + "case " + quote(enum.value.toString) + " => " + buildTypeName(localName, enum, true) + newline
+    def makeCaseEntry(enum: EnumerationDecl[_]) = baseSym match {
+      case Some(XsQName) => s"${indent(2)}case ${quote(enum.value.toString)} => ${enumName(localName, enum)}\n"
+      case _ => baseType.map {tpe =>
+        s"${indent(2)}case x: $tpe if x == scalaxb.fromXML[$tpe](scala.xml.Text(${quote(enum.value.toString)})) => ${enumName(localName, enum)}\n"
+      }.getOrElse {
+        s"${indent(2)}case ${quote(enum.value.toString)} => ${enumName(localName, enum)}\n" 
+      }
+    }
+
     
     val enumString = enums.map(makeEnum).mkString(newline)
-    def valueCode: String =
-      (decl.content match {
-        case SimpTypRestrictionDecl(base, _) => Some(base)
-        case _ => None
-      }) match {
+
+    def valueCode: String = baseSym match {
         case Some(XsQName) => """({ val (ns, localPart) = scalaxb.Helper.splitQName(value, scope)
     new javax.xml.namespace.QName(ns.orNull, localPart).toString })"""
-        case _ => "value"
-      }
+        case _ => baseType.map(tpe => s"scalaxb.fromXML[$tpe](scala.xml.Text(value))").getOrElse("value")
+    }
 
     val traitCode = enums match {
       case Nil =>

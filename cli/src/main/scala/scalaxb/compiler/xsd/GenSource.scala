@@ -43,6 +43,10 @@ abstract class GenSource(val schema: SchemaDecl,
     val snippets = mutable.ListBuffer.empty[Snippet]
     snippets += Snippet(makeSchemaComment, Nil, Nil, Nil)
 
+    // Needed to be able to use `fromXml` from enum's `fromString`
+    // methods. 
+    snippets += Snippet(makeImport(s"${config.protocolPackageName}._"))
+
     schema.typeList map {
       case decl: ComplexTypeDecl if !context.duplicatedTypes.contains((schema, decl)) =>
         if (context.baseToSubs.contains(decl)) {
@@ -1004,6 +1008,8 @@ object {localName} {{
 
   def makeSchemaComment = <source>{makeAnnotation(schema.annotation)}</source>
   
+  def makeImport(what: String) = <source>{s"import $what"}</source>
+
   def makeAnnotation(anno: Option[AnnotationDecl]) = anno match {
     case Some(annotation) =>
       newline + "/** " +

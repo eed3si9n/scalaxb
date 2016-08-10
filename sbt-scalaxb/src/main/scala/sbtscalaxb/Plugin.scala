@@ -30,7 +30,7 @@ object Plugin extends sbt.Plugin {
     lazy val packageDir       = SettingKey[Boolean]("scalaxb-package-dir")
     lazy val generateRuntime  = SettingKey[Boolean]("scalaxb-generate-runtime")
     lazy val protocolFileName = SettingKey[String]("scalaxb-protocol-file-name")
-    lazy val protocolPackageName  = SettingKey[Option[String]]("scalaxb-protocol-package-name")
+    lazy val protocolPackageName  = SettingKey[String]("scalaxb-protocol-package-name")
     lazy val laxAny           = SettingKey[Boolean]("scalaxb-lax-any")
     lazy val combinedPackageNames = SettingKey[Map[Option[String], Option[String]]]("scalaxb-combined-package-names")
     lazy val generateDispatchClient = SettingKey[Boolean]("scalaxb-generate-dispatch-client")
@@ -124,7 +124,7 @@ object Plugin extends sbt.Plugin {
     generateDispatchClient  := true,
     generateDispatchAs      := false,
     protocolFileName        := sc.Defaults.protocolFileName,
-    protocolPackageName     := None,
+    protocolPackageName     := "scalaxb.protocol",
     laxAny                  := false,
     dispatchVersion         := ScConfig.defaultDispatchVersion.value,
     async in scalaxb        := true,

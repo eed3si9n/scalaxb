@@ -324,17 +324,12 @@ trait Module {
     }
 
     def processProtocol = {
-      val pkg = config.protocolPackageName match {
-        case Some(_) => config.protocolPackageName
-        case _ => packageName(cs.firstNamespace, cs.context)
-      }
-      val output = implicitly[CanBeWriter[To]].newInstance(pkg, config.protocolFileName)
+      val output = implicitly[CanBeWriter[To]].newInstance(Some(config.protocolPackageName), config.protocolFileName)
       val out = implicitly[CanBeWriter[To]].toWriter(output)
-      val config2 = config.update(ProtocolPackageName(pkg)).
-        update(DefaultNamespace(config.defaultNamespace match {
-          case Some(_) => config.defaultNamespace
-          case _ => cs.firstNamespace
-        }))
+      val config2 = config.update(DefaultNamespace(config.defaultNamespace match {
+        case Some(_) => config.defaultNamespace
+        case _       => cs    .firstNamespace
+      }))
       val protocolNodes = generateProtocol(Snippet(snippets: _*), cs.context, config2)
       try {
         printNodes(protocolNodes, out)

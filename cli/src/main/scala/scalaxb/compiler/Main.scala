@@ -103,8 +103,7 @@ object Arguments {
         c.update(GeneratePackageDir) }
       opt[String]("protocol-file") valueName("<name.scala>") text("protocol file name (xmlprotocol.scala)") action { (x, c) =>
         c.update(ProtocolFileName(x)) }
-      opt[String]("protocol-package") valueName("<package>") text("package for protocols") action { (x, c) =>
-        c.update(ProtocolPackageName(Some(x))) }
+      opt[ String]("protocol-package") valueName("<package>") text("package for protocols") action { (x,c) => c.update(ProtocolPackageName(x)) }
       opt[Unit]("no-runtime") text("skips runtime files") action { (_, c) =>
         c.remove(GenerateRuntime) }
       opt[Unit]("no-dispatch-client") text("disables generation of Dispatch client") action { (_, c) =>

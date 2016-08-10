@@ -566,7 +566,13 @@ abstract class GenSource(val schema: SchemaDecl,
     val fqn = buildTypeName(decl, false)
     val formatterName = buildFormatterName(decl.namespace, localName)
     val enums = filterEnumeration(decl).distinct
-    
+
+    def enumName(localName: String, enum: EnumerationDecl[_]) =
+      // Avoid collisions between generated enum value names and built-it Scala types and keywords
+      if (isCommonlyUsedWord(localName) || isSpecialAttributeWord(localName) || isKeyword(localName))
+        "EnumValue_" + buildTypeName(localName, enum, true)
+      else buildTypeName(localName, enum, true)
+
     def makeEnum(enum: EnumerationDecl[_]) =
       "case object " + buildTypeName(localName, enum, true) + " extends " + localName + 
       " { override def toString = " + quote(enum.value.toString) + " }"

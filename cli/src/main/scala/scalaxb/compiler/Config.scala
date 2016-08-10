@@ -29,71 +29,66 @@ import scala.collection.immutable.{ Map, Set, Seq }
 case class Config(items: Map[String, ConfigEntry]) {
   import Config._
   import ConfigEntry._
-  def values: Vector[ConfigEntry] = items.values.toVector
-  def packageNames: Map[Option[String], Option[String]] =
-    (get[PackageNames] getOrElse defaultPackageNames).value
-  def classPrefix: Option[String] =
-    get[ClassPrefix] map {_.value}
-  def classPostfix: Option[String] =
-    get[ClassPostfix] map {_.value}
-  def paramPrefix: Option[String] =
-    get[ParamPrefix] map {_.value}
-  def attributePrefix: Option[String] =
-    get[AttributePrefix] map {_.value}
-  def outdir: File =
-    (get[Outdir] getOrElse defaultOutdir).value
-  def packageDir: Boolean = values contains GeneratePackageDir
-  def wrappedComplexTypes: List[String] =
-    (get[WrappedComplexTypes] getOrElse defaultWrappedComplexTypes).value
-  def prependFamilyName: Boolean = values contains PrependFamilyName
-  def seperateProtocol: Boolean = values contains SeperateProtocol
-  def protocolFileName: String =
-    (get[ProtocolFileName] getOrElse defaultProtocolFileName).value
-  def protocolPackageName: Option[String] =
-    (get[ProtocolPackageName] getOrElse defaultProtocolPackageName).value
-  def defaultNamespace: Option[String] =
-    (get[DefaultNamespace] getOrElse defaultDefaultNamespace).value
-  def generateRuntime: Boolean = values contains GenerateRuntime
-  def generateDispatchClient: Boolean = values contains GenerateDispatchClient
-  def generateDispatchAs: Boolean = values contains GenerateDispatchAs
-  def contentsSizeLimit: Int =
-    (get[ContentsSizeLimit] getOrElse defaultContentsSizeLimit).value
-  def sequenceChunkSize: Int =
-    (get[SequenceChunkSize] getOrElse defaultSequenceChunkSize).value
-  def namedAttributes: Boolean = values contains NamedAttributes
-  def laxAny: Boolean = values contains LaxAny
-  def async: Boolean = values contains GenerateAsync
-  def dispatchVersion: String =
-    (get[DispatchVersion] getOrElse defaultDispatchVersion).value
-  def varArg: Boolean = values contains VarArg
-  def ignoreUnknown: Boolean = values contains IgnoreUnknown
+  def values                : Vector[ConfigEntry] = items.values.toVector
+  def    packageNames       : Map[Option[String],
+                                  Option[String]] = (get[PackageNames       ] getOrElse defaultPackageNames       ).value
+  def wrappedComplexTypes   : List[String]        = (get[WrappedComplexTypes] getOrElse defaultWrappedComplexTypes).value
+  def outdir                :     File            = (get[Outdir             ] getOrElse defaultOutdir             ).value
+  def protocolFileName      : String              = (get[ProtocolFileName   ] getOrElse defaultProtocolFileName   ).value
 
-  private def get[A <: ConfigEntry: Manifest]: Option[A] =
-    items.get(implicitly[Manifest[A]].runtimeClass.getName).asInstanceOf[Option[A]]
-  def update(item: ConfigEntry): Config =
-    copy(items = items.updated(item.name, item))
-  def remove(item: ConfigEntry): Config =
-    copy(items = items - item.name)
+  // Protocol package can't be empty, since protocol is generated as "object `package`".
+  // The resolution goes as follows:
+  // 1. If ProtocolPackageName is set, use it
+  // 2. Else, if packageNames(None) is set, use it (i.e. use the default package name)
+  // 3. Else, use a reasonable default - `scalaxb.package`
+  def protocolPackageName   : String              =  get[ProtocolPackageName].map(_.value) getOrElse packageNames.get(None).flatMap(identity).getOrElse(defaultProtocolPackageName)
+  def defaultNamespace      : Option[String]      = (get[DefaultNamespace   ] getOrElse defaultDefaultNamespace   ).value
+  def contentsSizeLimit     : Int                 = (get[ContentsSizeLimit  ] getOrElse defaultContentsSizeLimit  ).value
+  def sequenceChunkSize     : Int                 = (get[SequenceChunkSize  ] getOrElse defaultSequenceChunkSize  ).value
+  def dispatchVersion       : String              = (get[DispatchVersion    ] getOrElse defaultDispatchVersion    ).value
+
+  def    classPrefix        : Option[String]      =  get[   ClassPrefix ] map {_.value}
+  def    classPostfix       : Option[String]      =  get[   ClassPostfix] map {_.value}
+  def     paramPrefix       : Option[String]      =  get[   ParamPrefix ] map {_.value}
+  def attributePrefix       : Option[String]      =  get[AttributePrefix] map {_.value}
+
+  def packageDir            : Boolean             = values contains GeneratePackageDir
+  def prependFamilyName     : Boolean             = values contains PrependFamilyName
+  def seperateProtocol      : Boolean             = values contains SeperateProtocol
+  def generateRuntime       : Boolean             = values contains GenerateRuntime
+  def generateDispatchClient: Boolean             = values contains GenerateDispatchClient
+  def generateDispatchAs    : Boolean             = values contains GenerateDispatchAs
+  def generateMutable       : Boolean             = values contains GenerateMutable
+  def namedAttributes       : Boolean             = values contains NamedAttributes
+  def laxAny                : Boolean             = values contains LaxAny
+  def async                 : Boolean             = values contains GenerateAsync
+  def varArg                : Boolean             = values contains VarArg
+  def ignoreUnknown         : Boolean             = values contains IgnoreUnknown
+  def autoPackages          : Boolean             = values contains AutoPackages
+
+
+  private def get[A <: ConfigEntry: Manifest]: Option[A] = items.get(implicitly[Manifest[A]].runtimeClass.getName).asInstanceOf[Option[A]]
+  def update(item: ConfigEntry): Config = copy(items = items.updated(item.name, item))
+  def remove(item: ConfigEntry): Config = copy(items = items - item.name)
 }
 
 object Config {
   import ConfigEntry._
 
-  def apply(xs: Vector[ConfigEntry]): Config =
-    xs.foldLeft(new Config(Map())) { (acc, x) => acc.update(x) }
-  val defaultPackageNames = PackageNames(Map(None -> None))
-  val defaultOutdir = Outdir(new File("."))
+  def apply(xs: Vector[ConfigEntry]): Config = xs.foldLeft(new Config(Map())) { (acc, x) => acc.update(x) }
+  val defaultPackageNames        = PackageNames(Map(None -> None))
+  val defaultOutdir              = Outdir(new File("."))
   val defaultWrappedComplexTypes = WrappedComplexTypes(Nil)
-  val defaultProtocolFileName = ProtocolFileName("xmlprotocol.scala")
-  val defaultProtocolPackageName = ProtocolPackageName(None)
-  val defaultDefaultNamespace = DefaultNamespace(None)
-  val defaultContentsSizeLimit = ContentsSizeLimit(Int.MaxValue)
-  val defaultSequenceChunkSize = SequenceChunkSize(10)
-  val defaultDispatchVersion = DispatchVersion(scalaxb.BuildInfo.defaultDispatchVersion)
+  val defaultProtocolFileName    = ProtocolFileName("xmlprotocol.scala")
+  val defaultProtocolPackageName = "scalaxb.protocol"
+  val defaultDefaultNamespace    = DefaultNamespace(None)
+  val defaultContentsSizeLimit   = ContentsSizeLimit(Int.MaxValue)
+  val defaultSequenceChunkSize   = SequenceChunkSize(10)
+  val defaultDispatchVersion     = DispatchVersion(scalaxb.BuildInfo.defaultDispatchVersion)
 
   val default = Config(
     Vector(defaultPackageNames, defaultOutdir, defaultWrappedComplexTypes,
-      SeperateProtocol, defaultProtocolFileName, defaultProtocolPackageName,
+      SeperateProtocol, defaultProtocolFileName,
       GenerateRuntime, GenerateDispatchClient,
       defaultContentsSizeLimit, defaultSequenceChunkSize,
       GenerateAsync, defaultDispatchVersion, VarArg)
@@ -104,28 +99,31 @@ sealed trait ConfigEntry {
   def name: String = getClass.getName
 }
 object ConfigEntry {
-  case class PackageNames(value: Map[Option[String], Option[String]]) extends ConfigEntry
-  case class ClassPrefix(value: String) extends ConfigEntry
-  case class ClassPostfix(value: String) extends ConfigEntry
-  case class ParamPrefix(value: String) extends ConfigEntry
-  case class AttributePrefix(value: String) extends ConfigEntry
-  case class Outdir(value: File) extends ConfigEntry
-  case object GeneratePackageDir extends ConfigEntry
-  case class WrappedComplexTypes(value: List[String]) extends ConfigEntry
-  case object PrependFamilyName extends ConfigEntry
-  case object SeperateProtocol extends ConfigEntry
-  case class ProtocolFileName(value: String) extends ConfigEntry
-  case class ProtocolPackageName(value: Option[String]) extends ConfigEntry
-  case class DefaultNamespace(value: Option[String]) extends ConfigEntry
-  case object GenerateRuntime extends ConfigEntry
-  case object GenerateDispatchClient extends ConfigEntry
-  case object GenerateDispatchAs extends ConfigEntry
-  case class ContentsSizeLimit(value: Int) extends ConfigEntry
-  case class SequenceChunkSize(value: Int) extends ConfigEntry
-  case object NamedAttributes extends ConfigEntry
-  case object LaxAny extends ConfigEntry
-  case object GenerateAsync extends ConfigEntry
-  case class DispatchVersion(value: String) extends ConfigEntry
-  case object VarArg extends ConfigEntry
-  case object IgnoreUnknown extends ConfigEntry
+  case class  PackageNames       (value: Map[Option[String],
+                                             Option[String]]) extends ConfigEntry
+  case class  ClassPrefix        (value:            String  ) extends ConfigEntry
+  case class  ClassPostfix       (value:            String  ) extends ConfigEntry
+  case class  ParamPrefix        (value:            String  ) extends ConfigEntry
+  case class  AttributePrefix    (value:            String  ) extends ConfigEntry
+  case class  Outdir             (value:            File    ) extends ConfigEntry
+  case class  WrappedComplexTypes(value:       List[String] ) extends ConfigEntry
+  case class  ProtocolFileName   (value:            String  ) extends ConfigEntry
+  case class  ProtocolPackageName(value:            String  ) extends ConfigEntry
+  case class  DefaultNamespace   (value:     Option[String] ) extends ConfigEntry
+  case class  ContentsSizeLimit  (value:            Int     ) extends ConfigEntry
+  case class  SequenceChunkSize  (value:            Int     ) extends ConfigEntry
+  case class  DispatchVersion    (value:            String  ) extends ConfigEntry
+  case object GeneratePackageDir                              extends ConfigEntry
+  case object GenerateRuntime                                 extends ConfigEntry
+  case object GenerateDispatchClient                          extends ConfigEntry
+  case object GenerateDispatchAs                              extends ConfigEntry
+  case object GenerateAsync                                   extends ConfigEntry
+  case object GenerateMutable                                 extends ConfigEntry
+  case object PrependFamilyName                               extends ConfigEntry
+  case object SeperateProtocol                                extends ConfigEntry
+  case object NamedAttributes                                 extends ConfigEntry
+  case object LaxAny                                          extends ConfigEntry
+  case object VarArg                                          extends ConfigEntry
+  case object IgnoreUnknown                                   extends ConfigEntry
+  case object AutoPackages                                    extends ConfigEntry
 }

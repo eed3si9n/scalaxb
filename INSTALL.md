@@ -19,6 +19,7 @@ Install a SNAPSHOT version of scalaxb.
 
     $ cs eed3si9n/scalaxb/x.x.x-SNAPSHOT
 
+
 Build from source
 =================================
 

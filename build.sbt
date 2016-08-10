@@ -34,7 +34,10 @@ lazy val app = (project in file("cli")).
         prev :+ "-Xfatal-warnings"
       }
       else prev
-    }
+    },
+
+    mainClass in assembly := Some("scalaxb.compiler.Main"),
+    assemblyJarName in assembly := "scalaxb-app.jar"
   )
 
 lazy val integration = (project in file("integration")).
@@ -46,6 +49,8 @@ lazy val integration = (project in file("integration")).
     libraryDependencies ++= integrationDependencies(scalaVersion.value)
     // fork in test := true,
     // javaOptions in test ++= Seq("-Xmx2G", "-XX:MaxPermSize=512M")
+  , parallelExecution in Test := false
+  , testOptions in Test += Tests.Argument("sequential")  
   ).
   dependsOn(app)
 

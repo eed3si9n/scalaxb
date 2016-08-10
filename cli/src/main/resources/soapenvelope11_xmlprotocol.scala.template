@@ -9,6 +9,8 @@ val document = scalaxb.toXML[soapenvelope11.Foo](obj, "foo", soapenvelope11.defa
 object `package` extends XMLProtocol { }
 
 trait XMLProtocol extends scalaxb.XMLStandardTypes {
+  implicit val anyDataRecordFormat = __DataRecordAnyDontResolveUnknownXMLFormat  // Will have a greater priority than the standard implicit `__DataRecordAnyXMLFormat`, since it is defined in this trait rather than in a super-trait
+
   val defaultScope = scalaxb.toScope(Some("tns") -> "http://schemas.xmlsoap.org/soap/envelope/",
     Some("xs") -> "http://www.w3.org/2001/XMLSchema",
     Some("xsi") -> "http://www.w3.org/2001/XMLSchema-instance")

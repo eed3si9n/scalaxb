@@ -215,7 +215,7 @@ object Facetable {
 case class EnumerationDecl[A](value: A) extends Facetable[A]
 
 object EnumerationDecl {
-  def fromXML(node: scala.xml.Node, base: XsTypeSymbol, config: ParserConfig) =
+  def fromXML(node: scala.xml.Node, base: XsTypeSymbol, config: ParserConfig) = {
     base match {
       case XsQName =>
         val (ns, localPart) = TypeSymbolParser.splitTypeName((node \ "@value").text, config.scope, config.targetNamespace)
@@ -223,4 +223,5 @@ object EnumerationDecl {
         EnumerationDecl(qname)
       case _ => EnumerationDecl((node \ "@value").text)
     }
+  }
 }

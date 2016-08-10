@@ -78,9 +78,7 @@ class Driver extends Module { driver =>
 
   override def generateProtocol(snippet: Snippet,
       context: Context, cnfg: Config): Seq[Node] =
-    (new GenProtocol(context.xsdcontext) {
-      val config = cnfg
-    }).generateProtocol(snippet, {
+    (new GenProtocol(context.xsdcontext, cnfg)).generateProtocol(snippet, {
       (for {
         dfn <- context.definitions.toList
         tns <- dfn.targetNamespace.toList
@@ -103,9 +101,7 @@ class Driver extends Module { driver =>
       val scope = pair.scope
       val xsdgenerator = new scalaxb.compiler.xsd.GenSource(
         SchemaDecl(targetNamespace = ns, scope = pair.scope),
-        cntxt.xsdcontext) {
-        val config = cnfg
-      }
+        cntxt.xsdcontext, cnfg)
     }
 
     val xsdgenerated: Seq[(Option[String], Snippet, String)] = pair.schemas.zipWithIndex flatMap { case (xsd, i) =>
@@ -193,7 +189,8 @@ class Driver extends Module { driver =>
   def generateRuntimeFiles[To](cntxt: Context, config: Config)(implicit evTo: CanBeWriter[To]): List[To] =
     List(
       generateFromResource[To](Some("scalaxb"), "scalaxb.scala",
-        "/scalaxb.scala.template"),
+        "/scalaxb.scala.template", Map[String, String]("protocolPackageName" -> config.protocolPackageName)),
+      generateFromResource[To](Some("scalaxb"), "Visitor.scala", "/Visitor.scala.template"),
       (if (config.async)
         generateFromResource[To](Some("scalaxb"), "httpclients_async.scala",
           "/httpclients_async.scala.template")

@@ -1,16 +1,16 @@
 /*
  * Copyright (c) 2010 e.e d3si9n
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -37,12 +37,9 @@ object Main {
     // change this change SbtApp too.
     try { start(args); }
     catch {
-      case e: ReferenceNotFound =>
-        log.error(e.getMessage)
-      case e: CaseClassTooLong =>
-        log.error(e.getMessage)
-      case e: Exception =>
-        log.error(e.getStackTrace.mkString("", Module.NL, Module.NL))
+      case e: ReferenceNotFound => log.error(e.getMessage)
+      case e: CaseClassTooLong  => log.error(e.getMessage)
+      case e: Exception         => log.error(e.getStackTrace.mkString("", Module.NL, Module.NL))
     }
   }
 
@@ -76,62 +73,43 @@ object Arguments {
 
     val paramParser = new scopt.OptionParser[Config]("scalaxb") {
       head("scalaxb", scalaxb.BuildInfo.version)
-      opt[File]('d', "outdir") valueName("<directory>") text("generated files will go into <directory>") action { (x, c) =>
-        c.update(Outdir(x)) }
-      opt[String]('p', "default-package") valueName("<package>") text("specifies the target package") action { (x, c) =>
-        c.update(PackageNames(c.packageNames updated (None, Some(x)))) }
-      opt[(String, String)]("package") unbounded() keyValueName("<namespaceURI>", "<package>") text(
-        "specifies the target package for <namespaceURI>") action { case ((k, v), c) =>
-        c.update(PackageNames(c.packageNames updated (Some(k), Some(v)))) }
-      opt[String]("class-prefix") valueName("<prefix>") text("prefixes generated class names") action { (x, c) =>
-        c.update(ClassPrefix(x)) }
-      opt[String]("param-prefix") valueName("<prefix>") text("prefixes generated parameter names") action { (x, c) =>
-        c.update(ParamPrefix(x)) }
-      opt[String]("attribute-prefix") valueName("<prefix>") text("prefixes generated attribute parameters") action { (x, c) =>
-        c.update(AttributePrefix(x)) }
-      opt[Unit]("prepend-family") text("prepends family name to class names") action { (_, c) =>
-        c.update(PrependFamilyName) }
-      opt[String]("wrap-contents") valueName("<complexType>") text("wraps inner contents into a seperate case class") action { (x, c) =>
-        c.update(WrappedComplexTypes(c.wrappedComplexTypes :+ x)) }
-      opt[Int]("contents-limit") valueName("<size>") text("defines long contents to be segmented (default: max)") action { (x, c) =>
-        c.update(ContentsSizeLimit(x)) }
-      opt[Int]("chunk-size") valueName("<size>") text("segments long sequences into chunks (default: 10)") action { (x, c) =>
-        c.update(SequenceChunkSize(x)) }
-      opt[Unit]("named-attributes") text("generates named fields for attributes") action { (_, c) =>
-        c.update(NamedAttributes) }
-      opt[Unit]("package-dir") text("generates package directories") action { (_, c) =>
-        c.update(GeneratePackageDir) }
-      opt[String]("protocol-file") valueName("<name.scala>") text("protocol file name (xmlprotocol.scala)") action { (x, c) =>
-        c.update(ProtocolFileName(x)) }
-      opt[String]("protocol-package") valueName("<package>") text("package for protocols") action { (x, c) =>
-        c.update(ProtocolPackageName(Some(x))) }
-      opt[Unit]("no-runtime") text("skips runtime files") action { (_, c) =>
-        c.remove(GenerateRuntime) }
-      opt[Unit]("no-dispatch-client") text("disables generation of Dispatch client") action { (_, c) =>
-        c.remove(GenerateDispatchClient) }
-      opt[Unit]("dispatch-as") text("generates of Dispatch \"as\"") action { (_, c) =>
-        c.update(GenerateDispatchAs) }
-      opt[Unit]("lax-any") text("relaxes namespace constraints of xs:any") action { (_, c) =>
-        c.update(LaxAny) }
-      opt[Unit]("blocking") text("generates blocking SOAP client") action { (_, c) =>
-        c.remove(GenerateAsync) }
-      opt[String]("dispatch-version") valueName("<version>") text("version of Dispatch (default: " + scalaxb.BuildInfo.defaultDispatchVersion + ")") action { (x, c) =>
-        c.update(DispatchVersion(x)) }
-      opt[Unit]("no-varargs") text("use Seq instead of the varargs") action { (_, c) =>
-        c.remove(VarArg) }
-      opt[Unit]("ignore-unknown") text("Ignore Unknown Elements") action { (_, c) =>
-        c.update(IgnoreUnknown) }
 
-      opt[Unit]('v', "verbose") text("be extra verbose") action { (_, c) =>
-        verbose = true
-        c
-      }
-      help("help") text("display this message")
-      version("version") text("display version info")
-      arg[File]("<schema_file>...") unbounded() text("input schema to be converted") action { (x, c) =>
-        files append x
-        c
-      }
+      opt[(String,
+           String)]("package"            ) unbounded() keyValueName(
+                                                     "<namespaceURI>",
+                                                     "<package>"    ) text("specifies the target package for <namespaceURI>"     ) action { case ((k,v), c) => c.update(PackageNames(c.packageNames updated (Some(k), Some(v)))) }
+      opt[ File  ]('d', "outdir"         ) valueName("<directory>"  ) text("generated files will go into <directory>"            ) action { (x,c) => c.update(Outdir(x)) }
+      opt[ String]('p', "default-package") valueName("<package>"    ) text("specifies the target package"                        ) action { (x,c) => c.update(PackageNames(c.packageNames updated (None, Some(x)))) }
+      opt[ String]("class-prefix"        ) valueName("<prefix>"     ) text("prefixes generated class names"                      ) action { (x,c) => c.update(    ClassPrefix(x)) }
+      opt[ String]("param-prefix"        ) valueName("<prefix>"     ) text("prefixes generated parameter names"                  ) action { (x,c) => c.update(    ParamPrefix(x)) }
+      opt[ String]("attribute-prefix"    ) valueName("<prefix>"     ) text("prefixes generated attribute parameters"             ) action { (x,c) => c.update(AttributePrefix(x)) }
+      opt[ String]("wrap-contents"       ) valueName("<complexType>") text("wraps inner contents into a seperate case class"     ) action { (x,c) => c.update(WrappedComplexTypes(c.wrappedComplexTypes :+ x)) }
+      opt[ Int   ]("contents-limit"      ) valueName("<size>"       ) text("defines long contents to be segmented (default: max)") action { (x,c) => c.update(ContentsSizeLimit  (x))}
+      opt[ Int   ]("chunk-size"          ) valueName("<size>"       ) text("segments long sequences into chunks (default: 10)"   ) action { (x,c) => c.update(SequenceChunkSize  (x))}
+      opt[ String]("protocol-file"       ) valueName("<name.scala>" ) text("protocol file name (xmlprotocol.scala)"              ) action { (x,c) => c.update(ProtocolFileName   (x))}
+      opt[ String]("protocol-package"    ) valueName("<package>"    ) text("package for protocols"                               ) action { (x,c) => c.update(ProtocolPackageName(x))}
+      opt[ String]("dispatch-version"    ) valueName("<version>"    ) text("version of Dispatch (default: "
+                                                                          + scalaxb.BuildInfo.defaultDispatchVersion + ")"       ) action { (x,c) => c.update(DispatchVersion(x)) }
+
+      opt[ Unit  ]("prepend-family"      ) text("prepends family name to class names"                      ) action { (_,c) => c.update(PrependFamilyName     ) }
+      opt[ Unit  ]("named-attributes"    ) text("generates named fields for attributes"                    ) action { (_,c) => c.update(NamedAttributes       ) }
+      opt[ Unit  ]("mutable"             ) text("generates mutable classes"                                ) action { (_,c) => c.update(GenerateMutable       )
+                                                                                                                                .remove(VarArg)                 }
+      opt[ Unit  ]("package-dir"         ) text("generates package directories"                            ) action { (_,c) => c.update(GeneratePackageDir    ) }
+      opt[ Unit  ]("no-runtime"          ) text("skips runtime files"                                      ) action { (_,c) => c.remove(GenerateRuntime       ) }
+      opt[ Unit  ]("no-dispatch-client"  ) text("disables generation of Dispatch client"                   ) action { (_,c) => c.remove(GenerateDispatchClient) }
+      opt[ Unit  ]("dispatch-as"         ) text("generates of Dispatch \"as\""                             ) action { (_,c) => c.update(GenerateDispatchAs    ) }
+      opt[ Unit  ]("lax-any"             ) text("relaxes namespace constraints of xs:any"                  ) action { (_,c) => c.update(LaxAny                ) }
+      opt[ Unit  ]("blocking"            ) text("generates blocking SOAP client"                           ) action { (_,c) => c.remove(GenerateAsync         ) }
+      opt[ Unit  ]("no-varargs"          ) text("use Seq instead of the varargs"                           ) action { (_,c) => c.remove(VarArg                ) }
+      opt[ Unit  ]("ignore-unknown"      ) text("Ignore Unknown Elements"                                  ) action { (_,c) => c.update(IgnoreUnknown         ) }
+      opt[ Unit  ]('v', "verbose"        ) text("be extra verbose"                                         ) action { (_,c) => verbose = true; c                }
+      opt[ Unit  ]("autopackages"        ) text("generate packages for different namespaces automatically.") action { (_,c) => c.update(AutoPackages          ) }
+
+      arg[ File  ]("<schema_file>...") unbounded() text("input schema to be converted"   ) action { (x,c) => files append x; c                }
+
+      help   ("help"   )                   text("display this message")
+      version("version")                   text("display version info")
     }
     paramParser.parse(args, Config.default) flatMap { c =>
       if (files.isEmpty) None

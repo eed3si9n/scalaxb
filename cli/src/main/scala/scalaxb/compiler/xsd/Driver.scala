@@ -41,7 +41,7 @@ class Driver extends Module { driver =>
   
   override def processContext(context: Context, schemas: Seq[SchemaDecl], cnfg: Config) =
     (new ContextProcessor {
-      val config = cnfg    
+      var config = cnfg    
     }).processContext(context, schemas)
 
   override def packageName(namespace: Option[String], context: Context): Option[String] =
@@ -50,16 +50,12 @@ class Driver extends Module { driver =>
   override def generate(xsd: Schema, part: String, context: Context, cnfg: Config) = {
     val pkg = packageName(xsd.targetNamespace, context)
     Seq((pkg, Snippet(headerSnippet(pkg),
-      (new GenSource(xsd, context) {
-        val config = cnfg
-      }).run), part))
+      (new GenSource(xsd, context, cnfg)).run), part))
   }
 
   override def generateProtocol(snippet: Snippet,
       context: Context, cnfg: Config): Seq[Node] =
-    (new GenProtocol(context) {
-      val config = cnfg
-    }).generateProtocol(snippet, Seq())
+    (new GenProtocol(context, cnfg)).generateProtocol(snippet, Seq())
   
   override def toImportable(alocation: URI, rawschema: RawSchema): Importable = new Importable {
     val location = alocation
@@ -83,13 +79,16 @@ class Driver extends Module { driver =>
       toImportable(appendPostFix(alocation, n), replaceNamespace(rawschema, targetNamespace, outerNamespace))
   }
 
-  def generateRuntimeFiles[To](cntxt: Context, config: Config)(implicit evTo: CanBeWriter[To]): List[To] =
+  def generateRuntimeFiles[To](cntxt: Context, config: Config)(implicit evTo: CanBeWriter[To]): List[To] = {
+    val placeholders = Map[String, String]("protocolPackageName" -> config.protocolPackageName)
     List(
-      generateFromResource[To](Some("scalaxb"), "scalaxb.scala", "/scalaxb.scala.template")
+      generateFromResource[To](Some("scalaxb"), "scalaxb.scala", "/scalaxb.scala.template", placeholders)
+    , generateFromResource[To](Some("scalaxb"), "Visitor.scala", "/Visitor.scala.template")
     ) ++
     (if (config.generateDispatchAs) List(generateFromResource[To](Some("dispatch.as"), "dispatch_as_scalaxb.scala",
         "/dispatch_as_scalaxb.scala.template"))
      else Nil)
+  }
 
   def readerToRawSchema(reader: Reader): RawSchema = CustomXML.load(reader)
 

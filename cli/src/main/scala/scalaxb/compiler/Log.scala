@@ -25,68 +25,30 @@ import org.apache.log4j.{Logger, Level, ConsoleAppender, EnhancedPatternLayout}
 import org.apache.log4j.spi.LoggingEvent
 
 case class Log(logger: Logger) {
-  def info(message: String, args: Any*) {
-    if (args.toSeq.isEmpty) logger.info(message)
-    else try {
-      logger.info(message format (args.toSeq: _*))
-    }
-    catch {
-      case _: Throwable => logger.info(message)
-    }
-  }
 
-  def debug(message: String, args: Any*) {
-    if (args.toSeq.isEmpty) logger.debug(message)
-    else try {
-      logger.debug(message format (args.toSeq: _*))
-    }
-    catch {
-      case _: Throwable => logger.debug(message)
-    }
-  }
+  def formattedMessage(message: String, args: Any*): String =
+    if (args.toSeq.isEmpty)          message
+    else try {                       message format (args.toSeq: _*)}
+         catch {case _: Throwable => message}
 
-  def warn(message: String, args: Any*) {
-    if (args.toSeq.isEmpty) logger.warn(message)
-    else try {
-      logger.warn(message format (args.toSeq: _*))
-    }
-    catch {
-      case _: Throwable => logger.warn(message)
-    }
-  }
-
-  def error(message: String, args: Any*) {
-    if (args.toSeq.isEmpty) logger.error(message)
-    else try {
-      logger.error(message format (args.toSeq: _*))
-    }
-    catch {
-      case _: Throwable => logger.error(message)
-    }
-  }
-
-  def fatal(message: String, args: Any*) {
-    if (args.toSeq.isEmpty) logger.fatal(message)
-    else try {
-      logger.fatal(message format (args.toSeq: _*))
-    }
-    catch {
-      case _: Throwable => logger.fatal(message)
-    }
-  }
+  def info (message: String, args: Any*) = logger.info (formattedMessage(message, args))
+  def debug(message: String, args: Any*) = logger.debug(formattedMessage(message, args))
+  def warn (message: String, args: Any*) = logger.warn (formattedMessage(message, args))
+  def error(message: String, args: Any*) = logger.error(formattedMessage(message, args))
+  def fatal(message: String, args: Any*) = logger.fatal(formattedMessage(message, args))
 }
 
 object Log {
   def forName(name: String) = Log(Logger.getLogger(name))
 
-  def configureLogger(verbose: Boolean) {
-    val root = Logger.getRootLogger()
-    val level = if (verbose) Level.TRACE else Level.WARN
-    root.setLevel(level)
+  def configureLogger(verbose: Boolean) = {
 
+    val root    = Logger.getRootLogger()
     val console = new ConsoleAppender(new Formatter)
-    val threshold = if (verbose) Level.TRACE else Level.INFO
-    console.setThreshold(threshold)
+
+    root   .setLevel    (if (verbose) Level.TRACE else Level.WARN)
+    console.setThreshold(if (verbose) Level.TRACE else Level.INFO)
+
     root.addAppender(console)
   }
 
@@ -99,18 +61,9 @@ object Log {
 
     override def format(event: LoggingEvent) : String = {
       val message = super.format(event)
-      val frames = event.getThrowableStrRep()
-      if (frames == null) {
-        message
-      } else {
-        val msg = new StringBuilder(message)
-        for (line <- frames) {
-          msg.append("! ").append(line).append("\n")
-        }
-        msg.toString
-      }
+      val frames  = event.getThrowableStrRep()
+      if (frames == null) message
+      else                frames.map{f => s"! $f \n"}.mkString
     }
-
   }
-
 }

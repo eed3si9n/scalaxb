@@ -33,19 +33,19 @@ import scala.collection.mutable.{ListBuffer, ListMap}
 import ConfigEntry._
 
 object Snippet {
-  def apply(definition: Node): Snippet = Snippet(definition, Nil, Nil, Nil)
-
   def apply(snippets: Snippet*): Snippet =
     Snippet(snippets flatMap { s => s.companion ++ s.definition},
       Nil,
       snippets flatMap {_.defaultFormats},
-      snippets flatMap {_.implicitValue})
+      snippets flatMap {_.implicitValue},
+      snippets flatMap {_.elemToTypeClauses})
 }
 
-case class Snippet(definition: Seq[Node],
-  companion: Seq[Node],
-  defaultFormats: Seq[Node],
-  implicitValue: Seq[Node])
+case class Snippet(definition: Seq[Node] = Nil,
+  companion: Seq[Node] = Nil,
+  defaultFormats: Seq[Node] = Nil,
+  implicitValue: Seq[Node] = Nil,
+  elemToTypeClauses: Seq[Node] = Nil)
 
 trait CanBeWriter[A] {
  def toWriter(value: A): PrintWriter
@@ -324,17 +324,12 @@ trait Module {
     }
 
     def processProtocol = {
-      val pkg = config.protocolPackageName match {
-        case Some(_) => config.protocolPackageName
-        case _ => packageName(cs.firstNamespace, cs.context)
-      }
-      val output = implicitly[CanBeWriter[To]].newInstance(pkg, config.protocolFileName)
+      val output = implicitly[CanBeWriter[To]].newInstance(Some(config.protocolPackageName), config.protocolFileName)
       val out = implicitly[CanBeWriter[To]].toWriter(output)
-      val config2 = config.update(ProtocolPackageName(pkg)).
-        update(DefaultNamespace(config.defaultNamespace match {
-          case Some(_) => config.defaultNamespace
-          case _ => cs.firstNamespace
-        }))
+      val config2 = config.update(DefaultNamespace(config.defaultNamespace match {
+        case Some(_) => config.defaultNamespace
+        case _       => cs    .firstNamespace
+      }))
       val protocolNodes = generateProtocol(Snippet(snippets: _*), cs.context, config2)
       try {
         printNodes(protocolNodes, out)
@@ -356,12 +351,18 @@ trait Module {
      else Nil)
   }
 
-  def generateFromResource[To](packageName: Option[String], fileName: String, resourcePath: String)
+  def generateFromResource[To](packageName: Option[String], fileName: String, resourcePath: String, placeholders: Map[String, String] = Map())
                               (implicit evTo: CanBeWriter[To]) = {
     val output = implicitly[CanBeWriter[To]].newInstance(packageName, fileName)
     val out = implicitly[CanBeWriter[To]].toWriter(output)
+
+    // Placeholder replacement mechanics: find placeholders of the #{name}
+    // form, resolve the names in the map and replace them.
+    val map: String => String =
+      """#\{([\w\d_]+)\}""".r.replaceAllIn(_, m => placeholders.get(m.group(1)).getOrElse(m.matched))
+
     try {
-      printFromResource(resourcePath, out)
+      printFromResource(resourcePath, out, map)
     } finally {
       out.flush()
       out.close()
@@ -452,13 +453,13 @@ trait Module {
     for (node <- nodes) { printNode(node) }
   }
 
-  def printFromResource(source: String, out: PrintWriter) {
+  def printFromResource(source: String, out: PrintWriter, map: String => String = identity) {
     val in = getClass.getResourceAsStream(source)
     val reader = new java.io.BufferedReader(new java.io.InputStreamReader(in))
     var line: Option[String] = None
     line = Option[String](reader.readLine)
     while (line != None) {
-      line foreach { out.println }
+      line.map(map) foreach { out.println }
       line = Option[String](reader.readLine)
     }
     in.close

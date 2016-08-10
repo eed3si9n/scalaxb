@@ -574,7 +574,7 @@ abstract class GenSource(val schema: SchemaDecl,
       else buildTypeName(localName, enum, true)
 
     def makeEnum(enum: EnumerationDecl[_]) =
-      "case object " + buildTypeName(localName, enum, true) + " extends " + localName + 
+      "case object " + enumName(localName, enum) + " extends " + localName + 
       " { override def toString = " + quote(enum.value.toString) + " }"
     
     def makeCaseEntry(enum: EnumerationDecl[_]) =

@@ -1,4 +1,4 @@
-import ipo._
+import scalaxb.protocol._
 
 object Usage extends App {
   val shipTo = scalaxb.fromXML[ipo.Address](<shipTo>

@@ -15,6 +15,7 @@ object XmlSchemaTest extends TestBase {
   lazy val generated = module.process(inFile, config)
   "XMLSchema.scala file must compile so that Schema can be used" in {
     (List("import scalaxb._",
+      "import scalaxb.protocol._",
       "import org.w3.xmlschema._",
       """val document = <xs:schema targetNamespace="http://www.example.com/IPO"
               xmlns:xs="http://www.w3.org/2001/XMLSchema"

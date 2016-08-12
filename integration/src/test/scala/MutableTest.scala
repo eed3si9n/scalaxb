@@ -21,7 +21,6 @@ object MutableTest extends TestBase {
 
   val setup = s"""
     import $pkgname._
-    import scalaxb.Visitor
 
     val elem = scalaxb.fromXML[AElem]($targetXml)
   """

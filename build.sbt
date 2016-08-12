@@ -34,7 +34,10 @@ lazy val app = (project in file("cli")).
         prev :+ "-Xfatal-warnings"
       }
       else prev
-    }
+    },
+
+    mainClass in assembly := Some("scalaxb.compiler.Main"),
+    assemblyJarName in assembly := "scalaxb-app.jar"
   )
 
 lazy val integration = (project in file("integration")).

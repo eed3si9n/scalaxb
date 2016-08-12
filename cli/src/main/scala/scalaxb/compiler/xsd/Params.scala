@@ -83,10 +83,12 @@ trait Params extends Lookup {
       case _ => false
     })
 
-    def toTraitScalaCode: String = toParamName + ": " + typeName
+    def toTraitScalaCode(doMutable: Boolean): String = s"${if (doMutable) "var " else ""}$toParamName: $typeName"
 
-    def toScalaCode: String =
-      toTraitScalaCode + (cardinality match {
+    def toScalaCode_possiblyMutable: String = toScalaCode(config.generateMutable)
+
+    def toScalaCode(doMutable: Boolean): String =
+      toTraitScalaCode(doMutable) + (cardinality match {
         case Single if typeSymbol == XsLongAttribute => " = Map()"
         case Optional => " = None"
         case Multiple => " = Nil"

@@ -250,10 +250,16 @@ abstract class GenSource(val schema: SchemaDecl,
         case _ => (0 to flatParticles.size - 1).toList map { i => buildArg(flatParticles(i), i) }
       }
     
-    val accessors = (primary match {
-        case Some(all: AllDecl) if longAll => generateAccessors(all)
-        case _ => generateAccessors(paramList, splitSequences(decl))
-      }) ::: (if (longAttribute) generateAccessors(attributes) else Nil)
+    def gettersAndIfMutableSetters: List[(String, Option[String])] =
+        (primary match {
+          case Some(all: AllDecl) if longAll => generateAccessors(all)
+          case _ => generateAccessors(paramList, splitSequences(decl))
+        }) :::
+        (if (longAttribute) generateAccessors(attributes) else Nil)
+
+    // There should be a better way to flatten a List[(String, Option[String])] to List[String]
+    val accessors: List[String] = gettersAndIfMutableSetters.map{ p => List(List(p._1), p._2.toList)}.flatten.flatten
+
     logger.debug("makeCaseClassWithType: generateAccessors " + accessors)
 
     val compositors = context.compositorParents.filter(
@@ -268,7 +274,7 @@ abstract class GenSource(val schema: SchemaDecl,
     def paramsString = if (hasSequenceParam) makeParamName(paramList.head.name, false) + ": " +
                                               paramList.head.singleTypeName + "*"
 
-                       else paramList.map(_.toScalaCode).mkString("," + newline + indent(1))
+                       else paramList.map(_.toScalaCode_possiblyMutable).mkString("," + newline + indent(1))
 
     val simpleFromXml: Boolean = if (flatParticles.isEmpty && !effectiveMixed) true
       else (decl.content, primary) match {
@@ -455,7 +461,7 @@ abstract class GenSource(val schema: SchemaDecl,
       (!paramList.head.attribute)
     val paramsString = if (hasSequenceParam)
         makeParamName(paramList.head.name, false) + ": " + paramList.head.singleTypeName + "*"
-      else paramList.map(_.toScalaCode).mkString("," + newline + indent(1))    
+      else paramList.map(_.toScalaCode_possiblyMutable).mkString("," + newline + indent(1))
     def makeWritesXML = <source>    def writes(__obj: {fqn}, __namespace: Option[String], __elementLabel: Option[String], 
         __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
       {childString}</source>
@@ -535,7 +541,7 @@ abstract class GenSource(val schema: SchemaDecl,
         case x => buildArg(x) 
       }
     val paramsString = paramList.map(
-      _.toScalaCode).mkString("," + newline + indent(1))
+      _.toScalaCode_possiblyMutable).mkString("," + newline + indent(1))
     val argsString = argList.mkString("," + newline + indent(3))  
     val attributeString = attributes.map(x => buildAttributeString(x)).mkString(newline + indent(2))
     
@@ -901,7 +907,7 @@ object {localName} {{
     }
   }
   
-  def generateAccessors(attributes: List[AttributeLike]): List[String] = {
+  def generateAccessors(attributes: List[AttributeLike]): List[(String, Option[String])] = {
     val wrapperName = makeParamName(ATTRS_PARAM, false)
 
     attributes collect {
@@ -920,7 +926,7 @@ object {localName} {{
     }
   }
   
-  def generateAccessors(params: List[Param], splits: List[SequenceDecl]) = params flatMap {
+  def generateAccessors(params: List[Param], splits: List[SequenceDecl]): List[(String, Option[String])] = params flatMap {
     case param@Param(_, _, ReferenceTypeSymbol(decl@ComplexTypeDecl(_, _, _, _, _, _, _, _)), _, _, _, _, _) if
         compositorWrapper.contains(decl) &&
         splits.contains(compositorWrapper(decl)) =>  
@@ -934,8 +940,9 @@ object {localName} {{
       }
       
       val paramList = particles map { buildParam }
-      paramList map { p =>
-        "lazy val " + makeParamName(p.name, false) + " = " + wrapperName + "." +  makeParamName(p.name, false)
+      paramList map { p => val paramName = makeParamName(p.name, false)
+                           ( s"$lazyValOrDef $paramName = $wrapperName.$paramName"
+                           , if (config.generateMutable) Some("/*TBD: setter */") else None)
       }
     case _ => Nil
   }

@@ -933,18 +933,25 @@ object {localName} {{
     val wrapperName = makeParamName(ATTRS_PARAM, false)
 
     attributes collect {
-      case attr: AttributeDecl   => (attr, toCardinality(attr))
-      case ref: AttributeRef     =>
-        val attr = buildAttribute(ref)
-        (attr, toCardinality(attr))
+      case  attr: AttributeDecl   =>                                 (attr, toCardinality(attr))
+      case   ref: AttributeRef    => val attr = buildAttribute(ref); (attr, toCardinality(attr))
       case group: AttributeGroupDecl => (group, Single)
-    } collect {
-      case (attr: AttributeDecl, Optional) =>
-        "lazy val " + makeParamName(buildParam(attr).name, true) + " = " +
-          wrapperName + ".get(" +  quote(buildNodeName(attr, false)) + ") map { _.as[" + buildTypeName(attr.typeSymbol, true) + "] }"
-      case (attr: AttributeDecl, Single) =>
-        "lazy val " + makeParamName(buildParam(attr).name, true) + " = " +
-          wrapperName + "(" +  quote(buildNodeName(attr, false)) + ").as[" + buildTypeName(attr.typeSymbol, true) + "]"
+    } collect { case (attr: AttributeDecl, cardinality: Cardinality) =>
+                    val      paramName =       makeParamName(buildParam(attr).name, true)
+                    val quotedNodeName = quote(buildNodeName(attr , false ))
+                    val       typeName =       buildTypeName(attr.typeSymbol, true)
+                    val isOptional     = cardinality == Optional
+
+                    ( getterDeclaration(paramName, wrapperName, quotedNodeName, typeName, isOptional)
+                    , setterDeclaration(paramName, wrapperName, quotedNodeName, typeName, isOptional))
+
+
+      //case (attr: AttributeDecl, Optional) =>
+      //  "lazy val " + makeParamName(buildParam(attr).name, true) + " = " +
+      //    wrapperName + ".get(" +  quote(buildNodeName(attr, false)) + ") map { _.as[" + buildTypeName(attr.typeSymbol, true) + "] }"
+      //case (attr: AttributeDecl, Single) =>
+      //  "lazy val " + makeParamName(buildParam(attr).name, true) + " = " +
+      //    wrapperName + "(" +  quote(buildNodeName(attr, false)) + ").as[" + buildTypeName(attr.typeSymbol, true) + "]"
     }
   }
   

@@ -575,11 +575,11 @@ abstract class GenSource(val schema: SchemaDecl,
       " { override def toString = " + quote(enum.value.toString) + " }"
     
     def makeCaseEntry(enum: EnumerationDecl[_]) = baseSym match {
-      case Some(XsQName) => s"${indent(2)}case ${quote(enum.value.toString)} => ${buildTypeName(localName, enum, true)}\n"
+      case Some(XsQName) => s"${indent(3)}case ${quote(enum.value.toString)} => ${buildTypeName(localName, enum, true)}\n"
       case _ => baseType.map {tpe =>
-        s"${indent(2)}case x: $tpe if x == scalaxb.fromXML[$tpe](scala.xml.Text(${quote(enum.value.toString)})) => ${buildTypeName(localName, enum, true)}\n"
+        s"${indent(3)}case x: $tpe if x == scalaxb.fromXML[$tpe](scala.xml.Text(${quote(enum.value.toString)})) => ${buildTypeName(localName, enum, true)}\n"
       }.getOrElse {
-        s"${indent(2)}case ${quote(enum.value.toString)} => ${buildTypeName(localName, enum, true)}\n" 
+        s"${indent(3)}case ${quote(enum.value.toString)} => ${buildTypeName(localName, enum, true)}\n" 
       }
     }
 
@@ -619,7 +619,7 @@ object {localName} {{
     val targetNamespace: Option[String] = { quote(schema.targetNamespace) }
     
     def fromString(value: String, scope: scala.xml.NamespaceBinding): {localName} = {valueCode} match {{
-  { enums.map(e => makeCaseEntry(e)) }
+{ enums.map(e => makeCaseEntry(e)) }
     }}
 
     def reads(seq: scala.xml.NodeSeq, stack: List[scalaxb.ElemName]): Either[String, {fqn}] = seq match {{

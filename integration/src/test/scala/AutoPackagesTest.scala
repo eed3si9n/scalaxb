@@ -27,7 +27,6 @@ object AutoPackagesTest extends TestBase {
 
   "When AutoPacakges flag is set, the package names should be generated automatically from the namespace URI" in repl(generated)(s"""
     import simple.main._
-    import scalaxb.protocol._
 
     val elem = scalaxb.fromXML[AElem]($targetXml)
     "true"

@@ -603,8 +603,9 @@ object {localName} {{
 <source>trait {localName}
 
 object {localName} {{
-  def fromString(value: String, scope: scala.xml.NamespaceBinding): {localName} = {valueCode} match {{
-{ enums.map(e => makeCaseEntry(e)) }
+  def fromString(value: String, scope: scala.xml.NamespaceBinding)(implicit fmt: scalaxb.XMLFormat[{fqn}]): {localName} = fmt.reads(scala.xml.Text(value), Nil) match {{
+    case Right(x: {localName}) => x
+    case x => throw new RuntimeException(s"fromString returned unexpected value $x for input $value")
   }}
 }}
 
@@ -617,9 +618,13 @@ object {localName} {{
   trait Default{formatterName} extends scalaxb.XMLFormat[{fqn}] {{
     val targetNamespace: Option[String] = { quote(schema.targetNamespace) }
     
+    def fromString(value: String, scope: scala.xml.NamespaceBinding): {localName} = {valueCode} match {{
+  { enums.map(e => makeCaseEntry(e)) }
+    }}
+
     def reads(seq: scala.xml.NodeSeq, stack: List[scalaxb.ElemName]): Either[String, {fqn}] = seq match {{
-      case elem: scala.xml.Elem => Right({fqn}.fromString(elem.text, elem.scope))
-      case _ => Right({fqn}.fromString(seq.text, scala.xml.TopScope))
+      case elem: scala.xml.Elem => Right(fromString(elem.text, elem.scope))
+      case _ => Right(fromString(seq.text, scala.xml.TopScope))
     }}
     
     def writes(__obj: {fqn}, __namespace: Option[String], __elementLabel: Option[String],

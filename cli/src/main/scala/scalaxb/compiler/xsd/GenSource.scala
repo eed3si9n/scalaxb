@@ -890,11 +890,23 @@ object {localName} {{
       val symbol = content.base.asInstanceOf[ReferenceTypeSymbol]
       List(buildSymbolElement(symbol))
   } 
-  
-  def generateAccessors(all: AllDecl): List[String] = {
-    val wrapperName = makeParamName("all", false)
-    
+
+  def lazyValOrDef = if (config.generateMutable) "def" else "lazy val"
+
+  def getterDeclaration(paramName: String, wrapperName: String, quotedNodeName: String, typeName: String, isOptional: Boolean) =
+    if (isOptional) s"$lazyValOrDef $paramName = $wrapperName.get($quotedNodeName) map { _.as[$typeName]}"
+    else            s"$lazyValOrDef $paramName = $wrapperName($quotedNodeName).as[$typeName]"
+
+  def setterDeclaration(paramName: String, wrapperName: String, quotedNodeName: String, typeName: String, isOptional: Boolean): Option[String] =
+    if (config.generateMutable) {
+      val t = if (isOptional) s"Option[$typeName]" else typeName
+      Some(s"def ${paramName}_=(_value: $t) = $wrapperName += $quotedNodeName -> scalaxb.DataRecord(_value)")
+    }
+    else None
+
+  def generateAccessors(all: AllDecl): List[(String, Option[String])] = {
     // by spec, there are only elements under <all>
+    val wrapperName = makeParamName("all", false)
     all.particles collect {
       case elem: ElemDecl => elem
       case ref: ElemRef   => buildElement(ref)

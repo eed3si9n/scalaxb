@@ -575,11 +575,11 @@ abstract class GenSource(val schema: SchemaDecl,
       " { override def toString = " + quote(enum.value.toString) + " }"
     
     def makeCaseEntry(enum: EnumerationDecl[_]) = baseSym match {
-      case Some(XsQName) => s"${indent(3)}case ${quote(enum.value.toString)} => ${buildTypeName(localName, enum, true)}\n"
+      case Some(XsQName) => s"${indent(3)}case ${quote(enum.value.toString)} => ${buildTypeName(localName, enum, false)}\n"
       case _ => baseType.map {tpe =>
-        s"${indent(3)}case x: $tpe if x == scalaxb.fromXML[$tpe](scala.xml.Text(${quote(enum.value.toString)})) => ${buildTypeName(localName, enum, true)}\n"
+        s"${indent(3)}case x: $tpe if x == scalaxb.fromXML[$tpe](scala.xml.Text(${quote(enum.value.toString)})) => ${buildTypeName(localName, enum, false)}\n"
       }.getOrElse {
-        s"${indent(3)}case ${quote(enum.value.toString)} => ${buildTypeName(localName, enum, true)}\n" 
+        s"${indent(3)}case ${quote(enum.value.toString)} => ${buildTypeName(localName, enum, false)}\n" 
       }
     }
 
@@ -618,7 +618,7 @@ object {localName} {{
   trait Default{formatterName} extends scalaxb.XMLFormat[{fqn}] {{
     val targetNamespace: Option[String] = { quote(schema.targetNamespace) }
     
-    def fromString(value: String, scope: scala.xml.NamespaceBinding): {localName} = {valueCode} match {{
+    def fromString(value: String, scope: scala.xml.NamespaceBinding): {fqn} = {valueCode} match {{
 { enums.map(e => makeCaseEntry(e)) }
     }}
 

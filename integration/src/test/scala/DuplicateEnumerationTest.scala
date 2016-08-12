@@ -9,8 +9,8 @@ object DuplicateEnumerationTest extends TestBase {
   lazy val generated = module.processNode(dupeEnums, config)
 
   "dupenum.scala file should compile" in {
-    """case x: String if x == scalaxb.fromXML\[String\]\(scala.xml.Text\("N"\)\) => NValue""".r.findAllIn(generated(1)).size must beEqualTo(1)
-    "case object NValue".r.findAllIn(generated(0)).size must beEqualTo(1)
+    """case x: String if x == scalaxb\.fromXML\[String\]\(scala.xml.Text\("N"\)\) => dupenum\.NValue""".r.findAllIn(generated(1)).size must beEqualTo(1)
+    """case object NValue""".r.findAllIn(generated(0)).size must beEqualTo(1)
   }
 
   val dupeEnums = <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">

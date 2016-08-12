@@ -20,7 +20,8 @@
  * THE SOFTWARE.
  */
 
-package scalaxb.compiler.xsd
+package scalaxb.compiler
+package xsd
 
 import scalashim._
 import scalaxb.compiler.{ScalaNames, Config, ReferenceNotFound, Log}
@@ -48,7 +49,7 @@ trait PackageName {
 
 trait ContextProcessor extends ScalaNames with PackageName {
   private val logger = Log.forName("xsd.ContextProcessor")
-  def config: Config
+  var config: Config
   val newline = System.getProperty("line.separator")
   val XSI_URL = "http://www.w3.org/2001/XMLSchema-instance"
   val XSI_PREFIX = "xsi"
@@ -60,6 +61,9 @@ trait ContextProcessor extends ScalaNames with PackageName {
   def processContext(context: XsdContext, schemas: Seq[SchemaDecl]) {
     logger.debug("processContext")
 
+    if (config.autoPackages) config = generateAutoPackages(schemas).foldLeft(config) {case (cfg, (uri, pkg)) =>
+      cfg.update(ConfigEntry.PackageNames(cfg.packageNames updated (uri, pkg)))
+    }
     context.schemas ++= schemas
     context.packageNames ++= config.packageNames
     
@@ -203,6 +207,26 @@ trait ContextProcessor extends ScalaNames with PackageName {
     }
 
     makeCompositorNames(context)
+  }
+
+  def generateAutoPackages(schemas: Seq[SchemaDecl]): Seq[(Option[String], Option[String])] = {
+    val numbers = ('0' to '9').toSet
+
+    val allowedChars = (  // What can be in a package name
+      ('a' to 'z') ++
+      ('A' to 'Z')
+    ).toSet ++ numbers ++ Set(
+      '.'
+    )
+
+    schemas.map {s => s.targetNamespace -> s.targetNamespace.map(_
+      .split("[:/]")                                           // Split the namespace URI into fragments
+      .map {_.filter(allowedChars)}                            // Package name must be valid
+      .filter(!_.isEmpty)                                      // Drop empty fragments
+      .map {str => if (numbers(str.head)) 'n' + str else str}  // Package name can't start with a number
+      .tail                                                    // Drop the first fragment, which is usually "http"
+      .mkString(".")                                           // Concat the fragments
+    )}
   }
 
   def getTypeGlobally(namespace: Option[String], typeName: String, context: XsdContext): TypeDecl =

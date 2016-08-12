@@ -25,7 +25,7 @@ package scalaxb.compiler.xsd
 import scalaxb.compiler.{Module, Config, Snippet, Log}
 import scala.xml._
 
-abstract class GenProtocol(val context: XsdContext) extends ContextProcessor {
+class GenProtocol(val context: XsdContext, var config: Config) extends ContextProcessor {
   private val logger = Log.forName("xsd.GenProtocol")
 
   def generateProtocol(snippet: Snippet, serviceTargetNamespaces: Seq[String]): Seq[Node] = {

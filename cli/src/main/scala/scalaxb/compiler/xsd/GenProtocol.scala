@@ -90,7 +90,7 @@ trait { buildDefaultProtocolName(name) } extends scalaxb.XMLStandardTypes {{
     else scopes.map(x => quote(x._1) + " -> " + quote(x._2)).mkString("," + newline + indent(2)) })
 {snippet.implicitValue}
 
-  def fromAnySchemaType(elem: scala.xml.Elem): scalaxb.DataRecord[Any] = {{
+  implicit val fromAnySchemaType: scala.xml.Elem => Option[scalaxb.DataRecord[Any]] = {{elem =>
     import scalaxb.{{Helper, DataRecord, fromXML}}
 
     val ns = Helper.nullOrEmpty(elem.scope.getURI(elem.prefix))
@@ -99,7 +99,7 @@ trait { buildDefaultProtocolName(name) } extends scalaxb.XMLStandardTypes {{
 
     (key, ns) match {{
 {snippet.elemToTypeClauses}
-      case _ => DataRecord(ns, key, xsns, xstype, elem)
+      case _ => None
     }}
   }}
 

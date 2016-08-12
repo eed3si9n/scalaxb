@@ -325,9 +325,9 @@ trait XMLStandardTypes {
       Helper.nilElem(namespace, elementLabel.get, scope)
   }
 
-  implicit lazy val __DataRecordAnyXMLFormat: XMLFormat[DataRecord[Any]] = new XMLFormat[DataRecord[Any]] {
+  implicit def __DataRecordAnyXMLFormat(implicit handleNonDefault: scala.xml.Elem => Option[DataRecord[Any]] = _ => None): XMLFormat[DataRecord[Any]] = new XMLFormat[DataRecord[Any]] {
     def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, DataRecord[Any]] = try {
-      Right(DataRecord.fromAny(seq)) } catch { case e: Exception => Left(e.toString) }
+      Right(DataRecord.fromAny(seq, handleNonDefault)) } catch { case e: Exception => Left(e.toString) }
 
     def writes(obj: DataRecord[Any], namespace: Option[String], elementLabel: Option[String],
         scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
@@ -427,16 +427,16 @@ object DataRecord extends XMLStandardTypes {
     DataWriter(namespace, key, xstypeNamespace, xstypeName, value, implicitly[CanWriteXML[A]])
 
   // this is for any.
-  def apply(elemName: ElemName): DataRecord[Any] = fromAny(elemName.node)
+  def apply(elemName: ElemName)(implicit handleNonDefault: scala.xml.Elem => Option[DataRecord[Any]]): DataRecord[Any] = fromAny(elemName.node, handleNonDefault)
 
-  def fromAny(seq: NodeSeq): DataRecord[Any] = {
+  def fromAny(seq: NodeSeq, handleNonDefault: scala.xml.Elem => Option[DataRecord[Any]]): DataRecord[Any] = {
     seq match {
-      case elem: Elem => fromAny(elem)
+      case elem: Elem => fromAny(elem, handleNonDefault)
       case _ => DataRecord(None, None, None, None, seq.text)
     }
   }
 
-  def fromAny(elem: Elem): DataRecord[Any] = {
+  def fromAny(elem: Elem, handleNonDefault: scala.xml.Elem => Option[DataRecord[Any]]): DataRecord[Any] = {
     val ns = scalaxb.Helper.nullOrEmpty(elem.scope.getURI(elem.prefix))
     val key = Some(elem.label)
     val XS = Some(XML_SCHEMA_URI)
@@ -490,9 +490,10 @@ object DataRecord extends XMLStandardTypes {
 
           case _          => DataRecord(ns, key, XS, xstype, elem)
         }
-      case _ =>
+      case _ => handleNonDefault(elem).getOrElse {
         val (xsns, xstype) = instanceType(elem)
         DataRecord(ns, key, xsns, xstype, elem)
+      }
     }
   }
 

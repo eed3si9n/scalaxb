@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xsd:schema xmlns="http://simple/main"
+  targetNamespace="http://simple/main"
+  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+  elementFormDefault="qualified">
+
+  <xsd:simpleType name="DummyType">
+   <xsd:restriction base="xsd:byte">
+     <xsd:enumeration value="00"/>
+     <xsd:enumeration value="01"/>
+     <xsd:enumeration value="02"/>
+     <xsd:enumeration value="16"/>
+   </xsd:restriction>
+  </xsd:simpleType>
+
+  <xsd:complexType name="Holder">
+    <xsd:attribute name="dummy" type="DummyType"/>
+  </xsd:complexType>
+
+  <xsd:element name="holder" type="Holder"/>
+
+</xsd:schema>

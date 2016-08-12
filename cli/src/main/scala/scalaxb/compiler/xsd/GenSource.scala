@@ -128,11 +128,12 @@ abstract class GenSource(val schema: SchemaDecl,
     //   val name = context.typeNames(pkg)(sch)
     //   "import " + pkg.map(_ + ".").getOrElse("") + buildDefaultProtocolName(name) + "._"
     // }  
-    
+
+    def valOrVar = if (config.generateMutable) "var" else "val"
+
     val traitCode = <source>{ buildComment(decl) }trait {localName}{extendString} {{
   {
-  val vals = for (param <- paramList)
-    yield  "val " + param.toTraitScalaCode
+  val vals = for (param <- paramList) yield  s"$valOrVar ${param.toTraitScalaCode(false)}"
   vals.mkString(newline + indent(1))}
 }}</source>
     
@@ -909,13 +910,22 @@ object {localName} {{
     val wrapperName = makeParamName("all", false)
     all.particles collect {
       case elem: ElemDecl => elem
-      case ref: ElemRef   => buildElement(ref)
-    } map { elem => toCardinality(elem.minOccurs, elem.maxOccurs) match {
-        case Optional => "lazy val " + makeParamName(elem.name, false) + " = " +
-          wrapperName + ".get(" +  quote(buildNodeName(elem, true)) + ") map { _.as[" + buildTypeName(elem.typeSymbol) + "] }"
-        case _        => "lazy val " + makeParamName(elem.name, false) + " = " +
-          wrapperName + "(" +  quote(buildNodeName(elem, true)) + ").as[" + buildTypeName(elem.typeSymbol) + "]"
-      }
+      case ref : ElemRef  => buildElement(ref)
+    } map { elem => val      paramName =       makeParamName(elem.name, false)
+                    val quotedNodeName = quote(buildNodeName(elem     , true ))
+                    val       typeName =       buildTypeName(elem.typeSymbol)
+                    val isOptional     = toCardinality(elem.minOccurs, elem.maxOccurs) == Optional
+
+                    ( getterDeclaration(paramName, wrapperName, quotedNodeName, typeName, isOptional)
+                    , setterDeclaration(paramName, wrapperName, quotedNodeName, typeName, isOptional))
+
+        //s"lazy val ${makeParamName(elem.name, false)} = $wrapperName.get(${quote(buildNodeName(elem, true))}) map { _.as[${buildTypeName(elem.typeSymbol)}] }"
+        //s"lazy val ${makeParamName(elem.name, false)} = $wrapperName    (${quote(buildNodeName(elem, true))})        .as[${buildTypeName(elem.typeSymbol)}]"
+        //case Optional => "lazy val " + makeParamName(elem.name, false) + " = " +
+        //  wrapperName + ".get(" +  quote(buildNodeName(elem, true)) + ") map { _.as[" + buildTypeName(elem.typeSymbol) + "] }"
+        //case _        => "lazy val " + makeParamName(elem.name, false) + " = " +
+        //  wrapperName + "(" +  quote(buildNodeName(elem, true)) + ").as[" + buildTypeName(elem.typeSymbol) + "]"
+      //}
     }
   }
   

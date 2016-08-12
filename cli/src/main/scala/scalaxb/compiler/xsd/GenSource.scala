@@ -901,7 +901,7 @@ object {localName} {{
   def setterDeclaration(paramName: String, wrapperName: String, quotedNodeName: String, typeName: String, isOptional: Boolean): Option[String] =
     if (config.generateMutable) {
       val t = if (isOptional) s"Option[$typeName]" else typeName
-      Some(s"def ${paramName}_=(_value: $t) = $wrapperName += $quotedNodeName -> scalaxb.DataRecord(_value)")
+      Some(s"def ${paramName}_=(_value: $t)(implicit evidence: scalaxb.CanWriteXML[$t]) = $wrapperName += $quotedNodeName -> scalaxb.DataRecord(_value)")
     }
     else None
 

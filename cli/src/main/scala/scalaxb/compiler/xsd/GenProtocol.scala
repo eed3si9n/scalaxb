@@ -89,6 +89,20 @@ trait { buildDefaultProtocolName(name) } extends scalaxb.XMLStandardTypes {{
   val defaultScope = scalaxb.toScope({ if (scopes.isEmpty) "Nil: _*"
     else scopes.map(x => quote(x._1) + " -> " + quote(x._2)).mkString("," + newline + indent(2)) })
 {snippet.implicitValue}
+
+  implicit val fromAnySchemaType: scala.xml.Elem => Option[scalaxb.DataRecord[Any]] = {{elem =>
+    import scalaxb.{{Helper, DataRecord, fromXML}}
+
+    val ns = Helper.nullOrEmpty(elem.scope.getURI(elem.prefix))
+    val key = Some(elem.label)
+    val (xsns, xstype) = Helper.instanceType(elem)
+
+    (key, ns) match {{
+{snippet.elemToTypeClauses}
+      case _ => None
+    }}
+  }}
+
 {snippet.defaultFormats}
 }}</source>
   }

@@ -33,19 +33,19 @@ import scala.collection.mutable.{ListBuffer, ListMap}
 import ConfigEntry._
 
 object Snippet {
-  def apply(definition: Node): Snippet = Snippet(definition, Nil, Nil, Nil)
-
   def apply(snippets: Snippet*): Snippet =
     Snippet(snippets flatMap { s => s.companion ++ s.definition},
       Nil,
       snippets flatMap {_.defaultFormats},
-      snippets flatMap {_.implicitValue})
+      snippets flatMap {_.implicitValue},
+      snippets flatMap {_.elemToTypeClauses})
 }
 
-case class Snippet(definition: Seq[Node],
-  companion: Seq[Node],
-  defaultFormats: Seq[Node],
-  implicitValue: Seq[Node])
+case class Snippet(definition: Seq[Node] = Nil,
+  companion: Seq[Node] = Nil,
+  defaultFormats: Seq[Node] = Nil,
+  implicitValue: Seq[Node] = Nil,
+  elemToTypeClauses: Seq[Node] = Nil)
 
 trait CanBeWriter[A] {
  def toWriter(value: A): PrintWriter

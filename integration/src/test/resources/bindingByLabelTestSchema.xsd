@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xsd:schema xmlns="http://simple/main"
+  targetNamespace="http://simple/main"
+  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+  elementFormDefault="qualified">
+
+  <xsd:complexType name="CT_GraphicalObjectData">
+    <xsd:sequence>
+      <xsd:any minOccurs="0" maxOccurs="unbounded" processContents="strict"/>
+    </xsd:sequence>
+  </xsd:complexType>
+  
+  <xsd:complexType name="CT_GraphicalObject">
+    <xsd:sequence>
+      <xsd:element name="graphicData" type="CT_GraphicalObjectData" minOccurs="0" maxOccurs="1"/>
+    </xsd:sequence>
+  </xsd:complexType>
+  
+  <xsd:complexType name="CT_Table">
+    <xsd:sequence>
+      <xsd:element name="name" type="xsd:string" minOccurs="0" maxOccurs="1"/>
+    </xsd:sequence>
+  </xsd:complexType>
+  
+  <xsd:element name="tbl" type="CT_Table"/>
+  <xsd:element name="graphic" type="CT_GraphicalObject"/>
+
+</xsd:schema>

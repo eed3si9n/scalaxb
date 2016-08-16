@@ -128,6 +128,9 @@ object Arguments {
       }
       opt[Unit]("autopackages") text("generate packages for different namespaces automatically.") action { (_,c) =>
         c.update(AutoPackages) }
+      opt[Unit]("mutable") text("generates mutable classes") action { (_,c) =>
+        c.update(GenerateMutable).remove(VarArg) }
+
       help("help") text("display this message")
       version("version") text("display version info")
       arg[File]("<schema_file>...") unbounded() text("input schema to be converted") action { (x, c) =>

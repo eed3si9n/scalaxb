@@ -75,6 +75,7 @@ case class Config(items: Map[String, ConfigEntry]) {
     copy(items = items.updated(item.name, item))
   def remove(item: ConfigEntry): Config =
     copy(items = items - item.name)
+  def generateMutable: Boolean = values contains GenerateMutable
 }
 
 object Config {
@@ -129,5 +130,6 @@ object ConfigEntry {
   case class DispatchVersion(value: String) extends ConfigEntry
   case object VarArg extends ConfigEntry
   case object IgnoreUnknown extends ConfigEntry
-  case object AutoPackages                                    extends ConfigEntry
+  case object AutoPackages extends ConfigEntry
+  case object GenerateMutable extends ConfigEntry
 }

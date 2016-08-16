@@ -34,7 +34,11 @@ lazy val app = (project in file("cli")).
         prev :+ "-Xfatal-warnings"
       }
       else prev
-    }
+    },
+
+    mainClass          in assembly := Some("scalaxb.compiler.Main")
+  , assemblyOption     in assembly := (assemblyOption in assembly).value.copy(prependShellScript = Some(sbtassembly.AssemblyPlugin.defaultShellScript))
+  , assemblyOutputPath in assembly := file(s"./${name.value}-${version.value}")
   )
 
 lazy val integration = (project in file("integration")).

@@ -135,13 +135,21 @@ class GenSource(val schema: SchemaDecl,
     //   val pkg = packageName(sch, context)
     //   val name = context.typeNames(pkg)(sch)
     //   "import " + pkg.map(_ + ".").getOrElse("") + buildDefaultProtocolName(name) + "._"
-    // }  
+    // }
 
-    def valOrVar = if (config.generateMutable) "var" else "val"
+    def paramEntries(param: Param): Seq[String] = {
+      val res = Seq(s"def ${param.toParamName}: ${param.typeName}")
+      if (!config.generateMutable) res else res :+ {
+        val base = s"def ${param.toParamName}_=(value: ${param.typeName})"
+        val impl = s"(implicit evidence: scalaxb.CanWriteXML[${param.typeName}]): Unit"
+
+        if (param.attribute) base + impl else base
+      }
+    }
 
     val traitCode = <source>{ buildComment(decl) }trait {localName}{extendString} {{
   {
-  val vals = for (param <- paramList) yield  s"$valOrVar ${param.toTraitScalaCode(false)}"
+  val vals = paramList.flatMap(paramEntries)
   vals.mkString(newline + indent(1))}
 }}</source>
     

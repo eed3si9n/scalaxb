@@ -26,8 +26,8 @@
         </s:schema>
     </wsdl:types>
     <wsdl:message name="CreateUserRequestHeader">
-        <wsdl:part name="sessionId" type="s:string"/>
-        <wsdl:part name="correlationId" type="s:int"/>
+        <wsdl:part name="SessionId" type="s:string"/>
+        <wsdl:part name="CorrelationId" type="s:int"/>
     </wsdl:message>
     <wsdl:message name="CreateUserRequest">
         <wsdl:part name="username" type="s:string"/>
@@ -50,8 +50,8 @@
             <soap12:operation soapAction="http://example.com/CreateUser"/>
             <wsdl:input>
                 <soap12:body use="literal"/>
-                <soap12:header use="literal" part="sessionId" message="tns:CreateUserRequestHeader"/>
-                <soap12:header use="literal" part="correlationId" message="tns:CreateUserRequestHeader"/>
+                <soap12:header use="literal" part="SessionId" message="tns:CreateUserRequestHeader"/>
+                <soap12:header use="literal" part="CorrelationId" message="tns:CreateUserRequestHeader"/>
             </wsdl:input>
             <wsdl:output>
                 <soap12:body use="literal"/>

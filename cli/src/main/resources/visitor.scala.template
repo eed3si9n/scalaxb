@@ -20,16 +20,16 @@ trait VisitorTrait {
 
   val tree: Any
   
-  var parents       : List[Any]        = Nil
-  var visited       : Set [Any]        = Set()
-  var doSkipChildren: Boolean          = false
+  var parents       : List[Any] = Nil
+  var visited       : List[Any] = Nil
+  var doSkipChildren: Boolean   = false
 
   /**
    * Runs `f` on each node of the `tree`.
    */
   def visit(f: PartialFunction[Any, Unit]): Unit = {
     parents        = Nil
-    visited        = Set()
+    visited        = Nil
     doSkipChildren = false
 
     visitBody(tree, f)
@@ -79,13 +79,16 @@ trait VisitorTrait {
 
 
   protected def visitBody(node: Any, f: PartialFunction[Any, Unit]): Unit = {
-    visited += node
+    visited :+= node
     doSkipChildren = false
     if (f isDefinedAt node) f(node)
 
     if (!doSkipChildren) {
       parents ::= node
-      children(node).filter(!visited(_)).foreach(visitBody(_, f))
+      children(node).filter {
+        case n: AnyRef => !visited.exists {case m: AnyRef => n eq m case _ => false}
+        case n => !visited.contains(n)
+      }.foreach(visitBody(_, f))
       parents = parents.tail
     }
   }

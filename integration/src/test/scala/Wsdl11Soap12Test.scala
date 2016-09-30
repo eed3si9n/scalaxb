@@ -45,8 +45,8 @@ object Wsdl11Soap12Test extends TestBase {
         |                             xmlns:tns="http://tempuri.org/"
         |                             xmlns="http://tempuri.org/">
         |              <soap12:Header>
-        |                 <sessionId>session</sessionId>
-        |                 <correlationId>10001</correlationId>
+        |                 <SessionId>session</SessionId>
+        |                 <CorrelationId>10001</CorrelationId>
         |              </soap12:Header>
         |              <soap12:Body><username>User</username></soap12:Body>
         |            </soap12:Envelope>
@@ -162,7 +162,7 @@ object Wsdl11Soap12Test extends TestBase {
         |                             xmlns:xs="http://www.w3.org/2001/XMLSchema"
         |                             xmlns:tns="http://tempuri.org/"
         |                             xmlns="http://tempuri.org/">
-        |              <soap12:Header><requestHeader>header</requestHeader></soap12:Header>
+        |              <soap12:Header><RequestHeader>header</RequestHeader></soap12:Header>
         |              <soap12:Body><username>User</username></soap12:Body>
         |            </soap12:Envelope>
         |          val currentReq = scala.xml.XML.loadString(in)

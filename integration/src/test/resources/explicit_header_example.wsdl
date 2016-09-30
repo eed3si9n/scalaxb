@@ -20,7 +20,7 @@
     </wsdl:types>
     <wsdl:message name="CreateUserRequest">
         <wsdl:part name="username" type="s:string"/>
-        <wsdl:part name="requestHeader" type="s:string"/>
+        <wsdl:part name="RequestHeader" type="s:string"/>
     </wsdl:message>
     <wsdl:message name="CreateUserResponse">
         <wsdl:part name="parameters" element="tns:QuoteResponse"/>
@@ -40,7 +40,7 @@
             <soap12:operation soapAction="http://example.com/CreateUser"/>
             <wsdl:input>
                 <soap12:body use="literal"/>
-                <soap12:header use="literal" part="requestHeader" message="tns:CreateUserRequest"/>
+                <soap12:header use="literal" part="RequestHeader" message="tns:CreateUserRequest"/>
             </wsdl:input>
             <wsdl:output>
                 <soap12:body use="literal"/>

@@ -1,0 +1,35 @@
+
+### breaking changes
+
+- Fixes name clashes in typeclass intance by prefixing full package name. [#385][385] by [@anatoliykmetyuk][@anatoliykmetyuk]
+
+### bug fixes
+
+- Fixes SOAP operations which use multiple implicit headers. [#380][380] by [@joshlreese][@joshlreese]
+- Fixes SOAP header values composition. [#381][381] by [@coutoPL][@coutoPL]
+- Fixes SOAP header parts code generation. [#400][400] by [@jankeesvanandel][@jankeesvanandel]
+- Fixes enum name conflicts. [#386][386] by [@anatoliykmetyuk][@anatoliykmetyuk]
+- Fixes enum parsing, for example `00` in `xsd:byte`. [#388][388] by [@anatoliykmetyuk][@anatoliykmetyuk]
+
+### enhancements
+
+- Uses type attribute to convert `xs:any`. [#389][389] by [@anatoliykmetyuk][@anatoliykmetyuk]
+- Adds `--mutable` option to generate mutable datatype. [#390][390] by [@AndreVanDelft][@AndreVanDelft]
+- Adds `--autopackages` option to pick package names automatically. [#391][391] by [@anatoliykmetyuk][@anatoliykmetyuk]
+- Adds Visitor implementation for traversing over the generates datatypes. [#392][392] by [@anatoliykmetyuk][@anatoliykmetyuk]
+
+  [380]: https://github.com/eed3si9n/scalaxb/pull/380
+  [381]: https://github.com/eed3si9n/scalaxb/pull/381
+  [385]: https://github.com/eed3si9n/scalaxb/pull/385
+  [386]: https://github.com/eed3si9n/scalaxb/pull/386
+  [388]: https://github.com/eed3si9n/scalaxb/pull/388
+  [389]: https://github.com/eed3si9n/scalaxb/pull/389
+  [390]: https://github.com/eed3si9n/scalaxb/pull/390
+  [391]: https://github.com/eed3si9n/scalaxb/pull/391
+  [392]: https://github.com/eed3si9n/scalaxb/pull/392
+  [400]: https://github.com/eed3si9n/scalaxb/pull/400
+  [@anatoliykmetyuk]: https://github.com/anatoliykmetyuk
+  [@AndreVanDelft]: https://github.com/AndreVanDelft
+  [@joshlreese]: https://github.com/joshlreese
+  [@coutoPL]: https://github.com/coutoPL
+  [@jankeesvanandel]: https://github.com/jankeesvanandel

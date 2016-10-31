@@ -13,10 +13,10 @@ lazy val commonSettings = Seq(
   ) ++ sonatypeSettings
 
 lazy val root = (project in file(".")).
+  enablePlugins(NoPublish).
   aggregate(app, integration, scalaxbPlugin).
   settings(
-    scalaVersion := scala211,
-    publishArtifact := false
+    scalaVersion := scala211
   )
 
 lazy val app = (project in file("cli")).

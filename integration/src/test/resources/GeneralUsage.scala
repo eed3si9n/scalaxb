@@ -456,7 +456,7 @@ JDREVGRw==</base64Binary>
     val obj = fromXML[TopLevelMultipleSeqTest](subject)
     
     def check(obj: Any) = obj match {
-        case TopLevelMultipleSeqTest() =>
+        case TopLevelMultipleSeqTest(_) =>
         case _ => sys.error("match failed: " + obj.toString)
       }
     check(obj)

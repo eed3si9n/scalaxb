@@ -40,7 +40,7 @@ object AnyUsage {
         </foo>
     val obj = fromXML[Element1](subject)
     obj match {
-      case Element1(
+      case Element1(Seq(
           DataRecord(Some("http://www.example.com/any"), Some("int"), 1),
           DataRecord(Some("http://www.example.com/any"), Some("byte"), 1),
           DataRecord(Some("http://www.example.com/any"), Some("short"), 1),
@@ -57,7 +57,7 @@ object AnyUsage {
           DataRecord(Some("http://www.example.com/any"), Some("unsignedShort"), 1),
           DataRecord(Some("http://www.example.com/any"), Some("unsignedByte"), 1),
           DataRecord(Some("http://www.example.com/any"), Some("decimal"), 1)
-        ) =>
+        )) =>
       case _ => sys.error("match failed: " + obj.toString)
     }
     val document = toXML[Element1](obj, "foo", defaultScope)
@@ -85,7 +85,7 @@ object AnyUsage {
         </foo>
     val obj = fromXML[Element1](subject)
     obj match {
-      case Element1(
+      case Element1(Seq(
           DataRecord(Some("http://www.example.com/any"), Some("boolean"), false),
           DataRecord(Some("http://www.example.com/any"), Some("string"), "foo"),
           DataRecord(Some("http://www.example.com/any"), Some("normalizedString"), "foo"),
@@ -100,7 +100,7 @@ object AnyUsage {
           DataRecord(Some("http://www.example.com/any"), Some("IDREFS"), Seq("foo")),
           DataRecord(Some("http://www.example.com/any"), Some("ENTITY"), "foo"),
           DataRecord(Some("http://www.example.com/any"), Some("ENTITIES"), Seq("foo"))
-        ) =>
+        )) =>
       case _ => sys.error("match failed: " + obj.toString)
     }
     val document = toXML[Element1](obj, "foo", defaultScope)
@@ -134,7 +134,7 @@ object AnyUsage {
     
     val obj = fromXML[Element1](subject)
     obj match {
-      case Element1(
+      case Element1(Seq(
           DataRecord(Some("http://www.example.com/any"), Some("hexBinary"), HexBinary(15)),
           DataRecord(Some("http://www.example.com/any"), Some("base64Binary"), Base64Binary('m')),
           DataRecord(Some("http://www.example.com/any"), Some("anyURI"), ExampleCom),
@@ -148,7 +148,7 @@ object AnyUsage {
           DataRecord(Some("http://www.example.com/any"), Some("gMonthDay"), XMLCalendar("--10-10")),
           DataRecord(Some("http://www.example.com/any"), Some("gDay"), XMLCalendar("---10")),
           DataRecord(Some("http://www.example.com/any"), Some("gMonth"), XMLCalendar("--10"))
-        ) =>
+        )) =>
       case _ => sys.error("match failed: " + obj.toString)
     }
     val document = toXML[Element1](obj, "foo", defaultScope)

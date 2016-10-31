@@ -45,18 +45,9 @@ object Common {
     buildInfoPackage := "scalaxb",
     buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion,
       "defaultDispatchVersion" -> Dependencies.defaultDispatchVersion),
-    sourceGenerators in Compile <+= buildInfo,
-    sourceGenerators in Compile <+= scalaShim
+    sourceGenerators in Compile += buildInfo.taskValue,
+    sourceGenerators in Compile += scalaShim.taskValue
   )
-
-  // val customLsSettings: Seq[Def.Setting[_]] = Nil
-  val customLsSettings: Seq[Def.Setting[_]] = {
-    import ls.Plugin.{LsKeys => lskeys}
-    _root_.ls.Plugin.lsSettings ++ Seq(
-      lskeys.tags in lskeys.lsync := Seq("xml", "soap", "wsdl", "code-generation"),
-      (externalResolvers in lskeys.lsync) := Seq(Resolver.sonatypeRepo("public"))
-    )
-  }
 
   val sonatypeSettings: Seq[Def.Setting[_]] = Seq(
     pomExtra := (<scm>
@@ -73,7 +64,8 @@ object Common {
     publishArtifact in Test := false,
     resolvers ++= Seq(
       "sonatype-public" at "https://oss.sonatype.org/content/repositories/public"),
-    publishTo <<= version { (v: String) =>
+    publishTo := {
+      val v = version.value
       val nexus = "https://oss.sonatype.org/"
       if (v.trim.endsWith("SNAPSHOT")) Some("snapshots" at nexus + "content/repositories/snapshots")
       else Some("releases"  at nexus + "service/local/staging/deploy/maven2")

@@ -1,9 +1,7 @@
-import ScalaxbKeys._
-
-name := "mavenxsd"
-
-seq(scalaxbSettings: _*)
-
-packageName in scalaxb in Compile := "ipo"
-
-sourceGenerators in Compile <+= scalaxb in Compile
+lazy val root = (project in file(".")).
+  enablePlugins(ScalaxbPlugin).
+  settings(
+    name := "mavenxsd",
+    scalaxbAutoPackages in (Compile, scalaxb) := true,
+    scalaxbGenerateMutable in (Compile, scalaxb) := true
+  )

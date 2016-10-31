@@ -68,6 +68,8 @@ case class Config(items: Map[String, ConfigEntry]) {
   def varArg: Boolean = values contains VarArg
   def ignoreUnknown: Boolean = values contains IgnoreUnknown
   def autoPackages: Boolean = values contains AutoPackages
+  def generateMutable: Boolean = values contains GenerateMutable
+  def generateVisitor: Boolean = values contains GenerateVisitor
 
   private def get[A <: ConfigEntry: Manifest]: Option[A] =
     items.get(implicitly[Manifest[A]].runtimeClass.getName).asInstanceOf[Option[A]]
@@ -75,7 +77,6 @@ case class Config(items: Map[String, ConfigEntry]) {
     copy(items = items.updated(item.name, item))
   def remove(item: ConfigEntry): Config =
     copy(items = items - item.name)
-  def generateMutable: Boolean = values contains GenerateMutable
 }
 
 object Config {
@@ -98,7 +99,7 @@ object Config {
       SeperateProtocol, defaultProtocolFileName, defaultProtocolPackageName,
       GenerateRuntime, GenerateDispatchClient,
       defaultContentsSizeLimit, defaultSequenceChunkSize,
-      GenerateAsync, defaultDispatchVersion, VarArg)
+      GenerateAsync, defaultDispatchVersion)
   )
 }
 
@@ -132,4 +133,5 @@ object ConfigEntry {
   case object IgnoreUnknown extends ConfigEntry
   case object AutoPackages extends ConfigEntry
   case object GenerateMutable extends ConfigEntry
+  case object GenerateVisitor extends ConfigEntry
 }

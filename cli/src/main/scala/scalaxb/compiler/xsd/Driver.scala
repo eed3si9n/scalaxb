@@ -82,8 +82,9 @@ class Driver extends Module { driver =>
   def generateRuntimeFiles[To](cntxt: Context, config: Config)(implicit evTo: CanBeWriter[To]): List[To] =
     List(
       generateFromResource[To](Some("scalaxb"), "scalaxb.scala", "/scalaxb.scala.template")
-    , generateFromResource[To](Some("scalaxb"), "Visitor.scala", "/visitor.scala.template")
     ) ++
+    (if (config.generateVisitor) List(generateFromResource[To](Some("scalaxb"), "Visitor.scala", "/visitor.scala.template"))
+     else Nil) ++
     (if (config.generateDispatchAs) List(generateFromResource[To](Some("dispatch.as"), "dispatch_as_scalaxb.scala",
         "/dispatch_as_scalaxb.scala.template"))
      else Nil)

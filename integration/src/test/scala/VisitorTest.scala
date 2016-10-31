@@ -26,7 +26,7 @@ object VisitorTest extends TestBase {
 
   lazy val generated = module.processFiles(
     List(schema),
-    Config.default.update(PackageNames(Map(None -> Some("visitortest")))).
+    Config.default.update(GenerateVisitor).update(PackageNames(Map(None -> Some("visitortest")))).
       update(Outdir(tmp)))
 
   "Visitor should have a working collect method" in repl(generated)(s"""

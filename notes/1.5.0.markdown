@@ -14,14 +14,14 @@
 
 ### enhancements
 
+- Adds `--mutable` option to generate mutable case classes. See below.
 - Uses type attribute to convert `xs:any`. [#389][389] by [@anatoliykmetyuk][@anatoliykmetyuk]
-- Adds `--mutable` option to generate mutable case classes. [#390][390] by [@AndreVanDelft][@AndreVanDelft]
 - Adds `--autopackages` option to pick package names automatically. [#391][391] by [@anatoliykmetyuk][@anatoliykmetyuk]
 - Adds `--visitor` option to generate a Visitor for traversing over the generates datatypes. [#392][392] by [@anatoliykmetyuk][@anatoliykmetyuk]
 
 ### sbt-scalaxb changes
 
-sbt-scalaxb is changed to an auto plugin.
+sbt-scalaxb for scalaxb 1.5.0 is changed to an auto plugin.
 Instead of adding `scalaxbSettings` and defining `sourceGenerators in Compile`,
 enable `ScalaxbPlugin` instead. All other setting/task keys will be prefixed with "scalaxb".
 For example, `packageName` will now be called `scalaxbPackageName`.
@@ -51,6 +51,26 @@ After:
       )
 
   [#405][405] by [@eed3si9n][@eed3si9n]
+
+### mutable case class
+
+scalaxb 1.5.0 adds an option to generate mutable case classes.
+
+    case class Address(var name: String,
+      var street: String,
+      var city: String)
+
+In sbt-scalaxb, this can be enabled as:
+
+    lazy val root = (project in file(".")).
+      enablePlugins(ScalaxbPlugin).
+      settings(
+        name := "foo-project",
+        scalaxbPackageName in (Compile, scalaxb) := "generated",
+        scalaxbGenerateMutable in (Compile, scalaxb) := true
+      )
+
+[#390][390] by [@AndreVanDelft][@AndreVanDelft]
 
   [380]: https://github.com/eed3si9n/scalaxb/pull/380
   [381]: https://github.com/eed3si9n/scalaxb/pull/381

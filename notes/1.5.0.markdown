@@ -1,7 +1,7 @@
 
 ### breaking changes
 
-- Fixes name clashes in typeclass intance by prefixing full package name. [#385][385] by [@anatoliykmetyuk][@anatoliykmetyuk]
+- Fixes name clashes in typeclass instance by prefixing full package name. [#385][385] by [@anatoliykmetyuk][@anatoliykmetyuk]
 - The default value for using varargs is set to false.
 - sbt-scalaxb is now an auto plugin. See below.
 

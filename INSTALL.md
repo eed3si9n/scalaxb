@@ -1,8 +1,7 @@
 scalaxb installation
 ====================
 
-scalaxb is tested under Scala 2.9.0-1, but should also work for 2.8.1.
-It also requires Java SE 6.
+scalaxb is tested under Scala 2.11.
 
 Use conscript
 =============
@@ -35,7 +34,7 @@ Grab scalaxb's source and build:
     $ git clone git://github.com/eed3si9n/scalaxb.git scalaxb
     $ cd scalaxb
 
-Open `project/build.scala` using your favorite editor, and change the version number to `local-SNAPSHOT`.
+Open `build.sbt` using your favorite editor, and change the version number to `local-SNAPSHOT`.
 This way our Ivy cache won't be confused when the official builds are released.
 
     version := "local-SNAPSHOT",

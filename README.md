@@ -36,10 +36,16 @@ To call scalaxb from sbt 0.13.x, put this in your `project/scalaxb.sbt`:
 
 and this in `scalaxb.sbt`:
 
-    scalaxbSettings
-    packageName in scalaxb in Compile := "xxx"
-    sourceGenerators in Compile <+= scalaxb in Compile
-    dispatchVersion in scalaxb in Compile := "0.11.3"
+```scala
+lazy val root = (project in file(".")).
+  enablePlugins(ScalaxbPlugin).
+  settings(
+    name := "foo-project",
+    scalaxbPackageName in (Compile, scalaxb) := "generated",
+    // scalaxbAutoPackages in (Compile, scalaxb) := true
+    scalaxbDispatchVersion in (Compile, scalaxb) := "0.11.3"
+  )
+```
 
 ### command line app scalaxb
 

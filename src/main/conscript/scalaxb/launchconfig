@@ -1,9 +1,9 @@
 [app]
   version: 1.4.1
   org: org.scalaxb
-  name: scalaxb_2.11
+  name: scalaxb
   class: scalaxb.compiler.SbtApp
-  cross-versioned: false
+  cross-versioned: true
 [scala]
   version: 2.11.8
 [repositories]

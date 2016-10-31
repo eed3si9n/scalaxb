@@ -18,7 +18,7 @@
 - Adds `--mutable` option to generate mutable case classes. See below.
 - Uses type attribute to convert `xs:any`. [#389][389] by [@anatoliykmetyuk][@anatoliykmetyuk]
 - Adds `--autopackages` option to pick package names automatically. [#391][391] by [@anatoliykmetyuk][@anatoliykmetyuk]
-- Adds `--visitor` option to generate a Visitor for traversing over the generates datatypes. [#392][392] by [@anatoliykmetyuk][@anatoliykmetyuk]
+- Adds `--visitor` option to generate a Visitor for traversing over the generated case classes. [#392][392] by [@anatoliykmetyuk][@anatoliykmetyuk]
 
 ### sbt-scalaxb changes
 

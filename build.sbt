@@ -10,7 +10,7 @@ lazy val commonSettings = Seq(
     scalacOptions := Seq("-deprecation", "-unchecked", "-feature", "-language:implicitConversions", "-language:postfixOps"),
     parallelExecution in Test := false,
     resolvers += Resolver.typesafeIvyRepo("releases")
-  ) ++ sonatypeSettings ++ lsSettings
+  ) ++ sonatypeSettings
 
 lazy val root = (project in file(".")).
   aggregate(app, integration, scalaxbPlugin).
@@ -26,7 +26,7 @@ lazy val app = (project in file("cli")).
     name := "scalaxb",
     crossScalaVersions := Seq(scala211, scala210),
     scalaVersion := scala211,
-    resolvers <+= sbtResolver,
+    resolvers += sbtResolver.value,
     libraryDependencies ++= appDependencies(scalaVersion.value),
     scalacOptions := {
       val prev = scalacOptions.value
@@ -51,7 +51,7 @@ lazy val integration = (project in file("integration")).
     // fork in test := true,
     // javaOptions in test ++= Seq("-Xmx2G", "-XX:MaxPermSize=512M")
   , parallelExecution in Test := false
-  , testOptions in Test += Tests.Argument("sequential")  
+  , testOptions in Test += Tests.Argument("sequential")
   ).
   dependsOn(app)
 
@@ -70,6 +70,6 @@ lazy val scalaxbPlugin = (project in file("sbt-scalaxb")).
       Seq("-Xmx1024M", "-XX:MaxPermSize=256M", "-Dplugin.version=" + version.value)
     },
     scriptedBufferLog := false,
-    scripted <<= scripted.dependsOn(publishLocal in app)
+    scripted := scripted.dependsOn(publishLocal in app).evaluated
   ).
   dependsOn(app)

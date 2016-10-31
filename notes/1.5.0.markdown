@@ -2,6 +2,7 @@
 ### breaking changes
 
 - Fixes name clashes in typeclass intance by prefixing full package name. [#385][385] by [@anatoliykmetyuk][@anatoliykmetyuk]
+- sbt-scalaxb is now an auto plugin. See below.
 
 ### bug fixes
 
@@ -14,9 +15,42 @@
 ### enhancements
 
 - Uses type attribute to convert `xs:any`. [#389][389] by [@anatoliykmetyuk][@anatoliykmetyuk]
-- Adds `--mutable` option to generate mutable datatype. [#390][390] by [@AndreVanDelft][@AndreVanDelft]
+- Adds `--mutable` option to generate mutable case classes. [#390][390] by [@AndreVanDelft][@AndreVanDelft]
 - Adds `--autopackages` option to pick package names automatically. [#391][391] by [@anatoliykmetyuk][@anatoliykmetyuk]
 - Adds `--visitor` option to generate a Visitor for traversing over the generates datatypes. [#392][392] by [@anatoliykmetyuk][@anatoliykmetyuk]
+
+### sbt-scalaxb changes
+
+sbt-scalaxb is changed to an auto plugin.
+Instead of adding `scalaxbSettings` and defining `sourceGenerators in Compile`,
+enable `ScalaxbPlugin` instead. All other setting/task keys will be prefixed with "scalaxb".
+For example, `packageName` will now be called `scalaxbPackageName`.
+
+Before:
+
+    import ScalaxbKeys._
+    lazy val root = (project in file(".")).
+      settings(
+        name := "foo-project").
+      settings(scalaxbSettings).
+      settings(
+        sourceGenerators in Compile += (scalaxb in Compile).taskValue,
+        packageName in (Compile, scalaxb) := "generated"
+        // packageNames in (Compile, scalaxb) := Map(uri("http://something/") -> "something"),
+        // logLevel in (Compile, scalaxb) := Level.Debug
+      )
+
+After:
+
+    lazy val root = (project in file(".")).
+      enablePlugins(ScalaxbPlugin).
+      settings(
+        name := "foo-project",
+        scalaxbPackageName in (Compile, scalaxb) := "generated"
+        // scalaxbAutoPackages in (Compile, scalaxb) := true
+      )
+
+  [#405][405] by [@eed3si9n][@eed3si9n]
 
   [380]: https://github.com/eed3si9n/scalaxb/pull/380
   [381]: https://github.com/eed3si9n/scalaxb/pull/381
@@ -28,8 +62,10 @@
   [391]: https://github.com/eed3si9n/scalaxb/pull/391
   [392]: https://github.com/eed3si9n/scalaxb/pull/392
   [400]: https://github.com/eed3si9n/scalaxb/pull/400
+  [405]: https://github.com/eed3si9n/scalaxb/pull/405
   [@anatoliykmetyuk]: https://github.com/anatoliykmetyuk
   [@AndreVanDelft]: https://github.com/AndreVanDelft
   [@joshlreese]: https://github.com/joshlreese
   [@coutoPL]: https://github.com/coutoPL
   [@jankeesvanandel]: https://github.com/jankeesvanandel
+  [@eed3si9n]: https://github.com/eed3si9n

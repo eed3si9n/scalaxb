@@ -38,6 +38,10 @@ object Plugin extends sbt.Plugin {
     lazy val dispatchVersion  = SettingKey[String]("scalaxb-dispatch-version")
     lazy val async            = SettingKey[Boolean]("scalaxb-async")
     lazy val ignoreUnknown    = SettingKey[Boolean]("scalaxb-ignore-unknown")
+    lazy val vararg           = SettingKey[Boolean]("scalaxb-vararg")
+    lazy val generateMutable  = SettingKey[Boolean]("scalaxb-generate-mutable")
+    lazy val generateVisitor  = SettingKey[Boolean]("scalaxb-generate-visitor")
+    lazy val autoPackages     = SettingKey[Boolean]("scalaxb-auto-packages")
   }
 
   object ScalaxbCompile {
@@ -87,7 +91,7 @@ object Plugin extends sbt.Plugin {
       if (Seq(Compile, Test) contains configuration.value) src / "wsdl"
       else src / "main" / "wsdl"
     },
-    logLevel in scalaxb <<= logLevel?? Level.Info
+    logLevel in scalaxb := (logLevel?? Level.Info).value
   ) ++ inTask(scalaxb)(Seq(
     generate := {
       val s = streams.value
@@ -129,6 +133,10 @@ object Plugin extends sbt.Plugin {
     dispatchVersion         := ScConfig.defaultDispatchVersion.value,
     async in scalaxb        := true,
     ignoreUnknown           := false,
+    vararg                  := false,
+    generateMutable         := false,
+    generateVisitor         := false,
+    autoPackages            := false,
     scalaxbConfig :=
       ScConfig(
         Vector(PackageNames(combinedPackageNames.value)) ++
@@ -161,7 +169,11 @@ object Plugin extends sbt.Plugin {
         (if (laxAny.value) Vector(LaxAny) else Vector()) ++
         Vector(DispatchVersion(dispatchVersion.value)) ++
         (if (async.value) Vector(GenerateAsync) else Vector()) ++
-        (if (ignoreUnknown.value) Vector(IgnoreUnknown) else Vector())
+        (if (ignoreUnknown.value) Vector(IgnoreUnknown) else Vector()) ++
+        (if (vararg.value && !generateMutable.value) Vector(VarArg) else Vector()) ++
+        (if (generateMutable.value) Vector(GenerateMutable) else Vector()) ++
+        (if (generateVisitor.value) Vector(GenerateVisitor) else Vector()) ++
+        (if (autoPackages.value) Vector(AutoPackages) else Vector())
       )
   ))
 }

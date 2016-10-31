@@ -121,15 +121,17 @@ object Arguments {
         c.remove(VarArg) }
       opt[Unit]("ignore-unknown") text("Ignore Unknown Elements") action { (_, c) =>
         c.update(IgnoreUnknown) }
+      opt[Unit]("autopackages") text("generate packages for different namespaces automatically.") action { (_,c) =>
+        c.update(AutoPackages) }
+      opt[Unit]("mutable") text("generates mutable classes") action { (_,c) =>
+        c.update(GenerateMutable).remove(VarArg) }
+      opt[Unit]("visitor") text("generates visitor") action { (_,c) =>
+        c.update(GenerateVisitor) }
 
       opt[Unit]('v', "verbose") text("be extra verbose") action { (_, c) =>
         verbose = true
         c
       }
-      opt[Unit]("autopackages") text("generate packages for different namespaces automatically.") action { (_,c) =>
-        c.update(AutoPackages) }
-      opt[Unit]("mutable") text("generates mutable classes") action { (_,c) =>
-        c.update(GenerateMutable).remove(VarArg) }
 
       help("help") text("display this message")
       version("version") text("display version info")

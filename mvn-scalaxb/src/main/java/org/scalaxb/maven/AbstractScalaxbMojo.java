@@ -278,7 +278,7 @@ public abstract class AbstractScalaxbMojo extends AbstractMojo {
     /**
      * Generate case class repeated parameters as varargs if true or Seq if false
      */
-    @Parameter(defaultValue = "true")
+    @Parameter(defaultValue = "false")
     private boolean varArgs;
 
     /**
@@ -287,6 +287,24 @@ public abstract class AbstractScalaxbMojo extends AbstractMojo {
      */
     @Parameter(defaultValue = "false")
     private boolean ignoreUnknown;
+
+    /**
+     * Generate packages for different namespaces automatically
+     */
+    @Parameter(defaultValue = "false")
+    private boolean autoPackages;
+
+    /**
+     * Generate mutable case classes
+     */
+    @Parameter(defaultValue = "false")
+    private boolean mutable;
+
+    /**
+     * Generates visitor
+     */
+    @Parameter(defaultValue = "false")
+    private boolean visitor;
 
     /**
      * Returns the command line options to be used for scalaxb, excluding the
@@ -313,8 +331,12 @@ public abstract class AbstractScalaxbMojo extends AbstractMojo {
             .flag("--prepend-family", prependFamily)
             .flag("--blocking", !async)
             .flag("--lax-any", laxAny)
-	        .flag("--no-varargs", !varArgs)
+            .flag("--no-varargs", !varArgs)
             .flag("--ignore-unknown", ignoreUnknown)
+            .flag("--autopackages", autoPackages)
+            .flag("--mutable", mutable)
+            .flag("--visitor", visitor)
+
             .getArguments();
         return unmodifiableList(args);
     }

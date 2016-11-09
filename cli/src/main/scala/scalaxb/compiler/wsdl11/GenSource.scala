@@ -99,7 +99,7 @@ trait GenSource {
     val operations = binding.operation map { opBinding => makeOperation(opBinding, interfaceType, soapBindingStyle, false) }
     val bindingOps = binding.operation map { opBinding => makeSoapOpBinding(opBinding, interfaceType, soapBindingStyle, false) }
     val importFutureString = if (config.async) "import scala.concurrent.Future" + NL else ""
-    val clientTraitName = if (config.async) "Soap11ClientsAsync" else "Soap11Clients"
+    val clientTrait = if (config.async) "scalaxb.Soap11ClientsAsync with scalaxb.ExecutionContextProvider" else "scalaxb.Soap11Clients"
 
     val interfaceTrait = <source>
 {importFutureString}
@@ -112,7 +112,7 @@ trait {interfaceTypeName} {{
 </source>
 
     val bindingTrait = <source>
-  trait {name}s {{ this: scalaxb.{clientTraitName} =>
+  trait {name}s {{ this: {clientTrait} =>
     lazy val targetNamespace: Option[String] = { xsdgenerator.quote(targetNamespace) }
     lazy val service: {interfaceTypeFQN} = new {name} {{}}
     {addressString}
@@ -147,7 +147,7 @@ trait {interfaceTypeName} {{
     val operations = binding.operation map { opBinding => makeOperation(opBinding, interfaceType, soapBindingStyle, true) }
     val bindingOps = binding.operation map { opBinding => makeSoapOpBinding(opBinding, interfaceType, soapBindingStyle, true) }
     val importFutureString = if (config.async) "import scala.concurrent.Future" + NL else ""
-    val clientTraitName = if (config.async) "SoapClientsAsync" else "SoapClients"
+    val clientTrait = if (config.async) "scalaxb.SoapClientsAsync with scalaxb.ExecutionContextProvider" else "scalaxb.SoapClients"
 
     val interfaceTrait = <source>
 {importFutureString}
@@ -160,7 +160,7 @@ trait {interfaceTypeName} {{
 </source>
 
     val bindingTrait = <source>
-  trait {name}s {{ this: scalaxb.{clientTraitName} =>
+  trait {name}s {{ this: {clientTrait} =>
     lazy val targetNamespace: Option[String] = { xsdgenerator.quote(targetNamespace) }
     lazy val service: {interfaceTypeFQN} = new {name} {{}}
     {addressString}

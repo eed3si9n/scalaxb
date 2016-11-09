@@ -20,8 +20,9 @@ case class Soap11Fault[+A](original: Any, detail: Option[A], headers: scala.xml.
   override def toString: String = s"""Soap11Fault($original, $detail, $headers)"""
 }
 
-trait Soap11ClientsAsync { this: HttpClientsAsync =>
-  implicit lazy val executionContext = scala.concurrent.ExecutionContext.Implicits.global
+trait Soap11ClientsAsync {
+  this: HttpClientsAsync with ExecutionContextProvider =>
+
   lazy val soapClient: Soap11ClientAsync = new Soap11ClientAsync {}
   def baseAddress: java.net.URI
 

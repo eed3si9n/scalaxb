@@ -35,7 +35,7 @@ object TimeoutTest extends TestBase with JaxwsTestBase {
       import scala.concurrent._, duration._
       import java.util.concurrent.ExecutionException
       import java.util.NoSuchElementException""",
-      s"""val service = (new DocumentWrappedServiceSoapBindings with scalaxb.Soap11ClientsAsync with scalaxb.DispatchHttpClientsAsync {
+      s"""val service = (new DocumentWrappedServiceSoapBindings with scalaxb.Soap11ClientsAsync with scalaxb.DispatchHttpClientsAsync with scalaxb.GlobalExecutionContextProvider {
         override def requestTimeout = $requestTimeout.seconds
         override def connectionTimeout = $connectionTimeout.seconds
       }).service""",

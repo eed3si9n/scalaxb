@@ -1,6 +1,8 @@
 package scalaxb
 
 trait DispatchHttpClientsAsync extends HttpClientsAsync {
+  this: ExecutionContextProvider =>
+
   lazy val httpClient = new DispatchHttpClient {}
 
   trait DispatchHttpClient extends HttpClient {

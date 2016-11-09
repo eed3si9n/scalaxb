@@ -26,7 +26,7 @@ object DispatchResponseAsScalaxbTest extends TestBase with JaxrsTestBase {
 
   "dispatch-response-as-scalaxb service works" in {
     (List("""import stockquote._
-      import scala.concurrent._, duration._, dispatch._""",
+      import scala.concurrent._, duration._, dispatch._, scala.concurrent.ExecutionContext.Implicits.global""",
       s"""val request = url("http://localhost:$servicePort/$serviceAddress/item/GOOG")""",
       """val fresponse = Http(request > as.scalaxb[StoreItem])""",
       """val response = Await.result(fresponse, 5.seconds)""",

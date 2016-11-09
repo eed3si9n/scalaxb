@@ -27,7 +27,7 @@ object Wsdl11RpcTest extends TestBase with JaxwsTestBase {
   "document-bare service works" in {
     (List("""import stockquote._
       import scala.concurrent._, duration._""",
-      """val service = (new RpcLiteralServiceSoapBindings with scalaxb.Soap11ClientsAsync with scalaxb.DispatchHttpClientsAsync {}).service""",
+      """val service = (new RpcLiteralServiceSoapBindings with scalaxb.Soap11ClientsAsync with scalaxb.DispatchHttpClientsAsync with scalaxb.GlobalExecutionContextProvider {}).service""",
       """val fresponse = service.price("GOOG")""",
       """val response = Await.result(fresponse, 5.seconds)""",
       """if (response != 42.0) sys.error(response.toString)""",

@@ -87,7 +87,8 @@ trait ContextProcessor extends ScalaNames with PackageName {
 
     def nameEnumSimpleType(schema: SchemaDecl, decl: SimpleTypeDecl,
        initialName: String, postfix: String = "Type") {
-      if (context.typeNames.contains(decl)) registerDuplicatedType(schema, decl, decl.name)
+      if (context.typeNames.contains(decl))
+        registerDuplicatedType(schema, decl, decl.name)
       else {
         context.typeNames(decl) = makeProtectedTypeName(schema.targetNamespace, initialName, postfix, context)
         logger.debug("processContent: enum %s is named %s" format(decl.name, context.typeNames(decl)))
@@ -486,6 +487,8 @@ trait ContextProcessor extends ScalaNames with PackageName {
     }
     
     var name = makeTypeName(initialName)
+    if (isKeyword(name) || isCommonlyUsedWord(name))
+      name += "_"
     if (!contains(name)) name
     else {
       name = makeTypeName(initialName) + postfix
@@ -557,11 +560,15 @@ trait ContextProcessor extends ScalaNames with PackageName {
       if (p.endsWith("_"))  p + name
       else p + name.capitalize
     } getOrElse { name }
-    
-    if (isKeyword(base) || isCommonlyUsedWord(base)) identifier(base + "Value")
-    else if (attribute && isSpecialAttributeWord(base)) identifier(base + "Attribute")
-    else if (startsWithNumber(base)) identifier("number" + base)
-    else identifier(base)
+
+    if (isKeyword(base) || isCommonlyUsedWord(base))
+      identifier(base + "Value")
+    else if (attribute && isSpecialAttributeWord(base))
+      identifier(base + "Attribute")
+    else if (startsWithNumber(base))
+      identifier("number" + base)
+    else
+      identifier(base)
   }
   
   def makePrefix(namespace: Option[String], context: XsdContext): String = namespace map { ns =>

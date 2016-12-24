@@ -126,7 +126,7 @@ trait ScalaNames {
     }
   
   def isKeyword(str: String) =
-    str match {
+    str.toLowerCase match {
       case "abstract"
       | "case"
       | "catch"

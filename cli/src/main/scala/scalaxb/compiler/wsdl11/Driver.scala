@@ -32,6 +32,8 @@ import java.net.{URI}
 import scala.xml.{Node}
 import scala.reflect.ClassTag
 import scalaxb.compiler.xsd.{SchemaLite, SchemaDecl, XsdContext, GenProtocol}
+import java.nio.file.Path
+import java.nio.file.Paths
 
 class Driver extends Module { driver =>
   private val logger = Log.forName("wsdl")
@@ -161,7 +163,8 @@ class Driver extends Module { driver =>
          case ImportDecl(_, Some(schemaLocation: String)) => schemaLocation
         }})
     val includeLocations: Seq[String] = schemaLite flatMap { schemaLite =>
-      schemaLite.includes map { _.schemaLocation }
+      schemaLite.includes map { include =>
+        Paths.get(alocation.getPath.substring(0, alocation.getPath.lastIndexOf('/') + 1) + include.schemaLocation).normalize().toString() }
     }
 
     def toSchema(context: Context): WsdlPair = {

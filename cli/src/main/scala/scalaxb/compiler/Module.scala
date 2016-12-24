@@ -31,6 +31,7 @@ import java.io.{File, PrintWriter, Reader, BufferedReader}
 import scala.collection.mutable
 import scala.collection.mutable.{ListBuffer, ListMap}
 import ConfigEntry._
+import java.nio.file.Paths
 
 object Snippet {
   def apply(snippets: Snippet*): Snippet =
@@ -229,7 +230,7 @@ trait Module {
 
       val additional = missings flatMap { x =>
         val uri = new URI(x)
-        val file = new File(new File(uri.getPath).getName)
+        val file = new File(uri.getPath)
 
         if (file.exists) Some(file)
         else None
@@ -390,11 +391,13 @@ trait Module {
     }
     val XML_LOCATION = "http://www.w3.org/2001/xml.xsd"
     val locationBased = importable.importLocations.toList flatMap { loc =>
-      val deps = files filter { f => shortenUri(f.location) == shortenUri(new URI(loc)) }
-      if (deps.isEmpty && loc != XML_LOCATION) {
-        logger.warn((new File(importable.location.getPath).getName) + " imports " + loc +
+      val absLoc = Paths.get(importable.location.getPath.substring(0, importable.location.getPath.lastIndexOf('/') + 1) + loc).normalize().toString()
+      //val absLoc = importable.location.getPath.substring(0, importable.location.getPath.lastIndexOf('/') + 1) + loc
+      val deps = files filter { f => shortenUri(f.location) == shortenUri(new URI(absLoc)) }
+      if (deps.isEmpty && absLoc != XML_LOCATION) {
+        logger.warn((new File(importable.location.getPath).getName) + " imports " + absLoc +
         " but no schema with that name was compiled together.")
-        List(loc)
+        List(absLoc)
       }
       else Nil
     }
@@ -481,7 +484,7 @@ trait Module {
       NamespaceBinding(null, outerNamespace getOrElse null, scope)
     def fixSeq(ns: Seq[Node]): Seq[Node] =
       for { node <- ns } yield node match {
-        case elem: Elem => 
+        case elem: Elem =>
           elem.copy(scope = fixScope(elem.scope),
                child = fixSeq(elem.child))
         case other => other

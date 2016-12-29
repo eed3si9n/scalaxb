@@ -5,8 +5,8 @@ import Keys._
 import scalaxb.compiler.{Config => ScConfig}
 
 trait ScalaxbKeys {
-  lazy val scalaxb                 = taskKey[Seq[File]]("Generates case classes and typeclass intances")
-  lazy val scalaxbGenerate         = taskKey[Seq[File]]("Generates case classes and typeclass intances")
+  lazy val scalaxb                 = taskKey[Seq[File]]("Generates case classes and typeclass instances")
+  lazy val scalaxbGenerate         = taskKey[Seq[File]]("Generates case classes and typeclass instances")
   lazy val scalaxbConfig           = settingKey[ScConfig]("Configuration for scalaxb")
   lazy val scalaxbXsdSource        = settingKey[File]("xsd source directory")
   lazy val scalaxbWsdlSource       = settingKey[File]("wsdl source directory")
@@ -17,7 +17,7 @@ trait ScalaxbKeys {
   lazy val scalaxbParamPrefix      = settingKey[Option[String]]("Prefixes generated parameter names")
   lazy val scalaxbAttributePrefix  = settingKey[Option[String]]("Prefixes generated attribute parameters")
   lazy val scalaxbPrependFamily    = settingKey[Boolean]("Prepends family name to class names")
-  lazy val scalaxbWrapContents     = settingKey[Seq[String]]("Wraps inner contents into a seperate case class")
+  lazy val scalaxbWrapContents     = settingKey[Seq[String]]("Wraps inner contents into a separate case class")
   lazy val scalaxbContentsSizeLimit = settingKey[Int]("Defines long contents to be segmented (default: max)")
   lazy val scalaxbChunkSize        = settingKey[Int]("Segments long sequences into chunks (default: 10)")
   lazy val scalaxbNamedAttributes  = settingKey[Boolean]("Generates named fields for attributes")

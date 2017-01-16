@@ -12,7 +12,7 @@ object EnumNameConflictsTest extends TestBase {
   "nil in enum name should be prefixed" in {
     (List(
       "import enumconflicts.NilType"
-    , "import enumconflicts.Macro"
+    , "import enumconflicts.Macro_"
     , "import enumconflicts.Foo"
     , """ "true" """),
      generated) must evaluateTo("true", outdir = "./tmp")

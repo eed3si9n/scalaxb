@@ -36,7 +36,6 @@ class GenSource(val schema: SchemaDecl,
   val topElems = schema.topElems
   val elemList = schema.elemList
   val MIXED_PARAM = "mixed"
-  val elemUsed = scala.collection.mutable.Set[String]()
 
   def run: Snippet = {
     logger.debug("run")
@@ -68,10 +67,8 @@ class GenSource(val schema: SchemaDecl,
   }
 
   def makeElemToTypeClause(name: String, elem: ElemDecl): Snippet = {
-    val src = if (elemUsed.contains(name)) {
-//      <source>{indent(3)}case (Some("{name}"), {elem.namespace.map(ns => s"""Some("$ns") | None""").getOrElse("None")}) => Some(DataRecord(ns, key, xsns, xstype, fromXML[{buildTypeName(elem.typeSymbol)}](elem)))</source>
-      <source></source>
-   } else {
+    val src = {
+      //<source>{indent(3)}case (Some("{name}"), {elem.namespace.map(ns => s"""Some("$ns") | None""").getOrElse("None")}) => Some(DataRecord(ns, key, xsns, xstype, fromXML[{buildTypeName(elem.typeSymbol)}](elem)))</source>
       <source></source>
     }
     Snippet(elemToTypeClauses = Seq(src))
@@ -353,10 +350,7 @@ class GenSource(val schema: SchemaDecl,
       }
     
     val childElemParams = paramList.filter(!_.attribute)
-    childElemParams.foreach(child => {
-      elemUsed += child.name
-    })
-    
+
     def makeWritesChildNodes = {
       def simpleContentString(base: XsTypeSymbol) = base match {
         case AnyType(symbol) => 
@@ -408,16 +402,22 @@ class GenSource(val schema: SchemaDecl,
 {makeWritesAttribute}{makeWritesChildNodes}
   }}</source>
     } else {
-      val childElemMapSectionStr = childElements.toList.map({elem: ElemDecl =>
-        if (elemUsed.contains(elem.name)) {
-      <string>{indent(3)}case (Some("{elem.name}"), {elem.namespace.map(ns => s"""Some("$ns") | None""").getOrElse("None")}) => Some(DataRecord(ns, key, xsns, xstype, fromXML[{buildTypeName(elem.typeSymbol)}](elem)))</string>
-          val caseArg2Str = elem.namespace.map(ns => s"""Some("$ns") | None""").getOrElse("None")
-          val indentStr = indent(3)
-          val quotedElemName = "\"" + elem.name + "\""
-          s"${indentStr}case (Some(${quotedElemName}), ${caseArg2Str}) => Some(DataRecord(ns, key, xsns, xstype, fromXML[${buildTypeName(elem.typeSymbol)}](elem)))"
-        } else {
-          ""
+      // Build the element type mapper entries list:
+      // If the current decl uses a top-level element type then include it (by type name).
+      // If the current decl uses "any" then include *all* of the top-level element types.
+      val elementToTypeSet = schema.topElems.map(_._2).filter(elem => ((childElements.find(_.name.equals("any")) != None) || (elem.typeSymbol match {
+        case t: ReferenceTypeSymbol => {
+          t.localPart.equals(decl.name)
         }
+        case _ => false
+      }))).map({ elem =>
+      // @formatter:off
+      <string>{indent(3)}case (Some("{elem.name}"), {elem.namespace.map(ns => s"""Some("$ns") | None""").getOrElse("None")}) => Some(DataRecord(ns, key, xsns, xstype, fromXML[{buildTypeName(elem.typeSymbol)}](elem)))</string>
+      // @formatter:on
+      val caseArg2Str = elem.namespace.map(ns => s"""Some("$ns") | None""").getOrElse("None")
+        val indentStr = indent(3)
+        val quotedElemName = "\"" + elem.name + "\""
+        s"${indentStr}case (Some(${quotedElemName}), ${caseArg2Str}) => Some(DataRecord(ns, key, xsns, xstype, fromXML[${buildTypeName(elem.typeSymbol)}](elem)))"
       }).mkString("\n")
 
     <source>  trait Default{formatterName} extends {defaultFormatSuperNames.mkString(" with ")} {{
@@ -431,7 +431,7 @@ class GenSource(val schema: SchemaDecl,
         val (xsns, xstype) = Helper.instanceType(elem)
 
         (key, ns) match {{
-    {childElemMapSectionStr}
+    {elementToTypeSet}
           case _ => None
         }}
       }}

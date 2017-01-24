@@ -239,6 +239,14 @@ class Driver extends Module { driver =>
         generateFromResource[To](Some("scalaxb"), "httpclients_dispatch_async.scala",
            "/httpclients_dispatch0114_async.scala.template")
     }) else Nil) ++
+    (if (config.generateGigahorseClient) List((config.gigahorseVersion, config.async) match {
+      case (VersionPattern(x, y, _), false) if (x.toInt == 0) && (y.toInt == 2) =>
+        generateFromResource[To](Some("scalaxb"), "httpclients_gigahorse.scala",
+          "/httpclients_gigahorse02.scala.template")
+      case (VersionPattern(x, y, _), true) if (x.toInt == 0) && (y.toInt == 2) =>
+        generateFromResource[To](Some("scalaxb"), "httpclients_gigahorse_async.scala",
+          "/httpclients_gigahorse02_async.scala.template")
+    }) else Nil) ++
     (if (cntxt.soap11) List(
       (if (config.async)
         generateFromResource[To](Some("scalaxb"), "soap11_async.scala",

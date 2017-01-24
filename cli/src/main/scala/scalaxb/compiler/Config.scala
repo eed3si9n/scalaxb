@@ -56,6 +56,7 @@ case class Config(items: Map[String, ConfigEntry]) {
   def generateRuntime: Boolean = values contains GenerateRuntime
   def generateDispatchClient: Boolean = values contains GenerateDispatchClient
   def generateDispatchAs: Boolean = values contains GenerateDispatchAs
+  def generateGigahorseClient: Boolean = values contains GenerateGigahorseClient
   def contentsSizeLimit: Int =
     (get[ContentsSizeLimit] getOrElse defaultContentsSizeLimit).value
   def sequenceChunkSize: Int =
@@ -65,6 +66,8 @@ case class Config(items: Map[String, ConfigEntry]) {
   def async: Boolean = values contains GenerateAsync
   def dispatchVersion: String =
     (get[DispatchVersion] getOrElse defaultDispatchVersion).value
+  def gigahorseVersion: String =
+    (get[GigahorseVersion] getOrElse defaultGigahorseVersion).value
   def varArg: Boolean = values contains VarArg
   def ignoreUnknown: Boolean = values contains IgnoreUnknown
   def autoPackages: Boolean = values contains AutoPackages
@@ -93,6 +96,7 @@ object Config {
   val defaultContentsSizeLimit = ContentsSizeLimit(Int.MaxValue)
   val defaultSequenceChunkSize = SequenceChunkSize(10)
   val defaultDispatchVersion = DispatchVersion(scalaxb.BuildInfo.defaultDispatchVersion)
+  val defaultGigahorseVersion = GigahorseVersion(scalaxb.BuildInfo.defaultGigahorseVersion)
 
   val default = Config(
     Vector(defaultPackageNames, defaultOutdir, defaultWrappedComplexTypes,
@@ -123,12 +127,14 @@ object ConfigEntry {
   case object GenerateRuntime extends ConfigEntry
   case object GenerateDispatchClient extends ConfigEntry
   case object GenerateDispatchAs extends ConfigEntry
+  case object GenerateGigahorseClient extends ConfigEntry
   case class ContentsSizeLimit(value: Int) extends ConfigEntry
   case class SequenceChunkSize(value: Int) extends ConfigEntry
   case object NamedAttributes extends ConfigEntry
   case object LaxAny extends ConfigEntry
   case object GenerateAsync extends ConfigEntry
   case class DispatchVersion(value: String) extends ConfigEntry
+  case class GigahorseVersion(value: String) extends ConfigEntry
   case object VarArg extends ConfigEntry
   case object IgnoreUnknown extends ConfigEntry
   case object AutoPackages extends ConfigEntry

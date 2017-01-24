@@ -8,6 +8,8 @@ object Dependencies {
   val log4j = "log4j" % "log4j" % "1.2.17"
   val defaultDispatchVersion = "0.11.3"
   val dispatch = "net.databinder.dispatch" %% "dispatch-core" % defaultDispatchVersion
+  val defaultGigahorseVersion = "0.2.0"
+  val gigahorse = "com.eed3si9n" %% "gigahorse-asynchttpclient" % defaultGigahorseVersion
   val launcherInterface = "org.scala-sbt" % "launcher-interface" % "0.12.0"
   val scalaXml = "org.scala-lang.modules" %% "scala-xml" % "1.0.2"
   val scalaParser = "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.4"
@@ -36,6 +38,7 @@ object Dependencies {
   })
   def integrationDependencies(sv: String) = Seq(
     dispatch % "test",
+    gigahorse % "test",
     scalaCompiler(sv),
     specs2(sv) % "test",
     cxfFrontendJaxws % "test",

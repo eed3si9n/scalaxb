@@ -44,7 +44,8 @@ object Common {
     unmanagedSourceDirectories in Compile <+= baseDirectory( _ / "src_managed" ),
     buildInfoPackage := "scalaxb",
     buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion,
-      "defaultDispatchVersion" -> Dependencies.defaultDispatchVersion),
+      "defaultDispatchVersion" -> Dependencies.defaultDispatchVersion,
+      "defaultGigahorseVersion" -> Dependencies.defaultGigahorseVersion),
     sourceGenerators in Compile += buildInfo.taskValue,
     sourceGenerators in Compile += scalaShim.taskValue
   )

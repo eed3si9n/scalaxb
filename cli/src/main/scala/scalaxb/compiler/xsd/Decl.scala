@@ -99,12 +99,12 @@ object TypeSymbolParser {
     else Module.splitTypeName(name, scope)
 }
 
-trait Particle {
+sealed trait Particle {
   val minOccurs: Int
   val maxOccurs: Int  
 }
 
-trait HasParticle extends Particle {
+sealed trait HasParticle extends Particle {
   val namespace: Option[String]
   val particles: List[Particle]
   val minOccurs: Int

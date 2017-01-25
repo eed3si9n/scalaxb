@@ -69,10 +69,13 @@ object ScalaxbPlugin extends sbt.AutoPlugin {
     scalaxbGenerateRuntime         := true,
     scalaxbGenerateDispatchClient  := true,
     scalaxbGenerateDispatchAs      := false,
+    scalaxbGenerateGigahorseClient := false,
+    scalaxbGenerateSingleClient    := HttpClientType.None,
     scalaxbProtocolFileName        := sc.Defaults.protocolFileName,
     scalaxbProtocolPackageName     := None,
     scalaxbLaxAny                  := false,
     scalaxbDispatchVersion         := ScConfig.defaultDispatchVersion.value,
+    scalaxbGigahorseVersion        := ScConfig.defaultGigahorseVersion.value,
     scalaxbAsync                   := true,
     scalaxbIgnoreUnknown           := false,
     scalaxbVararg                  := false,
@@ -103,13 +106,17 @@ object ScalaxbPlugin extends sbt.AutoPlugin {
         Vector(ProtocolPackageName(scalaxbProtocolPackageName.value)) ++
         Vector(ScConfig.defaultDefaultNamespace) ++
         (if (scalaxbGenerateRuntime.value) Vector(GenerateRuntime) else Vector()) ++
-        (if (scalaxbGenerateDispatchClient.value) Vector(GenerateDispatchClient) else Vector()) ++
+        (if (scalaxbGenerateDispatchClient.value && scalaxbGenerateSingleClient.value == HttpClientType.None ||
+          scalaxbGenerateSingleClient.value == HttpClientType.Dispatch) Vector(GenerateDispatchClient) else Vector()) ++
         (if (scalaxbGenerateDispatchAs.value) Vector(GenerateDispatchAs) else Vector()) ++
+        (if (scalaxbGenerateGigahorseClient.value && scalaxbGenerateSingleClient.value == HttpClientType.None ||
+          scalaxbGenerateSingleClient.value == HttpClientType.Gigahorse) Vector(GenerateGigahorseClient) else Vector()) ++
         Vector(ContentsSizeLimit(scalaxbContentsSizeLimit.value)) ++
         Vector(SequenceChunkSize(scalaxbChunkSize.value)) ++
         (if (scalaxbNamedAttributes.value) Vector(NamedAttributes) else Vector()) ++
         (if (scalaxbLaxAny.value) Vector(LaxAny) else Vector()) ++
         Vector(DispatchVersion(scalaxbDispatchVersion.value)) ++
+        Vector(GigahorseVersion(scalaxbGigahorseVersion.value)) ++
         (if (scalaxbAsync.value) Vector(GenerateAsync) else Vector()) ++
         (if (scalaxbIgnoreUnknown.value) Vector(IgnoreUnknown) else Vector()) ++
         (if (scalaxbVararg.value && !scalaxbGenerateMutable.value) Vector(VarArg) else Vector()) ++

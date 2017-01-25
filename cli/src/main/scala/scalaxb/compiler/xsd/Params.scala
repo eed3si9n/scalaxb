@@ -173,7 +173,8 @@ trait Params extends Lookup {
         if (containsSingleChoice(seq)) singleChoice(seq)
         else seq
       case choice: ChoiceDecl   => choice
-      case all: AllDecl         => all  
+      case all: AllDecl         => all
+      case p => sys.error("Params#primaryCompositor: unexpected particle type: " + p.getClass.getName)
     }
     else sys.error("Params#primaryCompositor: group must contain one content model: " + group)
 

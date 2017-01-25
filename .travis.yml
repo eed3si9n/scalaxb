@@ -12,6 +12,9 @@ cache:
 scala:
     - 2.11.7
 
+jdk:
+  - oraclejdk8
+
 env:
     # This splits the build into n parts
     matrix:

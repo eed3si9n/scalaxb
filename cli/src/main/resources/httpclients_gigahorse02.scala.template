@@ -1,0 +1,22 @@
+package scalaxb
+
+import scala.concurrent._, duration._
+
+trait GigahorseHttpClients extends HttpClients {
+  lazy val httpClient = new GigahorseHttpClient {}
+  def connectionTimeout: FiniteDuration = 5.seconds
+  def requestTimeout: FiniteDuration = 60.seconds
+
+  trait GigahorseHttpClient extends HttpClient {
+    import gigahorse._, gigahorse.support.asynchttpclient.Gigahorse._
+
+    lazy val client = http(config
+      .withConnectTimeout(connectionTimeout)
+      .withRequestTimeout(requestTimeout))
+
+    def request(in: String, address: java.net.URI, headers: Map[String, String]): String = {
+      val req = url(address.toString).post(in).withHeaders(headers.mapValues(List(_)))
+      Await.result(client.run(req, asString), connectionTimeout + requestTimeout)
+    }
+  }
+}

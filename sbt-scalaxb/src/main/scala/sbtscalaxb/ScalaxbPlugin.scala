@@ -70,6 +70,7 @@ object ScalaxbPlugin extends sbt.AutoPlugin {
     scalaxbGenerateDispatchClient  := true,
     scalaxbGenerateDispatchAs      := false,
     scalaxbGenerateGigahorseClient := false,
+    scalaxbGenerateSingleClient    := HttpClientType.None,
     scalaxbProtocolFileName        := sc.Defaults.protocolFileName,
     scalaxbProtocolPackageName     := None,
     scalaxbLaxAny                  := false,
@@ -105,9 +106,11 @@ object ScalaxbPlugin extends sbt.AutoPlugin {
         Vector(ProtocolPackageName(scalaxbProtocolPackageName.value)) ++
         Vector(ScConfig.defaultDefaultNamespace) ++
         (if (scalaxbGenerateRuntime.value) Vector(GenerateRuntime) else Vector()) ++
-        (if (scalaxbGenerateDispatchClient.value) Vector(GenerateDispatchClient) else Vector()) ++
+        (if (scalaxbGenerateDispatchClient.value && scalaxbGenerateSingleClient.value == HttpClientType.None ||
+          scalaxbGenerateSingleClient.value == HttpClientType.Dispatch) Vector(GenerateDispatchClient) else Vector()) ++
         (if (scalaxbGenerateDispatchAs.value) Vector(GenerateDispatchAs) else Vector()) ++
-        (if (scalaxbGenerateGigahorseClient.value) Vector(GenerateGigahorseClient) else Vector()) ++
+        (if (scalaxbGenerateGigahorseClient.value && scalaxbGenerateSingleClient.value == HttpClientType.None ||
+          scalaxbGenerateSingleClient.value == HttpClientType.Gigahorse) Vector(GenerateGigahorseClient) else Vector()) ++
         Vector(ContentsSizeLimit(scalaxbContentsSizeLimit.value)) ++
         Vector(SequenceChunkSize(scalaxbChunkSize.value)) ++
         (if (scalaxbNamedAttributes.value) Vector(NamedAttributes) else Vector()) ++

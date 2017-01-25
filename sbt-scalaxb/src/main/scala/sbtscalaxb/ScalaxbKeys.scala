@@ -2,6 +2,7 @@ package sbtscalaxb
 
 import sbt._
 import Keys._
+
 import scalaxb.compiler.{Config => ScConfig}
 
 trait ScalaxbKeys {
@@ -32,11 +33,16 @@ trait ScalaxbKeys {
   lazy val scalaxbGenerateDispatchClient = settingKey[Boolean]("Generate of Dispatch client")
   lazy val scalaxbGenerateDispatchAs = settingKey[Boolean]("Generates Dispatch \"as\"")
   lazy val scalaxbGenerateGigahorseClient = settingKey[Boolean]("Generate of Gigahorse client")
+  lazy val scalaxbGenerateSingleClient = settingKey[HttpClientType.Value]("Generate a single client (one of Dispatch or Gigahorse)")
   lazy val scalaxbDispatchVersion  = settingKey[String]("Dispatch version")
   lazy val scalaxbGigahorseVersion = settingKey[String]("Gigahorse version")
   lazy val scalaxbAsync            = settingKey[Boolean]("Generates async SOAP client")
   lazy val scalaxbIgnoreUnknown    = settingKey[Boolean]("Ignores unknown Elements")
   lazy val scalaxbVararg           = settingKey[Boolean]("Uses varargs when possible. (default: false)")
+
+  object HttpClientType extends Enumeration {
+    val None, Dispatch, Gigahorse = Value
+  }
 
 }
 object ScalaxbKeys extends ScalaxbKeys

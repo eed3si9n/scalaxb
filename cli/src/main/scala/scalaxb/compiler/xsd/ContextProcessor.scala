@@ -369,6 +369,7 @@ trait ContextProcessor extends ScalaNames with PackageName {
       context.compositorNames(group) = group.name + "Group"
       if (group.particles.size == 1) group.particles(0) match {
         case compositor: HasParticle => makeGroupCompositorName(compositor, group)
+        case p => sys.error("ContextProcessor#makeCompositorNames: unexpected particle type: " + p.getClass.getName)
       }
       else sys.error("ContextProcessor#makeCompositorNames: group must contain one content model: " + group)
     }

@@ -1,17 +1,18 @@
 import sbt._
 
 object Dependencies {
+  val scala212 = "2.12.1"
   val scala211 = "2.11.8"
   val scala210 = "2.10.6"
 
-  val scopt = "com.github.scopt" %% "scopt" % "3.2.0"
+  val scopt = "com.github.scopt" %% "scopt" % "3.5.0"
   val log4j = "log4j" % "log4j" % "1.2.17"
   val defaultDispatchVersion = "0.11.3"
   val dispatch = "net.databinder.dispatch" %% "dispatch-core" % defaultDispatchVersion
   val defaultGigahorseVersion = "0.2.0"
   val gigahorse = "com.eed3si9n" %% "gigahorse-asynchttpclient" % defaultGigahorseVersion
   val launcherInterface = "org.scala-sbt" % "launcher-interface" % "0.12.0"
-  val scalaXml = "org.scala-lang.modules" %% "scala-xml" % "1.0.2"
+  val scalaXml = "org.scala-lang.modules" %% "scala-xml" % "1.0.6"
   val scalaParser = "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.4"
   val cxfVersion = "3.0.2"
   val cxfFrontendJaxws = "org.apache.cxf" % "cxf-rt-frontend-jaxws" % cxfVersion

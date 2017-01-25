@@ -880,4 +880,11 @@
     <xs:attribute name="reason" type="xs:string"/>
   </xs:complexType>
 
+  <xs:complexType name="UnderscoreSuffix">
+    <xs:attribute name="at_" use="required" type="xs:boolean"/>
+    <xs:sequence>
+      <xs:element name="el_" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+
 </xs:schema>

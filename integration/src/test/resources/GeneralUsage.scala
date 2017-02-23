@@ -63,6 +63,7 @@ object GeneralUsage {
     testMixedAbtractExtension
     testLiteralBoolean
     testUnderscoreSuffix
+    testBigDecimal
     true
   }
   
@@ -836,4 +837,16 @@ JDREVGRw==</base64Binary>
     check(us)
   }
 
+  def testBigDecimal {
+    println("testBigDecimal")
+    val document = scalaxb.toXML(BigDecimal(100).setScale(-2), "foo", scope)
+    println(document)
+    check(document)
+
+    def check(output: scala.xml.NodeSeq) = output.toString() match {
+      case o if o.matches("<foo.*>100</foo>") =>
+      case o if o.matches("<foo.*>100.0+</foo>") =>
+      case _ => sys.error("match failed: " + output)
+    }
+  }
 }

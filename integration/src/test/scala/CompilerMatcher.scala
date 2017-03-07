@@ -98,15 +98,30 @@ trait CompilerMatcher {
       if (!main.compileSources(files.map(toSourceFile(_)): _*)) {
         sys.error(s"""Error compiling: ${ files.mkString(",") }""")
       }
-      code map { c => main.interpret(c) match {
+      code foreach { c => main.interpret(c) match {
         case IR.Error => sys.error("Error interpreting %s" format (c))
         case _ =>
       }}
-      val holder = allCatch opt {
+      val holder0 = allCatch opt {
         main.lastReq.lineRep.call("$result")
       }
-      if (holder != Some(expected))
-        println("actual: %s" format(holder.map(_.toString).getOrElse{"None"}))
+
+      def mitigate(s: String): String = {
+        // ListMap#toString went from "Map" (2.11) to "ListMap" (2.12), switch it back
+        s.replace("ListMap", "Map")
+      }
+
+      val holder = holder0 map {
+        case s: String => mitigate(s)
+        case x         => x
+      }
+
+      if (holder != Some(expected)) {
+        val actual = holder.fold("None")(_.toString)
+        val actualClass = holder.fold("<none>")(_.getClass.toString)
+        println(s"  actual: $actual ($actualClass)")
+        println(s"expected: $expected (${expected.getClass})")
+      }
       result(holder == Some(expected),
         code + " evaluates as expected",
         code + " does not evaluate as expected",

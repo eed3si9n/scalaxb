@@ -238,6 +238,13 @@ class Driver extends Module { driver =>
       case (VersionPattern(x, y, z), true) if (x.toInt == 0) && (y.toInt == 11) && (z.toInt == 4)  =>
         generateFromResource[To](Some("scalaxb"), "httpclients_dispatch_async.scala",
            "/httpclients_dispatch0114_async.scala.template")
+
+      case (VersionPattern(x, y, z), false) if (x.toInt == 0) && (y.toInt == 12) && (z.toInt == 0) =>
+        generateFromResource[To](Some("scalaxb"), "httpclients_dispatch.scala",
+          "/httpclients_dispatch0120.scala.template")
+      case (VersionPattern(x, y, z), true) if (x.toInt == 0) && (y.toInt == 12) && (z.toInt == 0)  =>
+        generateFromResource[To](Some("scalaxb"), "httpclients_dispatch_async.scala",
+           "/httpclients_dispatch0120_async.scala.template")
     }) else Nil) ++
     (if (config.generateGigahorseClient) List((config.gigahorseVersion, config.async) match {
       case (VersionPattern(x, y, _), false) if (x.toInt == 0) && (y.toInt == 2) =>

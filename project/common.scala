@@ -41,7 +41,7 @@ object Common {
   // }
 
   val codegenSettings: Seq[Def.Setting[_]] = buildInfoSettings ++ scalaShimSettings ++ scalaxbCodegenSettings ++ Seq(
-    unmanagedSourceDirectories in Compile <+= baseDirectory( _ / "src_managed" ),
+    unmanagedSourceDirectories in Compile += baseDirectory.value / "src_managed",
     buildInfoPackage := "scalaxb",
     buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion,
       "defaultDispatchVersion" -> Dependencies.defaultDispatchVersion,
@@ -71,7 +71,10 @@ object Common {
       if (v.trim.endsWith("SNAPSHOT")) Some("snapshots" at nexus + "content/repositories/snapshots")
       else Some("releases"  at nexus + "service/local/staging/deploy/maven2")
     },
-    credentials += Credentials(Path.userHome / ".ivy2" / ".credentials"),
+    credentials ++= {
+      val f = Path.userHome / ".ivy2" / ".credentials"
+      if (f.exists) List(Credentials(f)) else Nil
+    },
     publishMavenStyle := true,
     pomIncludeRepository := { x => false }
   )

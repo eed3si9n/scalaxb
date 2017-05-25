@@ -15,6 +15,7 @@ trait ScalaxbKeys {
   lazy val scalaxbPackageNames     = settingKey[Map[URI, String]]("specifies the target package")
   lazy val scalaxbAutoPackages     = settingKey[Boolean]("Generates packages for different namespaces automatically")
   lazy val scalaxbClassPrefix      = settingKey[Option[String]]("Prefixes generated class names")
+  lazy val scalaxbUseCamelCase     = settingKey[Boolean]("Translates class and member names to camel case")
   lazy val scalaxbParamPrefix      = settingKey[Option[String]]("Prefixes generated parameter names")
   lazy val scalaxbAttributePrefix  = settingKey[Option[String]]("Prefixes generated attribute parameters")
   lazy val scalaxbPrependFamily    = settingKey[Boolean]("Prepends family name to class names")

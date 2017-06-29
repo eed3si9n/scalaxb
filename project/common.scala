@@ -45,7 +45,8 @@ object Common {
     buildInfoPackage := "scalaxb",
     buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion,
       "defaultDispatchVersion" -> Dependencies.defaultDispatchVersion,
-      "defaultGigahorseVersion" -> Dependencies.defaultGigahorseVersion),
+      "defaultGigahorseVersion" -> Dependencies.defaultGigahorseVersion,
+      "defaultGigahorseBackend" -> Dependencies.defaultGigahorseBackend),
     sourceGenerators in Compile += buildInfo.taskValue,
     sourceGenerators in Compile += scalaShim.taskValue
   )

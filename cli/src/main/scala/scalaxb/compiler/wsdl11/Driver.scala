@@ -247,12 +247,12 @@ class Driver extends Module { driver =>
            "/httpclients_dispatch0120_async.scala.template")
     }) else Nil) ++
     (if (config.generateGigahorseClient) List((config.gigahorseVersion, config.async) match {
-      case (VersionPattern(x, y, _), false) if (x.toInt == 0) && (y.toInt == 2) =>
+      case (VersionPattern(x, y, _), false) if (x.toInt == 0) && ((y.toInt == 2) || (y.toInt == 3)) =>
         generateFromResource[To](Some("scalaxb"), "httpclients_gigahorse.scala",
-          "/httpclients_gigahorse02.scala.template")
-      case (VersionPattern(x, y, _), true) if (x.toInt == 0) && (y.toInt == 2) =>
+          "/httpclients_gigahorse02.scala.template", Some("%%BACKEND%%" -> config.gigahorseBackend))
+      case (VersionPattern(x, y, _), true) if (x.toInt == 0) && ((y.toInt == 2) || (y.toInt == 3)) =>
         generateFromResource[To](Some("scalaxb"), "httpclients_gigahorse_async.scala",
-          "/httpclients_gigahorse02_async.scala.template")
+          "/httpclients_gigahorse02_async.scala.template", Some("%%BACKEND%%" -> config.gigahorseBackend))
     }) else Nil) ++
     (if (cntxt.soap11) List(
       (if (config.async)

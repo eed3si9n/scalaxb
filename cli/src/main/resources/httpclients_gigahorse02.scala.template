@@ -8,7 +8,7 @@ trait GigahorseHttpClients extends HttpClients {
   def requestTimeout: FiniteDuration = 60.seconds
 
   trait GigahorseHttpClient extends HttpClient {
-    import gigahorse._, gigahorse.support.asynchttpclient.Gigahorse._
+    import gigahorse.support.%%BACKEND%%.Gigahorse._
 
     lazy val client = http(config
       .withConnectTimeout(connectionTimeout)

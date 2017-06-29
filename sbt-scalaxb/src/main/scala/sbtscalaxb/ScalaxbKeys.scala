@@ -36,6 +36,7 @@ trait ScalaxbKeys {
   lazy val scalaxbGenerateSingleClient = settingKey[HttpClientType.Value]("Generate a single client (one of Dispatch or Gigahorse)")
   lazy val scalaxbDispatchVersion  = settingKey[String]("Dispatch version")
   lazy val scalaxbGigahorseVersion = settingKey[String]("Gigahorse version")
+  lazy val scalaxbGigahorseBackend = settingKey[GigahorseHttpBackend.Value]("Gigahorse http backend")
   lazy val scalaxbAsync            = settingKey[Boolean]("Generates async SOAP client")
   lazy val scalaxbIgnoreUnknown    = settingKey[Boolean]("Ignores unknown Elements")
   lazy val scalaxbVararg           = settingKey[Boolean]("Uses varargs when possible. (default: false)")
@@ -44,5 +45,10 @@ trait ScalaxbKeys {
     val None, Dispatch, Gigahorse = Value
   }
 
+  object GigahorseHttpBackend extends Enumeration {
+    val OkHttp = Value("okhttp")
+    val AHC = Value("asynchttpclient")
+    //val AkkaHttp = Value("akkahttp")
+  }
 }
 object ScalaxbKeys extends ScalaxbKeys

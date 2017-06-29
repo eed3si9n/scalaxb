@@ -76,6 +76,7 @@ object ScalaxbPlugin extends sbt.AutoPlugin {
     scalaxbLaxAny                  := false,
     scalaxbDispatchVersion         := ScConfig.defaultDispatchVersion.value,
     scalaxbGigahorseVersion        := ScConfig.defaultGigahorseVersion.value,
+    scalaxbGigahorseBackend        := GigahorseHttpBackend.OkHttp,
     scalaxbAsync                   := true,
     scalaxbIgnoreUnknown           := false,
     scalaxbVararg                  := false,
@@ -117,6 +118,7 @@ object ScalaxbPlugin extends sbt.AutoPlugin {
         (if (scalaxbLaxAny.value) Vector(LaxAny) else Vector()) ++
         Vector(DispatchVersion(scalaxbDispatchVersion.value)) ++
         Vector(GigahorseVersion(scalaxbGigahorseVersion.value)) ++
+        Vector(GigahorseBackend(scalaxbGigahorseBackend.value.toString)) ++
         (if (scalaxbAsync.value) Vector(GenerateAsync) else Vector()) ++
         (if (scalaxbIgnoreUnknown.value) Vector(IgnoreUnknown) else Vector()) ++
         (if (scalaxbVararg.value && !scalaxbGenerateMutable.value) Vector(VarArg) else Vector()) ++

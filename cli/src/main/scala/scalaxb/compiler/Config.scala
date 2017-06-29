@@ -68,6 +68,8 @@ case class Config(items: Map[String, ConfigEntry]) {
     (get[DispatchVersion] getOrElse defaultDispatchVersion).value
   def gigahorseVersion: String =
     (get[GigahorseVersion] getOrElse defaultGigahorseVersion).value
+  def gigahorseBackend: String =
+    (get[GigahorseBackend] getOrElse defaultGigahorseBackend).value
   def varArg: Boolean = values contains VarArg
   def ignoreUnknown: Boolean = values contains IgnoreUnknown
   def autoPackages: Boolean = values contains AutoPackages
@@ -97,6 +99,7 @@ object Config {
   val defaultSequenceChunkSize = SequenceChunkSize(10)
   val defaultDispatchVersion = DispatchVersion(scalaxb.BuildInfo.defaultDispatchVersion)
   val defaultGigahorseVersion = GigahorseVersion(scalaxb.BuildInfo.defaultGigahorseVersion)
+  val defaultGigahorseBackend = GigahorseBackend(scalaxb.BuildInfo.defaultGigahorseBackend)
 
   val default = Config(
     Vector(defaultPackageNames, defaultOutdir, defaultWrappedComplexTypes,
@@ -135,6 +138,7 @@ object ConfigEntry {
   case object GenerateAsync extends ConfigEntry
   case class DispatchVersion(value: String) extends ConfigEntry
   case class GigahorseVersion(value: String) extends ConfigEntry
+  case class GigahorseBackend(value: String) extends ConfigEntry
   case object VarArg extends ConfigEntry
   case object IgnoreUnknown extends ConfigEntry
   case object AutoPackages extends ConfigEntry

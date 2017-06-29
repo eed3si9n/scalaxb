@@ -356,12 +356,12 @@ trait Module {
      else Nil)
   }
 
-  def generateFromResource[To](packageName: Option[String], fileName: String, resourcePath: String)
+  def generateFromResource[To](packageName: Option[String], fileName: String, resourcePath: String, substitution: Option[(String, String)] = None)
                               (implicit evTo: CanBeWriter[To]) = {
     val output = implicitly[CanBeWriter[To]].newInstance(packageName, fileName)
     val out = implicitly[CanBeWriter[To]].toWriter(output)
     try {
-      printFromResource(resourcePath, out)
+      printFromResource(resourcePath, out, substitution)
     } finally {
       out.flush()
       out.close()
@@ -452,21 +452,25 @@ trait Module {
     for (node <- nodes) { printNode(node) }
   }
 
-  def printFromResource(source: String, out: PrintWriter) {
+  def printFromResource(source: String, out: PrintWriter, substitution: Option[(String, String)] = None) {
     val in = getClass.getResourceAsStream(source)
     val reader = new java.io.BufferedReader(new java.io.InputStreamReader(in))
     var line: Option[String] = None
     line = Option[String](reader.readLine)
     while (line != None) {
-      line foreach { out.println }
+      (line, substitution) match {
+        case (Some(l), Some((target, replacement))) => out.println(l.replace(target, replacement))
+        case (Some(l), None) => out.println(l)
+        case _ => // do nothing
+      }
       line = Option[String](reader.readLine)
     }
     in.close
     out.flush
   }
 
-  def copyFileFromResource(source: String, dest: File) =
-    printFromResource(source, new java.io.PrintWriter(new java.io.FileWriter(dest)))
+  def copyFileFromResource(source: String, dest: File, substitution: Option[(String, String)] = None) =
+    printFromResource(source, new java.io.PrintWriter(new java.io.FileWriter(dest)), substitution)
 
   def mergeSnippets(snippets: Seq[Snippet]) =
     Snippet(snippets flatMap {_.definition},

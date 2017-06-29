@@ -67,7 +67,10 @@ class GenSource(val schema: SchemaDecl,
   }
 
   def makeElemToTypeClause(name: String, elem: ElemDecl): Snippet = {
-    val src = <source>{indent(3)}case (Some("{name}"), {elem.namespace.map(ns => s"""Some("$ns") | None""").getOrElse("None")}) => Some(DataRecord(ns, key, xsns, xstype, fromXML[{buildTypeName(elem.typeSymbol)}](elem)))</source>
+    val src = {
+      //<source>{indent(3)}case (Some("{name}"), {elem.namespace.map(ns => s"""Some("$ns") | None""").getOrElse("None")}) => Some(DataRecord(ns, key, xsns, xstype, fromXML[{buildTypeName(elem.typeSymbol)}](elem)))</source>
+      <source></source>
+    }
     Snippet(elemToTypeClauses = Seq(src))
   }
     
@@ -347,7 +350,7 @@ class GenSource(val schema: SchemaDecl,
       }
     
     val childElemParams = paramList.filter(!_.attribute)
-    
+
     def makeWritesChildNodes = {
       def simpleContentString(base: XsTypeSymbol) = base match {
         case AnyType(symbol) => 
@@ -387,30 +390,63 @@ class GenSource(val schema: SchemaDecl,
         "}" + newline}
       </source>
 
-    def defaultFormats = if (simpleFromXml) <source>  trait Default{formatterName} extends scalaxb.XMLFormat[{fqn}] with scalaxb.CanWriteChildNodes[{fqn}] {{
+    def defaultFormats = if (simpleFromXml) { <source>  trait Default{formatterName} extends scalaxb.XMLFormat[{fqn}] with scalaxb.CanWriteChildNodes[{fqn}] {{
     val targetNamespace: Option[String] = { quote(schema.targetNamespace) }
     import scalaxb.ElemName._
-    
+
     def reads(seq: scala.xml.NodeSeq, stack: List[scalaxb.ElemName]): Either[String, {fqn}] = seq match {{
       case node: scala.xml.Node => Right({fqn}({argsString}))
       case _ => Left("reads failed: seq must be scala.xml.Node")
     }}
-    
+
 {makeWritesAttribute}{makeWritesChildNodes}
   }}</source>
-    else <source>  trait Default{formatterName} extends {defaultFormatSuperNames.mkString(" with ")} {{
+    } else {
+      // Build the element type mapper entries list:
+      // If the current decl uses a top-level element type then include it (by type name).
+      // If the current decl uses "any" then include *all* of the top-level element types.
+      val elementToTypeSet = schema.topElems.map(_._2).filter(elem => ((childElements.find(_.name.equals("any")) != None) || (elem.typeSymbol match {
+        case t: ReferenceTypeSymbol => {
+          t.localPart.equals(decl.name)
+        }
+        case _ => false
+      }))).map({ elem =>
+      // @formatter:off
+      <string>{indent(3)}case (Some("{elem.name}"), {elem.namespace.map(ns => s"""Some("$ns") | None""").getOrElse("None")}) => Some(DataRecord(ns, key, xsns, xstype, fromXML[{buildTypeName(elem.typeSymbol)}](elem)))</string>
+      // @formatter:on
+      val caseArg2Str = elem.namespace.map(ns => s"""Some("$ns") | None""").getOrElse("None")
+        val indentStr = indent(3)
+        val quotedElemName = "\"" + elem.name + "\""
+        s"${indentStr}case (Some(${quotedElemName}), ${caseArg2Str}) => Some(DataRecord(ns, key, xsns, xstype, fromXML[${buildTypeName(elem.typeSymbol)}](elem)))"
+      }).mkString("\n")
+
+    <source>  trait Default{formatterName} extends {defaultFormatSuperNames.mkString(" with ")} {{
     val targetNamespace: Option[String] = { quote(schema.targetNamespace) }
-    
-    { if (decl.isNamed) "override def typeName: Option[String] = Some(" + quote(decl.name) + ")" + newline + newline + indent(2)  
+
+    implicit val fromAnySchemaType: scala.xml.Elem => Option[scalaxb.DataRecord[Any]] = {{elem =>
+        import scalaxb.{{Helper, DataRecord, fromXML}}
+
+        val ns = Helper.nullOrEmpty(elem.scope.getURI(elem.prefix))
+        val key = Some(elem.label)
+        val (xsns, xstype) = Helper.instanceType(elem)
+
+        (key, ns) match {{
+    {elementToTypeSet}
+          case _ => None
+        }}
+      }}
+
+    { if (decl.isNamed) "override def typeName: Option[String] = Some(" + quote(decl.name) + ")" + newline + newline + indent(2)
       else ""
     }{ if (effectiveMixed) "override def isMixed: Boolean = true" + newline + newline + indent(2)
        else "" }def parser(node: scala.xml.Node, stack: List[scalaxb.ElemName]): Parser[{fqn}] =
       {phrase}({ parserList.mkString(" " + follow + " " + newline + indent(3)) } ^^
       {{ case { parserVariableList.mkString(s" $follow ") } =>
       {fqn}({argsString}) }})
-    
+
 {makeWritesAttribute}{makeWritesChildNodes}  }}</source>
-    
+    }
+
     def makeWritesAttribute = if (attributes.isEmpty) <source></source>
       else if (longAttribute) {
         val cases = attributes collect {

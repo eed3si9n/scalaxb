@@ -1,8 +1,13 @@
 
 ### enhancements
 
-- Adds support for Gigahorse 0.3 and different backends (OkHttp and AHC) #428 by @alexdupre
+- Adds support for Gigahorse 0.3 and different backends (OkHttp and AHC) [#428][428] by [@alexdupre][@alexdupre]
 
 ### bug fixes
 
-- Splits `fromAnySchemaType` into smaller chunks to work around JVM code size limit. #429 by @fltt
+- Splits `fromAnySchemaType` into smaller chunks to work around JVM code size limit. [#429][429] by [@fltt][@fltt]
+
+  [@alexdupre]: https://github.com/alexdupre
+  [@fltt]: https://github.com/fltt
+  [428]: https://github.com/eed3si9n/scalaxb/pull/428
+  [429]: https://github.com/eed3si9n/scalaxb/pull/429

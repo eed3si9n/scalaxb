@@ -27,6 +27,7 @@ import java.io.File
 import ConfigEntry._
 
 object Defaults {
+  val opOutputWrapperPostfix = "Output"
   val protocolFileName = "xmlprotocol.scala"
 }
 
@@ -91,6 +92,8 @@ object Arguments {
         c.update(ParamPrefix(x)) }
       opt[String]("attribute-prefix") valueName("<prefix>") text("prefixes generated attribute parameters") action { (x, c) =>
         c.update(AttributePrefix(x)) }
+      opt[String]("op-output-wrapper-postfix") valueName("<postfix>") text("postfixes operation output wrapper names (default: Output)") action { (x, c) =>
+        c.update(OpOutputWrapperPostfix(x)) }
       opt[Unit]("prepend-family") text("prepends family name to class names") action { (_, c) =>
         c.update(PrependFamilyName) }
       opt[String]("wrap-contents") valueName("<complexType>") text("wraps inner contents into a seperate case class") action { (x, c) =>

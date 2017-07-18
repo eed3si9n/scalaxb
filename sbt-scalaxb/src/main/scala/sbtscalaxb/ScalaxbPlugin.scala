@@ -60,6 +60,7 @@ object ScalaxbPlugin extends sbt.AutoPlugin {
     scalaxbClassPrefix             := None,
     scalaxbParamPrefix             := None,
     scalaxbAttributePrefix         := None,
+    scalaxbOpOutputWrapperPostfix  := sc.Defaults.opOutputWrapperPostfix,
     scalaxbPrependFamily           := false,
     scalaxbWrapContents            := Nil,
     scalaxbContentsSizeLimit       := Int.MaxValue,
@@ -99,6 +100,7 @@ object ScalaxbPlugin extends sbt.AutoPlugin {
           case Some(x) => Vector(AttributePrefix(x))
           case None    => Vector()
         }) ++
+        Vector(OpOutputWrapperPostfix(scalaxbOpOutputWrapperPostfix.value)) ++
         Vector(ScConfig.defaultOutdir) ++
         (if (scalaxbPrependFamily.value) Vector(PrependFamilyName) else Vector()) ++
         Vector(WrappedComplexTypes(scalaxbWrapContents.value.toList)) ++

@@ -282,7 +282,7 @@ trait {interfaceTypeName} {{
     }
 
   def makeOperationOutputWrapperName(op: XOperationType): String =
-    xsdgenerator.makeTypeName(op.name + "Output")
+    xsdgenerator.makeTypeName(op.name + config.opOutputWrapperPostfix)
 
   def splitParamToParts(paramType: XParamType, paramBinding: Option[XStartWithExtensionsTypable]): (Seq[XPartType], Seq[XPartType]) = {
     val headers = headerBindings(paramBinding)

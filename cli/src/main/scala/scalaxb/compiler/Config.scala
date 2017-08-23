@@ -40,6 +40,8 @@ case class Config(items: Map[String, ConfigEntry]) {
     get[ParamPrefix] map {_.value}
   def attributePrefix: Option[String] =
     get[AttributePrefix] map {_.value}
+  def opOutputWrapperPostfix: String =
+    (get[OpOutputWrapperPostfix] getOrElse defaultOpOutputWrapperPostfix).value
   def outdir: File =
     (get[Outdir] getOrElse defaultOutdir).value
   def packageDir: Boolean = values contains GeneratePackageDir
@@ -90,6 +92,7 @@ object Config {
   def apply(xs: Vector[ConfigEntry]): Config =
     xs.foldLeft(new Config(Map())) { (acc, x) => acc.update(x) }
   val defaultPackageNames = PackageNames(Map(None -> None))
+  val defaultOpOutputWrapperPostfix = OpOutputWrapperPostfix(Defaults.opOutputWrapperPostfix)
   val defaultOutdir = Outdir(new File("."))
   val defaultWrappedComplexTypes = WrappedComplexTypes(Nil)
   val defaultProtocolFileName = ProtocolFileName("xmlprotocol.scala")
@@ -102,9 +105,9 @@ object Config {
   val defaultGigahorseBackend = GigahorseBackend(scalaxb.BuildInfo.defaultGigahorseBackend)
 
   val default = Config(
-    Vector(defaultPackageNames, defaultOutdir, defaultWrappedComplexTypes,
-      SeperateProtocol, defaultProtocolFileName, defaultProtocolPackageName,
-      GenerateRuntime, GenerateDispatchClient,
+    Vector(defaultPackageNames, defaultOpOutputWrapperPostfix, defaultOutdir,
+      defaultWrappedComplexTypes, SeperateProtocol, defaultProtocolFileName,
+      defaultProtocolPackageName, GenerateRuntime, GenerateDispatchClient,
       defaultContentsSizeLimit, defaultSequenceChunkSize,
       GenerateAsync, defaultDispatchVersion)
   )
@@ -119,6 +122,7 @@ object ConfigEntry {
   case class ClassPostfix(value: String) extends ConfigEntry
   case class ParamPrefix(value: String) extends ConfigEntry
   case class AttributePrefix(value: String) extends ConfigEntry
+  case class OpOutputWrapperPostfix(value: String) extends ConfigEntry
   case class Outdir(value: File) extends ConfigEntry
   case object GeneratePackageDir extends ConfigEntry
   case class WrappedComplexTypes(value: List[String]) extends ConfigEntry

@@ -17,6 +17,7 @@ trait ScalaxbKeys {
   lazy val scalaxbClassPrefix      = settingKey[Option[String]]("Prefixes generated class names")
   lazy val scalaxbParamPrefix      = settingKey[Option[String]]("Prefixes generated parameter names")
   lazy val scalaxbAttributePrefix  = settingKey[Option[String]]("Prefixes generated attribute parameters")
+  lazy val scalaxbOpOutputWrapperPostfix = settingKey[String]("Postfixes operation output wrapper names (default: Output)")
   lazy val scalaxbPrependFamily    = settingKey[Boolean]("Prepends family name to class names")
   lazy val scalaxbWrapContents     = settingKey[Seq[String]]("Wraps inner contents into a separate case class")
   lazy val scalaxbContentsSizeLimit = settingKey[Int]("Defines long contents to be segmented (default: max)")

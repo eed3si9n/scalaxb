@@ -1,6 +1,8 @@
 scalaxb
 =======
 
+![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.scalaxb/scalaxb_2.12/badge.svg)
+
 [![Join the chat at https://gitter.im/eed3si9n/scalaxb](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/eed3si9n/scalaxb?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 scalaxb is an XML data-binding tool for Scala that supports W3C XML Schema (xsd) and
@@ -9,13 +11,6 @@ Web Services Description Language (wsdl) as the input file.
 From schema documents scalaxb will generate Scala source files containing
 case classes to represent the data and typeclass instances to turn XML documents into an object,
 and the object back to XML.
-
-Status
-------
-
-The latest is 1.5.0. Some things may not work.
-I'd really appreciate if you could run it against your favorite xsd
-file and let me know the result.
 
 Modules
 -------
@@ -29,7 +24,7 @@ There are currently four ways of running scalaxb:
 
 ### sbt-scalaxb
 
-To call scalaxb from sbt 0.13.x, put this in your `project/scalaxb.sbt`:
+To call scalaxb from sbt 1.x and sbt 0.13.x, put this in your `project/scalaxb.sbt`:
 
     resolvers += Resolver.sonatypeRepo("public")
     addSbtPlugin("org.scalaxb" % "sbt-scalaxb" % "X.X")

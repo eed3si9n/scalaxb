@@ -1,0 +1,19 @@
+
+### bug fixes
+
+- Replaces trailing underscore with `"u93"`. [#415][415] by [@varnerac][@varnerac]
+- Fixes BigDecimal formatting. [#417][417] by [@coutoPL][@coutoPL]
+
+### enhancements
+
+- Adds Gigahorse support. [#413][413] by [@alexdupre][@alexdupre]
+- Adds Scala 2.12 cross building. [#413][413]/[#419][419] by [@alexdupre][@alexdupre] and [@dwijnand][@dwijnand]
+
+  [413]: https://github.com/eed3si9n/scalaxb/pull/413
+  [415]: https://github.com/eed3si9n/scalaxb/pull/415
+  [417]: https://github.com/eed3si9n/scalaxb/pull/417
+  [419]: https://github.com/eed3si9n/scalaxb/pull/419
+  [@alexdupre]: https://github.com/alexdupre
+  [@varnerac]: https://github.com/varnerac
+  [@coutoPL]: https://github.com/coutoPL
+  [@dwijnand]: https://github.com/dwijnand

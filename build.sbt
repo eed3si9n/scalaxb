@@ -2,7 +2,7 @@ import Dependencies._
 import Common._
 
 lazy val commonSettings = Seq(
-    version in ThisBuild := "1.5.0",
+    version in ThisBuild := "1.5.2",
     organization in ThisBuild := "org.scalaxb",
     homepage in ThisBuild := Some(url("http://scalaxb.org")),
     licenses in ThisBuild := Seq("MIT License" -> url("https://github.com/eed3si9n/scalaxb/blob/master/LICENSE")),
@@ -58,12 +58,8 @@ lazy val integration = (project in file("integration")).
 lazy val scalaxbPlugin = (project in file("sbt-scalaxb")).
   settings(commonSettings: _*).
   settings(
-    crossScalaVersions := Seq(scala210),
-    scalaVersion := scala210,
     sbtPlugin := true,
     name := "sbt-scalaxb",
-    // sbtVersion in Global := "0.12.4",
-    // scalaVersion in Global := "2.9.2",
     description := """sbt plugin to run scalaxb""",
     ScriptedPlugin.scriptedSettings,
     scriptedLaunchOpts := { scriptedLaunchOpts.value ++

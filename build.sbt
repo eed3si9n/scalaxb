@@ -58,12 +58,8 @@ lazy val integration = (project in file("integration")).
 lazy val scalaxbPlugin = (project in file("sbt-scalaxb")).
   settings(commonSettings: _*).
   settings(
-    crossScalaVersions := Seq(scala210),
-    scalaVersion := scala210,
     sbtPlugin := true,
     name := "sbt-scalaxb",
-    // sbtVersion in Global := "0.12.4",
-    // scalaVersion in Global := "2.9.2",
     description := """sbt plugin to run scalaxb""",
     ScriptedPlugin.scriptedSettings,
     scriptedLaunchOpts := { scriptedLaunchOpts.value ++

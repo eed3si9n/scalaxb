@@ -341,15 +341,23 @@ trait {interfaceTypeName} {{
     val soapBindingStyle = parseSoapBindingStyle(binding.any.headOption, defaultSoapBindingStyle)
     val actionString = action map {"Some(new java.net.URI(\"%s\"))".format(_)} getOrElse {"None"}
 
-    def faultString(faults: Seq[XFaultType]): String =
-      faultsToFaultParamTypeName(faults) match {
-        case ("Any", _) => "x"
-        case (x, true)  => s"""x.asNillableFault[$x]"""
-        case (x, _)     => s"""x.asFault[$x]"""
-      }
-    def faultTypeName: String =
-      if (soap12) "scalaxb.Fault[_]"
-      else "scalaxb.Soap11Fault[_]"
+    def faultTypeName: String = if (soap12) "scalaxb.Fault[_]" else "scalaxb.Soap11Fault[_]"
+
+    def detailTypeName = if (soap12) "soapenvelope12.Detail" else "soapenvelope11.Detail"
+
+    def faultString(faults: Seq[XFaultType]): String = faultParamString(faultsToFaultParamTypeName(faults))
+
+    def faultParamString(fault: (String, Boolean)): String = fault match {
+      case ("Any", _) => "x"
+      case (x, true)  => s"""x.asNillableFault[$x]"""
+      case (x, _)     => s"""x.asFault[$x]"""
+    }
+
+    def faultsString(faults: Seq[XFaultType]): String = faults.map { fault =>
+      val faultString = faultParamString(faultParamTypeName(fault))
+      """|              case x: %s if x.detail.exists { case %s(any, _) => any.headOption.exists(_.key.contains("%s")) } => %s
+         |""".stripMargin.format(faultTypeName, detailTypeName, fault.name, faultString)
+    }.mkString("")
 
     val opImpl = (op.xoperationtypeoption, config.async) match {
       case (DataRecord(_, _, XOnewayoperationSequence(input)), true) =>
@@ -378,9 +386,7 @@ trait {interfaceTypeName} {{
             bodyString(op, input, binding, soapBindingStyle),
             headerString(op, input, binding, soapBindingStyle), address, quotedMethod, actionString,
             outputString(output, binding, op, soapBindingStyle, soap12)) +
-          // TODO: handle multiple faults
-       """|              case x: %s => %s
-          |""".stripMargin.format(faultTypeName, faultString(faults)) +
+            faultsString(faults) +
        """|              case x => x
           |            })""".stripMargin
 
@@ -405,9 +411,7 @@ trait {interfaceTypeName} {{
             bodyString(op, input, binding, soapBindingStyle),
             headerString(op, input, binding, soapBindingStyle), address, quotedMethod, actionString,
             outputString(output, binding, op, soapBindingStyle, soap12)) +
-          // TODO: handle multiple faults
-       """|              case x: %s => %s
-          |""".stripMargin.format(faultTypeName, faultString(faults)) +
+            faultsString(faults) +
        """|              case x => x
           |            })""".stripMargin
 
@@ -766,17 +770,20 @@ trait {interfaceTypeName} {{
       case (x, true) => s"""Option[$x]"""
       case (x, _)    => x
     })
+
   // param type and nillable
-  def faultsToFaultParamTypeName(faults: Seq[XFaultType]): (String, Boolean) =
-    faults.toList match {
-      case x :: xs =>
-        val msg = context.messages(splitTypeName(x.message))
-        msg.part.headOption map { part =>
-          val pc = toParamCache(part)
-          (pc.baseTypeName, pc.nillable)
-        } getOrElse ("Any", false)
-      case _ => ("Any", false)
-    }
+  def faultParamTypeName(fault: XFaultType): (String, Boolean) = {
+    val msg = context.messages(splitTypeName(fault.message))
+    msg.part.headOption map { part =>
+      val pc = toParamCache(part)
+      (pc.baseTypeName, pc.nillable)
+    } getOrElse ("Any", false)
+  }
+
+  def faultsToFaultParamTypeName(faults: Seq[XFaultType]): (String, Boolean) = faults.toList match {
+    case x :: _ => faultParamTypeName(x)
+    case _      => ("Any", false)
+  }
 
   def makeBindingName(binding: XBindingType): String = {
     val name = xsdgenerator.makeTypeName(binding.name)

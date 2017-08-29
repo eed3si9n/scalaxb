@@ -58,6 +58,7 @@ object ScalaxbPlugin extends sbt.AutoPlugin {
     scalaxbPackageName             := "generated",
     scalaxbPackageNames            := Map(),
     scalaxbClassPrefix             := None,
+    scalaxbUseCamelCase            := false,
     scalaxbParamPrefix             := None,
     scalaxbAttributePrefix         := None,
     scalaxbOpOutputWrapperPostfix  := sc.Defaults.opOutputWrapperPostfix,
@@ -92,6 +93,7 @@ object ScalaxbPlugin extends sbt.AutoPlugin {
           case Some(x) => Vector(ClassPrefix(x))
           case None    => Vector()
         }) ++
+        (if (scalaxbUseCamelCase.value) Vector(UseCamelCase) else Vector()) ++
         (scalaxbParamPrefix.value match {
           case Some(x) => Vector(ParamPrefix(x))
           case None    => Vector()

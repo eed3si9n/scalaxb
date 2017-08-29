@@ -17,3 +17,4 @@ tmp/
 .settings
 Version.scala
 project/plugins/project/build.properties
+/.ensime*

@@ -36,6 +36,7 @@ case class Config(items: Map[String, ConfigEntry]) {
     get[ClassPrefix] map {_.value}
   def classPostfix: Option[String] =
     get[ClassPostfix] map {_.value}
+  def useCamelCase: Boolean = values contains UseCamelCase
   def paramPrefix: Option[String] =
     get[ParamPrefix] map {_.value}
   def attributePrefix: Option[String] =
@@ -120,6 +121,7 @@ object ConfigEntry {
   case class PackageNames(value: Map[Option[String], Option[String]]) extends ConfigEntry
   case class ClassPrefix(value: String) extends ConfigEntry
   case class ClassPostfix(value: String) extends ConfigEntry
+  case object UseCamelCase extends ConfigEntry
   case class ParamPrefix(value: String) extends ConfigEntry
   case class AttributePrefix(value: String) extends ConfigEntry
   case class OpOutputWrapperPostfix(value: String) extends ConfigEntry

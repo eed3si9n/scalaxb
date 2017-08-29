@@ -88,6 +88,8 @@ object Arguments {
         c.update(AutoPackages) }
       opt[String]("class-prefix") valueName("<prefix>") text("prefixes generated class names") action { (x, c) =>
         c.update(ClassPrefix(x)) }
+      opt[Unit]("camel-case") text("translates class and member names to camel case") action { (_, c) => 
+        c.update(UseCamelCase) }
       opt[String]("param-prefix") valueName("<prefix>") text("prefixes generated parameter names") action { (x, c) =>
         c.update(ParamPrefix(x)) }
       opt[String]("attribute-prefix") valueName("<prefix>") text("prefixes generated attribute parameters") action { (x, c) =>

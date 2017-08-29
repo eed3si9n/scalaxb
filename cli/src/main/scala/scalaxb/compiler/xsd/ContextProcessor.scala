@@ -583,8 +583,17 @@ trait ContextProcessor extends ScalaNames with PackageName {
           }).mkString
       }
       else nonspace
-    if (validfirstchar.endsWith("_")) validfirstchar.dropRight(1) + "u93"
+    val ident = if (validfirstchar.endsWith("_")) validfirstchar.dropRight(1) + "u93"
     else validfirstchar
+
+    if(config.useCamelCase) toCamelCase(ident) else ident
+  }
+
+  def toCamelCase(value: String): String = {
+    val words = value.split("_")
+    words.headOption.map(
+      head => (head.toLowerCase :: words.tail.map(_.toLowerCase.capitalize).toList).mkString
+    ).getOrElse("")
   }
 
   def quote(value: Option[String]): String = value map {

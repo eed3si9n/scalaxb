@@ -608,6 +608,8 @@ class GenSource(val schema: SchemaDecl,
 
     
     val enumString = enums.map(makeEnum).mkString(newline)
+    val enumListString = enums.map(enum => buildTypeName(localName, enum, true)).mkString(", ")
+    val enumValuesString = s"lazy val values: Seq[$localName] = Seq($enumListString)"
 
     def valueCode: String = baseSym match {
         case Some(XsQName) => """({ val (ns, localPart) = scalaxb.Helper.splitQName(value, scope)
@@ -630,6 +632,7 @@ object {localName} {{
     case Right(x: {localName}) => x
     case x => throw new RuntimeException(s"fromString returned unexpected value $x for input $value")
   }}
+  {enumValuesString}
 }}
 
 { enumString }</source>

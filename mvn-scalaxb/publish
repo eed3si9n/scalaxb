@@ -1,4 +1,4 @@
-#!/bin/sh -e
+#!/bin/bash -e
 # Publish mvn-scalaxb to Sonatype OSS repository hosting.
 # Prompts for Sonatype username and password on first run, and stores
 # the credentials in ~/.m2/sonatype.xml.

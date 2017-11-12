@@ -2,15 +2,15 @@ package scalaxb
 
 case class Soap11Fault[+A](original: Any, detail: Option[A], headers: scala.xml.NodeSeq) extends Exception {
   def asFault[B: scalaxb.XMLFormat]: Soap11Fault[B] = Soap11Fault(original, detail map {
-    case x: soapenvelope11.Detail => x.any.head.value match {
+    case soapenvelope11.Detail(dataRecord :: _, _) => dataRecord.value match {
       case node: scala.xml.Node => scalaxb.fromXML[B](node)
       case _ => sys.error("unsupported fault: " + toString)
     }
     case _ => sys.error("unsupported fault: " + toString)
   }, headers)
   def asNillableFault[B: scalaxb.XMLFormat]: Soap11Fault[Option[B]] = Soap11Fault(original, detail map {
-    case x: soapenvelope11.Detail => x.any.head.value match {
-      case node: scala.xml.Node if scalaxb.Helper.isNil(node) => None 
+    case soapenvelope11.Detail(dataRecord :: _, _) => dataRecord.value match {
+      case node: scala.xml.Node if scalaxb.Helper.isNil(node) => None
       case node: scala.xml.Node                               => Some(scalaxb.fromXML[B](node))
       case _ => sys.error("unsupported fault: " + toString)
     }

@@ -61,7 +61,7 @@ lazy val scalaxbPlugin = (project in file("sbt-scalaxb")).
     sbtPlugin := true,
     name := "sbt-scalaxb",
     description := """sbt plugin to run scalaxb""",
-    ScriptedPlugin.scriptedSettings,
+    ScriptedPlugin.projectSettings,
     scriptedLaunchOpts := { scriptedLaunchOpts.value ++
       Seq("-Xmx1024M", "-XX:MaxPermSize=256M", "-Dplugin.version=" + version.value)
     },

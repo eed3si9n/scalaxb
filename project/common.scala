@@ -1,6 +1,7 @@
 import sbt._
 import Keys._
-import sbtbuildinfo.Plugin._
+import sbtbuildinfo.BuildInfoPlugin._
+import sbtbuildinfo.BuildInfoKeys._
 import sbtscalashim.Plugin._
 
 object Common {

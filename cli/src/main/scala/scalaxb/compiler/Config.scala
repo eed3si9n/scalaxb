@@ -22,7 +22,6 @@
 
 package scalaxb.compiler
 
-import scalashim._
 import java.io.File
 import scala.collection.immutable.{ Map, Set, Seq }
 

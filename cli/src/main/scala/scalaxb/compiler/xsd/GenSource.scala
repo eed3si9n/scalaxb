@@ -22,7 +22,6 @@
 
 package scalaxb.compiler.xsd
 
-import scalashim._
 import scalaxb.compiler.{Config, Snippet, CaseClassTooLong, Log}
 import scala.collection.mutable
 import scala.collection.{Map}

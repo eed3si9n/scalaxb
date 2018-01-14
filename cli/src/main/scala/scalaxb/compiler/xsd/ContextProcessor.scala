@@ -23,7 +23,6 @@
 package scalaxb.compiler
 package xsd
 
-import scalashim._
 import scalaxb.compiler.{ScalaNames, Config, ReferenceNotFound, Log}
 import scala.collection.mutable
 import javax.xml.namespace.QName

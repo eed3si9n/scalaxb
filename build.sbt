@@ -14,12 +14,15 @@ lazy val commonSettings = Seq(
 
 lazy val root = (project in file(".")).
   enablePlugins(NoPublish).
+  disablePlugins(ScriptedPlugin).
   aggregate(app, integration, scalaxbPlugin).
   settings(
     scalaVersion := scala211
   )
 
 lazy val app = (project in file("cli")).
+  enablePlugins(BuildInfoPlugin).
+  disablePlugins(ScriptedPlugin).
   settings(commonSettings: _*).
   settings(codegenSettings: _*).
   settings(
@@ -36,32 +39,33 @@ lazy val app = (project in file("cli")).
       else prev
     },
 
-    mainClass          in assembly := Some("scalaxb.compiler.Main")
-  , assemblyOption     in assembly := (assemblyOption in assembly).value.copy(prependShellScript = Some(sbtassembly.AssemblyPlugin.defaultShellScript))
-  , assemblyOutputPath in assembly := file(s"./${name.value}-${version.value}")
+    mainClass          in assembly := Some("scalaxb.compiler.Main"),
+    assemblyOption     in assembly := (assemblyOption in assembly).value.copy(prependShellScript = Some(sbtassembly.AssemblyPlugin.defaultShellScript)),
+    assemblyOutputPath in assembly := file(s"./${name.value}-${version.value}"),
   )
 
 lazy val integration = (project in file("integration")).
+  disablePlugins(ScriptedPlugin).
   settings(commonSettings: _*).
   settings(
     crossScalaVersions := Seq(scala211),
     scalaVersion := scala211,
     publishArtifact := false,
-    libraryDependencies ++= integrationDependencies(scalaVersion.value)
+    libraryDependencies ++= integrationDependencies(scalaVersion.value),
     // fork in test := true,
     // javaOptions in test ++= Seq("-Xmx2G", "-XX:MaxPermSize=512M")
-  , parallelExecution in Test := false
-  , testOptions in Test += Tests.Argument("sequential")
+    parallelExecution in Test := false,
+    testOptions in Test += Tests.Argument("sequential"),
   ).
   dependsOn(app)
 
 lazy val scalaxbPlugin = (project in file("sbt-scalaxb")).
+  enablePlugins(ScriptedPlugin).
   settings(commonSettings: _*).
   settings(
     sbtPlugin := true,
     name := "sbt-scalaxb",
     description := """sbt plugin to run scalaxb""",
-    ScriptedPlugin.scriptedSettings,
     scriptedLaunchOpts := { scriptedLaunchOpts.value ++
       Seq("-Xmx1024M", "-XX:MaxPermSize=256M", "-Dplugin.version=" + version.value)
     },

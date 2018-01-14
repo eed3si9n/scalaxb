@@ -1,7 +1,7 @@
 import sbt._
 import Keys._
-import sbtbuildinfo.Plugin._
-import sbtscalashim.Plugin._
+import sbtbuildinfo.BuildInfoKey
+import sbtbuildinfo.BuildInfoKeys._
 
 object Common {
   val Xsd = config("xsd") extend(Compile)
@@ -40,15 +40,13 @@ object Common {
   //   inConfig(Soap12)(baseScalaxbSettings ++ inTask(scalaxb)(soapSettings("soapenvelope12")))
   // }
 
-  val codegenSettings: Seq[Def.Setting[_]] = buildInfoSettings ++ scalaShimSettings ++ scalaxbCodegenSettings ++ Seq(
+  val codegenSettings: Seq[Def.Setting[_]] = scalaxbCodegenSettings ++ Seq(
     unmanagedSourceDirectories in Compile += baseDirectory.value / "src_managed",
     buildInfoPackage := "scalaxb",
     buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion,
       "defaultDispatchVersion" -> Dependencies.defaultDispatchVersion,
       "defaultGigahorseVersion" -> Dependencies.defaultGigahorseVersion,
       "defaultGigahorseBackend" -> Dependencies.defaultGigahorseBackend),
-    sourceGenerators in Compile += buildInfo.taskValue,
-    sourceGenerators in Compile += scalaShim.taskValue
   )
 
   val sonatypeSettings: Seq[Def.Setting[_]] = Seq(

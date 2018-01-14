@@ -22,7 +22,6 @@
 
 package scalaxb.compiler.xsd
 
-import scalashim._
 import scalaxb.compiler.Log
 import scala.collection.mutable
 import scala.collection.immutable

@@ -22,7 +22,6 @@
 
 package scalaxb.compiler
 
-import scalashim._
 import java.net.{URI}
 import scala.xml.{Node, Elem, UnprefixedAttribute, NamespaceBinding}
 import scala.xml.factory.{XMLLoader}

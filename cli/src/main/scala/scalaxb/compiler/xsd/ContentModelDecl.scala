@@ -22,8 +22,6 @@
 
 package scalaxb.compiler.xsd
 
-import scalashim._
-
 trait ComplexTypeContent {
   val base: XsTypeSymbol
   val attributes: List[AttributeLike]

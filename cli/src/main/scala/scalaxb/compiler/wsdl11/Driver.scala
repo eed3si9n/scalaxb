@@ -22,7 +22,6 @@
 
 package scalaxb.compiler.wsdl11
 
-import scalashim._
 import scala.collection.mutable
 import scalaxb.compiler.{Module, Config, Snippet, CustomXML, CanBeWriter, Log}
 import masked.scalaxb.{DataRecord}

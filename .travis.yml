@@ -22,7 +22,7 @@ env:
         - TEST_COMMAND="integration/test"
 
 script:
-    - sbt ++2.10.6 -J-XX:ReservedCodeCacheSize=256M "scalaxbPlugin/scripted"
+    - sbt ++2.12.4 -J-XX:ReservedCodeCacheSize=256M "scalaxbPlugin/scripted"
     - sbt ++$TRAVIS_SCALA_VERSION -J-XX:ReservedCodeCacheSize=256M "$TEST_COMMAND"
     # Tricks to avoid unnecessary cache updates
     - find $HOME/.sbt -name "*.lock" | xargs rm

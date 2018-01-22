@@ -570,6 +570,8 @@ trait ContextProcessor extends ScalaNames with PackageName {
   } getOrElse {""}
       
   def identifier(value: String) = {
+    def normalize(c: Char): String = s"u${c.toInt}"
+
     val nonspace = 
       if (value == "") "blank" // treat "" as "blank" but " " as "u32"
       else if (value.trim != "") """\s""".r.replaceAllIn(value, "")
@@ -577,12 +579,12 @@ trait ContextProcessor extends ScalaNames with PackageName {
     val validfirstchar =
       if ("""\W""".r.findFirstIn(nonspace).isDefined) {
           (nonspace.toSeq map { c =>
-            if ("""\W""".r.findFirstIn(c.toString).isDefined) "u" + c.toInt.toString
+            if ("""\W""".r.findFirstIn(c.toString).isDefined) normalize(c)
             else c.toString
           }).mkString
       }
       else nonspace
-    if (validfirstchar.endsWith("_")) validfirstchar.dropRight(1) + "u93"
+    if (validfirstchar.endsWith("_")) validfirstchar.dropRight(1) + normalize(validfirstchar.last)
     else validfirstchar
   }
 

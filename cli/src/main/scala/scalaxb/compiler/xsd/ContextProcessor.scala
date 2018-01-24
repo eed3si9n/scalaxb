@@ -572,8 +572,12 @@ trait ContextProcessor extends ScalaNames with PackageName {
   def identifier(value: String) = {
     import ContextProcessor._
 
-    def normalize(c: Char): String =
-      if (config.discardNonIdentifierCharacters) "" else s"u${c.toInt}"
+    def normalize(c: Char): String = {
+      val encoded = s"u${c.toInt}"
+      if (config.discardNonIdentifierCharacters) ""
+      else if (config.replaceSpecialSymbolsWithNames) SpecialCharacterNames.getOrElse(c, encoded)
+      else encoded
+    }
 
     // treat "" as "blank" but " " as "u32"
     val nonspace = 
@@ -607,6 +611,16 @@ trait ContextProcessor extends ScalaNames with PackageName {
 }
 
 object ContextProcessor {
+  /** Names of the symbolic characters acceptable in an XML Name, according to the spec:
+    * https://www.w3.org/TR/xml/#NT-NameStartChar
+    */
+  private val SpecialCharacterNames = Map(
+    '-' -> "Hyphen",
+    '.' -> "Dot",
+    ':' -> "Colon",
+    '_' -> "Underscore"
+  )
+
   private def toCamelCase(value: String): String = {
     val words = value.split(raw"\b")  // word boundary
     (words.head +: words.tail.map(_.capitalize)).mkString

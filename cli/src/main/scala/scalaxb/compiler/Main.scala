@@ -133,6 +133,9 @@ object Arguments {
       opt[Unit]("discard-non-identifiers") text("Discards any characters that are invalid in Scala identifiers such as dots and hyphens") action { (_, c) =>
         c.update(DiscardNonIdentifierCharacters)
       }
+      opt[Unit]("replace-special-symbols-with-names")
+        .text("Replaces `.`, `-`, `:`, and trailing `_` in class names with `Dot`, `Hyphen`, `Colon`, and `Underscore`")
+        .action { (_, c) => c.update(ReplaceSpecialSymbolsWithNames) }
 
       opt[Unit]('v', "verbose") text("be extra verbose") action { (_, c) =>
         verbose = true

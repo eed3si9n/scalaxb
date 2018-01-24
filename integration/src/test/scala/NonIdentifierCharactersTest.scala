@@ -9,10 +9,14 @@ object NonIdentifierCharactersTest extends TestBase {
   private val schema = resource("non_identifier_characters.xsd")
   private val doubleUnderscoresSchema = resource("double_underscores.xsd")
 
-  private def generate(discardNonIdentifierCharacters: Boolean, schemaFile: File = schema) = {
+  private def generate(discardNonIdentifierCharacters: Boolean = false,
+                       replaceSpecialSymbolsWithNames: Boolean = false,
+                       schemaFile: File = schema) = {
     var config = Config.default.update(Outdir(tmp))
     if (discardNonIdentifierCharacters)
       config = config.update(DiscardNonIdentifierCharacters)
+    if (replaceSpecialSymbolsWithNames)
+      config = config.update(ReplaceSpecialSymbolsWithNames)
     module.process(schemaFile, config)
   }
 
@@ -97,25 +101,39 @@ object NonIdentifierCharactersTest extends TestBase {
     }
 
     "when unset" >> {
-      lazy val generated = generate(discardNonIdentifierCharacters = false)
 
-      "should leave dots" >> {
-        test(generated)(dots, "NamesWithDots", Seq("atu46", "atu46At"), Map("elu46" -> "suffix", "elu46El" -> "middle"))
-      }
+      def testSpecialSymbols(replaceSpecialSymbolsWithNames: Boolean, symbolEncoder: Char => String) = {
+        implicit lazy val generated: Seq[File] = generate(replaceSpecialSymbolsWithNames = replaceSpecialSymbolsWithNames)
+        val Seq(encodedDot, encodedHyphen, trailingUnderscore) = Seq('.', '-', '_').map(symbolEncoder)
 
-      "should leave hyphens" >> {
-        test(generated)(hyphens, "NamesWithHyphens", Seq("atu45", "atu45At"), Map("elu45" -> "suffix", "elu45El" -> "middle"))
-      }
-
-      "should leave underscores and encode the one at the end" >> {
-        val generated = generate(discardNonIdentifierCharacters = false, schemaFile = doubleUnderscoresSchema)
-        test(generated)(
-          doubleUnderscores,
-          "NamesWithDoubleUnderscores",
-          Seq("at_u95", "__at", "at__at"),
-          Map("el_u95" -> "suffix", "__el" -> "prefix", "el__el" -> "middle")
+        "should replace dots with their name" >> test(generated)(dots, "NamesWithDots",
+          Seq(s"at${encodedDot}", s"at${encodedDot}At"),
+          Map(s"el${encodedDot}" -> "suffix", s"el${encodedDot}El" -> "middle")
         )
+
+        "should replace hyphens with their name" >> test(generated)(hyphens, "NamesWithHyphens",
+          Seq(s"at${encodedHyphen}", s"at${encodedHyphen}At"),
+          Map(s"el${encodedHyphen}" -> "suffix", s"el${encodedHyphen}El" -> "middle")
+        )
+
+        "should leave underscores and encode the one at the end" >> {
+          implicit val generated = generate(replaceSpecialSymbolsWithNames = replaceSpecialSymbolsWithNames, schemaFile = doubleUnderscoresSchema)
+          test(generated)(doubleUnderscores, "NamesWithDoubleUnderscores",
+            Seq(s"at_${trailingUnderscore}", "__at", "at__at"),
+            Map(s"el_${trailingUnderscore}" -> "suffix", "__el" -> "prefix", "el__el" -> "middle")
+          )
+        }
       }
+
+      "when ReplaceSpecialSymbolsWithNames is disabled" >>
+        testSpecialSymbols(replaceSpecialSymbolsWithNames = false, symbolEncoder = "u" + _.toInt)
+
+      "when ReplaceSpecialSymbolsWithNames is enabled" >>
+        testSpecialSymbols(replaceSpecialSymbolsWithNames = true, symbolEncoder = {
+          case '.' => "Dot"
+          case '-' => "Hyphen"
+          case '_' => "Underscore"
+        })
     }
   }
 }

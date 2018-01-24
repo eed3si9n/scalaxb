@@ -77,6 +77,7 @@ case class Config(items: Map[String, ConfigEntry]) {
   def generateMutable: Boolean = values contains GenerateMutable
   def generateVisitor: Boolean = values contains GenerateVisitor
   def discardNonIdentifierCharacters = values contains DiscardNonIdentifierCharacters
+  def replaceSpecialSymbolsWithNames = values contains ReplaceSpecialSymbolsWithNames
 
   private def get[A <: ConfigEntry: Manifest]: Option[A] =
     items.get(implicitly[Manifest[A]].runtimeClass.getName).asInstanceOf[Option[A]]
@@ -149,4 +150,5 @@ object ConfigEntry {
   case object GenerateMutable extends ConfigEntry
   case object GenerateVisitor extends ConfigEntry
   case object DiscardNonIdentifierCharacters extends ConfigEntry
+  case object ReplaceSpecialSymbolsWithNames extends ConfigEntry
 }

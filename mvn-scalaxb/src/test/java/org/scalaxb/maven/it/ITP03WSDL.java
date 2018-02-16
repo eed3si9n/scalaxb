@@ -8,6 +8,7 @@ public class ITP03WSDL extends AbstractIT {
             "generated/stockquote.scala",
             "generated/stockquote_type1.scala",
             "generated/xmlprotocol.scala",
+            "scalaxb/execution_context_provider.scala",
             "scalaxb/httpclients_async.scala",
             "scalaxb/httpclients_dispatch_async.scala",
             "scalaxb/scalaxb.scala",

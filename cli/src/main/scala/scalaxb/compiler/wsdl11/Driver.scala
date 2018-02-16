@@ -189,12 +189,16 @@ class Driver extends Module { driver =>
     List(
       generateFromResource[To](Some("scalaxb"), "scalaxb.scala",
         "/scalaxb.scala.template"),
-      (if (config.async)
+      if (config.async)
         generateFromResource[To](Some("scalaxb"), "httpclients_async.scala",
           "/httpclients_async.scala.template")
       else
         generateFromResource[To](Some("scalaxb"), "httpclients.scala",
-          "/httpclients.scala.template"))) ++
+          "/httpclients.scala.template")) ++
+    (if (config.async)
+      List(generateFromResource[To](Some("scalaxb"), "execution_context_provider.scala",
+        "/execution_context_provider.scala.template"))
+    else Nil) ++
     (if (config.generateDispatchAs) List(generateFromResource[To](Some("dispatch.as"), "dispatch_as_scalaxb.scala",
         "/dispatch_as_scalaxb.scala.template"))
      else Nil) ++

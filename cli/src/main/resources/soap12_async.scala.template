@@ -20,12 +20,13 @@ case class Fault[+A](original: Any, detail: Option[A], headers: scala.xml.NodeSe
   override def toString: String = s"""Fault($original, $detail, $headers)"""
 }
 
-trait SoapClientsAsync { this: HttpClientsAsync =>
+trait SoapClientsAsync {
+  this: HttpClientsAsync with ExecutionContextProvider =>
+
   lazy val soapClient: SoapClientAsync = new SoapClientAsync {}
   def baseAddress: java.net.URI
 
   trait SoapClientAsync {
-    implicit lazy val executionContext = scala.concurrent.ExecutionContext.Implicits.global
     import soapenvelope12.{Fault => _, _}
     val SOAP_ENVELOPE_URI = "http://www.w3.org/2003/05/soap-envelope"
 

@@ -101,8 +101,6 @@ class GenProtocol(val context: XsdContext, var config: Config) extends ContextPr
     val packageString = config.protocolPackageName map { "package " + _ + newline } getOrElse{""}
     val importFutureString = if (config.async)
       "import scala.concurrent.Future" + newline else ""
-    val executionContextString = if (config.async)
-      "implicit lazy val executionContext = scala.concurrent.ExecutionContext.Implicits.global" + newline else ""
     val packageValueString = config.protocolPackageName map { x => x } getOrElse {""}
     val maxChunkLength = 200
     val nOfClauses = snippet.elemToTypeClauses.length
@@ -136,7 +134,6 @@ val document = scalaxb.toXML[{packageValueString}.Foo](obj, "foo", {packageValue
 object `package` extends { buildDefaultProtocolName(name) } {{ }}
 
 trait { buildDefaultProtocolName(name) } extends scalaxb.XMLStandardTypes {{
-  {executionContextString}
   val defaultScope = scalaxb.toScope({ if (scopes.isEmpty) "Nil: _*"
     else scopes.map(x => quote(x._1) + " -> " + quote(x._2)).mkString("," + newline + indent(2)) })
 {snippet.implicitValue}

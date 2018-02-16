@@ -14,10 +14,10 @@ object Wsdl11Soap12AsyncTest extends TestBase {
     update(Outdir(tmp)).
     update(GeneratePackageDir)
   "stockquote.scala file must compile" in {
-    (List("""import scala.concurrent.ExecutionContext.Implicits.global
+    (List("""
       import scala.concurrent._
       import scala.concurrent.duration._""",
-      """val service = (new stockquote.StockQuoteSoap12Bindings with scalaxb.SoapClientsAsync with scalaxb.DispatchHttpClientsAsync {}).service
+      """val service = (new stockquote.StockQuoteSoap12Bindings with scalaxb.SoapClientsAsync with scalaxb.DispatchHttpClientsAsync with scalaxb.GlobalExecutionContextProvider {}).service
        val fresponse = service.getQuote(Some("GOOG"))
        val response = Await.result(fresponse, 5.seconds)""",
       // The service is flaky. Running several times succeeds.

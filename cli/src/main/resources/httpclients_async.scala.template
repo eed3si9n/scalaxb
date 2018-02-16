@@ -3,6 +3,8 @@ package scalaxb
 import concurrent.Future
 
 trait HttpClientsAsync {
+  this: ExecutionContextProvider =>
+  
   def httpClient: HttpClient
 
   trait HttpClient {

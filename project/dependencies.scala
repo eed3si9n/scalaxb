@@ -5,17 +5,17 @@ object Dependencies {
   val scala211 = "2.11.12"
   val scala210 = "2.10.7"
 
-  val scopt = "com.github.scopt" %% "scopt" % "3.5.0"
+  val scopt = "com.github.scopt" %% "scopt" % "3.7.0"
   val log4j = "log4j" % "log4j" % "1.2.17"
   val defaultDispatchVersion = "0.12.0"
   val dispatch = "net.databinder.dispatch" %% "dispatch-core" % defaultDispatchVersion
-  val defaultGigahorseVersion = "0.3.0"
+  val defaultGigahorseVersion = "0.3.1"
   val defaultGigahorseBackend = "okhttp"
-  val gigahorse = "com.eed3si9n" %% "gigahorse-okhttp" % defaultGigahorseVersion
+  val gigahorse = "com.eed3si9n" %% s"gigahorse-$defaultGigahorseBackend" % defaultGigahorseVersion
   val launcherInterface = "org.scala-sbt" % "launcher-interface" % "0.12.0"
   val scalaXml = "org.scala-lang.modules" %% "scala-xml" % "1.0.6"
-  val scalaParser = "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.4"
-  val cxfVersion = "3.0.2"
+  val scalaParser = "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.5"
+  val cxfVersion = "3.0.16"
   val cxfFrontendJaxws = "org.apache.cxf" % "cxf-rt-frontend-jaxws" % cxfVersion
   val cxfFrontendJaxrs = "org.apache.cxf" % "cxf-rt-frontend-jaxrs" % cxfVersion
   val cxfTransportsHttp = "org.apache.cxf" % "cxf-rt-transports-http" % cxfVersion

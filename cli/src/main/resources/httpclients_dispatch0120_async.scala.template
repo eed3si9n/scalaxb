@@ -13,7 +13,7 @@ trait DispatchHttpClientsAsync extends HttpClientsAsync {
   def connectionTimeout: Duration = 5.seconds
 
   trait DispatchHttpClient extends HttpClient {
-    import dispatch._, Defaults._
+    import dispatch._
 
     // Keep it lazy. See https://github.com/eed3si9n/scalaxb/pull/279
     lazy val http = Http.configure(_.

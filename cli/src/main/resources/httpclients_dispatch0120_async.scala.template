@@ -6,6 +6,8 @@ import concurrent.Future
 import scala.concurrent._, duration._
 
 trait DispatchHttpClientsAsync extends HttpClientsAsync {
+  this: ExecutionContextProvider =>
+
   lazy val httpClient = new DispatchHttpClient {}
   def requestTimeout: Duration = 60.seconds
   def connectionTimeout: Duration = 5.seconds

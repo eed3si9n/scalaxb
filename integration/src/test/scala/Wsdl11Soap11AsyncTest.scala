@@ -30,7 +30,7 @@ object Wsdl11Soap11AsyncTest extends TestBase {
     (List("""import genericbarcode._
       import scala.concurrent._
       import scala.concurrent.duration._""",
-      """val service = (new BarCodeSoapBindings with scalaxb.Soap11ClientsAsync with scalaxb.GigahorseHttpClientsAsync {}).service
+      """val service = (new BarCodeSoapBindings with scalaxb.Soap11ClientsAsync with scalaxb.GlobalExecutionContextProvider with scalaxb.GigahorseHttpClientsAsync {}).service
        val data = BarCodeData(120, 120, 0, 1, 1, 20, 20, true, None, None, None, 10.0f, Both, CodeEAN128B, NoneType, BottomCenter, PNG)
        println(scalaxb.toXML(data, "BarCodeParam", defaultScope))
        val fresponse = service.generateBarCode(data, Some("1234"))

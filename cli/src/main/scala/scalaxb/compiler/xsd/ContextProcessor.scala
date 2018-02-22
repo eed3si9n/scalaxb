@@ -570,9 +570,11 @@ trait ContextProcessor extends ScalaNames with PackageName {
   } getOrElse {""}
       
   def identifier(value: String) = {
+    import ContextProcessor._
+
     val nonspace = 
       if (value == "") "blank" // treat "" as "blank" but " " as "u32"
-      else if (value.trim != "") """\s""".r.replaceAllIn(value, "")
+      else if (value.trim != "") """\s""".r.replaceAllIn(toCamelCase(value), "")
       else value    
     val validfirstchar =
       if ("""\W""".r.findFirstIn(nonspace).isDefined) {
@@ -594,4 +596,11 @@ trait ContextProcessor extends ScalaNames with PackageName {
     else "\"" + value + "\""
 
   def indent(indent: Int) = "  " * indent
+}
+
+object ContextProcessor {
+  private def toCamelCase(value: String): String = {
+    val words = value.split(raw"\b")  // word boundary
+    (words.head +: words.tail.map(_.capitalize)).mkString
+  }
 }

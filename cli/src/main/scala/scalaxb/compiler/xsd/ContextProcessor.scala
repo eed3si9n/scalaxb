@@ -570,12 +570,13 @@ trait ContextProcessor extends ScalaNames with PackageName {
   } getOrElse {""}
       
   def identifier(value: String) = {
-    def normalize(c: Char): String = s"u${c.toInt}"
+    def normalize(c: Char): String =
+      if (config.discardNonIdentifierCharacters) "" else s"u${c.toInt}"
 
-    val nonspace = 
-      if (value == "") "blank" // treat "" as "blank" but " " as "u32"
-      else if (value.trim != "") """\s""".r.replaceAllIn(value, "")
-      else value    
+    // treat "" as "blank" but " " as "u32"
+    val nonspace =
+      if (value.trim != "") """\s""".r.replaceAllIn(value, "")
+      else value
     val validfirstchar =
       if ("""\W""".r.findFirstIn(nonspace).isDefined) {
           (nonspace.toSeq map { c =>
@@ -584,7 +585,12 @@ trait ContextProcessor extends ScalaNames with PackageName {
           }).mkString
       }
       else nonspace
+
+    // Scala identifiers must not end with an underscore
+    // Known issue: if `discardNonIdentifierCharacters` is set and an identifier ends in multiple underscores (e.g. `el__`)
+    //              then the generated name will be invalid (`el_`, as only the last underscore will be dropped)
     if (validfirstchar.endsWith("_")) validfirstchar.dropRight(1) + normalize(validfirstchar.last)
+    else if (validfirstchar == "") "blank"
     else validfirstchar
   }
 

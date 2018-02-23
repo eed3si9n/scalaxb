@@ -130,6 +130,9 @@ object Arguments {
         c.remove(VarArg) }
       opt[Unit]("ignore-unknown") text("ignores unknown Elements") action { (_, c) =>
         c.update(IgnoreUnknown) }
+      opt[Unit]("discard-non-identifiers") text("Discards any characters that are invalid in Scala identifiers such as dots and hyphens") action { (_, c) =>
+        c.update(DiscardNonIdentifierCharacters)
+      }
 
       opt[Unit]('v', "verbose") text("be extra verbose") action { (_, c) =>
         verbose = true

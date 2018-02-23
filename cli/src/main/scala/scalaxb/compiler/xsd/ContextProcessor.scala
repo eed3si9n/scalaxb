@@ -579,18 +579,19 @@ trait ContextProcessor extends ScalaNames with PackageName {
       else encoded
     }
 
+    def normalizeUnless(isAcceptable: Char => Boolean, str: Iterable[Char]): Iterable[String] = str.map { c =>
+      if (isAcceptable(c)) c.toString else normalize(c)
+    }
+
     // treat "" as "blank" but " " as "u32"
     val nonspace = 
       if (value.trim != "") """\s""".r.replaceAllIn(toCamelCase(value), "")
       else value    
-    val validfirstchar =
-      if ("""\W""".r.findFirstIn(nonspace).isDefined) {
-          (nonspace.toSeq map { c =>
-            if ("""\W""".r.findFirstIn(c.toString).isDefined) normalize(c)
-            else c.toString
-          }).mkString
-      }
-      else nonspace
+
+    import Character._
+    val validfirstchar: String = nonspace.headOption.toIterable.flatMap { firstChar =>
+      normalizeUnless(isJavaIdentifierStart, Seq(firstChar)) ++ normalizeUnless(isJavaIdentifierPart, nonspace.tail)
+    }.mkString
 
     // Scala identifiers must not end with an underscore
     // Known issue: if `discardNonIdentifierCharacters` is set and an identifier ends in multiple underscores (e.g. `el__`)

@@ -126,7 +126,11 @@ object NonIdentifierCharactersTest extends TestBase {
       }
 
       "when ReplaceSpecialSymbolsWithNames is disabled" >>
-        testSpecialSymbols(replaceSpecialSymbolsWithNames = false, symbolEncoder = "u" + _.toInt)
+        testSpecialSymbols(replaceSpecialSymbolsWithNames = false, symbolEncoder = {
+          case '.' => "U002e"
+          case '-' => "U002d"
+          case '_' => "U005f"
+        })
 
       "when ReplaceSpecialSymbolsWithNames is enabled" >>
         testSpecialSymbols(replaceSpecialSymbolsWithNames = true, symbolEncoder = {

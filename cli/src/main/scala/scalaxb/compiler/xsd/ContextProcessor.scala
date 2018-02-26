@@ -573,7 +573,7 @@ trait ContextProcessor extends ScalaNames with PackageName {
     import ContextProcessor._
 
     def normalize(c: Char): String = {
-      val encoded = s"u${c.toInt}"
+      val encoded = f"U${c.toInt}%04x"
       if (config.discardNonIdentifierCharacters) ""
       else if (config.replaceSpecialSymbolsWithNames) SpecialCharacterNames.getOrElse(c, encoded)
       else encoded

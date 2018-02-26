@@ -831,7 +831,7 @@ JDREVGRw==</base64Binary>
     val us = scalaxb.fromXML[UnderscoreSuffix](subject)
     System.err.println("received:"+us)
     def check(obj: UnderscoreSuffix) = obj match {
-      case u@UnderscoreSuffix("blabla", attrs) if u.atu95 =>
+      case u@UnderscoreSuffix("blabla", attrs) if u.atU005f =>
       case _ => sys.error("match failed: " + obj.toString)
     }
     check(us)

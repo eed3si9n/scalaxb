@@ -157,8 +157,10 @@ object ConfigEntry {
     case object Discard      extends Strategy("discard",       "Discards any characters that are invalid in Scala identifiers, such as dots and hyphens")
     case object SymbolName   extends Strategy("symbol-name",   "Replaces `.`, `-`, `:`, and trailing `_` in class names with `Dot`, `Hyphen`, `Colon`, and `Underscore`")
     case object UnicodePoint extends Strategy("unicode-point", "Replaces symbols with a 'U' followed by the 4-digit hexadecimal code of the character (e.g. `_` => `U005f`)")
+    case object DecimalAscii extends Strategy("decimal-ascii", "Replaces symbols with a 'u' followed by the decimal code of the character (e.g. `_` => `u95`)")
+    case object Legacy151    extends Strategy("legacy-1.5.1",  "Same as decimal-ascii except that _trailing_ underscores are replaced with `u93` (as introduced in v1.5.1)")
 
-    val values = Seq(Discard, SymbolName, UnicodePoint)
+    val values = Seq(Discard, SymbolName, UnicodePoint, DecimalAscii, Legacy151)
 
     def apply(alias: String): Option[Strategy] = values.find(_.alias == alias)
     def withName(alias: String): Strategy = apply(alias).getOrElse {

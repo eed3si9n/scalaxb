@@ -76,9 +76,11 @@ object NonIdentifierCharactersTest extends TestBase {
   }
 
   "The symbol encoding strategy" >> {
+      var testedStrategies = Set.empty[SymbolEncoding.Strategy]
 
       def testSpecialSymbols(symbolEncodingStrategy: SymbolEncoding.Strategy,
                              symbolEncoder: Char => String) = {
+        testedStrategies += symbolEncodingStrategy
         implicit lazy val generated: Seq[File] = generate(symbolEncodingStrategy)
         val Seq(encodedDot, encodedHyphen, trailingUnderscore) = Seq('.', '-', '_').map(symbolEncoder)
 
@@ -124,5 +126,21 @@ object NonIdentifierCharactersTest extends TestBase {
           case '-' => "Hyphen"
           case '_' => "Underscore"
         })
+
+      "DecimalAscii" >>
+        testSpecialSymbols(SymbolEncoding.DecimalAscii, symbolEncoder = {
+          case '.' => "u46"
+          case '-' => "u45"
+          case '_' => "u95"
+        })
+
+      "Legacy151" >>
+        testSpecialSymbols(SymbolEncoding.Legacy151, symbolEncoder = {
+          case '.' => "u46"
+          case '-' => "u45"
+          case '_' => "u93"
+        })
+
+      "tests should have covered all strategies" >> { testedStrategies must containTheSameElementsAs(SymbolEncoding.values) }
   }
 }

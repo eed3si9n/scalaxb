@@ -617,10 +617,15 @@ object ContextProcessor {
       case Discard      => _ => ""
       case SymbolName   => symbolName
       case UnicodePoint => unicodePoint
+      case DecimalAscii => decimalAscii
+      case Legacy151    => legacy151
     }
 
     private def symbolName(c: Char) = SpecialCharacterNames.getOrElse(c, unicodePoint(c))
     private def unicodePoint(c: Char) = f"U${c.toInt}%04x"
+    private def decimalAscii(c: Char) = s"u${c.toInt}"
+    /** In v1.5.1, trailing underscores were encoded as "u93", even though the ASCII code for underscore is 95 */
+    private def legacy151(c: Char) = if (c == '_') "u93" else decimalAscii(c)
   }
 
   /** Names of the symbolic characters acceptable in an XML Name, according to the spec:

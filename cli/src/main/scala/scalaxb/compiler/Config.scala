@@ -76,8 +76,6 @@ case class Config(items: Map[String, ConfigEntry]) {
   def autoPackages: Boolean = values contains AutoPackages
   def generateMutable: Boolean = values contains GenerateMutable
   def generateVisitor: Boolean = values contains GenerateVisitor
-  def discardNonIdentifierCharacters = symbolEncodingStrategy == SymbolEncoding.Discard
-  def replaceSpecialSymbolsWithNames = symbolEncodingStrategy == SymbolEncoding.SymbolName
   def symbolEncodingStrategy = get[SymbolEncoding.Strategy] getOrElse defaultSymbolEncodingStrategy
 
   private def get[A <: ConfigEntry: Manifest]: Option[A] =

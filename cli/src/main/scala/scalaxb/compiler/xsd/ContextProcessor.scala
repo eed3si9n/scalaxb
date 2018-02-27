@@ -23,9 +23,10 @@
 package scalaxb.compiler
 package xsd
 
-import scalaxb.compiler.{ScalaNames, Config, ReferenceNotFound, Log}
 import scala.collection.mutable
 import javax.xml.namespace.QName
+
+import scalaxb.compiler.ConfigEntry.SymbolEncoding
 
 trait PackageName {
   def packageName(schema: SchemaDecl, context: XsdContext): Option[String] =
@@ -47,6 +48,8 @@ trait PackageName {
 }
 
 trait ContextProcessor extends ScalaNames with PackageName {
+  import ContextProcessor._
+
   private val logger = Log.forName("xsd.ContextProcessor")
   var config: Config
   val newline = System.getProperty("line.separator")
@@ -568,16 +571,11 @@ trait ContextProcessor extends ScalaNames with PackageName {
     if (ns == XML_URI) XML_PREFIX
     else context.prefixes.getOrElse(ns, "")
   } getOrElse {""}
-      
-  def identifier(value: String) = {
-    import ContextProcessor._
 
-    def normalize(c: Char): String = {
-      val encoded = f"U${c.toInt}%04x"
-      if (config.discardNonIdentifierCharacters) ""
-      else if (config.replaceSpecialSymbolsWithNames) SpecialCharacterNames.getOrElse(c, encoded)
-      else encoded
-    }
+  private lazy val symbolEncoder = SymbolEncoder(config.symbolEncodingStrategy)
+
+  def identifier(value: String) = {
+    def normalize(c: Char): String = symbolEncoder(c)
 
     def normalizeUnless(isAcceptable: Char => Boolean, str: Iterable[Char]): Iterable[String] = str.map { c =>
       if (isAcceptable(c)) c.toString else normalize(c)
@@ -612,6 +610,19 @@ trait ContextProcessor extends ScalaNames with PackageName {
 }
 
 object ContextProcessor {
+  type SymbolEncoder = Char => String
+  object SymbolEncoder {
+    import SymbolEncoding._
+    def apply(strategy: SymbolEncoding.Strategy): SymbolEncoder = strategy match {
+      case Discard      => _ => ""
+      case SymbolName   => symbolName
+      case UnicodePoint => unicodePoint
+    }
+
+    private def symbolName(c: Char) = SpecialCharacterNames.getOrElse(c, unicodePoint(c))
+    private def unicodePoint(c: Char) = f"U${c.toInt}%04x"
+  }
+
   /** Names of the symbolic characters acceptable in an XML Name, according to the spec:
     * https://www.w3.org/TR/xml/#NT-NameStartChar
     */

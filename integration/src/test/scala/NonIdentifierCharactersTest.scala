@@ -9,14 +9,10 @@ object NonIdentifierCharactersTest extends TestBase {
   private val schema = resource("non_identifier_characters.xsd")
   private val doubleUnderscoresSchema = resource("double_underscores.xsd")
 
-  private def generate(discardNonIdentifierCharacters: Boolean = false,
-                       replaceSpecialSymbolsWithNames: Boolean = false,
+  private def generate(symbolEncodingStrategy: SymbolEncoding.Strategy,
                        schemaFile: File = schema) = {
     var config = Config.default.update(Outdir(tmp))
-    if (discardNonIdentifierCharacters)
-      config = config.update(SymbolEncoding.Discard)
-    if (replaceSpecialSymbolsWithNames)
-      config = config.update(SymbolEncoding.SymbolName)
+    config = config.update(symbolEncodingStrategy)
     module.process(schemaFile, config)
   }
 
@@ -79,65 +75,54 @@ object NonIdentifierCharactersTest extends TestBase {
     """, expectedResult = "success")
   }
 
-  "DiscardNonIdentifierCharacters" >> {
-    "when set" >> {
-      lazy val generated = generate(discardNonIdentifierCharacters = true)
+  "The symbol encoding strategy" >> {
 
-      "should remove dots" >> {
-        test(generated)(dots, "NamesWithDots", Seq("at", "atAt"), Map("el" -> "suffix", "elEl" -> "middle"))
-      }
-
-      "should remove hyphens" >> {
-        test(generated)(hyphens, "NamesWithHyphens", Seq("at", "atAt"), Map("el" -> "suffix", "elEl" -> "middle"))
-      }
-
-      "should remove the underscore at the end" >> {
-        test(generated)(underscores, "NamesWithUnderscores", Seq("at"), Map("el" -> "suffix"))
-      }
-
-      "should leave underscores at the beginning and in the middle" >> {
-        test(generated)(underscores, "NamesWithUnderscores", Seq("_at", "at_at"), Map("_el" -> "prefix", "el_el" -> "middle"))
-      }
-    }
-
-    "when unset" >> {
-
-      def testSpecialSymbols(replaceSpecialSymbolsWithNames: Boolean, symbolEncoder: Char => String) = {
-        implicit lazy val generated: Seq[File] = generate(replaceSpecialSymbolsWithNames = replaceSpecialSymbolsWithNames)
+      def testSpecialSymbols(symbolEncodingStrategy: SymbolEncoding.Strategy,
+                             symbolEncoder: Char => String) = {
+        implicit lazy val generated: Seq[File] = generate(symbolEncodingStrategy)
         val Seq(encodedDot, encodedHyphen, trailingUnderscore) = Seq('.', '-', '_').map(symbolEncoder)
 
-        "should replace dots with their name" >> test(generated)(dots, "NamesWithDots",
+        if (symbolEncodingStrategy != SymbolEncoding.Discard) {
+          "should leave underscores at the beginning and in the middle, and encode the one at the end" >> {
+            implicit val generated = generate(symbolEncodingStrategy, schemaFile = doubleUnderscoresSchema)
+            test(generated)(doubleUnderscores, "NamesWithDoubleUnderscores",
+              Seq(s"at_${trailingUnderscore}", "__at", "at__at"),
+              Map(s"el_${trailingUnderscore}" -> "suffix", "__el" -> "prefix", "el__el" -> "middle")
+            )
+          }
+        }
+
+        "should encode dots" >> test(generated)(dots, "NamesWithDots",
           Seq(s"at${encodedDot}", s"at${encodedDot}At"),
           Map(s"el${encodedDot}" -> "suffix", s"el${encodedDot}El" -> "middle")
         )
 
-        "should replace hyphens with their name" >> test(generated)(hyphens, "NamesWithHyphens",
+        "should encode hyphens" >> test(generated)(hyphens, "NamesWithHyphens",
           Seq(s"at${encodedHyphen}", s"at${encodedHyphen}At"),
           Map(s"el${encodedHyphen}" -> "suffix", s"el${encodedHyphen}El" -> "middle")
         )
 
-        "should leave underscores and encode the one at the end" >> {
-          implicit val generated = generate(replaceSpecialSymbolsWithNames = replaceSpecialSymbolsWithNames, schemaFile = doubleUnderscoresSchema)
-          test(generated)(doubleUnderscores, "NamesWithDoubleUnderscores",
-            Seq(s"at_${trailingUnderscore}", "__at", "at__at"),
-            Map(s"el_${trailingUnderscore}" -> "suffix", "__el" -> "prefix", "el__el" -> "middle")
-          )
-        }
+        "should only encode the underscore at the end" >> test(generated)(underscores, "NamesWithUnderscores",
+          Seq(s"at${trailingUnderscore}", "at_at", "_at"),
+          Map(s"el${trailingUnderscore}" -> "suffix", "el_el" -> "middle", "_el" -> "prefix")
+        )
       }
 
-      "when ReplaceSpecialSymbolsWithNames is disabled" >>
-        testSpecialSymbols(replaceSpecialSymbolsWithNames = false, symbolEncoder = {
+      "Discard" >>
+        testSpecialSymbols(SymbolEncoding.Discard, symbolEncoder = _ => "")
+
+      "UnicodePoint" >>
+        testSpecialSymbols(SymbolEncoding.UnicodePoint, symbolEncoder = {
           case '.' => "U002e"
           case '-' => "U002d"
           case '_' => "U005f"
         })
 
-      "when ReplaceSpecialSymbolsWithNames is enabled" >>
-        testSpecialSymbols(replaceSpecialSymbolsWithNames = true, symbolEncoder = {
+      "SymbolName" >>
+        testSpecialSymbols(SymbolEncoding.SymbolName, symbolEncoder = {
           case '.' => "Dot"
           case '-' => "Hyphen"
           case '_' => "Underscore"
         })
-    }
   }
 }

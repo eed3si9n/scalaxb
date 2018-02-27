@@ -130,12 +130,11 @@ object Arguments {
         c.remove(VarArg) }
       opt[Unit]("ignore-unknown") text("ignores unknown Elements") action { (_, c) =>
         c.update(IgnoreUnknown) }
-      opt[Unit]("discard-non-identifiers") text("Discards any characters that are invalid in Scala identifiers such as dots and hyphens") action { (_, c) =>
-        c.update(DiscardNonIdentifierCharacters)
-      }
-      opt[Unit]("replace-special-symbols-with-names")
-        .text("Replaces `.`, `-`, `:`, and trailing `_` in class names with `Dot`, `Hyphen`, `Colon`, and `Underscore`")
-        .action { (_, c) => c.update(ReplaceSpecialSymbolsWithNames) }
+      opt[SymbolEncoding.Strategy]("symbol-encoding-strategy")
+        .valueName("<strategy>")
+        .text(s"Specifies the strategy to encode non-identifier characters in generated class names. Defaults to ${Config.defaultSymbolEncodingStrategy.alias}." +
+              SymbolEncoding.values.map(s => s"${s.alias}:\t${s.description}").mkString("\n\t\t\t\t", "\n\t\t\t\t", ""))
+        .action { (strategy, config) => config.update(strategy) }
 
       opt[Unit]('v', "verbose") text("be extra verbose") action { (_, c) =>
         verbose = true

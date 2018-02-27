@@ -14,9 +14,9 @@ object NonIdentifierCharactersTest extends TestBase {
                        schemaFile: File = schema) = {
     var config = Config.default.update(Outdir(tmp))
     if (discardNonIdentifierCharacters)
-      config = config.update(DiscardNonIdentifierCharacters)
+      config = config.update(SymbolEncoding.Discard)
     if (replaceSpecialSymbolsWithNames)
-      config = config.update(ReplaceSpecialSymbolsWithNames)
+      config = config.update(SymbolEncoding.SymbolName)
     module.process(schemaFile, config)
   }
 

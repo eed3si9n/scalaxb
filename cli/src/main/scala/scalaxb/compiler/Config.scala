@@ -76,8 +76,9 @@ case class Config(items: Map[String, ConfigEntry]) {
   def autoPackages: Boolean = values contains AutoPackages
   def generateMutable: Boolean = values contains GenerateMutable
   def generateVisitor: Boolean = values contains GenerateVisitor
-  def discardNonIdentifierCharacters = values contains DiscardNonIdentifierCharacters
-  def replaceSpecialSymbolsWithNames = values contains ReplaceSpecialSymbolsWithNames
+  def discardNonIdentifierCharacters = symbolEncodingStrategy == SymbolEncoding.Discard
+  def replaceSpecialSymbolsWithNames = symbolEncodingStrategy == SymbolEncoding.SymbolName
+  def symbolEncodingStrategy = get[SymbolEncoding.Strategy] getOrElse defaultSymbolEncodingStrategy
 
   private def get[A <: ConfigEntry: Manifest]: Option[A] =
     items.get(implicitly[Manifest[A]].runtimeClass.getName).asInstanceOf[Option[A]]
@@ -104,6 +105,7 @@ object Config {
   val defaultDispatchVersion = DispatchVersion(scalaxb.BuildInfo.defaultDispatchVersion)
   val defaultGigahorseVersion = GigahorseVersion(scalaxb.BuildInfo.defaultGigahorseVersion)
   val defaultGigahorseBackend = GigahorseBackend(scalaxb.BuildInfo.defaultGigahorseBackend)
+  val defaultSymbolEncodingStrategy = SymbolEncoding.UnicodePoint
 
   val default = Config(
     Vector(defaultPackageNames, defaultOpOutputWrapperPostfix, defaultOutdir,
@@ -149,6 +151,22 @@ object ConfigEntry {
   case object AutoPackages extends ConfigEntry
   case object GenerateMutable extends ConfigEntry
   case object GenerateVisitor extends ConfigEntry
-  case object DiscardNonIdentifierCharacters extends ConfigEntry
-  case object ReplaceSpecialSymbolsWithNames extends ConfigEntry
+
+  object SymbolEncoding {
+    sealed abstract class Strategy(val alias: String, val description: String) extends ConfigEntry with Product with Serializable {
+      final override def name: String = classOf[Strategy].getName
+    }
+    case object Discard      extends Strategy("discard",       "Discards any characters that are invalid in Scala identifiers, such as dots and hyphens")
+    case object SymbolName   extends Strategy("symbol-name",   "Replaces `.`, `-`, `:`, and trailing `_` in class names with `Dot`, `Hyphen`, `Colon`, and `Underscore`")
+    case object UnicodePoint extends Strategy("unicode-point", "Replaces symbols with a 'U' followed by the 4-digit hexadecimal code of the character (e.g. `_` => `U005f`)")
+
+    val values = Seq(Discard, SymbolName, UnicodePoint)
+
+    def apply(alias: String): Option[Strategy] = values.find(_.alias == alias)
+    def withName(alias: String): Strategy = apply(alias).getOrElse {
+      throw new IllegalArgumentException(s"""Unknown symbol encoding strategy "${alias}"; possible values are ${values.map(_.alias).mkString(", ")}.""")
+    }
+
+    private[compiler] implicit val scoptRead: scopt.Read[Strategy] = scopt.Read.reads(withName)
+  }
 }

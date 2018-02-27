@@ -575,14 +575,21 @@ trait ContextProcessor extends ScalaNames with PackageName {
   private lazy val symbolEncoder = SymbolEncoder(config.symbolEncodingStrategy)
 
   def identifier(value: String) = {
-    def normalize(c: Char): String = symbolEncoder(c)
+    def normalize(c: Char): String = {
+      val encoded = symbolEncoder(c)
+      if (config.capitalizeWords) encoded.capitalize else encoded
+    }
 
     def normalizeUnless(isAcceptable: Char => Boolean, str: Iterable[Char]): Iterable[String] = str.map { c =>
       if (isAcceptable(c)) c.toString else normalize(c)
     }
 
+    def toCamelCase(str: String) = {
+      if (config.capitalizeWords) ContextProcessor.toCamelCase(str) else str
+    }
+
     // treat "" as "blank" but " " as "u32"
-    val nonspace = 
+    val nonspace =
       if (value.trim != "") """\s""".r.replaceAllIn(toCamelCase(value), "")
       else value    
 
@@ -622,7 +629,7 @@ object ContextProcessor {
     }
 
     private def symbolName(c: Char) = SpecialCharacterNames.getOrElse(c, unicodePoint(c))
-    private def unicodePoint(c: Char) = f"U${c.toInt}%04x"
+    private def unicodePoint(c: Char) = f"u${c.toInt}%04x"
     private def decimalAscii(c: Char) = s"u${c.toInt}"
     /** In v1.5.1, trailing underscores were encoded as "u93", even though the ASCII code for underscore is 95 */
     private def legacy151(c: Char) = if (c == '_') "u93" else decimalAscii(c)
@@ -632,10 +639,10 @@ object ContextProcessor {
     * https://www.w3.org/TR/xml/#NT-NameStartChar
     */
   private val SpecialCharacterNames = Map(
-    '-' -> "Hyphen",
-    '.' -> "Dot",
-    ':' -> "Colon",
-    '_' -> "Underscore"
+    '-' -> "hyphen",
+    '.' -> "dot",
+    ':' -> "colon",
+    '_' -> "underscore"
   )
 
   private def toCamelCase(value: String): String = {

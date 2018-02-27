@@ -130,6 +130,9 @@ object Arguments {
         c.remove(VarArg) }
       opt[Unit]("ignore-unknown") text("ignores unknown Elements") action { (_, c) =>
         c.update(IgnoreUnknown) }
+      opt[Unit]("capitalize-words")
+        .text("Attempts to capitalize class and attribute names to match the CamelCase convention")
+        .action { (_, config) => config.update(CapitalizeWords) }
       opt[SymbolEncoding.Strategy]("symbol-encoding-strategy")
         .valueName("<strategy>")
         .text(s"Specifies the strategy to encode non-identifier characters in generated class names. Defaults to ${Config.defaultSymbolEncodingStrategy.alias}." +

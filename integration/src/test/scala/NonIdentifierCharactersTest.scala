@@ -11,8 +11,8 @@ object NonIdentifierCharactersTest extends TestBase {
 
   private def generate(symbolEncodingStrategy: SymbolEncoding.Strategy,
                        schemaFile: File = schema) = {
-    var config = Config.default.update(Outdir(tmp))
-    config = config.update(symbolEncodingStrategy)
+    val config = Config.default.update(Outdir(tmp))
+      .update(symbolEncodingStrategy)
     module.process(schemaFile, config)
   }
 
@@ -95,13 +95,13 @@ object NonIdentifierCharactersTest extends TestBase {
         }
 
         "should encode dots" >> test(generated)(dots, "NamesWithDots",
-          Seq(s"at${encodedDot}", s"at${encodedDot}At"),
-          Map(s"el${encodedDot}" -> "suffix", s"el${encodedDot}El" -> "middle")
+          Seq(s"at${encodedDot}", s"at${encodedDot}at"),
+          Map(s"el${encodedDot}" -> "suffix", s"el${encodedDot}el" -> "middle")
         )
 
         "should encode hyphens" >> test(generated)(hyphens, "NamesWithHyphens",
-          Seq(s"at${encodedHyphen}", s"at${encodedHyphen}At"),
-          Map(s"el${encodedHyphen}" -> "suffix", s"el${encodedHyphen}El" -> "middle")
+          Seq(s"at${encodedHyphen}", s"at${encodedHyphen}at"),
+          Map(s"el${encodedHyphen}" -> "suffix", s"el${encodedHyphen}el" -> "middle")
         )
 
         "should only encode the underscore at the end" >> test(generated)(underscores, "NamesWithUnderscores",
@@ -115,16 +115,16 @@ object NonIdentifierCharactersTest extends TestBase {
 
       "UnicodePoint" >>
         testSpecialSymbols(SymbolEncoding.UnicodePoint, symbolEncoder = {
-          case '.' => "U002e"
-          case '-' => "U002d"
-          case '_' => "U005f"
+          case '.' => "u002e"
+          case '-' => "u002d"
+          case '_' => "u005f"
         })
 
       "SymbolName" >>
         testSpecialSymbols(SymbolEncoding.SymbolName, symbolEncoder = {
-          case '.' => "Dot"
-          case '-' => "Hyphen"
-          case '_' => "Underscore"
+          case '.' => "dot"
+          case '-' => "hyphen"
+          case '_' => "underscore"
         })
 
       "DecimalAscii" >>

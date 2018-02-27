@@ -103,7 +103,7 @@ object Config {
   val defaultDispatchVersion = DispatchVersion(scalaxb.BuildInfo.defaultDispatchVersion)
   val defaultGigahorseVersion = GigahorseVersion(scalaxb.BuildInfo.defaultGigahorseVersion)
   val defaultGigahorseBackend = GigahorseBackend(scalaxb.BuildInfo.defaultGigahorseBackend)
-  val defaultSymbolEncodingStrategy = SymbolEncoding.UnicodePoint
+  val defaultSymbolEncodingStrategy = SymbolEncoding.Legacy151
 
   val default = Config(
     Vector(defaultPackageNames, defaultOpOutputWrapperPostfix, defaultOutdir,

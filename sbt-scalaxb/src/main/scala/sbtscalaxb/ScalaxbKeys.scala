@@ -41,6 +41,8 @@ trait ScalaxbKeys {
   lazy val scalaxbAsync            = settingKey[Boolean]("Generates async SOAP client")
   lazy val scalaxbIgnoreUnknown    = settingKey[Boolean]("Ignores unknown Elements")
   lazy val scalaxbVararg           = settingKey[Boolean]("Uses varargs when possible. (default: false)")
+  lazy val scalaxbCapitalizeWords  = settingKey[Boolean]("Attempts to capitalize class and attribute names to match the CamelCase convention")
+  lazy val scalaxbSymbolEncodingStrategy = settingKey[SymbolEncodingStrategy.Value]("Specifies the strategy to encode non-identifier characters in generated class names")
 
   object HttpClientType extends Enumeration {
     val None, Dispatch, Gigahorse = Value
@@ -50,6 +52,14 @@ trait ScalaxbKeys {
     val OkHttp = Value("okhttp")
     val AHC = Value("asynchttpclient")
     //val AkkaHttp = Value("akkahttp")
+  }
+
+  object SymbolEncodingStrategy extends Enumeration {
+    val Discard = Value("discard")
+    val SymbolName = Value("symbol-name")
+    val UnicodePoint = Value("unicode-point")
+    val DecimalAscii = Value("decimal-ascii")
+    val Legacy151 = Value("legacy-1.5.1")
   }
 }
 object ScalaxbKeys extends ScalaxbKeys

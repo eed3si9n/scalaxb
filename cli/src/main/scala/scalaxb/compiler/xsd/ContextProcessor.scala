@@ -23,9 +23,10 @@
 package scalaxb.compiler
 package xsd
 
-import scalaxb.compiler.{ScalaNames, Config, ReferenceNotFound, Log}
 import scala.collection.mutable
 import javax.xml.namespace.QName
+
+import scalaxb.compiler.ConfigEntry.SymbolEncoding
 
 trait PackageName {
   def packageName(schema: SchemaDecl, context: XsdContext): Option[String] =
@@ -47,6 +48,8 @@ trait PackageName {
 }
 
 trait ContextProcessor extends ScalaNames with PackageName {
+  import ContextProcessor._
+
   private val logger = Log.forName("xsd.ContextProcessor")
   var config: Config
   val newline = System.getProperty("line.separator")
@@ -568,21 +571,38 @@ trait ContextProcessor extends ScalaNames with PackageName {
     if (ns == XML_URI) XML_PREFIX
     else context.prefixes.getOrElse(ns, "")
   } getOrElse {""}
-      
+
+  private lazy val symbolEncoder = SymbolEncoder(config.symbolEncodingStrategy)
+
   def identifier(value: String) = {
-    val nonspace = 
-      if (value == "") "blank" // treat "" as "blank" but " " as "u32"
-      else if (value.trim != "") """\s""".r.replaceAllIn(value, "")
+    def normalize(c: Char): String = {
+      val encoded = symbolEncoder(c)
+      if (config.capitalizeWords) encoded.capitalize else encoded
+    }
+
+    def normalizeUnless(isAcceptable: Char => Boolean, str: Iterable[Char]): Iterable[String] = str.map { c =>
+      if (isAcceptable(c)) c.toString else normalize(c)
+    }
+
+    def toCamelCase(str: String) = {
+      if (config.capitalizeWords) ContextProcessor.toCamelCase(str) else str
+    }
+
+    // treat "" as "blank" but " " as "u32"
+    val nonspace =
+      if (value.trim != "") """\s""".r.replaceAllIn(toCamelCase(value), "")
       else value    
-    val validfirstchar =
-      if ("""\W""".r.findFirstIn(nonspace).isDefined) {
-          (nonspace.toSeq map { c =>
-            if ("""\W""".r.findFirstIn(c.toString).isDefined) "u" + c.toInt.toString
-            else c.toString
-          }).mkString
-      }
-      else nonspace
-    if (validfirstchar.endsWith("_")) validfirstchar.dropRight(1) + "u93"
+
+    import Character._
+    val validfirstchar: String = nonspace.headOption.toIterable.flatMap { firstChar =>
+      normalizeUnless(isJavaIdentifierStart, Seq(firstChar)) ++ normalizeUnless(isJavaIdentifierPart, nonspace.tail)
+    }.mkString
+
+    // Scala identifiers must not end with an underscore
+    // Known issue: if `discardNonIdentifierCharacters` is set and an identifier ends in multiple underscores (e.g. `el__`)
+    //              then the generated name will be invalid (`el_`, as only the last underscore will be dropped)
+    if (validfirstchar.endsWith("_")) validfirstchar.dropRight(1) + normalize(validfirstchar.last)
+    else if (validfirstchar == "") "blank"
     else validfirstchar
   }
 
@@ -594,4 +614,39 @@ trait ContextProcessor extends ScalaNames with PackageName {
     else "\"" + value + "\""
 
   def indent(indent: Int) = "  " * indent
+}
+
+object ContextProcessor {
+  type SymbolEncoder = Char => String
+  object SymbolEncoder {
+    import SymbolEncoding._
+    def apply(strategy: SymbolEncoding.Strategy): SymbolEncoder = strategy match {
+      case Discard      => _ => ""
+      case SymbolName   => symbolName
+      case UnicodePoint => unicodePoint
+      case DecimalAscii => decimalAscii
+      case Legacy151    => legacy151
+    }
+
+    private def symbolName(c: Char) = SpecialCharacterNames.getOrElse(c, unicodePoint(c))
+    private def unicodePoint(c: Char) = f"u${c.toInt}%04x"
+    private def decimalAscii(c: Char) = s"u${c.toInt}"
+    /** In v1.5.1, trailing underscores were encoded as "u93", even though the ASCII code for underscore is 95 */
+    private def legacy151(c: Char) = if (c == '_') "u93" else decimalAscii(c)
+  }
+
+  /** Names of the symbolic characters acceptable in an XML Name, according to the spec:
+    * https://www.w3.org/TR/xml/#NT-NameStartChar
+    */
+  private val SpecialCharacterNames = Map(
+    '-' -> "hyphen",
+    '.' -> "dot",
+    ':' -> "colon",
+    '_' -> "underscore"
+  )
+
+  private def toCamelCase(value: String): String = {
+    val words = value.split(raw"\b")  // word boundary
+    (words.head +: words.tail.map(_.capitalize)).mkString
+  }
 }

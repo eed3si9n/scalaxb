@@ -1,0 +1,17 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<xs:schema targetNamespace="http://www.example.com/general"
+           xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           elementFormDefault="qualified">
+
+  <xs:complexType name="NamesWithDoubleUnderscores">
+    <xs:sequence>
+      <xs:element name="__el"   type="xs:string"/>
+      <xs:element name="el__"   type="xs:string"/>
+      <xs:element name="el__el" type="xs:string"/>
+    </xs:sequence>
+    <xs:attribute name="__at"   use="required" type="xs:boolean"/>
+    <xs:attribute name="at__"   use="required" type="xs:boolean"/>
+    <xs:attribute name="at__at" use="required" type="xs:boolean"/>
+  </xs:complexType>
+
+</xs:schema>

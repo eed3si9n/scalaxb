@@ -130,6 +130,14 @@ object Arguments {
         c.remove(VarArg) }
       opt[Unit]("ignore-unknown") text("ignores unknown Elements") action { (_, c) =>
         c.update(IgnoreUnknown) }
+      opt[Unit]("capitalize-words")
+        .text("Attempts to capitalize class and attribute names to match the CamelCase convention")
+        .action { (_, config) => config.update(CapitalizeWords) }
+      opt[SymbolEncoding.Strategy]("symbol-encoding-strategy")
+        .valueName("<strategy>")
+        .text(s"Specifies the strategy to encode non-identifier characters in generated class names. Defaults to ${Config.defaultSymbolEncodingStrategy.alias}." +
+              SymbolEncoding.values.map(s => s"${s.alias}:\t${s.description}").mkString("\n\t\t\t\t", "\n\t\t\t\t", ""))
+        .action { (strategy, config) => config.update(strategy) }
 
       opt[Unit]('v', "verbose") text("be extra verbose") action { (_, c) =>
         verbose = true

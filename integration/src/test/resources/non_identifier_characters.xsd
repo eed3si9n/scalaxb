@@ -1,0 +1,35 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<xs:schema targetNamespace="http://www.example.com/general"
+           xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           elementFormDefault="qualified">
+
+  <xs:complexType name="NamesWithDots">
+    <xs:sequence>
+      <xs:element name="el."   type="xs:string"/>
+      <xs:element name="el.el" type="xs:string"/>
+    </xs:sequence>
+    <xs:attribute name="at."   use="required" type="xs:boolean"/>
+    <xs:attribute name="at.at" use="required" type="xs:boolean"/>
+  </xs:complexType>
+
+  <xs:complexType name="NamesWithHyphens">
+    <xs:sequence>
+      <xs:element name="el-"   type="xs:string"/>
+      <xs:element name="el-el" type="xs:string"/>
+    </xs:sequence>
+    <xs:attribute name="at-"   use="required" type="xs:boolean"/>
+    <xs:attribute name="at-at" use="required" type="xs:boolean"/>
+  </xs:complexType>
+
+  <xs:complexType name="NamesWithUnderscores">
+    <xs:sequence>
+      <xs:element name="_el"   type="xs:string"/>
+      <xs:element name="el_"   type="xs:string"/>
+      <xs:element name="el_el" type="xs:string"/>
+    </xs:sequence>
+    <xs:attribute name="_at"   use="required" type="xs:boolean"/>
+    <xs:attribute name="at_"   use="required" type="xs:boolean"/>
+    <xs:attribute name="at_at" use="required" type="xs:boolean"/>
+  </xs:complexType>
+
+</xs:schema>

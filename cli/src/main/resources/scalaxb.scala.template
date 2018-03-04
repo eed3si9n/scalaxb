@@ -763,11 +763,11 @@ trait ElemNameParser[A] extends AnyElemNameParser with XMLFormat[A] with CanWrit
   }
 
   private def parserErrorMsg(msg: String, next: scala.util.parsing.input.Reader[Elem], stack: List[ElemName]): String =
-    if (msg contains "paser error ") msg
+    if (msg contains "parser error ") msg
     else "parser error \"" + msg + "\" while parsing " + stack.reverse.mkString("/", "/", "/") + next.pos.longString
 
   private def parserErrorMsg(msg: String, node: scala.xml.Node): String =
-    if (msg contains "paser error ") msg
+    if (msg contains "parser error ") msg
     else "parser error \"" + msg + "\" while parsing " + node.toString
 
   def parser(node: scala.xml.Node, stack: List[ElemName]): Parser[A]

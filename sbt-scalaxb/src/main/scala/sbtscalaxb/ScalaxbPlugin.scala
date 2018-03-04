@@ -84,6 +84,8 @@ object ScalaxbPlugin extends sbt.AutoPlugin {
     scalaxbGenerateMutable         := false,
     scalaxbGenerateVisitor         := false,
     scalaxbAutoPackages            := false,
+    scalaxbCapitalizeWords         := false,
+    scalaxbSymbolEncodingStrategy  := SymbolEncodingStrategy.Legacy151,
     scalaxbConfig :=
       ScConfig(
         Vector(PackageNames(scalaxbCombinedPackageNames.value)) ++

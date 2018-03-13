@@ -168,7 +168,8 @@ class GenSource(val schema: SchemaDecl,
         }}
       case _ => Left("reads failed: seq must be scala.xml.Node")  
     }}
-    
+
+    override val defaultElementLabel: Option[String] = { quote(decl.family.headOption) }
     def writes(__obj: {fqn}, __namespace: Option[String], __elementLabel: Option[String],
         __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq = __obj match {{
       { val cases = for (sub <- context.baseToSubs(decl))
@@ -388,6 +389,7 @@ class GenSource(val schema: SchemaDecl,
 
     def defaultFormats = if (simpleFromXml) <source>  trait Default{formatterName} extends scalaxb.XMLFormat[{fqn}] with scalaxb.CanWriteChildNodes[{fqn}] {{
     val targetNamespace: Option[String] = { quote(schema.targetNamespace) }
+    override val defaultElementLabel: Option[String] = { quote(decl.family.headOption) }
     import scalaxb.ElemName._
     
     def reads(seq: scala.xml.NodeSeq, stack: List[scalaxb.ElemName]): Either[String, {fqn}] = seq match {{
@@ -398,6 +400,7 @@ class GenSource(val schema: SchemaDecl,
 {makeWritesAttribute}{makeWritesChildNodes}
   }}</source>
     else <source>  trait Default{formatterName} extends {defaultFormatSuperNames.mkString(" with ")} {{
+    override val defaultElementLabel: Option[String] = { quote(decl.family.headOption) }
     val targetNamespace: Option[String] = { quote(schema.targetNamespace) }
     
     { if (decl.isNamed) "override def typeName: Option[String] = Some(" + quote(decl.name) + ")" + newline + newline + indent(2)  
@@ -492,6 +495,7 @@ class GenSource(val schema: SchemaDecl,
     Snippet(<source>{ buildComment(seq) }case class {localName}({paramsString}){superString}</source>,
       <source/>,
       <source>  trait Default{formatterName} extends scalaxb.XMLFormat[{fqn}] {{
+    final override def defaultElementLabel: Option[String] = None  // sequences have no label
     def reads(seq: scala.xml.NodeSeq, stack: List[scalaxb.ElemName]): Either[String, {fqn}] = Left("don't call me.")
     
 {makeWritesXML}
@@ -642,6 +646,7 @@ object {localName} {{
       <source>  def build{formatterName} = new Default{formatterName} {{}}
   trait Default{formatterName} extends scalaxb.XMLFormat[{fqn}] {{
     val targetNamespace: Option[String] = { quote(schema.targetNamespace) }
+    override val defaultElementLabel: Option[String] = { quote(decl.family.headOption) }
     
     def fromString(value: String, scope: scala.xml.NamespaceBinding): {fqn} = {valueCode} match {{
 { enums.map(e => makeCaseEntry(e)) }
@@ -655,7 +660,7 @@ object {localName} {{
     def writes(__obj: {fqn}, __namespace: Option[String], __elementLabel: Option[String],
         __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
       scala.xml.Elem(scalaxb.Helper.getPrefix(__namespace, __scope).orNull, 
-        __elementLabel getOrElse {{ sys.error("missing element label.") }},
+        __elementLabel orElse defaultElementLabel getOrElse {{ sys.error("missing element label.") }},
         scala.xml.Null, __scope, true, scala.xml.Text(__obj.toString))
   }}</source>,
       makeImplicitValue(fqn, formatterName))

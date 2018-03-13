@@ -62,6 +62,7 @@ trait CanReadXML[A] {
 }
 
 trait CanWriteXML[A] {
+  def defaultElementLabel: Option[String] = None
   def writes(obj: A, namespace: Option[String], elementLabel: Option[String],
       scope: NamespaceBinding, typeAttribute: Boolean): NodeSeq
 }
@@ -733,7 +734,7 @@ trait CanWriteChildNodes[A] extends CanWriteXML[A] {
   def writes(obj: A, namespace: Option[String], elementLabel: Option[String],
       scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq = {
     val elem =  scala.xml.Elem(Helper.getPrefix(namespace, scope).orNull,
-      elementLabel getOrElse { sys.error("missing element label.") },
+      elementLabel orElse defaultElementLabel getOrElse { sys.error("missing element label.") },
       writesAttribute(obj, scope),
       scope, true,
       writesChildNodes(obj, scope): _*)

@@ -236,7 +236,12 @@ class GenSource(val schema: SchemaDecl,
     // val particles = buildParticles(decl, name)
     val childElements = if (effectiveMixed) flattenMixed(decl)
       else flatParticles 
-    val attributes = flattenAttributes(decl)
+    val allAttributes = flattenAttributes(decl)
+    val (attributes, fixedAttributes) = allAttributes.partition {
+      case a: AttributeDecl if a.fixedValue.isDefined => false
+      case a: AttributeRef  if a.fixedValue.isDefined => false
+      case _ => true
+    }
     val longAttribute = (!namedAttributes && !attributes.isEmpty) ||
       (attributes.size + childElements.size > contentsSizeLimit &&
       childElements.size + 1 <= contentsSizeLimit)

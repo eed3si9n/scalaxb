@@ -23,14 +23,17 @@
 package scalaxb.compiler.wsdl11
 
 import scala.collection.mutable
-import scalaxb.compiler.{Module, Config, Snippet, CustomXML, CanBeWriter, Log}
-import masked.scalaxb.{DataRecord}
+import scalaxb.compiler.{CanBeWriter, Config, CustomXML, Log, Module, Snippet}
+import masked.scalaxb.DataRecord
 import wsdl11._
-import java.io.{Reader}
-import java.net.{URI}
-import scala.xml.{Node}
+import java.io.Reader
+import java.net.URI
+
+import scala.xml.Node
 import scala.reflect.ClassTag
-import scalaxb.compiler.xsd.{SchemaLite, SchemaDecl, XsdContext, GenProtocol}
+import scalaxb.compiler.xsd.{GenProtocol, SchemaDecl, SchemaLite, XsdContext}
+
+import scala.util.matching.Regex
 
 class Driver extends Module { driver =>
   private val logger = Log.forName("wsdl")
@@ -184,7 +187,24 @@ class Driver extends Module { driver =>
       }
   }
 
-  val VersionPattern = """(\d+)\.(\d+)\.(\d+)""".r
+  object VersionPattern {
+    val Pattern: Regex = """(\d+)\.(\d+)\.(\d+)""".r
+
+    def unapply(version: String): Option[(Int, Int, Int)] = version match {
+      case Pattern(major, minor, patch) => Some((major.toInt, minor.toInt, patch.toInt))
+      case _                            => None
+    }
+  }
+
+  def generateDispatchFromResource[To](async: Boolean, filePrefix: String)(implicit evTo: CanBeWriter[To]): To = {
+    val asyncSuffix = if (async) "_async" else ""
+    generateFromResource[To](
+      Some("scalaxb"),
+      s"httpclients_dispatch${asyncSuffix}.scala",
+      s"${filePrefix}${asyncSuffix}.scala.template"
+    )
+  }
+
   def generateRuntimeFiles[To](cntxt: Context, config: Config)(implicit evTo: CanBeWriter[To]): List[To] =
     List(
       generateFromResource[To](Some("scalaxb"), "scalaxb.scala",
@@ -205,49 +225,31 @@ class Driver extends Module { driver =>
     (if (config.generateVisitor) List(generateFromResource[To](Some("scalaxb"), "Visitor.scala", "/visitor.scala.template"))
      else Nil) ++
     (if (config.generateDispatchClient) List((config.dispatchVersion, config.async) match {
-      case (VersionPattern(x, y, z), false) if (x.toInt == 0) && (y.toInt < 10) =>
-        generateFromResource[To](Some("scalaxb"), "httpclients_dispatch.scala",
-          "/httpclients_dispatch_classic.scala.template")
-      case (VersionPattern(x, y, z), true) if (x.toInt == 0) && (y.toInt < 10) =>
-        generateFromResource[To](Some("scalaxb"), "httpclients_dispatch_async.scala",
-          "/httpclients_dispatch_classic_async.scala.template")
+      case (VersionPattern(0, minor, _), async) if minor < 10   =>
+        generateDispatchFromResource(async, "/httpclients_dispatch_classic")
 
-      case (VersionPattern(x, y, z), false) if (x.toInt == 0) &&
-          ((y.toInt == 10) || ((y.toInt == 11) && (z.toInt == 0))) =>
-        generateFromResource[To](Some("scalaxb"), "httpclients_dispatch.scala",
-          "/httpclients_dispatch0100.scala.template")
-      case (VersionPattern(x, y, z), true) if (x.toInt == 0) &&
-          ((y.toInt == 10) || ((y.toInt == 11) && (z.toInt == 0))) =>
-        generateFromResource[To](Some("scalaxb"), "httpclients_dispatch_async.scala",
-          "/httpclients_dispatch0100_async.scala.template")
+      case (VersionPattern(0, 10 | 11, 0), async)               =>
+        generateDispatchFromResource(async, "/httpclients_dispatch0100")
 
-      case (VersionPattern(x, y, z), false) if (x.toInt == 0) && (y.toInt == 11) && ((z.toInt == 1) || (z.toInt == 2)) =>
-        generateFromResource[To](Some("scalaxb"), "httpclients_dispatch.scala",
-          "/httpclients_dispatch0111.scala.template")
-      case (VersionPattern(x, y, z), true) if (x.toInt == 0) && (y.toInt == 11) && ((z.toInt == 1) || (z.toInt == 2))  =>
-        generateFromResource[To](Some("scalaxb"), "httpclients_dispatch_async.scala",
-          "/httpclients_dispatch0111_async.scala.template")
+      case (VersionPattern(0, 11, 1 | 2), async)                =>
+        generateDispatchFromResource(async, "/httpclients_dispatch0111")
 
-      case (VersionPattern(x, y, z), false) if (x.toInt == 0) && (y.toInt == 11) && (z.toInt == 3) =>
-        generateFromResource[To](Some("scalaxb"), "httpclients_dispatch.scala",
-          "/httpclients_dispatch0113.scala.template")
-      case (VersionPattern(x, y, z), true) if (x.toInt == 0) && (y.toInt == 11) && (z.toInt == 3)  =>
-        generateFromResource[To](Some("scalaxb"), "httpclients_dispatch_async.scala",
-           "/httpclients_dispatch0113_async.scala.template")
+      case (VersionPattern(0, 11, 3 | 4), async)                =>
+        generateDispatchFromResource(async, "/httpclients_dispatch0113")
 
-      case (VersionPattern(x, y, z), false) if (x.toInt == 0) && (y.toInt == 11) && (z.toInt == 4) =>
-        generateFromResource[To](Some("scalaxb"), "httpclients_dispatch.scala",
-          "/httpclients_dispatch0114.scala.template")
-      case (VersionPattern(x, y, z), true) if (x.toInt == 0) && (y.toInt == 11) && (z.toInt == 4)  =>
-        generateFromResource[To](Some("scalaxb"), "httpclients_dispatch_async.scala",
-           "/httpclients_dispatch0114_async.scala.template")
+      case (VersionPattern(0, 12, 0 | 1), async)                => // 0.12.1 does not have artifact in maven central
+        // 0.12.[0, 1] is using same template as 0.11.3+
+        generateDispatchFromResource(async, "/httpclients_dispatch0113")
 
-      case (VersionPattern(x, y, z), false) if (x.toInt == 0) && (y.toInt == 12) && (z.toInt == 0) =>
-        generateFromResource[To](Some("scalaxb"), "httpclients_dispatch.scala",
-          "/httpclients_dispatch0120.scala.template")
-      case (VersionPattern(x, y, z), true) if (x.toInt == 0) && (y.toInt == 12) && (z.toInt == 0)  =>
-        generateFromResource[To](Some("scalaxb"), "httpclients_dispatch_async.scala",
-           "/httpclients_dispatch0120_async.scala.template")
+      case (VersionPattern(0, 12, _), async)                    =>
+        generateDispatchFromResource(async, "/httpclients_dispatch0122")
+
+      case (VersionPattern(0, 13, _), async)                    =>
+        generateDispatchFromResource(async, "/httpclients_dispatch0130")
+
+      case (VersionPattern(0, 14, _), async)                    =>
+        // Same as 0.13.x
+        generateDispatchFromResource(async, "/httpclients_dispatch0130")
     }) else Nil) ++
     (if (config.generateGigahorseClient) List((config.gigahorseVersion, config.async) match {
       case (VersionPattern(x, y, _), false) if (x.toInt == 0) && ((y.toInt == 2) || (y.toInt == 3)) =>

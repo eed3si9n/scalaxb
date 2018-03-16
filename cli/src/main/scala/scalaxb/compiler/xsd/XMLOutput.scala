@@ -78,8 +78,8 @@ trait XMLOutput extends Args {
     retval
   }
 
-  def buildAttributeStrings(attrs: Iterable[AttributeLike], separator: String): String =
-    attrs.map(buildAttributeString).mkString(separator)
+  def buildAttributesString(attrs: Iterable[AttributeLike], indentLength: Int): String =
+    attrs.map(buildAttributeString).mkString(newline + indent(indentLength))
 
   def buildAttributeString(attr: AttributeLike): String = attr match {
     case ref: AttributeRef => buildAttributeString(buildAttribute(ref))

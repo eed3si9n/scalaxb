@@ -13,12 +13,12 @@ trait DispatchHttpClients extends HttpClients {
     import dispatch._, Defaults._
 
     // Keep it lazy. See https://github.com/eed3si9n/scalaxb/pull/279
-    lazy val http = Http.configure(_.
+    lazy val http = Http.withConfiguration(_.
       setRequestTimeout(requestTimeout.toMillis.toInt).
       setConnectTimeout(connectionTimeout.toMillis.toInt))
 
     def request(in: String, address: java.net.URI, headers: Map[String, String]): String = {
-      val req = url(address.toString).setBodyEncoding("UTF-8") <:< headers << in
+      val req = url(address.toString).setBodyEncoding(Charset.forName("UTF-8")) <:< headers << in
       val s = http(req > as.String)
       s()
     }

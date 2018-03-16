@@ -77,7 +77,10 @@ trait XMLOutput extends Args {
     
     retval
   }
-  
+
+  def buildAttributeStrings(attrs: Iterable[AttributeLike], separator: String): String =
+    attrs.map(buildAttributeString).mkString(separator)
+
   def buildAttributeString(attr: AttributeLike): String = attr match {
     case ref: AttributeRef => buildAttributeString(buildAttribute(ref))
     case x: AttributeDecl  => buildAttributeString(x)
@@ -104,7 +107,7 @@ trait XMLOutput extends Args {
         buildToString(name, attr.typeSymbol) + ", attr)"
       case None =>
         "attr = scala.xml.Attribute(" + namespaceString + ", " + quote(attr.name) + ", " + 
-        buildToString(name, attr.typeSymbol) + ", attr)"
+        buildToString(attr.fixedValue.map(quote).getOrElse(name), attr.typeSymbol) + ", attr)"
     }
   }
   

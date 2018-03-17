@@ -591,11 +591,13 @@ trait ContextProcessor extends ScalaNames with PackageName {
     // treat "" as "blank" but " " as "u32"
     val nonspace =
       if (value.trim != "") """\s""".r.replaceAllIn(toCamelCase(value), "")
-      else value    
+      else value
 
     import Character._
+    val numbers = ('0' to '9').toSet
+    def isScalaxbIdentifierStart(value: Char): Boolean = isJavaIdentifierStart(value) || numbers.contains(value)
     val validfirstchar: String = nonspace.headOption.toIterable.flatMap { firstChar =>
-      normalizeUnless(isJavaIdentifierStart, Seq(firstChar)) ++ normalizeUnless(isJavaIdentifierPart, nonspace.tail)
+      normalizeUnless(isScalaxbIdentifierStart, Seq(firstChar)) ++ normalizeUnless(isJavaIdentifierPart, nonspace.tail)
     }.mkString
 
     // Scala identifiers must not end with an underscore

@@ -18,4 +18,13 @@
 
   <xsd:element name="holder" type="Holder"/>
 
+  <xsd:simpleType name="NumberType">
+    <xsd:restriction base="xsd:string">
+      <xsd:enumeration value="01"/>
+      <xsd:enumeration value="02"/>
+      <xsd:enumeration value="11"/>
+      <xsd:enumeration value="12"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+
 </xsd:schema>

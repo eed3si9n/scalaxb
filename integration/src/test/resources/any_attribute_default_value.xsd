@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+        xmlns:anyAttributes="http://www.example.com/any-attributes"
+        targetNamespace="http://www.example.com/any-attributes">
+
+    <attributeGroup name="extraAttributes">
+        <attribute name="id" type="ID" use="optional" />
+        <anyAttribute namespace="##other" processContents="lax"/>
+    </attributeGroup>
+
+    <element name="HasAnyAttribute">
+        <complexType>
+            <attributeGroup ref="anyAttributes:extraAttributes"/>
+        </complexType>
+    </element>
+
+</schema>

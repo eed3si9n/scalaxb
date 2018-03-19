@@ -88,7 +88,7 @@ trait Params extends Lookup {
 
     def toScalaCode(doMutable: Boolean): String =
       toTraitScalaCode(doMutable) + (cardinality match {
-        case Single if typeSymbol == XsLongAttribute => " = Map()"
+        case Single if typeSymbol == XsLongAttribute || typeSymbol == XsAnyAttribute => " = Map.empty"
         case Optional => " = None"
         case Multiple => " = Nil"
         case Single if nillable => " = None"

@@ -1,16 +1,16 @@
 /*
  * Copyright (c) 2010 e.e d3si9n
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -34,13 +34,13 @@ trait PackageName {
 
   def packageName(decl: ComplexTypeDecl, context: XsdContext): Option[String] =
     packageName(decl.namespace, context)
-  
+
   def packageName(decl: SimpleTypeDecl, context: XsdContext): Option[String] =
     packageName(decl.namespace, context)
 
   def packageName(group: AttributeGroupDecl, context: XsdContext): Option[String] =
     packageName(group.namespace, context)
-      
+
   def packageName(namespace: Option[String], context: XsdContext): Option[String] =
     if (context.packageNames.contains(namespace)) context.packageNames(namespace)
     else if (context.packageNames.contains(None)) context.packageNames(None)
@@ -59,7 +59,7 @@ trait ContextProcessor extends ScalaNames with PackageName {
   val XML_PREFIX = "xml"
   val XS_URL = "http://www.w3.org/2001/XMLSchema"
   val XS_PREFIX = "xs"
-  
+
   def processContext(context: XsdContext, schemas: Seq[SchemaDecl]) {
     logger.debug("processContext")
 
@@ -68,14 +68,14 @@ trait ContextProcessor extends ScalaNames with PackageName {
     }
     context.schemas ++= schemas
     context.packageNames ++= config.packageNames
-    
+
     (None :: (config.packageNames.valuesIterator.toList.distinct)) map {
       pkg =>
         context.enumValueNames(pkg) = mutable.ListMap.empty[(String, EnumerationDecl[_]), String]
     }
-    
+
     val anonymousTypes = mutable.ListBuffer.empty[(SchemaDecl, ComplexTypeDecl)]
-    
+
     for (schema <- schemas) {
       logger.debug("processContext - " + schema.targetNamespace)
       context.typeNames(schema) =  makeProtectedTypeName(schema, context)
@@ -143,9 +143,9 @@ trait ContextProcessor extends ScalaNames with PackageName {
       case (_, decl@SimpleTypeDecl(_, _, _, _, _)) if containsEnumeration(decl) =>
         logger.debug("processContext: top-level type %s" format (decl.name))
         nameEnumSimpleType(schema, decl, decl.name)
-      case _ =>      
+      case _ =>
     }
-    
+
     context.complexTypes ++= anonymousTypes.toList.distinct :::
       namedTypes.toList.distinct
 
@@ -174,14 +174,14 @@ trait ContextProcessor extends ScalaNames with PackageName {
       context.typeNames(base) = makeTraitName(base)
       logger.debug("processContext: naming trait %s" format context.typeNames(base))
     }
-      
+
     for (schema <- schemas;
         group <- schema.topGroups.valuesIterator.toList) {
       val pair = (schema, group)
       context.groups += pair
       logger.debug("processContext: added group " + group.name)
     }
-    
+
     for (schema <- schemas;
         elem <- schema.topElems.valuesIterator.toList) {
       elem.substitutionGroup foreach { sub =>
@@ -191,7 +191,7 @@ trait ContextProcessor extends ScalaNames with PackageName {
         }
       }
     }
-    
+
     for {
       schema <- schemas
       typ <- schema.typeList if !(schema.topTypes.valuesIterator contains typ)
@@ -199,9 +199,9 @@ trait ContextProcessor extends ScalaNames with PackageName {
       case decl: SimpleTypeDecl if containsEnumeration(decl) =>
         logger.debug("processContext: inner simple type %s" format (decl.name))
         nameEnumSimpleType(schema, decl, decl.family.last)
-      case _ =>      
+      case _ =>
     }
-    
+
     for (schema <- schemas;
         group <- schema.topAttrGroups.valuesIterator.toList) {
       if (context.typeNames.contains(group)) registerDuplicatedType(schema, group, group.name)
@@ -257,29 +257,31 @@ trait ContextProcessor extends ScalaNames with PackageName {
     }
 
     for (elem <- schema.elemList) resolveTypeSymbol(elem.typeSymbol)
-    
+
     for (attr <- schema.attrList) attr.typeSymbol match {
       case symbol: ReferenceTypeSymbol => resolveTypeSymbol(symbol)
       case _ =>
-    } // match    
-    
+    } // match
+
     for (typ <- schema.typeList) typ match {
       case SimpleTypeDecl(_, _, _, res: SimpTypRestrictionDecl, _) =>
         resolveTypeSymbol(res.base)
       case SimpleTypeDecl(_, _, _, list: SimpTypListDecl, _) =>
-        resolveTypeSymbol(list.itemType) 
+        resolveTypeSymbol(list.itemType)
       case ComplexTypeDecl(_, _, _, _, _, SimpleContentDecl(res: SimpContRestrictionDecl), _, _) =>
         resolveTypeSymbol(res.base)
       case ComplexTypeDecl(_, _, _, _, _, SimpleContentDecl(ext: SimpContExtensionDecl), _, _) =>
-        resolveTypeSymbol(ext.base)      
+        resolveTypeSymbol(ext.base)
       case ComplexTypeDecl(_, _, _, _, _, ComplexContentDecl(res: CompContRestrictionDecl), _, _) =>
         resolveTypeSymbol(res.base)
       case ComplexTypeDecl(_, _, _, _, _, ComplexContentDecl(ext: CompContExtensionDecl), _, _) =>
-        resolveTypeSymbol(ext.base)  
+        resolveTypeSymbol(ext.base)
       case _ =>
     }
   }
-  
+
+  lazy val enumNameMaxLength = config.enumNameMaxLength
+
   def makeEnumValues(decl: SimpleTypeDecl, scope: scala.xml.NamespaceBinding, context: XsdContext) : Unit = {
     val enumValues = context.enumValueNames(packageName(decl.namespace, context))
     val name = context.typeNames(decl)
@@ -287,12 +289,12 @@ trait ContextProcessor extends ScalaNames with PackageName {
       enumValues(name -> enum) = makeProtectedTypeName(decl.namespace,
         enum.value match {
           case qname: QName => Option(scope.getPrefix(qname.getNamespaceURI)).getOrElse("") + qname.getLocalPart.capitalize
-          case x if enum.value.toString.length > 50 => "longName"
+          case x if enum.value.toString.length > enumNameMaxLength => "longName"
           case _            => enum.value.toString
         }, "Value", context)
     }
   }
-  
+
   def containsEnumeration(decl: SimpleTypeDecl) = decl.content match {
     case x: SimpTypRestrictionDecl =>
       x.facets exists { f => f match {
@@ -300,19 +302,19 @@ trait ContextProcessor extends ScalaNames with PackageName {
           case _ => false
         }
       }
-    
+
     case _ => false
   }
-  
+
   def filterEnumeration(decl: SimpleTypeDecl): List[EnumerationDecl[_]] = decl.content match {
     case x: SimpTypRestrictionDecl =>
       x.facets collect {
         case e: EnumerationDecl[_] => e
       }
-    
+
     case _ => Nil
   }
-  
+
   def makeGroupComplexType(group: GroupDecl) =
     ComplexTypeDecl(group.namespace, group.name, List(group.name), false, false,
       ComplexContentDecl.empty, Nil, None)
@@ -321,12 +323,12 @@ trait ContextProcessor extends ScalaNames with PackageName {
     case ChoiceDecl(_, _, _, _, _) :: Nil => true
     case _ => false
   }
-  
+
   def singleChoice(seq: SequenceDecl): ChoiceDecl = seq.particles match {
     case (choice@ChoiceDecl(_, _, _, _, _)) :: Nil => choice
     case _ => sys.error("Does not cointain single choice.")
   }
-  
+
   lazy val sequenceChunkSize = config.sequenceChunkSize
   lazy val contentsSizeLimit = config.contentsSizeLimit
   lazy val namedAttributes = config.namedAttributes
@@ -336,23 +338,23 @@ trait ContextProcessor extends ScalaNames with PackageName {
     (namespace map { ns =>
       config.wrappedComplexTypes.contains("{" + ns + "}" + family.head) } getOrElse { false }) ||
     config.wrappedComplexTypes.contains(family.head)
-  
+
   def splitLong[A <: HasParticle](rest: List[Particle])(f: (List[Particle]) => A): List[A] =
     if (rest.size <= sequenceChunkSize) List(f(rest))
     else List(f(rest.take(sequenceChunkSize))) ::: splitLong[A](rest.drop(sequenceChunkSize))(f)
-    
+
   def makeCompositorNames(context: XsdContext) {
     var sequenceNumber = 0
     var choiceNumber = 0
     var allNumber = 0
     var isFirstCompositorSequence = false
-    
-    for ((schema, decl) <- context.complexTypes) { 
+
+    for ((schema, decl) <- context.complexTypes) {
       sequenceNumber = 0
       choiceNumber = 0
       allNumber = 0
       isFirstCompositorSequence = false
-      
+
       decl.content.content match {
         case CompContRestrictionDecl(_, Some(compositor: HasParticle), _) =>
           makeCompositorName(compositor, decl)
@@ -361,13 +363,13 @@ trait ContextProcessor extends ScalaNames with PackageName {
         case _ =>
       }
     }
-    
+
     for ((schema, group) <- context.groups) {
       sequenceNumber = 0
       choiceNumber = 0
       allNumber = 0
       isFirstCompositorSequence = false
-      
+
       context.compositorNames(group) = group.name + "Group"
       if (group.particles.size == 1) group.particles(0) match {
         case compositor: HasParticle => makeGroupCompositorName(compositor, group)
@@ -375,23 +377,23 @@ trait ContextProcessor extends ScalaNames with PackageName {
       }
       else sys.error("ContextProcessor#makeCompositorNames: group must contain one content model: " + group)
     }
-    
+
     def isFirstCompositor =
       (sequenceNumber + choiceNumber + allNumber == 0)
-        
+
     def makeGroupCompositorName(compositor: HasParticle, group: GroupDecl) {
       val groupName = group.name
-      
+
       compositor match {
         case seq: SequenceDecl =>
           if (!isFirstCompositor ||
               !containsSingleChoice(seq))
             context.compositorParents(compositor) = makeGroupComplexType(group)
-          
+
           if (isFirstCompositor) context.compositorNames(compositor) = groupName + "Sequence"
           else context.compositorNames(compositor) = groupName + "Sequence" + apparentSequenceNumber
           sequenceNumber += 1
-          
+
           if (seq.particles.size > contentsSizeLimit || isWrapped(group.namespace, List(group.name)))
             splitLong[SequenceDecl](seq.particles) { formSequence(makeGroupComplexType(group), group.name, _) }
         case choice: ChoiceDecl =>
@@ -399,7 +401,7 @@ trait ContextProcessor extends ScalaNames with PackageName {
           if (isFirstCompositor) context.compositorNames(compositor) = groupName + "Option"
           else context.compositorNames(compositor) = groupName + "Option" + (choiceNumber + 1)
           choiceNumber += 1
-          
+
         case all: AllDecl =>
           context.compositorParents(compositor) = makeGroupComplexType(group)
           if (isFirstCompositor) context.compositorNames(compositor) = groupName + "All"
@@ -407,20 +409,20 @@ trait ContextProcessor extends ScalaNames with PackageName {
           allNumber += 1
         case _ =>
       }
-      
+
       compositor.particles collect {
         case compositor2: HasParticle => makeGroupCompositorName(compositor2, group)
-      }      
+      }
     }
-    
-    def formSequence(decl: ComplexTypeDecl, baseName: String, rest: List[Particle]) = {      
+
+    def formSequence(decl: ComplexTypeDecl, baseName: String, rest: List[Particle]) = {
       val retval = SequenceDecl(decl.namespace, rest, 1, 1, 0)
       context.compositorNames(retval) = baseName + "Sequence" + apparentSequenceNumber
       sequenceNumber += 1
       context.compositorParents(retval) = decl
       retval
     }
-    
+
     def apparentSequenceNumber = if (isFirstCompositorSequence) sequenceNumber else sequenceNumber + 1
 
     def familyName(decl: ComplexTypeDecl): String = {
@@ -438,10 +440,10 @@ trait ContextProcessor extends ScalaNames with PackageName {
               case any: AnyDecl => false
               case choice: ChoiceDecl => false
               case _ => true
-            } 
+            }
             else true
           else false
-          
+
           if (separateSequence) {
             context.compositorParents(compositor) = decl
             context.compositorNames.getOrElseUpdate(compositor, familyName(decl) + "Sequence" + apparentSequenceNumber)
@@ -450,9 +452,9 @@ trait ContextProcessor extends ScalaNames with PackageName {
             isFirstCompositorSequence = true
             context.compositorNames.getOrElseUpdate(compositor, familyName(decl))
           }
-          
+
           sequenceNumber += 1
-          
+
           if (seq.particles.size > contentsSizeLimit || isWrapped(decl.namespace, decl.family))
             splitLong[SequenceDecl](seq.particles) { formSequence(decl, familyName(decl), _) }
         case choice: ChoiceDecl =>
@@ -460,7 +462,7 @@ trait ContextProcessor extends ScalaNames with PackageName {
           if (choiceNumber == 0) context.compositorNames.getOrElseUpdate(compositor, familyName(decl) + "Option")
           else context.compositorNames.getOrElseUpdate(compositor, familyName(decl) + "Option" + (choiceNumber + 1))
           choiceNumber += 1
-          
+
         case all: AllDecl =>
           context.compositorParents(compositor) = decl
           if (allNumber == 0) context.compositorNames.getOrElseUpdate(compositor, familyName(decl) + "All")
@@ -468,13 +470,13 @@ trait ContextProcessor extends ScalaNames with PackageName {
           allNumber += 1
         case _ =>
       }
-      
+
       compositor.particles collect {
         case compositor2: HasParticle => makeCompositorName(compositor2, decl)
       }
     } // makeCompositorName
   }
-  
+
   def makeProtectedTypeName(namespace: Option[String], initialName: String, postfix: String,
       context: XsdContext): String = {
     def contains(value: String) = {
@@ -487,7 +489,7 @@ trait ContextProcessor extends ScalaNames with PackageName {
       }) ||
       (enumValueNames.valuesIterator exists { x => x.toLowerCase == l })
     }
-    
+
     var name = makeTypeName(initialName)
     if (!contains(name)) name
     else {
@@ -498,34 +500,34 @@ trait ContextProcessor extends ScalaNames with PackageName {
         i = i + 1
       }
       name
-    }    
+    }
   }
-  
+
   def makeProtectedTypeName(schema: SchemaDecl, context: XsdContext): String =
     makeProtectedTypeName(schema.targetNamespace, "XMLProtocol", "", context)
-  
+
   def makeProtectedTypeName(namespace: Option[String], prefix: Option[String],
                             elem: ElemDecl, context: XsdContext): String =
     makeProtectedTypeName(elem.namespace orElse namespace,
       prefix map { "%s%s" format (_, elem.name.capitalize) } getOrElse {elem.name}, "", context)
-  
+
   def makeProtectedTypeName(namespace: Option[String], decl: ComplexTypeDecl, context: XsdContext): String =
     makeProtectedTypeName(decl.namespace orElse namespace, decl.name, "Type", context)
-    
+
   def makeProtectedTypeName(namespace: Option[String], decl: SimpleTypeDecl, context: XsdContext): String =
     makeProtectedTypeName(decl.namespace orElse namespace, decl.name, "Type", context)
-  
+
   def makeProtectedTypeName(namespace: Option[String], attr: AttributeDecl, context: XsdContext): String =
     makeProtectedTypeName(attr.namespace orElse namespace, attr.name, "Type", context)
 
   def makeProtectedTypeName(namespace: Option[String], group: AttributeGroupDecl, context: XsdContext): String =
     makeProtectedTypeName(group.namespace orElse namespace, group.name, "Type", context)
-      
+
   def makeTraitName(decl: ComplexTypeDecl) =
     if (decl.name.last == 'e')
       makeTypeName(decl.name.dropRight(1) + "able")
     else makeTypeName(decl.name + "able")
-  
+
   def makeTypeName(name: String) = name match {
     case s if (s.startsWith("java.") || s.startsWith("javax.")) => s
     case _ =>
@@ -541,13 +543,13 @@ trait ContextProcessor extends ScalaNames with PackageName {
       else if (isCommonlyUsedWord(base)) base + "Type"
       else base
   }
-  
+
   def startsWithNumber(name: String) =
     """\d""".r.findPrefixMatchOf(name) match {
       case Some(_) => true
       case _ => false
     }
-  
+
   def makeParamName(name0: String, attribute: Boolean) = {
     val prefix = (config.paramPrefix, config.attributePrefix) match {
       case (p, _) if !attribute => p
@@ -560,13 +562,13 @@ trait ContextProcessor extends ScalaNames with PackageName {
       if (p.endsWith("_"))  p + name
       else p + name.capitalize
     } getOrElse { name }
-    
+
     if (isKeyword(base) || isCommonlyUsedWord(base)) identifier(base + "Value")
     else if (attribute && isSpecialAttributeWord(base)) identifier(base + "Attribute")
     else if (startsWithNumber(base)) identifier("number" + base)
     else identifier(base)
   }
-  
+
   def makePrefix(namespace: Option[String], context: XsdContext): String = namespace map { ns =>
     if (ns == XML_URI) XML_PREFIX
     else context.prefixes.getOrElse(ns, "")
@@ -611,7 +613,7 @@ trait ContextProcessor extends ScalaNames with PackageName {
   def quote(value: Option[String]): String = value map {
     "Some(\"" + _ + "\")"
   } getOrElse { "None" }
-  
+
   def quote(value: String): String = if (value == null) "null"
     else "\"" + value + "\""
 

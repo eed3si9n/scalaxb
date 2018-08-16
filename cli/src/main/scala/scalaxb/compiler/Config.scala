@@ -78,6 +78,7 @@ case class Config(items: Map[String, ConfigEntry]) {
   def generateVisitor: Boolean = values contains GenerateVisitor
   def capitalizeWords: Boolean = values contains CapitalizeWords
   def symbolEncodingStrategy = get[SymbolEncoding.Strategy] getOrElse defaultSymbolEncodingStrategy
+  def enumNameMaxLength: Int = (get[EnumNameMaxLength] getOrElse defaultEnumNameMaxLength).value
 
   private def get[A <: ConfigEntry: Manifest]: Option[A] =
     items.get(implicitly[Manifest[A]].runtimeClass.getName).asInstanceOf[Option[A]]
@@ -105,6 +106,7 @@ object Config {
   val defaultGigahorseVersion = GigahorseVersion(scalaxb.BuildInfo.defaultGigahorseVersion)
   val defaultGigahorseBackend = GigahorseBackend(scalaxb.BuildInfo.defaultGigahorseBackend)
   val defaultSymbolEncodingStrategy = SymbolEncoding.Legacy151
+  val defaultEnumNameMaxLength = EnumNameMaxLength(50)
 
   val default = Config(
     Vector(defaultPackageNames, defaultOpOutputWrapperPostfix, defaultOutdir,
@@ -151,6 +153,7 @@ object ConfigEntry {
   case object GenerateMutable extends ConfigEntry
   case object GenerateVisitor extends ConfigEntry
   case object CapitalizeWords extends ConfigEntry
+  case class EnumNameMaxLength(value: Int) extends ConfigEntry
 
   object SymbolEncoding {
     sealed abstract class Strategy(val alias: String, val description: String) extends ConfigEntry with Product with Serializable {

@@ -1,16 +1,16 @@
 /*
  * Copyright (c) 2010 e.e d3si9n
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -138,6 +138,8 @@ object Arguments {
         .text(s"Specifies the strategy to encode non-identifier characters in generated class names. Defaults to ${Config.defaultSymbolEncodingStrategy.alias}." +
               SymbolEncoding.values.map(s => s"${s.alias}:\t${s.description}").mkString("\n\t\t\t\t", "\n\t\t\t\t", ""))
         .action { (strategy, config) => config.update(strategy) }
+      opt[Int]("enum-name-max-length") valueName("<length>") text("truncates names of enum members longer than this value (default: 50)") action { (x, c) =>
+        c.update(EnumNameMaxLength(x)) }
 
       opt[Unit]('v', "verbose") text("be extra verbose") action { (_, c) =>
         verbose = true

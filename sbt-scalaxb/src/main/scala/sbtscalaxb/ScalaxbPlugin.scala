@@ -86,6 +86,7 @@ object ScalaxbPlugin extends sbt.AutoPlugin {
     scalaxbAutoPackages            := false,
     scalaxbCapitalizeWords         := false,
     scalaxbSymbolEncodingStrategy  := SymbolEncodingStrategy.Legacy151,
+    scalaxbEnumNameMaxLength       := 50,
     scalaxbConfig :=
       ScConfig(
         Vector(PackageNames(scalaxbCombinedPackageNames.value)) ++
@@ -130,7 +131,8 @@ object ScalaxbPlugin extends sbt.AutoPlugin {
         (if (scalaxbGenerateVisitor.value) Vector(GenerateVisitor) else Vector()) ++
         (if (scalaxbAutoPackages.value) Vector(AutoPackages) else Vector()) ++
         (if (scalaxbCapitalizeWords.value) Vector(CapitalizeWords) else Vector()) ++
-        Vector(SymbolEncoding.withName(scalaxbSymbolEncodingStrategy.value.toString))
+        Vector(SymbolEncoding.withName(scalaxbSymbolEncodingStrategy.value.toString)) ++
+        Vector(EnumNameMaxLength(scalaxbEnumNameMaxLength.value))
       )
   ))
 }

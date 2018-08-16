@@ -43,6 +43,7 @@ trait ScalaxbKeys {
   lazy val scalaxbVararg           = settingKey[Boolean]("Uses varargs when possible. (default: false)")
   lazy val scalaxbCapitalizeWords  = settingKey[Boolean]("Attempts to capitalize class and attribute names to match the CamelCase convention")
   lazy val scalaxbSymbolEncodingStrategy = settingKey[SymbolEncodingStrategy.Value]("Specifies the strategy to encode non-identifier characters in generated class names")
+  lazy val scalaxbEnumNameMaxLength = settingKey[Int]("Truncates names of enum members longer than this value (default: 50)")
 
   object HttpClientType extends Enumeration {
     val None, Dispatch, Gigahorse = Value

@@ -624,7 +624,7 @@ object {localName} {{
   def fromString(value: String, scope: scala.xml.NamespaceBinding): {localName} = {localName}()
 }}</source>    
       case _ =>
-<source>trait {localName}
+<source>sealed trait {localName}
 
 object {localName} {{
   def fromString(value: String, scope: scala.xml.NamespaceBinding)(implicit fmt: scalaxb.XMLFormat[{fqn}]): {localName} = fmt.reads(scala.xml.Text(value), Nil) match {{

@@ -98,8 +98,8 @@ trait GenSource {
     val operationOutputs = binding.operation flatMap { makeOperationOutput(_, interfaceType, soapBindingStyle, false) }
     val operations = binding.operation map { opBinding => makeOperation(opBinding, interfaceType, soapBindingStyle, false) }
     val bindingOps = binding.operation map { opBinding => makeSoapOpBinding(opBinding, interfaceType, soapBindingStyle, false) }
-    val importFutureString = if (config.async) "import scala.concurrent.Future" + NL else ""
-    val clientTrait = if (config.async) "scalaxb.Soap11ClientsAsync with scalaxb.ExecutionContextProvider" else "scalaxb.Soap11Clients"
+    val importFutureString = if (config.async) "import scala.concurrent.{ Future, ExecutionContext }" + NL else ""
+    val clientTrait = if (config.async) "scalaxb.Soap11ClientsAsync" else "scalaxb.Soap11Clients"
 
     val interfaceTrait = <source>
 {importFutureString}
@@ -146,8 +146,8 @@ trait {interfaceTypeName} {{
     val operationOutputs = binding.operation flatMap { makeOperationOutput(_, interfaceType, soapBindingStyle, true) }
     val operations = binding.operation map { opBinding => makeOperation(opBinding, interfaceType, soapBindingStyle, true) }
     val bindingOps = binding.operation map { opBinding => makeSoapOpBinding(opBinding, interfaceType, soapBindingStyle, true) }
-    val importFutureString = if (config.async) "import scala.concurrent.Future" + NL else ""
-    val clientTrait = if (config.async) "scalaxb.SoapClientsAsync with scalaxb.ExecutionContextProvider" else "scalaxb.SoapClients"
+    val importFutureString = if (config.async) "import scala.concurrent.{ Future, ExecutionContext }" + NL else ""
+    val clientTrait = if (config.async) "scalaxb.SoapClientsAsync" else "scalaxb.SoapClients"
 
     val interfaceTrait = <source>
 {importFutureString}
@@ -241,7 +241,7 @@ trait {interfaceTypeName} {{
         "def %s(%s): Unit".format(name, arg(input))
 
       case (DataRecord(_, _, XRequestresponseoperationSequence(input, output, faults)), true) =>
-        "def %s(%s): Future[%s]".format(name, arg(input),
+        "def %s(%s)(implicit ec: ExecutionContext): Future[%s]".format(name, arg(input),
           outputTypeName(binding, op, output, soapBindingStyle))
 
       case (DataRecord(_, _, XRequestresponseoperationSequence(input, output, faults)), false) =>
@@ -249,7 +249,7 @@ trait {interfaceTypeName} {{
           faultsToTypeName(faults, soap12), outputTypeName(binding, op, output, soapBindingStyle))
 
       case (DataRecord(_, _, XSolicitresponseoperationSequence(output, input, faults)), true) =>
-        "def %s(%s): Future[%s]".format(name, arg(input),
+        "def %s(%s)(implicit ec: ExecutionContext): Future[%s]".format(name, arg(input),
           outputTypeName(binding, op, output, soapBindingStyle))
 
       case (DataRecord(_, _, XSolicitresponseoperationSequence(output, input, faults)), false) =>
@@ -257,7 +257,7 @@ trait {interfaceTypeName} {{
           faultsToTypeName(faults, soap12), outputTypeName(binding, op, output, soapBindingStyle))
 
       case (DataRecord(_, _, XNotificationoperationSequence(output)), true) =>
-        "def %s: Future[%s]".format(name, outputTypeName(binding, op, output, soapBindingStyle))
+        "def %s(implicit ec: ExecutionContext): Future[%s]".format(name, outputTypeName(binding, op, output, soapBindingStyle))
 
       case (DataRecord(_, _, XNotificationoperationSequence(output)), false) =>
         "def %s: %s".format(name, outputTypeName(binding, op, output, soapBindingStyle))

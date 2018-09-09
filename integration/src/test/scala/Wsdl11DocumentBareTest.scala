@@ -26,8 +26,8 @@ object Wsdl11DocumentBareTest extends TestBase with JaxwsTestBase {
 
   "document-bare service works" in {
     (List("""import stockquote._
-      import scala.concurrent._, duration._""",
-      """val service = (new DocumentLiteralBareServiceSoapBindings with scalaxb.Soap11ClientsAsync with scalaxb.DispatchHttpClientsAsync with scalaxb.GlobalExecutionContextProvider {}).service""",
+      import scala.concurrent._, duration._, ExecutionContext.Implicits._""",
+      """val service = (new DocumentLiteralBareServiceSoapBindings with scalaxb.Soap11ClientsAsync with scalaxb.DispatchHttpClientsAsync {}).service""",
       """val fresponse = service.price(Some("GOOG"))""",
       """val response = Await.result(fresponse, 5.seconds)""",
       """if (response != Some(42.0)) sys.error(response.toString)""",

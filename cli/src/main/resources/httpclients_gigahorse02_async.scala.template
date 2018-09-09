@@ -3,8 +3,6 @@ package scalaxb
 import scala.concurrent._, duration._
 
 trait GigahorseHttpClientsAsync extends HttpClientsAsync {
-  this: ExecutionContextProvider =>
-
   lazy val httpClient = new GigahorseHttpClient {}
   def connectionTimeout: FiniteDuration = 5.seconds
   def requestTimeout: FiniteDuration = 60.seconds
@@ -16,7 +14,7 @@ trait GigahorseHttpClientsAsync extends HttpClientsAsync {
       .withConnectTimeout(connectionTimeout)
       .withRequestTimeout(requestTimeout))
 
-    def request(in: String, address: java.net.URI, headers: Map[String, String]): Future[String] = {
+    def request(in: String, address: java.net.URI, headers: Map[String, String])(implicit ec: ExecutionContext): Future[String] = {
       val req = url(address.toString).post(in).withHeaders(headers.mapValues(List(_)))
       client.processFull(req, asString)
     }

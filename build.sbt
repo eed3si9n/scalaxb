@@ -1,28 +1,38 @@
 import Dependencies._
 import Common._
 
+ThisBuild / version := "1.5.2"
+ThisBuild / organization := "org.scalaxb"
+ThisBuild / homepage := Option(url("http://scalaxb.org"))
+ThisBuild / licenses := List("MIT License" -> url("https://github.com/eed3si9n/scalaxb/blob/master/LICENSE"))
+ThisBuild / description := """scalaxb is an XML data-binding tool for Scala that supports W3C XML Schema (xsd) and wsdl."""
+ThisBuild / publishMavenStyle := true
+ThisBuild / pomIncludeRepository := { x => false }
+ThisBuild / scmInfo := Option(ScmInfo(url("https://github.com/eed3si9n/scalaxb"), "scm:git@github.com:eed3si9n/scalaxb.git"))
+ThisBuild / developers := List(
+  Developer(
+    id    = "eed3si9n",
+    name  = "Eugene Yokota",
+    email = "@eed3si9n",
+    url   = url("http://eed3si9n.com")
+  )
+)
+
 lazy val commonSettings = Seq(
-    version in ThisBuild := "1.5.2",
-    organization in ThisBuild := "org.scalaxb",
-    homepage in ThisBuild := Some(url("http://scalaxb.org")),
-    licenses in ThisBuild := Seq("MIT License" -> url("https://github.com/eed3si9n/scalaxb/blob/master/LICENSE")),
-    description in ThisBuild := """scalaxb is an XML data-binding tool for Scala that supports W3C XML Schema (xsd) and wsdl.""",
     scalacOptions := Seq("-deprecation", "-unchecked", "-feature", "-language:implicitConversions", "-language:postfixOps"),
     parallelExecution in Test := false,
     resolvers += Resolver.typesafeIvyRepo("releases")
   ) ++ sonatypeSettings
 
 lazy val root = (project in file(".")).
-  enablePlugins(NoPublish).
-  disablePlugins(ScriptedPlugin).
   aggregate(app, integration, scalaxbPlugin).
   settings(
-    scalaVersion := scala211
+    scalaVersion := scala211,
+    publish / skip := true
   )
 
 lazy val app = (project in file("cli")).
   enablePlugins(BuildInfoPlugin).
-  disablePlugins(ScriptedPlugin).
   settings(commonSettings: _*).
   settings(codegenSettings: _*).
   settings(
@@ -45,7 +55,6 @@ lazy val app = (project in file("cli")).
   )
 
 lazy val integration = (project in file("integration")).
-  disablePlugins(ScriptedPlugin).
   settings(commonSettings: _*).
   settings(
     crossScalaVersions := Seq(scala211),
@@ -56,14 +65,14 @@ lazy val integration = (project in file("integration")).
     // javaOptions in test ++= Seq("-Xmx2G", "-XX:MaxPermSize=512M")
     parallelExecution in Test := false,
     testOptions in Test += Tests.Argument("sequential"),
+    publish / skip := true,
   ).
   dependsOn(app)
 
 lazy val scalaxbPlugin = (project in file("sbt-scalaxb")).
-  enablePlugins(ScriptedPlugin).
+  enablePlugins(SbtPlugin).
   settings(commonSettings: _*).
   settings(
-    sbtPlugin := true,
     name := "sbt-scalaxb",
     description := """sbt plugin to run scalaxb""",
     scriptedLaunchOpts := { scriptedLaunchOpts.value ++

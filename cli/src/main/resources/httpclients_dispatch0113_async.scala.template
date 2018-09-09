@@ -1,11 +1,8 @@
 package scalaxb
 
-import concurrent.Future
 import scala.concurrent._, duration._
 
 trait DispatchHttpClientsAsync extends HttpClientsAsync {
-  this: ExecutionContextProvider =>
-
   lazy val httpClient = new DispatchHttpClient {}
   // https://github.com/AsyncHttpClient/async-http-client/blob/1.9.x/src/main/java/com/ning/http/client/AsyncHttpClientConfigDefaults.java
   def requestTimeout: Duration = 60.seconds
@@ -19,7 +16,7 @@ trait DispatchHttpClientsAsync extends HttpClientsAsync {
       setRequestTimeout(requestTimeout.toMillis.toInt).
       setConnectTimeout(connectionTimeout.toMillis.toInt))
 
-    def request(in: String, address: java.net.URI, headers: Map[String, String]): concurrent.Future[String] = {
+    def request(in: String, address: java.net.URI, headers: Map[String, String])(implicit ec: ExecutionContext): Future[String] = {
       val req = url(address.toString).setBodyEncoding("UTF-8") <:< headers << in
       http(req > as.String)
     }

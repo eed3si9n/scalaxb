@@ -1,14 +1,14 @@
 package scalaxb
 
-trait DispatchHttpClientsAsync extends HttpClientsAsync {
-  this: ExecutionContextProvider =>
+import scala.concurrent.{ Future, ExecutionContext }
 
+trait DispatchHttpClientsAsync extends HttpClientsAsync {
   lazy val httpClient = new DispatchHttpClient {}
 
   trait DispatchHttpClient extends HttpClient {
     import dispatch._
 
-    def request(in: String, address: java.net.URI, headers: Map[String, String]): concurrent.Future[String] = {
+    def request(in: String, address: java.net.URI, headers: Map[String, String])(implicit ec: ExecutionContext): Future[String] = {
       val req = url(address.toString) << in <:< headers
       Http(req > as.String)
     }

@@ -100,7 +100,7 @@ class GenProtocol(val context: XsdContext, var config: Config) extends ContextPr
       List((Some(XSI_PREFIX) -> XSI_URL), (Some(XS_PREFIX) -> XS_URL))).distinct, 0)
     val packageString = config.protocolPackageName map { "package " + _ + newline } getOrElse{""}
     val importFutureString = if (config.async)
-      "import scala.concurrent.Future" + newline else ""
+      "import scala.concurrent.{ Future, ExecutionContext }" + newline else ""
     val packageValueString = config.protocolPackageName map { x => x } getOrElse {""}
     val maxChunkLength = 200
     val nOfClauses = snippet.elemToTypeClauses.length

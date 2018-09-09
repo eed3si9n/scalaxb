@@ -1,13 +1,11 @@
 package scalaxb
 
-import concurrent.Future
+import scala.concurrent.{ Future, ExecutionContext }
 
 trait HttpClientsAsync {
-  this: ExecutionContextProvider =>
-  
   def httpClient: HttpClient
 
   trait HttpClient {
-    def request(in: String, address: java.net.URI, headers: Map[String, String]): Future[String]
+    def request(in: String, address: java.net.URI, headers: Map[String, String])(implicit ec: ExecutionContext): Future[String]
   }
 }

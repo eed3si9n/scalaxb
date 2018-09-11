@@ -839,13 +839,13 @@ JDREVGRw==</base64Binary>
 
   def testBigDecimal {
     println("testBigDecimal")
-    val document = scalaxb.toXML(BigDecimal(100).setScale(-2), "foo", scope)
+    val document = scalaxb.toXML(BigDecimal(10000).setScale(-3), "foo", scope)
     println(document)
     check(document)
 
     def check(output: scala.xml.NodeSeq) = output.toString() match {
-      case o if o.matches("<foo.*>100</foo>") =>
-      case o if o.matches("<foo.*>100.0+</foo>") =>
+      case o if o.matches("<foo.*>10000</foo>") =>
+      case o if o.matches("<foo.*>10000.0+</foo>") =>
       case _ => sys.error("match failed: " + output)
     }
   }

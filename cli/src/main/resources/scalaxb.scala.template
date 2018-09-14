@@ -147,7 +147,7 @@ trait XMLStandardTypes {
 
     def writes(obj: BigDecimal, namespace: Option[String], elementLabel: Option[String],
         scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
-      Helper.stringToXML(obj.bigDecimal.toEngineeringString, namespace, elementLabel, scope)
+      Helper.stringToXML(obj.bigDecimal.toPlainString, namespace, elementLabel, scope)
   }
 
   implicit lazy val __BigIntXMLFormat: XMLFormat[BigInt] = new XMLFormat[BigInt] {

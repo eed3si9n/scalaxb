@@ -237,7 +237,10 @@ trait {interfaceTypeName} {{
     logger.debug("makeOperation: " + name)
 
     val retval = (op.xoperationtypeoption, config.async) match {
-      case (DataRecord(_, _, XOnewayoperationSequence(input)), _) =>
+      case (DataRecord(_, _, XOnewayoperationSequence(input)), true) =>
+        "def %s(%s)(implicit ec: ExecutionContext): Future[Unit]".format(name, arg(input))
+
+      case (DataRecord(_, _, XOnewayoperationSequence(input)), false) =>
         "def %s(%s): Unit".format(name, arg(input))
 
       case (DataRecord(_, _, XRequestresponseoperationSequence(input, output, faults)), true) =>

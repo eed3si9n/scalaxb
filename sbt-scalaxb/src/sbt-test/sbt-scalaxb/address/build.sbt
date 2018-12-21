@@ -1,5 +1,5 @@
-val scalaXml = "org.scala-lang.modules" %% "scala-xml" % "1.0.6"
-val scalaParser = "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.4"
+val scalaXml = "org.scala-lang.modules" %% "scala-xml" % "1.1.1"
+val scalaParser = "org.scala-lang.modules" %% "scala-parser-combinators" % "1.1.1"
 
 lazy val root = (project in file(".")).
   enablePlugins(ScalaxbPlugin).

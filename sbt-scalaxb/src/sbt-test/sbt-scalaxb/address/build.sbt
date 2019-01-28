@@ -4,7 +4,7 @@ val scalaParser = "org.scala-lang.modules" %% "scala-parser-combinators" % "1.1.
 lazy val root = (project in file(".")).
   enablePlugins(ScalaxbPlugin).
   settings(
-    scalaVersion := "2.12.7",
+    scalaVersion := "2.12.8",
     name := "mavenxsd",
     scalaxbAutoPackages in (Compile, scalaxb) := true,
     scalaxbGenerateMutable in (Compile, scalaxb) := true,

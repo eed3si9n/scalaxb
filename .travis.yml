@@ -15,6 +15,7 @@ scala:
 
 jdk:
   - oraclejdk8
+  - openjdk11
 
 env:
     # This splits the build into n parts

@@ -1,7 +1,7 @@
 import Dependencies._
 import Common._
 
-ThisBuild / version := "1.5.2"
+ThisBuild / version := "1.7.1"
 ThisBuild / organization := "org.scalaxb"
 ThisBuild / homepage := Option(url("http://scalaxb.org"))
 ThisBuild / licenses := List("MIT License" -> url("https://github.com/eed3si9n/scalaxb/blob/master/LICENSE"))
@@ -28,7 +28,8 @@ lazy val root = (project in file(".")).
   aggregate(app, integration, scalaxbPlugin).
   settings(
     scalaVersion := scala211,
-    publish / skip := true
+    publish / skip := true,
+    crossScalaVersions := Nil,
   )
 
 lazy val app = (project in file("cli")).

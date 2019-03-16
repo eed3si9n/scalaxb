@@ -384,8 +384,11 @@ trait Module {
   }
 
   def missingDependencies(importable: Importable, files: Seq[Importable]): List[String] = {
-    val nsBased = importable.importNamespaces.toList flatMap { ns =>
-      files filter { _.targetNamespace.contains(ns) }
+    val nsBased = importable.importNamespaces.toList flatMap { ns: String =>
+      files filter { x =>
+        val targetNamespace: Option[String] = x.targetNamespace
+        targetNamespace == Option(ns)
+      }
     }
     val XML_LOCATION = "http://www.w3.org/2001/xml.xsd"
     val locationBased = importable.importLocations.toList flatMap { loc =>

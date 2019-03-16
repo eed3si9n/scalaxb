@@ -28,7 +28,8 @@ lazy val root = (project in file(".")).
   aggregate(app, integration, scalaxbPlugin).
   settings(
     scalaVersion := scala211,
-    publish / skip := true
+    publish / skip := true,
+    crossScalaVersions := Nil,
   )
 
 lazy val app = (project in file("cli")).

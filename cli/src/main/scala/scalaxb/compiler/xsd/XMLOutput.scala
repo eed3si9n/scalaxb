@@ -115,6 +115,7 @@ trait XMLOutput extends Args {
     case symbol: BuiltInSimpleTypeSymbol =>
       buildTypeName(symbol) match {
         case "javax.xml.namespace.QName" => "scalaxb.Helper.toString(%s, __scope)" format  selector
+        case "BigDecimal" => selector + ".bigDecimal.toPlainString"
         case _ => selector + ".toString"
       }
     case ReferenceTypeSymbol(decl: SimpleTypeDecl) =>       

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<xs:schema 
+  xmlns:xs="http://www.w3.org/2001/XMLSchema"
+  elementFormDefault="qualified"
+  attributeFormDefault="unqualified">
+  <xs:complexType name="foo">
+        <xs:attribute name="attribute1" type="xs:decimal"/>
+        <xs:attribute name="optionalAttribute" type="xs:decimal" use="optional"/>
+  </xs:complexType>
+</xs:schema>

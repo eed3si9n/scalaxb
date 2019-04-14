@@ -15,7 +15,7 @@ object Dependencies {
   val launcherInterface = "org.scala-sbt" % "launcher-interface" % "0.12.0"
   val scalaXml = "org.scala-lang.modules" %% "scala-xml" % "1.1.1"
   val scalaParser = "org.scala-lang.modules" %% "scala-parser-combinators" % "1.1.1"
-  val cxfVersion = "3.0.16"
+  val cxfVersion = "3.3.1"
   val cxfFrontendJaxws = "org.apache.cxf" % "cxf-rt-frontend-jaxws" % cxfVersion
   val cxfFrontendJaxrs = "org.apache.cxf" % "cxf-rt-frontend-jaxrs" % cxfVersion
   val cxfTransportsHttp = "org.apache.cxf" % "cxf-rt-transports-http" % cxfVersion

@@ -176,7 +176,7 @@ class GenSource(val schema: SchemaDecl,
         cases.mkString(newline + indent(2 + compDepth))        
       }
       { if (!decl.abstractValue) "case x: " + defaultType + " => " +
-          buildToXML(defaultType, "x, __namespace, __elementLabel, __scope, false")
+          buildToXML(defaultType, "x, __namespace, __elementLabel, __scope, " + decl.namespace.isEmpty )
         else """case _ => sys.error("Unknown type: " + __obj)"""
       }
     }}

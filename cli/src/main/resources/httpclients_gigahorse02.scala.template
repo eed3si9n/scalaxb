@@ -15,7 +15,7 @@ trait GigahorseHttpClients extends HttpClients {
       .withRequestTimeout(requestTimeout))
 
     def request(in: String, address: java.net.URI, headers: Map[String, String]): String = {
-      val req = url(address.toString).post(in).withHeaders(headers.mapValues(List(_)))
+      val req = url(address.toString).post(in).withHeaders(headers.mapValues(List(_)).toMap)
       Await.result(client.processFull(req, asString), connectionTimeout + requestTimeout)
     }
   }

@@ -15,7 +15,7 @@ trait GigahorseHttpClientsAsync extends HttpClientsAsync {
       .withRequestTimeout(requestTimeout))
 
     def request(in: String, address: java.net.URI, headers: Map[String, String])(implicit ec: ExecutionContext): Future[String] = {
-      val req = url(address.toString).post(in).withHeaders(headers.mapValues(List(_)))
+      val req = url(address.toString).post(in).withHeaders(headers.mapValues(List(_)).toMap)
       client.processFull(req, asString)
     }
   }

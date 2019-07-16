@@ -821,14 +821,13 @@ class HexBinary(_vector: Vector[Byte]) extends scala.collection.IndexedSeq[Byte]
 
 object HexBinary {
   def apply(xs: Byte*): HexBinary = {
-    import scala.collection.breakOut
-    val vector: Vector[Byte] = (xs.toIndexedSeq map {x: Byte => x})(breakOut)
+    val vector: Vector[Byte] = xs.toVector
     new HexBinary(vector)
   }
 
   def apply(value: String): HexBinary = {
     val array = DatatypeConverter.parseHexBinary(value)
-    apply(array: _*)
+    apply(array.toSeq: _*)
   }
 
   def unapplySeq(x: HexBinary) = Some(x.vector)
@@ -843,14 +842,13 @@ class Base64Binary(_vector: Vector[Byte]) extends scala.collection.IndexedSeq[By
 
 object Base64Binary {
   def apply(xs: Byte*): Base64Binary = {
-    import scala.collection.breakOut
-    val vector: Vector[Byte] = (xs.toIndexedSeq map {x: Byte => x})(breakOut)
+    val vector: Vector[Byte] = xs.toVector
     new Base64Binary(vector)
   }
 
   def apply(value: String): Base64Binary = {
     val array = DatatypeConverter.parseBase64Binary(value)
-    apply(array: _*)
+    apply(array.toSeq: _*)
   }
 
   def unapplySeq(x: Base64Binary) = Some(x.vector)

@@ -38,13 +38,13 @@ lazy val app = (project in file("cli")).
   settings(codegenSettings: _*).
   settings(
     name := "scalaxb",
-    crossScalaVersions := Seq(scala212, scala211, scala210),
-    scalaVersion := scala211,
+    crossScalaVersions := Seq(scala213, scala212, scala211, scala210),
+    scalaVersion := scala212,
     resolvers += sbtResolver.value,
     libraryDependencies ++= appDependencies(scalaVersion.value),
     scalacOptions := {
       val prev = scalacOptions.value
-      if (scalaVersion.value != scala210) {
+      if (scalaVersion.value == scala212) {
         prev :+ "-Xfatal-warnings"
       }
       else prev

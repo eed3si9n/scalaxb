@@ -62,7 +62,7 @@ object Main {
  */
 case class Arguments(
       config: Config,
-      files: Seq[File],
+      files: collection.Seq[File],
       verbose: Boolean)
 
 object Arguments {
@@ -81,7 +81,7 @@ object Arguments {
         c.update(Outdir(x)) }
       opt[String]('p', "default-package") valueName("<package>") text("specifies the target package") action { (x, c) =>
         c.update(PackageNames(c.packageNames updated (None, Some(x)))) }
-      opt[(String, String)]("package") unbounded() keyValueName("<namespaceURI>", "<package>") text(
+      opt[(String, String)]("package").unbounded().keyValueName("<namespaceURI>", "<package>") text(
         "specifies the target package for <namespaceURI>") action { case ((k, v), c) =>
         c.update(PackageNames(c.packageNames updated (Some(k), Some(v)))) }
       opt[Unit]("autopackages") text("generates packages for different namespaces automatically") action { (_,c) =>
@@ -148,7 +148,7 @@ object Arguments {
 
       help("help") text("display this message")
       version("version") text("display version info")
-      arg[File]("<schema_file>...") unbounded() text("input schema to be converted") action { (x, c) =>
+      arg[File]("<schema_file>...").unbounded().text("input schema to be converted") action { (x, c) =>
         files append x
         c
       }

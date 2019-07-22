@@ -98,7 +98,7 @@ trait Module {
 
   case class CompileSource[From](context: Context,
     schemas: ListMap[Importable, Schema],
-    importables: Seq[(Importable, From)],
+    importables: collection.Seq[(Importable, From)],
     additionalImportables: ListMap[Importable, File],
     firstNamespace: Option[String]) {
 
@@ -215,7 +215,7 @@ trait Module {
     val importables = ListBuffer[(Importable, From)](files map { f => importables0(f) -> f }: _*)
     val schemas = ListMap[Importable, Schema](importables map { case (importable, file) =>
       val s = parse(importable, context)
-      (importable, s) }: _*)
+      (importable, s) } toSeq: _*)
 
     val additionalImportables = ListMap.empty[Importable, File]
 
@@ -334,7 +334,7 @@ trait Module {
           case Some(_) => config.defaultNamespace
           case _ => cs.firstNamespace
         }))
-      val protocolNodes = generateProtocol(Snippet(snippets: _*), cs.context, config2)
+      val protocolNodes = generateProtocol(Snippet(snippets.toSeq: _*), cs.context, config2)
       try {
         printNodes(protocolNodes, out)
       } finally {
@@ -383,7 +383,7 @@ trait Module {
     (new File(path)).getName
   }
 
-  def missingDependencies(importable: Importable, files: Seq[Importable]): List[String] = {
+  def missingDependencies(importable: Importable, files: collection.Seq[Importable]): List[String] = {
     val nsBased = importable.importNamespaces.toList flatMap { ns: String =>
       files filter { x =>
         val targetNamespace: Option[String] = x.targetNamespace

@@ -824,7 +824,7 @@ object AnnotationDecl {
   }  
 }
 
-case class DocumentationDecl(any: Seq[Any]) extends Decl
+case class DocumentationDecl(any: collection.Seq[Any]) extends Decl
 
 object DocumentationDecl {
   def fromXML(node: scala.xml.Node, config: ParserConfig) =

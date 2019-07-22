@@ -62,7 +62,7 @@ class GenSource(val schema: SchemaDecl,
     for (group <- schema.topAttrGroups.valuesIterator)
       snippets += makeAttributeGroup(group)
     
-    Snippet(snippets: _*)
+    Snippet(snippets.toSeq: _*)
   }
 
   def makeElemToTypeClause(name: String, elem: ElemDecl): Snippet = {

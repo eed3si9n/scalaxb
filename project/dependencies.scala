@@ -30,6 +30,7 @@ object Dependencies {
     case Some((2, 10)) => "org.specs2" %% "specs2" % "2.1.1"
     case Some((2, 11)) => "org.specs2" %% "specs2" % "2.3.13"
     case Some((2, 12)) => "org.specs2" %% "specs2" % "2.4.17"
+    case Some((2, 13)) => "org.specs2" %% "specs2-core" % "4.6.0"
     case x             => sys error s"Unexpected Scala version [$sv], with partial version $x"
   }
 

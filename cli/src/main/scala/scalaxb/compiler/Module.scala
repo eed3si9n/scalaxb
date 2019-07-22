@@ -168,7 +168,7 @@ trait Module {
   }
 
   def packageDir(packageName: Option[String], dir: File) = packageName map { x =>
-    (dir /: x.split('.')) { new File(_, _) }
+    x.split('.').foldLeft(dir) { new File(_, _) }
   } getOrElse {dir}
 
   def processString(input: String, packageName: String): List[String] =

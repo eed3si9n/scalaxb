@@ -15,7 +15,7 @@ object Wsdl11RpcTest extends TestBase with JaxwsTestBase {
   }
 
   val packageName = "stockquote"
-  val wsdlFile = new File(s"integration/target/$serviceAddress.wsdl")
+  val wsdlFile = new File(s"target/$serviceAddress.wsdl")
   val config =  Config.default.update(PackageNames(Map(None -> Some(packageName)))).
       update(Outdir(tmp)).
       update(GeneratePackageDir)

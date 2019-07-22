@@ -55,7 +55,7 @@ class Driver extends Module { driver =>
   override def packageName(namespace: Option[String], context: Context): Option[String] =
     xsddriver.packageName(namespace, context.xsdcontext)
 
-  override def processContext(context: Context, schemas: Seq[WsdlPair], cnfg: Config) {
+  override def processContext(context: Context, schemas: Seq[WsdlPair], cnfg: Config): Unit = {
     val xsds = schemas flatMap { _.schemas }
     logger.debug("processContext: " + (xsds map {_.targetNamespace}))
     xsddriver.processContext(context.xsdcontext, xsds, cnfg)
@@ -67,9 +67,9 @@ class Driver extends Module { driver =>
       case DataRecord(WSDL_NS, Some(`elementName`), x : A) => f(x)
     }
 
-  override def processSchema(schema: Schema, context: Context, cnfg: Config) {}
+  override def processSchema(schema: Schema, context: Context, cnfg: Config): Unit = {}
 
-  def processDefinition(definition: XDefinitionsType, context: Context) {
+  def processDefinition(definition: XDefinitionsType, context: Context): Unit = {
     val ns = definition.targetNamespace map {_.toString}
 
     extractChildren(definition, "message") { x: XMessageType => context.messages((ns, x.name)) = x }

@@ -47,7 +47,7 @@ object Main {
     }
   }
 
-  def start(args: Seq[String]) {
+  def start(args: Seq[String]): Unit = {
     Arguments(args) foreach { args =>
       Log.configureLogger(args.verbose)
       val module = Module.moduleByFileName(args.files.head)

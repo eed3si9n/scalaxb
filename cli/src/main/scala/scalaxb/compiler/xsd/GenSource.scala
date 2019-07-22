@@ -709,12 +709,12 @@ object {localName} {{
   def buildOptions(that: HasParticle): List[String] = {
     val set = mutable.ListBuffer.empty[String]
     
-    def addIfMatch(comp: HasParticle, choice: ChoiceDecl) {
+    def addIfMatch(comp: HasParticle, choice: ChoiceDecl): Unit = {
       if (comp == that && !containsForeignType(choice))
         set += makeTypeName(context.compositorNames(choice))     
     }
     
-    def addIfContains(choice: ChoiceDecl) {
+    def addIfContains(choice: ChoiceDecl): Unit = {
       choice.particles foreach { _ match {
           case ch: ChoiceDecl =>
             addIfMatch(ch, choice)

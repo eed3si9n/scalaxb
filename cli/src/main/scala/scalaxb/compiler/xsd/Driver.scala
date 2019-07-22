@@ -37,7 +37,7 @@ class Driver extends Module { driver =>
   
   override def buildContext = XsdContext()
   
-  override def processSchema(schema: Schema, context: Context, cnfg: Config) {}
+  override def processSchema(schema: Schema, context: Context, cnfg: Config): Unit = {}
   
   override def processContext(context: Context, schemas: Seq[SchemaDecl], cnfg: Config) =
     (new ContextProcessor {

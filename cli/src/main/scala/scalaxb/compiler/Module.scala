@@ -220,7 +220,7 @@ trait Module {
     val additionalImportables = ListMap.empty[Importable, File]
 
     // recursively add missing files
-    def addMissingFiles() {
+    def addMissingFiles(): Unit = {
       val current = (importables map {_._1}) ++ additionalImportables.keysIterator.toList
       // check for all dependencies before proceeding.
       val missings = (current flatMap { importable =>
@@ -244,7 +244,7 @@ trait Module {
         (importable, x) })
       if (added) addMissingFiles()
     }
-    def processUnnamedIncludes() {
+    def processUnnamedIncludes(): Unit = {
       logger.debug("processUnnamedIncludes")
       val all = (importables.toList map {_._1}) ++ (additionalImportables.toList map {_._1})
       val parents: ListBuffer[Importable] = ListBuffer(all filter { !_.includeLocations.isEmpty}: _*)
@@ -432,7 +432,7 @@ trait Module {
   def parse(location: URI, in: Reader): Schema
     = parse(toImportable(location, readerToRawSchema(in)), buildContext)
 
-  def printNodes(nodes: Seq[Node], out: PrintWriter) {
+  def printNodes(nodes: Seq[Node], out: PrintWriter): Unit = {
     import scala.xml._
 
     def printNode(n: Node): Unit = n match {
@@ -454,7 +454,7 @@ trait Module {
     for (node <- nodes) { printNode(node) }
   }
 
-  def printFromResource(source: String, out: PrintWriter, substitution: Option[(String, String)] = None) {
+  def printFromResource(source: String, out: PrintWriter, substitution: Option[(String, String)] = None): Unit = {
     val in = getClass.getResourceAsStream(source)
     val reader = new java.io.BufferedReader(new java.io.InputStreamReader(in))
     var line: Option[String] = None

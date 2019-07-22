@@ -25,7 +25,7 @@ import org.apache.log4j.{Logger, Level, ConsoleAppender, EnhancedPatternLayout}
 import org.apache.log4j.spi.LoggingEvent
 
 case class Log(logger: Logger) {
-  def info(message: String, args: Any*) {
+  def info(message: String, args: Any*): Unit = {
     if (args.toSeq.isEmpty) logger.info(message)
     else try {
       logger.info(message format (args.toSeq: _*))
@@ -35,7 +35,7 @@ case class Log(logger: Logger) {
     }
   }
 
-  def debug(message: String, args: Any*) {
+  def debug(message: String, args: Any*): Unit = {
     if (args.toSeq.isEmpty) logger.debug(message)
     else try {
       logger.debug(message format (args.toSeq: _*))
@@ -45,7 +45,7 @@ case class Log(logger: Logger) {
     }
   }
 
-  def warn(message: String, args: Any*) {
+  def warn(message: String, args: Any*): Unit = {
     if (args.toSeq.isEmpty) logger.warn(message)
     else try {
       logger.warn(message format (args.toSeq: _*))
@@ -55,7 +55,7 @@ case class Log(logger: Logger) {
     }
   }
 
-  def error(message: String, args: Any*) {
+  def error(message: String, args: Any*): Unit = {
     if (args.toSeq.isEmpty) logger.error(message)
     else try {
       logger.error(message format (args.toSeq: _*))
@@ -65,7 +65,7 @@ case class Log(logger: Logger) {
     }
   }
 
-  def fatal(message: String, args: Any*) {
+  def fatal(message: String, args: Any*): Unit = {
     if (args.toSeq.isEmpty) logger.fatal(message)
     else try {
       logger.fatal(message format (args.toSeq: _*))
@@ -79,7 +79,7 @@ case class Log(logger: Logger) {
 object Log {
   def forName(name: String) = Log(Logger.getLogger(name))
 
-  def configureLogger(verbose: Boolean) {
+  def configureLogger(verbose: Boolean): Unit = {
     val root = Logger.getRootLogger()
     val level = if (verbose) Level.TRACE else Level.WARN
     root.setLevel(level)

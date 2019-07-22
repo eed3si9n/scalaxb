@@ -62,7 +62,7 @@ lazy val integration = (project in file("integration")).
     scalaVersion := scala211,
     publishArtifact := false,
     libraryDependencies ++= integrationDependencies(scalaVersion.value),
-    fork in Test := true, //required due to https://github.com/scala/scala-parser-combinators/issues/197
+    // fork in test := true,
     // javaOptions in test ++= Seq("-Xmx2G", "-XX:MaxPermSize=512M")
     parallelExecution in Test := false,
     testOptions in Test += Tests.Argument("sequential"),

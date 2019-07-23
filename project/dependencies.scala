@@ -45,6 +45,7 @@ object Dependencies {
     case _ => Seq(scalaXml, scalaParser)
   })
   def integrationDependencies(sv: String) = Seq(
+    dispatch % "test",
     gigahorse % "test",
     scalaCompiler(sv),
     specs2(sv) % "test",

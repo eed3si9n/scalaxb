@@ -12,10 +12,12 @@ trait JaxwsTestBase {
   def writeStringToFile(content: String, file: File): Unit =
     sys.process.BasicIO.transferFully(new ByteArrayInputStream(content.getBytes("UTF-8")), new FileOutputStream(file))
   def retrieveWsdl: String = {
-    import dispatch._, Defaults._
-    val wsdl = url(s"http://localhost:$servicePort/$serviceAddress?wsdl")
-    val wsdlAsStr = Http(wsdl OK as.String)
-    wsdlAsStr()    
+    import scala.concurrent._, duration._
+    import gigahorse._, support.okhttp.Gigahorse
+    val http = Gigahorse.http(Gigahorse.config)
+    val wsdl = Gigahorse.url(s"http://localhost:$servicePort/$serviceAddress?wsdl").get
+    val wsdlAsStr = http.run(wsdl, Gigahorse.asString)
+    Await.result(wsdlAsStr, 10.seconds)
   }
 
   def initServer: Server = {

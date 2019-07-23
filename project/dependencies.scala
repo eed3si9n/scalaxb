@@ -10,7 +10,7 @@ object Dependencies {
   val log4j = "log4j" % "log4j" % "1.2.17"
   val defaultDispatchVersion = "0.12.0"
   val dispatch = "net.databinder.dispatch" %% "dispatch-core" % defaultDispatchVersion
-  val defaultGigahorseVersion = "0.3.1"
+  val defaultGigahorseVersion = "0.5.0"
   val defaultGigahorseBackend = "okhttp"
   val gigahorse = "com.eed3si9n" %% s"gigahorse-$defaultGigahorseBackend" % defaultGigahorseVersion
   val launcherInterface = "org.scala-sbt" % "launcher-interface" % "0.12.0"
@@ -31,7 +31,7 @@ object Dependencies {
     case Some((2, 10)) => "org.specs2" %% "specs2" % "2.1.1"
     case Some((2, 11)) => "org.specs2" %% "specs2" % "2.3.13"
     case Some((2, 12)) => "org.specs2" %% "specs2" % "2.4.17"
-    case Some((2, 13)) => "org.specs2" %% "specs2-core" % "4.6.0"
+    case Some((2, 13)) => "org.specs2" %% "specs2-matcher-extra" % "4.6.0"
     case x             => sys error s"Unexpected Scala version [$sv], with partial version $x"
   }
 
@@ -45,7 +45,6 @@ object Dependencies {
     case _ => Seq(scalaXml, scalaParser)
   })
   def integrationDependencies(sv: String) = Seq(
-    dispatch % "test",
     gigahorse % "test",
     scalaCompiler(sv),
     specs2(sv) % "test",

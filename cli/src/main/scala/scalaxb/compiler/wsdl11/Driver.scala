@@ -246,6 +246,9 @@ class Driver extends Module { driver =>
       case (VersionPattern(0, 14, _), async)                    =>
         // Same as 0.13.x
         generateDispatchFromResource(async, "/httpclients_dispatch0130")
+      case (VersionPattern(1, 0 | 1, _), async)                    =>
+        // Same as 0.13.x
+        generateDispatchFromResource(async, "/httpclients_dispatch0130")
     }) else Nil) ++
     (if (config.generateGigahorseClient) List((config.gigahorseVersion, config.async) match {
       case (VersionPattern(x, y, _), false) if (x.toInt == 0) && ((y.toInt == 2) || (y.toInt == 3)) =>

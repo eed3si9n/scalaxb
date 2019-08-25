@@ -251,10 +251,10 @@ class Driver extends Module { driver =>
         generateDispatchFromResource(async, "/httpclients_dispatch0130")
     }) else Nil) ++
     (if (config.generateGigahorseClient) List((config.gigahorseVersion, config.async) match {
-      case (VersionPattern(x, y, _), false) if (x.toInt == 0) && ((y.toInt == 2) || (y.toInt == 3)) =>
+      case (VersionPattern(x, y, _), false) if (x.toInt == 0) && (y.toInt <= 5) =>
         generateFromResource[To](Some("scalaxb"), "httpclients_gigahorse.scala",
           "/httpclients_gigahorse02.scala.template", Some("%%BACKEND%%" -> config.gigahorseBackend))
-      case (VersionPattern(x, y, _), true) if (x.toInt == 0) && ((y.toInt == 2) || (y.toInt == 3)) =>
+      case (VersionPattern(x, y, _), true) if (x.toInt == 0) && (y.toInt <= 5) =>
         generateFromResource[To](Some("scalaxb"), "httpclients_gigahorse_async.scala",
           "/httpclients_gigahorse02_async.scala.template", Some("%%BACKEND%%" -> config.gigahorseBackend))
     }) else Nil) ++

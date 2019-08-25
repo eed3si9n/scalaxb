@@ -1,7 +1,7 @@
 import scalaxb.compiler.Config
 import scalaxb.compiler.ConfigEntry._
 
-object CorrectEnumTypesTest extends TestBase {
+class CorrectEnumTypesTest extends TestBase {
   val schema = resource("correctEnumTestSchema.xsd")
 
   lazy val generated = module.processFiles(

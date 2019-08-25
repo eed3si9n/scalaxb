@@ -5,7 +5,7 @@ import scalaxb.compiler.ConfigEntry._
 import scalaxb.stockquote.server._
 import scala.concurrent._, duration.Duration
 
-object TimeoutTest extends TestBase with JaxwsTestBase {
+class TimeoutTest extends TestBase with JaxwsTestBase {
   override val module = new Driver // with Verbose
 
   def serviceImpl:DocumentWrappedService = new DocumentWrappedService(serverSleepTime)

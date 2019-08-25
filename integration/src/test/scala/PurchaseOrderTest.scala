@@ -1,6 +1,6 @@
 import java.io.{File}
 
-object PurchaseOrderTest extends TestBase {
+class PurchaseOrderTest extends TestBase {
   val inFile    = new File("integration/src/test/resources/ipo.xsd")
   val usageFile = new File(tmp, "PurchaseOrderUsage.scala")
   copyFileFromResource("PurchaseOrderUsage.scala", usageFile)

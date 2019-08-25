@@ -4,7 +4,7 @@ import scalaxb.compiler.Config
 import scalaxb.compiler.ConfigEntry._
 import scalaxb.compiler.xsd.Driver
 
-object DispatchResponseAsScalaxbTest extends TestBase with JaxrsTestBase {
+class DispatchResponseAsScalaxbTest extends TestBase with JaxrsTestBase {
   override val module = new Driver // with Verbose
 
   def serviceImpl:RestService = new RestService()

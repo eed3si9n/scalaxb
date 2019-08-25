@@ -3,7 +3,7 @@ import scalaxb.compiler.Config
 import scalaxb.compiler.xsd.Driver
 import scalaxb.compiler.ConfigEntry._
 
-object XmlSchemaTest extends TestBase {
+class XmlSchemaTest extends TestBase {
   // override val module = new Driver with Verbose
   val inFile  = new File("integration/src/test/resources/XMLSchema.xsd")
 

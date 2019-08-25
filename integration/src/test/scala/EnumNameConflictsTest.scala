@@ -1,7 +1,7 @@
 import scalaxb.compiler.Config
 import scalaxb.compiler.ConfigEntry._
 
-object EnumNameConflictsTest extends TestBase {
+class EnumNameConflictsTest extends TestBase {
   val schema = resource("enumTestSchema.xsd")
 
   lazy val generated = module.processFiles(

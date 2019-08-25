@@ -4,7 +4,7 @@ import scalaxb.compiler.ConfigEntry._
 
 import scala.io.Source
 
-object EnumValuesTest extends TestBase {
+class EnumValuesTest extends TestBase {
   val schema = resource("enumTestSchema.xsd")
 
   lazy val generated = module.processFiles(

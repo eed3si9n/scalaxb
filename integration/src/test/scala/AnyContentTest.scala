@@ -1,6 +1,6 @@
 import java.io.{File}
 
-object AnyContentTest extends TestBase {
+class AnyContentTest extends TestBase {
   val inFile = new File("integration/src/test/resources/any.xsd")
   lazy val generated = module.process(inFile, "anycontent", tmp)
   val usageFile = new File(tmp, "AnyUsage.scala")

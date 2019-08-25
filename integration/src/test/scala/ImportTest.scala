@@ -2,7 +2,7 @@ import java.io.{File}
 import scalaxb.compiler.{Config, Log}
 import scalaxb.compiler.ConfigEntry._
 
-object ImportTest extends TestBase {
+class ImportTest extends TestBase {
   // Log.configureLogger(true)
   val ipoxsd    = new File("integration/src/test/resources/ipo.xsd")
   val reportxsd = new File("integration/src/test/resources/report.xsd")

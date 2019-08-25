@@ -21,7 +21,16 @@ ThisBuild / developers := List(
 lazy val commonSettings = Seq(
     scalacOptions := Seq("-deprecation", "-unchecked", "-feature", "-language:implicitConversions", "-language:postfixOps"),
     parallelExecution in Test := false,
-    resolvers += Resolver.typesafeIvyRepo("releases")
+    resolvers += Resolver.typesafeIvyRepo("releases"),
+    // Adds a `src/test/scala-2.13+` source directory for Scala 2.13 and newer
+    // and a `src/test/scala-2.13-` source directory for Scala version older than 2.13
+    unmanagedSourceDirectories in Compile in Test += {
+      val sourceDir = (sourceDirectory in Compile in Test).value
+      CrossVersion.partialVersion(scalaVersion.value) match {
+        case Some((2, n)) if n >= 13 => sourceDir / "scala-2.13+"
+        case _                       => sourceDir / "scala-2.13-"
+      }
+    }
   ) ++ sonatypeSettings
 
 lazy val root = (project in file(".")).

@@ -2,7 +2,7 @@ import java.io.{File}
 import scalaxb.compiler.Config
 import scalaxb.compiler.ConfigEntry._
 
-object BigTest extends TestBase {
+class BigTest extends TestBase {
   val inFile  = new File("integration/src/test/resources/big.xsd")
   // override val module = new scalaxb.compiler.xsd.Driver with Verbose
   lazy val generated = module.process(inFile,

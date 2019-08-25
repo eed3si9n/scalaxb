@@ -5,7 +5,7 @@ import scalaxb.compiler.ConfigEntry._
 import scalaxb.stockquote.server._
 import scala.concurrent._, duration.Duration
 
-object Wsdl11DocumentWrappedTest extends TestBase with JaxwsTestBase {
+class Wsdl11DocumentWrappedTest extends TestBase with JaxwsTestBase {
   override val module = new Driver // with Verbose
 
   // specs2 has its own Duration

@@ -1,7 +1,7 @@
 import scalaxb.compiler.Config
 import scalaxb.compiler.ConfigEntry._
 
-object VisitorTest extends TestBase {
+class VisitorTest extends TestBase {
   val schema = resource("anotherSimpleSchema.xsd")
   val targetXml =
     (<n:aElem xmlns:n="http://simple/main">

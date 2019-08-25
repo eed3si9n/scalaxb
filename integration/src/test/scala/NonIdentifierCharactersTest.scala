@@ -5,7 +5,7 @@ import scalaxb.compiler.ConfigEntry._
 
 import scala.xml._
 
-object NonIdentifierCharactersTest extends TestBase {
+class NonIdentifierCharactersTest extends TestBase {
   private val schema = resource("non_identifier_characters.xsd")
   private val doubleUnderscoresSchema = resource("double_underscores.xsd")
 

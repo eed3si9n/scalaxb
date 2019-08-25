@@ -2,7 +2,7 @@ import java.io.{File}
 import scalaxb.compiler.Config
 import scalaxb.compiler.ConfigEntry._
 
-object CrossNamespaceTest extends TestBase {
+class CrossNamespaceTest extends TestBase {
   val ipoxsd    = new File("integration/src/test/resources/ipo.xsd")
   val xnxsd = new File("integration/src/test/resources/xn.xsd")
 

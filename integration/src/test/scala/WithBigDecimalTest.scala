@@ -1,6 +1,6 @@
 import java.io.{File}
 
-object WithBigDecimalTest extends TestBase {
+class WithBigDecimalTest extends TestBase {
   val inFile  = new File("integration/src/test/resources/withbigdecimal.xsd")
   lazy val generated = module.process(inFile, "bigdecimal", tmp)
   

@@ -92,7 +92,7 @@ trait CompilerMatcher {
         sys.error("At least one line of code is required.")
       val s = settings(outdir, classpath, usecurrentcp, unchecked,
         deprecation, feature, fatalWarnings)
-      val main = new IMain(s) {
+      val main = new IMain(s, new scala.tools.nsc.interpreter.shell.ReplReporterImpl(s)) {
         def lastReq = prevRequestList.last
       }
       if (!main.compileSources(files.map(toSourceFile(_)): _*)) {

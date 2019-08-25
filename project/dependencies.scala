@@ -8,8 +8,12 @@ object Dependencies {
 
   val scopt = "com.github.scopt" %% "scopt" % "3.7.1"
   val log4j = "log4j" % "log4j" % "1.2.17"
-  val defaultDispatchVersion = "0.12.0"
-  val dispatch = "net.databinder.dispatch" %% "dispatch-core" % defaultDispatchVersion
+  val defaultDispatchVersion = "1.0.1"
+  def dispatch(sv: String) = CrossVersion partialVersion sv match {
+    case Some((2, x)) if x >= 13 => "org.dispatchhttp" %% "dispatch-core" % "1.1.0"
+    case Some(_)                 => "org.dispatchhttp" %% "dispatch-core" % "1.0.1"
+    case x                       => sys error s"Unexpected Scala version [$sv], with partial version $x"
+  }
   val defaultGigahorseVersion = "0.5.0"
   val defaultGigahorseBackend = "okhttp"
   val gigahorse = "com.eed3si9n" %% s"gigahorse-$defaultGigahorseBackend" % defaultGigahorseVersion
@@ -45,7 +49,7 @@ object Dependencies {
     case _ => Seq(scalaXml, scalaParser)
   })
   def integrationDependencies(sv: String) = Seq(
-    dispatch % "test",
+    dispatch(sv) % "test",
     gigahorse % "test",
     scalaCompiler(sv),
     specs2(sv) % "test",

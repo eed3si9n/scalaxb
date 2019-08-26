@@ -25,7 +25,7 @@ object SamlUsage {
   //   lazy val NameFormat = attributes.get("@NameFormat") map { _.as[java.net.URI] }
   //   lazy val FriendlyName = attributes.get("@FriendlyName") map { _.as[String] }
   // }
-  def testAttribute {
+  def testAttribute = {
     val subject = <saml:Attribute
       xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion"
       xmlns:xs="http://www.w3.org/2001/XMLSchema"

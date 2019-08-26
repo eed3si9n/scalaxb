@@ -67,7 +67,7 @@ object GeneralUsage {
     true
   }
   
-  def testSingularBuiltInType {
+  def testSingularBuiltInType = {
     val subject = <foo xmlns="http://www.example.com/general"
         xmlns:xs="http://www.w3.org/2001/XMLSchema"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
@@ -142,7 +142,7 @@ JDREVGRw==</base64Binary>
     check(fromXML[SingularBuiltInTypeTest](document))
   }
       
-  def testSingularSimpleType {
+  def testSingularSimpleType = {
     println("testSingularSimpleType")
     val subject = <foo xmlns="http://www.example.com/general"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
@@ -170,7 +170,7 @@ JDREVGRw==</base64Binary>
     check(fromXML[SingularSimpleTypeTest](document))
   }
 
-  def testQNameEnum {
+  def testQNameEnum = {
     println("testQNameEnum")
     val subject = <x:foo xmlns:x="http://www.example.com/general"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">x:Receiver</x:foo>
@@ -185,12 +185,12 @@ JDREVGRw==</base64Binary>
     check(fromXML[QNameEnum](document))
   }
 
-  def testCaseOnly {
+  def testCaseOnly = {
     println("testCaseOnly")
     // println(WholeValue)
   }
   
-  def testList {
+  def testList = {
     println("testList")
     val subject = <foo xmlns="http://www.example.com/general"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
@@ -221,7 +221,7 @@ JDREVGRw==</base64Binary>
     println(document)
   }
   
-  def testSingularComplexType {
+  def testSingularComplexType = {
     println("testSingularComplexType")
     val subject = <foo xmlns="http://www.example.com/general"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
@@ -247,7 +247,7 @@ JDREVGRw==</base64Binary>
     println(document)
   }
   
-  def testChoiceComplexType {
+  def testChoiceComplexType = {
     println("testChoiceComplexType")
     val subject = <foo xmlns="http://www.example.com/general"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
@@ -280,7 +280,7 @@ JDREVGRw==</base64Binary>
     println(document)
   }
 
-  def testEmptyRep {
+  def testEmptyRep = {
     println("testEmptyRepTest")
     val subject = <foo xmlns="http://www.example.com/general"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
@@ -316,7 +316,7 @@ JDREVGRw==</base64Binary>
     </xs:sequence>
   </xs:complexType>
   */
-  def testAny {
+  def testAny = {
     println("testAny")
     val subject = <gen:foo xmlns:gen="http://www.example.com/general"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -370,7 +370,7 @@ JDREVGRw==</base64Binary>
     check(fromXML[AnyTest](scala.xml.XML.loadString(document.toString)))
   }
 
-  def testAll {
+  def testAll = {
     println("testAll")
     val subject = <foo xmlns="http://www.example.com/general"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -389,7 +389,7 @@ JDREVGRw==</base64Binary>
     check(fromXML[AllTest](document)) 
   }
     
-  def testLongAll {
+  def testLongAll = {
     println("testLongAll")
     val subject = <foo xmlns="http://www.example.com/general"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -412,7 +412,7 @@ JDREVGRw==</base64Binary>
     println(document)
   }
   
-  def testLongAttribute {
+  def testLongAttribute = {
     val subject = <foo xmlns="http://www.example.com/general"
         xmlns:xs="http://www.w3.org/2001/XMLSchema"
         milk1="SKIM" />
@@ -426,7 +426,7 @@ JDREVGRw==</base64Binary>
     println(document)    
   }
 
-  def testAnyAttribute {
+  def testAnyAttribute = {
     println("testAnyAttribute")
     val subject = <foo xmlns="http://www.example.com/general"
         xmlns:xmime="http://www.w3.org/2005/05/xmlmime"
@@ -449,7 +449,7 @@ JDREVGRw==</base64Binary>
     check(fromXML[AnyAttributeTest](document))  
   }
   
-  def testTopLevelMultipleSeq {
+  def testTopLevelMultipleSeq = {
     println("testTopLevelMultipleSeq")
     val subject = <foo xmlns="http://www.example.com/general"
         xmlns:gen="http://www.example.com/general"
@@ -467,7 +467,7 @@ JDREVGRw==</base64Binary>
     check(fromXML[TopLevelMultipleSeqTest](document))    
   }
   
-  def testTopLevelOptionalSeq {
+  def testTopLevelOptionalSeq = {
     println("testTopLevelOptionalSeq")
     val subject = <foo xmlns="http://www.example.com/general"
         xmlns:gen="http://www.example.com/general"
@@ -485,7 +485,7 @@ JDREVGRw==</base64Binary>
     check(fromXML[TopLevelOptionalSeqTest](document))    
   }
   
-  def testTopLevelMustipleSeqAny {
+  def testTopLevelMustipleSeqAny = {
     println("testTopLevelMustipleSeqAny")
     val subject = <foo xmlns="http://www.example.com/general"
         xmlns:gen="http://www.example.com/general"
@@ -502,7 +502,7 @@ JDREVGRw==</base64Binary>
     check(fromXML[TopLevelMultipleSeqAnyTest](document))    
   }
 
-  def testSimpleAnyTypeRestriction {
+  def testSimpleAnyTypeRestriction = {
     println("testSimpleAnyTypeRestriction")
     val subject = <foo xmlns="http://www.example.com/general"
       xmlns:gen="http://www.example.com/general"
@@ -520,7 +520,7 @@ JDREVGRw==</base64Binary>
     check(fromXML[AnySimpleTypeRestriction](document))
   }
 
-  def testSimpleAnyTypeIndirectRestriction {
+  def testSimpleAnyTypeIndirectRestriction = {
     println("testSimpleAnyTypeIndirectRestriction")
     val subject = <foo xmlns="http://www.example.com/general"
       xmlns:gen="http://www.example.com/general"
@@ -538,7 +538,7 @@ JDREVGRw==</base64Binary>
     check(fromXML[IndirectAnySimpleTypeRestriction](document))
   }
 
-  def testSimpleAnyTypeExtension {
+  def testSimpleAnyTypeExtension = {
     println("testSimpleAnyTypeExtension")
     val subject = <foo xmlns="http://www.example.com/general"
         xmlns:gen="http://www.example.com/general"
@@ -557,7 +557,7 @@ JDREVGRw==</base64Binary>
     check(fromXML[AnySimpleTypeExtension](document))
   }
 
-  def testDataRecord {
+  def testDataRecord = {
     println("testDataRecord")
     val subject = <foo xmlns="http://www.example.com/general"
         xmlns:gen="http://www.example.com/general"
@@ -581,7 +581,7 @@ JDREVGRw==</base64Binary>
     check(fromXML[DataRecord[Person]](document))
   }
 
-  def testDataRecordEquality {
+  def testDataRecordEquality = {
     println("testDataRecordEquality")
 
     val subject = <foo xmlns="http://www.example.com/general"
@@ -605,7 +605,7 @@ JDREVGRw==</base64Binary>
     }
   }
 
-  def testDataRecordAny {
+  def testDataRecordAny = {
     println("testDataRecordAny")
 
     val scope = scalaxb.toScope(Some("xs") -> "http://www.w3.org/2001/XMLSchema",
@@ -628,12 +628,12 @@ JDREVGRw==</base64Binary>
     check(fromXML[DataRecord[Any]](document))
   }
 
-  def testDefaultScope {
+  def testDefaultScope = {
     val x = if (defaultScope.getURI(null) == "http://www.example.com/general") true
             else sys.error("default scope is missing.")
   }
 
-  def testUnmarshallBaseComplexType {
+  def testUnmarshallBaseComplexType = {
     println("testUnmarshallBaseComplexType")
 
     val subject = <gen:shipTo xmlns:gen="http://www.example.com/general"
@@ -656,7 +656,7 @@ JDREVGRw==</base64Binary>
     if (!document.toString.startsWith("""<gen:shipTo xsi:type="gen:USAddress" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:gen="http://www.example.com/general">""")) sys.error("output is wrong")
   }
 
-  def testSubstitutionGroup {
+  def testSubstitutionGroup = {
     println("testSubstitutionGroup")
 
     val subject = <gen:subgroupTop xmlns:gen="http://www.example.com/general"
@@ -676,7 +676,7 @@ JDREVGRw==</base64Binary>
 
   }
   
-  def testExtraElement {
+  def testExtraElement: Unit = {
     println("testExtraElement")
 
     val subject = <person xmlns="http://www.example.com/general">
@@ -686,12 +686,12 @@ JDREVGRw==</base64Binary>
       val x = scalaxb.fromXML[Person](subject)
     }
     catch {
-      case _: Throwable => return
+      case _: Throwable => return ()
     }
     sys.error("extra element did not raise error")
   }
 
-  def testTypeAttribute {
+  def testTypeAttribute = {
     println("testTypeAttribute")
 
     val scope = scalaxb.toScope(Some("gen") -> "http://www.example.com/general",
@@ -720,7 +720,7 @@ JDREVGRw==</base64Binary>
     println(document)
   }
 
-  def testCrossNamespaceExtension {
+  def testCrossNamespaceExtension = {
     println("testCrossNamespaceExtension")
 
     import gimport.IntlAddress
@@ -745,7 +745,7 @@ JDREVGRw==</base64Binary>
     check(fromXML[IntlAddress](document))
   }
   
-  def testInnerSimpleType {
+  def testInnerSimpleType = {
     println("testInnerSimpleType")
     val subject = <gen:billing xmlns:gen="http://www.example.com/general"
                           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
@@ -762,7 +762,7 @@ JDREVGRw==</base64Binary>
     check(fromXML[InnerSimpleTypeTest](document))
   }
 
-  def testAbstractExtension {
+  def testAbstractExtension = {
     println("testAbstractExtension")
     val subject = <gen:event xmlns:gen="http://www.example.com/general"
                           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -782,7 +782,7 @@ JDREVGRw==</base64Binary>
   }
 
   // #228
-  def testMixedAbtractExtension {
+  def testMixedAbtractExtension = {
     println("testMixedAbtractExtension")
     val subject = <gen:loopCharacteristics xmlns:gen="http://www.example.com/general"
                           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
@@ -804,7 +804,7 @@ JDREVGRw==</base64Binary>
     check(fromXML[MixedExtensionTestB](document))
   }
 
-  def testLiteralBoolean {
+  def testLiteralBoolean = {
     println("testLiteralBoolean")
     val subject = 
       <literalBoolean xmlns="http://www.example.com/general"
@@ -820,7 +820,7 @@ JDREVGRw==</base64Binary>
     check(withBoolean)
   }
 
-  def testUnderscoreSuffix {
+  def testUnderscoreSuffix = {
     println("testUnderscoreSuffix")
     val subject =
       <UnderscoreSuffix xmlns="http://www.example.com/general"
@@ -837,7 +837,7 @@ JDREVGRw==</base64Binary>
     check(us)
   }
 
-  def testBigDecimal {
+  def testBigDecimal = {
     println("testBigDecimal")
     val document = scalaxb.toXML(BigDecimal(10000).setScale(-3), "foo", scope)
     println(document)

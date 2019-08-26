@@ -17,7 +17,7 @@ object AnyUsage {
     true
   }
   
-  def testAny {
+  def testAny = {
     val subject = <foo xmlns="http://www.example.com/any"
         xmlns:xs="http://www.w3.org/2001/XMLSchema"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
@@ -64,7 +64,7 @@ object AnyUsage {
     println(document)
   }
 
-  def testAny2 {
+  def testAny2 = {
     val subject = <foo xmlns="http://www.example.com/any"
         xmlns:xs="http://www.w3.org/2001/XMLSchema"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
@@ -107,7 +107,7 @@ object AnyUsage {
     println(document)
   }
   
-  def testAny3 {
+  def testAny3 = {
     val ExampleCom = new java.net.URI("http://www.example.com/")
     val ExampleQName = javax.xml.namespace.QName.valueOf("{http://www.example.com/any}foo")
     lazy val typeFactory = javax.xml.datatype.DatatypeFactory.newInstance()

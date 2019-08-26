@@ -28,7 +28,7 @@ class DispatchResponseAsScalaxbTest extends TestBase with JaxrsTestBase {
     (List("""import stockquote._
       import scala.concurrent._, duration._, dispatch._, scala.concurrent.ExecutionContext.Implicits.global""",
       s"""val request = url("http://localhost:$servicePort/$serviceAddress/item/GOOG")""",
-      """val fresponse = Http(request > as.scalaxb[StoreItem])""",
+      """val fresponse = Http.default(request > as.scalaxb[StoreItem])""",
       """val response = Await.result(fresponse, 5.seconds)""",
       """if (response != StoreItem(symbol = "GOOG", price = 42.0)) sys.error(response.toString)""",
 

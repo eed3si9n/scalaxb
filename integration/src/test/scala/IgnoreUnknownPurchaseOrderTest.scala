@@ -3,7 +3,7 @@ import java.io.File
 import scalaxb.compiler.Config
 import scalaxb.compiler.ConfigEntry._
 
-object IgnoreUnknownPurchaseOrderTest extends TestBase {
+class IgnoreUnknownPurchaseOrderTest extends TestBase {
   val inFile    = new File("integration/src/test/resources/ipo.xsd")
   val ignoreUnknownUsageFile = new File(tmp, "PurchaseOrderIgnoreUnknownUsage.scala")
   copyFileFromResource("PurchaseOrderIgnoreUnknownUsage.scala", ignoreUnknownUsageFile)

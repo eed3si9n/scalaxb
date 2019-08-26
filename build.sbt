@@ -21,7 +21,16 @@ ThisBuild / developers := List(
 lazy val commonSettings = Seq(
     scalacOptions := Seq("-deprecation", "-unchecked", "-feature", "-language:implicitConversions", "-language:postfixOps"),
     parallelExecution in Test := false,
-    resolvers += Resolver.typesafeIvyRepo("releases")
+    resolvers += Resolver.typesafeIvyRepo("releases"),
+    // Adds a `src/test/scala-2.13+` source directory for Scala 2.13 and newer
+    // and a `src/test/scala-2.13-` source directory for Scala version older than 2.13
+    unmanagedSourceDirectories in Compile in Test += {
+      val sourceDir = (sourceDirectory in Compile in Test).value
+      CrossVersion.partialVersion(scalaVersion.value) match {
+        case Some((2, n)) if n >= 13 => sourceDir / "scala-2.13+"
+        case _                       => sourceDir / "scala-2.13-"
+      }
+    }
   ) ++ sonatypeSettings
 
 lazy val root = (project in file(".")).
@@ -38,13 +47,13 @@ lazy val app = (project in file("cli")).
   settings(codegenSettings: _*).
   settings(
     name := "scalaxb",
-    crossScalaVersions := Seq(scala212, scala211, scala210),
-    scalaVersion := scala211,
+    crossScalaVersions := Seq(scala213, scala212, scala211, scala210),
+    scalaVersion := scala212,
     resolvers += sbtResolver.value,
     libraryDependencies ++= appDependencies(scalaVersion.value),
     scalacOptions := {
       val prev = scalacOptions.value
-      if (scalaVersion.value != scala210) {
+      if (scalaVersion.value == scala212) {
         prev :+ "-Xfatal-warnings"
       }
       else prev

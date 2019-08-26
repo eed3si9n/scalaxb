@@ -2,9 +2,9 @@ import org.specs2.execute.FailureException
 import scalaxb.compiler.Config
 import scalaxb.compiler.ConfigEntry._
 
-import io.Source
+import scala.io.Source
 
-object EnumValuesTest extends TestBase {
+class EnumValuesTest extends TestBase {
   val schema = resource("enumTestSchema.xsd")
 
   lazy val generated = module.processFiles(

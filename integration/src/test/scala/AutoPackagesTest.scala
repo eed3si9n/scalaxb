@@ -1,7 +1,7 @@
 import scalaxb.compiler.Config
 import scalaxb.compiler.ConfigEntry._
 
-object AutoPackagesTest extends TestBase {
+class AutoPackagesTest extends TestBase {
   val ns      = "http://simple/main"
 
   val schema = resource("anotherSimpleSchema.xsd")

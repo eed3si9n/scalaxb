@@ -1,7 +1,7 @@
 import scalaxb.compiler.Config
 import scalaxb.compiler.ConfigEntry._
 
-object MutableTest extends TestBase {
+class MutableTest extends TestBase {
   val pkgname = "mutabletest"
   val ns      = "http://simple/main"
 

@@ -1,7 +1,7 @@
 import scalaxb.compiler.{Config}
 import scalaxb.compiler.ConfigEntry._
 
-object EncloseTest extends TestBase {
+class EncloseTest extends TestBase {
   val config = Config.default.update(PackageNames(Map(None -> Some("enclose")))).
     update(Outdir(tmp)).
     update(GeneratePackageDir).

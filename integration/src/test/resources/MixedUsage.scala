@@ -15,7 +15,7 @@ object MixedUsage {
     true
   }
   
-  def testMixed {
+  def testMixed = {
     val subject = <foo xmlns="http://www.example.com/mixed"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">foo<name>Jane</name><name>Doe</name><city>New York</city>bar
           <billTo>

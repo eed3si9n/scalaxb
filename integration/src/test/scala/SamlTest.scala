@@ -2,7 +2,7 @@ import java.io.File
 import scalaxb.compiler.Config
 import scalaxb.compiler.ConfigEntry._
 
-object SamlTest extends TestBase {
+class SamlTest extends TestBase {
   val xmldsigcoreschemaxsd = new File("integration/src/test/resources/xmldsig-core-schema.xsd")
   val xencschemaxsd = new File("integration/src/test/resources/xenc-schema.xsd")
   val samlschemaassertion2xsd = new File("integration/src/test/resources/saml-schema-assertion-2.0.xsd")

@@ -3,7 +3,7 @@ import scalaxb.compiler.ConfigEntry._
 
 // Replicates a certain piece of Open Office Schema http://www.ecma-international.org/publications/standards/Ecma-376.htm
 // Note how <m:tbl> is bound to CT_Table, though it is in the xsd:any position according to the schema
-object BindingByLabelTest extends TestBase {
+class BindingByLabelTest extends TestBase {
   val schema = resource("bindingByLabelTestSchema.xsd")
 
   lazy val generated = module.processFiles(

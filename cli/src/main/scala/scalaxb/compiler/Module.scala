@@ -98,7 +98,7 @@ trait Module {
 
   case class CompileSource[From](context: Context,
     schemas: ListMap[Importable, Schema],
-    importables: Seq[(Importable, From)],
+    importables: collection.Seq[(Importable, From)],
     additionalImportables: ListMap[Importable, File],
     firstNamespace: Option[String]) {
 
@@ -168,7 +168,7 @@ trait Module {
   }
 
   def packageDir(packageName: Option[String], dir: File) = packageName map { x =>
-    (dir /: x.split('.')) { new File(_, _) }
+    x.split('.').foldLeft(dir) { new File(_, _) }
   } getOrElse {dir}
 
   def processString(input: String, packageName: String): List[String] =
@@ -215,12 +215,12 @@ trait Module {
     val importables = ListBuffer[(Importable, From)](files map { f => importables0(f) -> f }: _*)
     val schemas = ListMap[Importable, Schema](importables map { case (importable, file) =>
       val s = parse(importable, context)
-      (importable, s) }: _*)
+      (importable, s) } toSeq: _*)
 
     val additionalImportables = ListMap.empty[Importable, File]
 
     // recursively add missing files
-    def addMissingFiles() {
+    def addMissingFiles(): Unit = {
       val current = (importables map {_._1}) ++ additionalImportables.keysIterator.toList
       // check for all dependencies before proceeding.
       val missings = (current flatMap { importable =>
@@ -244,7 +244,7 @@ trait Module {
         (importable, x) })
       if (added) addMissingFiles()
     }
-    def processUnnamedIncludes() {
+    def processUnnamedIncludes(): Unit = {
       logger.debug("processUnnamedIncludes")
       val all = (importables.toList map {_._1}) ++ (additionalImportables.toList map {_._1})
       val parents: ListBuffer[Importable] = ListBuffer(all filter { !_.includeLocations.isEmpty}: _*)
@@ -334,7 +334,7 @@ trait Module {
           case Some(_) => config.defaultNamespace
           case _ => cs.firstNamespace
         }))
-      val protocolNodes = generateProtocol(Snippet(snippets: _*), cs.context, config2)
+      val protocolNodes = generateProtocol(Snippet(snippets.toSeq: _*), cs.context, config2)
       try {
         printNodes(protocolNodes, out)
       } finally {
@@ -383,7 +383,7 @@ trait Module {
     (new File(path)).getName
   }
 
-  def missingDependencies(importable: Importable, files: Seq[Importable]): List[String] = {
+  def missingDependencies(importable: Importable, files: collection.Seq[Importable]): List[String] = {
     val nsBased = importable.importNamespaces.toList flatMap { ns: String =>
       files filter { x =>
         val targetNamespace: Option[String] = x.targetNamespace
@@ -432,7 +432,7 @@ trait Module {
   def parse(location: URI, in: Reader): Schema
     = parse(toImportable(location, readerToRawSchema(in)), buildContext)
 
-  def printNodes(nodes: Seq[Node], out: PrintWriter) {
+  def printNodes(nodes: Seq[Node], out: PrintWriter): Unit = {
     import scala.xml._
 
     def printNode(n: Node): Unit = n match {
@@ -454,7 +454,7 @@ trait Module {
     for (node <- nodes) { printNode(node) }
   }
 
-  def printFromResource(source: String, out: PrintWriter, substitution: Option[(String, String)] = None) {
+  def printFromResource(source: String, out: PrintWriter, substitution: Option[(String, String)] = None): Unit = {
     val in = getClass.getResourceAsStream(source)
     val reader = new java.io.BufferedReader(new java.io.InputStreamReader(in))
     var line: Option[String] = None

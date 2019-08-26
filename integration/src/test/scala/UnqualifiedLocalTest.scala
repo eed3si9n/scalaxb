@@ -1,7 +1,7 @@
 import java.io.{File}
 import scalaxb.compiler.{Config}
 
-object UnqualifiedLocalTest extends TestBase {
+class UnqualifiedLocalTest extends TestBase {
   val inFile  = new File("integration/src/test/resources/unqualified.xsd")
   lazy val generated = module.process(inFile, "unqualified", tmp)
 

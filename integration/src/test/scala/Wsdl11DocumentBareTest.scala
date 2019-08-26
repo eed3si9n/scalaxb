@@ -4,7 +4,7 @@ import scalaxb.compiler.Config
 import scalaxb.compiler.ConfigEntry._
 import scalaxb.stockquote.server._
 
-object Wsdl11DocumentBareTest extends TestBase with JaxwsTestBase {
+class Wsdl11DocumentBareTest extends TestBase with JaxwsTestBase {
   override val module = new Driver // with Verbose
 
   def serviceImpl:DocumentLiteralBareService = new DocumentLiteralBareService()

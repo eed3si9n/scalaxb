@@ -77,7 +77,7 @@ object CustomizationUsage {
     }
   }
 
-  def testSingularSimpleType {
+  def testSingularSimpleType = {
     val customXMLProtocol = new CustomXMLProtocol with CustomXMLStandardTypes {}
     implicit val GeneralSingularSimpleTypeTestFormat = new customXMLProtocol.CustomGeneralSingularSimpleTypeTestFormat {}
 

@@ -33,7 +33,7 @@ object PurchaseOrderUsage {
     true
   }
   
-  def testUSAddress {
+  def testUSAddress = {
     val subject = <shipTo xmlns="http://www.example.com/IPO"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xmlns:ipo="http://www.example.com/IPO"
@@ -59,7 +59,7 @@ object PurchaseOrderUsage {
     println(address.toString)
   }
   
-  def testItem {
+  def testItem = {
     val subject = <item partNum="639-OS" xmlns="http://www.example.com/IPO">
       <productName>Olive Soap</productName>
       <quantity>1</quantity>
@@ -84,7 +84,7 @@ object PurchaseOrderUsage {
     println(item.toString)
   }
   
-  def testItems {
+  def testItems = {
     val subject = <items xmlns="http://www.example.com/IPO">
       <item partNum="639-OS">
         <productName>Olive Soap</productName>
@@ -103,7 +103,7 @@ object PurchaseOrderUsage {
     
   }
   
-  def testPurchaseOrder {
+  def testPurchaseOrder = {
     val subject = <purchaseOrder
         xmlns="http://www.example.com/IPO"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -145,7 +145,7 @@ object PurchaseOrderUsage {
     println(purchaseOrder.toString)  
   }
   
-  def testTimeOlson {
+  def testTimeOlson = {
     val subject = <time xmlns="http://www.example.com/IPO">00:00:00</time>
     
     val timeOlson = fromXML[TimeOlson](subject)
@@ -157,7 +157,7 @@ object PurchaseOrderUsage {
     println(timeOlson.toString)
   }
   
-  def testIntWithAttr {
+  def testIntWithAttr = {
     val subject = <some foo="test" xmlns="http://www.example.com/IPO">1</some>
     
     val intWithAttr = fromXML[IntWithAttr](subject)
@@ -169,7 +169,7 @@ object PurchaseOrderUsage {
     println(intWithAttr.toString)    
   }
 
-  def testChoices {
+  def testChoices = {
     val subject = <Element1 xmlns="http://www.example.com/IPO"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xmlns:ipo="http://www.example.com/IPO">
@@ -186,7 +186,7 @@ object PurchaseOrderUsage {
     println(obj.toString)
   }
 
-  def testLangAttr {
+  def testLangAttr = {
     val subject = <Choice1 xml:lang="en" xmlns="http://www.example.com/IPO"></Choice1>
     val obj = fromXML[Choice1](subject)
     obj match {
@@ -197,7 +197,7 @@ object PurchaseOrderUsage {
     println(obj.toString)
   }
 
-  def testRoundTrip {
+  def testRoundTrip = {
     import scala.xml.{TopScope, NamespaceBinding}
     
     val subject = <shipTo xmlns="http://www.example.com/IPO"
@@ -229,7 +229,7 @@ object PurchaseOrderUsage {
     }
   }
   
-  def testChoiceRoundTrip {
+  def testChoiceRoundTrip = {
     val subject = <Element1 xmlns="http://www.example.com/IPO"><Choice2>1</Choice2></Element1>
     val obj = fromXML[Element1](subject)
     val document = toXML(obj, Some("http://www.example.com/IPO"), Some("Element1"), subject.scope)
@@ -241,7 +241,7 @@ object PurchaseOrderUsage {
     }
   }
   
-  def testAny {
+  def testAny = {
     val subject = <choice1 xmlns="http://www.example.com/IPO"
         xmlns:ipo="http://www.example.com/IPO"
         xmlns:h="http://www.w3.org/1999/xhtml"
@@ -267,7 +267,7 @@ object PurchaseOrderUsage {
     println(document)  
   }
   
-  def testAnyChoice {
+  def testAnyChoice = {
     val subject = <Element1 xmlns="http://www.example.com/IPO"
         xmlns:ipo="http://www.example.com/IPO">
       <math xmlns="http://www.w3.org/1998/Math/MathML">
@@ -289,7 +289,7 @@ object PurchaseOrderUsage {
     }    
   }
   
-  def testAnyAttribute {
+  def testAnyAttribute = {
     val subject = <foo xmlns="http://www.example.com/IPO"
         xmlns:ipo="http://www.example.com/IPO"
         xmlns:h="http://www.w3.org/1999/xhtml"
@@ -312,7 +312,7 @@ object PurchaseOrderUsage {
     }
   }
   
-  def testDatedData {
+  def testDatedData = {
     val subject = <foo xmlns="http://www.example.com/IPO"
         xmlns:ipo="http://www.example.com/IPO" id="foo">
       <date>2010-02-06Z</date>
@@ -331,7 +331,7 @@ object PurchaseOrderUsage {
     println(document)
   }
   
-  def testNillable {
+  def testNillable = {
     val subject = <foo xmlns="http://www.example.com/IPO"
       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
       xmlns:ipo="http://www.example.com/IPO">
@@ -355,7 +355,7 @@ object PurchaseOrderUsage {
     println(document)
   }
   
-  def testAll {
+  def testAll = {
     val subject = <foo xmlns="http://www.example.com/IPO"
       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
       xmlns:ipo="http://www.example.com/IPO">
@@ -373,7 +373,7 @@ object PurchaseOrderUsage {
     println(document)    
   }
   
-  def testContentModel {
+  def testContentModel = {
     val subject = <head xmlns="http://www.example.com/IPO"
       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
       xmlns:ipo="http://www.example.com/IPO"
@@ -396,7 +396,7 @@ object PurchaseOrderUsage {
     println(document) 
   }
   
-  def testSubstitutionGroup {
+  def testSubstitutionGroup = {
     val subject = <billTo xmlns="http://www.example.com/IPO"
       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
       xmlns:ipo="http://www.example.com/IPO"

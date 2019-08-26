@@ -1,7 +1,7 @@
 import scalaxb.compiler.Config
 import scalaxb.compiler.ConfigEntry._
 
-object AnyAttributeDefaultValue extends TestBase {
+class AnyAttributeDefaultValue extends TestBase {
   private val schemaFile = resource("any_attribute_default_value.xsd")
 
   private def generate() = {

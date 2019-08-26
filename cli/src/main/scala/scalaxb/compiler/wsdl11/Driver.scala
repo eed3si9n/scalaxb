@@ -55,7 +55,7 @@ class Driver extends Module { driver =>
   override def packageName(namespace: Option[String], context: Context): Option[String] =
     xsddriver.packageName(namespace, context.xsdcontext)
 
-  override def processContext(context: Context, schemas: Seq[WsdlPair], cnfg: Config) {
+  override def processContext(context: Context, schemas: Seq[WsdlPair], cnfg: Config): Unit = {
     val xsds = schemas flatMap { _.schemas }
     logger.debug("processContext: " + (xsds map {_.targetNamespace}))
     xsddriver.processContext(context.xsdcontext, xsds, cnfg)
@@ -67,9 +67,9 @@ class Driver extends Module { driver =>
       case DataRecord(WSDL_NS, Some(`elementName`), x : A) => f(x)
     }
 
-  override def processSchema(schema: Schema, context: Context, cnfg: Config) {}
+  override def processSchema(schema: Schema, context: Context, cnfg: Config): Unit = {}
 
-  def processDefinition(definition: XDefinitionsType, context: Context) {
+  def processDefinition(definition: XDefinitionsType, context: Context): Unit = {
     val ns = definition.targetNamespace map {_.toString}
 
     extractChildren(definition, "message") { x: XMessageType => context.messages((ns, x.name)) = x }
@@ -246,12 +246,15 @@ class Driver extends Module { driver =>
       case (VersionPattern(0, 14, _), async)                    =>
         // Same as 0.13.x
         generateDispatchFromResource(async, "/httpclients_dispatch0130")
+      case (VersionPattern(1, 0 | 1, _), async)                    =>
+        // Same as 0.13.x
+        generateDispatchFromResource(async, "/httpclients_dispatch0130")
     }) else Nil) ++
     (if (config.generateGigahorseClient) List((config.gigahorseVersion, config.async) match {
-      case (VersionPattern(x, y, _), false) if (x.toInt == 0) && ((y.toInt == 2) || (y.toInt == 3)) =>
+      case (VersionPattern(x, y, _), false) if (x.toInt == 0) && (y.toInt <= 5) =>
         generateFromResource[To](Some("scalaxb"), "httpclients_gigahorse.scala",
           "/httpclients_gigahorse02.scala.template", Some("%%BACKEND%%" -> config.gigahorseBackend))
-      case (VersionPattern(x, y, _), true) if (x.toInt == 0) && ((y.toInt == 2) || (y.toInt == 3)) =>
+      case (VersionPattern(x, y, _), true) if (x.toInt == 0) && (y.toInt <= 5) =>
         generateFromResource[To](Some("scalaxb"), "httpclients_gigahorse_async.scala",
           "/httpclients_gigahorse02_async.scala.template", Some("%%BACKEND%%" -> config.gigahorseBackend))
     }) else Nil) ++

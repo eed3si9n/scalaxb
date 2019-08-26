@@ -185,7 +185,7 @@ trait CompilerMatcher {
       val compiler = new Global(s, reporter)
       val run = (new compiler.Run)
       run.compile(files.value.map(_.getAbsolutePath).toList)
-      reporter.printSummary
+      //reporter.printSummary
       result(!reporter.hasErrors,
         files.value.mkString + " compile(s)",
         files.value.mkString + " do(es) not compile",

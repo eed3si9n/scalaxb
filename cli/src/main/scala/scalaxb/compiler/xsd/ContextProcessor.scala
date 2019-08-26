@@ -60,7 +60,7 @@ trait ContextProcessor extends ScalaNames with PackageName {
   val XS_URL = "http://www.w3.org/2001/XMLSchema"
   val XS_PREFIX = "xs"
 
-  def processContext(context: XsdContext, schemas: Seq[SchemaDecl]) {
+  def processContext(context: XsdContext, schemas: Seq[SchemaDecl]): Unit = {
     logger.debug("processContext")
 
     if (config.autoPackages) config = generateAutoPackages(schemas).foldLeft(config) {case (cfg, (uri, pkg)) =>
@@ -82,13 +82,13 @@ trait ContextProcessor extends ScalaNames with PackageName {
       resolveType(schema, context)
     }
 
-    def registerDuplicatedType(schema: SchemaDecl, decl: Decl, name: String) {
+    def registerDuplicatedType(schema: SchemaDecl, decl: Decl, name: String): Unit = {
       context.duplicatedTypes += ((schema, decl))
       logger.warn("%s is defined more than once.", name)
     }
 
     def nameEnumSimpleType(schema: SchemaDecl, decl: SimpleTypeDecl,
-       initialName: String, postfix: String = "Type") {
+       initialName: String, postfix: String = "Type"): Unit = {
       if (context.typeNames.contains(decl)) registerDuplicatedType(schema, decl, decl.name)
       else {
         context.typeNames(decl) = makeProtectedTypeName(schema.targetNamespace, initialName, postfix, context)
@@ -149,7 +149,7 @@ trait ContextProcessor extends ScalaNames with PackageName {
     context.complexTypes ++= anonymousTypes.toList.distinct :::
       namedTypes.toList.distinct
 
-    def associateSubType(subType: ComplexTypeDecl, schema: SchemaDecl, base: ComplexTypeDecl) {
+    def associateSubType(subType: ComplexTypeDecl, schema: SchemaDecl, base: ComplexTypeDecl): Unit = {
       if (!context.baseToSubs.contains(base)) { context.baseToSubs(base) = Nil }
 
       context.baseToSubs(base) = subType :: context.baseToSubs(base)
@@ -343,7 +343,7 @@ trait ContextProcessor extends ScalaNames with PackageName {
     if (rest.size <= sequenceChunkSize) List(f(rest))
     else List(f(rest.take(sequenceChunkSize))) ::: splitLong[A](rest.drop(sequenceChunkSize))(f)
 
-  def makeCompositorNames(context: XsdContext) {
+  def makeCompositorNames(context: XsdContext): Unit = {
     var sequenceNumber = 0
     var choiceNumber = 0
     var allNumber = 0
@@ -381,7 +381,7 @@ trait ContextProcessor extends ScalaNames with PackageName {
     def isFirstCompositor =
       (sequenceNumber + choiceNumber + allNumber == 0)
 
-    def makeGroupCompositorName(compositor: HasParticle, group: GroupDecl) {
+    def makeGroupCompositorName(compositor: HasParticle, group: GroupDecl): Unit = {
       val groupName = group.name
 
       compositor match {
@@ -431,7 +431,7 @@ trait ContextProcessor extends ScalaNames with PackageName {
       config.classPostfix map { p => prefixed.dropRight(p.length) } getOrElse {prefixed}
     }
 
-    def makeCompositorName(compositor: HasParticle, decl: ComplexTypeDecl) {
+    def makeCompositorName(compositor: HasParticle, decl: ComplexTypeDecl): Unit = {
       compositor match {
         case seq: SequenceDecl =>
           val separateSequence = if (!isFirstCompositor ||

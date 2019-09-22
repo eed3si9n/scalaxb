@@ -58,6 +58,9 @@
             </configuration>
           </execution>
         </executions>
+        <configuration>
+          <dispatchVersion>0.11.3</dispatchVersion>
+        </configuration>
       </plugin>
 
       <plugin>

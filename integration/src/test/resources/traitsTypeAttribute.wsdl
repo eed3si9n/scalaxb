@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions name="Test"
+                  targetNamespace="http://tempuri.org/"
+                  xmlns:tns="http://tempuri.org/"
+                  xmlns:wsaw="http://www.w3.org/2006/05/addressing/wsdl"
+                  xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">
+
+    <wsdl:types>
+        <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:ser="http://schemas.microsoft.com/2003/10/Serialization/" elementFormDefault="unqualified">
+            <xs:complexType name="ServiceRequest">
+                <xs:sequence>
+                    <xs:element name="IP" nillable="true" type="xs:string"/>
+                </xs:sequence>
+            </xs:complexType>
+            <xs:element name="ServiceRequest" nillable="true" type="ServiceRequest"/>
+
+            <xs:complexType name="ServiceRequestResponse">
+                <xs:sequence>
+                    <xs:element name="IP" nillable="true" type="xs:string"/>
+                </xs:sequence>
+            </xs:complexType>
+            <xs:element name="ServiceRequestResponse" nillable="true" type="ServiceRequestResponse"/>
+
+            <xs:complexType name="MyRequest">
+                <xs:complexContent mixed="false">
+                    <xs:extension base="ServiceRequest">
+                        <xs:sequence>
+                            <xs:element name="ID" type="xs:int"/>
+                        </xs:sequence>
+                    </xs:extension>
+                </xs:complexContent>
+            </xs:complexType>
+            <xs:element name="MyRequest" nillable="true" type="MyRequest"/>
+
+            <xs:complexType name="MySubRequest">
+                <xs:complexContent mixed="false">
+                    <xs:extension base="MyRequest">
+                        <xs:sequence/>
+                    </xs:extension>
+                </xs:complexContent>
+            </xs:complexType>
+            <xs:element name="MySubRequest" nillable="true" type="MySubRequest"/>
+        </xs:schema>
+    </wsdl:types>
+
+    <wsdl:message name="DynamicDataServiceRequestInputMessage">
+        <wsdl:part name="parameters" element="tns:ServiceRequest"/>
+    </wsdl:message>
+    <wsdl:message name="DynamicDataServiceRequestOutputMessage">
+        <wsdl:part name="parameters" element="tns:ServiceRequestResponse"/>
+    </wsdl:message>
+
+    <wsdl:message name="DynamicDataMyRequestInputMessage">
+        <wsdl:part name="parameters" element="tns:MyRequest"/>
+    </wsdl:message>
+    <wsdl:message name="DynamicDataMyRequestOutputMessage">
+        <wsdl:part name="parameters" element="tns:ServiceRequestResponse"/>
+    </wsdl:message>
+
+    <wsdl:portType name="IDynamicDataService">
+        <wsdl:operation name="ServiceRequest">
+            <wsdl:input wsaw:Action="http://tempuri.org/DynamicDataService/ServiceRequest" message="tns:DynamicDataServiceRequestInputMessage"/>
+            <wsdl:output wsaw:Action="http://tempuri.org/DynamicDataService/ServiceRequestResponse" message="tns:DynamicDataServiceRequestOutputMessage"/>
+        </wsdl:operation>
+        <wsdl:operation name="MyRequest">
+            <wsdl:input wsaw:Action="http://tempuri.org/DynamicDataService/MyRequest" message="tns:DynamicDataMyRequestInputMessage"/>
+            <wsdl:output wsaw:Action="http://tempuri.org/DynamicDataService/ServiceRequestResponse" message="tns:DynamicDataMyRequestOutputMessage"/>
+        </wsdl:operation>
+    </wsdl:portType>
+</wsdl:definitions>

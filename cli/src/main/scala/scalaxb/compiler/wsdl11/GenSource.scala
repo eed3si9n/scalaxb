@@ -522,6 +522,7 @@ trait {interfaceTypeName} {{
     } match {
       case Nil => "Nil"
       case x :: Nil => x
+      case xs if config.useLists => "List.concat(%s)" format (xs.mkString("," + NL + "              "))
       case xs => "Seq.concat(%s)" format (xs.mkString("," + NL + "              "))
     }
 
@@ -661,7 +662,7 @@ trait {interfaceTypeName} {{
       cardinality match {
         case Single   => singleTypeName
         case Optional => "Option[" + singleTypeName + "]"
-        case Multiple => "Seq[" + singleTypeName + "]"
+        case Multiple => if (config.useLists) "List[" + singleTypeName + "]" else "Seq[" + singleTypeName + "]"
       }
     def baseTypeName: String = xsdgenerator.buildTypeName(typeSymbol)
     def toParamName = escapeKeyWord(paramName)

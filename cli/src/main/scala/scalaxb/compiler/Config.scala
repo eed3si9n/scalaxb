@@ -79,7 +79,8 @@ case class Config(items: Map[String, ConfigEntry]) {
   def capitalizeWords: Boolean = values contains CapitalizeWords
   def symbolEncodingStrategy = get[SymbolEncoding.Strategy] getOrElse defaultSymbolEncodingStrategy
   def enumNameMaxLength: Int = (get[EnumNameMaxLength] getOrElse defaultEnumNameMaxLength).value
-
+  def useLists: Boolean = values contains UseLists
+  
   private def get[A <: ConfigEntry: Manifest]: Option[A] =
     items.get(implicitly[Manifest[A]].runtimeClass.getName).asInstanceOf[Option[A]]
   def update(item: ConfigEntry): Config =
@@ -154,6 +155,7 @@ object ConfigEntry {
   case object GenerateVisitor extends ConfigEntry
   case object CapitalizeWords extends ConfigEntry
   case class EnumNameMaxLength(value: Int) extends ConfigEntry
+  case object UseLists extends ConfigEntry
 
   object SymbolEncoding {
     sealed abstract class Strategy(val alias: String, val description: String) extends ConfigEntry with Product with Serializable {

@@ -73,7 +73,7 @@ trait Params extends Lookup {
     def typeName: String = cardinality match {
       case Single   => singleTypeName
       case Optional => "Option[" + singleTypeName + "]"
-      case Multiple => "Seq[" + singleTypeName + "]"
+      case Multiple => if (config.useLists) "List[" + singleTypeName + "]" else "Seq[" + singleTypeName + "]"
     }      
 
     def toParamName: String = makeParamName(name, typeSymbol match {

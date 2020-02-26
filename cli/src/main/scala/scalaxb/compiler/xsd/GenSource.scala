@@ -301,7 +301,10 @@ class GenSource(val schema: SchemaDecl,
     
     def argsString = if (hasSequenceParam) particleArgs.head + ": _*"
       else {
-        val particleString = if (effectiveMixed) "Seq.concat(" + particleArgs.mkString("," + newline + indent(4)) + ")"
+        val particleString = if (effectiveMixed) {
+              if (config.useLists) "List.concat(" + particleArgs.mkString("," + newline + indent(4)) + ")"
+              else "Seq.concat(" + particleArgs.mkString("," + newline + indent(4)) + ")"
+          }
           else if (longAll) "scala.collection.immutable.ListMap(List(" + newline + 
               indent(4) + particleArgs.mkString("," + newline + indent(4)) + ").flatten[(String, scalaxb.DataRecord[Any])]: _*)"
           else decl.content match {
@@ -369,7 +372,7 @@ class GenSource(val schema: SchemaDecl,
             if (childElemParams.isEmpty) "Nil"
             else if (childElemParams.size == 1) "(" + buildXMLString(childElemParams(0)) + ")"
             else childElemParams.map(x =>
-              buildXMLString(x)).mkString("Seq.concat(", "," + newline + indent(4), ")")
+              buildXMLString(x)).mkString(if (config.useLists) "List.concat(" else "Seq.concat(", "," + newline + indent(4), ")")
         }
 
       <source>    def writesChildNodes(__obj: {fqn}, __scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node] =
@@ -484,7 +487,7 @@ class GenSource(val schema: SchemaDecl,
     def childString = if (paramList.isEmpty) "Nil"
       else if (paramList.size == 1) buildXMLString(paramList(0))
       else paramList.map(x => 
-        buildXMLString(x)).mkString("Seq.concat(", "," + newline + indent(4), ")")
+        buildXMLString(x)).mkString(if (config.useLists) "List.concat(" else "Seq.concat(", "," + newline + indent(4), ")")
     val superNames: List[String] = buildOptions(seq)
     val superString = if (superNames.isEmpty) ""
       else " extends " + superNames.mkString(" with ")

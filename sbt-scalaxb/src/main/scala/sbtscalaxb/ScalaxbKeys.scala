@@ -44,6 +44,7 @@ trait ScalaxbKeys {
   lazy val scalaxbCapitalizeWords  = settingKey[Boolean]("Attempts to capitalize class and attribute names to match the CamelCase convention")
   lazy val scalaxbSymbolEncodingStrategy = settingKey[SymbolEncodingStrategy.Value]("Specifies the strategy to encode non-identifier characters in generated class names")
   lazy val scalaxbEnumNameMaxLength = settingKey[Int]("Truncates names of enum members longer than this value (default: 50)")
+  lazy val scalaxbUseLists  = settingKey[Boolean]("Declare sequences with concrete type List instead of Seq")
 
   object HttpClientType extends Enumeration {
     val None, Dispatch, Gigahorse = Value

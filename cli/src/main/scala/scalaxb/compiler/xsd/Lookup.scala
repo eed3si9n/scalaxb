@@ -138,6 +138,9 @@ trait Lookup extends ContextProcessor {
       }
     case r: XsDataRecord => "scalaxb.DataRecord[Any]"
     case XsMixed         => "scalaxb.DataRecord[Any]"
+    case XsNMTOKENS      => if (config.useLists) "List[String]" else XsNMTOKENS.name
+    case XsIDREFS        => if (config.useLists) "List[String]" else XsIDREFS.name
+    case XsENTITIES      => if (config.useLists) "List[String]" else XsENTITIES.name
     case symbol: BuiltInSimpleTypeSymbol => symbol.name
     case ReferenceTypeSymbol(decl: SimpleTypeDecl) => buildTypeName(decl, shortLocal)
     case ReferenceTypeSymbol(decl: ComplexTypeDecl) => buildTypeName(decl, shortLocal)
@@ -168,7 +171,8 @@ trait Lookup extends ContextProcessor {
     case x@SimpTypRestrictionDecl(_, _) if containsEnumeration(decl)  => buildEnumTypeName(decl, shortLocal)
     case x: SimpTypRestrictionDecl                                    =>
       buildTypeName(baseType(decl), shortLocal)
-    case x: SimpTypListDecl => "Seq[" + buildTypeName(baseType(decl), shortLocal) + "]"
+    case x: SimpTypListDecl => if (config.useLists) "List[" + buildTypeName(baseType(decl), shortLocal) + "]"
+                               else "Seq[" + buildTypeName(baseType(decl), shortLocal) + "]"
     case x: SimpTypUnionDecl => buildTypeName(baseType(decl), shortLocal)
   }
   

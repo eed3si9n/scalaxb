@@ -188,7 +188,7 @@ trait {interfaceTypeName} {{
     }
     outputOpt flatMap { output: XParamType =>
       isMultiPart(output, binding.output) map { _ =>
-        "case class %s(%s)" format(
+        "case class %s(%s)".format(
           makeOperationOutputWrapperName(op),
           makeOperationOutputArgs map {_.toScalaCode} mkString(", ")
         )
@@ -522,8 +522,8 @@ trait {interfaceTypeName} {{
     } match {
       case Nil => "Nil"
       case x :: Nil => x
-      case xs if config.useLists => "List.concat(%s)" format (xs.mkString("," + NL + "              "))
-      case xs => "Seq.concat(%s)" format (xs.mkString("," + NL + "              "))
+      case xs if config.useLists => "List.concat(%s)".format(xs.mkString("," + NL + "              "))
+      case xs => "Seq.concat(%s)".format(xs.mkString("," + NL + "              "))
     }
 
   // http://www.w3.org/TR/wsdl#_soap:body
@@ -609,14 +609,14 @@ trait {interfaceTypeName} {{
             val elem = xsdgenerator.elements(splitTypeName(elementQName))
             """({
               scala.xml.Elem(null, "Body", scala.xml.Null, defaultScope, true, body.toSeq: _*)
-            } \ "%s").head""" format (elem.name)
+            } \ "%s").head""".format(elem.name)
           case (DocumentStyle, None) =>
             """body.head"""
           case (RpcStyle, Some(elementQName)) =>
             val elem = xsdgenerator.elements(splitTypeName(elementQName))
-            """(body.head \ "%s").head""" format (elem.name)
+            """(body.head \ "%s").head""".format(elem.name)
           case (RpcStyle, None) =>
-            """(body.head \ "%s").head""" format (p.name.get)
+            """(body.head \ "%s").head""".format(p.name.get)
         }
         buildPartArg(p, v) + (soapBindingStyle match {
           case DocumentStyle =>
@@ -628,13 +628,13 @@ trait {interfaceTypeName} {{
         })
       }) ++ (headerParts map { p =>
         val v =
-          if (p.element.isDefined) """(<x>{header}</x> \ "%s").head""" format (p.element.get.getLocalPart)
-          else """(<x>{header}</x> \ "%s").head""" format (p.name.get)
+          if (p.element.isDefined) """(<x>{header}</x> \ "%s").head""".format(p.element.get.getLocalPart)
+          else """(<x>{header}</x> \ "%s").head""".format(p.name.get)
         buildPartArg(p, v)
       })
 
       if (!multipart) fromXmls.head
-      else "%s(%s)" format (xsdgenerator.buildFullyQualifiedNameFromPackage(pkg, makeOperationOutputWrapperName(op)),
+      else "%s(%s)".format(xsdgenerator.buildFullyQualifiedNameFromPackage(pkg, makeOperationOutputWrapperName(op)),
         fromXmls.mkString("," + NL + "              "))
     }
   }
@@ -666,7 +666,7 @@ trait {interfaceTypeName} {{
       }
     def baseTypeName: String = xsdgenerator.buildTypeName(typeSymbol)
     def toParamName = escapeKeyWord(paramName)
-    def toScalaCode: String = "%s: %s" format(toParamName, typeName)
+    def toScalaCode: String = "%s: %s".format(toParamName, typeName)
     def toVarg: String =
       if (seqParam) toParamName + ": _*"
       else toParamName
@@ -768,12 +768,13 @@ trait {interfaceTypeName} {{
     }
 
   def faultsToTypeName(faults: Seq[XFaultType], soap12: Boolean): String =
-    "%s[%s]" format (if (soap12) "scalaxb.Fault"
-      else "scalaxb.Soap11Fault",
-    faultsToFaultParamTypeName(faults) match {
-      case (x, true) => s"""Option[$x]"""
-      case (x, _)    => x
-    })
+    "%s[%s]".format(
+      if (soap12) "scalaxb.Fault" else "scalaxb.Soap11Fault",
+      faultsToFaultParamTypeName(faults) match {
+        case (x, true) => s"""Option[$x]"""
+        case (x, _)    => x
+      }
+    )
 
   // param type and nillable
   def faultParamTypeName(fault: XFaultType): (String, Boolean) = {

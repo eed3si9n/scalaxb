@@ -53,9 +53,9 @@ trait Parsers extends Args with Params {
       if (laxAny) "_ => true"
       else namespaceConstraint match {
         case ("##any" :: Nil) | Nil | ("" :: Nil) => "_ => true"
-        case "##other" :: Nil => "_.namespace != %s" format (quoteNamespace(schema.targetNamespace))
+        case "##other" :: Nil => "_.namespace != %s".format(quoteNamespace(schema.targetNamespace))
         case _ =>
-          """x => %s contains x.namespace""" format (namespaceConstraint.map {
+          """x => %s contains x.namespace""".format(namespaceConstraint.map {
             case "##targetNamespace" => quoteNamespace(schema.targetNamespace)
             case "##local" => "None"
             case x => quoteNamespace(Some(x))

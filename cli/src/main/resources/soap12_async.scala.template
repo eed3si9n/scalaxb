@@ -41,7 +41,7 @@ trait SoapClientsAsync {
         case x => sys.error("unexpected non-elem: " + x.toString)
       }}
       val contentType = "application/soap+xml; charset=utf-8" +
-        (action map {"""; action="%s"""" format(_)} getOrElse {""})
+        (action map {"""; action="%s"""".format(_)} getOrElse {""})
       val headers = Map[String, String]("Content-Type" -> contentType)
       val ftr: Future[String] = httpClient.request(r map {_.toString} getOrElse {""}, address, headers)
       ftr map { s: String =>

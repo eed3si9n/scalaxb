@@ -18,7 +18,7 @@ object `package` {
   def fromXML[A](seq: NodeSeq, stack: List[ElemName] = Nil)
                 (implicit format: XMLFormat[A]): A = format.reads(seq, stack) match {
     case Right(a) => a
-    case Left(a) => throw new ParserFailure("Error while parsing %s: %s" format(seq.toString, a))
+    case Left(a) => throw new ParserFailure("Error while parsing %s: %s".format(seq.toString, a))
   }
 
   @implicitNotFound(msg = "Cannot find XMLFormat type class for ${A}")
@@ -810,7 +810,7 @@ object Helper {
 
   def toString(value: QName, scope: NamespaceBinding): String =
     Option[String](scope.getPrefix(value.getNamespaceURI)) map {
-      "%s:%s" format (_, value.getLocalPart)} getOrElse {value.getLocalPart}
+      "%s:%s".format(_, value.getLocalPart)} getOrElse {value.getLocalPart}
 
   def toCalendar(value: String): XMLGregorianCalendar = {
     DataTypeFactory.get().newXMLGregorianCalendar(value)
@@ -889,7 +889,7 @@ object Helper {
     else nullOrEmpty(scope.getPrefix(namespace.orNull))
 
   def prefixedName(namespace: Option[String], name: String, scope: scala.xml.NamespaceBinding) =
-    getPrefix(namespace, scope) map { """%s:%s""" format(_, name)
+    getPrefix(namespace, scope) map { """%s:%s""".format(_, name)
     } getOrElse {name}
 
   def stringToXML(obj: String, namespace: Option[String], elementLabel: Option[String],

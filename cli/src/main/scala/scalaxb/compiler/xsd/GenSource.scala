@@ -639,16 +639,33 @@ object {localName} {{
 
 { enumString }</source>
     }  // match
-        
+
+    def enumMatchGroup(enums: List[EnumerationDecl[_]], index: Int): String = {
+      s"""    private def fromString$index(value: String, scope: scala.xml.NamespaceBinding): PartialFunction[Any, $fqn] = {
+         |${enums.map(e => makeCaseEntry(e)).mkString}
+         |    }
+         |
+         |""".stripMargin
+    }
+
+    val enumMatchGroups: List[(Int, String)] = enums.grouped(500).toList.zipWithIndex.map {
+      case (enumGroup, index) =>
+        val code = enumMatchGroup(enumGroup, index)
+        (index, code)
+    }
+
+    val fromStringBody: String = s"""(${enumMatchGroups.map(e => s"fromString${e._1}(value, scope)").mkString(" orElse ")}).apply($valueCode)"""
+
     Snippet(traitCode,
       Nil,
       <source>  def build{formatterName} = new Default{formatterName} {{}}
   trait Default{formatterName} extends scalaxb.XMLFormat[{fqn}] {{
     val targetNamespace: Option[String] = { quote(schema.targetNamespace) }
     
-    def fromString(value: String, scope: scala.xml.NamespaceBinding): {fqn} = {valueCode} match {{
-{ enums.map(e => makeCaseEntry(e)) }
-    }}
+    def fromString(value: String, scope: scala.xml.NamespaceBinding): {fqn} =
+        { fromStringBody }
+
+{ enumMatchGroups.map(_._2) }
 
     def reads(seq: scala.xml.NodeSeq, stack: List[scalaxb.ElemName]): Either[String, {fqn}] = seq match {{
       case elem: scala.xml.Elem => Right(fromString(elem.text, elem.scope))

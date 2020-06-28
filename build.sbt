@@ -1,7 +1,7 @@
 import Dependencies._
 import Common._
 
-ThisBuild / version := "1.7.5"
+ThisBuild / version := "1.7.6-SNAPSHOT"
 ThisBuild / organization := "org.scalaxb"
 ThisBuild / homepage := Option(url("http://scalaxb.org"))
 ThisBuild / licenses := List("MIT License" -> url("https://github.com/eed3si9n/scalaxb/blob/master/LICENSE"))

@@ -295,6 +295,33 @@ trait XMLStandardTypes {
         namespace, elementLabel, scope)
   }
 
+  implicit def listXMLFormat[A: XMLFormat]: XMLFormat[List[A]] = new XMLFormat[List[A]] {
+    def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, List[A]] =
+    seq match {
+      case group: scala.xml.Group if group.nodes.nonEmpty =>
+        try {
+          val xs = Helper.splitBySpace(group.text).toList
+          Right(xs map { x => fromXML[A](scala.xml.Elem(group.prefix, group.head.label, scala.xml.Null, group.scope, true, scala.xml.Text(x)), stack) })
+        } catch { case e: Exception => Left(e.toString) }
+
+      case _: scala.xml.Group =>
+        Left("NonEmpty group expected: " + seq.toString)
+
+      case node: scala.xml.Node =>
+        try {
+          val xs = Helper.splitBySpace(node.text).toList
+          Right(xs map { x => fromXML[A](scala.xml.Elem(node.prefix, node.label, scala.xml.Null, node.scope, true, scala.xml.Text(x)), stack) })
+        } catch { case e: Exception => Left(e.toString) }
+
+      case _ => Left("Node expected: " + seq.toString)
+    }
+
+    def writes(obj: List[A], namespace: Option[String], elementLabel: Option[String],
+        scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
+      Helper.stringToXML((obj map { x => scalaxb.toXML(x, namespace, elementLabel, scope, typeAttribute).text }).mkString(" "),
+        namespace, elementLabel, scope)
+  }
+
   implicit def dataRecordFormat[A: XMLFormat]: XMLFormat[DataRecord[A]] = new XMLFormat[DataRecord[A]] {
     def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, DataRecord[A]] = seq match {
       case node: Node =>

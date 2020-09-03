@@ -12,7 +12,7 @@ object LensPurchaseOrderTest extends TestBase {
   val config = Config.default
     .update(PackageNames(Map(None -> Some("ipo"))))
     .update(Outdir(tmp))
-    // .update(UseLists)
+    .update(UseLists)
     .update(GenerateLens)
   lazy val generated = module.process(inFile, config)
 

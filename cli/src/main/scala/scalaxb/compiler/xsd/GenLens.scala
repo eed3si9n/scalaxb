@@ -34,13 +34,13 @@ trait GenLens { self: ContextProcessor =>
 class GenMonocleLens(var config: Config) extends GenLens with ContextProcessor {
 
   def buildImport: String  = {
-    "import scala.language.implicitConversions"
+    ""
   }
 
   def buildDefLens(className : String, param: Params#Param) : String = {
     s"def ${param.toParamName}: monocle.Lens[$className, ${param.typeName}] = " +
     s"monocle.Lens[$className, ${param.typeName}](_.${param.toParamName})" +
-    s"((${param.toParamName}: ${param.typeName}) => (${className.toLowerCase}: $className) => ${className.toLowerCase}.copy(${param.toParamName} = ${param.toParamName}))"
+    s"((_${param.toParamName}: ${param.typeName}) => (${className.toLowerCase}: $className) => ${className.toLowerCase}.copy(${param.toParamName} = _${param.toParamName}))"
   }
 
   def buildDefComposeLens(className : String, param: Params#Param) : String = {
@@ -50,9 +50,8 @@ class GenMonocleLens(var config: Config) extends GenLens with ContextProcessor {
   override def buildObjectLens(localName: String, defLenses: String, defComposeLenses: String): String = {
     newline + "object " + {localName} + " {" + newline +
       indent(1) + defLenses + newline + newline +
-      indent(1) + "class " + {localName} + "W[A](l: monocle.Lens[A, " + {localName} + "]) {" + newline +
+      indent(1) + "implicit class " + {localName} + "W[A](l: monocle.Lens[A, " + {localName} + "]) {" + newline +
       indent(2) + defComposeLenses + newline + indent(1) + "}" + newline + newline +
-      "implicit def lens2" + {localName} + "W[A](l: monocle.Lens[A, " + {localName} + "]): " + {localName} + "W[A] = new " + {localName} + "W(l)" +
       newline + "}" + newline
   }
 }

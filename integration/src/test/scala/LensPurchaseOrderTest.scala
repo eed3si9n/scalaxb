@@ -22,6 +22,15 @@ object LensPurchaseOrderTest extends TestBase {
      generated) must evaluateTo("Address(hello,,)", outdir = "./tmp", usecurrentcp = true)
   }
 
+  "ipo.scala file must compile so compositional lens can be used" in {
+    (List("""import ipo._""",
+          """val items = Items(Item("a", BigInt(0), BigDecimal(0)) :: Nil)""",
+          """val po = PurchaseOrderType(Address("", "", ""), Address("", "", ""), None, items)""",
+          """val po2 = PurchaseOrderType.items.item.set(Item("b", BigInt(0), BigDecimal(0)) :: Nil)(po)""",
+          """po2.toString"""),
+     generated) must evaluateTo("PurchaseOrderType(Address(,,),Address(,,),None,Items(List(Item(b,0,0,None,None,Map()))),Map())", outdir = "./tmp", usecurrentcp = true)
+  }
+
   "ipo.scala file must compile together with PurchaseOrderUsage.scala" in {
     (List("import ipo._",
           "PurchaseOrderUsage.allTests"),

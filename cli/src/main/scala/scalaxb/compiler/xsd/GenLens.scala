@@ -2,7 +2,7 @@ package scalaxb.compiler.xsd
 
 import scalaxb.compiler.Config
 
-trait GenLens extends ContextProcessor{
+trait GenLens { self: ContextProcessor =>
   def buildImport: String
   def buildDefLens(className: String, param: Params#Param): String
   def buildDefComposeLens(className: String, param: Params#Param): String
@@ -40,11 +40,10 @@ trait GenLens extends ContextProcessor{
  *  }
  * @param config
  */
-
-class GenScalazLens (val config: Config) extends GenLens{
+class GenScalazLens(var config: Config) extends GenLens with ContextProcessor {
 
   def buildImport: String  = {
-    "import scalaz._"
+    "import scalaz._, scala.language.implicitConversions"
   }
 
   def buildDefLens(className : String, param: Params#Param) : String = {

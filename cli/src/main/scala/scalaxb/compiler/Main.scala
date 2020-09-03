@@ -126,8 +126,12 @@ object Arguments {
         c.remove(GenerateAsync) }
       opt[String]("dispatch-version") valueName("<version>") text("version of Dispatch (default: " + scalaxb.BuildInfo.defaultDispatchVersion + ")") action { (x, c) =>
         c.update(DispatchVersion(x)) }
+      opt[Unit]("varargs") text("uses varargs instead of the Seq") action { (_, c) =>
+        c.update(VarArg) }
       opt[Unit]("no-varargs") text("uses Seq instead of the varargs") action { (_, c) =>
         c.remove(VarArg) }
+      opt[Unit]("generate-lens") text("Generate lenses") action { (_, c) =>
+        c.update(GenerateLens) }
       opt[Unit]("ignore-unknown") text("ignores unknown Elements") action { (_, c) =>
         c.update(IgnoreUnknown) }
       opt[Unit]("capitalize-words")

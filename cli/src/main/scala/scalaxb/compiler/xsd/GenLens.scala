@@ -10,56 +10,49 @@ trait GenLens { self: ContextProcessor =>
 }
 
 /**
- * this class aims to generate lens using scalaz. it is inspired from Gerolf Seitz work: Lensed
+ * This class generates lens for Monocle. it is inspired from Gerolf Seitz work: Lensed
  *
- *  case class Person(name: String, address: Address)
- *  case class Address(city: String)
+ * object PurchaseOrderType {
+ *   def shipTo: monocle.Lens[PurchaseOrderType, ipo.Addressable] = monocle.Lens[PurchaseOrderType, ipo.Addressable](_.shipTo)((shipTo: ipo.Addressable) => (purchaseordertype: PurchaseOrderType) => purchaseordertype.copy(shipTo = shipTo))
+ *   def billTo: monocle.Lens[PurchaseOrderType, ipo.Addressable] = monocle.Lens[PurchaseOrderType, ipo.Addressable](_.billTo)((billTo: ipo.Addressable) => (purchaseordertype: PurchaseOrderType) => purchaseordertype.copy(billTo = billTo))
+ *   def comment: monocle.Lens[PurchaseOrderType, Option[String]] = monocle.Lens[PurchaseOrderType, Option[String]](_.comment)((comment: Option[String]) => (purchaseordertype: PurchaseOrderType) => purchaseordertype.copy(comment = comment))
+ *   def items: monocle.Lens[PurchaseOrderType, ipo.Items] = monocle.Lens[PurchaseOrderType, ipo.Items](_.items)((items: ipo.Items) => (purchaseordertype: PurchaseOrderType) => purchaseordertype.copy(items = items))
+ *   def attributes: monocle.Lens[PurchaseOrderType, Map[String, scalaxb.DataRecord[Any]]] = monocle.Lens[PurchaseOrderType, Map[String, scalaxb.DataRecord[Any]]](_.attributes)((attributes: Map[String, scalaxb.DataRecord[Any]]) => (purchaseordertype: PurchaseOrderType) => purchaseordertype.copy(attributes = attributes))
  *
- *  Generated Code =================================
+ *   class PurchaseOrderTypeW[A](l: monocle.Lens[A, PurchaseOrderType]) {
+ *     def shipTo: monocle.Lens[A, ipo.Addressable] = l composeLens PurchaseOrderType.shipTo
+ *     def billTo: monocle.Lens[A, ipo.Addressable] = l composeLens PurchaseOrderType.billTo
+ *     def comment: monocle.Lens[A, Option[String]] = l composeLens PurchaseOrderType.comment
+ *     def items: monocle.Lens[A, ipo.Items] = l composeLens PurchaseOrderType.items
+ *     def attributes: monocle.Lens[A, Map[String, scalaxb.DataRecord[Any]]] = l composeLens PurchaseOrderType.attributes
+ *   }
  *
- *  object Person {
- *    def name: Lens[Person, String] =  Lens.lensu((p: Person, name :String) => p.copy(name = name), _.name)
- *    def address: Lens[Person, Address] = Lens.lensu((p: Person, address : Address) => p.copy(address = address), _.address)
- *
- *    class PersonW[A](l: Lens[A, Person]) {
- *      def name: Lens[A, String] = l andThen Person.name
- *      def address: Lens[A, Address] = l andThen Person.address
- *    }
- *
- *    implicit def lens2personW[A](l: Lens[A, Person]): PersonW[A] = new PersonW(l)
- *  }
- *
- *  object Address {
- *    def city: Lens[Address, String] = Lens.lensu((address: Address, city : String) => address.copy(city = city), _.city)
- *
- *    class AddressW[A](l: Lens[A, Address]) {
- *      def city: Lens[A, String] = l andThen Address.city
- *    }
- *
- *  implicit def lens2addressW[A](l: Lens[A, Address]): AddressW[A] = new AddressW(l)
- *  }
+ *   implicit def lens2PurchaseOrderTypeW[A](l: monocle.Lens[A, PurchaseOrderType]): PurchaseOrderTypeW[A] = new PurchaseOrderTypeW(l)
+ * }
  * @param config
  */
-class GenScalazLens(var config: Config) extends GenLens with ContextProcessor {
+class GenMonocleLens(var config: Config) extends GenLens with ContextProcessor {
 
   def buildImport: String  = {
-    "import scalaz._, scala.language.implicitConversions"
+    "import scala.language.implicitConversions"
   }
 
   def buildDefLens(className : String, param: Params#Param) : String = {
-    "def " + param.toParamName + ": Lens["+className+", "+param.typeName+"] =  Lens.lensu((" + className.toLowerCase + ": " + className+", "+param.toParamName +" : "+param.typeName+") => "+className.toLowerCase+".copy("+param.toParamName+" = "+param.toParamName+"), _."+param.toParamName+")"
+    s"def ${param.toParamName}: monocle.Lens[$className, ${param.typeName}] = " +
+    s"monocle.Lens[$className, ${param.typeName}](_.${param.toParamName})" +
+    s"((${param.toParamName}: ${param.typeName}) => (${className.toLowerCase}: $className) => ${className.toLowerCase}.copy(${param.toParamName} = ${param.toParamName}))"
   }
 
   def buildDefComposeLens(className : String, param: Params#Param) : String = {
-    "def " + param.toParamName + ": Lens[A, "+param.typeName+"] =  l andThen "+className+"."+param.toParamName
+    s"def ${param.toParamName}: monocle.Lens[A, ${param.typeName}] = l composeLens ${className}.${param.toParamName}"
   }
 
   override def buildObjectLens(localName: String, defLenses: String, defComposeLenses: String): String = {
     newline + "object " + {localName} + " {" + newline +
       indent(1) + defLenses + newline + newline +
-      indent(1) + "class " + {localName} + "W[A](l: Lens[A, " + {localName} + "]) {" + newline +
+      indent(1) + "class " + {localName} + "W[A](l: monocle.Lens[A, " + {localName} + "]) {" + newline +
       indent(2) + defComposeLenses + newline + indent(1) + "}" + newline + newline +
-      "implicit def lens2" + {localName} + "W[A](l: Lens[A, " + {localName} + "]): " + {localName} + "W[A] = new " + {localName} + "W(l)" +
+      "implicit def lens2" + {localName} + "W[A](l: monocle.Lens[A, " + {localName} + "]): " + {localName} + "W[A] = new " + {localName} + "W(l)" +
       newline + "}" + newline
   }
 }

@@ -35,7 +35,7 @@ class GenSource(val schema: SchemaDecl,
   val topElems = schema.topElems
   val elemList = schema.elemList
   val MIXED_PARAM = "mixed"
-  val genLens = new GenScalazLens(config)
+  val genLens = new GenMonocleLens(config)
 
   def run: Snippet = {
     logger.debug("run")

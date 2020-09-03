@@ -12,12 +12,13 @@ object LensPurchaseOrderTest extends TestBase {
   val config = Config.default
     .update(PackageNames(Map(None -> Some("ipo"))))
     .update(Outdir(tmp))
+    // .update(UseLists)
     .update(GenerateLens)
   lazy val generated = module.process(inFile, config)
 
   "ipo.scala file must compile so Address can be used" in {
-    (List("import ipo._",
-          "Address.name.set(Address(\"\", \"\", \"\"), \"hello\").toString"),
+    (List("""import ipo._""",
+          """Address.name.set("hello")(Address("", "", "")).toString"""),
      generated) must evaluateTo("Address(hello,,)", outdir = "./tmp", usecurrentcp = true)
   }
 

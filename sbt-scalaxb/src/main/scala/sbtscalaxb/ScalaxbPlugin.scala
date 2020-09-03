@@ -83,6 +83,7 @@ object ScalaxbPlugin extends sbt.AutoPlugin {
     scalaxbVararg                  := false,
     scalaxbGenerateMutable         := false,
     scalaxbGenerateVisitor         := false,
+    scalaxbGenerateLens            := false,
     scalaxbAutoPackages            := false,
     scalaxbCapitalizeWords         := false,
     scalaxbSymbolEncodingStrategy  := SymbolEncodingStrategy.Legacy151,
@@ -130,6 +131,7 @@ object ScalaxbPlugin extends sbt.AutoPlugin {
         (if (scalaxbVararg.value && !scalaxbGenerateMutable.value) Vector(VarArg) else Vector()) ++
         (if (scalaxbGenerateMutable.value) Vector(GenerateMutable) else Vector()) ++
         (if (scalaxbGenerateVisitor.value) Vector(GenerateVisitor) else Vector()) ++
+        (if (scalaxbGenerateLens.value) Vector(GenerateLens) else Vector()) ++
         (if (scalaxbAutoPackages.value) Vector(AutoPackages) else Vector()) ++
         (if (scalaxbCapitalizeWords.value) Vector(CapitalizeWords) else Vector()) ++
         Vector(SymbolEncoding.withName(scalaxbSymbolEncodingStrategy.value.toString)) ++

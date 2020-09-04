@@ -76,11 +76,12 @@ case class Config(items: Map[String, ConfigEntry]) {
   def autoPackages: Boolean = values contains AutoPackages
   def generateMutable: Boolean = values contains GenerateMutable
   def generateVisitor: Boolean = values contains GenerateVisitor
+  def generateLens: Boolean = values contains GenerateLens
   def capitalizeWords: Boolean = values contains CapitalizeWords
   def symbolEncodingStrategy = get[SymbolEncoding.Strategy] getOrElse defaultSymbolEncodingStrategy
   def enumNameMaxLength: Int = (get[EnumNameMaxLength] getOrElse defaultEnumNameMaxLength).value
   def useLists: Boolean = values contains UseLists
-  
+
   private def get[A <: ConfigEntry: Manifest]: Option[A] =
     items.get(implicitly[Manifest[A]].runtimeClass.getName).asInstanceOf[Option[A]]
   def update(item: ConfigEntry): Config =
@@ -153,6 +154,7 @@ object ConfigEntry {
   case object AutoPackages extends ConfigEntry
   case object GenerateMutable extends ConfigEntry
   case object GenerateVisitor extends ConfigEntry
+  case object GenerateLens extends ConfigEntry
   case object CapitalizeWords extends ConfigEntry
   case class EnumNameMaxLength(value: Int) extends ConfigEntry
   case object UseLists extends ConfigEntry

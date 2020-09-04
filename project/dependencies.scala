@@ -26,6 +26,8 @@ object Dependencies {
   val cxfFrontendJaxrs = "org.apache.cxf" % "cxf-rt-frontend-jaxrs" % cxfVersion
   val cxfTransportsHttp = "org.apache.cxf" % "cxf-rt-transports-http" % cxfVersion
   val cxfTrapsportsHttpJetty = "org.apache.cxf" % "cxf-rt-transports-http-jetty" % cxfVersion
+  val monocleCore = "com.github.julien-truffaut" %% "monocle-core"  % "2.0.3"
+  val monocleMacro = "com.github.julien-truffaut" %% "monocle-macro" % "2.0.3"
 
   def scalaCompiler(sv: String) = "org.scala-lang" % "scala-compiler" % sv
 
@@ -56,6 +58,8 @@ object Dependencies {
     cxfFrontendJaxws % "test",
     cxfFrontendJaxrs % "test",
     cxfTransportsHttp % "test",
-    cxfTrapsportsHttpJetty % "test"
+    cxfTrapsportsHttpJetty % "test",
+    monocleCore % Test,
+    monocleMacro % Test,
   )
 }

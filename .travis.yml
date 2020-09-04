@@ -10,9 +10,8 @@ cache:
         - $HOME/.sbt/boot/
 
 scala:
-    - 2.11.12
-    - 2.12.8
-    - 2.13.0
+    - 2.12.12
+    - 2.13.3
 
 jdk:
   - openjdk8
@@ -23,7 +22,7 @@ env:
         - TEST_COMMAND="integration/test"
 
 script:
-    - sbt ++2.12.4! -J-XX:ReservedCodeCacheSize=256M "scalaxbPlugin/scripted"
+    - sbt ++2.12.12! -J-XX:ReservedCodeCacheSize=256M "scalaxbPlugin/scripted"
     - sbt ++$TRAVIS_SCALA_VERSION! -J-XX:ReservedCodeCacheSize=256M "$TEST_COMMAND"
     # Tricks to avoid unnecessary cache updates
     - find $HOME/.sbt -name "*.lock" | xargs rm

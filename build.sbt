@@ -1,7 +1,7 @@
 import Dependencies._
 import Common._
 
-ThisBuild / version := "1.7.6-SNAPSHOT"
+ThisBuild / version := "1.8.0"
 ThisBuild / organization := "org.scalaxb"
 ThisBuild / homepage := Option(url("http://scalaxb.org"))
 ThisBuild / licenses := List("MIT License" -> url("https://github.com/eed3si9n/scalaxb/blob/master/LICENSE"))
@@ -43,7 +43,7 @@ lazy val root = (project in file(".")).
       "clean" ::
         "+app/publishSigned" ::
         ";++2.10.7!;^^0.13.18;scalaxbPlugin/publishSigned" ::
-        ";++2.12.11!;^^1.2.8;scalaxbPlugin/publishSigned" ::
+        ";++2.12.12!;^^1.2.8;scalaxbPlugin/publishSigned" ::
         state
     },
   )
@@ -74,8 +74,8 @@ lazy val app = (project in file("cli")).
 lazy val integration = (project in file("integration")).
   settings(commonSettings: _*).
   settings(
-    crossScalaVersions := Seq(scala211),
-    scalaVersion := scala211,
+    crossScalaVersions := Seq(scala212),
+    scalaVersion := scala212,
     publishArtifact := false,
     libraryDependencies ++= integrationDependencies(scalaVersion.value),
     // fork in test := true,

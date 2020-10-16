@@ -1,6 +1,6 @@
 package scalaxb.compiler.xsd
 
-import scalaxb.compiler.Config
+import scalaxb.compiler.{Config, ScalaNames}
 
 trait GenLens { self: ContextProcessor =>
   def buildImport: String
@@ -32,6 +32,8 @@ trait GenLens { self: ContextProcessor =>
  * @param config
  */
 class GenMonocleLens(var config: Config) extends GenLens with ContextProcessor {
+  lazy val scalaNames: ScalaNames = new ScalaNames {}
+  def escapeKeyWord(name: String) = if(scalaNames.isKeyword(name)) s"`$name`" else name
 
   def buildImport: String  = {
     ""
@@ -40,7 +42,7 @@ class GenMonocleLens(var config: Config) extends GenLens with ContextProcessor {
   def buildDefLens(className : String, param: Params#Param) : String = {
     s"def ${param.toParamName}: monocle.Lens[$className, ${param.typeName}] = " +
     s"monocle.Lens[$className, ${param.typeName}](_.${param.toParamName})" +
-    s"((_${param.toParamName}: ${param.typeName}) => (${className.toLowerCase}: $className) => ${className.toLowerCase}.copy(${param.toParamName} = _${param.toParamName}))"
+    s"((_${param.toParamName}: ${param.typeName}) => (${escapeKeyWord(className.toLowerCase)}: $className) => ${escapeKeyWord(className.toLowerCase)}.copy(${param.toParamName} = _${param.toParamName}))"
   }
 
   def buildDefComposeLens(className : String, param: Params#Param) : String = {

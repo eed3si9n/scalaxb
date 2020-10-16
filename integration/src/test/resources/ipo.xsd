@@ -318,4 +318,10 @@
       </extension>
     </simpleContent>
   </complexType>
+
+  <complexType name="Case">
+    <sequence>
+      <element type="string" name="Id"/>
+    </sequence>
+  </complexType>
 </schema>

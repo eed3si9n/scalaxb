@@ -304,6 +304,10 @@ class GenSource(val schema: SchemaDecl,
       case true => paramList.map( param => genLens.buildDefComposeLens(localName, param)).mkString(newline + indent(1))
       case false => ""
     }
+    val defComposeOptional = config.generateLens match {
+      case true => paramList.map( param => genLens.buildDefComposeOptional(localName, param)).mkString(newline + indent(1))
+      case false => ""
+    }
 
     val simpleFromXml: Boolean = if (flatParticles.isEmpty && !effectiveMixed) true
       else (decl.content, primary) match {
@@ -400,7 +404,7 @@ class GenSource(val schema: SchemaDecl,
       else " {" + newline +
         indent(1) + accessors.mkString(newline + indent(1)) + newline +
         "}" + newline}
-      {if(config.generateLens){genLens.buildObjectLens(localName, defLenses, defComposeLenses)}}
+      {if(config.generateLens){genLens.buildObjectLens(localName, defLenses, defComposeLenses, defComposeOptional)}}
       </source>
 
     def defaultFormats = if (simpleFromXml) <source>  trait Default{formatterName} extends scalaxb.XMLFormat[{fqn}] with scalaxb.CanWriteChildNodes[{fqn}] {{
@@ -496,6 +500,10 @@ class GenSource(val schema: SchemaDecl,
       case true => paramList.map( param => genLens.buildDefComposeLens(localName, param)).mkString(newline + indent(1))
       case false => ""
     }
+    val defComposeOptional = config.generateLens match {
+      case true => paramList.map( param => genLens.buildDefComposeOptional(localName, param)).mkString(newline + indent(1))
+      case false => ""
+    }
 
     val hasSequenceParam = (paramList.size == 1) &&
       (paramList.head.cardinality == Multiple) &&
@@ -515,7 +523,7 @@ class GenSource(val schema: SchemaDecl,
       else " extends " + superNames.mkString(" with ")
     
     Snippet(<source>{ buildComment(seq) }case class {localName}({paramsString}){superString}
-      {if(config.generateLens){genLens.buildObjectLens(localName, defLenses, defComposeLenses)}}</source>,
+      {if(config.generateLens){genLens.buildObjectLens(localName, defLenses, defComposeLenses, defComposeOptional)}}</source>,
       <source/>,
       <source>  trait Default{formatterName} extends scalaxb.XMLFormat[{fqn}] {{
     def reads(seq: scala.xml.NodeSeq, stack: List[scalaxb.ElemName]): Either[String, {fqn}] = Left("don't call me.")

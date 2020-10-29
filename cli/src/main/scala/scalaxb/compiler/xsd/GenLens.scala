@@ -6,7 +6,7 @@ trait GenLens { self: ContextProcessor =>
   def buildImport: String
   def buildDefLens(className: String, param: Params#Param): String
   def buildDefComposeLens(className: String, param: Params#Param): String
-  def buildObjectLens(localName: String, defLenses: String, defComposeLenses: String): String
+  def buildObjectLens(localName: String, defLenses: String, defComposeLenses: String, defComposeOptional: String): String
 }
 
 /**
@@ -36,7 +36,7 @@ class GenMonocleLens(var config: Config) extends GenLens with ContextProcessor {
   def escapeKeyWord(name: String) = if(scalaNames.isKeyword(name)) s"`$name`" else name
 
   def buildImport: String  = {
-    ""
+    "import monocle.std.option.some"
   }
 
   def buildDefLens(className : String, param: Params#Param) : String = {
@@ -49,11 +49,17 @@ class GenMonocleLens(var config: Config) extends GenLens with ContextProcessor {
     s"def ${param.toParamName}: monocle.Lens[A, ${param.typeName}] = l composeLens ${className}.${param.toParamName}"
   }
 
-  override def buildObjectLens(localName: String, defLenses: String, defComposeLenses: String): String = {
+  def buildDefComposeOptional(className : String, param: Params#Param) : String = {
+    s"def ${param.toParamName}: monocle.Optional[A, ${param.typeName}] = l.composePrism(some).composeLens(${className}.${param.toParamName})"
+  }
+
+  override def buildObjectLens(localName: String, defLenses: String, defComposeLenses: String, defComposeOptional: String): String = {
     newline + "object " + {localName} + " {" + newline +
       indent(1) + defLenses + newline + newline +
       indent(1) + "implicit class " + {localName} + "W[A](l: monocle.Lens[A, " + {localName} + "]) {" + newline +
-      indent(2) + defComposeLenses + newline + indent(1) + "}" + newline + newline +
+      indent(2) + defComposeLenses + newline + indent(2) + "}" + newline + newline +
+      indent(1) + "implicit class " + {localName} + "O[A](l: monocle.Lens[A, Option[" + {localName} + "]]) {" + newline +
+      indent(2) + defComposeOptional + newline + indent(2) + "}" + newline + newline +
       newline + "}" + newline
   }
 }

@@ -324,4 +324,13 @@
       <element type="string" name="Id"/>
     </sequence>
   </complexType>
+
+  <!-- #540 Lenses Generation fix -->
+  <complexType name="PurchaseOrderOptionalType">
+    <sequence>
+      <element name="shipTo"     minOccurs="0" maxOccurs="1" type="ipo:USAddress"/>
+      <element name="items"      minOccurs="0" maxOccurs="1" type="ipo:Items"/>
+    </sequence>
+    <attribute name="orderDate" type="date"/>
+  </complexType>
 </schema>

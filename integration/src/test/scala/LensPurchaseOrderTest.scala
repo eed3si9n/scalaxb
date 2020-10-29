@@ -31,6 +31,14 @@ object LensPurchaseOrderTest extends TestBase {
      generated) must evaluateTo("PurchaseOrderType(Address(,,),Address(,,),None,Items(List(Item(b,0,0,None,None,Map()))),Map())", outdir = "./tmp", usecurrentcp = true)
   }
 
+  "ipo.scala file must compile so compositional optional can be used" in {
+    (List("""import ipo._""",
+      """val po = PurchaseOrderOptionalType(shipTo=Some(USAddress("name","street","city",ipo.USState.fromString("AK",scala.xml.TopScope),11)))""",
+      """val name = PurchaseOrderOptionalType.shipTo.name.getOption(po)""",
+      """name.toString"""),
+      generated) must evaluateTo("Some(name)", outdir = "./tmp", usecurrentcp = true)
+  }
+
   "ipo.scala file must compile together with PurchaseOrderUsage.scala" in {
     (List("import ipo._",
           "PurchaseOrderUsage.allTests"),

@@ -1,16 +1,16 @@
 /*
  * Copyright (c) 2010 e.e d3si9n
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -19,15 +19,15 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
- 
+
 package scalaxb.compiler.xsd
 
 import javax.xml.namespace.QName
 
 trait XsTypeSymbol extends scala.xml.TypeSymbol {
   val name: String
-  
-  override def toString(): String = name 
+
+  override def toString(): String = name
 }
 
 object XsAnyType extends XsTypeSymbol {
@@ -116,6 +116,7 @@ object XsDuration         extends BuiltInSimpleTypeSymbol("javax.xml.datatype.Du
 object XsDateTime         extends BuiltInSimpleTypeSymbol("javax.xml.datatype.XMLGregorianCalendar") {}
 object XsTime             extends BuiltInSimpleTypeSymbol("javax.xml.datatype.XMLGregorianCalendar") {}
 object XsDate             extends BuiltInSimpleTypeSymbol("javax.xml.datatype.XMLGregorianCalendar") {}
+object XsJavaLocalDate    extends BuiltInSimpleTypeSymbol("java.time.LocalDate")
 object XsGYearMonth       extends BuiltInSimpleTypeSymbol("javax.xml.datatype.XMLGregorianCalendar") {}
 object XsGYear            extends BuiltInSimpleTypeSymbol("javax.xml.datatype.XMLGregorianCalendar") {}
 object XsGMonthDay        extends BuiltInSimpleTypeSymbol("javax.xml.datatype.XMLGregorianCalendar") {}
@@ -160,14 +161,15 @@ object XsUnsignedByte     extends BuiltInSimpleTypeSymbol("Int") {}
 object XsTypeSymbol {
   type =>?[A, B] = PartialFunction[A, B]
   val LOCAL_ELEMENT = "http://scalaxb.org/local-element"
-  
-  val toTypeSymbol: String =>? XsTypeSymbol = {
+
+  def toTypeSymbol(useJavaTime: Boolean): String =>? XsTypeSymbol = {
     case "anyType"        => XsAnyType
     case "anySimpleType"  => XsAnySimpleType
     case "duration"       => XsDuration
     case "dateTime"       => XsDateTime
     case "time"           => XsTime
-    case "date"           => XsDate
+    case "date" if useJavaTime  => XsJavaLocalDate
+    case "date" if !useJavaTime => XsDate
     case "gYearMonth"     => XsGYearMonth
     case "gYear"          => XsGYear
     case "gMonthDay"      => XsGMonthDay
@@ -207,6 +209,6 @@ object XsTypeSymbol {
     case "short"          => XsShort
     case "unsignedShort"  => XsUnsignedShort
     case "byte"           => XsByte
-    case "unsignedByte"   => XsUnsignedByte 
-  }  
+    case "unsignedByte"   => XsUnsignedByte
+  }
 }

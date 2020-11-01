@@ -1,7 +1,8 @@
 package scalaxb
 
+import java.time.LocalDate
+import javax.xml.datatype.{DatatypeFactory, XMLGregorianCalendar}
 import scala.xml.{Node, NodeSeq, NamespaceBinding, Elem, UnprefixedAttribute, PrefixedAttribute}
-import javax.xml.datatype.{XMLGregorianCalendar}
 import javax.xml.namespace.QName
 import javax.xml.bind.DatatypeConverter
 
@@ -207,6 +208,17 @@ trait XMLStandardTypes {
     def writes(obj: XMLGregorianCalendar, namespace: Option[String], elementLabel: Option[String],
         scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
       Helper.stringToXML(obj.toXMLFormat, namespace, elementLabel, scope)
+  }
+
+  implicit lazy val __JavaLocalDateXMLFormat: XMLFormat[java.time.LocalDate] = new XMLFormat[LocalDate] {
+    def localDate (d: XMLGregorianCalendar) : LocalDate = LocalDate.of(d.getYear, d.getMonth, d.getDay)
+    def gregorianCalendar (d: LocalDate): XMLGregorianCalendar = Helper.toCalendar(d.toString)
+
+    def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, LocalDate] =
+      implicitly[XMLFormat[XMLGregorianCalendar]].reads(seq, stack).map(localDate)
+
+    override def writes(obj: LocalDate, namespace: Option[String], elementLabel: Option[String], scope: NamespaceBinding, typeAttribute: Boolean): NodeSeq =
+      implicitly[XMLFormat[XMLGregorianCalendar]].writes(gregorianCalendar(obj), namespace, elementLabel, scope, typeAttribute)
   }
 
   implicit lazy val __GregorianCalendarXMLWriter: CanWriteXML[java.util.GregorianCalendar] = new CanWriteXML[java.util.GregorianCalendar] {

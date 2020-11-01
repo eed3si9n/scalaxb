@@ -31,7 +31,7 @@ import java.net.URI
 
 import scala.xml.Node
 import scala.reflect.ClassTag
-import scalaxb.compiler.xsd.{GenProtocol, SchemaDecl, SchemaLite, XsdContext}
+import scalaxb.compiler.xsd.{GenProtocol, ParserConfig, SchemaDecl, SchemaLite, XsdContext}
 
 import scala.util.matching.Regex
 
@@ -166,14 +166,14 @@ class Driver extends Module { driver =>
       schemaLite.includes map { _.schemaLocation }
     }
 
-    def toSchema(context: Context): WsdlPair = {
+    def toSchema(context: Context, config: ParserConfig): WsdlPair = {
       wsdl foreach { wsdl =>
         logger.debug(wsdl.toString)
         context.definitions += wsdl
       }
 
       val xsd = xsdRawSchema map { x =>
-        val schema = SchemaDecl.fromXML(x, context.xsdcontext)
+        val schema = SchemaDecl.fromXML(x, context.xsdcontext, config)
         logger.debug(schema.toString)
         schema
       }

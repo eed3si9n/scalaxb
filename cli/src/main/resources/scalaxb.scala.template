@@ -1,6 +1,6 @@
 package scalaxb
 
-import java.time.LocalDate
+import java.time.ZonedDateTime
 import javax.xml.datatype.{DatatypeFactory, XMLGregorianCalendar}
 import scala.xml.{Node, NodeSeq, NamespaceBinding, Elem, UnprefixedAttribute, PrefixedAttribute}
 import javax.xml.namespace.QName
@@ -210,15 +210,27 @@ trait XMLStandardTypes {
       Helper.stringToXML(obj.toXMLFormat, namespace, elementLabel, scope)
   }
 
-  implicit lazy val __JavaLocalDateXMLFormat: XMLFormat[java.time.LocalDate] = new XMLFormat[LocalDate] {
-    def localDate (d: XMLGregorianCalendar) : LocalDate = LocalDate.of(d.getYear, d.getMonth, d.getDay)
-    def gregorianCalendar (d: LocalDate): XMLGregorianCalendar = Helper.toCalendar(d.toString)
+  def toGregorianCalendar(zdt: ZonedDateTime): XMLGregorianCalendar = {
+    def toMili(nano: Int): Int = nano / 1000000
+    def toMinute(seconds: Int): Int = seconds / 60
+    DataTypeFactory.get().newXMLGregorianCalendar(
+      zdt.getYear,
+      zdt.getMonthValue,
+      zdt.getDayOfMonth,
+      zdt.getHour,
+      zdt.getMinute,
+      zdt.getSecond,
+      toMili(zdt.getNano),
+      toMinute(zdt.getOffset.getTotalSeconds)
+    )
+  }
 
-    def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, LocalDate] =
-      implicitly[XMLFormat[XMLGregorianCalendar]].reads(seq, stack).map(localDate)
+  implicit lazy val __JavaZonedDateTimeXMLFormat: XMLFormat[ZonedDateTime] = new XMLFormat[ZonedDateTime] {
+    def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, ZonedDateTime] =
+      implicitly[XMLFormat[XMLGregorianCalendar]].reads(seq, stack).map(_.toGregorianCalendar.toZonedDateTime)
 
-    override def writes(obj: LocalDate, namespace: Option[String], elementLabel: Option[String], scope: NamespaceBinding, typeAttribute: Boolean): NodeSeq =
-      implicitly[XMLFormat[XMLGregorianCalendar]].writes(gregorianCalendar(obj), namespace, elementLabel, scope, typeAttribute)
+    override def writes(obj: ZonedDateTime, namespace: Option[String], elementLabel: Option[String], scope: NamespaceBinding, typeAttribute: Boolean): NodeSeq =
+      implicitly[XMLFormat[XMLGregorianCalendar]].writes(toGregorianCalendar(obj), namespace, elementLabel, scope, typeAttribute)
   }
 
   implicit lazy val __GregorianCalendarXMLWriter: CanWriteXML[java.util.GregorianCalendar] = new CanWriteXML[java.util.GregorianCalendar] {

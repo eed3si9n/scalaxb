@@ -116,7 +116,7 @@ object XsDuration         extends BuiltInSimpleTypeSymbol("javax.xml.datatype.Du
 object XsDateTime         extends BuiltInSimpleTypeSymbol("javax.xml.datatype.XMLGregorianCalendar") {}
 object XsTime             extends BuiltInSimpleTypeSymbol("javax.xml.datatype.XMLGregorianCalendar") {}
 object XsDate             extends BuiltInSimpleTypeSymbol("javax.xml.datatype.XMLGregorianCalendar") {}
-object XsJavaLocalDate    extends BuiltInSimpleTypeSymbol("java.time.LocalDate")
+object XsJavaZonedDateTime extends BuiltInSimpleTypeSymbol("java.time.ZonedDateTime")
 object XsGYearMonth       extends BuiltInSimpleTypeSymbol("javax.xml.datatype.XMLGregorianCalendar") {}
 object XsGYear            extends BuiltInSimpleTypeSymbol("javax.xml.datatype.XMLGregorianCalendar") {}
 object XsGMonthDay        extends BuiltInSimpleTypeSymbol("javax.xml.datatype.XMLGregorianCalendar") {}
@@ -168,8 +168,8 @@ object XsTypeSymbol {
     case "duration"       => XsDuration
     case "dateTime"       => XsDateTime
     case "time"           => XsTime
-    case "date" if useJavaTime  => XsJavaLocalDate
-    case "date" if !useJavaTime => XsDate
+    case "date" if useJavaTime   => XsJavaZonedDateTime
+    case "date" if !useJavaTime  => XsDate
     case "gYearMonth"     => XsGYearMonth
     case "gYear"          => XsGYear
     case "gMonthDay"      => XsGMonthDay

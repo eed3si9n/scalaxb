@@ -818,11 +818,11 @@ trait ElemNameParser[A] extends AnyElemNameParser with XMLFormat[A] with CanWrit
     else in collect { case x: scala.xml.Elem => ElemName(x) }
 }
 
-class ElemNameSeqReader(val seq: Seq[ElemName],
+class ElemNameSeqReader(val seq: Vector[ElemName],
     override val offset: Int) extends scala.util.parsing.input.Reader[ElemName] {
   import scala.util.parsing.input._
 
-  def this(seq: Seq[ElemName]) = this(seq, 0)
+  def this(seq: Seq[ElemName]) = this(seq.toVector, 0)
 
   override def first: ElemName  =
     if (seq.isDefinedAt(offset)) seq(offset)

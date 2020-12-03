@@ -7,7 +7,13 @@ on:
   - cron: '0 7 * * 6'
 jobs:
   tests:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            java: 8
+    runs-on: ${{ matrix.os }}
     env:
       # define Java options for both official sbt and sbt-extras
       JAVA_OPTS: -Xms2048M -Xmx2048M -Xss6M -XX:ReservedCodeCacheSize=256M -Dfile.encoding=UTF-8
@@ -18,9 +24,15 @@ jobs:
     - name: Setup Scala
       uses: olafurpg/setup-scala@v10
       with:
-        java-version: "adopt@1.8"
+        java-version: "adopt@1.${{ matrix.java }}"
     - name: Coursier cache
       uses: coursier/cache-action@v5
     - name: Build and test
       run: |
-        echo hello
+        sbt -v ++2.12.12! "scalaxbPlugin/scripted"
+        sbt -v +integration/test
+        rm -rf "$HOME/.ivy2/local" || true
+        find $HOME/Library/Caches/Coursier/v1        -name "ivydata-*.properties" -delete || true
+        find $HOME/.ivy2/cache                       -name "ivydata-*.properties" -delete || true
+        find $HOME/.cache/coursier/v1                -name "ivydata-*.properties" -delete || true
+        find $HOME/.sbt

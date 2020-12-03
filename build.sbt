@@ -74,7 +74,7 @@ lazy val app = (project in file("cli")).
 lazy val integration = (project in file("integration")).
   settings(commonSettings: _*).
   settings(
-    crossScalaVersions := Seq(scala212),
+    crossScalaVersions := Seq(scala212, scala213),
     scalaVersion := scala212,
     publishArtifact := false,
     libraryDependencies ++= integrationDependencies(scalaVersion.value),

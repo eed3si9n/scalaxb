@@ -33,20 +33,23 @@ trait GenLens { self: ContextProcessor =>
  */
 class GenMonocleLens(var config: Config) extends GenLens with ContextProcessor {
   lazy val scalaNames: ScalaNames = new ScalaNames {}
-  def escapeKeyWord(name: String) = if(scalaNames.isKeyword(name)) s"`$name`" else name
+  def escapeKeyWord(name: String): String = if(scalaNames.isKeyword(name)) s"`$name`" else name
 
   def buildImport: String  = {
     ""
   }
 
   def buildDefLens(className : String, param: Params#Param) : String = {
-    s"def ${param.toParamName}: monocle.Lens[$className, ${param.typeName}] = " +
+    val methodName = if(className == param.toParamName) s"_${param.toParamName}" else param.toParamName
+
+    s"def $methodName: monocle.Lens[$className, ${param.typeName}] = " +
     s"monocle.Lens[$className, ${param.typeName}](_.${param.toParamName})" +
     s"((_${param.toParamName}: ${param.typeName}) => (${escapeKeyWord(className.toLowerCase)}: $className) => ${escapeKeyWord(className.toLowerCase)}.copy(${param.toParamName} = _${param.toParamName}))"
   }
 
   def buildDefComposeLens(className : String, param: Params#Param) : String = {
-    s"def ${param.toParamName}: monocle.Lens[A, ${param.typeName}] = l composeLens ${className}.${param.toParamName}"
+    val methodName = if(className == param.toParamName) s"_${param.toParamName}" else param.toParamName
+    s"def ${methodName}: monocle.Lens[A, ${param.typeName}] = l composeLens ${className}.${methodName}"
   }
 
   override def buildObjectLens(localName: String, defLenses: String, defComposeLenses: String): String = {

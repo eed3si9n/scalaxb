@@ -7,4 +7,10 @@
         <xs:attribute name="attribute1" type="xs:decimal"/>
         <xs:attribute name="optionalAttribute" type="xs:decimal" use="optional"/>
   </xs:complexType>
+
+  <xs:complexType name="bar">
+    <xs:simpleContent>
+      <xs:extension base="xs:decimal"/>
+    </xs:simpleContent>
+  </xs:complexType>
 </xs:schema>

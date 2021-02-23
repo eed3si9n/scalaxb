@@ -23,5 +23,24 @@ class WithBigDecimalTest extends TestBase {
         """xmlns:xs="http://www.w3.org/2001/XMLSchema" """ +
         """xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"/>""",
      outdir = "./tmp")
+
+    (List("import scalaxb._",
+      "import bigdecimal._",
+      """val document = <bar xmlns:xs="http://www.w3.org/2001/XMLSchema"
+        |  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+        |      0.42
+        |  </bar>""".stripMargin,
+      """toXML[Bar](fromXML[Bar](document),
+          None, Some("bar"), scalaxb.toScope(
+            Some("xs") -> "http://www.w3.org/2001/XMLSchema",
+            Some("xsi") -> "http://www.w3.org/2001/XMLSchema-instance"
+          )).toString"""
+     ),
+     generated) must evaluateTo(
+      """<bar """ +
+        """xmlns:xs="http://www.w3.org/2001/XMLSchema" """ +
+        """xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">0.42</bar>""",
+     outdir = "./tmp")
+
   }
 }

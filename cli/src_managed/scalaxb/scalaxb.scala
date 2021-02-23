@@ -109,7 +109,7 @@ trait XMLStandardTypes {
 
   implicit lazy val __IntXMLFormat: XMLFormat[Int] = new XMLFormat[Int] {
     def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, Int] = try {
-      Right(seq.text.toInt) } catch { case e: Exception => Left(e.toString) }
+      Right(seq.text.trim.toInt) } catch { case e: Exception => Left(e.toString) }
 
     def writes(obj: Int, namespace: Option[String], elementLabel: Option[String],
         scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
@@ -118,7 +118,7 @@ trait XMLStandardTypes {
 
   implicit lazy val __ByteXMLFormat: XMLFormat[Byte] = new XMLFormat[Byte] {
     def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, Byte] = try {
-      Right(seq.text.toByte) } catch { case e: Exception => Left(e.toString) }
+      Right(seq.text.trim.toByte) } catch { case e: Exception => Left(e.toString) }
 
     def writes(obj: Byte, namespace: Option[String], elementLabel: Option[String],
         scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
@@ -127,7 +127,7 @@ trait XMLStandardTypes {
 
   implicit lazy val __ShortXMLFormat: XMLFormat[Short] = new XMLFormat[Short] {
     def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, Short] = try {
-      Right(seq.text.toShort) } catch { case e: Exception => Left(e.toString) }
+      Right(seq.text.trim.toShort) } catch { case e: Exception => Left(e.toString) }
 
     def writes(obj: Short, namespace: Option[String], elementLabel: Option[String],
         scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
@@ -136,7 +136,7 @@ trait XMLStandardTypes {
 
   implicit lazy val __LongXMLFormat: XMLFormat[Long] = new XMLFormat[Long] {
     def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, Long] = try {
-      Right(seq.text.toLong) } catch { case e: Exception => Left(e.toString) }
+      Right(seq.text.trim.toLong) } catch { case e: Exception => Left(e.toString) }
 
     def writes(obj: Long, namespace: Option[String], elementLabel: Option[String],
         scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
@@ -145,7 +145,7 @@ trait XMLStandardTypes {
 
   implicit lazy val __BigDecimalXMLFormat: XMLFormat[BigDecimal] = new XMLFormat[BigDecimal] {
     def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, BigDecimal] = try {
-      Right(BigDecimal(seq.text)) } catch { case e: Exception => Left(e.toString) }
+      Right(BigDecimal(seq.text.trim)) } catch { case e: Exception => Left(e.toString) }
 
     def writes(obj: BigDecimal, namespace: Option[String], elementLabel: Option[String],
         scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
@@ -154,7 +154,7 @@ trait XMLStandardTypes {
 
   implicit lazy val __BigIntXMLFormat: XMLFormat[BigInt] = new XMLFormat[BigInt] {
     def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, BigInt] = try {
-      Right(BigInt(seq.text)) } catch { case e: Exception => Left(e.toString) }
+      Right(BigInt(seq.text.trim)) } catch { case e: Exception => Left(e.toString) }
 
     def writes(obj: BigInt, namespace: Option[String], elementLabel: Option[String],
         scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
@@ -163,7 +163,7 @@ trait XMLStandardTypes {
 
   implicit lazy val __FloatXMLFormat: XMLFormat[Float] = new XMLFormat[Float] {
     def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, Float] = try {
-      Right(seq.text.toFloat) } catch { case e: Exception => Left(e.toString) }
+      Right(seq.text.trim.toFloat) } catch { case e: Exception => Left(e.toString) }
 
     def writes(obj: Float, namespace: Option[String], elementLabel: Option[String],
         scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
@@ -172,7 +172,7 @@ trait XMLStandardTypes {
 
   implicit lazy val __DoubleXMLFormat: XMLFormat[Double] = new XMLFormat[Double] {
     def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, Double] = try {
-      Right(seq.text.toDouble) } catch { case e: Exception => Left(e.toString) }
+      Right(seq.text.trim.toDouble) } catch { case e: Exception => Left(e.toString) }
 
     def writes(obj: Double, namespace: Option[String], elementLabel: Option[String],
         scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
@@ -181,7 +181,7 @@ trait XMLStandardTypes {
 
   implicit lazy val __BooleanXMLFormat: XMLFormat[Boolean] = new XMLFormat[Boolean] {
     def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, Boolean] = 
-      seq.text match {
+      seq.text.trim match {
         case "1" | "true" => Right(true)
         case "0" | "false" => Right(false)
         case x => Left("Invalid boolean: "+x)
@@ -194,7 +194,7 @@ trait XMLStandardTypes {
 
   implicit lazy val __DurationXMLFormat: XMLFormat[javax.xml.datatype.Duration] = new XMLFormat[javax.xml.datatype.Duration] {
     def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, javax.xml.datatype.Duration] =
-      try { Right(Helper.toDuration(seq.text)) }
+      try { Right(Helper.toDuration(seq.text.trim)) }
       catch { case e: Exception => Left(e.toString) }
 
     def writes(obj: javax.xml.datatype.Duration, namespace: Option[String], elementLabel: Option[String],
@@ -204,7 +204,7 @@ trait XMLStandardTypes {
 
   implicit lazy val __CalendarXMLFormat: XMLFormat[XMLGregorianCalendar] = new XMLFormat[XMLGregorianCalendar] {
     def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, XMLGregorianCalendar] = try {
-      Right(XMLCalendar(seq.text)) } catch { case e: Exception => Left(e.toString) }
+      Right(XMLCalendar(seq.text.trim)) } catch { case e: Exception => Left(e.toString) }
 
     def writes(obj: XMLGregorianCalendar, namespace: Option[String], elementLabel: Option[String],
         scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =

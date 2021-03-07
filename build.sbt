@@ -1,7 +1,7 @@
 import Dependencies._
 import Common._
 
-ThisBuild / version := "1.8.1-SNAPSHOT"
+ThisBuild / version := "1.8.1"
 ThisBuild / organization := "org.scalaxb"
 ThisBuild / homepage := Option(url("http://scalaxb.org"))
 ThisBuild / licenses := List("MIT License" -> url("https://github.com/eed3si9n/scalaxb/blob/master/LICENSE"))
@@ -42,8 +42,8 @@ lazy val root = (project in file("."))
     commands += Command.command("release") { state =>
       "clean" ::
         "+app/publishSigned" ::
-        ";++2.10.7!;^^0.13.18;scalaxbPlugin/publishSigned" ::
-        ";++2.12.12!;^^1.2.8;scalaxbPlugin/publishSigned" ::
+        "++2.10.7!;scalaxbPlugin/publishSigned" ::
+        "++2.12.12!;scalaxbPlugin/publishSigned" ::
         state
     }
   })
@@ -94,6 +94,7 @@ lazy val scalaxbPlugin = (project in file("sbt-scalaxb"))
     description := """sbt plugin to run scalaxb"""
     pluginCrossBuild / sbtVersion := {
       scalaBinaryVersion.value match {
+        case "2.10" => "0.13.18"
         case "2.12" => "1.2.8" // set minimum sbt version
       }
     }

@@ -313,7 +313,7 @@ public abstract class AbstractScalaxbMojo extends AbstractMojo {
     private boolean visitor;
 
     /**
-     * Returns the command line options to be used for scalaxb, excluding the
+     * @return Returns the command line options to be used for scalaxb, excluding the
      * input file names.
      */
     protected List<String> arguments() {

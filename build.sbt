@@ -20,12 +20,12 @@ ThisBuild / developers := List(
 
 lazy val commonSettings = Seq(
     scalacOptions := Seq("-deprecation", "-unchecked", "-feature", "-language:implicitConversions", "-language:postfixOps"),
-    parallelExecution in Test := false,
+    Test / parallelExecution := false,
     resolvers += Resolver.typesafeIvyRepo("releases"),
     // Adds a `src/test/scala-2.13+` source directory for Scala 2.13 and newer
     // and a `src/test/scala-2.13-` source directory for Scala version older than 2.13
-    unmanagedSourceDirectories in Compile in Test += {
-      val sourceDir = (sourceDirectory in Compile in Test).value
+    Test / unmanagedSourceDirectories += {
+      val sourceDir = (Test / sourceDirectory).value
       CrossVersion.partialVersion(scalaVersion.value) match {
         case Some((2, n)) if n >= 13 => sourceDir / "scala-2.13+"
         case _                       => sourceDir / "scala-2.13-"
@@ -33,69 +33,73 @@ lazy val commonSettings = Seq(
     }
   ) ++ sonatypeSettings
 
-lazy val root = (project in file(".")).
-  aggregate(app, integration, scalaxbPlugin).
-  settings(
-    scalaVersion := scala211,
-    publish / skip := true,
-    crossScalaVersions := Nil,
+lazy val root = (project in file("."))
+  .aggregate(app, integration, scalaxbPlugin)
+  .settings(nocomma {
+    scalaVersion := scala211
+    publish / skip := true
+    crossScalaVersions := Nil
     commands += Command.command("release") { state =>
       "clean" ::
         "+app/publishSigned" ::
         ";++2.10.7!;^^0.13.18;scalaxbPlugin/publishSigned" ::
         ";++2.12.12!;^^1.2.8;scalaxbPlugin/publishSigned" ::
         state
-    },
-  )
+    }
+  })
 
-lazy val app = (project in file("cli")).
-  enablePlugins(BuildInfoPlugin).
-  settings(commonSettings: _*).
-  settings(codegenSettings: _*).
-  settings(
-    name := "scalaxb",
-    crossScalaVersions := Seq(scala213, scala212, scala211, scala210),
-    scalaVersion := scala212,
-    resolvers += sbtResolver.value,
-    libraryDependencies ++= appDependencies(scalaVersion.value),
+lazy val app = (project in file("cli"))
+  .enablePlugins(BuildInfoPlugin)
+  .settings(commonSettings)
+  .settings(codegenSettings)
+  .settings(nocomma {
+    name := "scalaxb"
+    crossScalaVersions := Seq(scala213, scala212, scala211, scala210)
+    scalaVersion := scala212
+    resolvers += sbtResolver.value
+    libraryDependencies ++= appDependencies(scalaVersion.value)
     scalacOptions := {
       val prev = scalacOptions.value
       if (scalaVersion.value == scala212) {
         prev :+ "-Xfatal-warnings"
       }
       else prev
-    },
+    }
+    assembly / mainClass           := Some("scalaxb.compiler.Main")
+    assembly / assemblyOption      := (assembly / assemblyOption).value.copy(prependShellScript = Some(sbtassembly.AssemblyPlugin.defaultShellScript))
+    assembly / assemblyOutputPath  := file(s"./${name.value}-${version.value}")
+  })
 
-    mainClass          in assembly := Some("scalaxb.compiler.Main"),
-    assemblyOption     in assembly := (assemblyOption in assembly).value.copy(prependShellScript = Some(sbtassembly.AssemblyPlugin.defaultShellScript)),
-    assemblyOutputPath in assembly := file(s"./${name.value}-${version.value}"),
-  )
-
-lazy val integration = (project in file("integration")).
-  settings(commonSettings: _*).
-  settings(
-    crossScalaVersions := Seq(scala212, scala213),
-    scalaVersion := scala212,
-    publishArtifact := false,
-    libraryDependencies ++= integrationDependencies(scalaVersion.value),
+lazy val integration = (project in file("integration"))
+  .dependsOn(app)
+  .settings(commonSettings)
+  .settings(nocomma {
+    crossScalaVersions := Seq(scala212, scala213)
+    scalaVersion := scala212
+    publishArtifact := false
+    libraryDependencies ++= integrationDependencies(scalaVersion.value)
     // fork in test := true,
     // javaOptions in test ++= Seq("-Xmx2G", "-XX:MaxPermSize=512M")
-    parallelExecution in Test := false,
-    testOptions in Test += Tests.Argument("sequential"),
-    publish / skip := true,
-  ).
-  dependsOn(app)
+    Test / parallelExecution := false
+    Test / testOptions += Tests.Argument("sequential")
+    publish / skip := true
+  })
 
-lazy val scalaxbPlugin = (project in file("sbt-scalaxb")).
-  enablePlugins(SbtPlugin).
-  settings(commonSettings: _*).
-  settings(
-    name := "sbt-scalaxb",
-    description := """sbt plugin to run scalaxb""",
+lazy val scalaxbPlugin = (project in file("sbt-scalaxb"))
+  .enablePlugins(SbtPlugin)
+  .dependsOn(app)
+  .settings(commonSettings)
+  .settings(nocomma {
+    name := "sbt-scalaxb"
+    description := """sbt plugin to run scalaxb"""
+    pluginCrossBuild / sbtVersion := {
+      scalaBinaryVersion.value match {
+        case "2.12" => "1.2.8" // set minimum sbt version
+      }
+    }
     scriptedLaunchOpts := { scriptedLaunchOpts.value ++
       Seq("-Xmx1024M", "-XX:MaxPermSize=256M", "-Dplugin.version=" + version.value)
-    },
-    scriptedBufferLog := false,
-    scripted := scripted.dependsOn(publishLocal in app).evaluated
-  ).
-  dependsOn(app)
+    }
+    scriptedBufferLog := false
+    scripted := scripted.dependsOn(app / publishLocal).evaluated
+  })

@@ -25,14 +25,14 @@ object ScalaxbCompile {
       } getOrElse {Nil}
 
     def cachedCompile =
-      inputChanged(cacheDir / "scalaxb-inputs") { (inChanged, inputs: (Seq[File], FilesInfo[ModifiedFileInfo], String)) =>
+      inputChanged(cacheDir / "scalaxb-inputs") { (inChanged, inputs: (List[File], FilesInfo[ModifiedFileInfo], String)) =>
         outputChanged(cacheDir / "scalaxb-output") { (outChanged, outputs: FilesInfo[PlainFileInfo]) =>
           if (inChanged || outChanged) compile
-          else outputs.files.toSeq map {_.file}
+          else outputs.files.toList map {_.file}
         }
       }
-    def inputs: (Seq[File], FilesInfo[ModifiedFileInfo], String) =
-      (sources, lastModified(sources.toSet).asInstanceOf[FilesInfo[ModifiedFileInfo]], BuildInfo.version)
+    def inputs: (List[File], FilesInfo[ModifiedFileInfo], String) =
+      (sources.toList, lastModified(sources.toSet).asInstanceOf[FilesInfo[ModifiedFileInfo]], BuildInfo.version)
     cachedCompile(inputs)(() => exists((outDir ** "*.scala").get.toSet).asInstanceOf[FilesInfo[PlainFileInfo]])
   }
 }

@@ -27,18 +27,25 @@ There are currently four ways of running scalaxb:
 To call scalaxb from sbt 1.x and sbt 0.13.x, put this in your `project/scalaxb.sbt`:
 
     resolvers += Resolver.sonatypeRepo("public")
-    addSbtPlugin("org.scalaxb" % "sbt-scalaxb" % "X.X")
+    addSbtPlugin("org.scalaxb" % "sbt-scalaxb" % "X.X.X")
 
-and this in `scalaxb.sbt`:
+and this in `build.sbt`:
 
 ```scala
+lazy val dispatchVersion = "1.1.3"
+lazy val dispatch = "org.dispatchhttp" %% "dispatch-core" % dispatchVersion
+lazy val jaxbApi = "javax.xml.bind" % "jaxb-api" % "2.3.0"
+lazy val scalaXml = "org.scala-lang.modules" %% "scala-xml" % "1.3.0"
+lazy val scalaParser = "org.scala-lang.modules" %% "scala-parser-combinators" % "1.1.2"
+
 lazy val root = (project in file(".")).
   enablePlugins(ScalaxbPlugin).
   settings(
     name := "foo-project",
     scalaxbPackageName in (Compile, scalaxb) := "generated",
-    // scalaxbAutoPackages in (Compile, scalaxb) := true
-    scalaxbDispatchVersion in (Compile, scalaxb) := "0.11.3"
+    // scalaxbAutoPackages in (Compile, scalaxb) := true,
+    scalaxbDispatchVersion in (Compile, scalaxb) := dispatchVersion,
+    libraryDependencies ++= Seq(dispatch, jaxbApi, scalaParser, scalaXml)
   )
 ```
 

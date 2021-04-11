@@ -692,8 +692,8 @@ trait AnyElemNameParser extends scala.util.parsing.combinator.Parsers {
     private def lookupSuccess[U](p: Parser[U], input: Input): ParseResult[U] = p(input) match {
       case s@Success(v, next) =>
         parseIterable(input, input, p, s)
-      case n@NoSuccess(b, next) =>
-        if (next.atEnd) n
+      case n: NoSuccess =>
+        if (n.next.atEnd) n
         else lookupSuccess(p, input.rest)
     }
 

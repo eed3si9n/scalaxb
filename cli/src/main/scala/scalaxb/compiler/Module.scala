@@ -22,14 +22,16 @@
 
 package scalaxb.compiler
 
-import java.net.{URI}
-import scala.xml.{Node, Elem, UnprefixedAttribute, NamespaceBinding}
-import scala.xml.factory.{XMLLoader}
+import java.net.URI
+
+import scala.xml.{Elem, NamespaceBinding, Node, UnprefixedAttribute}
+import scala.xml.factory.XMLLoader
 import javax.xml.parsers.SAXParser
-import java.io.{File, PrintWriter, Reader, BufferedReader}
-import scala.collection.mutable
+import java.io.{BufferedReader, File, PrintWriter, Reader}
+
 import scala.collection.mutable.{ListBuffer, ListMap}
 import ConfigEntry._
+import scalaxb.compiler.xsd.ParserConfig
 
 object Snippet {
   def apply(snippets: Snippet*): Snippet =
@@ -117,7 +119,7 @@ trait Module {
     def includeLocations: Seq[String]
     def raw: RawSchema
     def location: URI
-    def toSchema(context: Context): Schema
+    def toSchema(context: Context, config: ParserConfig): Schema
     def swapTargetNamespace(outerNamespace: Option[String], n: Int): Importable
   }
 
@@ -201,11 +203,11 @@ trait Module {
 
   def processReaders[From, To](files: Seq[From], config: Config)
      (implicit ev: CanBeRawSchema[From, RawSchema], evTo: CanBeWriter[To]): (CompileSource[From], List[To]) = {
-    val source = buildCompileSource(files)
+    val source = buildCompileSource(files, config)
     (source, processCompileSource(source, config))
   }
 
-  def buildCompileSource[From, To](files: Seq[From])
+  def buildCompileSource[From, To](files: Seq[From], config: Config)
      (implicit ev: CanBeRawSchema[From, RawSchema]): CompileSource[From] = {
 
     logger.debug("%s", files.toString())
@@ -213,14 +215,16 @@ trait Module {
     val importables0 = ListMap[From, Importable](files map { f =>
       f -> toImportable(ev.toURI(f), ev.toRawSchema(f))}: _*)
     val importables = ListBuffer[(Importable, From)](files map { f => importables0(f) -> f }: _*)
+    val parserConfig = new ParserConfig
+    parserConfig.useJavaTime = config.useJavaTime
     val schemas = ListMap[Importable, Schema](importables map { case (importable, file) =>
-      val s = parse(importable, context)
+      val s = parse(importable, context, parserConfig)
       (importable, s) } toSeq: _*)
 
     val additionalImportables = ListMap.empty[Importable, File]
 
     // recursively add missing files
-    def addMissingFiles(): Unit = {
+    def addMissingFiles(parserConfig: ParserConfig): Unit = {
       val current = (importables map {_._1}) ++ additionalImportables.keysIterator.toList
       // check for all dependencies before proceeding.
       val missings = (current flatMap { importable =>
@@ -239,12 +243,12 @@ trait Module {
         added = true
         val importable = toImportable(implicitly[CanBeRawSchema[File, RawSchema]].toURI(x),
           implicitly[CanBeRawSchema[File, RawSchema]].toRawSchema(x))
-        val s = parse(importable, context)
+        val s = parse(importable, context, parserConfig)
         schemas(importable) = s
         (importable, x) })
-      if (added) addMissingFiles()
+      if (added) addMissingFiles(parserConfig)
     }
-    def processUnnamedIncludes(): Unit = {
+    def processUnnamedIncludes(parserConfig: ParserConfig): Unit = {
       logger.debug("processUnnamedIncludes")
       val all = (importables.toList map {_._1}) ++ (additionalImportables.toList map {_._1})
       val parents: ListBuffer[Importable] = ListBuffer(all filter { !_.includeLocations.isEmpty}: _*)
@@ -270,7 +274,7 @@ trait Module {
                 logger.debug("processUnnamedIncludes - setting %s's outer namespace to %s", x.location, tnsstr)
                 count += 1
                 val swap = x.swapTargetNamespace(tns, count)
-                schemas(swap) = parse(swap, context)
+                schemas(swap) = parse(swap, context, parserConfig)
                 additionalImportables(swap) = new File(swap.location.getPath)
                 used += x
             }
@@ -292,8 +296,8 @@ trait Module {
       }
     }
 
-    addMissingFiles()
-    processUnnamedIncludes()
+    addMissingFiles(parserConfig)
+    processUnnamedIncludes(parserConfig)
     CompileSource(context, schemas, importables, additionalImportables,
       importables0(files.head).targetNamespace)
   }
@@ -426,11 +430,11 @@ trait Module {
 
   def nodeToRawSchema(node: Node): RawSchema
 
-  def parse(importable: Importable, context: Context): Schema
-    = importable.toSchema(context)
+  def parse(importable: Importable, context: Context, config: ParserConfig): Schema
+    = importable.toSchema(context, config)
 
-  def parse(location: URI, in: Reader): Schema
-    = parse(toImportable(location, readerToRawSchema(in)), buildContext)
+  def parse(location: URI, in: Reader, config: ParserConfig): Schema
+    = parse(toImportable(location, readerToRawSchema(in)), buildContext, config)
 
   def printNodes(nodes: Seq[Node], out: PrintWriter): Unit = {
     import scala.xml._
@@ -487,7 +491,7 @@ trait Module {
       NamespaceBinding(null, outerNamespace getOrElse null, scope)
     def fixSeq(ns: Seq[Node]): Seq[Node] =
       for { node <- ns } yield node match {
-        case elem: Elem => 
+        case elem: Elem =>
           elem.copy(scope = fixScope(elem.scope),
                child = fixSeq(elem.child))
         case other => other

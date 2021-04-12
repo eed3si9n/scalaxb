@@ -59,6 +59,7 @@ class ParserConfig {
   var targetNamespace: Option[String] = None
   var elementQualifiedDefault: Boolean = false
   var attributeQualifiedDefault: Boolean = false
+  var useJavaTime: Boolean = false
   val topElems  = mutable.ListMap.empty[String, ElemDecl]
   val elemList  = mutable.ListBuffer.empty[ElemDecl]
   val topTypes  = mutable.ListMap.empty[String, TypeDecl]
@@ -78,16 +79,16 @@ object TypeSymbolParser {
   val XML_URI = "http://www.w3.org/XML/1998/namespace"
   
   def fromString(name: String, scope: NamespaceBinding, config: ParserConfig): XsTypeSymbol =
-    fromString(splitTypeName(name, scope, config.targetNamespace))
+    fromString(splitTypeName(name, scope, config.targetNamespace), config.useJavaTime)
 
-  def fromQName(qname: javax.xml.namespace.QName): XsTypeSymbol =
-    fromString((masked.scalaxb.Helper.nullOrEmpty(qname.getNamespaceURI), qname.getLocalPart))
+  def fromQName(qname: javax.xml.namespace.QName, useJavaTime: Boolean): XsTypeSymbol =
+    fromString((masked.scalaxb.Helper.nullOrEmpty(qname.getNamespaceURI), qname.getLocalPart), useJavaTime)
 
-  def fromString(pair: (Option[String], String)): XsTypeSymbol = {
+  def fromString(pair: (Option[String], String), useJavaTime: Boolean): XsTypeSymbol = {
     val (namespace, localPart) = pair
     namespace match {
       case Some(XML_SCHEMA_URI) =>
-        if (XsTypeSymbol.toTypeSymbol.isDefinedAt(localPart)) XsTypeSymbol.toTypeSymbol(localPart)
+        if (XsTypeSymbol.toTypeSymbol(useJavaTime).isDefinedAt(localPart)) XsTypeSymbol.toTypeSymbol(useJavaTime)(localPart)
         else ReferenceTypeSymbol(namespace, localPart)
       case _ => ReferenceTypeSymbol(namespace, localPart)
     }
@@ -147,8 +148,8 @@ case class SchemaDecl(targetNamespace: Option[String],
 
 object SchemaDecl {
   def fromXML(node: scala.xml.Node,
-      context: XsdContext,
-      config: ParserConfig = new ParserConfig) = {
+              context: XsdContext,
+              config: ParserConfig) = {
     val schema = (node \\ "schema").headOption.getOrElse {
       sys.error("xsd: schema element not found: " + node.toString) }
     val targetNamespace = schema.attribute("targetNamespace").headOption map { _.text }
@@ -492,7 +493,7 @@ object SimpleTypeDecl {
   def fromXML(node: scala.xml.Node, name: String, family: List[String], config: ParserConfig): SimpleTypeDecl = {
     var content: ContentTypeDecl = null
     for (child <- node.child) child match {
-      case <restriction>{ _* }</restriction>  => content = SimpTypRestrictionDecl.fromXML(child, family, config) 
+      case <restriction>{ _* }</restriction>  => content = SimpTypRestrictionDecl.fromXML(child, family, config)
       case <list>{ _* }</list>                => content = SimpTypListDecl.fromXML(child, family, config)
       case <union>{ _* }</union>              => content = SimpTypUnionDecl.fromXML(child, config)
       case _ =>     

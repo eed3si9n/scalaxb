@@ -1,7 +1,8 @@
 package scalaxb
 
+import java.time.ZonedDateTime
+import javax.xml.datatype.{DatatypeFactory, XMLGregorianCalendar}
 import scala.xml.{Node, NodeSeq, NamespaceBinding, Elem, UnprefixedAttribute, PrefixedAttribute}
-import javax.xml.datatype.{XMLGregorianCalendar}
 import javax.xml.namespace.QName
 import javax.xml.bind.DatatypeConverter
 
@@ -207,6 +208,29 @@ trait XMLStandardTypes {
     def writes(obj: XMLGregorianCalendar, namespace: Option[String], elementLabel: Option[String],
         scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq =
       Helper.stringToXML(obj.toXMLFormat, namespace, elementLabel, scope)
+  }
+
+  def toGregorianCalendar(zdt: ZonedDateTime): XMLGregorianCalendar = {
+    def toMili(nano: Int): Int = nano / 1000000
+    def toMinute(seconds: Int): Int = seconds / 60
+    DataTypeFactory.get().newXMLGregorianCalendar(
+      zdt.getYear,
+      zdt.getMonthValue,
+      zdt.getDayOfMonth,
+      zdt.getHour,
+      zdt.getMinute,
+      zdt.getSecond,
+      toMili(zdt.getNano),
+      toMinute(zdt.getOffset.getTotalSeconds)
+    )
+  }
+
+  implicit lazy val __JavaZonedDateTimeXMLFormat: XMLFormat[ZonedDateTime] = new XMLFormat[ZonedDateTime] {
+    def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, ZonedDateTime] =
+      implicitly[XMLFormat[XMLGregorianCalendar]].reads(seq, stack).map(_.toGregorianCalendar.toZonedDateTime)
+
+    override def writes(obj: ZonedDateTime, namespace: Option[String], elementLabel: Option[String], scope: NamespaceBinding, typeAttribute: Boolean): NodeSeq =
+      implicitly[XMLFormat[XMLGregorianCalendar]].writes(toGregorianCalendar(obj), namespace, elementLabel, scope, typeAttribute)
   }
 
   implicit lazy val __GregorianCalendarXMLWriter: CanWriteXML[java.util.GregorianCalendar] = new CanWriteXML[java.util.GregorianCalendar] {

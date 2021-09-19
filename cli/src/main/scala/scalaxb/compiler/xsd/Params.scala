@@ -33,7 +33,11 @@ case object Multiple extends Cardinality { override def toString: String = "Mult
 
 trait Params extends Lookup {
   private val logger = Log.forName("xsd.Params")
-  val ATTRS_PARAM = "attributes"
+  val ATTRS_PARAM = (config.attributePrefix, "attributes") match {
+    case (Some(p), a) if p.endsWith("_") => p + a
+    case (Some(p), a) => p + a.capitalize
+    case (_, a) => a
+  }
   val anyNumbers: mutable.Map[AnyDecl, Int] = mutable.Map()
   
   case class Occurrence(minOccurs: Int, maxOccurs: Int, nillable: Boolean) {

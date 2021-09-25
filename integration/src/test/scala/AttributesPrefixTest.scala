@@ -8,7 +8,7 @@ class AttributesPrefixTest extends TestBase {
   lazy val generated = module.process(inFile,
     Config.default.update(PackageNames(Map(None -> Some("attr")))).
       update(Outdir(tmp)).
-      update(AttributePrefix("a")))
+      update(AttributePrefix("a_")))
 
   val targetXml =
     (<metricsPort id="metricsId" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
@@ -30,8 +30,8 @@ class AttributesPrefixTest extends TestBase {
     import attr._
 
     val metricsPort = scalaxb.fromXML[MetricsPort]($targetXml)
-    "true"
+    metricsPort.a_attributes("@id").value
   """,
-    """true"""
+    """metricsId"""
   )
 }

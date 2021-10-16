@@ -3,6 +3,16 @@ scalaxb installation
 
 scalaxb is tested under Scala 2.11.
 
+Use coursier
+============
+
+Install coursier (cs).
+- https://get-coursier.io/docs/cli-installation
+
+Install scalaxb using it.
+
+    $ cs install --contrib scalaxb
+
 Use conscript
 =============
 

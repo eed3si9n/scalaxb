@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+        xmlns:defaultLabels="http://www.example.com/default-labels"
+        targetNamespace="http://www.example.com/default-labels">
+
+    <element name="docdata">
+        <complexType>
+            <choice minOccurs="0" maxOccurs="unbounded">
+                <element ref="defaultLabels:docid"/>
+                <element ref="defaultLabels:urgency"/>
+            </choice>
+        </complexType>
+    </element>
+
+    <element name="urgency">
+        <complexType>
+            <attribute name="urg" type="NMTOKEN"/>
+        </complexType>
+    </element>
+    <element name="docid">
+        <complexType>
+            <attribute name="idstring" type="string"/>
+        </complexType>
+    </element>
+</schema>

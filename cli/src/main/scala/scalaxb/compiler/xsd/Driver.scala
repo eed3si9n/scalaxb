@@ -70,8 +70,8 @@ class Driver extends Module { driver =>
     }
     val includeLocations: Seq[String] = schemaLite.includes map { _.schemaLocation }
     
-    def toSchema(context: Context): Schema = {
-      val schema = SchemaDecl.fromXML(raw, context)
+    def toSchema(context: Context, config: ParserConfig): Schema = {
+      val schema = SchemaDecl.fromXML(raw, context, config)
       logger.debug("toSchema: " + schema.toString())
       schema
     }

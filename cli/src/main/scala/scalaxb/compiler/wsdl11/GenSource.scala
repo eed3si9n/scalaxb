@@ -642,7 +642,7 @@ trait {interfaceTypeName} {{
   def buildPartArg(part: XPartType, selector: String): String =
     (part.typeValue, part.element) match {
       case (Some(typeValueQName), _) =>
-        val typeSymbol = toTypeSymbol(typeValueQName)
+        val typeSymbol = toTypeSymbol(typeValueQName, config.useJavaTime)
         xsdgenerator.buildArg(xsdgenerator.buildTypeName(typeSymbol), selector, Single, None)
       case (_, Some(elementQName)) =>
         val elem = xsdgenerator.elements(splitTypeName(elementQName))
@@ -718,7 +718,7 @@ trait {interfaceTypeName} {{
   def toParamCache(part: XPartType): ParamCache =
     part.typeValue map { typeValue =>
       val name = camelCase(part.name getOrElse "in")
-      ParamCache(name, toTypeSymbol(typeValue), Single, false, false)
+      ParamCache(name, toTypeSymbol(typeValue, config.useJavaTime), Single, false, false)
     } getOrElse {
       part.element map { element =>
         val param = xsdgenerator.buildParam(xsdgenerator.elements(splitTypeName(element))) map {camelCase}
@@ -726,9 +726,9 @@ trait {interfaceTypeName} {{
       } getOrElse {sys.error("part does not have either type or element: " + part.toString)}
     }
 
-  def toTypeSymbol(qname: javax.xml.namespace.QName): XsTypeSymbol = {
+  def toTypeSymbol(qname: javax.xml.namespace.QName, useJavaTime: Boolean): XsTypeSymbol = {
     import scalaxb.compiler.xsd.{ReferenceTypeSymbol, TypeSymbolParser}
-    val symbol = TypeSymbolParser.fromQName(qname)
+    val symbol = TypeSymbolParser.fromQName(qname, useJavaTime)
     symbol match {
       case symbol: ReferenceTypeSymbol =>
         val (namespace, typeName) = splitTypeName(qname)

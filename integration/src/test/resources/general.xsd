@@ -840,6 +840,9 @@
     </xs:sequence>
   </xs:group>
 
+  <xs:complexType name="Package" >
+  </xs:complexType>
+
   <xs:group name="Group1">
     <xs:sequence>
       <xs:element name="string1" type="xs:string"/>

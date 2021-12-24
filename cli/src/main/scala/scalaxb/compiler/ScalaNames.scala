@@ -19,12 +19,12 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
- 
+
 package scalaxb.compiler
 
 trait ScalaNames {
   def isCommonlyUsedWord(s: String) = s match {
-    case "All" 
+    case "All"
     | "Any"
     | "AnyRef"
     | "Array"
@@ -78,6 +78,7 @@ trait ScalaNames {
     | "OnceParser"
     | "OpenHashMap"
     | "Option"
+    | "Package"
     | "Parser"
     | "ParserResult"
     | "PriorityQueue"
@@ -118,15 +119,15 @@ trait ScalaNames {
      => true
     case _ => false
   }
-  
+
   def isSpecialAttributeWord(str: String) =
     str match {
       case "value" => true
       case _ => false
     }
-  
+
   def isKeyword(str: String) =
-    str match {
+    str.toLowerCase match {
       case "abstract"
       | "case"
       | "catch"

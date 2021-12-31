@@ -80,7 +80,8 @@ trait CompilerMatcher {
       unchecked: Boolean = true,
       deprecation: Boolean = true,
       feature: Boolean = true,
-      fatalWarnings: Boolean = true) = new Matcher[(Seq[String], Seq[File])] {
+      fatalWarnings: Boolean = true,
+      lint: Boolean = false) = new Matcher[(Seq[String], Seq[File])] {
 
     def apply[A <: (Seq[String], Seq[File])](pair: Expectable[A]) = {
       import scala.tools.nsc.interpreter.{IMain, Results => IR}
@@ -91,7 +92,7 @@ trait CompilerMatcher {
       if (code.size < 1)
         sys.error("At least one line of code is required.")
       val s = settings(outdir, classpath, usecurrentcp, unchecked,
-        deprecation, feature, fatalWarnings)
+        deprecation, feature, fatalWarnings, lint)
       val main = new IMain(s) {
         def lastReq = prevRequestList.last
       }
@@ -131,7 +132,7 @@ trait CompilerMatcher {
 
   private def settings(outdir: String, classpath: List[String],
       usecurrentcp: Boolean, unchecked: Boolean,
-      deprecation: Boolean, feature: Boolean, fatalWarnings: Boolean): GenericRunnerSettings = {
+      deprecation: Boolean, feature: Boolean, fatalWarnings: Boolean, lint: Boolean): GenericRunnerSettings = {
     import java.io.{PrintWriter, BufferedWriter, BufferedReader, StringReader, OutputStreamWriter}
 
     val classpathList = classpath ++ (if (usecurrentcp) currentcp else Nil)
@@ -151,6 +152,9 @@ trait CompilerMatcher {
     grs.deprecation.value = deprecation
     grs.feature.value = feature
     grs.fatalWarnings.value = fatalWarnings
+    if (lint) {
+      grs.lint.value ++= grs.LintWarnings.allLintWarnings
+    }
     grs
   }
 
@@ -175,12 +179,13 @@ trait CompilerMatcher {
     unchecked: Boolean = true,
     deprecation: Boolean = true,
     feature: Boolean = true,
-    fatalWarnings: Boolean = true) = new Matcher[Seq[File]]() {
+    fatalWarnings: Boolean = true,
+    lint: Boolean = false) = new Matcher[Seq[File]]() {
 
     def apply[A <: Seq[File]](files: Expectable[A]) = {
       import scala.tools.nsc.{Global}
       val s = settings(outdir, classpath, usecurrentcp, unchecked,
-        deprecation, feature, fatalWarnings)
+        deprecation, feature, fatalWarnings, lint)
       val reporter = new ConsoleReporter(s)
       val compiler = new Global(s, reporter)
       val run = (new compiler.Run)

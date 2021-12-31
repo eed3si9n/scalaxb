@@ -1,13 +1,11 @@
 package scalaxb
 
-import scala.xml.{Node, NodeSeq, NamespaceBinding, Elem, UnprefixedAttribute, PrefixedAttribute}
-import javax.xml.datatype.{XMLGregorianCalendar}
+import scala.xml.{Node, NodeSeq, NamespaceBinding, Elem}
+import javax.xml.datatype.XMLGregorianCalendar
 import javax.xml.namespace.QName
 import javax.xml.bind.DatatypeConverter
 
-import scala.language.postfixOps
 import scala.language.implicitConversions
-import scala.language.existentials
 
 object `package` {
   import annotation.implicitNotFound
@@ -648,6 +646,7 @@ object ElemName {
       elemName.node = node
       elemName
   }
+  def apply(other: ElemName): ElemName = other
 
   implicit def toNodeSeq(elem: ElemName): scala.xml.NodeSeq = elem.node
 }
@@ -792,7 +791,7 @@ trait ElemNameParser[A] extends AnyElemNameParser with XMLFormat[A] with CanWrit
   def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, A] = seq match {
     case node: scala.xml.Node =>
       parse(parser(node, stack), node.child) match {
-        case x: Success[A] => Right(x.get)
+        case x: Success[A] @unchecked => Right(x.get)
         case x: Failure => Left(parserErrorMsg(x.msg, x.next, ElemName(node) :: stack))
         case x: Error => Left(parserErrorMsg(x.msg, node))
       }

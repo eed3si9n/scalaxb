@@ -792,7 +792,7 @@ trait ElemNameParser[A] extends AnyElemNameParser with XMLFormat[A] with CanWrit
   def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, A] = seq match {
     case node: scala.xml.Node =>
       parse(parser(node, stack), node.child) match {
-        case x: Success[A] => Right(x.get)
+        case x: Success[A] @unchecked => Right(x.get)
         case x: Failure => Left(parserErrorMsg(x.msg, x.next, ElemName(node) :: stack))
         case x: Error => Left(parserErrorMsg(x.msg, node))
       }

@@ -76,11 +76,11 @@ trait Args extends Params {
       else selector + ".headOption map { x => scalaxb.DataRecord(x, " +
         buildFromXML(typeName, "x", stackItem, formatter) + ") }"
     } else (cardinality, nillable, (!config.varArg)) match {
-      case (Multiple, true, true)  => selector + " map { _.nilOption map { " + fromU + " }}"
+      case (Multiple, true, true)  => selector + " map { x => scalaxb.ElemName(x).nilOption map { " + fromU + " }}"
       case (Multiple, false, true) => selector + " map { " + fromU + " }"
-      case (Multiple, true, false)  => selector + ".toSeq map { _.nilOption map { " + fromU + " }}"
+      case (Multiple, true, false)  => selector + ".toSeq map { x => scalaxb.ElemName(x).nilOption map { " + fromU + " }}"
       case (Multiple, false, false) => selector + ".toSeq map { " + fromU + " }"
-      case (Optional, true, _)  => selector + ".headOption map { _.nilOption map { " + fromU + " }}"
+      case (Optional, true, _)  => selector + ".headOption map { x => scalaxb.ElemName(x).nilOption map { " + fromU + " }}"
       case (Optional, false, _) => selector + ".headOption map { " + fromU + " }"
       case (Single, _, _) =>
         buildSingleArg(typeName, selector, stackItem, nillable, defaultValue, fixedValue, formatter)
@@ -97,7 +97,7 @@ trait Args extends Params {
 
     (nillable, defaultValue, fixedValue) match { 
       case ( _, _, Some(x))   => fromValue(x)
-      case (true, _, _)       => selector + ".nilOption map { " + fromX("_") + " }"
+      case (true, _, _)       => "scalaxb.ElemName(" + selector + ").nilOption map { " + fromX("_") + " }"
       case (_, Some(x), _)    => selector + ".headOption map { " + fromX("_") + " } getOrElse { " + fromValue(x) + " }"
       case (false, _, _)      => fromX(selector)
     }

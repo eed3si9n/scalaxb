@@ -177,7 +177,7 @@ class GenSource(val schema: SchemaDecl,
         __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq = __obj match {{
       { val cases = for (sub <- context.baseToSubs(decl))
           yield makeToXmlCaseEntry(sub)
-        cases.mkString(newline + indent(2 + compDepth))        
+        cases.mkString(newline + indent(2 + compDepth))
       }
       { if (!decl.abstractValue) "case x: " + defaultType + " => " +
           buildToXML(defaultType, "x, __namespace, __elementLabel, __scope, __typeAttribute")
@@ -405,8 +405,6 @@ class GenSource(val schema: SchemaDecl,
 
     def defaultFormats = if (simpleFromXml) <source>  trait Default{formatterName} extends scalaxb.XMLFormat[{fqn}] with scalaxb.CanWriteChildNodes[{fqn}] {{
     val targetNamespace: Option[String] = { quote(schema.targetNamespace) }
-    import scalaxb.ElemName._
-    
     def reads(seq: scala.xml.NodeSeq, stack: List[scalaxb.ElemName]): Either[String, {fqn}] = seq match {{
       case node: scala.xml.Node => Right({fqn}({argsString}))
       case _ => Left("reads failed: seq must be scala.xml.Node")

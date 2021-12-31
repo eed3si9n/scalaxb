@@ -646,6 +646,7 @@ object ElemName {
       elemName.node = node
       elemName
   }
+  def apply(other: ElemName): ElemName = other
 
   implicit def toNodeSeq(elem: ElemName): scala.xml.NodeSeq = elem.node
 }

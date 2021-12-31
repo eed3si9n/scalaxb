@@ -27,7 +27,8 @@ class GeneralTest extends TestBase {
   "general.scala file must compile together with GeneralUsage.scala" in {
     (List("GeneralUsage.allTests"),
       usageFile :: generated) must evaluateTo(true,
-      outdir = "./tmp")
+      outdir = "./tmp",
+      lint = false) // change this to true for strict linting
   }
 
   "general.scala file must compile together with CustomizationUsage.scala" in {

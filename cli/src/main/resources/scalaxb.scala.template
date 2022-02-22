@@ -699,7 +699,7 @@ trait AnyElemNameParser extends scala.util.parsing.combinator.Parsers {
     def ~|~[U](nextParser: => Parser[U]): Parser[~|~[T, U]] =
       Parser {
         in =>
-          lookupSuccess(current, in) match {
+          lookupSuccess(ev(current), in) match {
             case s@Success(currentResult, afterFirstInput) =>
               lookupSuccess(nextParser, afterFirstInput) match {
                 case qs@Success(nextResult, afterSecondInput) =>

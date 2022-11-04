@@ -18,9 +18,9 @@ object Dependencies {
   val defaultGigahorseBackend = "okhttp"
   val gigahorse = "com.eed3si9n" %% s"gigahorse-$defaultGigahorseBackend" % defaultGigahorseVersion
   val launcherInterface = "org.scala-sbt" % "launcher-interface" % "0.12.0"
-  val scalaXml = "org.scala-lang.modules" %% "scala-xml" % "1.2.0"
-  val scalaParser = "org.scala-lang.modules" %% "scala-parser-combinators" % "1.1.1"
-  val scalaParserForScala213 = "org.scala-lang.modules" %% "scala-parser-combinators" % "1.1.2"
+  val scalaXml1 = "org.scala-lang.modules" %% "scala-xml" % "1.3.0"
+  val scalaXml2 = "org.scala-lang.modules" %% "scala-xml" % "2.1.0"
+  val scalaParser = "org.scala-lang.modules" %% "scala-parser-combinators" % "2.1.1"
   val cxfVersion = "3.3.1"
   val cxfFrontendJaxws = "org.apache.cxf" % "cxf-rt-frontend-jaxws" % cxfVersion
   val cxfFrontendJaxrs = "org.apache.cxf" % "cxf-rt-frontend-jaxrs" % cxfVersion
@@ -46,9 +46,9 @@ object Dependencies {
     scopt,
     log4j
   ) ++ (sv match {
-    case x if sv startsWith "2.10." => Nil
-    case x if sv startsWith "2.13." => Seq(scalaXml, scalaParserForScala213) //due to https://github.com/scala/scala-parser-combinators/issues/197
-    case _ => Seq(scalaXml, scalaParser)
+    case x if sv.startsWith("2.10.") => Nil
+    case x if sv.startsWith("2.11.") => Seq(scalaXml1, scalaParser)
+    case x if sv.startsWith("2.12.") || sv.startsWith("2.13.") => Seq(scalaXml2, scalaParser)
   })
   def integrationDependencies(sv: String) = Seq(
     dispatch(sv) % "test",

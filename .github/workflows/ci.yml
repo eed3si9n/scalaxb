@@ -20,19 +20,14 @@ jobs:
       JVM_OPTS:  -Xms2048M -Xmx2048M -Xss6M -XX:ReservedCodeCacheSize=256M -Dfile.encoding=UTF-8
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
-    - name: Setup Scala
-      uses: olafurpg/setup-scala@v10
+      uses: actions/checkout@v3
+    - name: Setup JVM
+      uses: actions/setup-java@v3
       with:
-        java-version: "adopt@1.${{ matrix.java }}"
-    - name: Coursier cache
-      uses: coursier/cache-action@v5
+        distribution: 'temurin'
+        java-version: ${{ matrix.java }}
+        cache: 'sbt'
     - name: Build and test
       run: |
-        sbt -v ++2.12.12! "scalaxbPlugin/scripted"
+        sbt -v ++2.12.17! "scalaxbPlugin/scripted"
         sbt -v +integration/test
-        rm -rf "$HOME/.ivy2/local" || true
-        find $HOME/Library/Caches/Coursier/v1        -name "ivydata-*.properties" -delete || true
-        find $HOME/.ivy2/cache                       -name "ivydata-*.properties" -delete || true
-        find $HOME/.cache/coursier/v1                -name "ivydata-*.properties" -delete || true
-        find $HOME/.sbt

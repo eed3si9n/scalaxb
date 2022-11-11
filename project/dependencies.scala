@@ -18,7 +18,7 @@ object Dependencies {
   val defaultGigahorseBackend = "okhttp"
   val gigahorse = "com.eed3si9n" %% s"gigahorse-$defaultGigahorseBackend" % defaultGigahorseVersion
   val launcherInterface = "org.scala-sbt" % "launcher-interface" % "0.12.0"
-  val scalaXml = "org.scala-lang.modules" %% "scala-xml" % "1.2.0"
+  val scalaXml = "org.scala-lang.modules" %% "scala-xml" % "2.1.0"
   val scalaParser = "org.scala-lang.modules" %% "scala-parser-combinators" % "1.1.1"
   val scalaParserForScala213 = "org.scala-lang.modules" %% "scala-parser-combinators" % "1.1.2"
   val cxfVersion = "3.3.1"

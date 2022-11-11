@@ -3,8 +3,6 @@ scalaxb
 
 ![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.scalaxb/scalaxb_2.12/badge.svg)
 
-[![Join the chat at https://gitter.im/eed3si9n/scalaxb](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/eed3si9n/scalaxb?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-
 scalaxb is an XML data-binding tool for Scala that supports W3C XML Schema (xsd) and
 Web Services Description Language (wsdl) as the input file.
 

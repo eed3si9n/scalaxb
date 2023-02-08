@@ -21,6 +21,7 @@
  */
 
 package scalaxb.compiler.wsdl11
+import scalaxb.compiler.ConfigEntry.HttpClientStyle
 
 trait GenSource {
   import masked.scalaxb.DataRecord
@@ -80,6 +81,8 @@ trait GenSource {
   // called by generate.
   def makeSoap11Binding(binding: XBindingType): Snippet = {
     val name = makeBindingName(binding)
+    val taglessTypeConstraint = if(config.httpClientStyle == HttpClientStyle.Tagless) "[F[_]]" else ""
+    val taglessTypeParam = if(config.httpClientStyle == HttpClientStyle.Tagless) "[F]" else ""
     logger.debug("makeSoap11Binding: " + name)
 
     val interfaceType = context.interfaces(splitTypeName(binding.typeValue))
@@ -98,26 +101,35 @@ trait GenSource {
     val operationOutputs = binding.operation flatMap { makeOperationOutput(_, interfaceType, soapBindingStyle, false) }
     val operations = binding.operation map { opBinding => makeOperation(opBinding, interfaceType, soapBindingStyle, false) }
     val bindingOps = binding.operation map { opBinding => makeSoapOpBinding(opBinding, interfaceType, soapBindingStyle, false) }
-    val importFutureString = if (config.async) "import scala.concurrent.{ Future, ExecutionContext }" + NL else ""
-    val selfType = if (config.async) "scalaxb.Soap11ClientsAsync with scalaxb.HttpClientsAsync" else "scalaxb.Soap11Clients with scalaxb.HttpClients"
+    val importsString = config.httpClientStyle match {
+      case HttpClientStyle.Sync =>  ""
+      case HttpClientStyle.Future => "import scala.concurrent.{ Future, ExecutionContext }" + NL
+      case HttpClientStyle.Tagless => "import cats._, cats.implicits._" + NL
+    }
+    val selfType = config.httpClientStyle match {
+      case HttpClientStyle.Sync => "scalaxb.Soap11Clients with scalaxb.HttpClients"
+      case HttpClientStyle.Future => "scalaxb.Soap11ClientsAsync with scalaxb.HttpClientsAsync"
+      case HttpClientStyle.Tagless => "scalaxb.Soap11ClientsF[F] with scalaxb.HttpClientsF[F]"
+    }
 
     val interfaceTrait = <source>
-{importFutureString}
+{importsString}
 
-trait {interfaceTypeName} {{
+trait {interfaceTypeName}{taglessTypeConstraint} {{
   {operations.mkString(NL + "  ")}
 }}
 
 {operationOutputs.mkString(NL + NL)}
 </source>
 
-    val bindingTrait = <source>
-  trait {name}s {{ this: {selfType} =>
+  val bindingTrait = <source>
+  trait {name}s{taglessTypeConstraint} {{ this: {selfType} =>
+    {if(config.httpClientStyle == HttpClientStyle.Tagless) "implicit protected def F: ApplicativeError[F, Throwable]" else ""}
     lazy val targetNamespace: Option[String] = { xsdgenerator.quote(targetNamespace) }
-    lazy val service: {interfaceTypeFQN} = new {name} {{}}
+    lazy val service: {interfaceTypeFQN}{taglessTypeParam} = new {name} {{}}
     {addressString}
 
-    trait {name} extends {interfaceTypeFQN} {{
+    trait {name} extends {interfaceTypeFQN}{taglessTypeParam} {{
       import scalaxb.ElemName._
       {bindingOps.mkString(NL + "      ")}
     }}
@@ -130,6 +142,8 @@ trait {interfaceTypeName} {{
   // http://www.w3.org/TR/2007/REC-soap12-part2-20070427/
   def makeSoap12Binding(binding: XBindingType): Snippet = {
     val name = makeBindingName(binding)
+    val taglessTypeConstraint = if(config.httpClientStyle == HttpClientStyle.Tagless) "[F[_]]" else ""
+    val taglessTypeParam = if(config.httpClientStyle == HttpClientStyle.Tagless) "[F]" else ""
     val interfaceType = context.interfaces(splitTypeName(binding.typeValue))
     val interfaceTypeName = interfaceType.name.capitalize
     val interfaceTypeFQN = xsdgenerator.buildFullyQualifiedNameFromPackage(pkg, interfaceTypeName)
@@ -146,26 +160,35 @@ trait {interfaceTypeName} {{
     val operationOutputs = binding.operation flatMap { makeOperationOutput(_, interfaceType, soapBindingStyle, true) }
     val operations = binding.operation map { opBinding => makeOperation(opBinding, interfaceType, soapBindingStyle, true) }
     val bindingOps = binding.operation map { opBinding => makeSoapOpBinding(opBinding, interfaceType, soapBindingStyle, true) }
-    val importFutureString = if (config.async) "import scala.concurrent.{ Future, ExecutionContext }" + NL else ""
-    val selfType = if (config.async) "scalaxb.SoapClientsAsync with scalaxb.HttpClientsAsync" else "scalaxb.SoapClients with scalaxb.HttpClients"
+    val importsString = config.httpClientStyle match {
+      case HttpClientStyle.Sync =>  ""
+      case HttpClientStyle.Future => "import scala.concurrent.{ Future, ExecutionContext }" + NL
+      case HttpClientStyle.Tagless => "import cats._, cats.implicits._" + NL
+    }
+    val selfType = config.httpClientStyle match {
+      case HttpClientStyle.Sync => "scalaxb.SoapClients with scalaxb.HttpClients"
+      case HttpClientStyle.Future => "scalaxb.SoapClientsAsync with scalaxb.HttpClientsAsync"
+      case HttpClientStyle.Tagless => "scalaxb.SoapClientsF[F] with scalaxb.HttpClientsF[F]"
+    }
 
     val interfaceTrait = <source>
-{importFutureString}
+{importsString}
 
-trait {interfaceTypeName} {{
+trait {interfaceTypeName}{taglessTypeConstraint} {{
   {operations.mkString(NL + "  ")}
 }}
 
 {operationOutputs.mkString(NL + NL)}
 </source>
 
-    val bindingTrait = <source>
-  trait {name}s {{ this: {selfType} =>
+  val bindingTrait = <source>
+  trait {name}s{taglessTypeConstraint} {{ this: {selfType} =>
+    {if(config.httpClientStyle == HttpClientStyle.Tagless) "implicit protected def F: ApplicativeError[F, Throwable]" else ""}
     lazy val targetNamespace: Option[String] = { xsdgenerator.quote(targetNamespace) }
-    lazy val service: {interfaceTypeFQN} = new {name} {{}}
+    lazy val service: {interfaceTypeFQN}{taglessTypeParam} = new {name} {{}}
     {addressString}
 
-    trait {name} extends {interfaceTypeFQN} {{
+    trait {name} extends {interfaceTypeFQN}{taglessTypeParam} {{
       import scalaxb.ElemName._
       {bindingOps.mkString(NL + "      ")}
     }}
@@ -236,34 +259,48 @@ trait {interfaceTypeName} {{
     val name = escapeKeyWord(camelCase(op.name))
     logger.debug("makeOperation: " + name)
 
-    val retval = (op.xoperationtypeoption, config.async) match {
-      case (DataRecord(_, _, XOnewayoperationSequence(input)), true) =>
+    val retval = (op.xoperationtypeoption, config.httpClientStyle) match {
+      case (DataRecord(_, _, XOnewayoperationSequence(input)), HttpClientStyle.Future) =>
         "def %s(%s)(implicit ec: ExecutionContext): Future[Unit]".format(name, arg(input))
 
-      case (DataRecord(_, _, XOnewayoperationSequence(input)), false) =>
+      case (DataRecord(_, _, XOnewayoperationSequence(input)), HttpClientStyle.Sync) =>
         "def %s(%s): Unit".format(name, arg(input))
 
-      case (DataRecord(_, _, XRequestresponseoperationSequence(input, output, faults)), true) =>
+      case (DataRecord(_, _, XOnewayoperationSequence(input)), HttpClientStyle.Tagless) =>
+        "def %s(%s): F[Unit]".format(name, arg(input))        
+
+      case (DataRecord(_, _, XRequestresponseoperationSequence(input, output, faults)), HttpClientStyle.Future) =>
         "def %s(%s)(implicit ec: ExecutionContext): Future[%s]".format(name, arg(input),
           outputTypeName(binding, op, output, soapBindingStyle))
 
-      case (DataRecord(_, _, XRequestresponseoperationSequence(input, output, faults)), false) =>
+      case (DataRecord(_, _, XRequestresponseoperationSequence(input, output, faults)), HttpClientStyle.Sync) =>
         "def %s(%s): Either[%s, %s]".format(name, arg(input),
           faultsToTypeName(faults, soap12), outputTypeName(binding, op, output, soapBindingStyle))
 
-      case (DataRecord(_, _, XSolicitresponseoperationSequence(output, input, faults)), true) =>
+      case (DataRecord(_, _, XRequestresponseoperationSequence(input, output, faults)), HttpClientStyle.Tagless) =>
+        "def %s(%s): F[%s]".format(name, arg(input),
+          outputTypeName(binding, op, output, soapBindingStyle))        
+
+      case (DataRecord(_, _, XSolicitresponseoperationSequence(output, input, faults)), HttpClientStyle.Future) =>
         "def %s(%s)(implicit ec: ExecutionContext): Future[%s]".format(name, arg(input),
           outputTypeName(binding, op, output, soapBindingStyle))
 
-      case (DataRecord(_, _, XSolicitresponseoperationSequence(output, input, faults)), false) =>
+      case (DataRecord(_, _, XSolicitresponseoperationSequence(output, input, faults)), HttpClientStyle.Sync) =>
         "def %s(%s): Either[%s, %s]".format(name, arg(input),
           faultsToTypeName(faults, soap12), outputTypeName(binding, op, output, soapBindingStyle))
 
-      case (DataRecord(_, _, XNotificationoperationSequence(output)), true) =>
+      case (DataRecord(_, _, XSolicitresponseoperationSequence(output, input, faults)), HttpClientStyle.Tagless) =>
+        "def %s(%s): F[%s]".format(name, arg(input),
+          outputTypeName(binding, op, output, soapBindingStyle))
+
+      case (DataRecord(_, _, XNotificationoperationSequence(output)), HttpClientStyle.Future) =>
         "def %s(implicit ec: ExecutionContext): Future[%s]".format(name, outputTypeName(binding, op, output, soapBindingStyle))
 
-      case (DataRecord(_, _, XNotificationoperationSequence(output)), false) =>
+      case (DataRecord(_, _, XNotificationoperationSequence(output)), HttpClientStyle.Sync) =>
         "def %s: %s".format(name, outputTypeName(binding, op, output, soapBindingStyle))
+
+      case (DataRecord(_, _, XNotificationoperationSequence(output)), HttpClientStyle.Tagless) =>
+        "def %s: F[%s]".format(name, outputTypeName(binding, op, output, soapBindingStyle))
 
       case _ => sys.error("unsupported.")
     }
@@ -362,15 +399,15 @@ trait {interfaceTypeName} {{
          |""".stripMargin.format(faultTypeName, detailTypeName, fault.name, faultString)
     }.mkString("")
 
-    val opImpl = (op.xoperationtypeoption, config.async) match {
-      case (DataRecord(_, _, XOnewayoperationSequence(input)), true) =>
+    val opImpl = (op.xoperationtypeoption, config.httpClientStyle) match {
+      case (DataRecord(_, _, XOnewayoperationSequence(input)), HttpClientStyle.Future | HttpClientStyle.Tagless) =>
         // "def %s(%s): Unit".format(op.name, arg(input))
         """soapClient.requestResponse(%s,
           |            %s, defaultScope, %s, %s, %s).map({ case x => () })""".stripMargin.format(
             bodyString(op, input, binding, soapBindingStyle),
             headerString(op, input, binding, soapBindingStyle), address, quotedMethod, actionString)
 
-      case (DataRecord(_, _, XOnewayoperationSequence(input)), false) =>
+      case (DataRecord(_, _, XOnewayoperationSequence(input)), HttpClientStyle.Sync) =>
         // "def %s(%s): Unit".format(op.name, arg(input))
         """soapClient.requestResponse(%s,
           |            %s, defaultScope, %s, %s, %s) match {
@@ -380,7 +417,7 @@ trait {interfaceTypeName} {{
             bodyString(op, input, binding, soapBindingStyle),
             headerString(op, input, binding, soapBindingStyle), address, quotedMethod, actionString)
 
-      case (DataRecord(_, _, XRequestresponseoperationSequence(input, output, faults)), true) =>
+      case (DataRecord(_, _, XRequestresponseoperationSequence(input, output, faults)), HttpClientStyle.Future) =>
         // "def %s(%s): Option[scalaxb.Fault[%s]]".format(op.name, arg(input), faultsToTypeName(faults))
         """soapClient.requestResponse(%s,
           |            %s, defaultScope, %s, %s, %s).transform({ case (header, body) => 
@@ -393,7 +430,22 @@ trait {interfaceTypeName} {{
        """|              case x => x
           |            })""".stripMargin
 
-      case (DataRecord(_, _, XRequestresponseoperationSequence(input, output, faults)), false) =>
+      case (DataRecord(_, _, XRequestresponseoperationSequence(input, output, faults)), HttpClientStyle.Tagless) =>
+        // "def %s(%s): Option[scalaxb.Fault[%s]]".format(op.name, arg(input), faultsToTypeName(faults))
+        """F.adaptError(soapClient.requestResponse(%s,
+          |            %s, defaultScope, %s, %s, %s)
+          |          .map { case (header, body) => 
+          |            %s
+          |          })({ %s
+          |            case x => x
+          |          })
+          |""".stripMargin.format(
+            bodyString(op, input, binding, soapBindingStyle),
+            headerString(op, input, binding, soapBindingStyle), address, quotedMethod, actionString,
+            outputString(output, binding, op, soapBindingStyle, soap12),
+            faultsString(faults))
+
+      case (DataRecord(_, _, XRequestresponseoperationSequence(input, output, faults)), HttpClientStyle.Sync) =>
         // "def %s(%s): Option[scalaxb.Fault[%s]]".format(op.name, arg(input), faultsToTypeName(faults))
         """soapClient.requestResponse(%s,
           |            %s, defaultScope, %s, %s, %s) match {
@@ -405,7 +457,7 @@ trait {interfaceTypeName} {{
             headerString(op, input, binding, soapBindingStyle), address, quotedMethod, actionString,
             faultString(faults), outputString(output, binding, op, soapBindingStyle, soap12))
 
-      case (DataRecord(_, _, XSolicitresponseoperationSequence(output, input, faults)), true) =>
+      case (DataRecord(_, _, XSolicitresponseoperationSequence(output, input, faults)), HttpClientStyle.Future | HttpClientStyle.Tagless) =>
         // "def %s(%s): Either[scalaxb.Fault[Any], %s]".format(op.name, arg(input), paramTypeName)
         """soapClient.requestResponse(%s,
           |            %s, defaultScope, %s, %s, %s).transform({ case (header, body) => 
@@ -418,7 +470,7 @@ trait {interfaceTypeName} {{
        """|              case x => x
           |            })""".stripMargin
 
-      case (DataRecord(_, _, XSolicitresponseoperationSequence(output, input, faults)), false) =>
+      case (DataRecord(_, _, XSolicitresponseoperationSequence(output, input, faults)), HttpClientStyle.Sync) =>
         // "def %s(%s): Either[scalaxb.Fault[Any], %s]".format(op.name, arg(input), paramTypeName)
         """soapClient.requestResponse(%s,
           |            %s, defaultScope, %s, %s, %s) match {
@@ -430,13 +482,13 @@ trait {interfaceTypeName} {{
             headerString(op, input, binding, soapBindingStyle), address, quotedMethod, actionString,
             faultString(faults), outputString(output, binding, op, soapBindingStyle, soap12))
 
-      case (DataRecord(_, _, XNotificationoperationSequence(output)), true) =>
+      case (DataRecord(_, _, XNotificationoperationSequence(output)), HttpClientStyle.Future | HttpClientStyle.Tagless) =>
         // "def %s: %s".format(op.name, paramTypeName)
         """soapClient.requestResponse(Nil, defaultScope, %s, %s, %s).map({ case (header, body)) =>
           |            %s
           |        })""".stripMargin.format(address, quotedMethod, actionString, outputString(output, binding, op, soapBindingStyle, soap12))
 
-      case (DataRecord(_, _, XNotificationoperationSequence(output)), false) =>
+      case (DataRecord(_, _, XNotificationoperationSequence(output)), HttpClientStyle.Sync) =>
         // "def %s: %s".format(op.name, paramTypeName)
         """soapClient.requestResponse(Nil, defaultScope, %s, %s, %s) match {
           |          case Left(x)  => sys.error(x.toString)

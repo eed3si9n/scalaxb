@@ -14,6 +14,9 @@ object Dependencies {
     case Some(_)                 => "org.dispatchhttp" %% "dispatch-core" % "1.0.1"
     case x                       => sys error s"Unexpected Scala version [$sv], with partial version $x"
   }
+  val defaultHttp4sVersion = "0.23.18"
+  val http4s =  "org.http4s" %% "http4s-client" % defaultHttp4sVersion
+  val http4sEmber =  "org.http4s" %% "http4s-ember-client" % defaultHttp4sVersion
   val defaultGigahorseVersion = "0.5.0"
   val defaultGigahorseBackend = "okhttp"
   val gigahorse = "com.eed3si9n" %% s"gigahorse-$defaultGigahorseBackend" % defaultGigahorseVersion
@@ -54,6 +57,8 @@ object Dependencies {
   })
   def integrationDependencies(sv: String) = Seq(
     dispatch(sv) % "test",
+    http4s % "test",
+    http4sEmber % "test",
     gigahorse % "test",
     scalaCompiler(sv),
     specs2(sv) % "test",

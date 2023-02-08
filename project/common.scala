@@ -45,6 +45,7 @@ object Common {
     buildInfoPackage := "scalaxb",
     buildInfoKeys := BuildInfoKey.ofN(name, version, scalaVersion, sbtVersion,
       "defaultDispatchVersion" -> Dependencies.defaultDispatchVersion,
+      "defaultHttp4sVersion" -> Dependencies.defaultHttp4sVersion,
       "defaultGigahorseVersion" -> Dependencies.defaultGigahorseVersion,
       "defaultGigahorseBackend" -> Dependencies.defaultGigahorseBackend),
   )

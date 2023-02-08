@@ -4,6 +4,7 @@ import sbt._
 import Keys._
 
 import scalaxb.compiler.{Config => ScConfig}
+import scalaxb.compiler.ConfigEntry
 
 trait ScalaxbKeys {
   lazy val scalaxb                 = taskKey[Seq[File]]("Generates case classes and typeclass instances")
@@ -34,12 +35,16 @@ trait ScalaxbKeys {
   lazy val scalaxbCombinedPackageNames = settingKey[Map[Option[String], Option[String]]]("")
   lazy val scalaxbGenerateDispatchClient = settingKey[Boolean]("Generate of Dispatch client")
   lazy val scalaxbGenerateDispatchAs = settingKey[Boolean]("Generates Dispatch \"as\"")
+  lazy val scalaxbGenerateHttp4sClient = settingKey[Boolean]("Generates Http4s Client")
   lazy val scalaxbGenerateGigahorseClient = settingKey[Boolean]("Generate of Gigahorse client")
-  lazy val scalaxbGenerateSingleClient = settingKey[HttpClientType.Value]("Generate a single client (one of Dispatch or Gigahorse)")
+  lazy val scalaxbGenerateSingleClient = settingKey[HttpClientType.Value]("Generate a single client (one of Dispatch, Gigahorse, or Http4s)")
   lazy val scalaxbDispatchVersion  = settingKey[String]("Dispatch version")
+  lazy val scalaxbHttp4sVersion    = settingKey[String]("Http4s version")
   lazy val scalaxbGigahorseVersion = settingKey[String]("Gigahorse version")
   lazy val scalaxbGigahorseBackend = settingKey[GigahorseHttpBackend.Value]("Gigahorse http backend")
+  @deprecated("Use 'scalaxbHttpClientStyle:=HttpCLientStyle.Future' instead", since="1.10.0")
   lazy val scalaxbAsync            = settingKey[Boolean]("Generates async SOAP client")
+  lazy val scalaxbHttpClientStyle  = settingKey[HttpClientStyle.Value]("Generates SOAP client using a specific style")
   lazy val scalaxbIgnoreUnknown    = settingKey[Boolean]("Ignores unknown Elements")
   lazy val scalaxbVararg           = settingKey[Boolean]("Uses varargs when possible. (default: false)")
   lazy val scalaxbCapitalizeWords  = settingKey[Boolean]("Attempts to capitalize class and attribute names to match the CamelCase convention")
@@ -48,7 +53,11 @@ trait ScalaxbKeys {
   lazy val scalaxbUseLists  = settingKey[Boolean]("Declare sequences with concrete type List instead of Seq")
 
   object HttpClientType extends Enumeration {
-    val None, Dispatch, Gigahorse = Value
+    val None, Dispatch, Gigahorse, Http4s = Value
+  }
+
+  object HttpClientStyle extends Enumeration {
+    val Sync, Future, Tagless = Value
   }
 
   object GigahorseHttpBackend extends Enumeration {

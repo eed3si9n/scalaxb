@@ -158,6 +158,13 @@ public abstract class AbstractScalaxbMojo extends AbstractMojo {
     private boolean generateDispatchClient;
 
     /**
+     * If true generate Http4s client code.
+     */
+    @Parameter(property = "scalaxb.generateHttp4sClient",
+            defaultValue = "false")
+    private boolean generateHttp4sClient;
+
+    /**
      * If true generate Dispatch "as" code.
      */
     @Parameter(property = "scalaxb.generateDispatchAs",
@@ -245,8 +252,15 @@ public abstract class AbstractScalaxbMojo extends AbstractMojo {
     /**
      * Generate non-blocking client code from WSDL sources. 
      */
+    @deprecated("Use 'scalaxbHttpClientStyle:=HttpCLientStyle.Future' instead", since="1.10.0")
     @Parameter(property = "scalaxb.async", defaultValue = "true")
     private boolean async;
+
+    /**
+     * Specify the type of http client to generate 'Sync', 'Future', 'Tagless'
+     */
+    @Parameter(property = "scalaxb.httpClientStyle", defaultValue = "Future")
+    private string httpClientStyle;
 
     @Parameter(property = "scalaxb.verbose")
     private boolean verbose;
@@ -327,6 +341,8 @@ public abstract class AbstractScalaxbMojo extends AbstractMojo {
             .param("--param-prefix", parameterPrefix)
             .param("--chunk-size", chunkSize)
             .flag("--no-dispatch-client", !generateDispatchClient)
+	    .flag("--http4s-client", generateHttp4sClient)
+	    .param("--http-client-style", httpClientStyle) // TODO: This isn't right
             .flag("--dispatch-as", generateDispatchAs)
             .param("--dispatch-version", dispatchVersion)
             .flag("--no-runtime", !generateRuntime)

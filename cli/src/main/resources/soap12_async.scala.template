@@ -44,7 +44,7 @@ trait SoapClientsAsync {
         (action map {uri => """; action="%s"""".format(uri.toASCIIString)} getOrElse {""})
       val headers = Map[String, String]("Content-Type" -> contentType)
       val ftr: Future[String] = httpClient.request(r map {_.toString} getOrElse {""}, address, headers)
-      ftr map { s: String =>
+      ftr map { (s: String) =>
         try {
           val response = scala.xml.XML.loadString(s)
           scalaxb.fromXML[Envelope](response)

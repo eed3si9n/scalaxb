@@ -99,7 +99,7 @@ trait GenSource {
     val operations = binding.operation map { opBinding => makeOperation(opBinding, interfaceType, soapBindingStyle, false) }
     val bindingOps = binding.operation map { opBinding => makeSoapOpBinding(opBinding, interfaceType, soapBindingStyle, false) }
     val importFutureString = if (config.async) "import scala.concurrent.{ Future, ExecutionContext }" + NL else ""
-    val clientTrait = if (config.async) "scalaxb.Soap11ClientsAsync" else "scalaxb.Soap11Clients"
+    val selfType = if (config.async) "scalaxb.Soap11ClientsAsync with scalaxb.HttpClientsAsync" else "scalaxb.Soap11Clients with scalaxb.HttpClients"
 
     val interfaceTrait = <source>
 {importFutureString}
@@ -112,7 +112,7 @@ trait {interfaceTypeName} {{
 </source>
 
     val bindingTrait = <source>
-  trait {name}s {{ this: {clientTrait} =>
+  trait {name}s {{ this: {selfType} =>
     lazy val targetNamespace: Option[String] = { xsdgenerator.quote(targetNamespace) }
     lazy val service: {interfaceTypeFQN} = new {name} {{}}
     {addressString}
@@ -147,7 +147,7 @@ trait {interfaceTypeName} {{
     val operations = binding.operation map { opBinding => makeOperation(opBinding, interfaceType, soapBindingStyle, true) }
     val bindingOps = binding.operation map { opBinding => makeSoapOpBinding(opBinding, interfaceType, soapBindingStyle, true) }
     val importFutureString = if (config.async) "import scala.concurrent.{ Future, ExecutionContext }" + NL else ""
-    val clientTrait = if (config.async) "scalaxb.SoapClientsAsync" else "scalaxb.SoapClients"
+    val selfType = if (config.async) "scalaxb.SoapClientsAsync with scalaxb.HttpClientsAsync" else "scalaxb.SoapClients with scalaxb.HttpClients"
 
     val interfaceTrait = <source>
 {importFutureString}
@@ -160,7 +160,7 @@ trait {interfaceTypeName} {{
 </source>
 
     val bindingTrait = <source>
-  trait {name}s {{ this: {clientTrait} =>
+  trait {name}s {{ this: {selfType} =>
     lazy val targetNamespace: Option[String] = { xsdgenerator.quote(targetNamespace) }
     lazy val service: {interfaceTypeFQN} = new {name} {{}}
     {addressString}

@@ -44,7 +44,7 @@ trait Soap11ClientsAsync {
         (action map { x => "SOAPAction" -> """"%s"""".format(x)})
 
       val ftr: Future[String] = httpClient.request(r map {_.toString} getOrElse {""}, address, headers.toMap)
-      ftr map { s: String =>
+      ftr map { (s: String) =>
         try {
           val response = scala.xml.XML.loadString(s)
           scalaxb.fromXML[Envelope](response)

@@ -116,9 +116,9 @@ object Arguments {
         c.remove(GenerateDispatchClient) }
       opt[Unit]("dispatch-as") text("generates Dispatch \"as\"") action { (_, c) =>
         c.update(GenerateDispatchAs) }
-      opt[Unit]("tagless-final-client") text("enables generation of tagless final client") action { (_, c) =>
+      opt[Unit]("tagless-final-client") text("enables generation of tagless final client (mutually exclusive with async and blocking type clients)") action { (_, c) =>
         c.update(HttpClientStyle.Tagless)}
-      opt[Unit]("http4s-client") text("enables generation of Http4s client") action { (_, c) =>
+      opt[Unit]("http4s-client") text("enables generation of Http4s client (implies tagless-final-client)") action { (_, c) =>
         c.update(GenerateHttp4sClient).update(HttpClientStyle.Tagless) }
       opt[Unit]("mutable") text("generates mutable classes") action { (_,c) =>
         c.update(GenerateMutable).remove(VarArg) }
@@ -156,8 +156,6 @@ object Arguments {
         c
       }
 
-      note("--tagless-final-client and --blocking are mutually exclusive, whatever the last option selected will take precedence")
-      note("--http4s-client implies --tagless-final-client")
       help("help") text("display this message")
       version("version") text("display version info")
       arg[File]("<schema_file>...").unbounded().text("input schema to be converted") action { (x, c) =>

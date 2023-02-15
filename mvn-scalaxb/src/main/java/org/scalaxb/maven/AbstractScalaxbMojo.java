@@ -165,6 +165,14 @@ public abstract class AbstractScalaxbMojo extends AbstractMojo {
     private boolean generateHttp4sClient;
 
     /**
+     * The version of
+     * <a href="http4s.org/">Http4s</a>
+     * to be used when generating code from WSDL files.
+     */
+    @Parameter(property = "scalaxb.http4s.version")
+    private String http4sVersion;
+
+    /**
      * If true generate Dispatch "as" code.
      */
     @Parameter(property = "scalaxb.generateDispatchAs",
@@ -252,15 +260,15 @@ public abstract class AbstractScalaxbMojo extends AbstractMojo {
     /**
      * Generate non-blocking client code from WSDL sources. 
      */
-    @deprecated("Use 'scalaxbHttpClientStyle:=HttpCLientStyle.Future' instead", since="1.10.0")
     @Parameter(property = "scalaxb.async", defaultValue = "true")
     private boolean async;
 
     /**
-     * Specify the type of http client to generate 'Sync', 'Future', 'Tagless'
+     * Generate tagless final client code from WSDL sources.
+     * Mutually exclusive with async.
      */
-    @Parameter(property = "scalaxb.httpClientStyle", defaultValue = "Future")
-    private string httpClientStyle;
+    @Parameter(property = "scalaxb.tagless", defaultValue = "false")
+    private boolean tagless;
 
     @Parameter(property = "scalaxb.verbose")
     private boolean verbose;
@@ -341,17 +349,18 @@ public abstract class AbstractScalaxbMojo extends AbstractMojo {
             .param("--param-prefix", parameterPrefix)
             .param("--chunk-size", chunkSize)
             .flag("--no-dispatch-client", !generateDispatchClient)
-	    .flag("--http4s-client", generateHttp4sClient)
-	    .param("--http-client-style", httpClientStyle) // TODO: This isn't right
             .flag("--dispatch-as", generateDispatchAs)
             .param("--dispatch-version", dispatchVersion)
+	    .flag("--tagless-final-client", tagless)
+	    .flag("--http4s-client", generateHttp4sClient)
+	    .param("--http4s-version", http4sVersion)	    
             .flag("--no-runtime", !generateRuntime)
             .intersperse("--wrap-contents", wrapContents)
             .param("--protocol-file", protocolFile)
             .param("--protocol-package", protocolPackage)
             .param("--attribute-prefix", attributePrefix)
             .flag("--prepend-family", prependFamily)
-            .flag("--blocking", !async)
+            .flag("--blocking", !async && !tagless)
             .flag("--lax-any", laxAny)
             .flag("--no-varargs", !varArgs)
 	        .flag("--generate-lens", generateLens)

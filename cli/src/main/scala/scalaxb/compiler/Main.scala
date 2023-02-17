@@ -118,6 +118,8 @@ object Arguments {
         c.update(GenerateDispatchAs) }
       opt[Unit]("tagless-final-client") text("enables generation of tagless final client (mutually exclusive with async and blocking type clients)") action { (_, c) =>
         c.update(HttpClientStyle.Tagless)}
+      opt[Unit]("mapK") text("enables generation of mapK for tagless final client") action { (_, c) =>
+        c.update(GenerateMapK)}
       opt[Unit]("http4s-client") text("enables generation of Http4s client (implies tagless-final-client)") action { (_, c) =>
         c.update(GenerateHttp4sClient).update(HttpClientStyle.Tagless) }
       opt[Unit]("mutable") text("generates mutable classes") action { (_,c) =>

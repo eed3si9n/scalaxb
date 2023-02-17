@@ -40,6 +40,7 @@ trait ScalaxbKeys {
   lazy val scalaxbGenerateSingleClient = settingKey[HttpClientType.Value]("Generate a single client (one of Dispatch, Gigahorse, or Http4s)")
   lazy val scalaxbDispatchVersion  = settingKey[String]("Dispatch version")
   lazy val scalaxbHttp4sVersion    = settingKey[String]("Http4s version")
+  lazy val scalaxbMapK             = settingKey[Boolean]("Generate a mapK for tagless style clients")
   lazy val scalaxbGigahorseVersion = settingKey[String]("Gigahorse version")
   lazy val scalaxbGigahorseBackend = settingKey[GigahorseHttpBackend.Value]("Gigahorse http backend")
   @deprecated("Use 'scalaxbHttpClientStyle:=HttpCLientStyle.Future' instead", since="1.10.0")

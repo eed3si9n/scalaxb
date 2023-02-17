@@ -23,6 +23,7 @@ class Http4sResponseAsScalaxbTest extends TestBase with JaxwsTestBase {
       update(GeneratePackageDir).
       update(HttpClientStyle.Tagless).
       update(GenerateHttp4sClient).
+      update(GenerateMapK).
       remove(GenerateDispatchClient)
   def generated11 = {
     writeStringToFile(retrieveWsdl, wsdlFile11)

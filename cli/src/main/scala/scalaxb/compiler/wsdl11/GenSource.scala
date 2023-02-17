@@ -112,11 +112,21 @@ trait GenSource {
       case HttpClientStyle.Tagless => "scalaxb.Soap11ClientsF[F] with scalaxb.HttpClientsF[F]"
     }
 
+    val mapK: String = if(config.mapK && config.taglessClient) {
+        val mapkOperations: Seq[String] = binding.operation map { opBinding =>
+          makeMapKOperation(opBinding, interfaceType, soapBindingStyle, false)
+        }
+        s"def mapK[G[_]](fk: F ~> G): ${interfaceTypeName}[G] = new ${interfaceTypeName}[G] {" + NL +  "    " +
+        {mapkOperations.mkString(NL + "    ")} + 
+        "}"
+      } else ""
+
     val interfaceTrait = <source>
 {importsString}
 
-trait {interfaceTypeName}{taglessTypeConstraint} {{
+trait {interfaceTypeName}{taglessTypeConstraint} {{ self =>
   {operations.mkString(NL + "  ")}
+  {mapK}
 }}
 
 {operationOutputs.mkString(NL + NL)}
@@ -171,11 +181,21 @@ trait {interfaceTypeName}{taglessTypeConstraint} {{
       case HttpClientStyle.Tagless => "scalaxb.SoapClientsF[F] with scalaxb.HttpClientsF[F]"
     }
 
+    val mapK: String = if(config.mapK && config.taglessClient) {
+        val mapkOperations: Seq[String] = binding.operation map { opBinding =>
+          makeMapKOperation(opBinding, interfaceType, soapBindingStyle, false)
+        }
+        s"def mapK[G[_]](fk: F ~> G): ${interfaceTypeName}[G] = new ${interfaceTypeName}[G] {" + NL + "    " +
+        {mapkOperations.mkString(NL + "    ")} + 
+        "}"
+      } else ""
+
     val interfaceTrait = <source>
 {importsString}
 
-trait {interfaceTypeName}{taglessTypeConstraint} {{
+trait {interfaceTypeName}{taglessTypeConstraint} {{ self =>
   {operations.mkString(NL + "  ")}
+  {mapK}
 }}
 
 {operationOutputs.mkString(NL + NL)}
@@ -243,7 +263,7 @@ trait {interfaceTypeName}{taglessTypeConstraint} {{
 
   // generate method signature
   def makeOperation(binding: XBinding_operationType, intf: XPortTypeType,
-                    defaultSoapBindingStyle: SoapBindingStyle, soap12: Boolean): String = {
+                    defaultSoapBindingStyle: SoapBindingStyle, soap12: Boolean, taglessParamName: String = "F"): String = {
     val op = boundOperation(binding, intf)
     val soapBindingStyle = parseSoapBindingStyle(binding.any.headOption, defaultSoapBindingStyle)
 
@@ -267,7 +287,7 @@ trait {interfaceTypeName}{taglessTypeConstraint} {{
         "def %s(%s): Unit".format(name, arg(input))
 
       case (DataRecord(_, _, XOnewayoperationSequence(input)), HttpClientStyle.Tagless) =>
-        "def %s(%s): F[Unit]".format(name, arg(input))        
+        "def %s(%s): %s[Unit]".format(name, arg(input), taglessParamName)
 
       case (DataRecord(_, _, XRequestresponseoperationSequence(input, output, faults)), HttpClientStyle.Future) =>
         "def %s(%s)(implicit ec: ExecutionContext): Future[%s]".format(name, arg(input),
@@ -278,7 +298,7 @@ trait {interfaceTypeName}{taglessTypeConstraint} {{
           faultsToTypeName(faults, soap12), outputTypeName(binding, op, output, soapBindingStyle))
 
       case (DataRecord(_, _, XRequestresponseoperationSequence(input, output, faults)), HttpClientStyle.Tagless) =>
-        "def %s(%s): F[%s]".format(name, arg(input),
+        "def %s(%s): %s[%s]".format(name, arg(input), taglessParamName,
           outputTypeName(binding, op, output, soapBindingStyle))        
 
       case (DataRecord(_, _, XSolicitresponseoperationSequence(output, input, faults)), HttpClientStyle.Future) =>
@@ -290,7 +310,7 @@ trait {interfaceTypeName}{taglessTypeConstraint} {{
           faultsToTypeName(faults, soap12), outputTypeName(binding, op, output, soapBindingStyle))
 
       case (DataRecord(_, _, XSolicitresponseoperationSequence(output, input, faults)), HttpClientStyle.Tagless) =>
-        "def %s(%s): F[%s]".format(name, arg(input),
+        "def %s(%s): %s[%s]".format(name, arg(input), taglessParamName,
           outputTypeName(binding, op, output, soapBindingStyle))
 
       case (DataRecord(_, _, XNotificationoperationSequence(output)), HttpClientStyle.Future) =>
@@ -300,7 +320,7 @@ trait {interfaceTypeName}{taglessTypeConstraint} {{
         "def %s: %s".format(name, outputTypeName(binding, op, output, soapBindingStyle))
 
       case (DataRecord(_, _, XNotificationoperationSequence(output)), HttpClientStyle.Tagless) =>
-        "def %s: F[%s]".format(name, outputTypeName(binding, op, output, soapBindingStyle))
+        "def %s: %s[%s]".format(name, taglessParamName, outputTypeName(binding, op, output, soapBindingStyle))
 
       case _ => sys.error("unsupported.")
     }
@@ -501,6 +521,43 @@ trait {interfaceTypeName}{taglessTypeConstraint} {{
     val retval = makeOperation(binding, intf, defaultSoapBindingStyle, soap12) + " = " + NL +
       "        " + opImpl
     logger.debug(retval)
+    retval
+  }
+
+  // generate mapK method implementation
+  def makeMapKOperation(binding: XBinding_operationType, intf: XPortTypeType,
+                    defaultSoapBindingStyle: SoapBindingStyle, soap12: Boolean): String = {
+    val op = boundOperation(binding, intf)
+    val soapBindingStyle = parseSoapBindingStyle(binding.any.headOption, defaultSoapBindingStyle)
+
+    def arg(input: XParamType): String =
+      soapBindingStyle match {
+        case DocumentStyle =>
+          if (isEmptyPart(input, binding.input)) ""
+          else if (!isMultiPart(input, binding.input)) buildIRIStyleArgs(input) map {_.toParamName} mkString(", ")
+          else makeOperationInputArgs(binding, intf) map {_.toParamName} mkString(", ")
+        case RpcStyle => 
+          buildRPCStyleArgs(input) map {_.toParamName} mkString(", ")
+      }
+    val name = escapeKeyWord(camelCase(op.name))
+    logger.debug("makeMapKOperation: " + name)
+
+    val opImpl = (op.xoperationtypeoption, config.httpClientStyle) match {
+      case (DataRecord(_, _, XOnewayoperationSequence(input)), HttpClientStyle.Tagless) =>
+        "self.%s(%s)".format(name, arg(input))
+      case (DataRecord(_, _, XRequestresponseoperationSequence(input, _, _)), HttpClientStyle.Tagless) =>
+        "self.%s(%s)".format(name, arg(input))
+      case (DataRecord(_, _, XSolicitresponseoperationSequence(_, input, _)), HttpClientStyle.Tagless) =>
+        "self.%s(%s)".format(name, arg(input))
+      case (DataRecord(_, _, XNotificationoperationSequence(_)), HttpClientStyle.Tagless) =>
+        "self.%s".format(name)
+
+      case _ => sys.error("unsupported.")
+    }
+
+    val retval = makeOperation(binding, intf, defaultSoapBindingStyle, soap12, taglessParamName = "G") + " = " + NL +
+      s"        fk($opImpl)"
+    logger.debug("makeMapKOperation: " + retval)
     retval
   }
 
@@ -717,7 +774,7 @@ trait {interfaceTypeName}{taglessTypeConstraint} {{
         case Multiple => if (config.useLists) "List[" + singleTypeName + "]" else "Seq[" + singleTypeName + "]"
       }
     def baseTypeName: String = xsdgenerator.buildTypeName(typeSymbol)
-    def toParamName = escapeKeyWord(paramName)
+    def toParamName: String = escapeKeyWord(paramName)
     def toScalaCode: String = "%s: %s".format(toParamName, typeName)
     def toVarg: String =
       if (seqParam) toParamName + ": _*"

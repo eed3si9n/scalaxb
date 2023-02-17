@@ -67,6 +67,7 @@ case class Config(items: Map[String, ConfigEntry]) {
   def laxAny: Boolean = values contains LaxAny
   def httpClientStyle: HttpClientStyle = get[HttpClientStyle] getOrElse HttpClientStyle.Future
   def taglessClient: Boolean = httpClientStyle == HttpClientStyle.Tagless
+  def mapK: Boolean = values contains GenerateMapK
   def dispatchVersion: String =
     (get[DispatchVersion] getOrElse defaultDispatchVersion).value
   def http4sVersion: String =
@@ -164,6 +165,7 @@ object ConfigEntry {
   case object CapitalizeWords extends ConfigEntry
   case class EnumNameMaxLength(value: Int) extends ConfigEntry
   case object UseLists extends ConfigEntry
+  case object GenerateMapK extends ConfigEntry
 
   sealed abstract class HttpClientStyle extends ConfigEntry with Product with Serializable {
     final override def name: String = classOf[HttpClientStyle].getName

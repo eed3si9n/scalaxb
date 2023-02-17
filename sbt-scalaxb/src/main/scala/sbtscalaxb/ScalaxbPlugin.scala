@@ -83,6 +83,7 @@ object ScalaxbPlugin extends sbt.AutoPlugin {
     scalaxbGigahorseBackend        := GigahorseHttpBackend.OkHttp,
     scalaxbHttp4sVersion           := ScConfig.defaultHttp4sVersion.value,
     scalaxbHttpClientStyle         := {if(scalaxbAsync.?.value.getOrElse(true)) HttpClientStyle.Future else HttpClientStyle.Sync}: @nowarn,
+    scalaxbMapK := false,
     scalaxbIgnoreUnknown           := false,
     scalaxbVararg                  := false,
     scalaxbGenerateMutable         := false,
@@ -142,6 +143,7 @@ object ScalaxbPlugin extends sbt.AutoPlugin {
         (if (scalaxbCapitalizeWords.value) Vector(CapitalizeWords) else Vector()) ++
         Vector(SymbolEncoding.withName(scalaxbSymbolEncodingStrategy.value.toString)) ++
         Vector(EnumNameMaxLength(scalaxbEnumNameMaxLength.value)) ++
+        (if (scalaxbMapK.value) Vector(GenerateMapK) else Vector()) ++
         (if (scalaxbUseLists.value) Vector(UseLists) else Vector()) ++
           Vector(scalaxbHttpClientStyle.value match {
             case HttpClientStyle.Sync => ConfigEntry.HttpClientStyle.Sync

@@ -270,6 +270,12 @@ public abstract class AbstractScalaxbMojo extends AbstractMojo {
     @Parameter(property = "scalaxb.tagless", defaultValue = "false")
     private boolean tagless;
 
+    /**
+     * Generate mapK method for tagless final client code from WSDL sources.
+     */
+    @Parameter(property = "scalaxb.mapK", defaultValue = "false")
+    private boolean mapK;
+
     @Parameter(property = "scalaxb.verbose")
     private boolean verbose;
 
@@ -352,6 +358,7 @@ public abstract class AbstractScalaxbMojo extends AbstractMojo {
             .flag("--dispatch-as", generateDispatchAs)
             .param("--dispatch-version", dispatchVersion)
 	    .flag("--tagless-final-client", tagless)
+	    .flag("--mapK", mapK)
 	    .flag("--http4s-client", generateHttp4sClient)
 	    .param("--http4s-version", http4sVersion)	    
             .flag("--no-runtime", !generateRuntime)

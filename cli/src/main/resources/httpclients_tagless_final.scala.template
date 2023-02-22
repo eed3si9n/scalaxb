@@ -1,0 +1,13 @@
+package scalaxb
+
+trait HttpClientsF[F[_]] {
+  protected def httpClient: HttpClientF[F]
+
+  trait HttpClientF[G[_]] {
+    def request(
+        in: String,
+        address: java.net.URI,
+        headers: Map[String, String]
+    ): G[String]
+  }
+}

@@ -1,0 +1,49 @@
+package scalaxb
+
+import cats.effect._
+import org.http4s._
+import org.http4s.client._
+import org.typelevel.ci._
+import scala.concurrent.duration._
+
+trait Http4sClientsF[F[_]] extends HttpClientsF[F] { self =>
+  implicit protected def F: Concurrent[F]
+  protected def http4sClient: Client[F]
+
+  protected lazy val httpClient: Http4sClientF[F] = new Http4sClientF[F] {
+    implicit protected def F: Concurrent[F] = self.F
+    protected def http4sClient: Client[F] = self.http4sClient
+  }
+
+  trait Http4sClientF[G[_]] extends HttpClientF[G] {
+    implicit protected def F: Concurrent[G]
+    protected def http4sClient: Client[G]
+
+    protected def entityEncoder: EntityEncoder[G, String] =
+      EntityEncoder[G, String]
+    protected def entityDecoder: EntityDecoder[G, String] =
+      EntityDecoder[G, String]
+
+    override def request(
+        in: String,
+        address: java.net.URI,
+        headers: Map[String, String]
+    ): G[String] =
+      request(
+        in = in,
+        uri = Uri.unsafeFromString(address.toString),
+        headers = Headers(headers.map { case (name, value) =>
+          Header.Raw(CIString(name), value)
+        }.toList)
+      )
+
+    protected def request(in: String, uri: Uri, headers: Headers): G[String] = {
+      http4sClient
+        .expect[String](
+          Request[G](method = Method.POST, uri = uri)
+            .withEntity(in)(entityEncoder)
+            .putHeaders(headers)
+        )(entityDecoder)
+    }
+  }
+}

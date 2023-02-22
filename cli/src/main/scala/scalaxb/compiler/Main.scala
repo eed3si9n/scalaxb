@@ -116,6 +116,12 @@ object Arguments {
         c.remove(GenerateDispatchClient) }
       opt[Unit]("dispatch-as") text("generates Dispatch \"as\"") action { (_, c) =>
         c.update(GenerateDispatchAs) }
+      opt[Unit]("tagless-final-client") text("enables generation of tagless final client (mutually exclusive with async and blocking type clients)") action { (_, c) =>
+        c.update(HttpClientStyle.Tagless)}
+      opt[Unit]("mapK") text("enables generation of mapK for tagless final client") action { (_, c) =>
+        c.update(GenerateMapK)}
+      opt[Unit]("http4s-client") text("enables generation of Http4s client (implies tagless-final-client)") action { (_, c) =>
+        c.update(GenerateHttp4sClient).update(HttpClientStyle.Tagless) }
       opt[Unit]("mutable") text("generates mutable classes") action { (_,c) =>
         c.update(GenerateMutable).remove(VarArg) }
       opt[Unit]("visitor") text("generates visitor") action { (_,c) =>
@@ -123,9 +129,11 @@ object Arguments {
       opt[Unit]("lax-any") text("relaxes namespace constraints of xs:any") action { (_, c) =>
         c.update(LaxAny) }
       opt[Unit]("blocking") text("generates blocking SOAP client") action { (_, c) =>
-        c.remove(GenerateAsync) }
+        c.update(HttpClientStyle.Sync) }
       opt[String]("dispatch-version") valueName("<version>") text("version of Dispatch (default: " + scalaxb.BuildInfo.defaultDispatchVersion + ")") action { (x, c) =>
         c.update(DispatchVersion(x)) }
+      opt[String]("http4s-version") valueName("<version>") text("version of http4s (default: " + scalaxb.BuildInfo.defaultHttp4sVersion + ")") action { (x, c) =>
+        c.update(Http4sVersion(x)) }
       opt[Unit]("varargs") text("uses varargs instead of the Seq") action { (_, c) =>
         c.update(VarArg) }
       opt[Unit]("no-varargs") text("uses Seq instead of the varargs") action { (_, c) =>

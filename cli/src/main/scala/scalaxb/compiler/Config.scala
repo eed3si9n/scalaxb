@@ -56,6 +56,7 @@ case class Config(items: Map[String, ConfigEntry]) {
     (get[DefaultNamespace] getOrElse defaultDefaultNamespace).value
   def generateRuntime: Boolean = values contains GenerateRuntime
   def generateDispatchClient: Boolean = values contains GenerateDispatchClient
+  def generateHttp4sClient: Boolean = values contains GenerateHttp4sClient
   def generateDispatchAs: Boolean = values contains GenerateDispatchAs
   def generateGigahorseClient: Boolean = values contains GenerateGigahorseClient
   def contentsSizeLimit: Int =
@@ -64,9 +65,13 @@ case class Config(items: Map[String, ConfigEntry]) {
     (get[SequenceChunkSize] getOrElse defaultSequenceChunkSize).value
   def namedAttributes: Boolean = values contains NamedAttributes
   def laxAny: Boolean = values contains LaxAny
-  def async: Boolean = values contains GenerateAsync
+  def httpClientStyle: HttpClientStyle = get[HttpClientStyle] getOrElse HttpClientStyle.Future
+  def taglessClient: Boolean = httpClientStyle == HttpClientStyle.Tagless
+  def mapK: Boolean = values contains GenerateMapK
   def dispatchVersion: String =
     (get[DispatchVersion] getOrElse defaultDispatchVersion).value
+  def http4sVersion: String =
+    (get[Http4sVersion] getOrElse defaultHttp4sVersion).value
   def gigahorseVersion: String =
     (get[GigahorseVersion] getOrElse defaultGigahorseVersion).value
   def gigahorseBackend: String =
@@ -105,6 +110,7 @@ object Config {
   val defaultContentsSizeLimit = ContentsSizeLimit(Int.MaxValue)
   val defaultSequenceChunkSize = SequenceChunkSize(10)
   val defaultDispatchVersion = DispatchVersion(scalaxb.BuildInfo.defaultDispatchVersion)
+  val defaultHttp4sVersion = Http4sVersion(scalaxb.BuildInfo.defaultHttp4sVersion)
   val defaultGigahorseVersion = GigahorseVersion(scalaxb.BuildInfo.defaultGigahorseVersion)
   val defaultGigahorseBackend = GigahorseBackend(scalaxb.BuildInfo.defaultGigahorseBackend)
   val defaultSymbolEncodingStrategy = SymbolEncoding.Legacy151
@@ -115,7 +121,7 @@ object Config {
       defaultWrappedComplexTypes, SeperateProtocol, defaultProtocolFileName,
       defaultProtocolPackageName, GenerateRuntime, GenerateDispatchClient,
       defaultContentsSizeLimit, defaultSequenceChunkSize,
-      GenerateAsync, defaultDispatchVersion)
+      HttpClientStyle.Future, defaultDispatchVersion)
   )
 }
 
@@ -139,14 +145,15 @@ object ConfigEntry {
   case class DefaultNamespace(value: Option[String]) extends ConfigEntry
   case object GenerateRuntime extends ConfigEntry
   case object GenerateDispatchClient extends ConfigEntry
+  case object GenerateHttp4sClient extends ConfigEntry
   case object GenerateDispatchAs extends ConfigEntry
   case object GenerateGigahorseClient extends ConfigEntry
   case class ContentsSizeLimit(value: Int) extends ConfigEntry
   case class SequenceChunkSize(value: Int) extends ConfigEntry
   case object NamedAttributes extends ConfigEntry
   case object LaxAny extends ConfigEntry
-  case object GenerateAsync extends ConfigEntry
   case class DispatchVersion(value: String) extends ConfigEntry
+  case class Http4sVersion(value: String) extends ConfigEntry
   case class GigahorseVersion(value: String) extends ConfigEntry
   case class GigahorseBackend(value: String) extends ConfigEntry
   case object VarArg extends ConfigEntry
@@ -158,6 +165,16 @@ object ConfigEntry {
   case object CapitalizeWords extends ConfigEntry
   case class EnumNameMaxLength(value: Int) extends ConfigEntry
   case object UseLists extends ConfigEntry
+  case object GenerateMapK extends ConfigEntry
+
+  sealed abstract class HttpClientStyle extends ConfigEntry with Product with Serializable {
+    final override def name: String = classOf[HttpClientStyle].getName
+  }
+  object HttpClientStyle {
+    case object Sync extends HttpClientStyle
+    case object Future extends HttpClientStyle
+    case object Tagless extends HttpClientStyle
+  }
 
   object SymbolEncoding {
     sealed abstract class Strategy(val alias: String, val description: String) extends ConfigEntry with Product with Serializable {

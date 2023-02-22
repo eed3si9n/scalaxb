@@ -158,6 +158,21 @@ public abstract class AbstractScalaxbMojo extends AbstractMojo {
     private boolean generateDispatchClient;
 
     /**
+     * If true generate Http4s client code.
+     */
+    @Parameter(property = "scalaxb.generateHttp4sClient",
+            defaultValue = "false")
+    private boolean generateHttp4sClient;
+
+    /**
+     * The version of
+     * <a href="http4s.org/">Http4s</a>
+     * to be used when generating code from WSDL files.
+     */
+    @Parameter(property = "scalaxb.http4s.version")
+    private String http4sVersion;
+
+    /**
      * If true generate Dispatch "as" code.
      */
     @Parameter(property = "scalaxb.generateDispatchAs",
@@ -248,6 +263,19 @@ public abstract class AbstractScalaxbMojo extends AbstractMojo {
     @Parameter(property = "scalaxb.async", defaultValue = "true")
     private boolean async;
 
+    /**
+     * Generate tagless final client code from WSDL sources.
+     * Mutually exclusive with async.
+     */
+    @Parameter(property = "scalaxb.tagless", defaultValue = "false")
+    private boolean tagless;
+
+    /**
+     * Generate mapK method for tagless final client code from WSDL sources.
+     */
+    @Parameter(property = "scalaxb.mapK", defaultValue = "false")
+    private boolean mapK;
+
     @Parameter(property = "scalaxb.verbose")
     private boolean verbose;
 
@@ -329,13 +357,17 @@ public abstract class AbstractScalaxbMojo extends AbstractMojo {
             .flag("--no-dispatch-client", !generateDispatchClient)
             .flag("--dispatch-as", generateDispatchAs)
             .param("--dispatch-version", dispatchVersion)
+	    .flag("--tagless-final-client", tagless)
+	    .flag("--mapK", mapK)
+	    .flag("--http4s-client", generateHttp4sClient)
+	    .param("--http4s-version", http4sVersion)	    
             .flag("--no-runtime", !generateRuntime)
             .intersperse("--wrap-contents", wrapContents)
             .param("--protocol-file", protocolFile)
             .param("--protocol-package", protocolPackage)
             .param("--attribute-prefix", attributePrefix)
             .flag("--prepend-family", prependFamily)
-            .flag("--blocking", !async)
+            .flag("--blocking", !async && !tagless)
             .flag("--lax-any", laxAny)
             .flag("--no-varargs", !varArgs)
 	        .flag("--generate-lens", generateLens)

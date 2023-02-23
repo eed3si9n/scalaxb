@@ -43,7 +43,7 @@ trait ScalaxbKeys {
   lazy val scalaxbMapK             = settingKey[Boolean]("Generate a mapK for tagless style clients")
   lazy val scalaxbGigahorseVersion = settingKey[String]("Gigahorse version")
   lazy val scalaxbGigahorseBackend = settingKey[GigahorseHttpBackend.Value]("Gigahorse http backend")
-  @deprecated("Use 'scalaxbHttpClientStyle:=HttpCLientStyle.Future' instead", since="1.10.0")
+  @deprecated("Use 'scalaxbHttpClientStyle := HttpClientStyle.Future' instead", since="1.10.0")
   lazy val scalaxbAsync            = settingKey[Boolean]("Generates async SOAP client")
   lazy val scalaxbHttpClientStyle  = settingKey[HttpClientStyle.Value]("Generates SOAP client using a specific style")
   lazy val scalaxbIgnoreUnknown    = settingKey[Boolean]("Ignores unknown Elements")

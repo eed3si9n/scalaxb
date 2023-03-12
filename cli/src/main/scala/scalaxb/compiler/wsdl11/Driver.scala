@@ -265,6 +265,7 @@ class Driver extends Module { driver =>
     } else Nil) ++
     (if (config.generateHttp4sClient && config.httpClientStyle == HttpClientStyle.Tagless) config.http4sVersion match {
        case VersionPattern(0,21, _) => List(generateFromResource[To](Some("scalaxb"), "httpclients_http4s.scala", "/httpclients_http4s_0_21.scala.template"))
+       case VersionPattern(0,22, _) => List(generateFromResource[To](Some("scalaxb"), "httpclients_http4s.scala", "/httpclients_http4s_0_22.scala.template"))
        case VersionPattern(0,23, _) => List(generateFromResource[To](Some("scalaxb"), "httpclients_http4s.scala", "/httpclients_http4s_0_23.scala.template"))
        case _ => sys.error(s"Unsupported http4s version ${config.http4sVersion}"); Nil
       }

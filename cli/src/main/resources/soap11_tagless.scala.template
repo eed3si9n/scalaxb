@@ -86,7 +86,7 @@ trait Soap11ClientsF[F[_]] { self: HttpClientsF[F] =>
         address,
         headers.toMap
       )
-      ftr map { s: String =>
+      ftr map { (s: String) =>
         try {
           val response = scala.xml.XML.loadString(s)
           scalaxb.fromXML[Envelope](response)

@@ -74,10 +74,10 @@ class Driver extends Module { driver =>
   def processDefinition(definition: XDefinitionsType, context: Context): Unit = {
     val ns = definition.targetNamespace map {_.toString}
 
-    extractChildren(definition, "message") { x: XMessageType => context.messages((ns, x.name)) = x }
-    extractChildren(definition, "portType") { x: XPortTypeType => context.interfaces((ns, x.name)) = x }
-    extractChildren(definition, "binding") { x: XBindingType => context.bindings((ns, x.name)) = x }
-    extractChildren(definition, "service") { x: XServiceType => context.services((ns, x.name)) = x }
+    extractChildren(definition, "message") { (x: XMessageType) => context.messages((ns, x.name)) = x }
+    extractChildren(definition, "portType") { (x: XPortTypeType) => context.interfaces((ns, x.name)) = x }
+    extractChildren(definition, "binding") { (x: XBindingType) => context.bindings((ns, x.name)) = x }
+    extractChildren(definition, "service") { (x: XServiceType) => context.services((ns, x.name)) = x }
   }
 
   override def generateProtocol(snippet: Snippet,
@@ -114,7 +114,7 @@ class Driver extends Module { driver =>
 
     val wsdlgenerated: Seq[(Option[String], Snippet, String)] = pair.definition.toList map { wsdl =>
       val pkg = packageName(wsdl.targetNamespace map {_.toString}, cntxt)
-      val bindings = extractChildren(wsdl, "binding") { x: XBindingType => x }
+      val bindings = extractChildren(wsdl, "binding") { (x: XBindingType) => x }
       generator.soap11Bindings(bindings) foreach { _ => cntxt.soap11 = true }
       generator.soap12Bindings(bindings) foreach { _ => cntxt.soap12 = true }
       (pkg, Snippet(headerSnippet(pkg), generator.generate(wsdl, bindings)), part)
@@ -133,7 +133,7 @@ class Driver extends Module { driver =>
     lazy val (wsdl: Option[XDefinitionsType], xsdRawSchema: Seq[Node]) = alocation.toString match {
       case FileExtension(".wsdl") =>
         val w = masked.scalaxb.fromXML[XDefinitionsType](rawschema)
-        val x: Seq[Node] = extractChildren(w, "types") { t: XTypesType => t } flatMap { _.any collect {
+        val x: Seq[Node] = extractChildren(w, "types") { (t: XTypesType) => t } flatMap { _.any collect {
           case DataRecord(_, _, node: Node) => node
         }}
         (Some(w), x)
@@ -149,7 +149,7 @@ class Driver extends Module { driver =>
 
     lazy val importNamespaces: Seq[String] =
       (wsdl map { wsdl =>
-        extractChildren(wsdl, "import") { x: XImportType => x.namespace.toString }
+        extractChildren(wsdl, "import") { (x: XImportType) => x.namespace.toString }
       } getOrElse {Nil}) ++
       (schemaLite flatMap { schemaLite =>
         schemaLite.imports collect {
@@ -158,7 +158,7 @@ class Driver extends Module { driver =>
 
     val importLocations: Seq[String] =
       (wsdl map { wsdl =>
-        extractChildren(wsdl, "import") { x: XImportType => x.location.toString }
+        extractChildren(wsdl, "import") { (x: XImportType) => x.location.toString }
       } getOrElse {Nil}) ++
       (schemaLite flatMap { schemaLite =>
         schemaLite.imports collect {

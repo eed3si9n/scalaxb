@@ -229,7 +229,7 @@ trait {interfaceTypeName}{taglessTypeConstraint} {{ self =>
       val (headerParts, bodyParts) = splitParamToParts(output, binding.output)
       (bodyParts map toParamCache) ++ (headerParts map toParamCache)
     }
-    outputOpt flatMap { output: XParamType =>
+    outputOpt flatMap { (output: XParamType) =>
       isMultiPart(output, binding.output) map { _ =>
         "case class %s(%s)".format(
           makeOperationOutputWrapperName(op),

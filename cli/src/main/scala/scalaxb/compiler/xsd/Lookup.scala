@@ -239,7 +239,7 @@ trait Lookup extends ContextProcessor {
       _.topElems.valuesIterator.toSeq collect {
         case e: ElemDecl if e.name == elem.name && e.namespace == elem.namespace => e
         case e: ElemDecl if e.substitutionGroup == Some(elem.namespace, elem.name) => e
-      } filter { e: ElemDecl =>
+      } filter { (e: ElemDecl) =>
         e.typeSymbol match {
           case ReferenceTypeSymbol(decl: ComplexTypeDecl) => !decl.abstractValue
           case _ => true

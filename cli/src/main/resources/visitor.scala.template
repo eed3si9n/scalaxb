@@ -1,6 +1,6 @@
 package scalaxb
 
-import scala.reflect.Manifest
+import scala.reflect.ClassTag
 
 /**
  * Visitor utility for ScalaXB structures.
@@ -68,7 +68,7 @@ trait VisitorTrait {
   /**
    * Collects all the nodes of a given class.
    */
-  def collect[T](implicit m: Manifest[T]): Seq[T] =
+  def collect[T](implicit m: ClassTag[T]): Seq[T] =
     collect(m.runtimeClass.isInstance(_)).asInstanceOf[Seq[T]]
 
 

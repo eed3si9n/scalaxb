@@ -41,7 +41,7 @@ object Common {
   // }
 
   val codegenSettings: Seq[Def.Setting[_]] = scalaxbCodegenSettings ++ Seq(
-    unmanagedSourceDirectories in Compile += baseDirectory.value / "src_managed",
+    Compile / unmanagedSourceDirectories += baseDirectory.value / "src_managed",
     buildInfoPackage := "scalaxb",
     buildInfoKeys := BuildInfoKey.ofN(name, version, scalaVersion, sbtVersion,
       "defaultDispatchVersion" -> Dependencies.defaultDispatchVersion,
@@ -51,7 +51,7 @@ object Common {
   )
 
   val sonatypeSettings: Seq[Def.Setting[_]] = Seq(
-    publishArtifact in Test := false,
+    Test / publishArtifact := false,
     resolvers ++= Seq(
       "sonatype-public" at "https://oss.sonatype.org/content/repositories/public"),
     publishTo := {

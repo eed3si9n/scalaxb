@@ -24,6 +24,7 @@ package scalaxb.compiler
 
 import java.io.File
 import scala.collection.immutable.{ Map, Set, Seq }
+import scala.reflect.ClassTag
 
 case class Config(items: Map[String, ConfigEntry]) {
   import Config._
@@ -88,8 +89,8 @@ case class Config(items: Map[String, ConfigEntry]) {
   def useLists: Boolean = values contains UseLists
   def jaxbPackage = get[JaxbPackage] getOrElse defaultJaxbPackage
 
-  private def get[A <: ConfigEntry: Manifest]: Option[A] =
-    items.get(implicitly[Manifest[A]].runtimeClass.getName).asInstanceOf[Option[A]]
+  private def get[A <: ConfigEntry: ClassTag]: Option[A] =
+    items.get(implicitly[ClassTag[A]].runtimeClass.getName).asInstanceOf[Option[A]]
   def update(item: ConfigEntry): Config =
     copy(items = items.updated(item.name, item))
   def remove(item: ConfigEntry): Config =

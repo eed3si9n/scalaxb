@@ -51,7 +51,7 @@ trait CanBeWriter[A] {
  def newInstance(packageName: Option[String], fileName: String): A
 }
 object CanBeWriter {
-  implicit val stringWriter = new CanBeWriter[java.io.StringWriter] {
+  implicit val stringWriter: CanBeWriter[java.io.StringWriter] = new CanBeWriter[java.io.StringWriter] {
     override def toWriter(value: java.io.StringWriter) = new PrintWriter(value)
     override def newInstance(packageName: Option[String], fileName: String) = new java.io.StringWriter
   }
@@ -121,7 +121,7 @@ trait Module {
     def swapTargetNamespace(outerNamespace: Option[String], n: Int): Importable
   }
 
-  implicit val fileReader = new CanBeRawSchema[File, RawSchema] {
+  implicit val fileReader: CanBeRawSchema[File, RawSchema] = new CanBeRawSchema[File, RawSchema] {
     override def toRawSchema(value: File) = readerToRawSchema(UnicodeFileReader.reader(value))
     override def toURI(value: File) = value.toURI
   }

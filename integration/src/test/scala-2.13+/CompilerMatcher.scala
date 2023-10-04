@@ -207,7 +207,7 @@ trait CompilerMatcher {
     file.delete
   }
 
-  def copyFileFromResource(source: String, dest: File) {
+  def copyFileFromResource(source: String, dest: File): Unit = {
     val in = getClass.getResourceAsStream(source)
     val reader = new java.io.BufferedReader(new java.io.InputStreamReader(in))
     val out = new java.io.PrintWriter(new java.io.FileWriter(dest))

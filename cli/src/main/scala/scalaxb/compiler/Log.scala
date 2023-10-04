@@ -28,7 +28,7 @@ case class Log(logger: Logger) {
   def info(message: String, args: Any*): Unit = {
     if (args.toSeq.isEmpty) logger.info(message)
     else try {
-      logger.info(message format (args.toSeq: _*))
+      logger.info(message.format(args.toSeq: _*))
     }
     catch {
       case _: Throwable => logger.info(message)
@@ -38,7 +38,7 @@ case class Log(logger: Logger) {
   def debug(message: String, args: Any*): Unit = {
     if (args.toSeq.isEmpty) logger.debug(message)
     else try {
-      logger.debug(message format (args.toSeq: _*))
+      logger.debug(message.format(args.toSeq: _*))
     }
     catch {
       case _: Throwable => logger.debug(message)
@@ -48,7 +48,7 @@ case class Log(logger: Logger) {
   def warn(message: String, args: Any*): Unit = {
     if (args.toSeq.isEmpty) logger.warn(message)
     else try {
-      logger.warn(message format (args.toSeq: _*))
+      logger.warn(message.format(args.toSeq: _*))
     }
     catch {
       case _: Throwable => logger.warn(message)
@@ -58,7 +58,7 @@ case class Log(logger: Logger) {
   def error(message: String, args: Any*): Unit = {
     if (args.toSeq.isEmpty) logger.error(message)
     else try {
-      logger.error(message format (args.toSeq: _*))
+      logger.error(message.format(args.toSeq: _*))
     }
     catch {
       case _: Throwable => logger.error(message)
@@ -68,7 +68,7 @@ case class Log(logger: Logger) {
   def fatal(message: String, args: Any*): Unit = {
     if (args.toSeq.isEmpty) logger.fatal(message)
     else try {
-      logger.fatal(message format (args.toSeq: _*))
+      logger.fatal(message.format(args.toSeq: _*))
     }
     catch {
       case _: Throwable => logger.fatal(message)

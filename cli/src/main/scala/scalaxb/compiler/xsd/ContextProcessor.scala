@@ -225,7 +225,7 @@ trait ContextProcessor extends ScalaNames with PackageName {
       .split("[:/]")                                           // Split the namespace URI into fragments
       .map {_.filter(allowedChars)}                            // Package name must be valid
       .filter(!_.isEmpty)                                      // Drop empty fragments
-      .map {str => if (numbers(str.head)) 'n' + str else str}  // Package name can't start with a number
+      .map {str => if (numbers(str.head)) s"n${str}" else str} // Package name can't start with a number
       .tail                                                    // Drop the first fragment, which is usually "http"
       .mkString(".")                                           // Concat the fragments
     )}

@@ -384,7 +384,7 @@ trait Module {
   }
 
   def missingDependencies(importable: Importable, files: collection.Seq[Importable]): List[String] = {
-    val nsBased = importable.importNamespaces.toList flatMap { ns: String =>
+    val nsBased = importable.importNamespaces.toList flatMap { (ns: String) =>
       files filter { x =>
         val targetNamespace: Option[String] = x.targetNamespace
         targetNamespace == Option(ns)

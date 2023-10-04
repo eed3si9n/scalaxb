@@ -52,6 +52,7 @@ trait ScalaxbKeys {
   lazy val scalaxbSymbolEncodingStrategy = settingKey[SymbolEncodingStrategy.Value]("Specifies the strategy to encode non-identifier characters in generated class names")
   lazy val scalaxbEnumNameMaxLength = settingKey[Int]("Truncates names of enum members longer than this value (default: 50)")
   lazy val scalaxbUseLists  = settingKey[Boolean]("Declare sequences with concrete type List instead of Seq")
+  lazy val scalaxbJaxbPackage = settingKey[JaxbPackage.Value]("Specifies the jaxb package name to use in generated code")
 
   object HttpClientType extends Enumeration {
     val None, Dispatch, Gigahorse, Http4s = Value
@@ -73,6 +74,11 @@ trait ScalaxbKeys {
     val UnicodePoint = Value("unicode-point")
     val DecimalAscii = Value("decimal-ascii")
     val Legacy151 = Value("legacy-1.5.1")
+  }
+
+  object JaxbPackage extends Enumeration {
+    val Javax = Value("javax")
+    val Jakarta = Value("jakarta")
   }
 }
 object ScalaxbKeys extends ScalaxbKeys

@@ -51,6 +51,7 @@ object ScalaxbPlugin extends sbt.AutoPlugin {
     scalaxbEnumNameMaxLength       := 50,
     scalaxbUseLists                := false,
     scalaxbAsync                   := true,
+    scalaxbJaxbPackage             := JaxbPackage.Javax,
   )
 
   override lazy val projectSettings: Seq[Def.Setting[_]] =
@@ -155,6 +156,7 @@ object ScalaxbPlugin extends sbt.AutoPlugin {
         Vector(EnumNameMaxLength(scalaxbEnumNameMaxLength.value)) ++
         (if (scalaxbMapK.value) Vector(GenerateMapK) else Vector()) ++
         (if (scalaxbUseLists.value) Vector(UseLists) else Vector()) ++
+        Vector(ConfigEntry.JaxbPackage.withPackageName(scalaxbJaxbPackage.value.toString)) ++
           Vector(scalaxbHttpClientStyle.value match {
             case HttpClientStyle.Sync => ConfigEntry.HttpClientStyle.Sync
             case HttpClientStyle.Future => ConfigEntry.HttpClientStyle.Future

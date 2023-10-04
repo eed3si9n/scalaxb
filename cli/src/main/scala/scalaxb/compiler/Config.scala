@@ -86,6 +86,7 @@ case class Config(items: Map[String, ConfigEntry]) {
   def symbolEncodingStrategy = get[SymbolEncoding.Strategy] getOrElse defaultSymbolEncodingStrategy
   def enumNameMaxLength: Int = (get[EnumNameMaxLength] getOrElse defaultEnumNameMaxLength).value
   def useLists: Boolean = values contains UseLists
+  def jaxbPackage = get[JaxbPackage] getOrElse defaultJaxbPackage
 
   private def get[A <: ConfigEntry: Manifest]: Option[A] =
     items.get(implicitly[Manifest[A]].runtimeClass.getName).asInstanceOf[Option[A]]
@@ -115,6 +116,7 @@ object Config {
   val defaultGigahorseBackend = GigahorseBackend(scalaxb.BuildInfo.defaultGigahorseBackend)
   val defaultSymbolEncodingStrategy = SymbolEncoding.Legacy151
   val defaultEnumNameMaxLength = EnumNameMaxLength(50)
+  val defaultJaxbPackage = JaxbPackage.Javax
 
   val default = Config(
     Vector(defaultPackageNames, defaultOpOutputWrapperPostfix, defaultOutdir,
@@ -194,5 +196,22 @@ object ConfigEntry {
     }
 
     private[compiler] implicit val scoptRead: scopt.Read[Strategy] = scopt.Read.reads(withName)
+  }
+
+  sealed abstract class JaxbPackage(val packageName: String) extends ConfigEntry with Product with Serializable {
+    final override def name: String = classOf[JaxbPackage].getName
+  }
+  object JaxbPackage {
+    case object Javax extends JaxbPackage("javax")
+    case object Jakarta extends JaxbPackage("jakarta")
+
+    val values = Seq(Javax, Jakarta)
+
+    def apply(packageName: String): Option[JaxbPackage] = values.find(_.packageName == packageName)
+    def withPackageName(packageName: String): JaxbPackage = apply(packageName).getOrElse {
+      throw new IllegalArgumentException(s"""Unknown jaxb package "${packageName}"; possible values are ${values.map(_.packageName).mkString(", ")}.""")
+    }
+
+    private[compiler] implicit val scoptRead: scopt.Read[JaxbPackage] = scopt.Read.reads(withPackageName)
   }
 }

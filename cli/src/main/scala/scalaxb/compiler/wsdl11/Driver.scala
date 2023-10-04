@@ -213,7 +213,7 @@ class Driver extends Module { driver =>
 
   def generateRuntimeFiles[To](cntxt: Context, config: Config)(implicit evTo: CanBeWriter[To]): List[To] =
     List(
-      generateFromResource[To](Some("scalaxb"), "scalaxb.scala", "/scalaxb.scala.template"),
+      generateFromResource[To](Some("scalaxb"), "scalaxb.scala", "/scalaxb.scala.template", Some("%%JAXB_PACKAGE%%" -> config.jaxbPackage.packageName)),
       (config.httpClientStyle match {
         case HttpClientStyle.Sync => generateFromResource[To](Some("scalaxb"), "httpclients.scala", "/httpclients.scala.template")
         case HttpClientStyle.Future => generateFromResource[To](Some("scalaxb"), "httpclients_async.scala", "/httpclients_async.scala.template")

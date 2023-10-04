@@ -3,7 +3,7 @@ package scalaxb
 import scala.xml.{Node, NodeSeq, NamespaceBinding, Elem}
 import javax.xml.datatype.XMLGregorianCalendar
 import javax.xml.namespace.QName
-import javax.xml.bind.DatatypeConverter
+import %%JAXB_PACKAGE%%.xml.bind.DatatypeConverter
 
 import scala.language.implicitConversions
 

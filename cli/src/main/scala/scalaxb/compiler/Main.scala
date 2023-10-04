@@ -152,6 +152,11 @@ object Arguments {
         .action { (strategy, config) => config.update(strategy) }
       opt[Int]("enum-name-max-length") valueName("<length>") text("truncates names of enum members longer than this value (default: 50)") action { (x, c) =>
         c.update(EnumNameMaxLength(x)) }
+      opt[JaxbPackage]("jaxb-package")
+        .valueName("<package>")
+        .text(s"Specifies the jaxb package to use in generated code. Defaults to ${Config.defaultJaxbPackage.packageName}." +
+              JaxbPackage.values.map(p => s"${p.packageName}").mkString(", "))
+        .action { (pkg, config) => config.update(pkg) }
 
       opt[Unit]('v', "verbose") text("be extra verbose") action { (_, c) =>
         verbose = true

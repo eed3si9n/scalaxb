@@ -99,14 +99,14 @@ object CompContRestrictionDecl {
     val base = TypeSymbolParser.fromString(baseName, node.scope, config)
     var compositor: Option[HasParticle] = None
     
-    for (child <- node.child) child match {
-      case <group>{ _* }</group> =>
+    for (child <- node.child) child.label match {
+      case "group" =>
         compositor = Some(CompositorDecl.fromXML(child, family, config))
-      case <all>{ _* }</all> =>
+      case "all" =>
         compositor = Some(CompositorDecl.fromXML(child, family, config))
-      case <choice>{ _* }</choice> =>
+      case "choice" =>
         compositor = Some(CompositorDecl.fromXML(child, family, config))
-      case <sequence>{ _* }</sequence> =>
+      case "sequence" =>
         compositor = Some(CompositorDecl.fromXML(child, family, config))
 
       case _ =>
@@ -127,14 +127,14 @@ object CompContExtensionDecl {
     val base = TypeSymbolParser.fromString(baseName, node.scope, config)
     var compositor: Option[HasParticle] = None
     
-    for (child <- node.child) child match {
-      case <group>{ _* }</group> =>
+    for (child <- node.child) child.label match {
+      case "group" =>
         compositor = Some(CompositorDecl.fromXML(child, family, config))
-      case <all>{ _* }</all> =>
+      case "all" =>
         compositor = Some(CompositorDecl.fromXML(child, family, config))
-      case <choice>{ _* }</choice> =>
+      case "choice" =>
         compositor = Some(CompositorDecl.fromXML(child, family, config))
-      case <sequence>{ _* }</sequence> =>
+      case "sequence" =>
         compositor = Some(CompositorDecl.fromXML(child, family, config))
       case _ =>
     }
@@ -206,7 +206,7 @@ trait Facetable[A] {
 object Facetable {
   def fromParent(node: scala.xml.Node, base: XsTypeSymbol, config: ParserConfig): List[Facetable[_]] = 
     node.child.toList collect {
-      case x@(<enumeration>{ _* }</enumeration>) => EnumerationDecl.fromXML(x, base, config)
+      case x if x.label == "enumeration" => EnumerationDecl.fromXML(x, base, config)
     }
 }
 

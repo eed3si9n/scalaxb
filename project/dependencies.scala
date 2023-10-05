@@ -1,11 +1,12 @@
 import sbt._
 
 object Dependencies {
-  val scala213 = "2.13.10"
-  val scala212 = "2.12.17"
+  val scala213 = "2.13.12"
+  val scala212 = "2.12.18"
   val scala211 = "2.11.12"
   val scala210 = "2.10.7"
 
+  val jaxb = "javax.xml.bind" % "jaxb-api" % "2.3.1"
   val scopt = "com.github.scopt" %% "scopt" % "3.7.1"
   val log4j = "log4j" % "log4j" % "1.2.17"
   val defaultDispatchVersion = "1.0.1"
@@ -61,6 +62,7 @@ object Dependencies {
 
   def appDependencies(sv: String) = Seq(
     launcherInterface % "provided",
+    jaxb % "provided",
     scopt,
     log4j
   ) ++ (sv match {

@@ -10,6 +10,10 @@ jobs:
         include:
           - os: ubuntu-latest
             java: 8
+            distribution: 'temurin'
+          - os: ubuntu-latest
+            java: 21
+            distribution: 'corretto'
     runs-on: ${{ matrix.os }}
     env:
       # define Java options for both official sbt and sbt-extras
@@ -21,10 +25,20 @@ jobs:
     - name: Setup JVM
       uses: actions/setup-java@v3
       with:
-        distribution: 'temurin'
+        distribution: ${{ matrix.distribution }}
         java-version: ${{ matrix.java }}
         cache: 'sbt'
     - name: Build and test
       run: |
-        sbt -v ++2.12.17! "scalaxbPlugin/scripted"
-        sbt -v +integration/test
+        case ${{ matrix.java }} in
+          "8")
+            sbt -v ++2.12.x "scalaxbPlugin/scripted"
+            sbt -v +integration/test
+            ;;
+          "21")
+            sbt -v ++2.12.x "project scalaxbPlugin" "set pluginCrossBuild / sbtVersion := sbtVersion.value" "scripted"
+            ;;
+          *)
+            echo "unexpected java version"
+            exit 1
+        esac

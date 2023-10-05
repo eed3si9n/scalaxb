@@ -6,7 +6,7 @@ lazy val emberClient= "org.http4s" %% "http4s-ember-client" % http4sVersion
 
 organization in ThisBuild  := "com.example"
 version in ThisBuild := "0.1.0-SNAPSHOT"
-scalaVersion in ThisBuild := "2.13.10"
+scalaVersion in ThisBuild := "2.13.12"
 scalaxbPackageName in ThisBuild := "generated"
 scalaxbGenerateDispatchClient in ThisBuild := false
 scalaxbGenerateHttp4sClient in ThisBuild := true

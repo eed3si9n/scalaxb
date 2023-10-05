@@ -1,13 +1,21 @@
 import sbt._
 
 object Dependencies {
+  val scala3   = "3.3.1"
   val scala213 = "2.13.12"
   val scala212 = "2.12.18"
   val scala211 = "2.11.12"
   val scala210 = "2.10.7"
 
   val jaxb = "javax.xml.bind" % "jaxb-api" % "2.3.1"
-  val scopt = "com.github.scopt" %% "scopt" % "3.7.1"
+  def scopt(sv: String) = {
+    CrossVersion.partialVersion(sv) match {
+      case Some((2, _)) =>
+        "com.github.scopt" %% "scopt" % "3.7.1"
+      case _ =>
+        "com.github.scopt" %% "scopt" % "4.1.0"
+    }
+  }
   val log4j = "log4j" % "log4j" % "1.2.17"
   val defaultDispatchVersion = "1.0.1"
   def dispatch(sv: String) = CrossVersion partialVersion sv match {
@@ -63,13 +71,13 @@ object Dependencies {
   def appDependencies(sv: String) = Seq(
     launcherInterface % "provided",
     jaxb % "provided",
-    scopt,
+    scopt(sv),
     log4j
   ) ++ (sv match {
     case x if sv.startsWith("2.10.") => Nil
     case x if sv.startsWith("2.11.") => Seq(scalaXml1, scalaParserCombinators1)
     case x if sv.startsWith("2.12.") => Seq(scalaXml2, scalaParserCombinators1)
-    case x if sv.startsWith("2.13.") => Seq(scalaXml2, scalaParserCombinators2)
+    case x                           => Seq(scalaXml2, scalaParserCombinators2)
   })
   def integrationDependencies(sv: String) = Seq(
     dispatch(sv) % "test",

@@ -33,6 +33,7 @@ jobs:
         case ${{ matrix.java }} in
           "8")
             sbt -v ++2.12.x "scalaxbPlugin/scripted"
+            sbt -v ++3.x "app/Test/compile"
             sbt -v +integration/test
             ;;
           "21")

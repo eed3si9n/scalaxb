@@ -99,7 +99,7 @@ lazy val scalaxbPlugin = (project in file("sbt-scalaxb"))
       }
     }
     scriptedLaunchOpts := { scriptedLaunchOpts.value ++
-      Seq("-Xmx1024M", "-XX:MaxPermSize=256M", "-Dplugin.version=" + version.value)
+      Seq("-Xmx1024M", "-Dplugin.version=" + version.value)
     }
     scriptedBufferLog := false
     scripted := scripted.dependsOn(app / publishLocal).evaluated

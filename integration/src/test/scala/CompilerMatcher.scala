@@ -20,24 +20,14 @@
  * THE SOFTWARE.
  */
 
-import scala.language.reflectiveCalls
 import org.specs2.matcher._
 import java.io.{File}
-import scala.tools.nsc.{Settings, GenericRunnerSettings}
+import scala.tools.nsc.GenericRunnerSettings
 import scala.reflect.internal.util.{SourceFile, BatchSourceFile}
 import scala.tools.nsc.io.{PlainFile}
 import scala.tools.nsc.reporters.{ConsoleReporter}
 
-class Holder {
-  var value: Any = _
-  override def toString: String = value match {
-    case s: String => s
-    case ref: AnyRef => ref.toString
-    case _ => super.toString
-  }
-}
-
-trait CompilerMatcher {
+trait CompilerMatcher extends CompilerMatcherBase {
   private lazy val bootPathList = List(jarPathOfClass("scala.tools.nsc.Main"),
                                    jarPathOfClass("scala.Option"),
                                    jarPathOfClass("scala.xml.Elem"),
@@ -93,9 +83,7 @@ trait CompilerMatcher {
         sys.error("At least one line of code is required.")
       val s = settings(outdir, classpath, usecurrentcp, unchecked,
         deprecation, feature, fatalWarnings, lint)
-      val main = new IMain(s, new scala.tools.nsc.interpreter.shell.ReplReporterImpl(s)) {
-        def lastReq = prevRequestList.last
-      }
+      val main = imain(s)
       if (!main.compileSources(files.map(toSourceFile(_)): _*)) {
         sys.error(s"""Error compiling: ${ files.mkString(",") }""")
       }

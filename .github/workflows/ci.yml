@@ -43,3 +43,8 @@ jobs:
             echo "unexpected java version"
             exit 1
         esac
+    - name: maven plugin
+      run: |
+        pushd mvn-scalaxb
+        mvn test
+        popd

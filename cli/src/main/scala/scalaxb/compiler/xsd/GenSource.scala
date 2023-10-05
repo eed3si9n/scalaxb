@@ -616,22 +616,22 @@ class GenSource(val schema: SchemaDecl,
     val baseSym : Option[XsTypeSymbol] = decl.content match {case SimpTypRestrictionDecl(base, _) => Some(base) case _ => None}
     val baseType: Option[String      ] = baseSym.map(buildTypeName(_))
 
-    def makeEnum(enum: EnumerationDecl[_]) =
-      "case object " + buildTypeName(localName, enum, true) + " extends " + localName + 
-      " { override def toString = " + quote(enum.value.toString) + " }"
+    def makeEnum(enumDecl: EnumerationDecl[_]) =
+      "case object " + buildTypeName(localName, enumDecl, true) + " extends " + localName + 
+      " { override def toString = " + quote(enumDecl.value.toString) + " }"
     
-    def makeCaseEntry(enum: EnumerationDecl[_]) = baseSym match {
-      case Some(XsQName) => s"${indent(3)}case ${quote(enum.value.toString)} => ${buildTypeName(localName, enum, false)}\n"
+    def makeCaseEntry(enumDecl: EnumerationDecl[_]) = baseSym match {
+      case Some(XsQName) => s"${indent(3)}case ${quote(enumDecl.value.toString)} => ${buildTypeName(localName, enumDecl, false)}\n"
       case _ => baseType.map {tpe =>
-        s"${indent(3)}case x: $tpe if x == scalaxb.fromXML[$tpe](scala.xml.Text(${quote(enum.value.toString)})) => ${buildTypeName(localName, enum, false)}\n"
+        s"${indent(3)}case x: $tpe if x == scalaxb.fromXML[$tpe](scala.xml.Text(${quote(enumDecl.value.toString)})) => ${buildTypeName(localName, enumDecl, false)}\n"
       }.getOrElse {
-        s"${indent(3)}case ${quote(enum.value.toString)} => ${buildTypeName(localName, enum, false)}\n" 
+        s"${indent(3)}case ${quote(enumDecl.value.toString)} => ${buildTypeName(localName, enumDecl, false)}\n" 
       }
     }
 
     
     val enumString = enums.map(makeEnum).mkString(newline)
-    val enumListString = enums.map(enum => buildTypeName(localName, enum, true)).mkString(", ")
+    val enumListString = enums.map(enumDecl => buildTypeName(localName, enumDecl, true)).mkString(", ")
     val enumValuesString = s"lazy val values: Seq[$localName] = Seq($enumListString)"
 
     def valueCode: String = baseSym match {

@@ -285,12 +285,12 @@ trait ContextProcessor extends ScalaNames with PackageName {
   def makeEnumValues(decl: SimpleTypeDecl, scope: scala.xml.NamespaceBinding, context: XsdContext) : Unit = {
     val enumValues = context.enumValueNames(packageName(decl.namespace, context))
     val name = context.typeNames(decl)
-    filterEnumeration(decl) map { enum =>
-      enumValues(name -> enum) = makeProtectedTypeName(decl.namespace,
-        enum.value match {
+    filterEnumeration(decl) map { enumDecl =>
+      enumValues(name -> enumDecl) = makeProtectedTypeName(decl.namespace,
+        enumDecl.value match {
           case qname: QName => Option(scope.getPrefix(qname.getNamespaceURI)).getOrElse("") + qname.getLocalPart.capitalize
-          case x if enum.value.toString.length > enumNameMaxLength => "longName"
-          case _            => enum.value.toString
+          case x if enumDecl.value.toString.length > enumNameMaxLength => "longName"
+          case _            => enumDecl.value.toString
         }, "Value", context)
     }
   }

@@ -159,34 +159,34 @@ object SchemaDecl {
     config.attributeQualifiedDefault = schema.attribute("attributeFormDefault").headOption map {
       _.text == "qualified"} getOrElse {false}
 
-    for (child <- schema.child) child match {
-      case <element>{ _* }</element>  =>
+    for (child <- schema.child) child.label match {
+      case "element" =>
         (child \ "@name").headOption foreach {  x =>
           val elem = ElemDecl.fromXML(child, List(x.text), true, config)
           config.topElems += (elem.name -> elem) }
       
-      case <attribute>{ _* }</attribute>  =>
+      case "attribute" =>
         (child \ "@name").headOption foreach {  x =>
           val attr = AttributeDecl.fromXML(child, config, true)
           config.topAttrs += (attr.name -> attr) }
             
-      case <attributeGroup>{ _* }</attributeGroup>  =>
+      case "attributeGroup" =>
         (child \ "@name").headOption foreach {  x =>
           val attrGroup = AttributeGroupDecl.fromXML(child, config)
           config.topAttrGroups += (attrGroup.name -> attrGroup) }
       
-      case <group>{ _* }</group>  =>
+      case "group" =>
         (child \ "@name").headOption foreach {  x =>
           val group = GroupDecl.fromXML(child, config)
           config.topGroups += (group.name -> group) }
       
-      case <complexType>{ _* }</complexType>  =>
+      case "complexType" =>
         (child \ "@name").headOption foreach {  x =>
           val decl = ComplexTypeDecl.fromXML(child, x.text, List(x.text), config)
           config.typeList += decl
           config.topTypes += (decl.name -> decl) }
       
-      case <simpleType>{ _* }</simpleType>  =>
+      case "simpleType" =>
         (child \ "@name").headOption foreach {  x =>
           val decl = SimpleTypeDecl.fromXML(child, x.text, List(x.text), config)
           config.typeList += decl
@@ -316,8 +316,8 @@ object AttributeDecl {
     if (typeName != "") {
       typeSymbol = TypeSymbolParser.fromString(typeName, node.scope, config)
     } else {
-      for (child <- node.child) child match {
-        case <simpleType>{ _* }</simpleType> =>
+      for (child <- node.child) child.label match {
+        case "simpleType" =>
           val decl = SimpleTypeDecl.fromXML(child, List(name), config)
           config.typeList += decl
           val symbol = ReferenceTypeSymbol(config.targetNamespace, decl.name)
@@ -418,15 +418,15 @@ object ElemDecl {
     (node \ "@type").headOption map { typeName =>
       typeSymbol = TypeSymbolParser.fromString(typeName.text, node.scope, config)
     } getOrElse {
-      for (child <- node.child) child match {
-        case <complexType>{ _* }</complexType> =>
+      for (child <- node.child) child.label match {
+        case "complexType" =>
           val decl = ComplexTypeDecl.fromXML(child, "@%s".format((family :+ name).mkString("/")), family :+ name, config)
           config.typeList += decl
           val symbol = ReferenceTypeSymbol(config.targetNamespace, decl.name)
           symbol.decl = decl
           typeSymbol = symbol
           
-        case <simpleType>{ _* }</simpleType> =>
+        case "simpleType" =>
           val decl = SimpleTypeDecl.fromXML(child, family :+ name, config)
           config.typeList += decl
           val symbol = ReferenceTypeSymbol(config.targetNamespace, decl.name)
@@ -491,10 +491,10 @@ object SimpleTypeDecl {
   
   def fromXML(node: scala.xml.Node, name: String, family: List[String], config: ParserConfig): SimpleTypeDecl = {
     var content: ContentTypeDecl = null
-    for (child <- node.child) child match {
-      case <restriction>{ _* }</restriction>  => content = SimpTypRestrictionDecl.fromXML(child, family, config) 
-      case <list>{ _* }</list>                => content = SimpTypListDecl.fromXML(child, family, config)
-      case <union>{ _* }</union>              => content = SimpTypUnionDecl.fromXML(child, config)
+    for (child <- node.child) child.label match {
+      case "restriction" => content = SimpTypRestrictionDecl.fromXML(child, family, config)
+      case "list"        => content = SimpTypListDecl.fromXML(child, family, config)
+      case "union"       => content = SimpTypUnionDecl.fromXML(child, config)
       case _ =>     
     }
     
@@ -533,22 +533,22 @@ object ComplexTypeDecl {
     val attributes = AttributeLike.fromParentNode(node, config)
     var content: HasComplexTypeContent = ComplexContentDecl.fromAttributes(attributes)
     
-    for (child <- node.child) child match {
-      case <group>{ _* }</group> =>
+    for (child <- node.child) child.label match {
+      case "group" =>
         content = ComplexContentDecl.fromCompositor(
           CompositorDecl.fromXML(child, family, config), attributes)
-      case <all>{ _* }</all> =>
+      case "all" =>
         content = ComplexContentDecl.fromCompositor(
           CompositorDecl.fromXML(child, family, config), attributes)
-      case <choice>{ _* }</choice> =>
+      case "choice" =>
         content = ComplexContentDecl.fromCompositor(
           CompositorDecl.fromXML(child, family, config), attributes)
-      case <sequence>{ _* }</sequence> =>
+      case "sequence" =>
         content = ComplexContentDecl.fromCompositor(
           CompositorDecl.fromXML(child, family, config), attributes)
-      case <simpleContent>{ _* }</simpleContent> =>
+      case "simpleContent" =>
         content = SimpleContentDecl.fromXML(child, family, config)
-      case <complexContent>{ _* }</complexContent> =>
+      case "complexContent" =>
         content = ComplexContentDecl.fromXML(child, family, config)
       case _ =>
     }
@@ -578,10 +578,10 @@ object SimpleContentDecl {
   def fromXML(node: scala.xml.Node, family: List[String], config: ParserConfig) = {
     var content: ComplexTypeContent = null
     
-    for (child <- node.child) child match {
-      case <restriction>{ _* }</restriction> =>
+    for (child <- node.child) child.label match {
+      case "restriction" =>
         content = SimpContRestrictionDecl.fromXML(child, family, config)
-      case <extension>{ _* }</extension> =>
+      case "extension" =>
         content = SimpContExtensionDecl.fromXML(child, family, config)
       case _ =>
     }
@@ -607,10 +607,10 @@ object ComplexContentDecl {
   def fromXML(node: scala.xml.Node, family: List[String], config: ParserConfig) = {
     var content: ComplexTypeContent = CompContRestrictionDecl.empty
     
-    for (child <- node.child) child match {
-      case <restriction>{ _* }</restriction> =>
+    for (child <- node.child) child.label match {
+      case "restriction" =>
         content = CompContRestrictionDecl.fromXML(child, family, config)
-      case <extension>{ _* }</extension> =>
+      case "extension" =>
         content = CompContExtensionDecl.fromXML(child, family, config)
       case _ =>
     }
@@ -628,16 +628,16 @@ object CompositorDecl {
         if (elem.label != "annotation") &&
           (elem.label != "attribute") => elem
     }) map(node =>
-      node match {
-        case <element>{ _* }</element>   =>
+      node.label match {
+        case "element"  =>
           if ((node \ "@name").headOption.isDefined) ElemDecl.fromXML(node, family, false, config)
           else if ((node \ "@ref").headOption.isDefined) ElemRef.fromXML(node, config)
           else sys.error("xsd: Unspported content type " + node.toString) 
-        case <choice>{ _* }</choice>     => ChoiceDecl.fromXML(node, family, config)
-        case <sequence>{ _* }</sequence> => SequenceDecl.fromXML(node, family, config)
-        case <all>{ _* }</all>           => AllDecl.fromXML(node, family, config)
-        case <any>{ _* }</any>           => AnyDecl.fromXML(node, config)
-        case <group>{ _* }</group>       =>
+        case "choice"   => ChoiceDecl.fromXML(node, family, config)
+        case "sequence" => SequenceDecl.fromXML(node, family, config)
+        case "all"      => AllDecl.fromXML(node, family, config)
+        case "any"      => AnyDecl.fromXML(node, config)
+        case "group"    =>
           if ((node \ "@name").headOption.isDefined) GroupDecl.fromXML(node, config)
           else if ((node \ "@ref").headOption.isDefined) GroupRef.fromXML(node, config)
           else sys.error("xsd: Unspported content type " + node.toString) 
@@ -646,11 +646,11 @@ object CompositorDecl {
       }
     )
   
-  def fromXML(node: scala.xml.Node, family: List[String], config: ParserConfig): HasParticle = node match {
-    case <choice>{ _* }</choice>     => ChoiceDecl.fromXML(node, family, config)
-    case <sequence>{ _* }</sequence> => SequenceDecl.fromXML(node, family, config)
-    case <all>{ _* }</all>           => AllDecl.fromXML(node, family, config)
-    case <group>{ _* }</group>       =>
+  def fromXML(node: scala.xml.Node, family: List[String], config: ParserConfig): HasParticle = node.label match {
+    case "choice"   => ChoiceDecl.fromXML(node, family, config)
+    case "sequence" => SequenceDecl.fromXML(node, family, config)
+    case "all"      => AllDecl.fromXML(node, family, config)
+    case "group"    =>
       if ((node \ "@name").headOption.isDefined) GroupDecl.fromXML(node, config)
       else if ((node \ "@ref").headOption.isDefined) GroupRef.fromXML(node, config)
       else sys.error("xsd: Unspported content type " + node.toString)

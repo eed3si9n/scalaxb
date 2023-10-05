@@ -18,7 +18,7 @@ Use conscript
 
 Install conscript (cs).
 
-- https://github.com/n8han/conscript/
+- https://github.com/foundweekends/conscript
 
 Install scalaxb using it.
 
@@ -35,13 +35,13 @@ If you want to build from source, install git.
 
 - http://git-scm.com/
 
-Download and install simple-build-tool (sbt 0.10).
+Download and install sbt.
 
-- https://github.com/harrah/xsbt/wiki/Setup
+- https://www.scala-sbt.org/download.html
 
 Grab scalaxb's source and build:
 
-    $ git clone git://github.com/eed3si9n/scalaxb.git scalaxb
+    $ git clone git@github.com:eed3si9n/scalaxb.git scalaxb
     $ cd scalaxb
 
 Open `build.sbt` using your favorite editor, and change the version number to `local-SNAPSHOT`.
@@ -51,7 +51,7 @@ This way our Ivy cache won't be confused when the official builds are released.
 
 Build, and publish it locally.
 
-    $ sbt "project app" "so publish-local"
+    $ sbt "project app" "publishLocal"
 
 Finally, install it using conscript.
 

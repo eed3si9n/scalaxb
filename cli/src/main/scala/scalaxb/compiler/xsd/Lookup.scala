@@ -179,14 +179,14 @@ trait Lookup extends ContextProcessor {
   def buildTypeName(group: AttributeGroupDecl, shortLocal: Boolean): String =
     buildTypeName(packageName(group, context), group, shortLocal)
   
-  def buildTypeName(enumTypeName: String, enum: EnumerationDecl[_], shortLocal: Boolean): String = {
+  def buildTypeName(enumTypeName: String, enumDecl: EnumerationDecl[_], shortLocal: Boolean): String = {
     val pkg = packageName(schema, context)
     val typeNames = context.enumValueNames(pkg)
-    if (!typeNames.contains(enumTypeName, enum))
-      sys.error(s"${pkg}: Type name not found: " + enum.toString)
+    if (!typeNames.contains(enumTypeName, enumDecl))
+      sys.error(s"${pkg}: Type name not found: " + enumDecl.toString)
     
-    if (shortLocal && pkg == packageName(schema, context)) typeNames(enumTypeName, enum)
-    else buildFullyQualifiedNameFromPackage(pkg, typeNames(enumTypeName, enum))   
+    if (shortLocal && pkg == packageName(schema, context)) typeNames(enumTypeName, enumDecl)
+    else buildFullyQualifiedNameFromPackage(pkg, typeNames(enumTypeName, enumDecl))   
   }
   
   def buildFullyQualifiedNameFromNS(namespace: Option[String], localName: String): String = {

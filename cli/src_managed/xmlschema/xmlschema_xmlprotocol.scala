@@ -3837,7 +3837,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     def toAttribute(__obj: xmlschema.XDefRef, __attr: scala.xml.MetaData, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {
       var attr: scala.xml.MetaData  = __attr
       __obj.name foreach { x => attr = scala.xml.Attribute(null, "name", x.toString, attr) }
-    __obj.ref foreach { x => attr = scala.xml.Attribute(null, "ref", scalaxb.Helper.toString(x, __scope), attr) }
+      __obj.ref foreach { x => attr = scala.xml.Attribute(null, "ref", scalaxb.Helper.toString(x, __scope), attr) }
       attr
     }
   }
@@ -3854,7 +3854,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     def toAttribute(__obj: xmlschema.XOccurs, __attr: scala.xml.MetaData, __scope: scala.xml.NamespaceBinding): scala.xml.MetaData = {
       var attr: scala.xml.MetaData  = __attr
       if (__obj.minOccurs.toString != "1") attr = scala.xml.Attribute(null, "minOccurs", __obj.minOccurs.toString, attr)
-    if (__obj.maxOccurs.toString != "1") attr = scala.xml.Attribute(null, "maxOccurs", __obj.maxOccurs.toString, attr)
+      if (__obj.maxOccurs.toString != "1") attr = scala.xml.Attribute(null, "maxOccurs", __obj.maxOccurs.toString, attr)
       attr
     }
   }

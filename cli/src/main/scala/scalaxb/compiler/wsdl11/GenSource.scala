@@ -132,7 +132,7 @@ trait {interfaceTypeName}{taglessTypeConstraint} {{ self =>
 {operationOutputs.mkString(NL + NL)}
 </source>
 
-  val bindingTrait = <source>
+    val bindingTrait = <source>
   trait {name}s{taglessTypeConstraint} {{ this: {selfType} =>
     {if(config.httpClientStyle == HttpClientStyle.Tagless) "implicit protected def F: ApplicativeError[F, Throwable]" else ""}
     lazy val targetNamespace: Option[String] = { xsdgenerator.quote(targetNamespace) }
@@ -201,7 +201,7 @@ trait {interfaceTypeName}{taglessTypeConstraint} {{ self =>
 {operationOutputs.mkString(NL + NL)}
 </source>
 
-  val bindingTrait = <source>
+    val bindingTrait = <source>
   trait {name}s{taglessTypeConstraint} {{ this: {selfType} =>
     {if(config.httpClientStyle == HttpClientStyle.Tagless) "implicit protected def F: ApplicativeError[F, Throwable]" else ""}
     lazy val targetNamespace: Option[String] = { xsdgenerator.quote(targetNamespace) }

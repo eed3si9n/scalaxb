@@ -165,7 +165,8 @@ class GenSource(val schema: SchemaDecl,
         scalaxb.Helper.instanceType(node) match {{
           { val cases = for (sub <- baseToDescendants(decl) if sub.isNamed)
               yield makeCaseEntry(sub)
-            cases.mkString(newline + indent(4 + compDepth))        
+
+              cases.mkString(newline + indent(4 + compDepth))
           }
           { if (!decl.abstractValue) "case _ => Right(" + buildFromXML(defaultType, "node", Some("stack"), None) + ")"
             else """case x => Left("Unknown type: " + x)""" }
@@ -177,7 +178,8 @@ class GenSource(val schema: SchemaDecl,
         __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq = __obj match {{
       { val cases = for (sub <- context.baseToSubs(decl))
           yield makeToXmlCaseEntry(sub)
-        cases.mkString(newline + indent(2 + compDepth))
+
+          cases.mkString(newline + indent(2 + compDepth))
       }
       { if (!decl.abstractValue) "case x: " + defaultType + " => " +
           buildToXML(defaultType, "x, __namespace, __elementLabel, __scope, __typeAttribute")
@@ -642,13 +644,13 @@ class GenSource(val schema: SchemaDecl,
 
     val traitCode = enums match {
       case Nil =>
-<source>case class {localName}()
+        <source>case class {localName}()
 
 object {localName} {{
   def fromString(value: String, scope: scala.xml.NamespaceBinding): {localName} = {localName}()
 }}</source>    
       case _ =>
-<source>sealed trait {localName}
+        <source>sealed trait {localName}
 
 object {localName} {{
   def fromString(value: String, scope: scala.xml.NamespaceBinding)(implicit fmt: scalaxb.XMLFormat[{fqn}]): {localName} = fmt.reads(scala.xml.Text(value), Nil) match {{

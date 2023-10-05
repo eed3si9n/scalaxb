@@ -54,7 +54,7 @@ lazy val app = (project in file("cli"))
   .settings(codegenSettings)
   .settings(nocomma {
     name := "scalaxb"
-    crossScalaVersions := Seq(scala213, scala212, scala211, scala210)
+    crossScalaVersions := Seq(scala3, scala213, scala212, scala211, scala210)
     scalaVersion := scala212
     resolvers += sbtResolver.value
     libraryDependencies ++= appDependencies(scalaVersion.value)

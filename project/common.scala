@@ -43,7 +43,7 @@ object Common {
   val codegenSettings: Seq[Def.Setting[_]] = scalaxbCodegenSettings ++ Seq(
     Compile / unmanagedSourceDirectories += baseDirectory.value / "src_managed",
     buildInfoPackage := "scalaxb",
-    buildInfoKeys := BuildInfoKey.ofN(name, version, scalaVersion, sbtVersion,
+    buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion,
       "defaultDispatchVersion" -> Dependencies.defaultDispatchVersion,
       "defaultHttp4sVersion" -> Dependencies.defaultHttp4sVersion,
       "defaultGigahorseVersion" -> Dependencies.defaultGigahorseVersion,

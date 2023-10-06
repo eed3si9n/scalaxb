@@ -65,7 +65,7 @@ lazy val app = (project in file("cli"))
       else prev
     }
     assembly / mainClass           := Some("scalaxb.compiler.Main")
-    assembly / assemblyOption      := (assembly / assemblyOption).value.copy(prependShellScript = Some(sbtassembly.AssemblyPlugin.defaultShellScript))
+    assembly / assemblyOption      := (assembly / assemblyOption).value.withPrependShellScript(Some(sbtassembly.AssemblyPlugin.defaultShellScript))
     assembly / assemblyOutputPath  := file(s"./${name.value}-${version.value}")
   })
 

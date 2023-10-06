@@ -4,8 +4,6 @@ object Dependencies {
   val scala3   = "3.3.1"
   val scala213 = "2.13.12"
   val scala212 = "2.12.18"
-  val scala211 = "2.11.12"
-  val scala210 = "2.10.7"
 
   val jaxb = "javax.xml.bind" % "jaxb-api" % "2.3.1"
   def scopt(sv: String) = {
@@ -30,7 +28,6 @@ object Dependencies {
   val defaultGigahorseBackend = "okhttp"
   val gigahorse = "com.eed3si9n" %% s"gigahorse-$defaultGigahorseBackend" % defaultGigahorseVersion
   val launcherInterface = "org.scala-sbt" % "launcher-interface" % "0.12.0"
-  val scalaXml1 = "org.scala-lang.modules" %% "scala-xml" % "1.3.0"
   val scalaXml2 = "org.scala-lang.modules" %% "scala-xml" % "2.1.0"
   val scalaParserCombinators1 = "org.scala-lang.modules" %% "scala-parser-combinators" % "1.1.2"
   val scalaParserCombinators2 = "org.scala-lang.modules" %% "scala-parser-combinators" % "2.1.1"
@@ -58,11 +55,7 @@ object Dependencies {
 
   def scalaCompiler(sv: String) = "org.scala-lang" % "scala-compiler" % sv
 
-  val specs2Version = "2.4.11"
   def specs2(sv: String) = CrossVersion partialVersion sv match {
-    case Some((2,  9)) => "org.specs2" %% "specs2" % "1.12.3"
-    case Some((2, 10)) => "org.specs2" %% "specs2" % "2.1.1"
-    case Some((2, 11)) => "org.specs2" %% "specs2" % "2.3.13"
     case Some((2, 12)) => "org.specs2" %% "specs2" % "2.4.17"
     case Some((2, 13)) => "org.specs2" %% "specs2-matcher-extra" % "4.6.0"
     case x             => sys error s"Unexpected Scala version [$sv], with partial version $x"
@@ -74,8 +67,6 @@ object Dependencies {
     scopt(sv),
     log4j
   ) ++ (sv match {
-    case x if sv.startsWith("2.10.") => Nil
-    case x if sv.startsWith("2.11.") => Seq(scalaXml1, scalaParserCombinators1)
     case x if sv.startsWith("2.12.") => Seq(scalaXml2, scalaParserCombinators1)
     case x                           => Seq(scalaXml2, scalaParserCombinators2)
   })

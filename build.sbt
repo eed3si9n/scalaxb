@@ -36,13 +36,12 @@ lazy val commonSettings = Seq(
 lazy val root = (project in file("."))
   .aggregate(app, integration, scalaxbPlugin)
   .settings(nocomma {
-    scalaVersion := scala211
+    scalaVersion := scala212
     publish / skip := true
     crossScalaVersions := Nil
     commands += Command.command("release") { state =>
       "clean" ::
         "+app/publishSigned" ::
-        "++2.10.7!;scalaxbPlugin/publishSigned" ::
         "++2.12.12!;scalaxbPlugin/publishSigned" ::
         state
     }
@@ -54,7 +53,7 @@ lazy val app = (project in file("cli"))
   .settings(codegenSettings)
   .settings(nocomma {
     name := "scalaxb"
-    crossScalaVersions := Seq(scala3, scala213, scala212, scala211, scala210)
+    crossScalaVersions := Seq(scala3, scala213, scala212)
     scalaVersion := scala212
     resolvers += sbtResolver.value
     libraryDependencies ++= appDependencies(scalaVersion.value)
@@ -94,7 +93,6 @@ lazy val scalaxbPlugin = (project in file("sbt-scalaxb"))
     description := """sbt plugin to run scalaxb"""
     pluginCrossBuild / sbtVersion := {
       scalaBinaryVersion.value match {
-        case "2.10" => "0.13.18"
         case "2.12" => "1.2.8" // set minimum sbt version
       }
     }

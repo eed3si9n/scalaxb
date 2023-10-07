@@ -20,7 +20,7 @@
   <licenses>
     <license>
       <name>The MIT License</name>
-      <url>https://raw.github.com/eed3si9n/scalaxb/master/mvn-scalaxb/LICENSE</url>
+      <url>https://raw.github.com/eed3si9n/scalaxb/HEAD/mvn-scalaxb/LICENSE</url>
       <distribution>repo</distribution>
     </license>
   </licenses>

@@ -4,7 +4,7 @@ import Common._
 ThisBuild / version := "1.10.1-SNAPSHOT"
 ThisBuild / organization := "org.scalaxb"
 ThisBuild / homepage := Option(url("http://scalaxb.org"))
-ThisBuild / licenses := List("MIT License" -> url("https://github.com/eed3si9n/scalaxb/blob/master/LICENSE"))
+ThisBuild / licenses := List("MIT License" -> url("https://github.com/eed3si9n/scalaxb/blob/HEAD/LICENSE"))
 ThisBuild / description := """scalaxb is an XML data-binding tool for Scala that supports W3C XML Schema (xsd) and wsdl."""
 ThisBuild / publishMavenStyle := true
 ThisBuild / pomIncludeRepository := { x => false }

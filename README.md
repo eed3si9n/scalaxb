@@ -76,6 +76,6 @@ Contacts
 - [mailing list](http://groups.google.com/group/scalaxb)
 - [@scalaxb](http://twitter.com/scalaxb)
 
-  [1]: https://github.com/eed3si9n/scalaxb/blob/master/INSTALL.md
+  [1]: https://github.com/eed3si9n/scalaxb/blob/HEAD/INSTALL.md
   [2]: http://scalaxb.org/mvn-scalaxb
   [3]: http://scalaxb.org/issue-reporting-guideline

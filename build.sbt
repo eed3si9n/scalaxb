@@ -93,7 +93,7 @@ lazy val scalaxbPlugin = (project in file("sbt-scalaxb"))
     description := """sbt plugin to run scalaxb"""
     pluginCrossBuild / sbtVersion := {
       scalaBinaryVersion.value match {
-        case "2.12" => "1.2.8" // set minimum sbt version
+        case "2.12" => "1.5.8" // set minimum sbt version
       }
     }
     scriptedLaunchOpts := { scriptedLaunchOpts.value ++

@@ -1,4 +1,5 @@
 import www.example.com.IPO
+import www.example.com.IPO._
 
 object Usage extends App {
   val shipTo = scalaxb.fromXML[IPO.Address](<shipTo>

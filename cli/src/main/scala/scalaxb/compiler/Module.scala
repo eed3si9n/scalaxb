@@ -541,7 +541,5 @@ class ReferenceNotFound(kind: String, namespace: Option[String], name: String) e
     (namespace map { "{" + _ + "}" } getOrElse {"(unqualified) "}) + name + " was not found.")
 
 class CaseClassTooLong(fqn: String, xmlname: String) extends RuntimeException(
-  """Error: A case class with > 22 parameters cannot be created for %s. Consider using --wrap-contents "%s" option.""".format(
-    fqn, xmlname
-  )
+  s"""Error: A case class with > 22 parameters cannot be created for ${fqn}. Consider using --wrap-contents "${xmlname}" option."""
 )

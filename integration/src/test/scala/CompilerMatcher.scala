@@ -88,7 +88,7 @@ trait CompilerMatcher extends CompilerMatcherBase {
         sys.error(s"""Error compiling: ${ files.mkString(",") }""")
       }
       code foreach { c => main.interpret(c) match {
-        case IR.Error => sys.error("Error interpreting %s" format (c))
+        case IR.Error => sys.error(s"Error interpreting ${c}")
         case _ =>
       }}
       val holder0 = allCatch opt {

@@ -420,7 +420,7 @@ object ElemDecl {
     } getOrElse {
       for (child <- node.child) child.label match {
         case "complexType" =>
-          val decl = ComplexTypeDecl.fromXML(child, "@%s".format((family :+ name).mkString("/")), family :+ name, config)
+          val decl = ComplexTypeDecl.fromXML(child, s"@${(family :+ name).mkString("/")}", family :+ name, config)
           config.typeList += decl
           val symbol = ReferenceTypeSymbol(config.targetNamespace, decl.name)
           symbol.decl = decl

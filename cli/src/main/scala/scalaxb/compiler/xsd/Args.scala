@@ -29,12 +29,10 @@ trait Args extends Params {
 
   def buildFromXML(typeName: String): String = "scalaxb.fromXML[" + typeName + "]"
   def buildFromXML(typeName: String, selector: String, stackItem: Option[String], formatter: Option[String]): String =
-    buildFromXML(typeName) + "(%s, %s)%s".format(selector,
-      stackItem map {
+    buildFromXML(typeName) + s"(${selector}, ${stackItem map {
         case "stack" => "stack"
         case x       => "scalaxb.ElemName(" + x + ") :: stack"
-      } getOrElse {"Nil"},
-      formatter map {"(" + _ + ")"} getOrElse {""})
+      } getOrElse {"Nil"}})${formatter map {"(" + _ + ")"} getOrElse {""}}"
 
   def buildToXML(typeName: String, args: String): String =
     "scalaxb.toXML[" + typeName + "](" + args + ")"
@@ -228,7 +226,7 @@ trait Args extends Params {
     if (elem.global) elem.namespace match {
       case None => elem.name
       case Some(ns) =>
-        if (prependNamespace) "{%s}".format(ns) + elem.name
+        if (prependNamespace) s"{${ns}}" + elem.name
         else elem.name
     }
     else elem.name

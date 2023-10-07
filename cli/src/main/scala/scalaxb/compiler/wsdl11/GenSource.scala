@@ -231,10 +231,7 @@ trait {interfaceTypeName}{taglessTypeConstraint} {{ self =>
     }
     outputOpt flatMap { (output: XParamType) =>
       isMultiPart(output, binding.output) map { _ =>
-        "case class %s(%s)".format(
-          makeOperationOutputWrapperName(op),
-          makeOperationOutputArgs map {_.toScalaCode} mkString(", ")
-        )
+        s"case class ${makeOperationOutputWrapperName(op)}(${makeOperationOutputArgs map {_.toScalaCode} mkString(", ")})"
       }
     }
   }
@@ -281,46 +278,40 @@ trait {interfaceTypeName}{taglessTypeConstraint} {{ self =>
 
     val retval = (op.xoperationtypeoption, config.httpClientStyle) match {
       case (DataRecord(_, _, XOnewayoperationSequence(input)), HttpClientStyle.Future) =>
-        "def %s(%s)(implicit ec: ExecutionContext): Future[Unit]".format(name, arg(input))
+        s"def ${name}(${arg(input)})(implicit ec: ExecutionContext): Future[Unit]"
 
       case (DataRecord(_, _, XOnewayoperationSequence(input)), HttpClientStyle.Sync) =>
-        "def %s(%s): Unit".format(name, arg(input))
+        s"def ${name}(${arg(input)}): Unit"
 
       case (DataRecord(_, _, XOnewayoperationSequence(input)), HttpClientStyle.Tagless) =>
-        "def %s(%s): %s[Unit]".format(name, arg(input), taglessParamName)
+        s"def ${name}(${arg(input)}): ${taglessParamName}[Unit]"
 
       case (DataRecord(_, _, XRequestresponseoperationSequence(input, output, faults)), HttpClientStyle.Future) =>
-        "def %s(%s)(implicit ec: ExecutionContext): Future[%s]".format(name, arg(input),
-          outputTypeName(binding, op, output, soapBindingStyle))
+        s"def ${name}(${arg(input)})(implicit ec: ExecutionContext): Future[${outputTypeName(binding, op, output, soapBindingStyle)}]"
 
       case (DataRecord(_, _, XRequestresponseoperationSequence(input, output, faults)), HttpClientStyle.Sync) =>
-        "def %s(%s): Either[%s, %s]".format(name, arg(input),
-          faultsToTypeName(faults, soap12), outputTypeName(binding, op, output, soapBindingStyle))
+        s"def ${name}(${arg(input)}): Either[${faultsToTypeName(faults, soap12)}, ${outputTypeName(binding, op, output, soapBindingStyle)}]"
 
       case (DataRecord(_, _, XRequestresponseoperationSequence(input, output, faults)), HttpClientStyle.Tagless) =>
-        "def %s(%s): %s[%s]".format(name, arg(input), taglessParamName,
-          outputTypeName(binding, op, output, soapBindingStyle))        
+        s"def ${name}(${arg(input)}): ${taglessParamName}[${outputTypeName(binding, op, output, soapBindingStyle)}]"
 
       case (DataRecord(_, _, XSolicitresponseoperationSequence(output, input, faults)), HttpClientStyle.Future) =>
-        "def %s(%s)(implicit ec: ExecutionContext): Future[%s]".format(name, arg(input),
-          outputTypeName(binding, op, output, soapBindingStyle))
+        s"def ${name}(${arg(input)})(implicit ec: ExecutionContext): Future[${outputTypeName(binding, op, output, soapBindingStyle)}]"
 
       case (DataRecord(_, _, XSolicitresponseoperationSequence(output, input, faults)), HttpClientStyle.Sync) =>
-        "def %s(%s): Either[%s, %s]".format(name, arg(input),
-          faultsToTypeName(faults, soap12), outputTypeName(binding, op, output, soapBindingStyle))
+        s"def ${name}(${arg(input)}): Either[${faultsToTypeName(faults, soap12)}, ${outputTypeName(binding, op, output, soapBindingStyle)}]"
 
       case (DataRecord(_, _, XSolicitresponseoperationSequence(output, input, faults)), HttpClientStyle.Tagless) =>
-        "def %s(%s): %s[%s]".format(name, arg(input), taglessParamName,
-          outputTypeName(binding, op, output, soapBindingStyle))
+        s"def ${name}(${arg(input)}): ${taglessParamName}[${outputTypeName(binding, op, output, soapBindingStyle)}]"
 
       case (DataRecord(_, _, XNotificationoperationSequence(output)), HttpClientStyle.Future) =>
-        "def %s(implicit ec: ExecutionContext): Future[%s]".format(name, outputTypeName(binding, op, output, soapBindingStyle))
+        s"def ${name}(implicit ec: ExecutionContext): Future[${outputTypeName(binding, op, output, soapBindingStyle)}]"
 
       case (DataRecord(_, _, XNotificationoperationSequence(output)), HttpClientStyle.Sync) =>
-        "def %s: %s".format(name, outputTypeName(binding, op, output, soapBindingStyle))
+        s"def ${name}: ${outputTypeName(binding, op, output, soapBindingStyle)}"
 
       case (DataRecord(_, _, XNotificationoperationSequence(output)), HttpClientStyle.Tagless) =>
-        "def %s: %s[%s]".format(name, taglessParamName, outputTypeName(binding, op, output, soapBindingStyle))
+        s"def ${name}: ${taglessParamName}[${outputTypeName(binding, op, output, soapBindingStyle)}]"
 
       case _ => sys.error("unsupported.")
     }
@@ -372,7 +363,7 @@ trait {interfaceTypeName}{taglessTypeConstraint} {{ self =>
 
   def boundOperation(binding: XBinding_operationType, intf: XPortTypeType) =
     (intf.operation filter {_.name == binding.name}).headOption getOrElse {
-      sys.error("operation %s was not found in %s".format(binding.name, intf.name))
+      sys.error(s"operation ${binding.name} was not found in ${intf.name}")
     }
 
   def parseSoapBindingStyle(anyHeadOption: Option[DataRecord[Any]], defaultSoapBindingStyle: SoapBindingStyle): SoapBindingStyle =
@@ -544,13 +535,13 @@ trait {interfaceTypeName}{taglessTypeConstraint} {{ self =>
 
     val opImpl = (op.xoperationtypeoption, config.httpClientStyle) match {
       case (DataRecord(_, _, XOnewayoperationSequence(input)), HttpClientStyle.Tagless) =>
-        "self.%s(%s)".format(name, arg(input))
+        s"self.${name}(${arg(input)})"
       case (DataRecord(_, _, XRequestresponseoperationSequence(input, _, _)), HttpClientStyle.Tagless) =>
-        "self.%s(%s)".format(name, arg(input))
+        s"self.${name}(${arg(input)})"
       case (DataRecord(_, _, XSolicitresponseoperationSequence(_, input, _)), HttpClientStyle.Tagless) =>
-        "self.%s(%s)".format(name, arg(input))
+        s"self.${name}(${arg(input)})"
       case (DataRecord(_, _, XNotificationoperationSequence(_)), HttpClientStyle.Tagless) =>
-        "self.%s".format(name)
+        s"self.${name}"
 
       case _ => sys.error("unsupported.")
     }
@@ -626,13 +617,13 @@ trait {interfaceTypeName}{taglessTypeConstraint} {{ self =>
   case _ => sys.error("Elem not found!")
 }"""
           else ""
-        "scalaxb.toXML(%s, %s, %s, defaultScope)%s".format(v, nsString, label, post)
+        s"scalaxb.toXML(${v}, ${nsString}, ${label}, defaultScope)${post}"
       }
     } match {
       case Nil => "Nil"
       case x :: Nil => x
-      case xs if config.useLists => "List.concat(%s)".format(xs.mkString("," + NL + "              "))
-      case xs => "Seq.concat(%s)".format(xs.mkString("," + NL + "              "))
+      case xs if config.useLists => s"List.concat(${xs.mkString("," + NL + "              ")})"
+      case xs => s"Seq.concat(${xs.mkString("," + NL + "              ")})"
     }
 
   // http://www.w3.org/TR/wsdl#_soap:body
@@ -647,7 +638,7 @@ trait {interfaceTypeName}{taglessTypeConstraint} {{ self =>
       case symbol: BuiltInSimpleTypeSymbol => (buildIRIStyleArgs(input) map {_.toParamName}).head
       case ReferenceTypeSymbol(decl: SimpleTypeDecl) => (buildIRIStyleArgs(input) map {_.toParamName}).head
       case _ =>
-        "%s(%s)".format(toParamCache(bodyParts.head).baseTypeName, buildIRIStyleArgs(input) map {_.toVarg} mkString(", "))
+        s"${toParamCache(bodyParts.head).baseTypeName}(${buildIRIStyleArgs(input) map {_.toVarg} mkString(", ")})"
     }
 
     lazy val opLabel = "\"%s\"".format(op.name)
@@ -673,7 +664,7 @@ trait {interfaceTypeName}{taglessTypeConstraint} {{ self =>
 
       val nsString = namespace map {"Some(\"%s\")".format(_)} getOrElse {"None"}
       
-      "scalaxb.toXML(%s, %s, %s, defaultScope)".format(v, nsString, label) +
+      s"scalaxb.toXML(${v}, ${nsString}, ${label}, defaultScope)" +
       (soapBindingStyle match {
         case DocumentStyle if !p.element.isDefined =>
           """ match {
@@ -689,8 +680,8 @@ trait {interfaceTypeName}{taglessTypeConstraint} {{ self =>
       case (DocumentStyle, x :: xs) => x
       case (DocumentStyle, _)       => "Nil"
       case _ =>
-        """scala.xml.Elem(%s, %s, scala.xml.Null, defaultScope, true,
-          %s: _*)""".format(prefix, opLabel, argsString)
+        s"""scala.xml.Elem(${prefix}, ${opLabel}, scala.xml.Null, defaultScope, true,
+          ${argsString}: _*)"""
     }
   }
 
@@ -743,8 +734,7 @@ trait {interfaceTypeName}{taglessTypeConstraint} {{ self =>
       })
 
       if (!multipart) fromXmls.head
-      else "%s(%s)".format(xsdgenerator.buildFullyQualifiedNameFromPackage(pkg, makeOperationOutputWrapperName(op)),
-        fromXmls.mkString("," + NL + "              "))
+      else s"${xsdgenerator.buildFullyQualifiedNameFromPackage(pkg, makeOperationOutputWrapperName(op))}(${fromXmls.mkString("," + NL + "              ")})"
     }
   }
 
@@ -775,7 +765,7 @@ trait {interfaceTypeName}{taglessTypeConstraint} {{ self =>
       }
     def baseTypeName: String = xsdgenerator.buildTypeName(typeSymbol)
     def toParamName: String = escapeKeyWord(paramName)
-    def toScalaCode: String = "%s: %s".format(toParamName, typeName)
+    def toScalaCode: String = s"${toParamName}: ${typeName}"
     def toVarg: String =
       if (seqParam) toParamName + ": _*"
       else toParamName
@@ -821,7 +811,7 @@ trait {interfaceTypeName}{taglessTypeConstraint} {{ self =>
   } getOrElse {sys.error("unexpected input: " + input)}
 
   def buildPartsArg(input: XParamType): String = (paramMessage(input).part map { part =>
-    "%s: %s".format(part.name getOrElse {"in"}, toParamCache(part).typeName)
+    s"${part.name getOrElse {"in"}}: ${toParamCache(part).typeName}"
   }).mkString(", ")
 
   def toParamCache(part: XPartType): ParamCache =
@@ -877,13 +867,10 @@ trait {interfaceTypeName}{taglessTypeConstraint} {{ self =>
     }
 
   def faultsToTypeName(faults: Seq[XFaultType], soap12: Boolean): String =
-    "%s[%s]".format(
-      if (soap12) "scalaxb.Fault" else "scalaxb.Soap11Fault",
-      faultsToFaultParamTypeName(faults) match {
+    s"${if (soap12) "scalaxb.Fault" else "scalaxb.Soap11Fault"}[${faultsToFaultParamTypeName(faults) match {
         case (x, true) => s"""Option[$x]"""
         case (x, _)    => x
-      }
-    )
+      }}]"
 
   // param type and nillable
   def faultParamTypeName(fault: XFaultType): (String, Boolean) = {

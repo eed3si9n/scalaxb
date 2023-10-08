@@ -31,8 +31,8 @@ lazy val root = (project in file(".")).
       "3.3.1",
     ),
     name := "mavenxsd",
-    scalaxbAutoPackages in (Compile, scalaxb) := true,
-    scalaxbGenerateMutable in (Compile, scalaxb) := true,
+    Compile / scalaxb / scalaxbAutoPackages := true,
+    Compile / scalaxb / scalaxbGenerateMutable := true,
     libraryDependencies ++= scalaXml.value,
     libraryDependencies ++= scalaParser.value,
     libraryDependencies += jaxbApi

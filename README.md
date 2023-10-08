@@ -40,9 +40,9 @@ lazy val root = (project in file(".")).
   enablePlugins(ScalaxbPlugin).
   settings(
     name := "foo-project",
-    scalaxbPackageName in (Compile, scalaxb) := "generated",
-    // scalaxbAutoPackages in (Compile, scalaxb) := true,
-    scalaxbDispatchVersion in (Compile, scalaxb) := dispatchVersion,
+    Compile / scalaxb / scalaxbPackageName := "generated",
+    // Compile / scalaxb / scalaxbAutoPackages := true,
+    Compile / scalaxb / scalaxbDispatchVersion := dispatchVersion,
     libraryDependencies ++= Seq(dispatch, jaxbApi, scalaParser, scalaXml)
   )
 ```

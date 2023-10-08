@@ -57,24 +57,24 @@ object ScalaxbPlugin extends sbt.AutoPlugin {
   override lazy val projectSettings: Seq[Def.Setting[_]] =
     inConfig(Compile)(baseScalaxbSettings) ++
     Set(
-      sourceGenerators in Compile += (scalaxb in Compile).taskValue
+      Compile / sourceGenerators += (Compile / scalaxb).taskValue
     )
   lazy val baseScalaxbSettings: Seq[Def.Setting[_]] = Seq(
-    scalaxb := (scalaxbGenerate in scalaxb).value,
-    sourceManaged in scalaxb := {
+    scalaxb := (scalaxb / scalaxbGenerate).value,
+    scalaxb / sourceManaged := {
       sourceManaged.value / "sbt-scalaxb"
     },
-    scalaxbXsdSource in scalaxb := {
+    scalaxb / scalaxbXsdSource := {
       val src = sourceDirectory.value
       if (Seq(Compile, Test) contains configuration.value) src / "xsd"
       else src / "main" / "xsd"
     },
-    scalaxbWsdlSource in scalaxb := {
+    scalaxb / scalaxbWsdlSource := {
       val src = sourceDirectory.value
       if (Seq(Compile, Test) contains configuration.value) src / "wsdl"
       else src / "main" / "wsdl"
     },
-    logLevel in scalaxb := (logLevel?? Level.Info).value
+    scalaxb / logLevel := (logLevel?? Level.Info).value
   ) ++ inTask(scalaxb)(Seq(
     scalaxbGenerate := {
       val s = streams.value

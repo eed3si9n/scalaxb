@@ -12,9 +12,6 @@ class SbtApp extends xsbti.AppMain {
       case e: ReferenceNotFound =>
         logger.error(e.getMessage)
         Exit(1)
-      case e: CaseClassTooLong =>
-        logger.error(e.getMessage)
-        Exit(1)
       case e: Exception =>
         logger.error(e.getStackTrace.mkString("", Module.NL, Module.NL))
         Exit(1)

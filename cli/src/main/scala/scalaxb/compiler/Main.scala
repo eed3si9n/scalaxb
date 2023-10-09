@@ -40,8 +40,6 @@ object Main {
     catch {
       case e: ReferenceNotFound =>
         log.error(e.getMessage)
-      case e: CaseClassTooLong =>
-        log.error(e.getMessage)
       case e: Exception =>
         log.error(e.getStackTrace.mkString("", Module.NL, Module.NL))
     }

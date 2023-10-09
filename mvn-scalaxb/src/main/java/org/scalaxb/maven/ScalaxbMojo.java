@@ -49,7 +49,6 @@ import org.sonatype.plexus.build.incremental.BuildContext;
 
 import scala.Option;
 import scalaxb.compiler.Arguments;
-import scalaxb.compiler.CaseClassTooLong;
 import scalaxb.compiler.Module;
 import scalaxb.compiler.ReferenceNotFound;
 
@@ -158,8 +157,6 @@ public class ScalaxbMojo extends AbstractScalaxbMojo {
             }
             context.refresh(getOutputDirectory());
         } catch (ReferenceNotFound ex) {
-            throw new MojoFailureException(ex.getMessage(), ex);
-        } catch (CaseClassTooLong ex) {
             throw new MojoFailureException(ex.getMessage(), ex);
         } catch (Exception ex) {
             throw new MojoExecutionException("Error running scalaxb", ex);

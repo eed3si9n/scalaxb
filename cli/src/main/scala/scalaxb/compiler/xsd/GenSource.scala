@@ -22,7 +22,7 @@
 
 package scalaxb.compiler.xsd
 
-import scalaxb.compiler.{Config, Snippet, CaseClassTooLong, Log}
+import scalaxb.compiler.{Config, Snippet, Log}
 import scala.collection.mutable
 import scala.collection.{Map}
 import scala.xml._

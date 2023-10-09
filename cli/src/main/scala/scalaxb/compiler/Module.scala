@@ -540,6 +540,7 @@ class ReferenceNotFound(kind: String, namespace: Option[String], name: String) e
   "Error: Referenced " + kind + " " +
     (namespace map { "{" + _ + "}" } getOrElse {"(unqualified) "}) + name + " was not found.")
 
+@deprecated(message = "will be removed")
 class CaseClassTooLong(fqn: String, xmlname: String) extends RuntimeException(
   s"""Error: A case class with > 22 parameters cannot be created for ${fqn}. Consider using --wrap-contents "${xmlname}" option."""
 )

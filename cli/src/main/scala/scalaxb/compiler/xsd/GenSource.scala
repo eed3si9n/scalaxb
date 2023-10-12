@@ -758,13 +758,12 @@ object {localName} {{
     }
     
     def addIfContains(choice: ChoiceDecl): Unit = {
-      choice.particles foreach { _ match {
-          case ch: ChoiceDecl =>
-            addIfMatch(ch, choice)
-            addIfContains(ch)
-          case comp: HasParticle => addIfMatch(comp, choice)
-          case _ =>
-        }
+      choice.particles.foreach {
+        case ch: ChoiceDecl =>
+          addIfMatch(ch, choice)
+          addIfContains(ch)
+        case comp: HasParticle => addIfMatch(comp, choice)
+        case _ =>
       }
     }
 

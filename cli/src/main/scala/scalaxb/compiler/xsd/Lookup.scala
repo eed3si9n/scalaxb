@@ -220,13 +220,12 @@ trait Lookup extends ContextProcessor {
       case _ => true
     }
 
-    compositor.particles.exists(_ match {
-        case elem: ElemDecl => elemContainsForeignType(elem)
-        case ref: ElemRef   => elemContainsForeignType(buildElement(ref))
-        case ref: GroupRef  => ref.namespace != schema.targetNamespace
-        case _ => false
-      }
-    )
+    compositor.particles.exists {
+      case elem: ElemDecl => elemContainsForeignType(elem)
+      case ref: ElemRef   => elemContainsForeignType(buildElement(ref))
+      case ref: GroupRef  => ref.namespace != schema.targetNamespace
+      case _ => false
+    }
   }
 
   def isSubstitutionGroup(elem: ElemDecl) =

@@ -174,15 +174,15 @@ trait Parsers extends Args with Params {
   def buildChoiceParser(choice: ChoiceDecl, occurrence: Occurrence, mixed: Boolean, ignoreSubGroup: Boolean): String = {
     assert(choice.particles.size > 0, "choice has no particles: " + choice)
     val containsStructure = if (mixed) true
-      else choice.particles exists(_ match {
+      else choice.particles.exists {
         case elem: ElemDecl => false
         case ref: ElemRef => false
         case _ => true
-        })
+      }
     val singleOccurrence = occurrence.copy(minOccurs = 1, maxOccurs = 1) 
     
     // expand substitution groups into elements
-    val options = choice.particles flatMap { _ match {
+    val options = choice.particles.flatMap {
       case any: AnyDecl => Nil
       case compositor: HasParticle if isEmptyCompositor(compositor) => Nil
       case elem: ElemDecl =>
@@ -193,7 +193,7 @@ trait Parsers extends Args with Params {
         if (isSubstitutionGroup(elem)) substitutionGroupMembers(elem)
         else Seq(ref)
       case particle => Seq(particle)
-    }}
+    }
     val parserList = options map {
       case elem: ElemDecl =>
         if (mixed && containsStructure) buildParser(SequenceDecl(elem.namespace, List(elem), 1, 1, 0), singleOccurrence, mixed, true, true)

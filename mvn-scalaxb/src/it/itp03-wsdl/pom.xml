@@ -33,9 +33,9 @@
     </dependency>
 
     <dependency>
-      <groupId>net.databinder.dispatch</groupId>
+      <groupId>org.dispatchhttp</groupId>
       <artifactId>dispatch-core_${binary.version}</artifactId>
-      <version>0.11.3</version>
+      <version>1.0.1</version>
     </dependency>
 
   </dependencies>
@@ -56,7 +56,7 @@
           </execution>
         </executions>
         <configuration>
-          <dispatchVersion>0.11.3</dispatchVersion>
+          <dispatchVersion>1.0.1</dispatchVersion>
         </configuration>
       </plugin>
 

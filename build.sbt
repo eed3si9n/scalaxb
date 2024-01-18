@@ -36,6 +36,7 @@ lazy val commonSettings = Seq(
 lazy val root = (project in file("."))
   .aggregate(app, integration, scalaxbPlugin)
   .settings(nocomma {
+    name := "scalaxb-root"
     scalaVersion := scala212
     publish / skip := true
     crossScalaVersions := Nil

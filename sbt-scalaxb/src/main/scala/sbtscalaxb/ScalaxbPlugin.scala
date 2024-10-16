@@ -84,11 +84,11 @@ object ScalaxbPlugin extends sbt.AutoPlugin {
     sources := {
       val xsd = scalaxbXsdSource.value
       val wsdl = scalaxbWsdlSource.value
-      (wsdl ** "*.wsdl").get.sorted ++ (xsd ** "*.xsd").get.sorted
+      (wsdl ** "*.wsdl").get().sorted ++ (xsd ** "*.xsd").get().sorted
     },
     clean := {
       val outdir = sourceManaged.value
-      IO.delete((outdir ** "*").get)
+      IO.delete((outdir ** "*").get())
       IO.createDirectory(outdir)
     },
     scalaxbCombinedPackageNames := {

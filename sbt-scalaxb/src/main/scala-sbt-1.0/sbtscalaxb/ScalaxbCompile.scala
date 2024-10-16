@@ -33,6 +33,6 @@ object ScalaxbCompile {
       }
     def inputs: (List[File], FilesInfo[ModifiedFileInfo], String) =
       (sources.toList, lastModified(sources.toSet).asInstanceOf[FilesInfo[ModifiedFileInfo]], BuildInfo.version)
-    cachedCompile(inputs)(() => exists((outDir ** "*.scala").get.toSet).asInstanceOf[FilesInfo[PlainFileInfo]])
+    cachedCompile(inputs)(() => exists((outDir ** "*.scala").get().toSet).asInstanceOf[FilesInfo[PlainFileInfo]])
   }
 }

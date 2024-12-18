@@ -57,8 +57,7 @@ object Dependencies {
 
   def specs2(sv: String) = CrossVersion partialVersion sv match {
     case Some((2, 12)) => "org.specs2" %% "specs2" % "2.4.17"
-    case Some((2, 13)) => "org.specs2" %% "specs2-matcher-extra" % "4.6.0"
-    case x             => sys error s"Unexpected Scala version [$sv], with partial version $x"
+    case _             => "org.specs2" %% "specs2-matcher-extra" % "4.6.0"
   }
 
   def appDependencies(sv: String) = Seq(

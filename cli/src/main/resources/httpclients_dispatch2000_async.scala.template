@@ -1,0 +1,26 @@
+package scalaxb
+
+import java.nio.charset.Charset
+import java.time.Duration
+import scala.concurrent._, duration._
+import scala.jdk.DurationConverters._
+
+trait DispatchHttpClientsAsync extends HttpClientsAsync {
+  lazy val httpClient = new DispatchHttpClient {}
+  def requestTimeout: scala.concurrent.duration.FiniteDuration = 60.seconds
+  def connectionTimeout: scala.concurrent.duration.FiniteDuration = 5.seconds
+
+  trait DispatchHttpClient extends HttpClient {
+    import dispatch._
+
+    // Keep it lazy. See https://github.com/eed3si9n/scalaxb/pull/279
+    lazy val http = Http.withConfiguration(_.
+      setRequestTimeout(requestTimeout.toJava).
+      setConnectTimeout(connectionTimeout.toJava))
+
+    def request(in: String, address: java.net.URI, headers: Map[String, String])(implicit ec: ExecutionContext): Future[String] = {
+      val req = url(address.toString).setBodyEncoding(Charset.forName("UTF-8")) <:< headers << in
+      http(req > as.String)
+    }
+  }
+}

@@ -2,7 +2,7 @@ import sbt._
 
 object Dependencies {
   val scala3   = "3.3.1"
-  val scala213 = "2.13.12"
+  val scala213 = "2.13.16"
   val scala212 = "2.12.18"
 
   val jaxb = "javax.xml.bind" % "jaxb-api" % "2.3.1"
@@ -14,10 +14,11 @@ object Dependencies {
         "com.github.scopt" %% "scopt" % "4.1.0"
     }
   }
-  val log4j = "log4j" % "log4j" % "1.2.17"
-  val defaultDispatchVersion = "1.0.1"
+  val log4j = "org.apache.logging.log4j" % "log4j-core" % "2.24.3"
+  val log4jApi = "org.apache.logging.log4j" %% "log4j-api-scala" % "13.1.0"
+  val defaultDispatchVersion = "1.2.0"
   def dispatch(sv: String) = CrossVersion partialVersion sv match {
-    case Some((2, x)) if x >= 13 => "org.dispatchhttp" %% "dispatch-core" % "1.1.0"
+    case Some((2, x)) if x >= 13 => "org.dispatchhttp" %% "dispatch-core" % "1.2.0"
     case Some(_)                 => "org.dispatchhttp" %% "dispatch-core" % "1.0.1"
     case x                       => sys error s"Unexpected Scala version [$sv], with partial version $x"
   }
@@ -65,7 +66,8 @@ object Dependencies {
     launcherInterface % "provided",
     jaxb % "provided",
     scopt(sv),
-    log4j
+    log4j,
+    log4jApi
   ) ++ (sv match {
     case x if sv.startsWith("2.12.") => Seq(scalaXml2, scalaParserCombinators1)
     case x                           => Seq(scalaXml2, scalaParserCombinators2)

@@ -14,7 +14,8 @@ object Dependencies {
         "com.github.scopt" %% "scopt" % "4.1.0"
     }
   }
-  val log4j = "log4j" % "log4j" % "1.2.17"
+  val log4j = "org.apache.logging.log4j" % "log4j-core" % "2.24.3"
+  val log4jApi = "org.apache.logging.log4j" %% "log4j-api-scala" % "13.1.0"
   val defaultDispatchVersion = "1.0.1"
   def dispatch(sv: String) = CrossVersion partialVersion sv match {
     case Some((2, x)) if x >= 13 => "org.dispatchhttp" %% "dispatch-core" % "1.1.0"
@@ -65,7 +66,8 @@ object Dependencies {
     launcherInterface % "provided",
     jaxb % "provided",
     scopt(sv),
-    log4j
+    log4j,
+    log4jApi
   ) ++ (sv match {
     case x if sv.startsWith("2.12.") => Seq(scalaXml2, scalaParserCombinators1)
     case x                           => Seq(scalaXml2, scalaParserCombinators2)

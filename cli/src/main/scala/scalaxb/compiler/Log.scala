@@ -21,16 +21,14 @@
  */
 package scalaxb.compiler
 
-import org.apache.logging.log4j.{Logger, LogManager, Level}
-import org.apache.logging.log4j.core.appender.ConsoleAppender
-import org.apache.logging.log4j.core.layout.{PatternLayout, AbstractStringLayout}
-import org.apache.logging.log4j.core.LogEvent
+import org.apache.log4j.{Logger, Level, ConsoleAppender, EnhancedPatternLayout}
+import org.apache.log4j.spi.LoggingEvent
 
 case class Log(logger: Logger) {
   def info(message: String, args: Any*): Unit = {
-    if (args.isEmpty) logger.info(message)
+    if (args.toSeq.isEmpty) logger.info(message)
     else try {
-      logger.info(message.format(args: _*))
+      logger.info(message.format(args.toSeq: _*))
     }
     catch {
       case _: Throwable => logger.info(message)
@@ -38,9 +36,9 @@ case class Log(logger: Logger) {
   }
 
   def debug(message: String, args: Any*): Unit = {
-    if (args.isEmpty) logger.debug(message)
+    if (args.toSeq.isEmpty) logger.debug(message)
     else try {
-      logger.debug(message.format(args: _*))
+      logger.debug(message.format(args.toSeq: _*))
     }
     catch {
       case _: Throwable => logger.debug(message)
@@ -48,9 +46,9 @@ case class Log(logger: Logger) {
   }
 
   def warn(message: String, args: Any*): Unit = {
-    if (args.isEmpty) logger.warn(message)
+    if (args.toSeq.isEmpty) logger.warn(message)
     else try {
-      logger.warn(message.format(args: _*))
+      logger.warn(message.format(args.toSeq: _*))
     }
     catch {
       case _: Throwable => logger.warn(message)
@@ -58,9 +56,9 @@ case class Log(logger: Logger) {
   }
 
   def error(message: String, args: Any*): Unit = {
-    if (args.isEmpty) logger.error(message)
+    if (args.toSeq.isEmpty) logger.error(message)
     else try {
-      logger.error(message.format(args: _*))
+      logger.error(message.format(args.toSeq: _*))
     }
     catch {
       case _: Throwable => logger.error(message)
@@ -68,9 +66,9 @@ case class Log(logger: Logger) {
   }
 
   def fatal(message: String, args: Any*): Unit = {
-    if (args.isEmpty) logger.fatal(message)
+    if (args.toSeq.isEmpty) logger.fatal(message)
     else try {
-      logger.fatal(message.format(args: _*))
+      logger.fatal(message.format(args.toSeq: _*))
     }
     catch {
       case _: Throwable => logger.fatal(message)
@@ -79,41 +77,40 @@ case class Log(logger: Logger) {
 }
 
 object Log {
-  def forName(name: String) = Log(LogManager.getLogger(name))
+  def forName(name: String) = Log(Logger.getLogger(name))
 
   def configureLogger(verbose: Boolean): Unit = {
-    val root = LogManager.getRootLogger.asInstanceOf[org.apache.logging.log4j.core.Logger]
+    val root = Logger.getRootLogger()
     val level = if (verbose) Level.TRACE else Level.WARN
     root.setLevel(level)
 
-    val console = ConsoleAppender
-      .createDefaultAppenderForLayout(new Formatter())
-
-    console.start()
+    val console = new ConsoleAppender(new Formatter)
+    val threshold = if (verbose) Level.TRACE else Level.INFO
+    console.setThreshold(threshold)
     root.addAppender(console)
   }
 
   /**
    * Formats log messages. Prepends a '!' to each line of an exception.
    */
-  class Formatter extends AbstractStringLayout(PatternLayout.createDefaultLayout().getCharset) {
+  class Formatter extends EnhancedPatternLayout("%-5p [%d] %c: %m\n") {
 
-    override def toSerializable(event: LogEvent): String = {
-      val message = event.getMessage.getFormattedMessage
-      val throwable = event.getThrown
-      if (throwable == null) {
+    override def ignoresThrowable = false
+
+    override def format(event: LoggingEvent) : String = {
+      val message = super.format(event)
+      val frames = event.getThrowableStrRep()
+      if (frames == null) {
         message
       } else {
         val msg = new StringBuilder(message)
-        for (line <- throwable.getStackTrace) {
-          msg.append("! ").append(line.toString).append("\n")
+        for (line <- frames) {
+          msg.append("! ").append(line).append("\n")
         }
         msg.toString
       }
     }
 
-    override def toByteArray(event: LogEvent): Array[Byte] = {
-      toSerializable(event).getBytes(getCharset)
-    }
   }
+
 }

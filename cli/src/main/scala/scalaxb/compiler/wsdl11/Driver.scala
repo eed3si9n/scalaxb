@@ -254,7 +254,7 @@ class Driver extends Module { driver =>
       case (VersionPattern(1, 0 | 1, _), style)                    =>
         // Same as 0.13.x
         generateDispatchFromResource(style, "/httpclients_dispatch0130", config)
-      case (VersionPattern(2, 0 | 2, _), style)                    =>
+      case (VersionPattern(2, _, _), style)                    =>
         // New for 2.0.x
         generateDispatchFromResource(style, "/httpclients_dispatch2000", config)
     } else Nil) ++

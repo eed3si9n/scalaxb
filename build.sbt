@@ -74,7 +74,7 @@ lazy val integration = (project in file("integration"))
   .dependsOn(app)
   .settings(commonSettings)
   .settings(nocomma {
-    crossScalaVersions := Seq(scala3, scala212, scala213)
+    crossScalaVersions := Seq(scala212, scala213)
     scalaVersion := scala212
     publishArtifact := false
     libraryDependencies ++= integrationDependencies(scalaVersion.value)
@@ -95,10 +95,10 @@ lazy val scalaxbPlugin = (project in file("sbt-scalaxb"))
     pluginCrossBuild / sbtVersion := {
       scalaBinaryVersion.value match {
         case "2.12" => "1.5.8" // set minimum sbt version
-        case _ => "2.0.0-M3"
+        case _ => "2.0.0-M4"
       }
     }
-    crossScalaVersions := Seq(scala212, "3.6.2")
+    crossScalaVersions := Seq(scala212, scala3ForSbt)
     scriptedLaunchOpts := { scriptedLaunchOpts.value ++
       Seq("-Xmx1024M", "-Dplugin.version=" + version.value)
     }

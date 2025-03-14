@@ -628,7 +628,7 @@ trait AnyElemNameParser extends scala.util.parsing.combinator.Parsers {
     accept("any", { case x: ElemName if x.name != "" && f(x) => x })
 
   def optTextRecord(implicit format: XMLFormat[String]): Parser[Option[DataRecord[Any]]] =
-    opt(text ^^ (x => DataRecord(x.node.text)(format)))
+    opt(text ^^ (x => DataRecord(x.node.text)(using format)))
 
   def text: Parser[ElemName] =
     accept("text", { case x: ElemName if x.name == "" => x })

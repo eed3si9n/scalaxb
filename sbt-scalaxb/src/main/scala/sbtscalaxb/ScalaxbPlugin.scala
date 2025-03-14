@@ -75,7 +75,7 @@ object ScalaxbPlugin extends sbt.AutoPlugin {
       else src / "main" / "wsdl"
     },
     scalaxb / logLevel := (logLevel?? Level.Info).value
-  ) ++ inTask(scalaxb)(Seq(
+  ) ++ Project.inTask(scalaxb)(Seq(
     scalaxbGenerate := {
       val s = streams.value
       val ll = logLevel.value

@@ -10,10 +10,20 @@ jobs:
         include:
           - os: ubuntu-latest
             java: 8
-            distribution: 'temurin'
+            distribution: zulu
+            jobtype: 1
           - os: ubuntu-latest
             java: 21
-            distribution: 'corretto'
+            distribution: corretto
+            jobtype: 2
+          - os: ubuntu-latest
+            java: 8
+            distribution: zulu
+            jobtype: 3
+          - os: ubuntu-latest
+            java: 8
+            distribution: zulu
+            jobtype: 4
     runs-on: ${{ matrix.os }}
     env:
       # define Java options for both official sbt and sbt-extras
@@ -29,23 +39,24 @@ jobs:
         java-version: ${{ matrix.java }}
         cache: 'sbt'
     - uses: sbt/setup-sbt@v1
-    - name: Build and test
+    - name: Build and test (1)
+      if: ${{ matrix.jobtype == 1 }}
       run: |
-        case ${{ matrix.java }} in
-          "8")
-            sbt -v ++2.12.x "scalaxbPlugin/scripted"
-            sbt -v ++3.x "app/Test/compile" "scalaxbPlugin/scripted"
-            sbt -v +integration/test
-            ;;
-          "21")
-            sbt -v ++2.12.x "project scalaxbPlugin" "set pluginCrossBuild / sbtVersion := sbtVersion.value" "scripted"
-            ;;
-          *)
-            echo "unexpected java version"
-            exit 1
-        esac
-    - name: maven plugin
+        sbt -v ++2.12.x "scalaxbPlugin/scripted"
+        sbt -v +integration/test
+    - name: Build and test (2)
+      if: ${{ matrix.jobtype == 2 }}
+      shell: bash
       run: |
-        pushd mvn-scalaxb
+        sbt -v ++2.12.x "project scalaxbPlugin" "set pluginCrossBuild / sbtVersion := sbtVersion.value" "scripted"
+    - name: Build and test (3)
+      if: ${{ matrix.jobtype == 3 }}
+      shell: bash
+      run: |
+        sbt -v ++3.x "app/Test/compile" "scalaxbPlugin/scripted"
+    - name: Build and test (4)
+      if: ${{ matrix.jobtype == 4 }}
+      shell: bash
+      run: |
+        cd mvn-scalaxb
         mvn test
-        popd

@@ -71,7 +71,7 @@ trait ContextProcessor extends ScalaNames with PackageName {
 
     (None :: (config.packageNames.valuesIterator.toList.distinct)) map {
       pkg =>
-        context.enumValueNames(pkg) = mutable.ListMap.empty[(String, EnumerationDecl[_]), String]
+        context.enumValueNames(pkg) = mutable.ListMap.empty[(String, EnumerationDecl[?]), String]
     }
 
     val anonymousTypes = mutable.ListBuffer.empty[(SchemaDecl, ComplexTypeDecl)]
@@ -298,7 +298,7 @@ trait ContextProcessor extends ScalaNames with PackageName {
   def containsEnumeration(decl: SimpleTypeDecl) = decl.content match {
     case x: SimpTypRestrictionDecl =>
       x.facets exists { f => f match {
-          case e: EnumerationDecl[_] => true
+          case e: EnumerationDecl[?] => true
           case _ => false
         }
       }
@@ -306,10 +306,10 @@ trait ContextProcessor extends ScalaNames with PackageName {
     case _ => false
   }
 
-  def filterEnumeration(decl: SimpleTypeDecl): List[EnumerationDecl[_]] = decl.content match {
+  def filterEnumeration(decl: SimpleTypeDecl): List[EnumerationDecl[?]] = decl.content match {
     case x: SimpTypRestrictionDecl =>
       x.facets collect {
-        case e: EnumerationDecl[_] => e
+        case e: EnumerationDecl[?] => e
       }
 
     case _ => Nil

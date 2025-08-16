@@ -179,7 +179,7 @@ trait Lookup extends ContextProcessor {
   def buildTypeName(group: AttributeGroupDecl, shortLocal: Boolean): String =
     buildTypeName(packageName(group, context), group, shortLocal)
   
-  def buildTypeName(enumTypeName: String, enumDecl: EnumerationDecl[_], shortLocal: Boolean): String = {
+  def buildTypeName(enumTypeName: String, enumDecl: EnumerationDecl[?], shortLocal: Boolean): String = {
     val pkg = packageName(schema, context)
     val typeNames = context.enumValueNames(pkg)
     if (!typeNames.contains(enumTypeName, enumDecl))

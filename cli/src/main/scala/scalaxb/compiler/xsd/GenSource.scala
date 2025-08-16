@@ -618,11 +618,11 @@ class GenSource(val schema: SchemaDecl,
     val baseSym : Option[XsTypeSymbol] = decl.content match {case SimpTypRestrictionDecl(base, _) => Some(base) case _ => None}
     val baseType: Option[String      ] = baseSym.map(buildTypeName(_))
 
-    def makeEnum(enumDecl: EnumerationDecl[_]) =
+    def makeEnum(enumDecl: EnumerationDecl[?]) =
       "case object " + buildTypeName(localName, enumDecl, true) + " extends " + localName + 
       " { override def toString = " + quote(enumDecl.value.toString) + " }"
     
-    def makeCaseEntry(enumDecl: EnumerationDecl[_]) = baseSym match {
+    def makeCaseEntry(enumDecl: EnumerationDecl[?]) = baseSym match {
       case Some(XsQName) => s"${indent(3)}case ${quote(enumDecl.value.toString)} => ${buildTypeName(localName, enumDecl, false)}\n"
       case _ => baseType.map {tpe =>
         s"${indent(3)}case x: $tpe if x == scalaxb.fromXML[$tpe](scala.xml.Text(${quote(enumDecl.value.toString)})) => ${buildTypeName(localName, enumDecl, false)}\n"
@@ -663,7 +663,7 @@ object {localName} {{
 { enumString }</source>
     }  // match
 
-    def enumMatchGroup(enums: List[EnumerationDecl[_]], index: Int): String = {
+    def enumMatchGroup(enums: List[EnumerationDecl[?]], index: Int): String = {
       s"""    private def fromString$index(value: String, scope: scala.xml.NamespaceBinding): PartialFunction[Any, $fqn] = {
          |${enums.map(e => makeCaseEntry(e)).mkString}
          |    }

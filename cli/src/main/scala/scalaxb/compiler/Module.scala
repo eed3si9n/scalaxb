@@ -486,7 +486,7 @@ trait Module {
       case EntityRef("lt")  => out.print('<')
       case EntityRef("gt")  => out.print('>')
       case EntityRef("amp") => out.print('&')
-      case atom: Atom[_]    => out.print(transform(atom.text))
+      case atom: Atom[?]    => out.print(transform(atom.text))
       case elem: Elem       =>
         printNodes(elem.child, out, transform)
         if (elem.text != "") {

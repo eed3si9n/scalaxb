@@ -380,10 +380,10 @@ object DataRecord extends XMLStandardTypes {
     xstypeNamespace: Option[String],
     xstypeName: Option[String],
     value: A,
-    writer: CanWriteXML[_]) extends DataRecord[A] {
+    writer: CanWriteXML[?]) extends DataRecord[A] {
     override def equals(o: Any): Boolean =
       o match {
-        case that: DataWriter[_] =>
+        case that: DataWriter[?] =>
           namespace == that.namespace &&
           key == that.key &&
           value == that.value
@@ -573,7 +573,7 @@ object DataRecord extends XMLStandardTypes {
 
   def toXML[A](obj: DataRecord[A], namespace: Option[String], elementLabel: Option[String],
       scope: scala.xml.NamespaceBinding, typeAttribute: Boolean): scala.xml.NodeSeq = obj match {
-    case w: DataWriter[_] =>
+    case w: DataWriter[?] =>
       obj.value match {
         case seq: NodeSeq =>
           w.writer.asInstanceOf[CanWriteXML[A]].writes(obj.value, namespace, elementLabel, scope, typeAttribute)
@@ -695,7 +695,7 @@ trait ElemNameParser[A] extends AnyElemNameParser with XMLFormat[A] with CanWrit
   def reads(seq: scala.xml.NodeSeq, stack: List[ElemName]): Either[String, A] = seq match {
     case node: scala.xml.Node =>
       parse(parser(node, stack), node.child) match {
-        case x: Success[_] => Right(x.get)
+        case x: Success[?] => Right(x.get)
         case x: Failure => Left(parserErrorMsg(x.msg, x.next, ElemName(node) :: stack))
         case x: Error => Left(parserErrorMsg(x.msg, node))
       }

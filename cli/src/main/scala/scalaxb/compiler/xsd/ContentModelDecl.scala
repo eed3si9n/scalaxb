@@ -30,7 +30,7 @@ trait ComplexTypeContent {
 abstract class ContentTypeDecl extends Decl
 
 case class SimpContRestrictionDecl(base: XsTypeSymbol, simpleType: Option[XsTypeSymbol],
-  facets: List[Facetable[_]],
+  facets: List[Facetable[?]],
   attributes: List[AttributeLike]) extends ContentTypeDecl with ComplexTypeContent
 
 object SimpContRestrictionDecl {
@@ -144,7 +144,7 @@ object CompContExtensionDecl {
   }  
 }
 
-case class SimpTypRestrictionDecl(base: XsTypeSymbol, facets: List[Facetable[_]]) extends ContentTypeDecl
+case class SimpTypRestrictionDecl(base: XsTypeSymbol, facets: List[Facetable[?]]) extends ContentTypeDecl
 
 object SimpTypRestrictionDecl {  
   def fromXML(node: scala.xml.Node, family: List[String], config: ParserConfig) = {
@@ -204,7 +204,7 @@ trait Facetable[A] {
 }
 
 object Facetable {
-  def fromParent(node: scala.xml.Node, base: XsTypeSymbol, config: ParserConfig): List[Facetable[_]] = 
+  def fromParent(node: scala.xml.Node, base: XsTypeSymbol, config: ParserConfig): List[Facetable[?]] = 
     node.child.toList collect {
       case x if x.label == "enumeration" => EnumerationDecl.fromXML(x, base, config)
     }

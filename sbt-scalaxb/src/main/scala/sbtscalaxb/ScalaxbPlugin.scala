@@ -13,7 +13,7 @@ object ScalaxbPlugin extends sbt.AutoPlugin {
 
   object autoImport extends ScalaxbKeys
   import autoImport._
-  override lazy val globalSettings: Seq[Def.Setting[_]] = Seq(
+  override lazy val globalSettings: Seq[Def.Setting[?]] = Seq(
     scalaxbPackageName             := "generated",
     scalaxbPackageNames            := Map(),
     scalaxbClassPrefix             := None,
@@ -54,12 +54,12 @@ object ScalaxbPlugin extends sbt.AutoPlugin {
     scalaxbJaxbPackage             := JaxbPackage.Javax,
   )
 
-  override lazy val projectSettings: Seq[Def.Setting[_]] =
+  override lazy val projectSettings: Seq[Def.Setting[?]] =
     inConfig(Compile)(baseScalaxbSettings) ++
     Set(
       Compile / sourceGenerators += (Compile / scalaxb).taskValue
     )
-  lazy val baseScalaxbSettings: Seq[Def.Setting[_]] = Seq(
+  lazy val baseScalaxbSettings: Seq[Def.Setting[?]] = Seq(
     scalaxb := (scalaxb / scalaxbGenerate).value,
     scalaxb / sourceManaged := {
       sourceManaged.value / "sbt-scalaxb"

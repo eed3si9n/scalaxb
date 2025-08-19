@@ -43,7 +43,7 @@ lazy val root = (project in file("."))
     commands += Command.command("release") { state =>
       "clean" ::
         "+app/publishSigned" ::
-        "++2.12.12!;scalaxbPlugin/publishSigned" ::
+        "++2.12.20!;scalaxbPlugin/publishSigned" ::
         state
     }
   })

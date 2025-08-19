@@ -1,10 +1,10 @@
 import sbt._
 
 object Dependencies {
-  val scala3   = "3.3.1"
+  val scala3   = "3.3.6"
   val scala3ForSbt = "3.6.4"
-  val scala213 = "2.13.12"
-  val scala212 = "2.12.18"
+  val scala213 = "2.13.16"
+  val scala212 = "2.12.20"
 
   val jaxb = "javax.xml.bind" % "jaxb-api" % "2.3.1"
   def scopt(sv: String) = {

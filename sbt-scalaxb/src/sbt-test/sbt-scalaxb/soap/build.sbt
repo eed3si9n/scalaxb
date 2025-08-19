@@ -1,5 +1,5 @@
 lazy val scala3BleedingEdge = "3.5.0"
-lazy val scala3Lts = "3.3.3"
+lazy val scala3Lts = "3.3.6"
 
 lazy val scalaXml = Def.setting(
   scalaBinaryVersion.value match {

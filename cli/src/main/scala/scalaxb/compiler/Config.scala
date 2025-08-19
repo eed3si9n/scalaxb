@@ -137,7 +137,7 @@ object Config {
   val defaultSymbolEncodingStrategy = SymbolEncoding.Legacy151
   val defaultEnumNameMaxLength = EnumNameMaxLength(50)
   val defaultJaxbPackage = JaxbPackage.Javax
-  val defaultTargetScalaVersion = TargetScalaVersion("2.13.14")
+  val defaultTargetScalaVersion = TargetScalaVersion("2.13.16")
 
   val default = Config(
     Vector(defaultPackageNames, defaultOpOutputWrapperPostfix, defaultOutdir,

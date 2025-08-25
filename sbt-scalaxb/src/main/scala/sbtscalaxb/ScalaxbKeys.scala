@@ -7,7 +7,9 @@ import scalaxb.compiler.{Config => ScConfig}
 import scalaxb.compiler.ConfigEntry
 
 trait ScalaxbKeys {
+  @transient
   lazy val scalaxb                 = taskKey[Seq[File]]("Generates case classes and typeclass instances")
+  @transient
   lazy val scalaxbGenerate         = taskKey[Seq[File]]("Generates case classes and typeclass instances")
   lazy val scalaxbConfig           = settingKey[ScConfig]("Configuration for scalaxb")
   lazy val scalaxbXsdSource        = settingKey[File]("xsd source directory")

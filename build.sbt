@@ -17,6 +17,12 @@ ThisBuild / developers := List(
     url   = url("http://eed3si9n.com")
   )
 )
+ThisBuild / publishTo := {
+  val centralSnapshots = "https://central.sonatype.com/repository/maven-snapshots/"
+  val v = (ThisBuild / version).value
+  if (v.endsWith("SNAPSHOT")) Some("central-snapshots" at centralSnapshots)
+  else localStaging.value
+}
 
 lazy val commonSettings = Seq(
     scalacOptions := Seq("-deprecation", "-unchecked", "-feature", "-language:implicitConversions", "-language:postfixOps"),
@@ -43,7 +49,8 @@ lazy val root = (project in file("."))
     commands += Command.command("release") { state =>
       "clean" ::
         "+app/publishSigned" ::
-        "++2.12.20!;scalaxbPlugin/publishSigned" ::
+        "++2.12.x;scalaxbPlugin/publishSigned" ::
+        "++3.x;scalaxbPlugin/publishSigned" ::
         state
     }
   })
@@ -95,7 +102,7 @@ lazy val scalaxbPlugin = (project in file("sbt-scalaxb"))
     pluginCrossBuild / sbtVersion := {
       scalaBinaryVersion.value match {
         case "2.12" => "1.5.8" // set minimum sbt version
-        case _ => "2.0.0-RC3"
+        case _ => "2.0.0-RC4"
       }
     }
     crossScalaVersions := Seq(scala212, scala3ForSbt)

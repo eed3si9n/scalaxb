@@ -280,6 +280,15 @@ public abstract class AbstractScalaxbMojo extends AbstractMojo {
     private boolean verbose;
 
     /**
+     * Specifies which JAXB package to use when generating code.
+     * Use {@code "javax"} for environments based on Java EE (up to Java 8),
+     * or {@code "jakarta"} for newer Jakarta EE–based environments (Java 11+).
+     * Default is {@code "javax"} for back compability.
+     */
+    @Parameter(property = "scalaxb.jaxbPackage", defaultValue = "javax")
+    private String jaxbPackage;
+
+    /**
      * Returns the directory in which to search for XSD schema files.
      * @return The directory containing the XSD files.
      */
@@ -357,6 +366,7 @@ public abstract class AbstractScalaxbMojo extends AbstractMojo {
             .flag("--no-dispatch-client", !generateDispatchClient)
             .flag("--dispatch-as", generateDispatchAs)
             .param("--dispatch-version", dispatchVersion)
+            .param("--jaxb-package", jaxbPackage)
 	    .flag("--tagless-final-client", tagless)
 	    .flag("--mapK", mapK)
 	    .flag("--http4s-client", generateHttp4sClient)

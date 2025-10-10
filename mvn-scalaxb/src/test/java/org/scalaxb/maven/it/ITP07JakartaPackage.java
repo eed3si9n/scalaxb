@@ -2,7 +2,7 @@ package org.scalaxb.maven.it;
 
 import org.junit.Test;
 
-public class ITP06Blocking extends AbstractIT {
+public class ITP07JakartaPackage extends AbstractIT {
 
     private String[] expected = new String[] {
             "generated/stockquote.scala",
@@ -16,10 +16,9 @@ public class ITP06Blocking extends AbstractIT {
             "soapenvelope12/soapenvelope12_xmlprotocol.scala"
     };
 
-
     @Test
     public void filesAreGeneratedInCorrectLocation() {
-        assertFilesGenerated("itp06-blocking", expected);
+        assertFilesGenerated("itp07-jakarta-package", expected);
     }
     
 }

@@ -5,12 +5,11 @@
   <parent>
     <groupId>org.sonatype.oss</groupId>
     <artifactId>oss-parent</artifactId>
-    <version>7</version>
+    <version>9</version>
   </parent>
-
   <groupId>org.scalaxb</groupId>
   <artifactId>scalaxb-maven-plugin</artifactId>
-  <version>1.12.2</version>
+  <version>1.12.3</version>
   <packaging>maven-plugin</packaging>
 
   <name>scalaxb Maven Plugin</name>
@@ -103,6 +102,12 @@
     </dependency>
 
     <dependency>
+        <groupId>log4j</groupId>
+        <artifactId>log4j</artifactId>
+        <version>1.2.17</version>
+    </dependency>
+
+    <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <version>${junit.version}</version>
@@ -145,31 +150,77 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-plugin-plugin</artifactId>
-        <version>3.3</version>
+        <version>3.6.0</version>
         <configuration>
           <goalPrefix>scalaxb</goalPrefix>
           <skipErrorNoDescriptorsFound>true</skipErrorNoDescriptorsFound>
           <extractors>
             <!-- scalaxb mojo uses annotations -->
             <extractor>java-annotations</extractor>
-            <!-- generated help mojo uses javadoc tags -->
-            <extractor>java</extractor>
           </extractors>
         </configuration>
         <executions>
           <execution>
             <id>mojo-descriptor</id>
+            <phase>process-classes</phase>
             <goals>
               <goal>descriptor</goal>
             </goals>
           </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-source-plugin</artifactId>
+        <version>2.2.1</version>
+        <executions>
           <execution>
-            <id>generated-helpmojo</id>
+            <id>attach-sources</id>
             <goals>
-              <goal>helpmojo</goal>
+              <goal>jar-no-fork</goal>
             </goals>
           </execution>
         </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <version>2.9.1</version>
+        <executions>
+          <execution>
+            <id>attach-javadocs</id>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-gpg-plugin</artifactId>
+        <version>1.5</version>
+        <executions>
+          <execution>
+            <id>sign-artifacts</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>sign</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.sonatype.central</groupId>
+        <artifactId>central-publishing-maven-plugin</artifactId>
+        <version>0.9.0</version>
+        <extensions>true</extensions>
+        <configuration>
+          <publishingServerId>central</publishingServerId>
+        </configuration>
       </plugin>
     </plugins>
 

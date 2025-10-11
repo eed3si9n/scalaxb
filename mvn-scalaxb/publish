@@ -26,12 +26,7 @@ setup() {
 
   <servers>
     <server>
-      <id>sonatype-nexus-staging</id>
-      <username>$username</username>
-      <password>$password</password>
-    </server>
-    <server>
-      <id>sonatype-nexus-snapshots</id>
+      <id>central</id>
       <username>$username</username>
       <password>$password</password>
     </server>
@@ -48,4 +43,4 @@ init() {
 }
 
 init
-mvn -s "$SETTINGS" deploy -Pit,sonatype-oss-release "$@"
+mvn -s "$SETTINGS" deploy -Pit,central "$@"

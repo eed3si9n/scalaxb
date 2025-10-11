@@ -40,7 +40,7 @@ object Common {
   //   inConfig(Soap12)(baseScalaxbSettings ++ inTask(scalaxb)(soapSettings("soapenvelope12")))
   // }
 
-  val codegenSettings: Seq[Def.Setting[_]] = scalaxbCodegenSettings ++ Seq(
+  val codegenSettings: Seq[Def.Setting[?]] = scalaxbCodegenSettings ++ Seq(
     Compile / unmanagedSourceDirectories += baseDirectory.value / "src_managed",
     buildInfoPackage := "scalaxb",
     buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion,
@@ -50,7 +50,7 @@ object Common {
       "defaultGigahorseBackend" -> Dependencies.defaultGigahorseBackend),
   )
 
-  val sonatypeSettings: Seq[Def.Setting[_]] = Seq(
+  val sonatypeSettings: Seq[Def.Setting[?]] = Seq(
     Test / publishArtifact := false,
   )
 }

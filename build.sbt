@@ -102,7 +102,7 @@ lazy val scalaxbPlugin = (project in file("sbt-scalaxb"))
     pluginCrossBuild / sbtVersion := {
       scalaBinaryVersion.value match {
         case "2.12" => "1.5.8" // set minimum sbt version
-        case _ => "2.0.0-RC9"
+        case _ => "2.0.0-RC10"
       }
     }
     crossScalaVersions := Seq(scala212, scala3ForSbt)

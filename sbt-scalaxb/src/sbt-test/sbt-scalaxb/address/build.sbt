@@ -23,8 +23,8 @@ val jaxbApi = "javax.xml.bind" % "jaxb-api" % "2.3.1"
 val scalaVersions = Seq(
   "2.10.7",
   "2.11.12",
-  "2.12.20",
-  "2.13.16",
+  "2.12.21",
+  "2.13.18",
   "3.6.3",
 )
 

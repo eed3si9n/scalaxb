@@ -18,7 +18,7 @@ object Dependencies {
   val log4j = "org.apache.logging.log4j" % "log4j-core" % "2.24.3"
   val log4jApi = "org.apache.logging.log4j" %% "log4j-api-scala" % "13.1.0"
   val defaultDispatchVersion = "1.0.1"
-  def dispatch(sv: String) = CrossVersion partialVersion sv match {
+  def dispatch(sv: String) = CrossVersion.partialVersion(sv) match {
     case Some((2, x)) if x >= 13 => "org.dispatchhttp" %% "dispatch-core" % "1.1.0"
     case Some(_)                 => "org.dispatchhttp" %% "dispatch-core" % "1.0.1"
     case x                       => sys error s"Unexpected Scala version [$sv], with partial version $x"
@@ -57,7 +57,7 @@ object Dependencies {
 
   def scalaCompiler(sv: String) = "org.scala-lang" % "scala-compiler" % sv
 
-  def specs2(sv: String) = CrossVersion partialVersion sv match {
+  def specs2(sv: String) = CrossVersion.partialVersion(sv) match {
     case Some((2, 12)) => "org.specs2" %% "specs2" % "2.4.17"
     case _             => "org.specs2" %% "specs2-matcher-extra" % "4.6.0"
   }

@@ -4,10 +4,10 @@ import sbtbuildinfo.BuildInfoKey
 import sbtbuildinfo.BuildInfoKeys._
 
 object Common {
-  val Xsd = config("xsd") extend(Compile)
-  val Wsdl = config("wsdl") extend(Compile)
-  val Soap11 = config("soap11") extend(Compile)
-  val Soap12 = config("soap12") extend(Compile)
+  val Xsd = config("xsd").extend(Compile)
+  val Wsdl = config("wsdl").extend(Compile)
+  val Soap11 = config("soap11").extend(Compile)
+  val Soap12 = config("soap12").extend(Compile)
 
   val scalaxbCodegenSettings = Nil
   // val scalaxbCodegenSettings: Seq[Def.Setting[_]] = {

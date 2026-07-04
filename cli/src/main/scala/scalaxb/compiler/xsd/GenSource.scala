@@ -150,7 +150,7 @@ class GenSource(val schema: SchemaDecl,
       }
     }
 
-    val traitCode = <source>{ buildComment(decl) }trait {localName}{extendString} {{
+    val traitCode = <source>{ buildComment(decl) }sealed trait {localName}{extendString} {{
   {
   val vals = paramList.flatMap(paramEntries)
   vals.mkString(newline + indent(1))}

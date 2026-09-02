@@ -267,7 +267,7 @@ trait Parsers extends Args with Params {
         }
         else addConverter(buildParserString(elem, occurrence))
       case AnyType(XsWildcard(constraint)) => buildAnyParser(constraint, occurrence, mixed, wrapInDataRecord, config.laxAny)
-      case AnyType(symbol) => buildAnyParser(Nil, occurrence, mixed, wrapInDataRecord, true)
+      case AnyType(symbol) => addConverter(buildParserString(elem, occurrence))
       case XsLongAll => ""
       
       case symbol: ReferenceTypeSymbol =>

@@ -49,6 +49,7 @@ object GeneralUsage {
     testSimpleAnyTypeRestriction
     testSimpleAnyTypeIndirectRestriction
     testSimpleAnyTypeExtension
+    testNamedAnyType
     testDataRecord
     testDataRecordAny
     testDataRecordEquality
@@ -368,6 +369,22 @@ JDREVGRw==</base64Binary>
       case _ => sys.error("x:other includes outer namespace bindings: " + document.toString)
     }
     check(fromXML[AnyTest](scala.xml.XML.loadString(document.toString)))
+  }
+
+  def testNamedAnyType = {
+    println("testNamedAnyType")
+    // absent optional xs:anyType element should not remove the next sibling
+    fromXML[NamedAnyTypeTest](
+      <foo xmlns="http://www.example.com/general"><messageType>hello</messageType></foo>) match {
+      case NamedAnyTypeTest(None, "hello") =>
+      case x => sys.error("absent case failed: " + x.toString)
+    }
+    // present optional xs:anyType element is captured
+    fromXML[NamedAnyTypeTest](
+      <foo xmlns="http://www.example.com/general"><sessionId>abc</sessionId><messageType>hello</messageType></foo>) match {
+      case NamedAnyTypeTest(Some("abc"), "hello") =>
+      case x => sys.error("present case failed: " + x.toString)
+    }
   }
 
   def testAll = {

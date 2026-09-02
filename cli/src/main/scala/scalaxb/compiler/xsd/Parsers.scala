@@ -44,11 +44,8 @@ trait Parsers extends Args with Params {
     case any: AnyDecl             => buildAnyParser(any.namespaceConstraint, occurrence, mixed, wrapInDataRecord, config.laxAny)
   }
   
-  def buildAnyParser(namespaceConstraint: List[String], occurrence: Occurrence, mixed: Boolean,
-                     wrapInDataRecord: Boolean, laxAny: Boolean): String = {
-    val converter = if (occurrence.nillable) buildFromXML("scalaxb.DataRecord[Option[Any]]", "_",
-        Some("node"), None)
-      else buildFromXML(buildTypeName(XsWildcard(namespaceConstraint)), "_", Some("node"), None)
+  def buildAnyParser(namespaceConstraint: List[String], occurrence: Occurrence, mixed: Boolean, wrapInDataRecord: Boolean, laxAny: Boolean): String = {
+    val converter = buildAnyParserConverter(namespaceConstraint, occurrence)
     val parser = "any(%s)".format(
       if (laxAny) "_ => true"
       else namespaceConstraint match {
@@ -63,15 +60,28 @@ trait Parsers extends Args with Params {
             }.mkString("List(", ", ", ")")
           )
       })
-    
-    buildParserString(if (mixed) "((" + parser + " ^^ (" + converter + ")) " + follow + newline +
-        indent(3) + buildTextParser + ") ^^ " + newline +
-        indent(3) + s"{ case p1 $follow p2 => Seq.concat(Seq(p1), p2.toList) }"
-      else if (wrapInDataRecord) "(" + parser + " ^^ (" + converter + "))"
-      else parser,
-      occurrence)
+
+    buildParserString(buildAnyParserBase(parser, converter, mixed, wrapInDataRecord), occurrence)
   }
-  
+
+  def buildAnyTypeParser(occurrence: Occurrence, mixed: Boolean, wrapInDataRecord: Boolean, nameFilter: String): String = {
+    val converter = buildAnyParserConverter(Nil, occurrence)
+    val parser = s"""any(_.name == ${quote(nameFilter)})"""
+
+    buildParserString(buildAnyParserBase(parser, converter, mixed, wrapInDataRecord), occurrence)
+  }
+
+  private def buildAnyParserConverter(namespaceConstraint: List[String], occurrence: Occurrence): String =
+    if (occurrence.nillable) buildFromXML("scalaxb.DataRecord[Option[Any]]", "_", Some("node"), None)
+    else buildFromXML(buildTypeName(XsWildcard(namespaceConstraint)), "_", Some("node"), None)
+
+  private def buildAnyParserBase(parser: String, converter: String, mixed: Boolean, wrapInDataRecord: Boolean): String =
+    if (mixed) "((" + parser + " ^^ (" + converter + ")) " + follow + newline +
+      indent(3) + buildTextParser + ") ^^ " + newline +
+      indent(3) + s"{ case p1 $follow p2 => Seq.concat(Seq(p1), p2.toList) }"
+    else if (wrapInDataRecord) "(" + parser + " ^^ (" + converter + "))"
+    else parser
+
   // minOccurs and maxOccurs may come from the declaration of the compositor,
   // or from the element declaration.
   def buildCompositorParser(compositor: HasParticle, occurrence: Occurrence, 
@@ -267,7 +277,7 @@ trait Parsers extends Args with Params {
         }
         else addConverter(buildParserString(elem, occurrence))
       case AnyType(XsWildcard(constraint)) => buildAnyParser(constraint, occurrence, mixed, wrapInDataRecord, config.laxAny)
-      case AnyType(symbol) => buildAnyParser(Nil, occurrence, mixed, wrapInDataRecord, true)
+      case AnyType(symbol) => buildAnyTypeParser(occurrence, mixed, wrapInDataRecord, elem.name)
       case XsLongAll => ""
       
       case symbol: ReferenceTypeSymbol =>

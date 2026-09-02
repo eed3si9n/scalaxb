@@ -13,27 +13,8 @@ Install scalaxb using it.
 
     $ cs install --contrib scalaxb
 
-Use conscript
-=============
-
-Install conscript (cs).
-
-- https://github.com/foundweekends/conscript
-
-Install scalaxb using it.
-
-    $ cs eed3si9n/scalaxb
-
-Install a SNAPSHOT version of scalaxb.
-
-    $ cs eed3si9n/scalaxb/x.x.x-SNAPSHOT
-
 Build from source
 =================================
-
-If you want to build from source, install git.
-
-- http://git-scm.com/
 
 Download and install sbt.
 

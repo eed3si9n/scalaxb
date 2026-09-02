@@ -1,7 +1,7 @@
 scalaxb
 =======
 
-![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.scalaxb/scalaxb_2.12/badge.svg)
+[![scalaxb Scala version support](https://index.scala-lang.org/eed3si9n/scalaxb/scalaxb/latest.svg)](https://index.scala-lang.org/eed3si9n/scalaxb/scalaxb)
 
 scalaxb is an XML data-binding tool for Scala that supports W3C XML Schema (xsd) and
 Web Services Description Language (wsdl) as the input file.
@@ -22,10 +22,11 @@ There are currently four ways of running scalaxb:
 
 ### sbt-scalaxb
 
-To call scalaxb from sbt 1.x and sbt 0.13.x, put this in your `project/scalaxb.sbt`:
+To call scalaxb from sbt 1.x and sbt 0.13.x, put this in your `project/plugins.sbt`:
 
-    resolvers += Resolver.sonatypeRepo("public")
-    addSbtPlugin("org.scalaxb" % "sbt-scalaxb" % "X.X.X")
+```scala
+addSbtPlugin("org.scalaxb" % "sbt-scalaxb" % "X.X.X")
+```
 
 and this in `build.sbt`:
 
@@ -36,9 +37,9 @@ lazy val jaxbApi = "javax.xml.bind" % "jaxb-api" % "2.3.0"
 lazy val scalaXml = "org.scala-lang.modules" %% "scala-xml" % "1.3.0"
 lazy val scalaParser = "org.scala-lang.modules" %% "scala-parser-combinators" % "1.1.2"
 
-lazy val root = (project in file(".")).
-  enablePlugins(ScalaxbPlugin).
-  settings(
+lazy val root = (project in file("."))
+  .enablePlugins(ScalaxbPlugin)
+  .settings(
     name := "foo-project",
     Compile / scalaxb / scalaxbPackageName := "generated",
     // Compile / scalaxb / scalaxbAutoPackages := true,

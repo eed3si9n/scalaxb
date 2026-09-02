@@ -144,7 +144,7 @@ object Config {
       defaultWrappedComplexTypes, SeperateProtocol, defaultProtocolFileName,
       defaultProtocolPackageName, GenerateRuntime, GenerateDispatchClient,
       defaultContentsSizeLimit, defaultSequenceChunkSize,
-      HttpClientStyle.Future, defaultDispatchVersion)
+      HttpClientStyle.Future, defaultDispatchVersion, PrependFamilyName)
   )
 }
 

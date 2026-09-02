@@ -23,7 +23,7 @@
 package scalaxb.compiler.xsd
 
 import scalaxb.compiler.Log
-import scala.collection.mutable
+
 import scala.collection.immutable
 
 trait Parsers extends Args with Params {
@@ -45,24 +45,27 @@ trait Parsers extends Args with Params {
   }
   
   def buildAnyParser(namespaceConstraint: List[String], occurrence: Occurrence, mixed: Boolean,
-                     wrapInDataRecord: Boolean, laxAny: Boolean): String = {
+                     wrapInDataRecord: Boolean, laxAny: Boolean, nameFilter: Option[String] = None): String = {
     val converter = if (occurrence.nillable) buildFromXML("scalaxb.DataRecord[Option[Any]]", "_",
         Some("node"), None)
       else buildFromXML(buildTypeName(XsWildcard(namespaceConstraint)), "_", Some("node"), None)
-    val parser = "any(%s)".format(
-      if (laxAny) "_ => true"
-      else namespaceConstraint match {
-        case ("##any" :: Nil) | Nil | ("" :: Nil) => "_ => true"
-        case "##other" :: Nil => "_.namespace != %s".format(quoteNamespace(schema.targetNamespace))
-        case _ =>
-          """x => %s contains x.namespace""".format(
-            namespaceConstraint.map {
-              case "##targetNamespace" => quoteNamespace(schema.targetNamespace)
-              case "##local" => "None"
-              case x => quoteNamespace(Some(x))
-            }.mkString("List(", ", ", ")")
-          )
-      })
+    val parser = "any(%s)".format(nameFilter match {
+      case Some(name) => "_.name == %s".format(quote(name))
+      case None =>
+        if (laxAny) "_ => true"
+        else namespaceConstraint match {
+          case ("##any" :: Nil) | Nil | ("" :: Nil) => "_ => true"
+          case "##other" :: Nil => "_.namespace != %s".format(quoteNamespace(schema.targetNamespace))
+          case _ =>
+            """x => %s contains x.namespace""".format(
+              namespaceConstraint.map {
+                case "##targetNamespace" => quoteNamespace(schema.targetNamespace)
+                case "##local" => "None"
+                case x => quoteNamespace(Some(x))
+              }.mkString("List(", ", ", ")")
+            )
+        }
+    })
     
     buildParserString(if (mixed) "((" + parser + " ^^ (" + converter + ")) " + follow + newline +
         indent(3) + buildTextParser + ") ^^ " + newline +
@@ -267,7 +270,7 @@ trait Parsers extends Args with Params {
         }
         else addConverter(buildParserString(elem, occurrence))
       case AnyType(XsWildcard(constraint)) => buildAnyParser(constraint, occurrence, mixed, wrapInDataRecord, config.laxAny)
-      case AnyType(symbol) => addConverter(buildParserString(elem, occurrence))
+      case AnyType(symbol) => buildAnyParser(Nil, occurrence, mixed, wrapInDataRecord, config.laxAny, Some(elem.name))
       case XsLongAll => ""
       
       case symbol: ReferenceTypeSymbol =>

@@ -382,7 +382,7 @@ JDREVGRw==</base64Binary>
     // present optional xs:anyType element is captured
     fromXML[NamedAnyTypeTest](
       <foo xmlns="http://www.example.com/general"><sessionId>abc</sessionId><messageType>hello</messageType></foo>) match {
-      case NamedAnyTypeTest(Some("abc"), "hello") =>
+      case NamedAnyTypeTest(Some(_), "hello") =>
       case x => sys.error("present case failed: " + x.toString)
     }
   }

@@ -209,8 +209,8 @@
 
   <xs:complexType name="NamedAnyTypeTest">
     <xs:sequence>
-      <xs:element name="sessionId" minOccurs="0"/>
-      <xs:element name="messageType" type="xs:string"/>
+      <xs:element name="any1" minOccurs="0"/>
+      <xs:element name="string1" type="xs:string"/>
     </xs:sequence>
   </xs:complexType>
 

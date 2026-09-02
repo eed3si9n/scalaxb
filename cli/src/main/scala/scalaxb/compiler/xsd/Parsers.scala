@@ -23,7 +23,7 @@
 package scalaxb.compiler.xsd
 
 import scalaxb.compiler.Log
-
+import scala.collection.mutable
 import scala.collection.immutable
 
 trait Parsers extends Args with Params {

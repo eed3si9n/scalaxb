@@ -375,13 +375,15 @@ JDREVGRw==</base64Binary>
     println("testNamedAnyType")
     // absent optional xs:anyType element should not remove the next sibling
     fromXML[NamedAnyTypeTest](
-      <foo xmlns="http://www.example.com/general"><string1>foo</string1></foo>) match {
+      <foo xmlns="http://www.example.com/general"><string1>foo</string1></foo>
+    ) match {
       case NamedAnyTypeTest(None, "foo") =>
       case other => sys.error("absent case failed: " + other.toString)
     }
     // present optional xs:anyType element is captured
     fromXML[NamedAnyTypeTest](
-      <foo xmlns="http://www.example.com/general"><any1>bar</any1><string1>foo</string1></foo>) match {
+      <foo xmlns="http://www.example.com/general"><any1>bar</any1><string1>foo</string1></foo>
+    ) match {
       case NamedAnyTypeTest(Some(_), "foo") =>
       case other => sys.error("present case failed: " + other.toString)
     }

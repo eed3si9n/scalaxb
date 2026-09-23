@@ -33,24 +33,8 @@ trait CompilerMatcher extends CompilerMatcherBase {
                                    jarPathOfClass("scala.xml.Elem"),
                                    jarPathOfClass("scala.util.parsing.combinator.Parsers"))
 
-  // For some reason, there's a `java.net.URLClassLoader` in the
-  // classloader hierarchy only for the first specs2 example in the suite.
-  // This is most probably due to the sequential order of test execution, see
-  // `testOptions in Test += Tests.Argument("sequential")` in `build.sbt`.
-  // We assume that the current classpath doesn't change from example to
-  // example in a single test suite.
-  private lazy val currentcp = {
-    val currentLoader = java.lang.Thread.currentThread.getContextClassLoader
-     currentLoader match {
-      case cl: java.net.URLClassLoader => cl.getURLs.toList map {_.toString}
-      case x =>
-        // sbt 0.13 wraps classloader with ClasspathFilter
-        x.getParent match {
-          case cl: java.net.URLClassLoader => cl.getURLs.toList map {_.toString}
-          case x => sys.error("classloader is not a URLClassLoader: " + x.getClass)
-        }
-    }
-  }
+  private lazy val currentcp: List[String] =
+    scala.util.Properties.javaClassPath.split(File.pathSeparator).toList.map("file:" + _)
 
   /** evaluteTo matches a pair of code list and files against the expected value
    * after evaluating the files and the given code list.
@@ -65,7 +49,7 @@ trait CompilerMatcher extends CompilerMatcherBase {
    */
   def evaluateTo(expected: Any,
       outdir: String = ".",
-      classpath: List[String] = Nil,
+      classpath: List[String] = currentcp.filter(_.contains("jaxb-api")),
       usecurrentcp: Boolean = false,
       unchecked: Boolean = true,
       deprecation: Boolean = true,

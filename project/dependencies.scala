@@ -73,6 +73,7 @@ object Dependencies {
     case x                           => Seq(scalaXml2, scalaParserCombinators2)
   })
   def integrationDependencies(sv: String) = Seq(
+    jaxb % "test",
     dispatch(sv) % "test",
     http4s % "test",
     http4sEmber % "test",

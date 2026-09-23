@@ -13,6 +13,10 @@ jobs:
             distribution: zulu
             jobtype: 1
           - os: ubuntu-latest
+            java: 25
+            distribution: zulu
+            jobtype: 1
+          - os: ubuntu-latest
             java: 21
             distribution: corretto
             jobtype: 2

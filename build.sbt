@@ -85,7 +85,8 @@ lazy val integration = (project in file("integration"))
     scalaVersion := scala212
     publishArtifact := false
     libraryDependencies ++= integrationDependencies(scalaVersion.value)
-    // fork in test := true,
+    Test / fork := true
+    Test / baseDirectory := (LocalRootProject / baseDirectory).value
     // javaOptions in test ++= Seq("-Xmx2G", "-XX:MaxPermSize=512M")
     Test / parallelExecution := false
     Test / testOptions += Tests.Argument("sequential")
@@ -101,7 +102,7 @@ lazy val scalaxbPlugin = (project in file("sbt-scalaxb"))
     description := """sbt plugin to run scalaxb"""
     pluginCrossBuild / sbtVersion := {
       scalaBinaryVersion.value match {
-        case "2.12" => "1.5.8" // set minimum sbt version
+        case "2.12" => "1.9.9" // set minimum sbt version
         case _ => "2.0.1"
       }
     }

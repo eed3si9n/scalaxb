@@ -9,7 +9,7 @@
   </parent>
   <groupId>org.scalaxb</groupId>
   <artifactId>scalaxb-maven-plugin</artifactId>
-  <version>1.12.3</version>
+  <version>1.12.5</version>
   <packaging>maven-plugin</packaging>
 
   <name>scalaxb Maven Plugin</name>

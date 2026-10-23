@@ -53,7 +53,7 @@ trait Lookup extends ContextProcessor {
   // In other words, global declarations cannot contain the attributes
   // minOccurs, maxOccurs, or use.
   def buildElement(ref: ElemRef) =
-    Some(elements(ref.namespace, ref.name)) map { that =>
+    Some(elements(ref.namespace, ref.name)).map { that =>
       that.copy(minOccurs = ref.minOccurs,
         maxOccurs = ref.maxOccurs,
         nillable = ref.nillable match {
@@ -61,7 +61,7 @@ trait Lookup extends ContextProcessor {
           case _    => ref.nillable
         },
         global = true)
-    } get
+    }.get
 
   def buildSymbolElement(symbol: XsTypeSymbol): ElemDecl =
     ElemDecl(schema.targetNamespace, "value", symbol, None, None, 1, 1)
@@ -107,11 +107,11 @@ trait Lookup extends ContextProcessor {
   // In other words, global declarations cannot contain the attributes
   // minOccurs, maxOccurs, or use.
   def buildAttribute(ref: AttributeRef) =
-    Some(attrs(ref.namespace, ref.name)) map { that =>
+    Some(attrs(ref.namespace, ref.name)).map { that =>
       that.copy(defaultValue = ref.defaultValue,
         fixedValue = ref.fixedValue,
         use = ref.use)
-    } get
+    }.get
 
   def attributeGroups(namespace: Option[String], name: String) =
     (for (schema <- schemas;

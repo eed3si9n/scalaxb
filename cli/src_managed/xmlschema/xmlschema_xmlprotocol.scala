@@ -416,7 +416,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
     
     def writes(__obj: xmlschema.XSchemaSequence1, __namespace: Option[String], __elementLabel: Option[String], 
         __scope: scala.xml.NamespaceBinding, __typeAttribute: Boolean): scala.xml.NodeSeq =
-      Seq.concat(Some(__obj.xSchemaTopOption1) map {x => scalaxb.toXML[scalaxb.DataRecord[Any]](x, x.namespace, x.key, __scope, false)} get,
+      Seq.concat(Some(__obj.xSchemaTopOption1).map {x => scalaxb.toXML[scalaxb.DataRecord[Any]](x, x.namespace, x.key, __scope, false)}.get,
         __obj.annotation flatMap { scalaxb.toXML[xmlschema.XAnnotation](_, Some("http://www.w3.org/2001/XMLSchema"), Some("annotation"), __scope, false) })
 
 
@@ -647,7 +647,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
 
     def writesChildNodes(__obj: xmlschema.XTopLevelComplexType, __scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node] =
       Seq.concat(__obj.annotation map { scalaxb.toXML[xmlschema.XAnnotation](_, Some("http://www.w3.org/2001/XMLSchema"), Some("annotation"), __scope, false) } getOrElse {Nil},
-        Some(__obj.xComplexTypeModelOption3) map {x => scalaxb.toXML[scalaxb.DataRecord[xmlschema.XComplexTypeModelOption]](x, x.namespace, x.key, __scope, false)} get)
+        Some(__obj.xComplexTypeModelOption3).map {x => scalaxb.toXML[scalaxb.DataRecord[xmlschema.XComplexTypeModelOption]](x, x.namespace, x.key, __scope, false)}.get)
 
   }
 
@@ -702,7 +702,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
 
     def writesChildNodes(__obj: xmlschema.XLocalComplexType, __scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node] =
       Seq.concat(__obj.annotation map { scalaxb.toXML[xmlschema.XAnnotation](_, Some("http://www.w3.org/2001/XMLSchema"), Some("annotation"), __scope, false) } getOrElse {Nil},
-        Some(__obj.xComplexTypeModelOption3) map {x => scalaxb.toXML[scalaxb.DataRecord[xmlschema.XComplexTypeModelOption]](x, x.namespace, x.key, __scope, false)} get)
+        Some(__obj.xComplexTypeModelOption3).map {x => scalaxb.toXML[scalaxb.DataRecord[xmlschema.XComplexTypeModelOption]](x, x.namespace, x.key, __scope, false)}.get)
 
   }
 
@@ -922,7 +922,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
 
     def writesChildNodes(__obj: xmlschema.XComplexContent, __scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node] =
       Seq.concat(__obj.annotation map { scalaxb.toXML[xmlschema.XAnnotation](_, Some("http://www.w3.org/2001/XMLSchema"), Some("annotation"), __scope, false) } getOrElse {Nil},
-        Some(__obj.xcomplexcontentoption) map {x => scalaxb.toXML[scalaxb.DataRecord[xmlschema.XComplexContentOption]](x, x.namespace, x.key, __scope, false)} get)
+        Some(__obj.xcomplexcontentoption).map {x => scalaxb.toXML[scalaxb.DataRecord[xmlschema.XComplexContentOption]](x, x.namespace, x.key, __scope, false)}.get)
 
   }
 
@@ -1056,7 +1056,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
 
     def writesChildNodes(__obj: xmlschema.XSimpleContent, __scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node] =
       Seq.concat(__obj.annotation map { scalaxb.toXML[xmlschema.XAnnotation](_, Some("http://www.w3.org/2001/XMLSchema"), Some("annotation"), __scope, false) } getOrElse {Nil},
-        Some(__obj.xsimplecontentoption) map {x => scalaxb.toXML[scalaxb.DataRecord[xmlschema.XSimpleContentOption]](x, x.namespace, x.key, __scope, false)} get)
+        Some(__obj.xsimplecontentoption).map {x => scalaxb.toXML[scalaxb.DataRecord[xmlschema.XSimpleContentOption]](x, x.namespace, x.key, __scope, false)}.get)
 
   }
 
@@ -2687,7 +2687,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
 
     def writesChildNodes(__obj: xmlschema.XTopLevelSimpleType, __scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node] =
       Seq.concat(__obj.annotation map { scalaxb.toXML[xmlschema.XAnnotation](_, Some("http://www.w3.org/2001/XMLSchema"), Some("annotation"), __scope, false) } getOrElse {Nil},
-        Some(__obj.xSimpleDerivationOption3) map {x => scalaxb.toXML[scalaxb.DataRecord[xmlschema.XSimpleDerivationOption]](x, x.namespace, x.key, __scope, false)} get)
+        Some(__obj.xSimpleDerivationOption3).map {x => scalaxb.toXML[scalaxb.DataRecord[xmlschema.XSimpleDerivationOption]](x, x.namespace, x.key, __scope, false)}.get)
 
   }
 
@@ -2733,7 +2733,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
 
     def writesChildNodes(__obj: xmlschema.XLocalSimpleType, __scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node] =
       Seq.concat(__obj.annotation map { scalaxb.toXML[xmlschema.XAnnotation](_, Some("http://www.w3.org/2001/XMLSchema"), Some("annotation"), __scope, false) } getOrElse {Nil},
-        Some(__obj.xSimpleDerivationOption3) map {x => scalaxb.toXML[scalaxb.DataRecord[xmlschema.XSimpleDerivationOption]](x, x.namespace, x.key, __scope, false)} get)
+        Some(__obj.xSimpleDerivationOption3).map {x => scalaxb.toXML[scalaxb.DataRecord[xmlschema.XSimpleDerivationOption]](x, x.namespace, x.key, __scope, false)}.get)
 
   }
 

@@ -555,9 +555,9 @@ trait {interfaceTypeName}{taglessTypeConstraint} {{ self =>
   // http://www.w3.org/TR/wsdl#_soap:body
   def bodyBinding(spec: Option[XStartWithExtensionsTypable]): BodyBinding = {
     val b = spec flatMap {
-      _.any collect {
+      _.any.collect {
         case DataRecord(_, Some("body"), node: Node) => node
-      } headOption
+      }.headOption
     }
     val literal = 
       b flatMap { node =>

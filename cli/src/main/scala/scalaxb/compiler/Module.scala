@@ -29,6 +29,7 @@ import javax.xml.parsers.SAXParser
 import java.io.{File, PrintWriter, Reader, BufferedReader}
 import scala.collection.mutable
 import scala.collection.mutable.{ListBuffer, ListMap}
+import scala.annotation.tailrec
 import ConfigEntry._
 
 object Snippet {
@@ -220,6 +221,7 @@ trait Module {
     val additionalImportables = ListMap.empty[Importable, File]
 
     // recursively add missing files
+    @tailrec
     def addMissingFiles(): Unit = {
       val current = (importables map {_._1}) ++ additionalImportables.keysIterator.toList
       // check for all dependencies before proceeding.

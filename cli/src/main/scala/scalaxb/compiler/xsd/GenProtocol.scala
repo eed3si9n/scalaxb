@@ -23,12 +23,14 @@
 package scalaxb.compiler.xsd
 
 import scalaxb.compiler.{Module, Config, Snippet, Log}
+import scala.annotation.tailrec
 import scala.xml._
 import scalaxb.compiler.ConfigEntry.HttpClientStyle
 
 class GenProtocol(val context: XsdContext, var config: Config) extends ContextProcessor {
   private val logger = Log.forName("xsd.GenProtocol")
 
+  @tailrec
   private def buildHelper(clauses: Seq[Node], chunkLength: Int, index: Int, helperBody: Seq[Node], headBody: Seq[String], tailBody: Seq[String]): (Seq[Node], String) =
     clauses.splitAt(chunkLength) match {
       case (Nil, _) =>

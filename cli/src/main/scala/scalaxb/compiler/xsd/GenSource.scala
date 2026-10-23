@@ -23,6 +23,7 @@
 package scalaxb.compiler.xsd
 
 import scalaxb.compiler.{Config, Snippet, Log}
+import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.collection.{Map}
 import scala.xml._
@@ -375,6 +376,7 @@ class GenSource(val schema: SchemaDecl,
         case _ => "Seq(scala.xml.Text(__obj.value.toString))"
       }
 
+      @tailrec
       def childString(decl: ComplexTypeDecl): String =
         if (effectiveMixed) "__obj." + makeParamName(MIXED_PARAM, false) +
           ".toSeq flatMap { x => " + buildToXML("scalaxb.DataRecord[Any]", "x, x.namespace, x.key, __scope, false") + " }"

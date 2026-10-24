@@ -23,6 +23,7 @@
 package scalaxb.compiler.xsd
 
 import scalaxb.compiler.Log
+import scala.annotation.tailrec
 
 trait Args extends Params {
   private val logger = Log.forName("xsd.Args")
@@ -286,6 +287,7 @@ trait Args extends Params {
   // sub groups behave like a choice
   def buildArgForMixed(particle: Particle, selector: String, ignoreSubGroup: Boolean): String = {
     val cardinality = toCardinality(particle.minOccurs, particle.maxOccurs)
+    @tailrec
     def isCompositor(p: Particle): Boolean = p match {
       case ref: GroupRef => true
       case ref: ElemRef => isCompositor(buildElement(ref))

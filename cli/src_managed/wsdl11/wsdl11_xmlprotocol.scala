@@ -334,7 +334,7 @@ trait XXMLProtocol extends scalaxb.XMLStandardTypes {
 
     def writesChildNodes(__obj: wsdl11.XOperationType, __scope: scala.xml.NamespaceBinding): Seq[scala.xml.Node] =
       Seq.concat(__obj.documentation map { scalaxb.toXML[wsdl11.XDocumentation](_, Some("http://schemas.xmlsoap.org/wsdl/"), Some("documentation"), __scope, false) } getOrElse {Nil},
-        Some(__obj.xoperationtypeoption) map {x => scalaxb.toXML[scalaxb.DataRecord[Any]](x, x.namespace, x.key, __scope, false)} get)
+        Some(__obj.xoperationtypeoption).map {x => scalaxb.toXML[scalaxb.DataRecord[Any]](x, x.namespace, x.key, __scope, false)}.get)
 
   }
 

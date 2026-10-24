@@ -7,7 +7,6 @@ import javax.xml.datatype.{XMLGregorianCalendar}
 import javax.xml.namespace.QName
 import javax.xml.bind.DatatypeConverter
 
-import scala.language.postfixOps
 import scala.language.implicitConversions
 import scala.language.existentials
 
@@ -222,7 +221,7 @@ trait XMLStandardTypes {
       seq match {
         case node: scala.xml.Node =>
           val (namespace, localPart) = Helper.splitQName(node.text, scope)
-          Right(new QName(namespace orNull, localPart))
+          Right(new QName(namespace.orNull, localPart))
         case _ => Left("scala.xml.Node is required")
       }
 
@@ -854,7 +853,7 @@ object Helper {
       scala.xml.Attribute(scope.getPrefix(XSI_URL), "nil", "true", scala.xml.Null),
       scope, true)
 
-  def splitBySpace(text: String) = text.split(' ').filter("" !=)
+  def splitBySpace(text: String) = text.split(' ').filter("" != _)
 
   def instanceType(node: scala.xml.Node): (Option[String], Option[String]) = {
     val typeName = (node \ ("@{" + XSI_URL + "}type")).text

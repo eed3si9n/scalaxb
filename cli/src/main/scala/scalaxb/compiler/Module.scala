@@ -213,9 +213,9 @@ trait Module {
     val importables0 = ListMap[From, Importable](files map { f =>
       f -> toImportable(ev.toURI(f), ev.toRawSchema(f))}: _*)
     val importables = ListBuffer[(Importable, From)](files map { f => importables0(f) -> f }: _*)
-    val schemas = ListMap[Importable, Schema](importables map { case (importable, file) =>
+    val schemas = ListMap[Importable, Schema](importables.map { case (importable, file) =>
       val s = parse(importable, context)
-      (importable, s) } toSeq: _*)
+      (importable, s) }.toSeq: _*)
 
     val additionalImportables = ListMap.empty[Importable, File]
 

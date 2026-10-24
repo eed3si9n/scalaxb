@@ -151,12 +151,12 @@ object SchemaDecl {
       config: ParserConfig = new ParserConfig) = {
     val schema = (node \\ "schema").headOption.getOrElse {
       sys.error("xsd: schema element not found: " + node.toString) }
-    val targetNamespace = schema.attribute("targetNamespace").headOption map { _.text }
+    val targetNamespace = schema.attribute("targetNamespace") map { _.text }
     config.targetNamespace = targetNamespace
     config.scope = schema.scope
-    config.elementQualifiedDefault = schema.attribute("elementFormDefault").headOption map {
+    config.elementQualifiedDefault = schema.attribute("elementFormDefault") map {
       _.text == "qualified"} getOrElse {false}
-    config.attributeQualifiedDefault = schema.attribute("attributeFormDefault").headOption map {
+    config.attributeQualifiedDefault = schema.attribute("attributeFormDefault") map {
       _.text == "qualified"} getOrElse {false}
 
     for (child <- schema.child) child.label match {
@@ -776,7 +776,7 @@ object SchemaLite {
     val schema = (node \\ "schema").headOption getOrElse {
       sys.error("xsd: schema element not found: " + node.toString)
     }
-    val targetNamespace = schema.attribute("targetNamespace").headOption map { _.text }
+    val targetNamespace = schema.attribute("targetNamespace") map { _.text }
     
     var importList: List[ImportDecl] = Nil
     for (node <- schema \ "import") {

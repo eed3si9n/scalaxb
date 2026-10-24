@@ -26,6 +26,20 @@ ThisBuild / publishTo := {
 
 lazy val commonSettings = Seq(
     scalacOptions := Seq("-deprecation", "-unchecked", "-feature", "-language:implicitConversions"),
+    scalacOptions ++= {
+      if (scalaVersion.value.startsWith("3.3.")) {
+        Seq(
+          "-Yfuture-lazy-vals",
+          "-release:11",
+        )
+      } else if (scalaBinaryVersion.value == "3") {
+        Nil
+      } else {
+        Seq(
+          "-release:8",
+        )
+      }
+    },
     Test / parallelExecution := false,
     resolvers += Resolver.typesafeIvyRepo("releases"),
     // Adds a `src/test/scala-2.13+` source directory for Scala 2.13 and newer

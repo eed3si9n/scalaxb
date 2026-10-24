@@ -9,7 +9,7 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-            java: 8
+            java: 11
             distribution: zulu
             jobtype: 1
           - os: ubuntu-latest

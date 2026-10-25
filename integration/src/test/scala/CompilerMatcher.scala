@@ -96,8 +96,8 @@ trait CompilerMatcher extends CompilerMatcherBase {
         println(s"expected: $expected (${expected.getClass})")
       }
       result(holder == Some(expected),
-        code + " evaluates as expected",
-        code + " does not evaluate as expected",
+        s"$code evaluates as expected",
+        s"$code does not evaluate as expected",
         pair)
     }
   }

@@ -22,46 +22,60 @@
 
 package scalaxb.compiler
 
-import java.net.{URI}
-import scala.xml.{Node, Elem, UnprefixedAttribute, NamespaceBinding}
-import scala.xml.factory.{XMLLoader}
+import java.net.{ URI }
+import scala.xml.{ Node, Elem, UnprefixedAttribute, NamespaceBinding }
+import scala.xml.factory.{ XMLLoader }
 import javax.xml.parsers.SAXParser
-import java.io.{File, PrintWriter, Reader, BufferedReader}
+import java.io.{ File, PrintWriter, Reader, BufferedReader }
 import scala.collection.mutable
-import scala.collection.mutable.{ListBuffer, ListMap}
+import scala.collection.mutable.{ ListBuffer, ListMap }
 import scala.annotation.tailrec
-import ConfigEntry._
+import ConfigEntry.*
+
 
 object Snippet {
-  def apply(snippets: Snippet*): Snippet =
-    Snippet(snippets flatMap { s => s.companion ++ s.definition},
-      Nil,
-      snippets flatMap {_.defaultFormats},
-      snippets flatMap {_.implicitValue},
-      snippets flatMap {_.elemToTypeClauses})
+  def apply(snippets: Snippet*): Snippet = Snippet(
+    snippets flatMap { s => s.companion ++ s.definition },
+    Nil,
+    snippets flatMap { _.defaultFormats },
+    snippets flatMap { _.implicitValue },
+    snippets flatMap { _.elemToTypeClauses },
+  )
 }
 
-case class Snippet(definition: Seq[Node] = Nil,
-  companion: Seq[Node] = Nil,
-  defaultFormats: Seq[Node] = Nil,
-  implicitValue: Seq[Node] = Nil,
-  elemToTypeClauses: Seq[Node] = Nil)
+case class Snippet(
+    definition: Seq[Node] = Nil,
+    companion: Seq[Node] = Nil,
+    defaultFormats: Seq[Node] = Nil,
+    implicitValue: Seq[Node] = Nil,
+    elemToTypeClauses: Seq[Node] = Nil,
+)
+
 
 trait CanBeWriter[A] {
- def toWriter(value: A): PrintWriter
- def newInstance(packageName: Option[String], fileName: String): A
+  def toWriter(value: A): PrintWriter
+  def newInstance(packageName: Option[String], fileName: String): A
 }
+
 object CanBeWriter {
-  implicit val stringWriter: CanBeWriter[java.io.StringWriter] = new CanBeWriter[java.io.StringWriter] {
+  implicit val stringWriter: CanBeWriter[
+    java.io.StringWriter
+  ] = new CanBeWriter[java.io.StringWriter] {
     override def toWriter(value: java.io.StringWriter) = new PrintWriter(value)
-    override def newInstance(packageName: Option[String], fileName: String) = new java.io.StringWriter
+
+    override def newInstance(
+        packageName: Option[String],
+        fileName: String,
+    ) = new java.io.StringWriter
   }
 }
+
 
 trait CanBeRawSchema[A, B] {
   def toRawSchema(value: A): B
   def toURI(value: A): URI
 }
+
 
 object Module {
   import scala.util.matching.Regex
@@ -78,12 +92,13 @@ object Module {
     }
   }
 
-  def splitTypeName(value: String, scope: scala.xml.NamespaceBinding) = masked.scalaxb.Helper.splitQName(value, scope)
+  def splitTypeName(value: String, scope: scala.xml.NamespaceBinding) =
+    masked.scalaxb.Helper.splitQName(value, scope)
 
   def indent(n: Int) = "  " * n
 
   def camelCase(name: String): String = {
-    val (cap, rest) = name span {_.isUpper}
+    val (cap, rest) = name span { _.isUpper }
     cap.size match {
       case x if (x == 0) || (x == 1) || (x == name.size) => cap.toLowerCase + rest
       case x => (cap take (x - 1)).toLowerCase + (cap drop (x - 1)) + rest
@@ -97,11 +112,13 @@ trait Module {
   type Schema
   type Context
 
-  case class CompileSource[From](context: Context,
-    schemas: ListMap[Importable, Schema],
-    importables: collection.Seq[(Importable, From)],
-    additionalImportables: ListMap[Importable, File],
-    firstNamespace: Option[String]) {
+  case class CompileSource[From](
+      context: Context,
+      schemas: ListMap[Importable, Schema],
+      importables: collection.Seq[(Importable, From)],
+      additionalImportables: ListMap[Importable, File],
+      firstNamespace: Option[String],
+  ) {
 
   }
 
@@ -126,10 +143,12 @@ trait Module {
     override def toRawSchema(value: File) = readerToRawSchema(UnicodeFileReader.reader(value))
     override def toURI(value: File) = value.toURI
   }
+
   val stringReader = new CanBeRawSchema[String, RawSchema] {
     override def toRawSchema(value: String) = readerToRawSchema(new java.io.StringReader(value))
     override def toURI(value: String) = new URI("file://C:/temp.txt")
   }
+
   val nodeReader = new CanBeRawSchema[Node, RawSchema] {
     override def toRawSchema(value: Node) = nodeToRawSchema(value)
     override def toURI(value: Node) = new URI("file://C:/temp.txt")
@@ -140,8 +159,7 @@ trait Module {
       update(PackageNames(Map(None -> Some(packageName)))).
       update(Outdir(outdir)))
 
-  def process(file: File, config: Config): List[File] =
-    processFiles(List(file), config)
+  def process(file: File, config: Config): List[File] = processFiles(List(file), config)
 
   def processFiles(files: Seq[File], config: Config): List[File] = {
     val (source, outfiles) = infoFiles(files, config)
@@ -153,8 +171,10 @@ trait Module {
 
   def infoFiles(files: Seq[File], config: Config): (CompileSource[File], List[File]) = {
     implicit val fileWriter = new CanBeWriter[File] {
-      override def toWriter(value: File) = new PrintWriter(new java.io.OutputStreamWriter(
-          new java.io.FileOutputStream(value), encoding))
+      override def toWriter(value: File) = new PrintWriter(
+        new java.io.OutputStreamWriter(new java.io.FileOutputStream(value), encoding)
+      )
+
       override def newInstance(packageName: Option[String], fileName: String) = {
         val dir = if (config.packageDir) packageDir(packageName, config.outdir)
                   else config.outdir
@@ -170,7 +190,7 @@ trait Module {
 
   def packageDir(packageName: Option[String], dir: File) = packageName map { x =>
     x.split('.').foldLeft(dir) { new File(_, _) }
-  } getOrElse {dir}
+  } getOrElse { dir }
 
   def processString(input: String, packageName: String): List[String] =
     processString(input, Config.default.update(PackageNames(Map(None -> Some(packageName)))))
@@ -181,7 +201,7 @@ trait Module {
   def infoString(input: String, config: Config): (CompileSource[String], List[String]) = {
     implicit val ev = stringReader
     val (source, result) = processReaders(Seq(input), config)
-    (source, result map {_.toString})
+    (source, result map { _.toString })
   }
 
   def processNode(input: Node, packageName: String): List[String] =
@@ -193,7 +213,7 @@ trait Module {
   def infoNode(input: Node, config: Config): (CompileSource[Node], List[String]) = {
     implicit val ev = nodeReader
     val (source, result) = processReaders(Seq(input), config)
-    (source, result map {_.toString})
+    (source, result map { _.toString })
   }
 
   def headerSnippet(pkg: Option[String]): Snippet =
@@ -201,7 +221,10 @@ trait Module {
 { pkg map { "package " + _ } getOrElse {""} }</source>)
 
   def processReaders[From, To](files: Seq[From], config: Config)
-     (implicit ev: CanBeRawSchema[From, RawSchema], evTo: CanBeWriter[To]): (CompileSource[From], List[To]) = {
+     (
+         implicit ev: CanBeRawSchema[From, RawSchema],
+         evTo: CanBeWriter[To],
+     ): (CompileSource[From], List[To]) = {
     val source = buildCompileSource(files)
     (source, processCompileSource(source, config))
   }
@@ -211,19 +234,20 @@ trait Module {
 
     logger.debug("%s", files.toString())
     val context = buildContext
-    val importables0 = ListMap[From, Importable](files map { f =>
-      f -> toImportable(ev.toURI(f), ev.toRawSchema(f))}: _*)
-    val importables = ListBuffer[(Importable, From)](files map { f => importables0(f) -> f }: _*)
+    val importables0 = ListMap[From, Importable](
+      files.map { (f) => f -> toImportable(ev.toURI(f), ev.toRawSchema(f)) }*
+    )
+    val importables = ListBuffer[(Importable, From)](files.map { (f) => importables0(f) -> f }*)
     val schemas = ListMap[Importable, Schema](importables.map { case (importable, file) =>
       val s = parse(importable, context)
-      (importable, s) }.toSeq: _*)
+      (importable, s) }.toSeq*)
 
     val additionalImportables = ListMap.empty[Importable, File]
 
     // recursively add missing files
     @tailrec
     def addMissingFiles(): Unit = {
-      val current = (importables map {_._1}) ++ additionalImportables.keysIterator.toList
+      val current = (importables map { _._1 }) ++ additionalImportables.keysIterator.toList
       // check for all dependencies before proceeding.
       val missings = (current flatMap { importable =>
         missingDependencies(importable, current) }).distinct
@@ -236,11 +260,13 @@ trait Module {
         else None
       }
       var added = false
-      additionalImportables ++= (additional map { x =>
+      additionalImportables ++= (additional.map { x =>
         logger.warn("added " + x + " to compilation.")
         added = true
-        val importable = toImportable(implicitly[CanBeRawSchema[File, RawSchema]].toURI(x),
-          implicitly[CanBeRawSchema[File, RawSchema]].toRawSchema(x))
+        val importable = toImportable(
+          implicitly[CanBeRawSchema[File, RawSchema]].toURI(x),
+          implicitly[CanBeRawSchema[File, RawSchema]].toRawSchema(x),
+        )
         val s = parse(importable, context)
         schemas(importable) = s
         (importable, x) })
@@ -248,10 +274,12 @@ trait Module {
     }
     def processUnnamedIncludes(): Unit = {
       logger.debug("processUnnamedIncludes")
-      val all = (importables.toList map {_._1}) ++ (additionalImportables.toList map {_._1})
-      val parents: ListBuffer[Importable] = ListBuffer(all filter { !_.includeLocations.isEmpty}: _*)
+      val all = (importables.toList.map { _._1 }) ++ (additionalImportables.toList map { _._1 })
+      val parents: ListBuffer[Importable] = ListBuffer(all.filter { !_.includeLocations.isEmpty }*)
       def children(importable: Importable): List[Importable] = {
-        val uris = importable.includeLocations map { includedLoc => shortenUri(new URI(includedLoc)) }
+        val uris = importable.includeLocations map { includedLoc =>
+          shortenUri(new URI(includedLoc))
+        }
         all filter { x => uris contains shortenUri(x.location) }
       }
       val mapping: ListMap[Importable, Option[String]] = ListMap()
@@ -264,12 +292,16 @@ trait Module {
         val parent = parents(i % parents.size)
         val xs = children(parent)
         if (xs forall { x => !(parents contains x) }) {
-          val tns = mapping.get(parent) getOrElse {parent.targetNamespace}
+          val tns = mapping.get(parent) getOrElse { parent.targetNamespace }
           tns foreach { tnsstr => xs foreach { x =>
             x.targetNamespace match {
               case Some(ns) =>
-              case None =>
-                logger.debug("processUnnamedIncludes - setting %s's outer namespace to %s", x.location, tnsstr)
+              case None     =>
+                logger.debug(
+                  "processUnnamedIncludes - setting %s's outer namespace to %s",
+                  x.location,
+                  tnsstr,
+                )
                 count += 1
                 val swap = x.swapTargetNamespace(tns, count)
                 schemas(swap) = parse(swap, context)
@@ -277,7 +309,7 @@ trait Module {
                 used += x
             }
             mapping(x) = tns
-          }}
+          } }
           parents.remove(i % parents.size)
         }
       }
@@ -296,8 +328,13 @@ trait Module {
 
     addMissingFiles()
     processUnnamedIncludes()
-    CompileSource(context, schemas, importables, additionalImportables,
-      importables0(files.head).targetNamespace)
+    CompileSource(
+      context,
+      schemas,
+      importables,
+      additionalImportables,
+      importables0(files.head).targetNamespace,
+    )
   }
 
   // ev: CanBeRawSchema[From, RawSchema]
@@ -308,9 +345,16 @@ trait Module {
     def toFileNamePart[From](file: From)(implicit ev: CanBeRawSchema[From, RawSchema]): String =
       """([.]\w+)$""".r.replaceFirstIn(new File(ev.toURI(file).getPath).getName, "")
 
-    def processImportables[A](xs: List[(Importable, A)])(implicit ev: CanBeRawSchema[A, RawSchema]) = xs flatMap {
+    def processImportables[A](xs: List[(Importable, A)])(
+        implicit ev: CanBeRawSchema[A, RawSchema]
+    ) = xs flatMap {
       case (importable, file) =>
-        generate(cs.schemas(importable), toFileNamePart(file), cs.context, config) map { case (pkg, snippet, part) =>
+        generate(
+          cs.schemas(importable),
+          toFileNamePart(file),
+          cs.context,
+          config,
+        ) map { case (pkg, snippet, part) =>
           snippets += snippet
           val output = evTo.newInstance(pkg, part + ".scala")
           val out = evTo.toWriter(output)
@@ -327,16 +371,16 @@ trait Module {
     def processProtocol = {
       val pkg = config.protocolPackageName match {
         case Some(_) => config.protocolPackageName
-        case _ => packageName(cs.firstNamespace, cs.context)
+        case _       => packageName(cs.firstNamespace, cs.context)
       }
       val output = implicitly[CanBeWriter[To]].newInstance(pkg, config.protocolFileName)
       val out = implicitly[CanBeWriter[To]].toWriter(output)
       val config2 = config.update(ProtocolPackageName(pkg)).
         update(DefaultNamespace(config.defaultNamespace match {
           case Some(_) => config.defaultNamespace
-          case _ => cs.firstNamespace
+          case _       => cs.firstNamespace
         }))
-      val protocolNodes = generateProtocol(Snippet(snippets.toSeq: _*), cs.context, config2)
+      val protocolNodes = generateProtocol(Snippet(snippets.toSeq*), cs.context, config2)
       try {
         printNodes(protocolNodes, out, config2)
       } finally {
@@ -368,18 +412,18 @@ trait Module {
     if (config.isScala3_4Plus) {
       subs += scala3VarArgSub
       subs += scala3With
-      printNodes(nodes, out, substituteMany(subs.toList: _*))
+      printNodes(nodes, out, substituteMany(subs.toList*))
     } else {
       printNodes(nodes, out)
     }
   }
 
   def generateFromResource[To](
-    packageName: Option[String],
-    fileName: String,
-    resourcePath: String,
-    config: Config,
-    subs0: (String, String)*
+      packageName: Option[String],
+      fileName: String,
+      resourcePath: String,
+      config: Config,
+      subs0: (String, String)*,
   )(implicit evTo: CanBeWriter[To]): To = {
     val output = implicitly[CanBeWriter[To]].newInstance(packageName, fileName)
     val out = implicitly[CanBeWriter[To]].toWriter(output)
@@ -389,7 +433,7 @@ trait Module {
       if (config.isScala3_4Plus) {
         subs += scala3VarArgSub
       }
-      val transform = substituteMany(subs.toList: _*)
+      val transform = substituteMany(subs.toList*)
       printFromResource(resourcePath, out, transform)
     } finally {
       out.flush()
@@ -398,7 +442,9 @@ trait Module {
     output
   }
 
-  def generateBaseRuntimeFiles[To](cntxt: Context, config: Config)(implicit evTo: CanBeWriter[To]): List[To] = {
+  def generateBaseRuntimeFiles[To](cntxt: Context, config: Config)(
+      implicit evTo: CanBeWriter[To]
+  ): List[To] = {
     val subs = ListBuffer.empty[(String, String)]
     subs += "%%JAXB_PACKAGE%%" -> config.jaxbPackage.packageName
     if (config.isScala3Plus) {
@@ -411,27 +457,36 @@ trait Module {
         "scalaxb.scala",
         "/scalaxb.scala.template",
         config,
-        subs.toList: _*,
-      ),
+        subs.toList*,
+      )
     )
   }
 
-  def generateRuntimeFiles[To](context: Context, config: Config)(implicit evTo: CanBeWriter[To]): List[To]
+  def generateRuntimeFiles[To](context: Context, config: Config)(
+      implicit evTo: CanBeWriter[To]
+  ): List[To]
 
   // returns a seq of package name, snippet, and file name part tuple
-  def generate(schema: Schema, part: String, context: Context, config: Config): Seq[(Option[String], Snippet, String)]
+  def generate(
+      schema: Schema,
+      part: String,
+      context: Context,
+      config: Config,
+  ): Seq[(Option[String], Snippet, String)]
 
-  def generateProtocol(snippet: Snippet,
-    context: Context, config: Config): Seq[Node]
+  def generateProtocol(snippet: Snippet, context: Context, config: Config): Seq[Node]
 
   def toImportable(location: URI, rawschema: RawSchema): Importable
 
   def shortenUri(uri: URI): String = {
-    val path = Option[String](uri.getPath) getOrElse {""}
+    val path = Option[String](uri.getPath) getOrElse { "" }
     (new File(path)).getName
   }
 
-  def missingDependencies(importable: Importable, files: collection.Seq[Importable]): List[String] = {
+  def missingDependencies(
+      importable: Importable,
+      files: collection.Seq[Importable],
+  ): List[String] = {
     val nsBased = importable.importNamespaces.toList flatMap { (ns: String) =>
       files filter { x =>
         val targetNamespace: Option[String] = x.targetNamespace
@@ -451,7 +506,9 @@ trait Module {
     val includes = importable.includeLocations.toList flatMap { loc =>
       val deps = files filter { f => shortenUri(f.location) == shortenUri(new URI(loc)) }
       if (deps.isEmpty && loc != XML_LOCATION) {
-        logger.warn("Warning: " + (new File(importable.location.getPath).getName) + " includes " + loc +
+        logger.warn("Warning: " + (new File(
+          importable.location.getPath
+        ).getName) + " includes " + loc +
           " but no schema with that name was compiled together.")
         List(loc)
       }
@@ -480,29 +537,38 @@ trait Module {
   def parse(location: URI, in: Reader): Schema
     = parse(toImportable(location, readerToRawSchema(in)), buildContext)
 
-  def printNodes(nodes: Seq[Node], out: PrintWriter, transform: String => String = identity): Unit = {
-    import scala.xml.{ transform => _, _ }
+  def printNodes(
+      nodes: Seq[Node],
+      out: PrintWriter,
+      transform: String => String = identity,
+  ): Unit = {
+    import scala.xml.{ transform as _, * }
 
-    def printNode(n: Node): Unit = n match {
-      case Text(s)          => out.print(transform(s))
-      case EntityRef("lt")  => out.print('<')
-      case EntityRef("gt")  => out.print('>')
-      case EntityRef("amp") => out.print('&')
-      case atom: Atom[?]    => out.print(transform(atom.text))
-      case elem: Elem       =>
-        printNodes(elem.child, out, transform)
-        if (elem.text != "") {
-          if (elem.text.contains(newline)) out.println("")
-          out.println("")
-        }
-      case _                => logger.error("error in Module: encountered "
-        + n.getClass() + " " + n.toString)
-    }
+    def printNode(n: Node): Unit =
+      n match {
+        case Text(s)          => out.print(transform(s))
+        case EntityRef("lt")  => out.print('<')
+        case EntityRef("gt")  => out.print('>')
+        case EntityRef("amp") => out.print('&')
+        case atom: Atom[?]    => out.print(transform(atom.text))
+        case elem: Elem       =>
+          printNodes(elem.child, out, transform)
+          if (elem.text != "") {
+            if (elem.text.contains(newline)) out.println("")
+            out.println("")
+          }
+        case _ => logger.error("error in Module: encountered "
+          + n.getClass() + " " + n.toString)
+      }
 
     for (node <- nodes) { printNode(node) }
   }
 
-  def printFromResource(source: String, out: PrintWriter, transform: String => String = identity): Unit = {
+  def printFromResource(
+      source: String,
+      out: PrintWriter,
+      transform: String => String = identity,
+  ): Unit = {
     val in = getClass.getResourceAsStream(source)
     try {
       val reader = new java.io.BufferedReader(new java.io.InputStreamReader(in))
@@ -524,34 +590,48 @@ trait Module {
   def copyFileFromResource(source: String, dest: File, transform: String => String = identity) =
     printFromResource(source, new java.io.PrintWriter(new java.io.FileWriter(dest)), transform)
 
-  def mergeSnippets(snippets: Seq[Snippet]) =
-    Snippet(snippets flatMap {_.definition},
-      snippets flatMap {_.companion},
-      snippets flatMap {_.defaultFormats},
-      snippets flatMap {_.implicitValue})
+  def mergeSnippets(snippets: Seq[Snippet]) = Snippet(
+    snippets flatMap { _.definition },
+    snippets flatMap { _.companion },
+    snippets flatMap { _.defaultFormats },
+    snippets flatMap { _.implicitValue },
+  )
 
-  def appendPostFix(location: URI, n: Int): URI = new URI(shortenUri(location).replaceFirst("\\.xsd", "") + n.toString + ".xsd")
+  def appendPostFix(location: URI, n: Int): URI = new URI(
+    shortenUri(location).replaceFirst("\\.xsd", "") + n.toString + ".xsd"
+  )
+
   // replace the targetNamespace
   def replaceNamespace(raw: Node, old: Option[String], outerNamespace: Option[String]): Node = {
     def fixScope(scope: NamespaceBinding): NamespaceBinding =
       NamespaceBinding(null, outerNamespace getOrElse null, scope)
     def fixSeq(ns: Seq[Node]): Seq[Node] =
       for { node <- ns } yield node match {
-        case elem: Elem => 
-          elem.copy(scope = fixScope(elem.scope),
-               child = fixSeq(elem.child))
+        case elem: Elem =>
+          elem.copy(
+            scope = fixScope(elem.scope),
+            child = fixSeq(elem.child),
+          )
         case other => other
       }
     val xml = CustomXML.load(new java.io.StringReader((raw match {
       case elem: Elem if !old.isDefined =>
-        val x = elem.copy(attributes = new UnprefixedAttribute("targetNamespace", outerNamespace getOrElse null, elem.attributes),
-          scope = fixScope(elem.scope), child = fixSeq(elem.child))
+        val x = elem.copy(
+          attributes = new UnprefixedAttribute(
+            "targetNamespace",
+            outerNamespace getOrElse null,
+            elem.attributes,
+          ),
+          scope = fixScope(elem.scope),
+          child = fixSeq(elem.child),
+        )
         x
       case node => node
     }).toString))
     xml
   }
 }
+
 
 object CustomXML extends XMLLoader[Elem] {
   override def parser: SAXParser = {
@@ -563,6 +643,7 @@ object CustomXML extends XMLLoader[Elem] {
     factory.newSAXParser()
   }
 }
+
 
 object UnicodeFileReader {
   def reader(value: File): Reader = {
@@ -586,11 +667,19 @@ object UnicodeFileReader {
   }
 }
 
-class ReferenceNotFound(kind: String, namespace: Option[String], name: String) extends RuntimeException(
-  "Error: Referenced " + kind + " " +
-    (namespace map { "{" + _ + "}" } getOrElse {"(unqualified) "}) + name + " was not found.")
 
-@deprecated(message = "will be removed")
+class ReferenceNotFound(
+    kind: String,
+    namespace: Option[String],
+    name: String,
+) extends RuntimeException(
+  "Error: Referenced " + kind + " " +
+    (namespace map { "{" + _ + "}" } getOrElse { "(unqualified) " }) + name + " was not found.")
+
+
+@deprecated(
+  message = "will be removed"
+)
 class CaseClassTooLong(fqn: String, xmlname: String) extends RuntimeException(
   s"""Error: A case class with > 22 parameters cannot be created for ${fqn}. Consider using --wrap-contents "${xmlname}" option."""
 )

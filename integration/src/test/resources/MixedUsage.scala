@@ -1,9 +1,8 @@
-/**
- * @author  e.e d3si9n
- */
+/** @author  e.e d3si9n */
 
-import scalaxb._
-import mixed._
+import scalaxb.*
+import mixed.*
+
 
 object MixedUsage {
   def main(args: Array[String]): Unit = {
@@ -14,7 +13,7 @@ object MixedUsage {
     testMixed
     true
   }
-  
+
   def testMixed = {
     val subject = <foo xmlns="http://www.example.com/mixed"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">foo<name>Jane</name><name>Doe</name><city>New York</city>bar

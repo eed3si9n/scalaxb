@@ -1,9 +1,9 @@
-
 import scalaxb.compiler.Config
-import scalaxb.compiler.ConfigEntry._
+import scalaxb.compiler.ConfigEntry.*
+
 
 class AttributesPrefixTest extends TestBase {
-  val inFile  = resource("attrPrefixSchema.xsd")
+  val inFile = resource("attrPrefixSchema.xsd")
 
   lazy val generated = module.process(inFile,
     Config.default.update(PackageNames(Map(None -> Some("attr")))).

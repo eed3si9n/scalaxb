@@ -2,7 +2,8 @@ import org.junit.runner.RunWith
 import org.scalatestplus.junit.JUnitRunner
 import org.scalatest.funsuite.AnyFunSuite
 import scala.xml.Utility.trim
-import scalaxb._
+import scalaxb.*
+
 
 @RunWith(classOf[JUnitRunner])
 class ScalaxbExampleSpec extends AnyFunSuite {
@@ -13,7 +14,14 @@ class ScalaxbExampleSpec extends AnyFunSuite {
 
   test("The Address in the example should be serialized into XML correctly") {
     val shipTo = example.address
-    val document = scalaxb.toXML[ipo.Address](shipTo.copy(name = "Bar"), None, Some("foo"), ipo.defaultScope)
+    val document = scalaxb.toXML[ipo.Address](
+      shipTo.copy(
+        name = "Bar"
+      ),
+      None,
+      Some("foo"),
+      ipo.defaultScope,
+    )
     assert(document == trim(
       <foo xmlns="http://www.example.com/IPO"
            xmlns:xs="http://www.w3.org/2001/XMLSchema"

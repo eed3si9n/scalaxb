@@ -22,6 +22,7 @@
 import scala.tools.nsc.interpreter.IMain
 import scala.tools.nsc.GenericRunnerSettings
 
+
 trait CompilerMatcherBase {
   protected final def imain(s: GenericRunnerSettings): IMainWithLastReq =
     new IMain(s) with IMainWithLastReq {

@@ -1,7 +1,8 @@
-import sbt._
-import Keys._
+import sbt.*
+import Keys.*
 import sbtbuildinfo.BuildInfoKey
-import sbtbuildinfo.BuildInfoKeys._
+import sbtbuildinfo.BuildInfoKeys.*
+
 
 object Common {
   val Xsd = config("xsd").extend(Compile)
@@ -10,6 +11,7 @@ object Common {
   val Soap12 = config("soap12").extend(Compile)
 
   val scalaxbCodegenSettings = Nil
+
   // val scalaxbCodegenSettings: Seq[Def.Setting[_]] = {
   //   import sbtscalaxb.Plugin._
   //   import ScalaxbKeys._
@@ -43,14 +45,19 @@ object Common {
   val codegenSettings: Seq[Def.Setting[?]] = scalaxbCodegenSettings ++ Seq(
     Compile / unmanagedSourceDirectories += baseDirectory.value / "src_managed",
     buildInfoPackage := "scalaxb",
-    buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion,
+    buildInfoKeys := Seq[BuildInfoKey](
+      name,
+      version,
+      scalaVersion,
+      sbtVersion,
       "defaultDispatchVersion" -> Dependencies.defaultDispatchVersion,
       "defaultHttp4sVersion" -> Dependencies.defaultHttp4sVersion,
       "defaultGigahorseVersion" -> Dependencies.defaultGigahorseVersion,
-      "defaultGigahorseBackend" -> Dependencies.defaultGigahorseBackend),
+      "defaultGigahorseBackend" -> Dependencies.defaultGigahorseBackend,
+    ),
   )
 
   val sonatypeSettings: Seq[Def.Setting[?]] = Seq(
-    Test / publishArtifact := false,
+    Test / publishArtifact := false
   )
 }

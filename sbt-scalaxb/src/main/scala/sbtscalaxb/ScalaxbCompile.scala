@@ -1,38 +1,58 @@
 package sbtscalaxb
 
-import sbt._
-import Keys._
-import scalaxb.{compiler => sc}
-import scalaxb.compiler.{Config => ScConfig}
-import sc.ConfigEntry._
+import sbt.*
+import Keys.*
+import scalaxb.{ compiler as sc }
+import scalaxb.compiler.{ Config as ScConfig }
+import sc.ConfigEntry.*
 import scalaxb.BuildInfo
+
 
 object ScalaxbCompile {
   def apply(sources: Seq[File], packageName: String, outDir: File, cacheDir: File): Seq[File] =
-    apply(sources, sc.Config.default.update(PackageNames(Map(None -> Some(packageName)))), outDir, cacheDir, false)
+    apply(
+      sources,
+      sc.Config.default.update(PackageNames(Map(None -> Some(packageName)))),
+      outDir,
+      cacheDir,
+      false,
+    )
 
-  def apply(sources: Seq[File], config: sc.Config, outDir: File, cacheDir: File, verbose: Boolean = false): Seq[File] = {
-    import Tracked.{inputChanged, outputChanged}
-    import FilesInfo.{lastModified, exists}
-    import sbt.util.CacheImplicits._
+  def apply(
+      sources: Seq[File],
+      config: sc.Config,
+      outDir: File,
+      cacheDir: File,
+      verbose: Boolean = false,
+  ): Seq[File] = {
+    import Tracked.{ inputChanged, outputChanged }
+    import FilesInfo.{ lastModified, exists }
+    import sbt.util.CacheImplicits.*
 
     def compile: Seq[File] =
       sources.headOption map { src =>
-        import sc._
+        import sc.*
         sc.Log.configureLogger(verbose)
         val module = Module.moduleByFileName(src)
         module.processFiles(sources.toVector, config.update(Outdir(outDir)))
-      } getOrElse {Nil}
+      } getOrElse { Nil }
 
-    def cachedCompile =
-      inputChanged(cacheDir / "scalaxb-inputs") { (inChanged, inputs: (List[File], FilesInfo[ModifiedFileInfo], String)) =>
-        outputChanged(cacheDir / "scalaxb-output") { (outChanged, outputs: FilesInfo[PlainFileInfo]) =>
-          if (inChanged || outChanged) compile
-          else outputs.files.toList map {_.file}
-        }
+    def cachedCompile = inputChanged(
+      cacheDir / "scalaxb-inputs"
+    ) { (inChanged, inputs: (List[File], FilesInfo[ModifiedFileInfo], String)) =>
+      outputChanged(
+        cacheDir / "scalaxb-output"
+      ) { (outChanged, outputs: FilesInfo[PlainFileInfo]) =>
+        if (inChanged || outChanged) compile
+        else outputs.files.toList map { _.file }
       }
+    }
     def inputs: (List[File], FilesInfo[ModifiedFileInfo], String) =
-      (sources.toList, lastModified(sources.toSet).asInstanceOf[FilesInfo[ModifiedFileInfo]], BuildInfo.version)
-    cachedCompile(inputs)(() => exists((outDir ** "*.scala").get().toSet).asInstanceOf[FilesInfo[PlainFileInfo]])
+      (sources.toList, lastModified(
+        sources.toSet
+      ).asInstanceOf[FilesInfo[ModifiedFileInfo]], BuildInfo.version)
+    cachedCompile(inputs)(() =>
+      exists((outDir ** "*.scala").get().toSet).asInstanceOf[FilesInfo[PlainFileInfo]]
+    )
   }
 }

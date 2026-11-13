@@ -2,6 +2,7 @@ import org.apache.cxf.endpoint.Server
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean
 import org.apache.cxf.transport.http_jetty.JettyHTTPServerEngineFactory
 
+
 trait JaxrsTestBase {
   lazy val server = initServer
   def serviceImpl: Any
@@ -21,6 +22,6 @@ trait JaxrsTestBase {
   def stopServer: Unit = {
     server.stop
     val jettyFactory = new JettyHTTPServerEngineFactory
-    jettyFactory.retrieveJettyHTTPServerEngine(servicePort).shutdown 
+    jettyFactory.retrieveJettyHTTPServerEngine(servicePort).shutdown
   }
 }

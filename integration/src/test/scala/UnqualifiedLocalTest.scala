@@ -1,8 +1,9 @@
-import java.io.{File}
-import scalaxb.compiler.{Config}
+import java.io.{ File }
+import scalaxb.compiler.{ Config }
+
 
 class UnqualifiedLocalTest extends TestBase {
-  val inFile  = new File("integration/src/test/resources/unqualified.xsd")
+  val inFile = new File("integration/src/test/resources/unqualified.xsd")
   lazy val generated = module.process(inFile, "unqualified", tmp)
 
   "unqualified.scala file must compile so that Foo can be used" in {
@@ -47,12 +48,16 @@ class UnqualifiedLocalTest extends TestBase {
   }
 
   "unqualified.scala file must compile so that USAddress can roundtrip" in {
-    (List("""val usaddress = unqualified.USAddress("123", "New York", "NY", 10000, Map())""",
+    (List(
+      """val usaddress = unqualified.USAddress("123", "New York", "NY", 10000, Map())""",
       """val xml = scalaxb.toXML[unqualified.Addressable](usaddress, None, Some("shipTo"), unqualified.defaultScope)""",
       """val x = scalaxb.fromXML[unqualified.Addressable](xml).toString""",
-      """x"""),
-     generated) must evaluateTo ("""USAddress(123,New York,NY,10000,Map(@{http://www.w3.org/2001/XMLSchema-instance}type -> DataRecord({http://www.w3.org/2001/XMLSchema-instance}type,tns:USAddress)))""",
-      outdir = "./tmp")
+      """x""",
+    ),
+     generated) must evaluateTo(
+       """USAddress(123,New York,NY,10000,Map(@{http://www.w3.org/2001/XMLSchema-instance}type -> DataRecord({http://www.w3.org/2001/XMLSchema-instance}type,tns:USAddress)))""",
+       outdir = "./tmp",
+     )
   }
 
   /*

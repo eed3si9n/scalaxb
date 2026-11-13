@@ -38,6 +38,7 @@ lazy val commonSettings = Seq(
         Seq(
           "-Xsource:3",
           "-release:8",
+          "-Xsource:3",
         )
       }
     },

@@ -11,7 +11,7 @@ class ScalaFile(val fileName: String) {
   def inputStream: InputStream =
     new ByteArrayInputStream(out.toString.getBytes)
   
-  def write(out: OutputStream) {
+  def write(out: OutputStream): Unit = {
     val in = inputStream
     try {
       val buffer = new Array[Byte](1024)

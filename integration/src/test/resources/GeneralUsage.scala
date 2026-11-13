@@ -697,7 +697,7 @@ JDREVGRw==</base64Binary>
   
   def testExtraElement: Unit = {
     println("testExtraElement")
-
+    var error = false
     val subject = <person xmlns="http://www.example.com/general">
         <firstName>John</firstName><lastName>Doe</lastName><extra>something</extra>
       </person>
@@ -705,9 +705,10 @@ JDREVGRw==</base64Binary>
       val x = scalaxb.fromXML[Person](subject)
     }
     catch {
-      case _: Throwable => return ()
+      case _: Throwable => error = true
     }
-    sys.error("extra element did not raise error")
+    if (!error) sys.error("extra element did not raise error")
+    else ()
   }
 
   def testTypeAttribute = {

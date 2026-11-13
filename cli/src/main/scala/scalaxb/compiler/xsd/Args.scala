@@ -19,17 +19,24 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
- 
+
 package scalaxb.compiler.xsd
 
 import scalaxb.compiler.Log
 import scala.annotation.tailrec
 
+
 trait Args extends Params {
   private val logger = Log.forName("xsd.Args")
 
   def buildFromXML(typeName: String): String = "scalaxb.fromXML[" + typeName + "]"
-  def buildFromXML(typeName: String, selector: String, stackItem: Option[String], formatter: Option[String]): String =
+
+  def buildFromXML(
+      typeName: String,
+      selector: String,
+      stackItem: Option[String],
+      formatter: Option[String],
+  ): String =
     buildFromXML(typeName) + s"(${selector}, ${stackItem map {
         case "stack" => "stack"
         case x       => "scalaxb.ElemName(" + x + ") :: stack"
@@ -42,190 +49,321 @@ trait Args extends Params {
     typeName + ".fromString(" + selector + ")"
 
   // called by buildConverter
-  def buildArg(selector: String, typeSymbol: XsTypeSymbol, stackItem: Option[String]): String = typeSymbol match {
-    case AnyType(symbol)                            => selector
-    case symbol: BuiltInSimpleTypeSymbol            => buildArg(buildTypeName(symbol), selector, Single, stackItem)
-    case ReferenceTypeSymbol(decl: SimpleTypeDecl)  => buildArg(buildTypeName(baseType(decl)), selector, Single, stackItem)
-    case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
-      buildFromXML(buildTypeName(typeSymbol), selector, stackItem, None)
-  }
-  
-  def buildArg(typeName: String, selector: String, cardinality: Cardinality,
+  def buildArg(selector: String, typeSymbol: XsTypeSymbol, stackItem: Option[String]): String =
+    typeSymbol match {
+      case AnyType(symbol)                 => selector
+      case symbol: BuiltInSimpleTypeSymbol => buildArg(
+        buildTypeName(symbol),
+        selector,
+        Single,
+        stackItem,
+      )
+      case ReferenceTypeSymbol(decl: SimpleTypeDecl) => buildArg(
+        buildTypeName(baseType(decl)),
+        selector,
+        Single,
+        stackItem,
+      )
+      case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
+        buildFromXML(buildTypeName(typeSymbol), selector, stackItem, None)
+    }
+
+  def buildArg(
+      typeName: String,
+      selector: String,
+      cardinality: Cardinality,
       stackItem: Option[String],
-      nillable: Boolean = false, defaultValue: Option[String] = None, fixedValue: Option[String] = None,
-      wrapForLongAll: Boolean = false, formatter: Option[String] = None): String = {
+      nillable: Boolean = false,
+      defaultValue: Option[String] = None,
+      fixedValue: Option[String] = None,
+      wrapForLongAll: Boolean = false,
+      formatter: Option[String] = None,
+  ): String = {
     val stack = "scalaxb.ElemName(node) :: stack"
     def fromU = buildFromXML(typeName, "_", stackItem, formatter)
-    def fromValue(x: String) = buildFromXML(typeName, "scala.xml.Text(" + quote(x) + ")", stackItem, formatter)
+    def fromValue(x: String) =
+      buildFromXML(typeName, "scala.xml.Text(" + quote(x) + ")", stackItem, formatter)
 
-    val retval = if (wrapForLongAll) {
-      // PrefixedAttribute only contains pre, so you need to pass in node to get the namespace.
-      if (selector.contains("@")) 
-        (defaultValue, fixedValue) match {
-          case (_, Some(x)) =>
-            "Some(scalaxb.DataRecord(None, None, " + fromValue(x) + "))"
-          case (Some(x), _) =>
-            selector + ".headOption map { x => scalaxb.DataRecord(x, node, " +
-              buildFromXML(typeName, "x", stackItem, formatter) + ") } orElse " +
+    val retval =
+      if (wrapForLongAll) {
+        // PrefixedAttribute only contains pre, so you need to pass in node to get the namespace.
+        if (selector.contains("@"))
+          (defaultValue, fixedValue) match {
+            case (_, Some(x)) =>
               "Some(scalaxb.DataRecord(None, None, " + fromValue(x) + "))"
-          case _ =>
-            selector + ".headOption map { x => scalaxb.DataRecord(x, node, " +
-              buildFromXML(typeName, "x", stackItem, formatter) + ") }"
-        }
-      else selector + ".headOption map { x => scalaxb.DataRecord(x, " +
-        buildFromXML(typeName, "x", stackItem, formatter) + ") }"
-    } else (cardinality, nillable, (!config.varArg)) match {
-      case (Multiple, true, true)  => selector + " map { x => scalaxb.ElemName(x).nilOption map { " + fromU + " }}"
-      case (Multiple, false, true) => selector + " map { " + fromU + " }"
-      case (Multiple, true, false)  => selector + ".toSeq map { x => scalaxb.ElemName(x).nilOption map { " + fromU + " }}"
-      case (Multiple, false, false) => selector + ".toSeq map { " + fromU + " }"
-      case (Optional, true, _)  => selector + ".headOption map { x => scalaxb.ElemName(x).nilOption map { " + fromU + " }}"
-      case (Optional, false, _) => selector + ".headOption map { " + fromU + " }"
-      case (Single, _, _) =>
-        buildSingleArg(typeName, selector, stackItem, nillable, defaultValue, fixedValue, formatter)
-    }
-    
+            case (Some(x), _) =>
+              selector + ".headOption map { x => scalaxb.DataRecord(x, node, " +
+                buildFromXML(typeName, "x", stackItem, formatter) + ") } orElse " +
+                "Some(scalaxb.DataRecord(None, None, " + fromValue(x) + "))"
+            case _ =>
+              selector + ".headOption map { x => scalaxb.DataRecord(x, node, " +
+                buildFromXML(typeName, "x", stackItem, formatter) + ") }"
+          }
+        else selector + ".headOption map { x => scalaxb.DataRecord(x, " +
+          buildFromXML(typeName, "x", stackItem, formatter) + ") }"
+      } else (cardinality, nillable, (!config.varArg)) match {
+        case (Multiple, true, true) => selector + " map { x => scalaxb.ElemName(x).nilOption map { " + fromU + " }}"
+        case (Multiple, false, true) => selector + " map { " + fromU + " }"
+        case (Multiple, true, false) => selector + ".toSeq map { x => scalaxb.ElemName(x).nilOption map { " + fromU + " }}"
+        case (Multiple, false, false) => selector + ".toSeq map { " + fromU + " }"
+        case (Optional, true, _) => selector + ".headOption map { x => scalaxb.ElemName(x).nilOption map { " + fromU + " }}"
+        case (Optional, false, _) => selector + ".headOption map { " + fromU + " }"
+        case (Single, _, _)       =>
+          buildSingleArg(
+            typeName,
+            selector,
+            stackItem,
+            nillable,
+            defaultValue,
+            fixedValue,
+            formatter,
+          )
+      }
+
     retval
   }
 
-  def buildSingleArg(typeName: String, selector: String, stackItem: Option[String],
-      nillable: Boolean, defaultValue: Option[String],
-      fixedValue: Option[String], formatter: Option[String]): String = {
-    def fromValue(x: String) = buildFromXML(typeName, "scala.xml.Text(" + quote(x) + ")", stackItem, formatter)
+  def buildSingleArg(
+      typeName: String,
+      selector: String,
+      stackItem: Option[String],
+      nillable: Boolean,
+      defaultValue: Option[String],
+      fixedValue: Option[String],
+      formatter: Option[String],
+  ): String = {
+    def fromValue(x: String) =
+      buildFromXML(typeName, "scala.xml.Text(" + quote(x) + ")", stackItem, formatter)
     def fromX(x: String) = buildFromXML(typeName, x, stackItem, formatter)
 
-    (nillable, defaultValue, fixedValue) match { 
-      case ( _, _, Some(x))   => fromValue(x)
-      case (true, _, _)       => "scalaxb.ElemName(" + selector + ").nilOption map { " + fromX("_") + " }"
-      case (_, Some(x), _)    => selector + ".headOption map { " + fromX("_") + " } getOrElse { " + fromValue(x) + " }"
-      case (false, _, _)      => fromX(selector)
+    (nillable, defaultValue, fixedValue) match {
+      case (_, _, Some(x)) => fromValue(x)
+      case (true, _, _) => "scalaxb.ElemName(" + selector + ").nilOption map { " + fromX("_") + " }"
+      case (_, Some(x), _) => selector + ".headOption map { " + fromX(
+        "_"
+      ) + " } getOrElse { " + fromValue(x) + " }"
+      case (false, _, _) => fromX(selector)
     }
   }
-      
-  def buildArg(decl: Decl): String = decl match {
-    case elem: ElemDecl        => buildArg(elem, 0)
-    case attr: AttributeDecl   => buildArg(attr, buildSelector(attr), Some("node"), false)
-    case ref: AttributeRef     => buildArg(buildAttribute(ref))
-    case group: AttributeGroupDecl => buildAttributeGroupArg(group, false)
-    case _ => sys.error("GenSource#buildArg unsupported delcaration " + decl.toString)
-  }
-  
-  def buildArgForAttribute(decl: AttributeLike, stackItem: Option[String], longAttribute: Boolean): String =
+
+  def buildArg(decl: Decl): String =
+    decl match {
+      case elem: ElemDecl            => buildArg(elem, 0)
+      case attr: AttributeDecl       => buildArg(attr, buildSelector(attr), Some("node"), false)
+      case ref: AttributeRef         => buildArg(buildAttribute(ref))
+      case group: AttributeGroupDecl => buildAttributeGroupArg(group, false)
+      case _ => sys.error("GenSource#buildArg unsupported delcaration " + decl.toString)
+    }
+
+  def buildArgForAttribute(
+      decl: AttributeLike,
+      stackItem: Option[String],
+      longAttribute: Boolean,
+  ): String =
     if (longAttribute) {
       decl match {
-        case attr: AttributeDecl   =>
-          val o = attr.copy(use = OptionalUse)
+        case attr: AttributeDecl =>
+          val o = attr.copy(
+            use = OptionalUse
+          )
           val arg = buildArg(o, buildSelector(o), stackItem, longAttribute)
           if (longAttribute) {
             arg + " map { " + quote(buildNodeName(o, false)) + " -> _ }"
           }
           else arg
-        case ref: AttributeRef         => buildArgForAttribute(buildAttribute(ref), stackItem, longAttribute)
+        case ref: AttributeRef => buildArgForAttribute(
+          buildAttribute(ref),
+          stackItem,
+          longAttribute,
+        )
         case group: AttributeGroupDecl => buildAttributeGroupArg(group, longAttribute)
       }
     } else buildArg(decl)
-    
-  def toOptional(that: ElemDecl) = that.copy(minOccurs = 0, annotation = None)
-    
+
+  def toOptional(that: ElemDecl) = that.copy(
+    minOccurs = 0,
+    annotation = None,
+  )
+
   // called by makeCaseClassWithType. By spec, <all> contains only elements.
   def buildArgForAll(particle: Particle, longAll: Boolean): String = {
     val o = particle match {
       case elem: ElemDecl => toOptional(elem)
       case ref: ElemRef   => toOptional(buildElement(ref))
-      case _ => sys.error("buildArgForAll unsupported type: " + particle)
+      case _              => sys.error("buildArgForAll unsupported type: " + particle)
     }
     val arg = buildArg(o, buildSelector(o), Some("node"), longAll)
     if (longAll) arg + " map { " + quote(buildNodeName(o, true)) + " -> _ }"
     else arg
   }
-  
+
   def buildArg(elem: ElemDecl, pos: Int): String =
     buildArg(elem, buildSelector(pos), Some("node"), false)
-  
-  def buildArg(elem: ElemDecl, selector: String, stackItem: Option[String], wrapForLongAll: Boolean): String =
+
+  def buildArg(
+      elem: ElemDecl,
+      selector: String,
+      stackItem: Option[String],
+      wrapForLongAll: Boolean,
+  ): String =
     if ((isSubstitutionGroup(elem))) selector
     else elem.typeSymbol match {
-      case symbol: BuiltInSimpleTypeSymbol => buildArg(buildTypeName(symbol), selector,
-        toCardinality(elem.minOccurs, elem.maxOccurs), stackItem,
-        elem.nillable getOrElse(false), elem.defaultValue, elem.fixedValue, wrapForLongAll)
+      case symbol: BuiltInSimpleTypeSymbol => buildArg(
+        buildTypeName(symbol),
+        selector,
+        toCardinality(elem.minOccurs, elem.maxOccurs),
+        stackItem,
+        elem.nillable getOrElse (false),
+        elem.defaultValue,
+        elem.fixedValue,
+        wrapForLongAll,
+      )
       case ReferenceTypeSymbol(decl: SimpleTypeDecl) =>
-        buildArg(buildTypeName(decl, false), selector,
-          toCardinality(elem.minOccurs, elem.maxOccurs), stackItem,
-          elem.nillable getOrElse(false), elem.defaultValue, elem.fixedValue, wrapForLongAll)
+        buildArg(
+          buildTypeName(decl, false),
+          selector,
+          toCardinality(elem.minOccurs, elem.maxOccurs),
+          stackItem,
+          elem.nillable getOrElse (false),
+          elem.defaultValue,
+          elem.fixedValue,
+          wrapForLongAll,
+        )
       case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
         if (compositorWrapper.contains(decl))
-          (toCardinality(elem.minOccurs, elem.maxOccurs), elem.nillable getOrElse {false}) match {
+          (toCardinality(elem.minOccurs, elem.maxOccurs), elem.nillable getOrElse { false }) match {
             case (Multiple, _) if config.varArg => selector + ".toSeq"
-            case (Optional, true) => selector + " getOrElse { None }"
-            case _ => selector
+            case (Optional, true)               => selector + " getOrElse { None }"
+            case _                              => selector
           }
-        else buildArg(buildTypeName(decl, false), selector, 
-          toCardinality(elem.minOccurs, elem.maxOccurs), stackItem,
-          elem.nillable getOrElse(false), elem.defaultValue, elem.fixedValue, wrapForLongAll)
+        else buildArg(
+          buildTypeName(decl, false),
+          selector,
+          toCardinality(elem.minOccurs, elem.maxOccurs),
+          stackItem,
+          elem.nillable getOrElse (false),
+          elem.defaultValue,
+          elem.fixedValue,
+          wrapForLongAll,
+        )
       case AnyType(symbol) => buildArg(
-          if (elem.nillable getOrElse(false)) buildTypeName(XsNillableAny)
+          if (elem.nillable getOrElse (false)) buildTypeName(XsNillableAny)
           else buildTypeName(symbol), selector,
         toCardinality(elem.minOccurs, elem.maxOccurs), stackItem,
         false, elem.defaultValue, elem.fixedValue, wrapForLongAll)
-      
+
       case symbol: ReferenceTypeSymbol =>
         if (symbol.decl == null) sys.error("GenSource#buildArg: " + elem.toString + " Invalid type " + symbol.getClass.toString + ": " +
             symbol.toString + " with null decl")
         else sys.error("GenSource#buildArg: " + elem.toString + " Invalid type " + symbol.getClass.toString + ": " +
             symbol.toString + " with " + symbol.decl.toString)
-      case _ => sys.error("GenSource#buildArg: " + elem.toString + " Invalid type " + elem.typeSymbol.getClass.toString + ": " + elem.typeSymbol.toString)
+      case _ => sys.error(
+        "GenSource#buildArg: " + elem.toString + " Invalid type " + elem.typeSymbol.getClass.toString + ": " + elem.typeSymbol.toString
+      )
     }
-  
-  def buildArg(attr: AttributeDecl, selector: String, stackItem: Option[String], wrapForLong: Boolean): String =
-    attr.typeSymbol match {
-      // special treatment for QName attributes
-      case XsQName =>
-        buildArg(buildTypeName(XsQName), selector, toCardinality(attr), stackItem, false,
-          attr.defaultValue, attr.fixedValue, wrapForLong, Some("scalaxb.XMLStandardTypes.qnameXMLFormat(node.scope)"))
-      case symbol: BuiltInSimpleTypeSymbol =>
-        buildArg(buildTypeName(symbol), selector, toCardinality(attr), stackItem, false,
-          attr.defaultValue, attr.fixedValue, wrapForLong)
 
-      // special treatment for QName attributes
-      case ReferenceTypeSymbol(decl: SimpleTypeDecl) if buildTypeName(decl, false) == buildTypeName(XsQName) =>
-        buildArg(buildTypeName(decl, false), selector, toCardinality(attr), stackItem, false,
-          attr.defaultValue, attr.fixedValue, wrapForLong, Some("scalaxb.XMLStandardTypes.qnameXMLFormat(node.scope)"))
-      case ReferenceTypeSymbol(decl: SimpleTypeDecl) =>
-        buildArg(buildTypeName(decl, false), selector, toCardinality(attr), stackItem, false,
-          attr.defaultValue, attr.fixedValue, wrapForLong)
-      case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
-        sys.error("Args: Attribute with complex type " + decl.toString)
-      case _ =>
-        sys.error("Args: unsupported type: " + attr.typeSymbol)
-    }
+  def buildArg(
+      attr: AttributeDecl,
+      selector: String,
+      stackItem: Option[String],
+      wrapForLong: Boolean,
+  ): String = attr.typeSymbol match {
+    // special treatment for QName attributes
+    case XsQName =>
+      buildArg(
+        buildTypeName(XsQName),
+        selector,
+        toCardinality(attr),
+        stackItem,
+        false,
+        attr.defaultValue,
+        attr.fixedValue,
+        wrapForLong,
+        Some("scalaxb.XMLStandardTypes.qnameXMLFormat(node.scope)"),
+      )
+    case symbol: BuiltInSimpleTypeSymbol =>
+      buildArg(
+        buildTypeName(symbol),
+        selector,
+        toCardinality(attr),
+        stackItem,
+        false,
+        attr.defaultValue,
+        attr.fixedValue,
+        wrapForLong,
+      )
+
+    // special treatment for QName attributes
+    case ReferenceTypeSymbol(decl: SimpleTypeDecl) if buildTypeName(decl, false) == buildTypeName(
+      XsQName
+    ) =>
+      buildArg(
+        buildTypeName(decl, false),
+        selector,
+        toCardinality(attr),
+        stackItem,
+        false,
+        attr.defaultValue,
+        attr.fixedValue,
+        wrapForLong,
+        Some("scalaxb.XMLStandardTypes.qnameXMLFormat(node.scope)"),
+      )
+    case ReferenceTypeSymbol(decl: SimpleTypeDecl) =>
+      buildArg(
+        buildTypeName(decl, false),
+        selector,
+        toCardinality(attr),
+        stackItem,
+        false,
+        attr.defaultValue,
+        attr.fixedValue,
+        wrapForLong,
+      )
+    case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
+      sys.error("Args: Attribute with complex type " + decl.toString)
+    case _ =>
+      sys.error("Args: unsupported type: " + attr.typeSymbol)
+  }
 
   // called by makeCaseClassWithType
-  def buildArg(content: SimpleContentDecl, typeSymbol: XsTypeSymbol): String = typeSymbol match {
-    case AnyType(symbol) => buildArg(buildTypeName(symbol), "node", Single, Some("node"))
-    case base: BuiltInSimpleTypeSymbol => buildArg(buildTypeName(base), "node", Single, Some("node"))
-    case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
-      decl.content match {
-        case simp@SimpleContentDecl(SimpContRestrictionDecl(base: XsTypeSymbol, _, _, _)) => buildArg(simp, base)      
-        case simp@SimpleContentDecl(SimpContExtensionDecl(base: XsTypeSymbol, _)) => buildArg(simp, base)        
-        
-        // http://www.w3.org/TR/xmlschema-1/#d0e7923
-        case comp: ComplexContentDecl => content match {
-          case SimpleContentDecl(SimpContRestrictionDecl(_, Some(simpleType: XsTypeSymbol), _, _))  =>
-            buildArg(content, simpleType)
+  def buildArg(content: SimpleContentDecl, typeSymbol: XsTypeSymbol): String =
+    typeSymbol match {
+      case AnyType(symbol) => buildArg(buildTypeName(symbol), "node", Single, Some("node"))
+      case base: BuiltInSimpleTypeSymbol => buildArg(
+        buildTypeName(base),
+        "node",
+        Single,
+        Some("node"),
+      )
+      case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
+        decl.content match {
+          case simp @ SimpleContentDecl(SimpContRestrictionDecl(base: XsTypeSymbol, _, _, _)) => buildArg(
+            simp,
+            base,
+          )
+          case simp @ SimpleContentDecl(SimpContExtensionDecl(base: XsTypeSymbol, _)) => buildArg(
+            simp,
+            base,
+          )
+
+          // http://www.w3.org/TR/xmlschema-1/#d0e7923
+          case comp: ComplexContentDecl => content match {
+            case SimpleContentDecl(SimpContRestrictionDecl(_, Some(simpleType: XsTypeSymbol), _, _)) =>
+              buildArg(content, simpleType)
+            case _ => sys.error("Args: Unsupported content " + content.toString)
+          }
           case _ => sys.error("Args: Unsupported content " + content.toString)
         }
-        case _ => sys.error("Args: Unsupported content " + content.toString)
-      }
-    case ReferenceTypeSymbol(decl: SimpleTypeDecl) =>
-      buildArg(buildTypeName(decl, false), "node", Single, Some("node"), false, None, None, false)
-        
-    case _ => sys.error("Args: Unsupported type " + typeSymbol.toString)    
-  }
+      case ReferenceTypeSymbol(decl: SimpleTypeDecl) =>
+        buildArg(buildTypeName(decl, false), "node", Single, Some("node"), false, None, None, false)
+
+      case _ => sys.error("Args: Unsupported type " + typeSymbol.toString)
+    }
 
   // scala's <foo/> \ "foo" syntax is not namespace aware, but {ns}foo is useful for long all.
   def buildNodeName(elem: ElemDecl, prependNamespace: Boolean): String =
     if (elem.global) elem.namespace match {
-      case None => elem.name
+      case None     => elem.name
       case Some(ns) =>
         if (prependNamespace) s"{${ns}}" + elem.name
         else elem.name
@@ -234,33 +372,37 @@ trait Args extends Params {
 
   // scala's <foo ns:attr1="" /> \ "@{uri}attr1" syntax requires ns, but {uri} should be ommitted for long attr.
   def buildNodeName(attr: AttributeDecl, prependNamespace: Boolean): String =
-    if (attr.global) "@" + (attr.namespace map { "{" + _ + "}" } getOrElse {""}) + attr.name
+    if (attr.global) "@" + (attr.namespace map { "{" + _ + "}" } getOrElse { "" }) + attr.name
     else if (prependNamespace && attr.qualified) "@" +
-      (elementNamespace(attr.global, attr.namespace, attr.qualified) map { "{" + _ + "}" } getOrElse {""}) + attr.name
+      (elementNamespace(attr.global, attr.namespace, attr.qualified) map {
+        "{" + _ + "}"
+      } getOrElse { "" }) + attr.name
     else "@" + attr.name
-  
-  def buildNodeName(group: AttributeGroupDecl): String = 
+
+  def buildNodeName(group: AttributeGroupDecl): String =
     if (group.namespace == schema.targetNamespace) group.name
-    else (group.namespace map { "{" + _ + "}" } getOrElse {""}) + group.name
-  
+    else (group.namespace map { "{" + _ + "}" } getOrElse { "" }) + group.name
+
   def buildSelector(elem: ElemDecl): String = buildSelector(buildNodeName(elem, false))
   def buildSelector(pos: Int): String = "p" + (pos + 1)
   def buildSelector(attr: AttributeDecl): String = buildSelector(buildNodeName(attr, true))
   def buildSelector(nodeName: String): String = "(node \\ \"" + nodeName + "\")"
-  
+
   def buildArgForAnyAttribute(parent: ComplexTypeDecl, longAttribute: Boolean): String =
     buildArgForAnyAttribute(flattenAttributes(parent), longAttribute)
-  
+
   def buildArgForAnyAttribute(parent: AttributeGroupDecl, longAttribute: Boolean): String =
     buildArgForAnyAttribute(flattenAttributes(parent.attributes), longAttribute)
-  
+
   def buildArgForAnyAttribute(attributes: List[AttributeLike], longAttribute: Boolean): String = {
     def makeCaseEntry(attr: AttributeDecl) = if (attr.global || attr.qualified)
       "case scala.xml.PrefixedAttribute(pre, key, value, _) if pre == elem.scope.getPrefix(" +
         (attr.namespace map { quote(_) } getOrElse { "null" }) + ") &&" + newline +
       indent(8) + "key == " + quote(attr.name) + " => Nil"
-    else "case scala.xml.UnprefixedAttribute(key, value, _) if key == " + quote(attr.name) + " => Nil"
-    
+    else "case scala.xml.UnprefixedAttribute(key, value, _) if key == " + quote(
+      attr.name
+    ) + " => Nil"
+
     val xs = "node match {" + newline +
     indent(5) + "case elem: scala.xml.Elem =>" + newline +
     indent(5) + "  elem.attributes.toList flatMap {" + newline +
@@ -268,42 +410,47 @@ trait Args extends Params {
       case x: AttributeDecl => makeCaseEntry(x)
     }.mkString(indent(7), newline + indent(7), newline) +
     indent(5) + "    case scala.xml.UnprefixedAttribute(key, value, _) =>" + newline +
-    indent(5) + "      List((\"@\" + key, scalaxb.DataRecord(None, Some(key), value.text)))" + newline +
+    indent(
+      5
+    ) + "      List((\"@\" + key, scalaxb.DataRecord(None, Some(key), value.text)))" + newline +
     indent(5) + "    case scala.xml.PrefixedAttribute(pre, key, value, _) =>" + newline +
     indent(5) + "      val ns = elem.scope.getURI(pre)" + newline +
-    indent(5) + "      List((\"@{\" + ns + \"}\" + key, scalaxb.DataRecord(Option[String](ns), Some(key), value.text)))" + newline +
+    indent(
+      5
+    ) + "      List((\"@{\" + ns + \"}\" + key, scalaxb.DataRecord(Option[String](ns), Some(key), value.text)))" + newline +
     indent(5) + "    case _ => Nil" + newline +
     indent(5) + "  }" + newline +
     indent(5) + "case _ => Nil" + newline +
     indent(4) + "}"
-    
+
     if (longAttribute) xs
     else "scala.collection.immutable.ListMap((" + xs + "): _*)"
   }
-    
+
   def buildArgForMixed(particle: Particle, pos: Int, ignoreSubGroup: Boolean): String =
     buildArgForMixed(particle, buildSelector(pos), ignoreSubGroup)
-  
+
   // sub groups behave like a choice
   def buildArgForMixed(particle: Particle, selector: String, ignoreSubGroup: Boolean): String = {
     val cardinality = toCardinality(particle.minOccurs, particle.maxOccurs)
     @tailrec
-    def isCompositor(p: Particle): Boolean = p match {
-      case ref: GroupRef => true
-      case ref: ElemRef => isCompositor(buildElement(ref))
-      case elem: ElemDecl =>
-        if (!ignoreSubGroup && isSubstitutionGroup(elem)) true
-        else elem.typeSymbol match {
-          case AnyType(symbol) => true
-          case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
-            if (compositorWrapper.contains(decl)) true
-            else false
-          case _ => false 
-        }
-      case x: HasParticle => true
-      case _ => false      
-    }
-    
+    def isCompositor(p: Particle): Boolean =
+      p match {
+        case ref: GroupRef  => true
+        case ref: ElemRef   => isCompositor(buildElement(ref))
+        case elem: ElemDecl =>
+          if (!ignoreSubGroup && isSubstitutionGroup(elem)) true
+          else elem.typeSymbol match {
+            case AnyType(symbol)                            => true
+            case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
+              if (compositorWrapper.contains(decl)) true
+              else false
+            case _ => false
+          }
+        case x: HasParticle => true
+        case _              => false
+      }
+
     val retval = cardinality match {
       case Multiple =>
         if (isCompositor(particle)) selector + ".flatten"
@@ -315,64 +462,73 @@ trait Args extends Params {
         if (isCompositor(particle)) selector
         else "Seq(" + selector + ")"
     }
-    
+
     logger.debug("buildArgForMixed: " + cardinality + ": " + particle + ": " + retval)
     retval
   }
-  
+
   def buildArgForOptTextRecord(pos: Int): String =
     buildSelector(pos) + ".toList"
-    
+
   def buildAttributeGroupArg(group: AttributeGroupDecl, longAttribute: Boolean): String = {
     val formatterName = buildFormatterName(group)
     val arg = formatterName + ".reads(node).right"
-    if (longAttribute) arg + ".toOption map { x => " + 
+    if (longAttribute) arg + ".toOption map { x => " +
       quote(buildNodeName(group)) + " -> scalaxb.DataRecord(None, None, x) }"
     else arg + ".get"
   }
 
   def flattenAttributes(decl: ComplexTypeDecl): List[AttributeLike] = {
     val attributes = mergeAttributes(decl.content.content match {
-      case SimpContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _, _) => flattenAttributes(base)
-      case SimpContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _)         => flattenAttributes(base)
-      case CompContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _)    => flattenAttributes(base)
-      case CompContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _)      => flattenAttributes(base)
+      case SimpContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _, _) => flattenAttributes(
+        base
+      )
+      case SimpContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _) => flattenAttributes(
+        base
+      )
+      case CompContRestrictionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) => flattenAttributes(
+        base
+      )
+      case CompContExtensionDecl(ReferenceTypeSymbol(base: ComplexTypeDecl), _, _) => flattenAttributes(
+        base
+      )
       case _ => Nil
     }, flattenAttributes(decl.content.content.attributes))
 
     // rearrange attributes so AnyAttributeDecl comes at the end.
     val notAnyAttributes = attributes filter {
       case any: AnyAttributeDecl => false
-      case _ => true
+      case _                     => true
     }
     val anyAttributes = attributes filter {
       case any: AnyAttributeDecl => true
-      case _ => false
+      case _                     => false
     }
     if (anyAttributes.isEmpty) notAnyAttributes
     else notAnyAttributes ::: List(anyAttributes.head)
   }
-  
+
   // return a list of either AttributeDecl or AnyAttributeDecl
   def flattenAttributes(attributes: List[AttributeLike]): List[AttributeLike] =
     attributes flatMap {
-      case any: AnyAttributeDecl => List(any)
-      case attr: AttributeDecl => List(attr)
-      case ref: AttributeRef   => List(buildAttribute(ref))
+      case any: AnyAttributeDecl     => List(any)
+      case attr: AttributeDecl       => List(attr)
+      case ref: AttributeRef         => List(buildAttribute(ref))
       case group: AttributeGroupDecl => flattenAttributes(group.attributes)
       case ref: AttributeGroupRef    => flattenAttributes(buildAttributeGroup(ref).attributes)
     }
 
-  def mergeAttributes(parent: List[AttributeLike],
-      child: List[AttributeLike]): List[AttributeLike] = child match {
+  def mergeAttributes(
+      parent: List[AttributeLike],
+      child: List[AttributeLike],
+  ): List[AttributeLike] = child match {
     case x :: xs => mergeAttributes(mergeAttributes(parent, x), xs)
-    case Nil => parent
+    case Nil     => parent
   }
 
-  def mergeAttributes(parent: List[AttributeLike],
-      child: AttributeLike): List[AttributeLike] =
+  def mergeAttributes(parent: List[AttributeLike], child: AttributeLike): List[AttributeLike] =
     if (!parent.exists(x => isSameAttribute(x, child))) parent ::: List(child)
-    else parent.map (x =>
+    else parent.map(x =>
       if (isSameAttribute(x, child)) child match {
         // since OO's hierarchy does not allow base members to be ommited,
         // child overrides needs to be implemented some other way.
@@ -380,26 +536,26 @@ trait Args extends Params {
           Some(x)
         case _ => Some(x)
       }
-      else Some(x) ).flatten
+      else Some(x)).flatten
 
   def isSameAttribute(lhs: AttributeLike, rhs: AttributeLike) = {
-    def resolveRef(attribute: AttributeLike): AttributeLike = attribute match {
-      case any: AnyAttributeDecl => any
-      case attr: AttributeDecl => attr
-      case ref: AttributeRef   => buildAttribute(ref)
-      case group: AttributeGroupDecl => group
-      case ref: AttributeGroupRef    => buildAttributeGroup(ref)
-    }
+    def resolveRef(attribute: AttributeLike): AttributeLike =
+      attribute match {
+        case any: AnyAttributeDecl     => any
+        case attr: AttributeDecl       => attr
+        case ref: AttributeRef         => buildAttribute(ref)
+        case group: AttributeGroupDecl => group
+        case ref: AttributeGroupRef    => buildAttributeGroup(ref)
+      }
 
     (resolveRef(lhs), resolveRef(rhs)) match {
       case (x: AnyAttributeDecl, y: AnyAttributeDecl) => true
-      case (x: AttributeDecl, y: AttributeDecl) =>
-        x.name == y.name &&
-        x.global == y.global &&
-        (x.namespace == y.namespace ||
-         (!x.global && !y.global))
+      case (x: AttributeDecl, y: AttributeDecl)       =>
+        (x.name == y.name
+          && x.global == y.global
+          && (x.namespace == y.namespace || (!x.global && !y.global)))
       case (x: AttributeGroupDecl, y: AttributeGroupDecl) =>
-        (x.name == y.name && x.namespace == y.namespace)
+        x.name == y.name && x.namespace == y.namespace
       case _ => false
     }
   }

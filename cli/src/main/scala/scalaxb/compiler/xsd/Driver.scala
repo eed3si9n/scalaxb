@@ -19,16 +19,18 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
- 
+
 package scalaxb.compiler.xsd
 
-import scalaxb.compiler.{Module, Config, Snippet, CustomXML, CanBeWriter, Log}
-import java.io.{File, Reader}
-import java.net.{URI}
+import scalaxb.compiler.{ Module, Config, Snippet, CustomXML, CanBeWriter, Log }
+import java.io.{ File, Reader }
+import java.net.{ URI }
 import collection.mutable
-import scala.xml.{Node, Elem}
+import scala.xml.{ Node, Elem }
+
 
 class Driver extends Module { driver =>
+
   private val logger = Log.forName("xsd")
 
   type Schema = SchemaDecl
@@ -49,12 +51,10 @@ class Driver extends Module { driver =>
 
   override def generate(xsd: Schema, part: String, context: Context, cnfg: Config) = {
     val pkg = packageName(xsd.targetNamespace, context)
-    Seq((pkg, Snippet(headerSnippet(pkg),
-      (new GenSource(xsd, context, cnfg)).run), part))
+    Seq((pkg, Snippet(headerSnippet(pkg), (new GenSource(xsd, context, cnfg)).run), part))
   }
 
-  override def generateProtocol(snippet: Snippet,
-      context: Context, cnfg: Config): Seq[Node] =
+  override def generateProtocol(snippet: Snippet, context: Context, cnfg: Config): Seq[Node] =
     (new GenProtocol(context, cnfg)).generateProtocol(snippet, Seq())
 
   override def toImportable(alocation: URI, rawschema: RawSchema): Importable = new Importable {
@@ -62,12 +62,15 @@ class Driver extends Module { driver =>
     val raw = rawschema
     val schemaLite = SchemaLite.fromXML(raw)
     val targetNamespace = schemaLite.targetNamespace
+
     val importNamespaces: Seq[String] = schemaLite.imports collect {
       case ImportDecl(Some(namespace: String), _) => namespace
     }
+
     val importLocations: Seq[String] = schemaLite.imports collect {
       case ImportDecl(_, Some(schemaLocation: String)) => schemaLocation
     }
+
     val includeLocations: Seq[String] = schemaLite.includes map { _.schemaLocation }
 
     def toSchema(context: Context): Schema = {
@@ -75,16 +78,29 @@ class Driver extends Module { driver =>
       logger.debug("toSchema: " + schema.toString())
       schema
     }
-    def swapTargetNamespace(outerNamespace: Option[String], n: Int): Importable =
-      toImportable(appendPostFix(alocation, n), replaceNamespace(rawschema, targetNamespace, outerNamespace))
+
+    def swapTargetNamespace(outerNamespace: Option[String], n: Int): Importable = toImportable(
+      appendPostFix(alocation, n),
+      replaceNamespace(rawschema, targetNamespace, outerNamespace),
+    )
   }
 
-  def generateRuntimeFiles[To](cntxt: Context, config: Config)(implicit evTo: CanBeWriter[To]): List[To] =
+  def generateRuntimeFiles[To](cntxt: Context, config: Config)(
+      implicit evTo: CanBeWriter[To]
+  ): List[To] =
     generateBaseRuntimeFiles[To](cntxt, config) ++
-    (if (config.generateVisitor) List(generateFromResource[To](Some("scalaxb"), "Visitor.scala", "/visitor.scala.template", config))
+    (if (config.generateVisitor) List(
+      generateFromResource[To](Some("scalaxb"), "Visitor.scala", "/visitor.scala.template", config)
+    )
      else Nil) ++
-    (if (config.generateDispatchAs) List(generateFromResource[To](Some("dispatch.as"), "dispatch_as_scalaxb.scala",
-        "/dispatch_as_scalaxb.scala.template", config))
+    (if (config.generateDispatchAs) List(
+      generateFromResource[To](
+        Some("dispatch.as"),
+        "dispatch_as_scalaxb.scala",
+        "/dispatch_as_scalaxb.scala.template",
+        config,
+      )
+    )
      else Nil)
 
   def readerToRawSchema(reader: Reader): RawSchema = CustomXML.load(reader)

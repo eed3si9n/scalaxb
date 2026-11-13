@@ -1,25 +1,26 @@
 import java.io.File
 
 import scalaxb.compiler.Config
-import scalaxb.compiler.ConfigEntry._
+import scalaxb.compiler.ConfigEntry.*
 import scalaxb.compiler.xsd.Driver
+
 
 class DispatchResponseAsScalaxbTest extends TestBase with JaxrsTestBase {
   override val module = new Driver // with Verbose
 
-  def serviceImpl:RestService = new RestService()
+  def serviceImpl: RestService = new RestService()
   def serviceAddress: String = "dispatch-response-as-scalaxb"
 
-  step {
-    startServer
-  }
+  step { startServer }
 
   val packageName = "stockquote"
   val xsdFile = new File(s"integration/src/test/resources/item.xsd")
+
   val config = Config.default.update(PackageNames(Map(None -> Some(packageName)))).
       update(Outdir(tmp)).
       update(GeneratePackageDir).
       update(GenerateDispatchAs)
+
   lazy val generated = {
     module.process(xsdFile, config)
   }
@@ -32,11 +33,12 @@ class DispatchResponseAsScalaxbTest extends TestBase with JaxrsTestBase {
       """val response = Await.result(fresponse, 5.seconds)""",
       """if (response != StoreItem(symbol = "GOOG", price = 42.0)) sys.error(response.toString)""",
 
-      """true"""), generated) must evaluateTo(true,
-      outdir = "./tmp", usecurrentcp = true)
+      """true"""), generated) must evaluateTo(
+        true,
+        outdir = "./tmp",
+        usecurrentcp = true,
+      )
   }
 
-  step {
-    stopServer
-  }
+  step { stopServer }
 }

@@ -1,25 +1,26 @@
 import scalaxb.compiler.wsdl11.Driver
 import java.io.File
 import scalaxb.compiler.Config
-import scalaxb.compiler.ConfigEntry._
-import scalaxb.stockquote.server._
-import scala.concurrent._, duration.Duration
+import scalaxb.compiler.ConfigEntry.*
+import scalaxb.stockquote.server.*
+import scala.concurrent.*, duration.Duration
+
 
 class TimeoutTest extends TestBase with JaxwsTestBase {
   override val module = new Driver // with Verbose
 
-  def serviceImpl:DocumentWrappedService = new DocumentWrappedService(serverSleepTime)
+  def serviceImpl: DocumentWrappedService = new DocumentWrappedService(serverSleepTime)
   def serviceAddress: String = "document-wrapped"
 
-  step {
-    startServer
-  }
+  step { startServer }
 
   val packageName = "stockquote"
   val wsdlFile = new File(s"integration/target/$serviceAddress.wsdl")
-  val config =  Config.default.update(PackageNames(Map(None -> Some(packageName)))).
+
+  val config = Config.default.update(PackageNames(Map(None -> Some(packageName)))).
       update(Outdir(tmp)).
       update(GeneratePackageDir)
+
   lazy val generated = {
     writeStringToFile(retrieveWsdl, wsdlFile)
     module.process(wsdlFile, config)
@@ -46,11 +47,12 @@ class TimeoutTest extends TestBase with JaxwsTestBase {
         case e: NoSuchElementException => sys.error("Request was supposed to timeout but it returned successfully")
         case e: Throwable => throw e
       }""",
-      s"""true"""), generated) must evaluateTo(true,
-      outdir = "./tmp", usecurrentcp = true)
+      s"""true"""), generated) must evaluateTo(
+        true,
+        outdir = "./tmp",
+        usecurrentcp = true,
+      )
   }
 
-  step {
-    stopServer
-  }
+  step { stopServer }
 }

@@ -1,10 +1,9 @@
-/**
- * @author  e.e d3si9n
- */
+/** @author  e.e d3si9n */
 
-import general._
-import scalaxb._
-import xmlmime.{Base64BinaryType => XBase64Binary, HexBinaryType => XHexBinary}
+import general.*
+import scalaxb.*
+import xmlmime.{ Base64BinaryType as XBase64Binary, HexBinaryType as XHexBinary }
+
 
 object GeneralUsage {
   val NS = Some("http://www.example.com/general")
@@ -19,12 +18,14 @@ object GeneralUsage {
       if (x >= Int.MinValue && x <= Int.MaxValue) Some(x.toInt)
       else None
   }
-  
-  val scope = toScope(None -> "http://www.example.com/general",
+
+  val scope = toScope(
+    None -> "http://www.example.com/general",
     Some("gen") -> "http://www.example.com/general",
     Some("xsi") -> "http://www.w3.org/2001/XMLSchema-instance",
-    Some("xs") -> "http://www.w3.org/2001/XMLSchema")
-    
+    Some("xs") -> "http://www.w3.org/2001/XMLSchema",
+  )
+
   def main(args: Array[String]): Unit = {
     allTests
   }
@@ -67,7 +68,7 @@ object GeneralUsage {
     testBigDecimal
     true
   }
-  
+
   def testSingularBuiltInType = {
     val subject = <foo xmlns="http://www.example.com/general"
         xmlns:xs="http://www.w3.org/2001/XMLSchema"
@@ -124,14 +125,14 @@ JDREVGRw==</base64Binary>
       <anyType xsi:type="xs:string">foo</anyType>
       <anySimpleType xsi:type="xs:string">foo</anySimpleType>
     </foo>
-    
+
     val obj = fromXML[SingularBuiltInTypeTest](subject)
     def check(obj: Any) = obj match {
         case SingularBuiltInTypeTest(
           "foo", false, Int_(1), 1.0F, 1.0, du, dt, t, d, ym,
           y, md, dd, m, HexBinary(15), Base64Binary('A', 'B', 'C', 'D', 'E', 'F', 'G'),
           uri, qname, notaton, "foo",
-          "foo", "en-US", "foo",  Seq("foo"), "foo", "foo", "foo", "foo", Seq("foo"), "foo",
+          "foo", "en-US", "foo", Seq("foo"), "foo", "foo", "foo", "foo", Seq("foo"), "foo",
           Seq("foo"), Int_(1), Int_(-1), Int_(-1), 1, 1, 1, 1, Int_(1), Int_(1),
           1, 1, 1, Int_(1),
           DataRecord(_, _, "foo"), DataRecord(_, _, "foo")) =>
@@ -142,7 +143,7 @@ JDREVGRw==</base64Binary>
     println(document)
     check(fromXML[SingularBuiltInTypeTest](document))
   }
-      
+
   def testSingularSimpleType = {
     println("testSingularSimpleType")
     val subject = <foo xmlns="http://www.example.com/general"
@@ -158,9 +159,9 @@ JDREVGRw==</base64Binary>
       <milk5>WHOLE</milk5><milk5>SKIM</milk5>
     </foo>
     val obj = fromXML[SingularSimpleTypeTest](subject)
-    
+
     def check(obj: Any) = obj match {
-        case x@SingularSimpleTypeTest(1, None, None, Some(Some(1)), Seq(2, 1), Seq(), None,
+        case x @ SingularSimpleTypeTest(1, None, None, Some(Some(1)), Seq(2, 1), Seq(), None,
           WHOLE, None, None, None, Seq(WHOLE, SKIM), Seq(),
           attrs) if x.attr3 == WHOLE =>
         case _ => sys.error("match failed: " + obj.toString)
@@ -178,7 +179,7 @@ JDREVGRw==</base64Binary>
     val obj = fromXML[QNameEnum](subject)
     def check(obj: QNameEnum) = obj match {
       case GenReceiver =>
-      case _ => sys.error("match failed: " + obj.toString)
+      case _           => sys.error("match failed: " + obj.toString)
     }
     check(obj)
     val document = toXML[QNameEnum](obj, "foo", subject.scope)
@@ -190,7 +191,7 @@ JDREVGRw==</base64Binary>
     println("testCaseOnly")
     // println(WholeValue)
   }
-  
+
   def testList = {
     println("testList")
     val subject = <foo xmlns="http://www.example.com/general"
@@ -209,7 +210,7 @@ JDREVGRw==</base64Binary>
       <milk7>WHOLE</milk7>
     </foo>
     val obj = fromXML[ListTest](subject)
-    
+
     def check(obj: Any) = obj match {
         case ListTest(Seq(1, 2, 3), None, None, Some(Some(Seq(1))), Seq(Seq(), Seq(1)), Seq(None), Seq(1, 2, 3),
           Seq(WHOLE), None, None, None, Seq(Seq(), Seq(SKIM)), Seq(None), Seq(WHOLE),
@@ -221,7 +222,7 @@ JDREVGRw==</base64Binary>
     check(fromXML[ListTest](document))
     println(document)
   }
-  
+
   def testSingularComplexType = {
     println("testSingularComplexType")
     val subject = <foo xmlns="http://www.example.com/general"
@@ -234,20 +235,20 @@ JDREVGRw==</base64Binary>
       <person6 xsi:nil="true"/>
     </foo>
     val obj = fromXML[SingularComplexTypeTest](subject)
-    
+
     def check(obj: Any) = obj match {
         case SingularComplexTypeTest(Person("John", "Doe"), None, Some(Person("John", "Doe")), None,
           Seq(Person("John", "Doe"), Person("John", "Doe")),
           Seq(None)) =>
         case _ => sys.error("match failed: " + obj.toString)
       }
-    
+
     check(obj)
     val document = toXML[SingularComplexTypeTest](obj, "foo", defaultScope)
     check(fromXML[SingularComplexTypeTest](document))
     println(document)
   }
-  
+
   def testChoiceComplexType = {
     println("testChoiceComplexType")
     val subject = <foo xmlns="http://www.example.com/general"
@@ -261,20 +262,20 @@ JDREVGRw==</base64Binary>
       <person7 xsi:nil="true"/>
     </foo>
     val obj = fromXML[ChoiceComplexTypeTest](subject)
-    
+
     def check(obj: Any) = obj match {
         case ChoiceComplexTypeTest(
           DataRecord(NS, Some("person1"), Person("John", "Doe")),
           DataRecord(NS, Some("person2"), None),
-          Some(DataRecord(NS, Some("person3"), Person("John", "Doe") )),
+          Some(DataRecord(NS, Some("person3"), Person("John", "Doe"))),
           None,
           Seq(DataRecord(NS, Some("person5"), Person("John", "Doe")),
             DataRecord(NS, Some("person5"), Person("John", "Doe"))),
           Seq(DataRecord(NS, Some("person6"), None)),
-          Seq(DataRecord(NS, Some("person7"), None)) ) =>
+          Seq(DataRecord(NS, Some("person7"), None))) =>
         case _ => sys.error("match failed: " + obj.toString)
       }
-    
+
     check(obj)
     val document = toXML[ChoiceComplexTypeTest](obj, "foo", defaultScope)
     check(fromXML[ChoiceComplexTypeTest](document))
@@ -289,7 +290,7 @@ JDREVGRw==</base64Binary>
     val obj = fromXML[EmptyRepTest](subject)
     def check(obj: Any) = obj match {
         case EmptyRepTest(_) =>
-        case _ => sys.error("match failed: " + obj.toString)
+        case _               => sys.error("match failed: " + obj.toString)
       }
     check(obj)
   }
@@ -337,7 +338,7 @@ JDREVGRw==</base64Binary>
       <local><something/></local>
     </gen:foo>
     val obj = fromXML[AnyTest](subject)
-    
+
     def check(obj: Any) = obj match {
         case AnyTest(
           Person("John", "Doe"),
@@ -356,17 +357,19 @@ JDREVGRw==</base64Binary>
         case _ => sys.error("match failed: " + obj.toString)
       }
     check(obj)
-    val scope = toScope(Some("gen") -> "http://www.example.com/general",
+    val scope = toScope(
+      Some("gen") -> "http://www.example.com/general",
       Some("xsi") -> "http://www.w3.org/2001/XMLSchema-instance",
       Some("xs") -> "http://www.w3.org/2001/XMLSchema",
-      Some("o") -> "http://www.example.com/other")
+      Some("o") -> "http://www.example.com/other",
+    )
     val document = toXML[AnyTest](obj, "foo", scope)
     println(document.toString)
     //  actually xml library can print <x:something/>  as <x:something></x:something>
     //  so check only for 1-st part
     (document.toString contains "x:other xmlns:x=\"http://www.example.com/x\"") match {
       case true =>
-      case _ => sys.error("x:other includes outer namespace bindings: " + document.toString)
+      case _    => sys.error("x:other includes outer namespace bindings: " + document.toString)
     }
     check(fromXML[AnyTest](scala.xml.XML.loadString(document.toString)))
   }
@@ -378,14 +381,14 @@ JDREVGRw==</base64Binary>
       <foo xmlns="http://www.example.com/general"><string1>foo</string1></foo>
     ) match {
       case NamedAnyTypeTest(None, "foo") =>
-      case other => sys.error("absent case failed: " + other.toString)
+      case other                         => sys.error("absent case failed: " + other.toString)
     }
     // present optional xs:anyType element is captured
     fromXML[NamedAnyTypeTest](
       <foo xmlns="http://www.example.com/general"><any1>bar</any1><string1>foo</string1></foo>
     ) match {
       case NamedAnyTypeTest(Some(_), "foo") =>
-      case other => sys.error("present case failed: " + other.toString)
+      case other                            => sys.error("present case failed: " + other.toString)
     }
   }
 
@@ -405,9 +408,9 @@ JDREVGRw==</base64Binary>
     check(obj)
     val document = toXML[AllTest](obj, "foo", defaultScope)
     println(document)
-    check(fromXML[AllTest](document)) 
+    check(fromXML[AllTest](document))
   }
-    
+
   def testLongAll = {
     println("testLongAll")
     val subject = <foo xmlns="http://www.example.com/general"
@@ -426,11 +429,11 @@ JDREVGRw==</base64Binary>
       case Some(address) if address.street == "1 Plaza" =>
       case _ => sys.error("match failed: " + obj.toString)
     }
-    
+
     val document = toXML[LongAllTest](obj, "foo", defaultScope)
     println(document)
   }
-  
+
   def testLongAttribute = {
     val subject = <foo xmlns="http://www.example.com/general"
         xmlns:xs="http://www.w3.org/2001/XMLSchema"
@@ -438,11 +441,11 @@ JDREVGRw==</base64Binary>
     val obj = fromXML[LongAttributeTest](subject)
     obj.milk1 match {
       case Some(SKIM) =>
-      case _ => sys.error("match failed: " + obj.toString)
+      case _          => sys.error("match failed: " + obj.toString)
     }
-    
+
     val document = toXML[LongAttributeTest](obj, "foo", defaultScope)
-    println(document)    
+    println(document)
   }
 
   def testAnyAttribute = {
@@ -455,19 +458,25 @@ JDREVGRw==</base64Binary>
     def check(obj: AnyAttributeTest): Unit = {
       obj.attributes("@milk1") match {
         case DataRecord(_, _, "SKIM") =>
-        case _ => sys.error("match failed: " + obj.attributes("@milk1").toString + " " + obj.toString)
+        case _                        => sys.error(
+          "match failed: " + obj.attributes("@milk1").toString + " " + obj.toString
+        )
       }
       obj.attributes("@{http://www.w3.org/2005/05/xmlmime}contentType") match {
         case DataRecord(_, _, "foo") =>
-        case _ => sys.error("match failed: " + obj.attributes("@{http://www.w3.org/2005/05/xmlmime}contentType").toString + " " + obj.toString)
-      } 
+        case _                       => sys.error(
+          "match failed: " + obj.attributes(
+            "@{http://www.w3.org/2005/05/xmlmime}contentType"
+          ).toString + " " + obj.toString
+        )
+      }
     }
     check(obj)
     val document = toXML[AnyAttributeTest](obj, "foo", defaultScope)
     println(document)
-    check(fromXML[AnyAttributeTest](document))  
+    check(fromXML[AnyAttributeTest](document))
   }
-  
+
   def testTopLevelMultipleSeq = {
     println("testTopLevelMultipleSeq")
     val subject = <foo xmlns="http://www.example.com/general"
@@ -475,17 +484,17 @@ JDREVGRw==</base64Binary>
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     </foo>
     val obj = fromXML[TopLevelMultipleSeqTest](subject)
-    
+
     def check(obj: Any) = obj match {
         case TopLevelMultipleSeqTest(_) =>
-        case _ => sys.error("match failed: " + obj.toString)
+        case _                          => sys.error("match failed: " + obj.toString)
       }
     check(obj)
     val document = toXML[TopLevelMultipleSeqTest](obj, "foo", scope)
     println(document)
-    check(fromXML[TopLevelMultipleSeqTest](document))    
+    check(fromXML[TopLevelMultipleSeqTest](document))
   }
-  
+
   def testTopLevelOptionalSeq = {
     println("testTopLevelOptionalSeq")
     val subject = <foo xmlns="http://www.example.com/general"
@@ -493,24 +502,24 @@ JDREVGRw==</base64Binary>
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     </foo>
     val obj = fromXML[TopLevelOptionalSeqTest](subject)
-    
+
     def check(obj: Any) = obj match {
         case TopLevelOptionalSeqTest(None) =>
-        case _ => sys.error("match failed: " + obj.toString)
+        case _                             => sys.error("match failed: " + obj.toString)
       }
     check(obj)
     val document = toXML[TopLevelOptionalSeqTest](obj, "foo", scope)
     println(document)
-    check(fromXML[TopLevelOptionalSeqTest](document))    
+    check(fromXML[TopLevelOptionalSeqTest](document))
   }
-  
+
   def testTopLevelMustipleSeqAny = {
     println("testTopLevelMustipleSeqAny")
     val subject = <foo xmlns="http://www.example.com/general"
         xmlns:gen="http://www.example.com/general"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">something</foo>
     val obj = fromXML[TopLevelMultipleSeqAnyTest](subject)
-    
+
     def check(obj: Any) = obj match {
         case TopLevelMultipleSeqAnyTest(Seq(DataRecord(None, None, "something"))) =>
         case _ => sys.error("match failed: " + obj.toString)
@@ -518,7 +527,7 @@ JDREVGRw==</base64Binary>
     check(obj)
     val document = toXML[TopLevelMultipleSeqAnyTest](obj, "foo", scope)
     println(document)
-    check(fromXML[TopLevelMultipleSeqAnyTest](document))    
+    check(fromXML[TopLevelMultipleSeqAnyTest](document))
   }
 
   def testSimpleAnyTypeRestriction = {
@@ -587,7 +596,7 @@ JDREVGRw==</base64Binary>
 
     scopeList match {
       case (None, "http://www.example.com/general") :: xs =>
-      case _ => sys.error(scopeList.toString)
+      case _                                              => sys.error(scopeList.toString)
     }
 
     def check(obj: Any) = obj match {
@@ -595,7 +604,7 @@ JDREVGRw==</base64Binary>
         case _ => sys.error("match failed: " + obj.toString)
       }
     check(obj)
-    val document = toXML[DataRecord[Person]](obj, "foo", toScope(scopeList: _*))
+    val document = toXML[DataRecord[Person]](obj, "foo", toScope(scopeList*))
     println(document)
     check(fromXML[DataRecord[Person]](document))
   }
@@ -627,8 +636,10 @@ JDREVGRw==</base64Binary>
   def testDataRecordAny = {
     println("testDataRecordAny")
 
-    val scope = scalaxb.toScope(Some("xs") -> "http://www.w3.org/2001/XMLSchema",
-      Some("xsi") -> "http://www.w3.org/2001/XMLSchema-instance")
+    val scope = scalaxb.toScope(
+      Some("xs") -> "http://www.w3.org/2001/XMLSchema",
+      Some("xsi") -> "http://www.w3.org/2001/XMLSchema-instance",
+    )
     val subject = <core:gln xmlns:core="urn:epcglobal:hls:1">0111222123458</core:gln>
     val r = scalaxb.fromXML[DataRecord[Any]](subject)
 
@@ -667,12 +678,19 @@ JDREVGRw==</base64Binary>
 
     def check(obj: Addressable) = obj match {
       case USAddress(_, _, _, _, _) =>
-      case _ => sys.error("match failed: " + obj.toString)
+      case _                        => sys.error("match failed: " + obj.toString)
     }
-    val document = scalaxb.toXML[Addressable](shipTo, Some("http://www.example.com/general"), Some("shipTo"), subject.scope)
+    val document = scalaxb.toXML[Addressable](
+      shipTo,
+      Some("http://www.example.com/general"),
+      Some("shipTo"),
+      subject.scope,
+    )
     println(document)
     check(fromXML[Addressable](document))
-    if (!document.toString.startsWith("""<gen:shipTo xsi:type="gen:USAddress" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:gen="http://www.example.com/general">""")) sys.error("output is wrong")
+    if (!document.toString.startsWith(
+      """<gen:shipTo xsi:type="gen:USAddress" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:gen="http://www.example.com/general">"""
+    )) sys.error("output is wrong")
   }
 
   def testSubstitutionGroup = {
@@ -685,19 +703,25 @@ JDREVGRw==</base64Binary>
       </gen:subgroupTop>
     val x = scalaxb.fromXML[SubstitutionGroupTest](subject)
 
-    def check(obj: SubstitutionGroupTest) = obj match {
-      case SubstitutionGroupTest(DataRecord(_, _, "foo")) =>
-      case _ => sys.error("match failed: " + obj.toString)
-    }
-    val document = scalaxb.toXML[SubstitutionGroupTest](x, Some("http://www.example.com/general"), Some("subgroupTop"), subject.scope)
+    def check(obj: SubstitutionGroupTest) =
+      obj match {
+        case SubstitutionGroupTest(DataRecord(_, _, "foo")) =>
+        case _ => sys.error("match failed: " + obj.toString)
+      }
+    val document = scalaxb.toXML[SubstitutionGroupTest](
+      x,
+      Some("http://www.example.com/general"),
+      Some("subgroupTop"),
+      subject.scope,
+    )
     println(document)
     check(fromXML[SubstitutionGroupTest](document))
 
   }
-  
+
   def testExtraElement: Unit = {
     println("testExtraElement")
-
+    var error = false
     val subject = <person xmlns="http://www.example.com/general">
         <firstName>John</firstName><lastName>Doe</lastName><extra>something</extra>
       </person>
@@ -705,18 +729,21 @@ JDREVGRw==</base64Binary>
       val x = scalaxb.fromXML[Person](subject)
     }
     catch {
-      case _: Throwable => return ()
+      case _: Throwable => error = true
     }
-    sys.error("extra element did not raise error")
+    if (!error) sys.error("extra element did not raise error")
+    else ()
   }
 
   def testTypeAttribute = {
     println("testTypeAttribute")
 
-    val scope = scalaxb.toScope(Some("gen") -> "http://www.example.com/general",
+    val scope = scalaxb.toScope(
+      Some("gen") -> "http://www.example.com/general",
       Some("foo") -> "http://www.example.com/foo",
       Some("xs") -> "http://www.w3.org/2001/XMLSchema",
-      Some("xsi") -> "http://www.w3.org/2001/XMLSchema-instance")
+      Some("xsi") -> "http://www.w3.org/2001/XMLSchema-instance",
+    )
     val subject = <foo:billTo
           xmlns:gen="http://www.example.com/general"
           xmlns:foo="http://www.example.com/foo"
@@ -729,7 +756,8 @@ JDREVGRw==</base64Binary>
     val usaddress = scalaxb.fromXML[USAddress](subject)
     val obj: Addressable = usaddress
     println(obj)
-    val document = scalaxb.toXML(obj, Some("http://www.example.com/foo"), Some("billTo"), scope, true)
+    val document =
+      scalaxb.toXML(obj, Some("http://www.example.com/foo"), Some("billTo"), scope, true)
      // TODO: order of attributes can be any, so, better reformulate this test in way not depending from concrete XML representation
     document.toString match {
       case """<foo:billTo xsi:type="gen:USAddress" href="http://foo.com/" xmlns:gen="http://www.example.com/general" xmlns:foo="http://www.example.com/foo" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><gen:street>1537 Paper Street</gen:street><gen:city>Wilmington</gen:city><gen:state>DE</gen:state><gen:zip>19886</gen:zip></foo:billTo>""" =>
@@ -757,13 +785,18 @@ JDREVGRw==</base64Binary>
 
     def check(obj: IntlAddress) = obj match {
       case IntlAddress(_, _, _, _, _) =>
-      case _ => sys.error("match failed: " + obj.toString)
+      case _                          => sys.error("match failed: " + obj.toString)
     }
-    val document = scalaxb.toXML[IntlAddress](shipTo, Some("http://www.example.com/general_import"), Some("shipTo"), subject.scope)
+    val document = scalaxb.toXML[IntlAddress](
+      shipTo,
+      Some("http://www.example.com/general_import"),
+      Some("shipTo"),
+      subject.scope,
+    )
     println(document)
     check(fromXML[IntlAddress](document))
   }
-  
+
   def testInnerSimpleType = {
     println("testInnerSimpleType")
     val subject = <gen:billing xmlns:gen="http://www.example.com/general"
@@ -771,12 +804,18 @@ JDREVGRw==</base64Binary>
         <gen:billingAccountType>MOBILE</gen:billingAccountType>
       </gen:billing>
     val billing = scalaxb.fromXML[InnerSimpleTypeTest](subject)
-    def check(obj: InnerSimpleTypeTest) = obj match {
-      case InnerSimpleTypeTest(MOBILE) =>
-      case _ => sys.error("match failed: " + obj.toString)
-    }
+    def check(obj: InnerSimpleTypeTest) =
+      obj match {
+        case InnerSimpleTypeTest(MOBILE) =>
+        case _                           => sys.error("match failed: " + obj.toString)
+      }
     check(billing)
-    val document = scalaxb.toXML[InnerSimpleTypeTest](billing, Some("http://www.example.com/general"), Some("billing"), subject.scope)
+    val document = scalaxb.toXML[InnerSimpleTypeTest](
+      billing,
+      Some("http://www.example.com/general"),
+      Some("billing"),
+      subject.scope,
+    )
     println(document)
     check(fromXML[InnerSimpleTypeTest](document))
   }
@@ -792,10 +831,15 @@ JDREVGRw==</base64Binary>
     val event = scalaxb.fromXML[BaseEvent](subject)
     def check(obj: BaseEvent) = obj match {
       case EventTwo("foo", "foo") =>
-      case _ => sys.error("match failed: " + obj.toString)
+      case _                      => sys.error("match failed: " + obj.toString)
     }
     check(event)
-    val document = scalaxb.toXML[BaseEvent](event, Some("http://www.example.com/general"), Some("event"), subject.scope)
+    val document = scalaxb.toXML[BaseEvent](
+      event,
+      Some("http://www.example.com/general"),
+      Some("event"),
+      subject.scope,
+    )
     println(document)
     check(fromXML[BaseEvent](document))
   }
@@ -808,34 +852,41 @@ JDREVGRw==</base64Binary>
                     <gen:loopCardinality>10</gen:loopCardinality>
                   </gen:loopCharacteristics>
     val characteristics = scalaxb.fromXML[MixedExtensionTestB](subject)
-    def check(obj: MixedExtensionTestB) = obj match {
-      case MixedExtensionTestB(Seq(_,
-        DataRecord(_, Some("loopCardinality"),
-          MixedExtensionTestA(Seq(
-            DataRecord(None, None, "10")
-          ), _)),
-        _), _) =>
-      case _ => sys.error("match failed: " + obj.toString)
-    }
+    def check(obj: MixedExtensionTestB) =
+      obj match {
+        case MixedExtensionTestB(Seq(_,
+          DataRecord(_, Some("loopCardinality"),
+            MixedExtensionTestA(Seq(
+              DataRecord(None, None, "10")
+            ), _)),
+          _), _) =>
+        case _ => sys.error("match failed: " + obj.toString)
+      }
     check(characteristics)
-    val document = scalaxb.toXML[MixedExtensionTestB](characteristics, Some("http://www.example.com/general"), Some("loopCharacteristics"), subject.scope)
+    val document = scalaxb.toXML[MixedExtensionTestB](
+      characteristics,
+      Some("http://www.example.com/general"),
+      Some("loopCharacteristics"),
+      subject.scope,
+    )
     println(document)
     check(fromXML[MixedExtensionTestB](document))
   }
 
   def testLiteralBoolean = {
     println("testLiteralBoolean")
-    val subject = 
+    val subject =
       <literalBoolean xmlns="http://www.example.com/general"
                       xmlns:xs="http://www.w3.org/2001/XMLSchema" 
            avail="1" reason="xxx" >
       </literalBoolean>
     val withBoolean = scalaxb.fromXML[LiteralBoolean](subject)
-    System.err.println("received:"+withBoolean)
-    def check(obj: LiteralBoolean) = obj match {
-      case b@LiteralBoolean(attrs) if b.avail && (b.reason == Some("xxx")) =>
-      case _ => sys.error("match failed: " + obj.toString)
-    }
+    System.err.println("received:" + withBoolean)
+    def check(obj: LiteralBoolean) =
+      obj match {
+        case b @ LiteralBoolean(attrs) if b.avail && (b.reason == Some("xxx")) =>
+        case _ => sys.error("match failed: " + obj.toString)
+      }
     check(withBoolean)
   }
 
@@ -848,11 +899,12 @@ JDREVGRw==</base64Binary>
         <el_>blabla</el_>
       </UnderscoreSuffix>
     val us = scalaxb.fromXML[UnderscoreSuffix](subject)
-    System.err.println("received:"+us)
-    def check(obj: UnderscoreSuffix) = obj match {
-      case u@UnderscoreSuffix("blabla", attrs) if u.atu93 =>
-      case _ => sys.error("match failed: " + obj.toString)
-    }
+    System.err.println("received:" + us)
+    def check(obj: UnderscoreSuffix) =
+      obj match {
+        case u @ UnderscoreSuffix("blabla", attrs) if u.atu93 =>
+        case _ => sys.error("match failed: " + obj.toString)
+      }
     check(us)
   }
 
@@ -862,10 +914,11 @@ JDREVGRw==</base64Binary>
     println(document)
     check(document)
 
-    def check(output: scala.xml.NodeSeq) = output.toString() match {
-      case o if o.matches("<foo.*>10000</foo>") =>
-      case o if o.matches("<foo.*>10000.0+</foo>") =>
-      case _ => sys.error("match failed: " + output)
-    }
+    def check(output: scala.xml.NodeSeq) =
+      output.toString() match {
+        case o if o.matches("<foo.*>10000</foo>")    =>
+        case o if o.matches("<foo.*>10000.0+</foo>") =>
+        case _                                       => sys.error("match failed: " + output)
+      }
   }
 }

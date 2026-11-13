@@ -20,34 +20,39 @@
  * THE SOFTWARE.
  */
 
-import org.specs2.matcher._
-import java.io.{File}
+import org.specs2.matcher.*
+import java.io.{ File }
 import scala.tools.nsc.GenericRunnerSettings
-import scala.reflect.internal.util.{SourceFile, BatchSourceFile}
-import scala.tools.nsc.io.{PlainFile}
-import scala.tools.nsc.reporters.{ConsoleReporter}
+import scala.reflect.internal.util.{ SourceFile, BatchSourceFile }
+import scala.tools.nsc.io.PlainFile
+import scala.tools.nsc.reporters.ConsoleReporter
+import scala.tools.nsc.settings.ScalaVersion
+
 
 trait CompilerMatcher extends CompilerMatcherBase {
-  private lazy val bootPathList = List(jarPathOfClass("scala.tools.nsc.Main"),
-                                   jarPathOfClass("scala.Option"),
-                                   jarPathOfClass("scala.xml.Elem"),
-                                   jarPathOfClass("scala.util.parsing.combinator.Parsers"))
+  private lazy val bootPathList = List(
+    jarPathOfClass("scala.tools.nsc.Main"),
+    jarPathOfClass("scala.Option"),
+    jarPathOfClass("scala.xml.Elem"),
+    jarPathOfClass("scala.util.parsing.combinator.Parsers"),
+  )
 
   private lazy val currentcp: List[String] =
     scala.util.Properties.javaClassPath.split(File.pathSeparator).toList.map("file:" + _)
 
   /** evaluteTo matches a pair of code list and files against the expected value
-   * after evaluating the files and the given code list.
-   * @param expected: Any - expected value
-   * @param outdir: String - output dir for the interpreter
+   *  after evaluating the files and the given code list.
+   *  @param expected: Any - expected value
+   *  @param outdir: String - output dir for the interpreter
    *
-   * <code>
-   * (List("import ipo._",
-   *       "Address(\"\", \"\", \"\").toString"),
-   *   List(generated)) must evaluateTo("Address(,,)")
-   * </code>
+   *  <code>
+   *  (List("import ipo._",
+   *        "Address(\"\", \"\", \"\").toString"),
+   *    List(generated)) must evaluateTo("Address(,,)")
+   *  </code>
    */
-  def evaluateTo(expected: Any,
+  def evaluateTo(
+      expected: Any,
       outdir: String = ".",
       classpath: List[String] = currentcp.filter(_.contains("jaxb-api")),
       usecurrentcp: Boolean = false,
@@ -55,26 +60,34 @@ trait CompilerMatcher extends CompilerMatcherBase {
       deprecation: Boolean = true,
       feature: Boolean = true,
       fatalWarnings: Boolean = true,
-      lint: Boolean = false) = new Matcher[(Seq[String], Seq[File])] {
+      lint: Boolean = false,
+  ) = new Matcher[(Seq[String], Seq[File])] {
 
     def apply[A <: (Seq[String], Seq[File])](pair: Expectable[A]) = {
-      import scala.tools.nsc.interpreter.{IMain, Results => IR}
-      import scala.util.control.Exception._
+      import scala.tools.nsc.interpreter.{ IMain, Results as IR }
+      import scala.util.control.Exception.*
 
       val code = pair.value._1
       val files = pair.value._2
-      if (code.size < 1)
-        sys.error("At least one line of code is required.")
-      val s = settings(outdir, classpath, usecurrentcp, unchecked,
-        deprecation, feature, fatalWarnings, lint)
+      if (code.size < 1) sys.error("At least one line of code is required.")
+      val s = settings(
+        outdir,
+        classpath,
+        usecurrentcp,
+        unchecked,
+        deprecation,
+        feature,
+        fatalWarnings,
+        lint,
+      )
       val main = imain(s)
-      if (!main.compileSources(files.map(toSourceFile(_)): _*)) {
+      if (!main.compileSources(files.map(toSourceFile(_))*)) {
         sys.error(s"""Error compiling: ${ files.mkString(",") }""")
       }
       code foreach { c => main.interpret(c) match {
         case IR.Error => sys.error(s"Error interpreting ${c}")
-        case _ =>
-      }}
+        case _        =>
+      } }
       val holder0 = allCatch opt {
         main.lastReq.lineRep.call("$result")
       }
@@ -95,22 +108,30 @@ trait CompilerMatcher extends CompilerMatcherBase {
         println(s"  actual: $actual ($actualClass)")
         println(s"expected: $expected (${expected.getClass})")
       }
-      result(holder == Some(expected),
+      result(
+        holder == Some(expected),
         s"$code evaluates as expected",
         s"$code does not evaluate as expected",
-        pair)
+        pair,
+      )
     }
   }
 
-  private def settings(outdir: String, classpath: List[String],
-      usecurrentcp: Boolean, unchecked: Boolean,
-      deprecation: Boolean, feature: Boolean, fatalWarnings: Boolean, lint: Boolean): GenericRunnerSettings = {
-    import java.io.{PrintWriter, BufferedWriter, BufferedReader, StringReader, OutputStreamWriter}
+  private def settings(
+      outdir: String,
+      classpath: List[String],
+      usecurrentcp: Boolean,
+      unchecked: Boolean,
+      deprecation: Boolean,
+      feature: Boolean,
+      fatalWarnings: Boolean,
+      lint: Boolean,
+  ): GenericRunnerSettings = {
+    import java.io.{ PrintWriter, BufferedWriter, BufferedReader, StringReader, OutputStreamWriter }
 
     val classpathList = classpath ++ (if (usecurrentcp) currentcp else Nil)
     val in = new BufferedReader(new StringReader(""))
-    val out = new PrintWriter(new BufferedWriter(
-      new OutputStreamWriter(System.out)))
+    val out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(System.out)))
     val grs = new GenericRunnerSettings(out.println _)
     val origBootclasspath = grs.bootclasspath.value
 
@@ -127,54 +148,65 @@ trait CompilerMatcher extends CompilerMatcherBase {
     if (lint) {
       grs.lint.value ++= grs.LintWarnings.allLintWarnings
     }
+    grs.source.value = ScalaVersion("3")
     grs
   }
 
-  private def mkClasspath(entries:List[String]):String = {
-    def windowsFix(path:String):String =
-      if(java.io.File.separatorChar != '\\') path
+  private def mkClasspath(entries: List[String]): String = {
+    def windowsFix(path: String): String =
+      if (java.io.File.separatorChar != '\\') path
       else { // Windows
-        (if(path.startsWith("file:")) path.substring(6) else path)
+        (if (path.startsWith("file:")) path.substring(6) else path)
         .replace('/', java.io.File.separatorChar)
       }
 
-    entries.distinct
-    .map(windowsFix)
-    .mkString(java.io.File.pathSeparator)
+    entries.distinct.map(windowsFix).mkString(java.io.File.pathSeparator)
   }
+
   /** compile checks if the given list of files compiles without an error.
-   * @param outdir: String - output dir for the interpreter
+   *  @param outdir: String - output dir for the interpreter
    */
-  def compile(outdir: String = ".",
-    classpath: List[String] = Nil,
-    usecurrentcp: Boolean = false,
-    unchecked: Boolean = true,
-    deprecation: Boolean = true,
-    feature: Boolean = true,
-    fatalWarnings: Boolean = true,
-    lint: Boolean = false) = new Matcher[Seq[File]]() {
+  def compile(
+      outdir: String = ".",
+      classpath: List[String] = Nil,
+      usecurrentcp: Boolean = false,
+      unchecked: Boolean = true,
+      deprecation: Boolean = true,
+      feature: Boolean = true,
+      fatalWarnings: Boolean = true,
+      lint: Boolean = false,
+  ) = new Matcher[Seq[File]]() {
 
     def apply[A <: Seq[File]](files: Expectable[A]) = {
-      import scala.tools.nsc.{Global}
-      val s = settings(outdir, classpath, usecurrentcp, unchecked,
-        deprecation, feature, fatalWarnings, lint)
+      import scala.tools.nsc.{ Global }
+      val s = settings(
+        outdir,
+        classpath,
+        usecurrentcp,
+        unchecked,
+        deprecation,
+        feature,
+        fatalWarnings,
+        lint,
+      )
       val reporter = new ConsoleReporter(s)
       val compiler = new Global(s, reporter)
       val run = (new compiler.Run)
       run.compile(files.value.map(_.getAbsolutePath).toList)
       //reporter.printSummary
-      result(!reporter.hasErrors,
+      result(
+        !reporter.hasErrors,
         files.value.mkString + " compile(s)",
         files.value.mkString + " do(es) not compile",
-        files)
+        files,
+      )
     }
   }
 
   def deleteAll(file: File): Boolean = {
     if (file.isDirectory) {
       val children = file.listFiles
-      if (children != null)
-        children.foreach(deleteAll(_))
+      if (children != null) children.foreach(deleteAll(_))
     }
     file.delete
   }
@@ -192,6 +224,7 @@ trait CompilerMatcher extends CompilerMatcherBase {
     in.close
     out.flush
   }
+
   private def jarPathOfClass(className: String) = {
     val resource = className.split('.').mkString("/", "/", ".class")
     val path = getClass.getResource(resource).getPath
@@ -204,6 +237,7 @@ trait CompilerMatcher extends CompilerMatcherBase {
       path.substring(indexOfFile, indexOfSeparator)
     }
   }
+
   private def toSourceFile(file: File): SourceFile =
     new BatchSourceFile(new PlainFile(file))
 }

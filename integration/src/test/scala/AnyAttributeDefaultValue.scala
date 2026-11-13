@@ -1,11 +1,13 @@
 import scalaxb.compiler.Config
-import scalaxb.compiler.ConfigEntry._
+import scalaxb.compiler.ConfigEntry.*
+
 
 class AnyAttributeDefaultValue extends TestBase {
   private val schemaFile = resource("any_attribute_default_value.xsd")
 
   private def generate() = {
-    val config = Config.default.update(Outdir(tmp))
+    val config = Config.default
+      .update(Outdir(tmp))
       .update(PackageNames(Map(None -> Some("anyAttributes"))))
       .update(NamedAttributes)
     module.process(schemaFile, config)
@@ -19,6 +21,6 @@ class AnyAttributeDefaultValue extends TestBase {
 
          val x = HasAnyAttribute()  // parameter `attributes` should have a default value
          "success"
-       """, expectedResult = "success")  // it just needs to compile
+       """, expectedResult = "success") // it just needs to compile
   }
 }

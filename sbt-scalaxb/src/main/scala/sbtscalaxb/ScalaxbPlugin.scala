@@ -1,57 +1,59 @@
 package sbtscalaxb
 
-import sbt._
-import Keys._
+import sbt.*
+import Keys.*
 import scala.collection.immutable
-import scalaxb.{compiler => sc}
-import scalaxb.compiler.{Config => ScConfig}
+import scalaxb.{ compiler as sc }
+import scalaxb.compiler.{ Config as ScConfig }
 import sc.ConfigEntry
-import sc.ConfigEntry.{HttpClientStyle => _, _}
+import sc.ConfigEntry.{ HttpClientStyle as _, * }
+
 
 object ScalaxbPlugin extends sbt.AutoPlugin {
   override def requires = plugins.JvmPlugin
 
   object autoImport extends ScalaxbKeys
-  import autoImport._
+  import autoImport.*
+
   override lazy val globalSettings: Seq[Def.Setting[?]] = Seq(
-    scalaxbPackageName             := "generated",
-    scalaxbPackageNames            := Map(),
-    scalaxbClassPrefix             := None,
-    scalaxbParamPrefix             := None,
-    scalaxbAttributePrefix         := None,
-    scalaxbOpOutputWrapperPostfix  := sc.Defaults.opOutputWrapperPostfix,
-    scalaxbPrependFamily           := false,
-    scalaxbWrapContents            := Nil,
-    scalaxbContentsSizeLimit       := Int.MaxValue,
-    scalaxbChunkSize               := 10,
-    scalaxbNamedAttributes         := false,
-    scalaxbPackageDir              := true,
-    scalaxbGenerateRuntime         := true,
-    scalaxbGenerateDispatchClient  := true,
-    scalaxbGenerateDispatchAs      := false,
-    scalaxbGenerateHttp4sClient    := false,
+    scalaxbPackageName := "generated",
+    scalaxbPackageNames := Map(),
+    scalaxbClassPrefix := None,
+    scalaxbParamPrefix := None,
+    scalaxbAttributePrefix := None,
+    scalaxbOpOutputWrapperPostfix := sc.Defaults.opOutputWrapperPostfix,
+    scalaxbPrependFamily := false,
+    scalaxbWrapContents := Nil,
+    scalaxbContentsSizeLimit := Int.MaxValue,
+    scalaxbChunkSize := 10,
+    scalaxbNamedAttributes := false,
+    scalaxbPackageDir := true,
+    scalaxbGenerateRuntime := true,
+    scalaxbGenerateDispatchClient := true,
+    scalaxbGenerateDispatchAs := false,
+    scalaxbGenerateHttp4sClient := false,
     scalaxbGenerateGigahorseClient := false,
-    scalaxbGenerateSingleClient    := HttpClientType.None,
-    scalaxbProtocolFileName        := sc.Defaults.protocolFileName,
-    scalaxbProtocolPackageName     := None,
-    scalaxbLaxAny                  := false,
-    scalaxbDispatchVersion         := ScConfig.defaultDispatchVersion.value,
-    scalaxbGigahorseVersion        := ScConfig.defaultGigahorseVersion.value,
-    scalaxbGigahorseBackend        := GigahorseHttpBackend.OkHttp,
-    scalaxbHttp4sVersion           := ScConfig.defaultHttp4sVersion.value,
-    scalaxbMapK                    := false,
-    scalaxbIgnoreUnknown           := false,
-    scalaxbVararg                  := false,
-    scalaxbGenerateMutable         := false,
-    scalaxbGenerateVisitor         := false,
-    scalaxbGenerateLens            := false,
-    scalaxbAutoPackages            := false,
-    scalaxbCapitalizeWords         := false,
-    scalaxbSymbolEncodingStrategy  := SymbolEncodingStrategy.Legacy151,
-    scalaxbEnumNameMaxLength       := 50,
-    scalaxbUseLists                := false,
-    scalaxbAsync                   := true,
-    scalaxbJaxbPackage             := JaxbPackage.Javax,
+    scalaxbGenerateSingleClient := HttpClientType.None,
+    scalaxbProtocolFileName := sc.Defaults.protocolFileName,
+    scalaxbProtocolPackageName := None,
+    scalaxbLaxAny := false,
+    scalaxbDispatchVersion := ScConfig.defaultDispatchVersion.value,
+    scalaxbGigahorseVersion := ScConfig.defaultGigahorseVersion.value,
+    scalaxbGigahorseBackend := GigahorseHttpBackend.OkHttp,
+    scalaxbHttp4sVersion := ScConfig.defaultHttp4sVersion.value,
+    scalaxbMapK := false,
+    scalaxbIgnoreUnknown := false,
+    scalaxbVararg := false,
+    scalaxbGenerateMutable := false,
+    scalaxbGenerateVisitor := false,
+    scalaxbGenerateLens := false,
+    scalaxbAutoPackages := false,
+    scalaxbCapitalizeWords := false,
+    scalaxbSymbolEncodingStrategy := SymbolEncodingStrategy.Legacy151,
+    scalaxbEnumNameMaxLength := 50,
+    scalaxbUseLists := false,
+    scalaxbAsync := true,
+    scalaxbJaxbPackage := JaxbPackage.Javax,
   )
 
   override lazy val projectSettings: Seq[Def.Setting[?]] =
@@ -59,6 +61,7 @@ object ScalaxbPlugin extends sbt.AutoPlugin {
     Set(
       Compile / sourceGenerators += (Compile / scalaxb).taskValue
     )
+
   lazy val baseScalaxbSettings: Seq[Def.Setting[?]] = Seq(
     scalaxb := (scalaxb / scalaxbGenerate).value,
     scalaxb / sourceManaged := {
@@ -74,12 +77,18 @@ object ScalaxbPlugin extends sbt.AutoPlugin {
       if (Seq(Compile, Test) contains configuration.value) src / "wsdl"
       else src / "main" / "wsdl"
     },
-    scalaxb / logLevel := (logLevel?? Level.Info).value
+    scalaxb / logLevel := (logLevel ?? Level.Info).value
   ) ++ Project.inTask(scalaxb)(Seq(
     scalaxbGenerate := {
       val s = streams.value
       val ll = logLevel.value
-      ScalaxbCompile(sources.value, scalaxbConfig.value, sourceManaged.value, s.cacheDirectory, ll == Level.Debug)
+      ScalaxbCompile(
+        sources.value,
+        scalaxbConfig.value,
+        sourceManaged.value,
+        s.cacheDirectory,
+        ll == Level.Debug,
+      )
     },
     sources := {
       val xsd = scalaxbXsdSource.value
@@ -94,12 +103,14 @@ object ScalaxbPlugin extends sbt.AutoPlugin {
     scalaxbCombinedPackageNames := {
       val x = scalaxbPackageName.value
       val xs = scalaxbPackageNames.value
-      (xs map { case (k, v) => ((Some(k.toString): Option[String]), Some(v)) }) updated (None, Some(x))
+      (xs map { case (k, v) => ((Some(k.toString): Option[String]), Some(v)) }) updated (None, Some(
+        x
+      ))
     },
     scalaxbHttpClientStyle := {
       (scalaxbHttpClientStyle.?.value) match {
         case Some(x) => x
-        case _ =>
+        case _       =>
           if (scalaxbGenerateHttp4sClient.value) HttpClientStyle.Tagless
           else if (scalaxbAsync.value) HttpClientStyle.Future
           else HttpClientStyle.Sync
@@ -130,13 +141,23 @@ object ScalaxbPlugin extends sbt.AutoPlugin {
         Vector(ProtocolPackageName(scalaxbProtocolPackageName.value)) ++
         Vector(ScConfig.defaultDefaultNamespace) ++
         (if (scalaxbGenerateRuntime.value) Vector(GenerateRuntime) else Vector()) ++
-        (if (scalaxbGenerateDispatchClient.value && scalaxbGenerateSingleClient.value == HttpClientType.None ||
-          scalaxbGenerateSingleClient.value == HttpClientType.Dispatch) Vector(GenerateDispatchClient) else Vector()) ++
+        (if (scalaxbGenerateDispatchClient.value
+          && scalaxbGenerateSingleClient.value == HttpClientType.None
+          || scalaxbGenerateSingleClient.value == HttpClientType.Dispatch) Vector(
+            GenerateDispatchClient
+          ) else Vector()) ++
         (if (scalaxbGenerateDispatchAs.value) Vector(GenerateDispatchAs) else Vector()) ++
-        (if (scalaxbGenerateGigahorseClient.value && scalaxbGenerateSingleClient.value == HttpClientType.None ||
-          scalaxbGenerateSingleClient.value == HttpClientType.Gigahorse) Vector(GenerateGigahorseClient) else Vector()) ++
-        (if (scalaxbGenerateHttp4sClient.value && scalaxbGenerateSingleClient.value == HttpClientType.None ||
-          scalaxbGenerateSingleClient.value == HttpClientType.Http4s) Vector(GenerateHttp4sClient, ConfigEntry.HttpClientStyle.Tagless) else Vector()) ++
+        (if (scalaxbGenerateGigahorseClient.value
+          && scalaxbGenerateSingleClient.value == HttpClientType.None
+          || scalaxbGenerateSingleClient.value == HttpClientType.Gigahorse) Vector(
+            GenerateGigahorseClient
+          ) else Vector()) ++
+        (if (scalaxbGenerateHttp4sClient.value
+          && scalaxbGenerateSingleClient.value == HttpClientType.None
+          || scalaxbGenerateSingleClient.value == HttpClientType.Http4s) Vector(
+            GenerateHttp4sClient,
+            ConfigEntry.HttpClientStyle.Tagless,
+          ) else Vector()) ++
         Vector(ContentsSizeLimit(scalaxbContentsSizeLimit.value)) ++
         Vector(SequenceChunkSize(scalaxbChunkSize.value)) ++
         (if (scalaxbNamedAttributes.value) Vector(NamedAttributes) else Vector()) ++
@@ -159,8 +180,8 @@ object ScalaxbPlugin extends sbt.AutoPlugin {
         Vector(TargetScalaVersion(scalaVersion.value)) ++
         Vector(ConfigEntry.JaxbPackage.withPackageName(scalaxbJaxbPackage.value.toString)) ++
           Vector(scalaxbHttpClientStyle.value match {
-            case HttpClientStyle.Sync => ConfigEntry.HttpClientStyle.Sync
-            case HttpClientStyle.Future => ConfigEntry.HttpClientStyle.Future
+            case HttpClientStyle.Sync    => ConfigEntry.HttpClientStyle.Sync
+            case HttpClientStyle.Future  => ConfigEntry.HttpClientStyle.Future
             case HttpClientStyle.Tagless => ConfigEntry.HttpClientStyle.Tagless
           })
   )))

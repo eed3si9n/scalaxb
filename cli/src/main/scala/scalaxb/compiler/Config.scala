@@ -26,82 +26,108 @@ import java.io.File
 import scala.collection.immutable.{ Map, Set, Seq }
 import scala.reflect.ClassTag
 
+
 case class Config(items: Map[String, ConfigEntry]) {
-  import Config._
-  import ConfigEntry._
+  import Config.*
+  import ConfigEntry.*
+
   def values: Vector[ConfigEntry] = items.values.toVector
+
   def packageNames: Map[Option[String], Option[String]] =
     (get[PackageNames] getOrElse defaultPackageNames).value
-  def classPrefix: Option[String] =
-    get[ClassPrefix] map {_.value}
-  def classPostfix: Option[String] =
-    get[ClassPostfix] map {_.value}
-  def paramPrefix: Option[String] =
-    get[ParamPrefix] map {_.value}
-  def attributePrefix: Option[String] =
-    get[AttributePrefix] map {_.value}
+
+  def classPrefix: Option[String] = get[ClassPrefix].map { _.value }
+
+  def classPostfix: Option[String] = get[ClassPostfix].map { _.value }
+
+  def paramPrefix: Option[String] = get[ParamPrefix].map { _.value }
+
+  def attributePrefix: Option[String] = get[AttributePrefix].map { _.value }
+
   def opOutputWrapperPostfix: String =
     (get[OpOutputWrapperPostfix] getOrElse defaultOpOutputWrapperPostfix).value
+
   def outdir: File =
     (get[Outdir] getOrElse defaultOutdir).value
-  def packageDir: Boolean = values contains GeneratePackageDir
+
+  def packageDir: Boolean = values.contains(GeneratePackageDir)
+
   def wrappedComplexTypes: List[String] =
     (get[WrappedComplexTypes] getOrElse defaultWrappedComplexTypes).value
-  def prependFamilyName: Boolean = values contains PrependFamilyName
-  def seperateProtocol: Boolean = values contains SeperateProtocol
+
+  def prependFamilyName: Boolean = values.contains(PrependFamilyName)
+  def seperateProtocol: Boolean = values.contains(SeperateProtocol)
+
   def protocolFileName: String =
     (get[ProtocolFileName] getOrElse defaultProtocolFileName).value
+
   def protocolPackageName: Option[String] =
     (get[ProtocolPackageName] getOrElse defaultProtocolPackageName).value
+
   def defaultNamespace: Option[String] =
     (get[DefaultNamespace] getOrElse defaultDefaultNamespace).value
-  def generateRuntime: Boolean = values contains GenerateRuntime
-  def generateDispatchClient: Boolean = values contains GenerateDispatchClient
-  def generateHttp4sClient: Boolean = values contains GenerateHttp4sClient
-  def generateDispatchAs: Boolean = values contains GenerateDispatchAs
-  def generateGigahorseClient: Boolean = values contains GenerateGigahorseClient
+
+  def generateRuntime: Boolean = values.contains(GenerateRuntime)
+  def generateDispatchClient: Boolean = values.contains(GenerateDispatchClient)
+  def generateHttp4sClient: Boolean = values.contains(GenerateHttp4sClient)
+  def generateDispatchAs: Boolean = values.contains(GenerateDispatchAs)
+  def generateGigahorseClient: Boolean = values.contains(GenerateGigahorseClient)
+
   def contentsSizeLimit: Int =
     (get[ContentsSizeLimit] getOrElse defaultContentsSizeLimit).value
+
   def sequenceChunkSize: Int =
     (get[SequenceChunkSize] getOrElse defaultSequenceChunkSize).value
-  def namedAttributes: Boolean = values contains NamedAttributes
-  def laxAny: Boolean = values contains LaxAny
+
+  def namedAttributes: Boolean = values.contains(NamedAttributes)
+  def laxAny: Boolean = values.contains(LaxAny)
   def httpClientStyle: HttpClientStyle = get[HttpClientStyle] getOrElse HttpClientStyle.Future
   def taglessClient: Boolean = httpClientStyle == HttpClientStyle.Tagless
-  def mapK: Boolean = values contains GenerateMapK
+  def mapK: Boolean = values.contains(GenerateMapK)
+
   def dispatchVersion: String =
     (get[DispatchVersion] getOrElse defaultDispatchVersion).value
+
   def http4sVersion: String =
     (get[Http4sVersion] getOrElse defaultHttp4sVersion).value
+
   def gigahorseVersion: String =
     (get[GigahorseVersion] getOrElse defaultGigahorseVersion).value
+
   def gigahorseBackend: String =
     (get[GigahorseBackend] getOrElse defaultGigahorseBackend).value
-  def varArg: Boolean = values contains VarArg
-  def ignoreUnknown: Boolean = values contains IgnoreUnknown
-  def autoPackages: Boolean = values contains AutoPackages
-  def generateMutable: Boolean = values contains GenerateMutable
-  def generateVisitor: Boolean = values contains GenerateVisitor
-  def generateLens: Boolean = values contains GenerateLens
-  def capitalizeWords: Boolean = values contains CapitalizeWords
+
+  def varArg: Boolean = values.contains(VarArg)
+  def ignoreUnknown: Boolean = values.contains(IgnoreUnknown)
+  def autoPackages: Boolean = values.contains(AutoPackages)
+  def generateMutable: Boolean = values.contains(GenerateMutable)
+  def generateVisitor: Boolean = values.contains(GenerateVisitor)
+  def generateLens: Boolean = values.contains(GenerateLens)
+  def capitalizeWords: Boolean = values.contains(CapitalizeWords)
   def symbolEncodingStrategy = get[SymbolEncoding.Strategy] getOrElse defaultSymbolEncodingStrategy
   def enumNameMaxLength: Int = (get[EnumNameMaxLength] getOrElse defaultEnumNameMaxLength).value
-  def useLists: Boolean = values contains UseLists
+  def useLists: Boolean = values.contains(UseLists)
   def jaxbPackage = get[JaxbPackage] getOrElse defaultJaxbPackage
-  def targetScalaVersion: String = get[TargetScalaVersion].getOrElse(defaultTargetScalaVersion).value
-  def targetScalaPartialVersion: Option[(Long, Long)] =
-    partialVersion(targetScalaVersion)
+
+  def targetScalaVersion: String = get[TargetScalaVersion].getOrElse(
+    defaultTargetScalaVersion
+  ).value
+
+  def targetScalaPartialVersion: Option[(Long, Long)] = partialVersion(targetScalaVersion)
   private val longPattern = """\d{1,19}"""
   private val PartialVersion = raw"""($longPattern)\.($longPattern)(?:\..+)?""".r
+
   private def partialVersion(s: String): Option[(Long, Long)] =
     s match {
       case PartialVersion(major, minor) => Some((major.toLong, minor.toLong))
       case _                            => None
     }
+
   def isScala3Plus: Boolean = targetScalaPartialVersion match {
     case Some((major, _)) => major >= 3
     case _                => false
   }
+
   def isScala3_4Plus: Boolean = targetScalaPartialVersion match {
     case Some((3, minor)) => minor >= 4
     case Some((major, _)) => major > 3
@@ -110,17 +136,23 @@ case class Config(items: Map[String, ConfigEntry]) {
 
   private def get[A <: ConfigEntry: ClassTag]: Option[A] =
     items.get(implicitly[ClassTag[A]].runtimeClass.getName).asInstanceOf[Option[A]]
-  def update(item: ConfigEntry): Config =
-    copy(items = items.updated(item.name, item))
-  def remove(item: ConfigEntry): Config =
-    copy(items = items - item.name)
+
+  def update(item: ConfigEntry): Config = copy(
+    items = items.updated(item.name, item)
+  )
+
+  def remove(item: ConfigEntry): Config = copy(
+    items = items - item.name
+  )
 }
 
 object Config {
-  import ConfigEntry._
+  import ConfigEntry.*
 
-  def apply(xs: Vector[ConfigEntry]): Config =
-    xs.foldLeft(new Config(Map())) { (acc, x) => acc.update(x) }
+  def apply(xs: Vector[ConfigEntry]): Config = xs.foldLeft(new Config(Map())) { (acc, x) =>
+    acc.update(x)
+  }
+
   val defaultPackageNames = PackageNames(Map(None -> None))
   val defaultOpOutputWrapperPostfix = OpOutputWrapperPostfix(Defaults.opOutputWrapperPostfix)
   val defaultOutdir = Outdir(new File("."))
@@ -140,100 +172,186 @@ object Config {
   val defaultTargetScalaVersion = TargetScalaVersion("2.13.18")
 
   val default = Config(
-    Vector(defaultPackageNames, defaultOpOutputWrapperPostfix, defaultOutdir,
-      defaultWrappedComplexTypes, SeperateProtocol, defaultProtocolFileName,
-      defaultProtocolPackageName, GenerateRuntime, GenerateDispatchClient,
-      defaultContentsSizeLimit, defaultSequenceChunkSize,
-      HttpClientStyle.Future, defaultDispatchVersion)
+    Vector(
+      defaultPackageNames,
+      defaultOpOutputWrapperPostfix,
+      defaultOutdir,
+      defaultWrappedComplexTypes,
+      SeperateProtocol,
+      defaultProtocolFileName,
+      defaultProtocolPackageName,
+      GenerateRuntime,
+      GenerateDispatchClient,
+      defaultContentsSizeLimit,
+      defaultSequenceChunkSize,
+      HttpClientStyle.Future,
+      defaultDispatchVersion,
+    )
   )
 }
+
 
 sealed trait ConfigEntry {
   def name: String = getClass.getName
 }
+
 object ConfigEntry {
   case class PackageNames(value: Map[Option[String], Option[String]]) extends ConfigEntry
+
   case class ClassPrefix(value: String) extends ConfigEntry
+
   case class ClassPostfix(value: String) extends ConfigEntry
+
   case class ParamPrefix(value: String) extends ConfigEntry
+
   case class AttributePrefix(value: String) extends ConfigEntry
+
   case class OpOutputWrapperPostfix(value: String) extends ConfigEntry
+
   case class Outdir(value: File) extends ConfigEntry
+
   case object GeneratePackageDir extends ConfigEntry
+
   case class WrappedComplexTypes(value: List[String]) extends ConfigEntry
+
   case object PrependFamilyName extends ConfigEntry
+
   case object SeperateProtocol extends ConfigEntry
+
   case class ProtocolFileName(value: String) extends ConfigEntry
+
   case class ProtocolPackageName(value: Option[String]) extends ConfigEntry
+
   case class DefaultNamespace(value: Option[String]) extends ConfigEntry
+
   case object GenerateRuntime extends ConfigEntry
+
   case object GenerateDispatchClient extends ConfigEntry
+
   case object GenerateHttp4sClient extends ConfigEntry
+
   case object GenerateDispatchAs extends ConfigEntry
+
   case object GenerateGigahorseClient extends ConfigEntry
+
   case class ContentsSizeLimit(value: Int) extends ConfigEntry
+
   case class SequenceChunkSize(value: Int) extends ConfigEntry
+
   case object NamedAttributes extends ConfigEntry
+
   case object LaxAny extends ConfigEntry
+
   case class DispatchVersion(value: String) extends ConfigEntry
+
   case class Http4sVersion(value: String) extends ConfigEntry
+
   case class GigahorseVersion(value: String) extends ConfigEntry
+
   case class GigahorseBackend(value: String) extends ConfigEntry
+
   case object VarArg extends ConfigEntry
+
   case object IgnoreUnknown extends ConfigEntry
+
   case object AutoPackages extends ConfigEntry
+
   case object GenerateMutable extends ConfigEntry
+
   case object GenerateVisitor extends ConfigEntry
+
   case object GenerateLens extends ConfigEntry
+
   case object CapitalizeWords extends ConfigEntry
+
   case class EnumNameMaxLength(value: Int) extends ConfigEntry
+
   case object UseLists extends ConfigEntry
+
   case object GenerateMapK extends ConfigEntry
+
   case class TargetScalaVersion(value: String) extends ConfigEntry
 
   sealed abstract class HttpClientStyle extends ConfigEntry with Product with Serializable {
     final override def name: String = classOf[HttpClientStyle].getName
   }
+
   object HttpClientStyle {
     case object Sync extends HttpClientStyle
+
     case object Future extends HttpClientStyle
+
     case object Tagless extends HttpClientStyle
   }
 
   object SymbolEncoding {
-    sealed abstract class Strategy(val alias: String, val description: String) extends ConfigEntry with Product with Serializable {
+    sealed abstract class Strategy(
+        val alias: String,
+        val description: String,
+    ) extends ConfigEntry with Product with Serializable {
       final override def name: String = classOf[Strategy].getName
     }
-    case object Discard      extends Strategy("discard",       "Discards any characters that are invalid in Scala identifiers, such as dots and hyphens")
-    case object SymbolName   extends Strategy("symbol-name",   "Replaces `.`, `-`, `:`, and trailing `_` in class names with `Dot`, `Hyphen`, `Colon`, and `Underscore`")
-    case object UnicodePoint extends Strategy("unicode-point", "Replaces symbols with a 'u' followed by the 4-digit hexadecimal code of the character (e.g. `_` => `u005f`)")
-    case object DecimalAscii extends Strategy("decimal-ascii", "Replaces symbols with a 'u' followed by the decimal code of the character (e.g. `_` => `u95`)")
-    case object Legacy151    extends Strategy("legacy-1.5.1",  "Same as decimal-ascii except that _trailing_ underscores are replaced with `u93` (as introduced in v1.5.1)")
+
+    case object Discard extends Strategy(
+      "discard",
+      "Discards any characters that are invalid in Scala identifiers, such as dots and hyphens",
+    )
+
+    case object SymbolName extends Strategy(
+      "symbol-name",
+      "Replaces `.`, `-`, `:`, and trailing `_` in class names with `Dot`, `Hyphen`, `Colon`, and `Underscore`",
+    )
+
+    case object UnicodePoint extends Strategy(
+      "unicode-point",
+      "Replaces symbols with a 'u' followed by the 4-digit hexadecimal code of the character (e.g. `_` => `u005f`)",
+    )
+
+    case object DecimalAscii extends Strategy(
+      "decimal-ascii",
+      "Replaces symbols with a 'u' followed by the decimal code of the character (e.g. `_` => `u95`)",
+    )
+
+    case object Legacy151 extends Strategy(
+      "legacy-1.5.1",
+      "Same as decimal-ascii except that _trailing_ underscores are replaced with `u93` (as introduced in v1.5.1)",
+    )
 
     val values = Seq(Discard, SymbolName, UnicodePoint, DecimalAscii, Legacy151)
 
     def apply(alias: String): Option[Strategy] = values.find(_.alias == alias)
+
     def withName(alias: String): Strategy = apply(alias).getOrElse {
-      throw new IllegalArgumentException(s"""Unknown symbol encoding strategy "${alias}"; possible values are ${values.map(_.alias).mkString(", ")}.""")
+      throw new IllegalArgumentException(
+        s"""Unknown symbol encoding strategy "${alias}"; possible values are ${values.map(_.alias).mkString(", ")}."""
+      )
     }
 
     private[compiler] implicit val scoptRead: scopt.Read[Strategy] = scopt.Read.reads(withName)
   }
 
-  sealed abstract class JaxbPackage(val packageName: String) extends ConfigEntry with Product with Serializable {
+  sealed abstract class JaxbPackage(
+      val packageName: String
+  ) extends ConfigEntry with Product with Serializable {
     final override def name: String = classOf[JaxbPackage].getName
   }
+
   object JaxbPackage {
     case object Javax extends JaxbPackage("javax")
+
     case object Jakarta extends JaxbPackage("jakarta")
 
     val values = Seq(Javax, Jakarta)
 
     def apply(packageName: String): Option[JaxbPackage] = values.find(_.packageName == packageName)
+
     def withPackageName(packageName: String): JaxbPackage = apply(packageName).getOrElse {
-      throw new IllegalArgumentException(s"""Unknown jaxb package "${packageName}"; possible values are ${values.map(_.packageName).mkString(", ")}.""")
+      throw new IllegalArgumentException(
+        s"""Unknown jaxb package "${packageName}"; possible values are ${values.map(_.packageName).mkString(", ")}."""
+      )
     }
 
-    private[compiler] implicit val scoptRead: scopt.Read[JaxbPackage] = scopt.Read.reads(withPackageName)
+    private[compiler] implicit val scoptRead: scopt.Read[JaxbPackage] =
+      scopt.Read.reads(withPackageName)
   }
 }

@@ -1,0 +1,16 @@
+version = "0.4.2"
+
+dialect = "scala212source3"
+
+exclude-paths = [
+  "glob:**/src_managed/**",
+  "glob:**/src/sbt-test/**",
+]
+
+[lint]
+select = [
+  "untyped_implicit_val",
+  "no_return",
+  # "no_null",
+  "procedure_syntax",
+]

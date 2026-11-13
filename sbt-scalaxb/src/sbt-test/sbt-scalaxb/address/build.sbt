@@ -8,6 +8,7 @@ val scalaXml = Def.setting(
       Seq("org.scala-lang.modules" %% "scala-xml" % "2.2.0")
   }
 )
+
 val scalaParser = Def.setting(
   scalaBinaryVersion.value match {
     case "2.10" =>
@@ -18,15 +19,10 @@ val scalaParser = Def.setting(
       Seq("org.scala-lang.modules" %% "scala-parser-combinators" % "2.3.0")
   }
 )
+
 val jaxbApi = "javax.xml.bind" % "jaxb-api" % "2.3.1"
 
-val scalaVersions = Seq(
-  "2.10.7",
-  "2.11.12",
-  "2.12.21",
-  "2.13.18",
-  "3.6.3",
-)
+val scalaVersions = Seq("2.10.7", "2.11.12", "2.12.21", "2.13.18", "3.6.3")
 
 lazy val root = (project in file(".")).
   enablePlugins(ScalaxbPlugin).

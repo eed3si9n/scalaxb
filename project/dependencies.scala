@@ -1,12 +1,14 @@
-import sbt._
+import sbt.*
+
 
 object Dependencies {
-  val scala3   = "3.3.8"
+  val scala3 = "3.3.8"
   val scala3ForSbt = "3.8.4"
   val scala213 = "2.13.18"
   val scala212 = "2.12.21"
 
   val jaxb = "javax.xml.bind" % "jaxb-api" % "2.3.1"
+
   def scopt(sv: String) = {
     CrossVersion.partialVersion(sv) match {
       case Some((2, _)) =>
@@ -15,17 +17,20 @@ object Dependencies {
         "com.github.scopt" %% "scopt" % "4.1.0"
     }
   }
+
   val log4j = "org.apache.logging.log4j" % "log4j-core" % "2.24.3"
   val log4jApi = "org.apache.logging.log4j" %% "log4j-api-scala" % "13.1.0"
   val defaultDispatchVersion = "1.0.1"
+
   def dispatch(sv: String) = CrossVersion.partialVersion(sv) match {
     case Some((2, x)) if x >= 13 => "org.dispatchhttp" %% "dispatch-core" % "1.1.0"
     case Some(_)                 => "org.dispatchhttp" %% "dispatch-core" % "1.0.1"
-    case x                       => sys error s"Unexpected Scala version [$sv], with partial version $x"
+    case x => sys error s"Unexpected Scala version [$sv], with partial version $x"
   }
+
   val defaultHttp4sVersion = "0.23.18"
-  val http4s =  "org.http4s" %% "http4s-client" % defaultHttp4sVersion
-  val http4sEmber =  "org.http4s" %% "http4s-ember-client" % defaultHttp4sVersion
+  val http4s = "org.http4s" %% "http4s-client" % defaultHttp4sVersion
+  val http4sEmber = "org.http4s" %% "http4s-ember-client" % defaultHttp4sVersion
   val defaultGigahorseVersion = "0.5.0"
   val defaultGigahorseBackend = "okhttp"
   val gigahorse = "com.eed3si9n" %% s"gigahorse-$defaultGigahorseBackend" % defaultGigahorseVersion
@@ -38,6 +43,7 @@ object Dependencies {
   val cxfFrontendJaxrs = "org.apache.cxf" % "cxf-rt-frontend-jaxrs" % cxfVersion
   val cxfTransportsHttp = "org.apache.cxf" % "cxf-rt-transports-http" % cxfVersion
   val cxfTrapsportsHttpJetty = "org.apache.cxf" % "cxf-rt-transports-http-jetty" % cxfVersion
+
   def monocleCore(sv: String) = {
     CrossVersion.partialVersion(sv) match {
       case Some((2, v)) if v <= 12 =>
@@ -46,6 +52,7 @@ object Dependencies {
         "dev.optics" %% "monocle-core" % "3.2.0"
     }
   }
+
   def monocleMacro(sv: String) = {
     CrossVersion.partialVersion(sv) match {
       case Some((2, v)) if v <= 12 =>
@@ -67,11 +74,12 @@ object Dependencies {
     jaxb % "provided",
     scopt(sv),
     log4j,
-    log4jApi
+    log4jApi,
   ) ++ (sv match {
     case x if sv.startsWith("2.12.") => Seq(scalaXml2, scalaParserCombinators1)
     case x                           => Seq(scalaXml2, scalaParserCombinators2)
   })
+
   def integrationDependencies(sv: String) = Seq(
     jaxb % "test",
     dispatch(sv) % "test",

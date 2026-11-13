@@ -1,20 +1,24 @@
-import Dependencies._
-import Common._
+import Dependencies.*
+import Common.*
 
 ThisBuild / version := "1.12.3-SNAPSHOT"
 ThisBuild / organization := "org.scalaxb"
 ThisBuild / homepage := Option(url("http://scalaxb.org"))
-ThisBuild / licenses := List("MIT License" -> url("https://github.com/eed3si9n/scalaxb/blob/HEAD/LICENSE"))
+ThisBuild / licenses := List(
+  "MIT License" -> url("https://github.com/eed3si9n/scalaxb/blob/HEAD/LICENSE")
+)
 ThisBuild / description := """scalaxb is an XML data-binding tool for Scala that supports W3C XML Schema (xsd) and wsdl."""
 ThisBuild / publishMavenStyle := true
 ThisBuild / pomIncludeRepository := { x => false }
-ThisBuild / scmInfo := Option(ScmInfo(url("https://github.com/eed3si9n/scalaxb"), "scm:git@github.com:eed3si9n/scalaxb.git"))
+ThisBuild / scmInfo := Option(
+  ScmInfo(url("https://github.com/eed3si9n/scalaxb"), "scm:git@github.com:eed3si9n/scalaxb.git")
+)
 ThisBuild / developers := List(
   Developer(
-    id    = "eed3si9n",
-    name  = "Eugene Yokota",
+    id = "eed3si9n",
+    name = "Eugene Yokota",
     email = "@eed3si9n",
-    url   = url("http://eed3si9n.com")
+    url = url("http://eed3si9n.com"),
   )
 )
 ThisBuild / publishTo := {
@@ -28,16 +32,11 @@ lazy val commonSettings = Seq(
     scalacOptions := Seq("-deprecation", "-unchecked", "-feature", "-language:implicitConversions"),
     scalacOptions ++= {
       if (scalaVersion.value.startsWith("3.3.")) {
-        Seq(
-          "-Yfuture-lazy-vals",
-          "-release:11",
-        )
+        Seq("-Yfuture-lazy-vals", "-release:11")
       } else if (scalaBinaryVersion.value == "3") {
         Nil
       } else {
-        Seq(
-          "-release:8",
-        )
+        Seq("-release:8", "-Xsource:3")
       }
     },
     Test / parallelExecution := false,
@@ -86,9 +85,11 @@ lazy val app = (project in file("cli"))
       }
       else prev
     }
-    assembly / mainClass           := Some("scalaxb.compiler.Main")
-    assembly / assemblyOption      := (assembly / assemblyOption).value.withPrependShellScript(Some(sbtassembly.AssemblyPlugin.defaultShellScript))
-    assembly / assemblyOutputPath  := file(s"./${name.value}-${version.value}")
+    assembly / mainClass := Some("scalaxb.compiler.Main")
+    assembly / assemblyOption := (assembly / assemblyOption).value.withPrependShellScript(
+      Some(sbtassembly.AssemblyPlugin.defaultShellScript)
+    )
+    assembly / assemblyOutputPath := file(s"./${name.value}-${version.value}")
   })
 
 lazy val integration = (project in file("integration"))
@@ -117,7 +118,7 @@ lazy val scalaxbPlugin = (project in file("sbt-scalaxb"))
     pluginCrossBuild / sbtVersion := {
       scalaBinaryVersion.value match {
         case "2.12" => "1.9.9" // set minimum sbt version
-        case _ => "2.0.1"
+        case _      => "2.0.1"
       }
     }
     crossScalaVersions := Seq(scala212, scala3ForSbt)

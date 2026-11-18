@@ -6,9 +6,9 @@ import scalaxb.compiler.wsdl11.Driver
 import scalaxb.stockquote.server._
 
 class Http4sResponseAsScalaxbTest extends TestBase with JaxwsTestBase {
-  override val module = new Driver // with Verbose
+  override val module: Driver = new Driver // with Verbose
 
-  def serviceImpl = new DocumentLiteralBareService()
+  def serviceImpl: DocumentLiteralBareService = new DocumentLiteralBareService()
   def serviceAddress: String = "document-bare"
 
   step {

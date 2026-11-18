@@ -5,7 +5,7 @@ import scalaxb.compiler.ConfigEntry._
 import scalaxb.stockquote.server._
 
 class Wsdl11RpcTest extends TestBase with JaxwsTestBase {
-  override val module = new Driver // with Verbose
+  override val module: Driver = new Driver // with Verbose
 
   def serviceImpl:RpcLiteralService = new RpcLiteralService()
   def serviceAddress: String = "rpc-literal"

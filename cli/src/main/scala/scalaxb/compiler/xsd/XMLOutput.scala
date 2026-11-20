@@ -21,108 +21,146 @@
  */
 
 package scalaxb.compiler.xsd
+
 import scala.collection.mutable
 import scalaxb.compiler.Log
 
+
 trait XMLOutput extends Args {
   private val logger = Log.forName("xsd.XMLOutput")
+
   def buildXMLString(param: Param): String = {
     val ns = elementNamespaceString(param.global, param.namespace, param.qualified)
-    val name = "__obj." + makeParamName(param.name, param.typeSymbol != XsAnyAttribute && param.attribute)
-    
+    val name = "__obj." + makeParamName(
+      param.name,
+      param.typeSymbol != XsAnyAttribute && param.attribute,
+    )
+
     val typeAttribute = param.typeSymbol match {
       case AnyType(symbol) => "true"
       case _               => "false"
     }
-    
-    lazy val xToXMLCode = "x => " + buildToXML(param.baseTypeName, "x, x.namespace, x.key, __scope, " + typeAttribute)
+
+    lazy val xToXMLCode = "x => " + buildToXML(
+      param.baseTypeName,
+      "x, x.namespace, x.key, __scope, " + typeAttribute,
+    )
     lazy val toXMLCode = param.typeSymbol match {
       case AnyType(symbol)      => xToXMLCode
       case XsNillableAny        => xToXMLCode
       case XsDataRecord(member) => xToXMLCode
-      case _ => buildToXML(param.baseTypeName, "_, " + ns + ", " + quote(Some(param.name)) +
+      case _                    => buildToXML(param.baseTypeName, "_, " + ns + ", " + quote(
+        Some(param.name)
+      ) +
         ", __scope, " + typeAttribute)
     }
 
     lazy val optionalType = "Option[" + param.baseTypeName + "]"
-    lazy val xOptionalToXMLCode = "x => " + buildToXML(optionalType, "x, x.namespace, x.key, __scope, " + typeAttribute)
+    lazy val xOptionalToXMLCode = "x => " + buildToXML(
+      optionalType,
+      "x, x.namespace, x.key, __scope, " + typeAttribute,
+    )
     lazy val optionalToXMLCode = param.typeSymbol match {
       case AnyType(symbol)      => xOptionalToXMLCode
       case XsDataRecord(member) => xOptionalToXMLCode
-      case _ => buildToXML(optionalType, "_, " + ns + ", " + quote(Some(param.name)) + ", __scope, " + typeAttribute)
+      case _                    => buildToXML(
+        optionalType,
+        "_, " + ns + ", " + quote(Some(param.name)) + ", __scope, " + typeAttribute,
+      )
     }
 
     lazy val singleToXMLCode = param.typeSymbol match {
       case AnyType(symbol)      => s"(Some($name) map {$xToXMLCode}).get"
       case XsNillableAny        => s"(Some($name) map {$xToXMLCode}).get"
       case XsDataRecord(member) => s"(Some($name) map {$xToXMLCode}).get"
-      case _ => buildToXML(param.baseTypeName, name + ", " + ns + ", " + quote(Some(param.name)) + ", __scope, " + typeAttribute)
+      case _                    => buildToXML(
+        param.baseTypeName,
+        name + ", " + ns + ", " + quote(Some(param.name)) + ", __scope, " + typeAttribute,
+      )
     }
 
-    lazy val singleOptionalToXMLCode = param.typeSymbol match {
-      case AnyType(symbol)      => s"(Some($name) map {$optionalToXMLCode}).get"
-      case XsNillableAny        => s"(Some($name) map {$optionalToXMLCode}).get"
-      case XsDataRecord(member) => s"(Some($name) map {$optionalToXMLCode}).get"
-      case _ => buildToXML(optionalType, name + ", " + ns + ", " + quote(Some(param.name)) + ", __scope, " + typeAttribute)
-    }
-    
+    lazy val singleOptionalToXMLCode =
+      param.typeSymbol match {
+        case AnyType(symbol)      => s"(Some($name) map {$optionalToXMLCode}).get"
+        case XsNillableAny        => s"(Some($name) map {$optionalToXMLCode}).get"
+        case XsDataRecord(member) => s"(Some($name) map {$optionalToXMLCode}).get"
+        case _                    => buildToXML(
+          optionalType,
+          name + ", " + ns + ", " + quote(Some(param.name)) + ", __scope, " + typeAttribute,
+        )
+      }
+
     val retval = (param.cardinality, param.nillable) match {
       case (Multiple, true)  => name + " flatMap { " + optionalToXMLCode + " }"
       case (Multiple, false) => name + " flatMap { " + toXMLCode + " }"
-      case (Optional, true)  => name + " map { " +  optionalToXMLCode + " } getOrElse {Nil}"
+      case (Optional, true)  => name + " map { " + optionalToXMLCode + " } getOrElse {Nil}"
       case (Optional, false) => name + " map { " + toXMLCode + " } getOrElse {Nil}"
       case (Single, true)    => singleOptionalToXMLCode
       case (Single, false)   => singleToXMLCode
     }
-    
+
     retval
   }
-  
-  def buildAttributeString(attr: AttributeLike): String = attr match {
-    case ref: AttributeRef => buildAttributeString(buildAttribute(ref))
-    case x: AttributeDecl  => buildAttributeString(x)
-    case any: AnyAttributeDecl => buildAttributeString(any)
-    case group: AttributeGroupDecl => buildAttributeString(group)
-  }
-  
+
+  def buildAttributeString(attr: AttributeLike): String =
+    attr match {
+      case ref: AttributeRef         => buildAttributeString(buildAttribute(ref))
+      case x: AttributeDecl          => buildAttributeString(x)
+      case any: AnyAttributeDecl     => buildAttributeString(any)
+      case group: AttributeGroupDecl => buildAttributeString(group)
+    }
+
   def buildAttributeString(any: AnyAttributeDecl): String =
     "__obj." + makeParamName(ATTRS_PARAM, false) + ".toList.map {" + newline +
-    indent(4) + "case (key, x) => attr = scala.xml.Attribute((x.namespace map { __scope.getPrefix(_) }).orNull, x.key.orNull, x.value.toString, attr) }"
-    
+    indent(
+      4
+    ) + "case (key, x) => attr = scala.xml.Attribute((x.namespace map { __scope.getPrefix(_) }).orNull, x.key.orNull, x.value.toString, attr) }"
+
   def buildAttributeString(attr: AttributeDecl): String = {
-    val namespaceString = if (attr.global || attr.qualified) "__scope.getPrefix(" + quote(attr.namespace.orNull) + ")"
+    val namespaceString = if (attr.global || attr.qualified) "__scope.getPrefix(" + quote(
+      attr.namespace.orNull
+    ) + ")"
       else "null"
     val name = "__obj." + makeParamName(buildParam(attr).name, true)
-    
+
     if (toCardinality(attr) == Optional)
-      name + ".foreach { x => attr = scala.xml.Attribute(" + namespaceString + ", " + quote(attr.name) +
+      name + ".foreach { x => attr = scala.xml.Attribute(" + namespaceString + ", " + quote(
+        attr.name
+      ) +
         ", " + buildToString("x", attr.typeSymbol) + ", attr) }"
     else attr.defaultValue match {
       case Some(x) =>
-        "if (" + buildToString(name, attr.typeSymbol) + " != " + quote(x) + 
-        ") attr = scala.xml.Attribute(" + namespaceString + ", " + quote(attr.name) + ", " + 
+        "if (" + buildToString(name, attr.typeSymbol) + " != " + quote(x) +
+        ") attr = scala.xml.Attribute(" + namespaceString + ", " + quote(attr.name) + ", " +
         buildToString(name, attr.typeSymbol) + ", attr)"
       case None =>
-        "attr = scala.xml.Attribute(" + namespaceString + ", " + quote(attr.name) + ", " + 
+        "attr = scala.xml.Attribute(" + namespaceString + ", " + quote(attr.name) + ", " +
         buildToString(name, attr.typeSymbol) + ", attr)"
     }
   }
-  
+
   def buildAttributeString(group: AttributeGroupDecl): String =
-    "attr = " + buildFormatterName(group) + ".toAttribute(__obj." + makeParamName(buildParam(group).name, true) + ", attr, __scope)"
-    
-  def buildToString(selector: String, typeSymbol: XsTypeSymbol): String = typeSymbol match {
-    case symbol: BuiltInSimpleTypeSymbol =>
-      buildTypeName(symbol) match {
-        case "javax.xml.namespace.QName" => s"scalaxb.Helper.toString(${selector}, __scope)"
-        case "BigDecimal" => selector + ".bigDecimal.toPlainString"
-        case _ => selector + ".toString"
-      }
-    case ReferenceTypeSymbol(decl: SimpleTypeDecl) =>       
-      decl.content match {
-        case x: SimpTypListDecl => selector + ".map(x => " + buildToString("x", baseType(decl)) + ").mkString(\" \")"
-        case _ => buildToString(selector, baseType(decl))
-      }
-    case _ => selector + ".toString"
-  }
+    "attr = " + buildFormatterName(group) + ".toAttribute(__obj." + makeParamName(
+      buildParam(group).name,
+      true,
+    ) + ", attr, __scope)"
+
+  def buildToString(selector: String, typeSymbol: XsTypeSymbol): String =
+    typeSymbol match {
+      case symbol: BuiltInSimpleTypeSymbol =>
+        buildTypeName(symbol) match {
+          case "javax.xml.namespace.QName" => s"scalaxb.Helper.toString(${selector}, __scope)"
+          case "BigDecimal"                => selector + ".bigDecimal.toPlainString"
+          case _                           => selector + ".toString"
+        }
+      case ReferenceTypeSymbol(decl: SimpleTypeDecl) =>
+        decl.content match {
+          case x: SimpTypListDecl => selector + ".map(x => " + buildToString(
+            "x",
+            baseType(decl),
+          ) + ").mkString(\" \")"
+          case _ => buildToString(selector, baseType(decl))
+        }
+      case _ => selector + ".toString"
+    }
 }

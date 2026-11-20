@@ -1,9 +1,8 @@
-/**
- * @author  e.e d3si9n
- */
+/** @author  e.e d3si9n */
 
-import scalaxb._
-import anycontent._
+import scalaxb.*
+import anycontent.*
+
 
 object AnyUsage {
   def main(args: Array[String]): Unit = {
@@ -16,7 +15,7 @@ object AnyUsage {
     testAny3
     true
   }
-  
+
   def testAny = {
     val subject = <foo xmlns="http://www.example.com/any"
         xmlns:xs="http://www.w3.org/2001/XMLSchema"
@@ -106,13 +105,13 @@ object AnyUsage {
     val document = toXML[Element1](obj, "foo", defaultScope)
     println(document)
   }
-  
+
   def testAny3 = {
     val ExampleCom = new java.net.URI("http://www.example.com/")
     val ExampleQName = javax.xml.namespace.QName.valueOf("{http://www.example.com/any}foo")
     lazy val typeFactory = javax.xml.datatype.DatatypeFactory.newInstance()
     val ExampleDuration = typeFactory.newDuration("P1D")
-    
+
     val subject = <foo xmlns="http://www.example.com/any"
         xmlns:any="http://www.example.com/any"
         xmlns:xs="http://www.w3.org/2001/XMLSchema"
@@ -131,7 +130,7 @@ object AnyUsage {
           <gDay xsi:type="xs:gDay">---10</gDay>
           <gMonth xsi:type="xs:gMonth">--10</gMonth>
         </foo>
-    
+
     val obj = fromXML[Element1](subject)
     obj match {
       case Element1(Seq(

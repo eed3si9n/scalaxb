@@ -22,61 +22,69 @@
 
 package scalaxb.compiler.xsd
 
-import scala.collection.{Map, Set}
+import scala.collection.{ Map, Set }
 import scala.collection.mutable
 import scala.collection.immutable
 import java.net.URI
 import scala.xml.NamespaceBinding
 
+
 abstract class Decl
+
 
 object Incrementor {
   var i: Int = 1000
+
   def nextInt: Int = {
     i = i + 1
     i
   }
 }
 
+
 case class XsdContext(
-  schemas: mutable.ListBuffer[SchemaDecl] = mutable.ListBuffer(),
-  typeNames: mutable.ListMap[NameKey, String] = mutable.ListMap(),
-  enumValueNames: mutable.ListMap[Option[String],
-      mutable.ListMap[(String, EnumerationDecl[?]), String]] = mutable.ListMap(),
-  packageNames: mutable.ListMap[Option[String], Option[String]] = mutable.ListMap(),
-  complexTypes: mutable.ListBuffer[(SchemaDecl, ComplexTypeDecl)] = mutable.ListBuffer(),
-  baseToSubs: mutable.ListMap[ComplexTypeDecl, List[ComplexTypeDecl]] = mutable.ListMap(),
-  compositorParents: mutable.ListMap[HasParticle, ComplexTypeDecl] = mutable.ListMap(),
-  compositorNames: mutable.ListMap[HasParticle, String] = mutable.ListMap(),
-  groups: mutable.ListBuffer[(SchemaDecl, GroupDecl)] = mutable.ListBuffer(),
-  substituteGroups: mutable.ListBuffer[(Option[String], String)] = mutable.ListBuffer(),
-  prefixes: mutable.ListMap[String, String] = mutable.ListMap(),
-  duplicatedTypes: mutable.ListBuffer[(SchemaDecl, Decl)] = mutable.ListBuffer()
+    schemas: mutable.ListBuffer[SchemaDecl] = mutable.ListBuffer(),
+    typeNames: mutable.ListMap[NameKey, String] = mutable.ListMap(),
+    enumValueNames: mutable.ListMap[
+      Option[String],
+      mutable.ListMap[(String, EnumerationDecl[?]), String],
+    ] = mutable.ListMap(),
+    packageNames: mutable.ListMap[Option[String], Option[String]] = mutable.ListMap(),
+    complexTypes: mutable.ListBuffer[(SchemaDecl, ComplexTypeDecl)] = mutable.ListBuffer(),
+    baseToSubs: mutable.ListMap[ComplexTypeDecl, List[ComplexTypeDecl]] = mutable.ListMap(),
+    compositorParents: mutable.ListMap[HasParticle, ComplexTypeDecl] = mutable.ListMap(),
+    compositorNames: mutable.ListMap[HasParticle, String] = mutable.ListMap(),
+    groups: mutable.ListBuffer[(SchemaDecl, GroupDecl)] = mutable.ListBuffer(),
+    substituteGroups: mutable.ListBuffer[(Option[String], String)] = mutable.ListBuffer(),
+    prefixes: mutable.ListMap[String, String] = mutable.ListMap(),
+    duplicatedTypes: mutable.ListBuffer[(SchemaDecl, Decl)] = mutable.ListBuffer(),
 )
+
 
 class ParserConfig {
   var scope: scala.xml.NamespaceBinding = _
   var targetNamespace: Option[String] = None
   var elementQualifiedDefault: Boolean = false
   var attributeQualifiedDefault: Boolean = false
-  val topElems  = mutable.ListMap.empty[String, ElemDecl]
-  val elemList  = mutable.ListBuffer.empty[ElemDecl]
-  val topTypes  = mutable.ListMap.empty[String, TypeDecl]
-  val typeList  = mutable.ListBuffer.empty[TypeDecl]
-  val topAttrs  = mutable.ListMap.empty[String, AttributeDecl]
-  val attrList  = mutable.ListBuffer.empty[AttributeDecl]
+  val topElems = mutable.ListMap.empty[String, ElemDecl]
+  val elemList = mutable.ListBuffer.empty[ElemDecl]
+  val topTypes = mutable.ListMap.empty[String, TypeDecl]
+  val typeList = mutable.ListBuffer.empty[TypeDecl]
+  val topAttrs = mutable.ListMap.empty[String, AttributeDecl]
+  val attrList = mutable.ListBuffer.empty[AttributeDecl]
   val topGroups = mutable.ListMap.empty[String, GroupDecl]
   val topAttrGroups = mutable.ListMap.empty[String, AttributeGroupDecl]
-  val choices   = mutable.ListBuffer.empty[ChoiceDecl]
+  val choices = mutable.ListBuffer.empty[ChoiceDecl]
   val typeToAnnotatable = mutable.ListMap.empty[TypeDecl, Annotatable]
 }
+
 
 object TypeSymbolParser {
   import scalaxb.compiler.Module
 
   val XML_SCHEMA_URI = "http://www.w3.org/2001/XMLSchema"
   val XML_URI = "http://www.w3.org/XML/1998/namespace"
-  
+
   def fromString(name: String, scope: NamespaceBinding, config: ParserConfig): XsTypeSymbol =
     fromString(splitTypeName(name, scope, config.targetNamespace))
 
@@ -93,15 +101,21 @@ object TypeSymbolParser {
     }
   }
 
-  def splitTypeName(name: String, scope: NamespaceBinding, targetNamespace: Option[String]): (Option[String], String) =
+  def splitTypeName(
+      name: String,
+      scope: NamespaceBinding,
+      targetNamespace: Option[String],
+  ): (Option[String], String) =
     if (name.contains('@')) (targetNamespace, name)
     else Module.splitTypeName(name, scope)
 }
 
+
 sealed trait Particle {
   val minOccurs: Int
-  val maxOccurs: Int  
+  val maxOccurs: Int
 }
+
 
 sealed trait HasParticle extends Particle {
   val namespace: Option[String]
@@ -110,11 +124,14 @@ sealed trait HasParticle extends Particle {
   val maxOccurs: Int
 }
 
+
 trait Annotatable {
   val annotation: Option[AnnotationDecl]
 }
 
-case class SchemaDecl(targetNamespace: Option[String],
+
+case class SchemaDecl(
+    targetNamespace: Option[String],
     elementQualifiedDefault: Boolean = false,
     attributeQualifiedDefault: Boolean = false,
     topElems: Map[String, ElemDecl] = Map(),
@@ -128,17 +145,18 @@ case class SchemaDecl(targetNamespace: Option[String],
     topAttrGroups: Map[String, AttributeGroupDecl] = Map(),
     typeToAnnotatable: Map[TypeDecl, Annotatable] = Map(),
     annotation: Option[AnnotationDecl] = None,
-    scope: scala.xml.NamespaceBinding) extends Decl with Annotatable {
-  
+    scope: scala.xml.NamespaceBinding,
+) extends Decl with Annotatable {
+
   val newline = System.getProperty("line.separator")
-  
+
   override def toString: String = {
     "SchemaDecl(" + newline +
     "topElems(" + topElems.valuesIterator.mkString("," + newline) + ")," + newline +
-    "topTypes(" + topTypes.valuesIterator.mkString("," + newline)  + ")," + newline + 
-    "topAttrs(" + topAttrs.valuesIterator.mkString("," + newline)  + ")," + newline + 
-    "topGroups(" + topGroups.valuesIterator.mkString("," + newline)  + ")," + newline + 
-    "topAttrGroups(" + topAttrGroups.valuesIterator.mkString("," + newline)  + ")," + newline +
+    "topTypes(" + topTypes.valuesIterator.mkString("," + newline) + ")," + newline +
+    "topAttrs(" + topAttrs.valuesIterator.mkString("," + newline) + ")," + newline +
+    "topGroups(" + topGroups.valuesIterator.mkString("," + newline) + ")," + newline +
+    "topAttrGroups(" + topAttrGroups.valuesIterator.mkString("," + newline) + ")," + newline +
     "typeList(" + typeList.map(_.name).mkString("," + newline) + ")," + newline +
     "attrList(" + attrList.mkString("," + newline) + ")" + newline +
     ")"
@@ -146,66 +164,71 @@ case class SchemaDecl(targetNamespace: Option[String],
 }
 
 object SchemaDecl {
-  def fromXML(node: scala.xml.Node,
+  def fromXML(
+      node: scala.xml.Node,
       context: XsdContext,
-      config: ParserConfig = new ParserConfig) = {
+      config: ParserConfig = new ParserConfig,
+  ) = {
     val schema = (node \\ "schema").headOption.getOrElse {
-      sys.error("xsd: schema element not found: " + node.toString) }
+      sys.error("xsd: schema element not found: " + node.toString)
+    }
     val targetNamespace = schema.attribute("targetNamespace") map { _.text }
     config.targetNamespace = targetNamespace
     config.scope = schema.scope
     config.elementQualifiedDefault = schema.attribute("elementFormDefault") map {
-      _.text == "qualified"} getOrElse {false}
+      _.text == "qualified" } getOrElse { false }
     config.attributeQualifiedDefault = schema.attribute("attributeFormDefault") map {
-      _.text == "qualified"} getOrElse {false}
+      _.text == "qualified" } getOrElse { false }
 
     for (child <- schema.child) child.label match {
       case "element" =>
-        (child \ "@name").headOption foreach {  x =>
+        (child \ "@name").headOption foreach { x =>
           val elem = ElemDecl.fromXML(child, List(x.text), true, config)
           config.topElems += (elem.name -> elem) }
-      
+
       case "attribute" =>
-        (child \ "@name").headOption foreach {  x =>
+        (child \ "@name").headOption foreach { x =>
           val attr = AttributeDecl.fromXML(child, config, true)
           config.topAttrs += (attr.name -> attr) }
-            
+
       case "attributeGroup" =>
-        (child \ "@name").headOption foreach {  x =>
+        (child \ "@name").headOption foreach { x =>
           val attrGroup = AttributeGroupDecl.fromXML(child, config)
           config.topAttrGroups += (attrGroup.name -> attrGroup) }
-      
+
       case "group" =>
-        (child \ "@name").headOption foreach {  x =>
+        (child \ "@name").headOption foreach { x =>
           val group = GroupDecl.fromXML(child, config)
           config.topGroups += (group.name -> group) }
-      
+
       case "complexType" =>
-        (child \ "@name").headOption foreach {  x =>
+        (child \ "@name").headOption foreach { x =>
           val decl = ComplexTypeDecl.fromXML(child, x.text, List(x.text), config)
           config.typeList += decl
           config.topTypes += (decl.name -> decl) }
-      
+
       case "simpleType" =>
-        (child \ "@name").headOption foreach {  x =>
+        (child \ "@name").headOption foreach { x =>
           val decl = SimpleTypeDecl.fromXML(child, x.text, List(x.text), config)
           config.typeList += decl
           config.topTypes += (decl.name -> decl) }
-      
+
       case _ =>
     }
-    
+
     var scope = schema.scope
     while (scope != null) {
-      if (scope.prefix != null && scope.uri != null &&
-          context.prefixes.get(scope.uri).isEmpty) context.prefixes(scope.uri) = scope.prefix
+      if (scope.prefix != null
+        && scope.uri != null
+        && context.prefixes.get(scope.uri).isEmpty) context.prefixes(scope.uri) = scope.prefix
       scope = scope.parent
     } // while
-                
+
     val annotation = (node \ "annotation").headOption map { x =>
       AnnotationDecl.fromXML(x, config) }
-      
-    SchemaDecl(config.targetNamespace,
+
+    SchemaDecl(
+      config.targetNamespace,
       config.elementQualifiedDefault,
       config.attributeQualifiedDefault,
       immutable.ListMap.empty[String, ElemDecl] ++ config.topElems,
@@ -219,9 +242,11 @@ object SchemaDecl {
       immutable.ListMap.empty[String, AttributeGroupDecl] ++ config.topAttrGroups,
       immutable.ListMap.empty[TypeDecl, Annotatable] ++ config.typeToAnnotatable,
       annotation,
-      schema.scope)
+      schema.scope,
+    )
   }
 }
+
 
 abstract class AttributeLike extends Decl
 
@@ -229,32 +254,40 @@ object AttributeLike {
   def fromParentNode(parent: scala.xml.Node, config: ParserConfig): List[AttributeLike] =
     for (child <- parent.child.toList;
         if child.isInstanceOf[scala.xml.Elem];
-        if List("attribute", "anyAttribute", "attributeGroup").contains(
-          child.label))
+        if List("attribute", "anyAttribute", "attributeGroup").contains(child.label))
       yield fromXML(child, config)
-  
-  private def fromXML(node: scala.xml.Node, config: ParserConfig): AttributeLike  = {
-    if (node.label == "anyAttribute")
-      AnyAttributeDecl.fromXML(node, config)
+
+  private def fromXML(node: scala.xml.Node, config: ParserConfig): AttributeLike = {
+    if (node.label == "anyAttribute") AnyAttributeDecl.fromXML(node, config)
     else if (node.label == "attributeGroup")
       (node \ "@ref").headOption match {
         case Some(x) => AttributeGroupRef.fromXML(node, config)
-        case None => AttributeGroupDecl.fromXML(node, config)
-      }  
+        case None    => AttributeGroupDecl.fromXML(node, config)
+      }
     else (node \ "@ref").headOption match {
       case Some(x) => AttributeRef.fromXML(node, config)
-      case None => AttributeDecl.fromXML(node, config, false)
+      case None    => AttributeDecl.fromXML(node, config, false)
     }
   }
 }
 
+
 abstract class ProcessContents
+
+
 object LaxProcess extends ProcessContents
+
+
 object SkipProcess extends ProcessContents
+
+
 object StrictProcess extends ProcessContents
 
-case class AnyAttributeDecl(namespaceConstraint: List[String],
-  processContents: ProcessContents) extends AttributeLike
+
+case class AnyAttributeDecl(
+    namespaceConstraint: List[String],
+    processContents: ProcessContents,
+) extends AttributeLike
 
 object AnyAttributeDecl {
   def fromXML(node: scala.xml.Node, config: ParserConfig) = {
@@ -268,21 +301,32 @@ object AnyAttributeDecl {
   }
 }
 
+
 abstract class AttributeUse
+
+
 object OptionalUse extends AttributeUse
+
+
 object ProhibitedUse extends AttributeUse
+
+
 object RequiredUse extends AttributeUse
 
-case class AttributeRef(namespace: Option[String],
-  name: String,
-  defaultValue: Option[String],
-  fixedValue: Option[String],
-  use: AttributeUse) extends AttributeLike
+
+case class AttributeRef(
+    namespace: Option[String],
+    name: String,
+    defaultValue: Option[String],
+    fixedValue: Option[String],
+    use: AttributeUse,
+) extends AttributeLike
 
 object AttributeRef {
   def fromXML(node: scala.xml.Node, config: ParserConfig) = {
     val ref = (node \ "@ref").text
-    val (namespace, typeName) = TypeSymbolParser.splitTypeName(ref, node.scope, config.targetNamespace)
+    val (namespace, typeName) =
+      TypeSymbolParser.splitTypeName(ref, node.scope, config.targetNamespace)
     val defaultValue = (node \ "@default").headOption map { _.text }
     val fixedValue = (node \ "@fixed").headOption map { _.text }
     val use = (node \ "@use").text match {
@@ -294,7 +338,9 @@ object AttributeRef {
   }
 }
 
-case class AttributeDecl(namespace: Option[String],
+
+case class AttributeDecl(
+    namespace: Option[String],
     name: String,
     typeSymbol: XsTypeSymbol,
     defaultValue: Option[String] = None,
@@ -302,17 +348,17 @@ case class AttributeDecl(namespace: Option[String],
     use: AttributeUse = OptionalUse,
     qualified: Boolean = false,
     annotation: Option[AnnotationDecl] = None,
-    global: Boolean = true) extends AttributeLike with Annotatable {
+    global: Boolean = true,
+) extends AttributeLike with Annotatable {
   override def toString = "@" + name
 }
 
 object AttributeDecl {
-  def fromXML(node: scala.xml.Node,
-      config: ParserConfig, global: Boolean) = {
+  def fromXML(node: scala.xml.Node, config: ParserConfig, global: Boolean) = {
     val name = (node \ "@name").text
     var typeSymbol: XsTypeSymbol = XsUnknown
     val typeName = (node \ "@type").text
-    
+
     if (typeName != "") {
       typeSymbol = TypeSymbolParser.fromString(typeName, node.scope, config)
     } else {
@@ -323,7 +369,7 @@ object AttributeDecl {
           val symbol = ReferenceTypeSymbol(config.targetNamespace, decl.name)
           symbol.decl = decl
           typeSymbol = symbol
-          
+
         case _ =>
       }
     } // if-else
@@ -336,79 +382,96 @@ object AttributeDecl {
       case _            => OptionalUse
     }
     val qualified = (node \ "@form").headOption map {
-      _.text == "qualified" } getOrElse {config.attributeQualifiedDefault}
+      _.text == "qualified" } getOrElse { config.attributeQualifiedDefault }
     val annotation = (node \ "annotation").headOption map { x =>
       AnnotationDecl.fromXML(x, config) }
 
-    val attr = AttributeDecl(config.targetNamespace,
-      name, typeSymbol, defaultValue, fixedValue, use, qualified, annotation,
-      global)
+    val attr = AttributeDecl(
+      config.targetNamespace,
+      name,
+      typeSymbol,
+      defaultValue,
+      fixedValue,
+      use,
+      qualified,
+      annotation,
+      global,
+    )
     config.attrList += attr
     attr
-  } 
+  }
 }
 
-case class AttributeGroupRef(namespace: Option[String],
-  name: String) extends AttributeLike
+
+case class AttributeGroupRef(namespace: Option[String], name: String) extends AttributeLike
 
 object AttributeGroupRef {
-  def fromXML(node: scala.xml.Node,
-      config: ParserConfig) = {
+  def fromXML(node: scala.xml.Node, config: ParserConfig) = {
     val ref = (node \ "@ref").text
-    val (namespace, typeName) = TypeSymbolParser.splitTypeName(ref, node.scope, config.targetNamespace)
-    
+    val (namespace, typeName) =
+      TypeSymbolParser.splitTypeName(ref, node.scope, config.targetNamespace)
+
     AttributeGroupRef(namespace, typeName)
-  }    
+  }
 }
 
-case class AttributeGroupDecl(namespace: Option[String],
-  name: String,
-  attributes: List[AttributeLike],
-  annotation: Option[AnnotationDecl]) extends AttributeLike with Annotatable
-  
+
+case class AttributeGroupDecl(
+    namespace: Option[String],
+    name: String,
+    attributes: List[AttributeLike],
+    annotation: Option[AnnotationDecl],
+) extends AttributeLike with Annotatable
+
 object AttributeGroupDecl {
-  def fromXML(node: scala.xml.Node,
-      config: ParserConfig) = {
+  def fromXML(node: scala.xml.Node, config: ParserConfig) = {
     val name = (node \ "@name").text
     val attributes = AttributeLike.fromParentNode(node, config)
     val annotation = (node \ "annotation").headOption map { x =>
       AnnotationDecl.fromXML(x, config) }
-    
-    AttributeGroupDecl(config.targetNamespace,
-      name, attributes, annotation)
-  } 
+
+    AttributeGroupDecl(config.targetNamespace, name, attributes, annotation)
+  }
 }
 
-case class ElemRef(namespace: Option[String],
-  name: String,
-  minOccurs: Int,
-  maxOccurs: Int,
-  nillable: Option[Boolean]) extends Decl with Particle
+
+case class ElemRef(
+    namespace: Option[String],
+    name: String,
+    minOccurs: Int,
+    maxOccurs: Int,
+    nillable: Option[Boolean],
+) extends Decl with Particle
 
 object ElemRef {
   def fromXML(node: scala.xml.Node, config: ParserConfig) = {
-    val ref = (node \ "@ref").text   
+    val ref = (node \ "@ref").text
     val minOccurs = CompositorDecl.buildOccurrence((node \ "@minOccurs").text)
     val maxOccurs = CompositorDecl.buildOccurrence((node \ "@maxOccurs").text)
-    val (namespace, typeName) = TypeSymbolParser.splitTypeName(ref, node.scope, config.targetNamespace)
-    val nillable = (node \ "@nillable").headOption map { case x => x.text == "true" || x.text == "1" }
-    
+    val (namespace, typeName) =
+      TypeSymbolParser.splitTypeName(ref, node.scope, config.targetNamespace)
+    val nillable = (node \ "@nillable").headOption map { case x => (x.text == "true"
+      || x.text == "1") }
+
     ElemRef(namespace, typeName, minOccurs, maxOccurs, nillable)
   }
 }
 
-case class ElemDecl(namespace: Option[String],
-  name: String,
-  typeSymbol: XsTypeSymbol,
-  defaultValue: Option[String],
-  fixedValue: Option[String],  
-  minOccurs: Int,
-  maxOccurs: Int,
-  nillable: Option[Boolean] = None,
-  global: Boolean = false,
-  qualified: Boolean = false,
-  substitutionGroup: Option[(Option[String], String)] = None,
-  annotation: Option[AnnotationDecl] = None) extends Decl with Particle with Annotatable
+
+case class ElemDecl(
+    namespace: Option[String],
+    name: String,
+    typeSymbol: XsTypeSymbol,
+    defaultValue: Option[String],
+    fixedValue: Option[String],
+    minOccurs: Int,
+    maxOccurs: Int,
+    nillable: Option[Boolean] = None,
+    global: Boolean = false,
+    qualified: Boolean = false,
+    substitutionGroup: Option[(Option[String], String)] = None,
+    annotation: Option[AnnotationDecl] = None,
+) extends Decl with Particle with Annotatable
 
 object ElemDecl {
   def fromXML(node: scala.xml.Node, family: List[String], global: Boolean, config: ParserConfig) = {
@@ -420,41 +483,58 @@ object ElemDecl {
     } getOrElse {
       for (child <- node.child) child.label match {
         case "complexType" =>
-          val decl = ComplexTypeDecl.fromXML(child, s"@${(family :+ name).mkString("/")}", family :+ name, config)
+          val decl = ComplexTypeDecl.fromXML(
+            child,
+            s"@${(family :+ name).mkString("/")}",
+            family :+ name,
+            config,
+          )
           config.typeList += decl
           val symbol = ReferenceTypeSymbol(config.targetNamespace, decl.name)
           symbol.decl = decl
           typeSymbol = symbol
-          
+
         case "simpleType" =>
           val decl = SimpleTypeDecl.fromXML(child, family :+ name, config)
           config.typeList += decl
           val symbol = ReferenceTypeSymbol(config.targetNamespace, decl.name)
           symbol.decl = decl
           typeSymbol = symbol
-        
+
         case _ =>
       }
     } // if-else
 
     val qualified = (node \ "@form").headOption map {
-      _.text == "qualified" } getOrElse {config.elementQualifiedDefault}
+      _.text == "qualified" } getOrElse { config.elementQualifiedDefault }
     val defaultValue = (node \ "@default").headOption map { _.text }
     val fixedValue = (node \ "@fixed").headOption map { _.text }
     val minOccurs = CompositorDecl.buildOccurrence((node \ "@minOccurs").text)
     val maxOccurs = CompositorDecl.buildOccurrence((node \ "@maxOccurs").text)
-    val nillable = (node \ "@nillable").headOption map { case x => x.text == "true" || x.text == "1" }
+    val nillable = (node \ "@nillable").headOption map { case x => (x.text == "true"
+      || x.text == "1") }
     val substitutionGroup = (node \ "@substitutionGroup").headOption map { x =>
       TypeSymbolParser.splitTypeName(x.text, node.scope, config.targetNamespace) }
     val annotation = (node \ "annotation").headOption map { x =>
       AnnotationDecl.fromXML(x, config) }
-    
-    val elem = ElemDecl(config.targetNamespace,
-      name, typeSymbol, defaultValue, fixedValue, minOccurs, maxOccurs, nillable, global, qualified,
-      substitutionGroup, annotation)
+
+    val elem = ElemDecl(
+      config.targetNamespace,
+      name,
+      typeSymbol,
+      defaultValue,
+      fixedValue,
+      minOccurs,
+      maxOccurs,
+      nillable,
+      global,
+      qualified,
+      substitutionGroup,
+      annotation,
+    )
     config.elemList += elem
 
-    (node \ "@type").headOption foreach  { _ =>
+    (node \ "@type").headOption foreach { _ =>
       typeSymbol match {
         case ReferenceTypeSymbol(decl: ComplexTypeDecl) =>
           config.typeToAnnotatable += (decl -> elem)
@@ -474,13 +554,15 @@ trait TypeDecl extends Decl with Annotatable {
   def name: String
 }
 
-/** simple types cannot have element children or attributes.
- */
-case class SimpleTypeDecl(namespace: Option[String],
+
+/** simple types cannot have element children or attributes. */
+case class SimpleTypeDecl(
+    namespace: Option[String],
     name: String,
     family: List[String],
     content: ContentTypeDecl,
-    annotation: Option[AnnotationDecl]) extends TypeDecl {
+    annotation: Option[AnnotationDecl],
+) extends TypeDecl {
   override def toString(): String = name + "(" + content.toString + ")"
   def isNamed = (List(name) == family)
 }
@@ -488,96 +570,121 @@ case class SimpleTypeDecl(namespace: Option[String],
 object SimpleTypeDecl {
   def fromXML(node: scala.xml.Node, family: List[String], config: ParserConfig): SimpleTypeDecl =
     fromXML(node, "simpleType@" + family.mkString("/") + ":" + Incrementor.nextInt, family, config)
-  
-  def fromXML(node: scala.xml.Node, name: String, family: List[String], config: ParserConfig): SimpleTypeDecl = {
+
+  def fromXML(
+      node: scala.xml.Node,
+      name: String,
+      family: List[String],
+      config: ParserConfig,
+  ): SimpleTypeDecl = {
     var content: ContentTypeDecl = null
     for (child <- node.child) child.label match {
       case "restriction" => content = SimpTypRestrictionDecl.fromXML(child, family, config)
       case "list"        => content = SimpTypListDecl.fromXML(child, family, config)
       case "union"       => content = SimpTypUnionDecl.fromXML(child, config)
-      case _ =>     
+      case _             =>
     }
-    
+
     val annotation = (node \ "annotation").headOption map { x =>
       AnnotationDecl.fromXML(x, config) }
-    
+
     SimpleTypeDecl(config.targetNamespace, name, family, content, annotation)
   }
 }
 
-/** complex types may have element children and attributes.
- */
-case class ComplexTypeDecl(namespace: Option[String],
+
+/** complex types may have element children and attributes. */
+case class ComplexTypeDecl(
+    namespace: Option[String],
     name: String,
     family: List[String],
     abstractValue: Boolean,
     mixed: Boolean,
     content: HasComplexTypeContent,
     attributes: List[AttributeLike],
-    annotation: Option[AnnotationDecl]) extends TypeDecl {
+    annotation: Option[AnnotationDecl],
+) extends TypeDecl {
   def isNamed = (List(name) == family)
 }
 
-object ComplexTypeDecl {  
+object ComplexTypeDecl {
   def fromXML(node: scala.xml.Node, name: String, family: List[String], config: ParserConfig) = {
     val abstractValue = (node \ "@abstract").headOption match {
       case Some(x) => x.text.toBoolean
       case None    => false
     }
-    
+
     val mixed = (node \ "@mixed").headOption match {
       case Some(x) => x.text.toBoolean
       case None    => false
     }
-    
+
     val attributes = AttributeLike.fromParentNode(node, config)
     var content: HasComplexTypeContent = ComplexContentDecl.fromAttributes(attributes)
-    
+
     for (child <- node.child) child.label match {
       case "group" =>
         content = ComplexContentDecl.fromCompositor(
-          CompositorDecl.fromXML(child, family, config), attributes)
+          CompositorDecl.fromXML(child, family, config),
+          attributes,
+        )
       case "all" =>
         content = ComplexContentDecl.fromCompositor(
-          CompositorDecl.fromXML(child, family, config), attributes)
+          CompositorDecl.fromXML(child, family, config),
+          attributes,
+        )
       case "choice" =>
         content = ComplexContentDecl.fromCompositor(
-          CompositorDecl.fromXML(child, family, config), attributes)
+          CompositorDecl.fromXML(child, family, config),
+          attributes,
+        )
       case "sequence" =>
         content = ComplexContentDecl.fromCompositor(
-          CompositorDecl.fromXML(child, family, config), attributes)
+          CompositorDecl.fromXML(child, family, config),
+          attributes,
+        )
       case "simpleContent" =>
         content = SimpleContentDecl.fromXML(child, family, config)
       case "complexContent" =>
         content = ComplexContentDecl.fromXML(child, family, config)
       case _ =>
     }
-    
+
     val annotation = (node \ "annotation").headOption map { x =>
       AnnotationDecl.fromXML(x, config) }
-    
+
     // val contentModel = ContentModel.fromSchema(firstChild(node))
-    ComplexTypeDecl(config.targetNamespace, name, family, abstractValue, mixed, 
-      content, attributes, annotation)
+    ComplexTypeDecl(
+      config.targetNamespace,
+      name,
+      family,
+      abstractValue,
+      mixed,
+      content,
+      attributes,
+      annotation,
+    )
   }
 }
+
 
 trait HasComplexTypeContent {
   val content: ComplexTypeContent
 }
 
+
 trait HasContent {
   val content: ContentTypeDecl
 }
 
-/** complex types with simple content only allow character content.
- */
+
+/** complex types with simple content only allow character content. */
 case class SimpleContentDecl(content: ComplexTypeContent) extends Decl with HasComplexTypeContent
 
 object SimpleContentDecl {
   def fromXML(node: scala.xml.Node, family: List[String], config: ParserConfig) = {
     var content: ComplexTypeContent = null
-    
+
     for (child <- node.child) child.label match {
       case "restriction" =>
         content = SimpContRestrictionDecl.fromXML(child, family, config)
@@ -585,28 +692,27 @@ object SimpleContentDecl {
         content = SimpContExtensionDecl.fromXML(child, family, config)
       case _ =>
     }
-       
+
     SimpleContentDecl(content)
   }
 }
 
-/** only complex types with complex content allow child elements
- */
+
+/** only complex types with complex content allow child elements */
 case class ComplexContentDecl(content: ComplexTypeContent) extends Decl with HasComplexTypeContent
 
 object ComplexContentDecl {
-  lazy val empty =
-    ComplexContentDecl(CompContRestrictionDecl.empty)
-  
+  lazy val empty = ComplexContentDecl(CompContRestrictionDecl.empty)
+
   def fromAttributes(attributes: List[AttributeLike]) =
     ComplexContentDecl(CompContRestrictionDecl.fromAttributes(attributes))
-  
+
   def fromCompositor(compositor: HasParticle, attributes: List[AttributeLike]) =
     ComplexContentDecl(CompContRestrictionDecl.fromCompositor(compositor, attributes))
-  
+
   def fromXML(node: scala.xml.Node, family: List[String], config: ParserConfig) = {
     var content: ComplexTypeContent = CompContRestrictionDecl.empty
-    
+
     for (child <- node.child) child.label match {
       case "restriction" =>
         content = CompContRestrictionDecl.fromXML(child, family, config)
@@ -614,25 +720,29 @@ object ComplexContentDecl {
         content = CompContExtensionDecl.fromXML(child, family, config)
       case _ =>
     }
-    
+
     ComplexContentDecl(content)
   }
 }
 
+
 abstract class CompositorDecl extends Decl
 
 object CompositorDecl {
-  def fromNodeSeq(seq: scala.xml.NodeSeq, family: List[String], config: ParserConfig): List[Particle] =
+  def fromNodeSeq(
+      seq: scala.xml.NodeSeq,
+      family: List[String],
+      config: ParserConfig,
+  ): List[Particle] =
     (seq.toList.collect {
       case elem: scala.xml.Elem
-        if (elem.label != "annotation") &&
-          (elem.label != "attribute") => elem
-    }) map(node =>
+        if (elem.label != "annotation") && (elem.label != "attribute") => elem
+    }) map (node =>
       node.label match {
-        case "element"  =>
+        case "element" =>
           if ((node \ "@name").headOption.isDefined) ElemDecl.fromXML(node, family, false, config)
           else if ((node \ "@ref").headOption.isDefined) ElemRef.fromXML(node, config)
-          else sys.error("xsd: Unspported content type " + node.toString) 
+          else sys.error("xsd: Unspported content type " + node.toString)
         case "choice"   => ChoiceDecl.fromXML(node, family, config)
         case "sequence" => SequenceDecl.fromXML(node, family, config)
         case "all"      => AllDecl.fromXML(node, family, config)
@@ -640,85 +750,115 @@ object CompositorDecl {
         case "group"    =>
           if ((node \ "@name").headOption.isDefined) GroupDecl.fromXML(node, config)
           else if ((node \ "@ref").headOption.isDefined) GroupRef.fromXML(node, config)
-          else sys.error("xsd: Unspported content type " + node.toString) 
+          else sys.error("xsd: Unspported content type " + node.toString)
 
-        case _ => sys.error("xsd: Unspported content type " + node.label)    
+        case _ => sys.error("xsd: Unspported content type " + node.label)
       }
     )
-  
-  def fromXML(node: scala.xml.Node, family: List[String], config: ParserConfig): HasParticle = node.label match {
-    case "choice"   => ChoiceDecl.fromXML(node, family, config)
-    case "sequence" => SequenceDecl.fromXML(node, family, config)
-    case "all"      => AllDecl.fromXML(node, family, config)
-    case "group"    =>
-      if ((node \ "@name").headOption.isDefined) GroupDecl.fromXML(node, config)
-      else if ((node \ "@ref").headOption.isDefined) GroupRef.fromXML(node, config)
-      else sys.error("xsd: Unspported content type " + node.toString)
-    
-    case _ => sys.error("xsd: Unspported content type " + node.label)
-  }
-  
+
+  def fromXML(node: scala.xml.Node, family: List[String], config: ParserConfig): HasParticle =
+    node.label match {
+      case "choice"   => ChoiceDecl.fromXML(node, family, config)
+      case "sequence" => SequenceDecl.fromXML(node, family, config)
+      case "all"      => AllDecl.fromXML(node, family, config)
+      case "group"    =>
+        if ((node \ "@name").headOption.isDefined) GroupDecl.fromXML(node, config)
+        else if ((node \ "@ref").headOption.isDefined) GroupRef.fromXML(node, config)
+        else sys.error("xsd: Unspported content type " + node.toString)
+
+      case _ => sys.error("xsd: Unspported content type " + node.label)
+    }
+
   def buildOccurrence(value: String) =
     if (value == "") 1
     else if (value == "unbounded") Integer.MAX_VALUE
     else value.toInt
 }
 
-case class SequenceDecl(namespace: Option[String],
-  particles: List[Particle],
-  minOccurs: Int,
-  maxOccurs: Int,
-  uniqueId: Int = Incrementor.nextInt) extends CompositorDecl with HasParticle
+
+case class SequenceDecl(
+    namespace: Option[String],
+    particles: List[Particle],
+    minOccurs: Int,
+    maxOccurs: Int,
+    uniqueId: Int = Incrementor.nextInt,
+) extends CompositorDecl with HasParticle
 
 object SequenceDecl {
   def fromXML(node: scala.xml.Node, family: List[String], config: ParserConfig) = {
     val minOccurs = CompositorDecl.buildOccurrence((node \ "@minOccurs").text)
     val maxOccurs = CompositorDecl.buildOccurrence((node \ "@maxOccurs").text)
-    SequenceDecl(config.targetNamespace, CompositorDecl.fromNodeSeq(node.child, family, config), minOccurs, maxOccurs)
+    SequenceDecl(
+      config.targetNamespace,
+      CompositorDecl.fromNodeSeq(node.child, family, config),
+      minOccurs,
+      maxOccurs,
+    )
   }
 }
 
-case class ChoiceDecl(namespace: Option[String],
-  particles: List[Particle],
-  minOccurs: Int,
-  maxOccurs: Int,
-  uniqueId: Int = Incrementor.nextInt) extends CompositorDecl with HasParticle
+
+case class ChoiceDecl(
+    namespace: Option[String],
+    particles: List[Particle],
+    minOccurs: Int,
+    maxOccurs: Int,
+    uniqueId: Int = Incrementor.nextInt,
+) extends CompositorDecl with HasParticle
 
 object ChoiceDecl {
   def fromXML(node: scala.xml.Node, family: List[String], config: ParserConfig) = {
     val minOccurs = CompositorDecl.buildOccurrence((node \ "@minOccurs").text)
     val maxOccurs = CompositorDecl.buildOccurrence((node \ "@maxOccurs").text)
-    val choice = ChoiceDecl(config.targetNamespace, CompositorDecl.fromNodeSeq(node.child, family, config), minOccurs, maxOccurs)
+    val choice = ChoiceDecl(
+      config.targetNamespace,
+      CompositorDecl.fromNodeSeq(node.child, family, config),
+      minOccurs,
+      maxOccurs,
+    )
     config.choices += choice
     choice
   }
 }
 
-case class AllDecl(namespace: Option[String],
-  particles: List[Particle],
-  minOccurs: Int,
-  maxOccurs: Int,
-  uniqueId: Int = Incrementor.nextInt) extends CompositorDecl with HasParticle
+
+case class AllDecl(
+    namespace: Option[String],
+    particles: List[Particle],
+    minOccurs: Int,
+    maxOccurs: Int,
+    uniqueId: Int = Incrementor.nextInt,
+) extends CompositorDecl with HasParticle
 
 object AllDecl {
   def fromXML(node: scala.xml.Node, family: List[String], config: ParserConfig) = {
     val minOccurs = CompositorDecl.buildOccurrence((node \ "@minOccurs").text)
     val maxOccurs = CompositorDecl.buildOccurrence((node \ "@maxOccurs").text)
-    AllDecl(config.targetNamespace, CompositorDecl.fromNodeSeq(node.child, family, config), minOccurs, maxOccurs)
+    AllDecl(
+      config.targetNamespace,
+      CompositorDecl.fromNodeSeq(node.child, family, config),
+      minOccurs,
+      maxOccurs,
+    )
   }
 }
 
-case class AnyDecl(minOccurs: Int,
-  maxOccurs: Int,
-  namespaceConstraint: List[String],
-  processContents: ProcessContents,
-  uniqueId: Int = Incrementor.nextInt) extends CompositorDecl with Particle
+
+case class AnyDecl(
+    minOccurs: Int,
+    maxOccurs: Int,
+    namespaceConstraint: List[String],
+    processContents: ProcessContents,
+    uniqueId: Int = Incrementor.nextInt,
+) extends CompositorDecl with Particle
 
 object AnyDecl {
   def fromXML(node: scala.xml.Node, config: ParserConfig) = {
     val minOccurs = CompositorDecl.buildOccurrence((node \ "@minOccurs").text)
     val maxOccurs = CompositorDecl.buildOccurrence((node \ "@maxOccurs").text)
-    val namespaceConstraint = (node \ "@namespace").headOption map { _.text.split(' ').toList } getOrElse {Nil}
+    val namespaceConstraint = (node \ "@namespace").headOption map {
+      _.text.split(' ').toList
+    } getOrElse { Nil }
     val processContents = (node \ "@processContents").text match {
       case "lax"  => LaxProcess
       case "skip" => SkipProcess
@@ -728,48 +868,64 @@ object AnyDecl {
   }
 }
 
-case class GroupRef(namespace: Option[String],
-  name: String,
-  particles: List[Particle],
-  minOccurs: Int,
-  maxOccurs: Int) extends CompositorDecl with HasParticle
+
+case class GroupRef(
+    namespace: Option[String],
+    name: String,
+    particles: List[Particle],
+    minOccurs: Int,
+    maxOccurs: Int,
+) extends CompositorDecl with HasParticle
 
 object GroupRef {
   def fromXML(node: scala.xml.Node, config: ParserConfig) = {
-    val ref = (node \ "@ref").text   
+    val ref = (node \ "@ref").text
     val minOccurs = CompositorDecl.buildOccurrence((node \ "@minOccurs").text)
     val maxOccurs = CompositorDecl.buildOccurrence((node \ "@maxOccurs").text)
-    val (namespace, typeName) = TypeSymbolParser.splitTypeName(ref, node.scope, config.targetNamespace)
-    
+    val (namespace, typeName) =
+      TypeSymbolParser.splitTypeName(ref, node.scope, config.targetNamespace)
+
     GroupRef(namespace, typeName, Nil, minOccurs, maxOccurs)
   }
 }
 
-case class GroupDecl(namespace: Option[String],
-  name: String,
-  particles: List[Particle],
-  minOccurs: Int,
-  maxOccurs: Int,
-  annotation: Option[AnnotationDecl]) extends CompositorDecl with HasParticle with Annotatable
+
+case class GroupDecl(
+    namespace: Option[String],
+    name: String,
+    particles: List[Particle],
+    minOccurs: Int,
+    maxOccurs: Int,
+    annotation: Option[AnnotationDecl],
+) extends CompositorDecl with HasParticle with Annotatable
 
 object GroupDecl {
   def fromXML(node: scala.xml.Node, config: ParserConfig) = {
     val name = (node \ "@name").text
     val minOccurs = CompositorDecl.buildOccurrence((node \ "@minOccurs").text)
     val maxOccurs = CompositorDecl.buildOccurrence((node \ "@maxOccurs").text)
-    
+
     val annotation = (node \ "annotation").headOption map { x =>
       AnnotationDecl.fromXML(x, config) }
-    val group = GroupDecl(config.targetNamespace, name,
-      CompositorDecl.fromNodeSeq(node.child, List(name), config), minOccurs, maxOccurs,
-      annotation)
+    val group = GroupDecl(
+      config.targetNamespace,
+      name,
+      CompositorDecl.fromNodeSeq(node.child, List(name), config),
+      minOccurs,
+      maxOccurs,
+      annotation,
+    )
     // config.choices += choice
     group
   }
 }
 
-case class SchemaLite(targetNamespace: Option[String],
-    imports: List[ImportDecl], includes: List[IncludeDecl])
+
+case class SchemaLite(
+    targetNamespace: Option[String],
+    imports: List[ImportDecl],
+    includes: List[IncludeDecl],
+)
 
 object SchemaLite {
   def fromXML(node: scala.xml.Node) = {
@@ -777,25 +933,25 @@ object SchemaLite {
       sys.error("xsd: schema element not found: " + node.toString)
     }
     val targetNamespace = schema.attribute("targetNamespace") map { _.text }
-    
+
     var importList: List[ImportDecl] = Nil
     for (node <- schema \ "import") {
       val decl = ImportDecl.fromXML(node)
       importList = decl :: importList
     }
-    
+
     var includeList: List[IncludeDecl] = Nil
     for (node <- schema \ "include") {
       val decl = IncludeDecl.fromXML(node)
       includeList = decl :: includeList
     }
-    
+
     SchemaLite(targetNamespace, importList.reverse, includeList.reverse)
   }
 }
 
-case class ImportDecl(namespace: Option[String],
-    schemaLocation: Option[String]) extends Decl
+
+case class ImportDecl(namespace: Option[String], schemaLocation: Option[String]) extends Decl
 
 object ImportDecl {
   def fromXML(node: scala.xml.Node) = {
@@ -804,6 +960,7 @@ object ImportDecl {
     ImportDecl(namespace, schemaLocation)
   }
 }
+
 
 case class IncludeDecl(schemaLocation: String) extends Decl
 
@@ -814,6 +971,7 @@ object IncludeDecl {
   }
 }
 
+
 case class AnnotationDecl(documentations: Seq[DocumentationDecl]) extends Decl
 
 object AnnotationDecl {
@@ -821,15 +979,15 @@ object AnnotationDecl {
     AnnotationDecl(
       for (child <- node \ "documentation")
         yield DocumentationDecl.fromXML(child, config))
-  }  
+  }
 }
+
 
 case class DocumentationDecl(any: collection.Seq[Any]) extends Decl
 
 object DocumentationDecl {
-  def fromXML(node: scala.xml.Node, config: ParserConfig) =
-    DocumentationDecl(node.child.collect {
-      case x: scala.xml.Text => x.data
-      case x => x
-    })
+  def fromXML(node: scala.xml.Node, config: ParserConfig) = DocumentationDecl(node.child.collect {
+    case x: scala.xml.Text => x.data
+    case x                 => x
+  })
 }

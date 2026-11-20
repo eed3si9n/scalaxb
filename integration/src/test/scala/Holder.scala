@@ -22,9 +22,11 @@
 
 class Holder {
   var value: Any = _
-  override def toString: String = value match {
-    case s: String => s
-    case ref: AnyRef => ref.toString
-    case _ => super.toString
-  }
+
+  override def toString: String =
+    value match {
+      case s: String   => s
+      case ref: AnyRef => ref.toString
+      case _           => super.toString
+    }
 }

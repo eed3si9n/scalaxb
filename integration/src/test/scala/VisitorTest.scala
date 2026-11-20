@@ -1,10 +1,11 @@
 import scalaxb.compiler.Config
-import scalaxb.compiler.ConfigEntry._
+import scalaxb.compiler.ConfigEntry.*
+
 
 class VisitorTest extends TestBase {
   val schema = resource("anotherSimpleSchema.xsd")
-  val targetXml =
-    (<n:aElem xmlns:n="http://simple/main">
+
+  val targetXml = (<n:aElem xmlns:n="http://simple/main">
       <n:bElem>
         <n:cElem>Foo</n:cElem>
       </n:bElem>
@@ -39,7 +40,7 @@ class VisitorTest extends TestBase {
     """List(Foo, Bar, Boo, 3)"""
   )
 
-  "Visitor should have a working visiting capability" in repl(generated) (s"""
+  "Visitor should have a working visiting capability" in repl(generated)(s"""
     $setup
 
     var i = 0
@@ -50,7 +51,7 @@ class VisitorTest extends TestBase {
   """,
   "3")
 
-  "Visitor should be capable to skip children on demand" in repl(generated) (s"""
+  "Visitor should be capable to skip children on demand" in repl(generated)(s"""
     $setup
 
     var i = 0

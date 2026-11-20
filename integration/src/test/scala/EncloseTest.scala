@@ -1,5 +1,6 @@
-import scalaxb.compiler.{Config}
-import scalaxb.compiler.ConfigEntry._
+import scalaxb.compiler.{ Config }
+import scalaxb.compiler.ConfigEntry.*
+
 
 class EncloseTest extends TestBase {
   val config = Config.default.update(PackageNames(Map(None -> Some("enclose")))).

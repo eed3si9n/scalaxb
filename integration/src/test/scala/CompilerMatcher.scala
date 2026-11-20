@@ -23,6 +23,7 @@
 import org.specs2.matcher.*
 import java.io.{ File }
 import scala.tools.nsc.GenericRunnerSettings
+import scala.tools.nsc.settings.ScalaVersion
 import scala.reflect.internal.util.{ SourceFile, BatchSourceFile }
 import scala.tools.nsc.io.{ PlainFile }
 import scala.tools.nsc.reporters.{ ConsoleReporter }
@@ -144,6 +145,7 @@ trait CompilerMatcher extends CompilerMatcherBase {
     grs.deprecation.value = deprecation
     grs.feature.value = feature
     grs.fatalWarnings.value = fatalWarnings
+    grs.source.value = ScalaVersion("3")
     if (lint) {
       grs.lint.value ++= grs.LintWarnings.allLintWarnings
     }

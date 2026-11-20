@@ -5,7 +5,7 @@ import scalaxb.compiler.ConfigEntry._
 import scalaxb.compiler.xsd.Driver
 
 class DispatchResponseAsScalaxbTest extends TestBase with JaxrsTestBase {
-  override val module = new Driver // with Verbose
+  override val module: Driver = new Driver // with Verbose
 
   def serviceImpl:RestService = new RestService()
   def serviceAddress: String = "dispatch-response-as-scalaxb"

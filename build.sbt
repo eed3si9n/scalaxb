@@ -36,6 +36,7 @@ lazy val commonSettings = Seq(
         Nil
       } else {
         Seq(
+          "-Xsource:3",
           "-release:8",
         )
       }
@@ -76,7 +77,10 @@ lazy val app = (project in file("cli"))
   .settings(nocomma {
     name := "scalaxb"
     crossScalaVersions := Seq(scala3, scala213, scala212)
-    scalaVersion := scala212
+    scalaVersion := {
+      if ((LocalProject("scalaxbPlugin") / scalaBinaryVersion).value == "3") scala3
+      else scala212
+    }
     resolvers += sbtResolver.value
     libraryDependencies ++= appDependencies(scalaVersion.value)
     scalacOptions := {
@@ -113,14 +117,16 @@ lazy val scalaxbPlugin = (project in file("sbt-scalaxb"))
   .settings(commonSettings)
   .settings(nocomma {
     name := "sbt-scalaxb"
+    scalaVersion := scala212
     description := """sbt plugin to run scalaxb"""
     pluginCrossBuild / sbtVersion := {
       scalaBinaryVersion.value match {
         case "2.12" => "1.9.9" // set minimum sbt version
-        case _ => "2.0.1"
+        case _ => "2.1.0"
       }
     }
     crossScalaVersions := Seq(scala212, scala3ForSbt)
+    scriptedSbt := (if (scalaBinaryVersion.value == "2.12") "1.13.1" else "2.1.0")
     scriptedLaunchOpts := { scriptedLaunchOpts.value ++
       Seq("-Xmx1024M", "-Dplugin.version=" + version.value)
     }

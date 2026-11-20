@@ -21,6 +21,7 @@
  */
 import scala.tools.nsc.interpreter.IMain
 
+
 trait IMainWithLastReq extends IMain {
   def lastReq: Request
 }

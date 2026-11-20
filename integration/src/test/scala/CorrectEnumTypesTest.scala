@@ -1,5 +1,6 @@
 import scalaxb.compiler.Config
-import scalaxb.compiler.ConfigEntry._
+import scalaxb.compiler.ConfigEntry.*
+
 
 class CorrectEnumTypesTest extends TestBase {
   val schema = resource("correctEnumTestSchema.xsd")
@@ -15,6 +16,9 @@ class CorrectEnumTypesTest extends TestBase {
     , """scalaxb.fromXML[enumtypes.Holder](
           <xn:holder xmlns:xn="http://simple/main" dummy="0"/>
         ).toString"""),
-     generated) must evaluateTo("Holder(Map(@dummy -> DataRecord(00)))", outdir = "./tmp")
+     generated) must evaluateTo(
+       "Holder(Map(@dummy -> DataRecord(00)))",
+       outdir = "./tmp",
+     )
   }
 }

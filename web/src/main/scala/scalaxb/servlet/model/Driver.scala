@@ -1,7 +1,8 @@
 package scalaxb.servlet.model
 
-import scalaxb.compiler.{Config, CanBeRawSchema, CanBeWriter, CustomXML, Module}
-import java.io.{File}
+import scalaxb.compiler.{ Config, CanBeRawSchema, CanBeWriter, CustomXML, Module }
+import java.io.{ File }
+
 
 object Driver {
   def process(files: Seq[SchemaFile], config: Config) = {
@@ -13,7 +14,10 @@ object Driver {
     }
     implicit val fileWriter = new CanBeWriter[ScalaFile] {
       override def toWriter(value: ScalaFile) = value.printout
-      override def newInstance(packageName: Option[String], fileName: String) = new ScalaFile(fileName)
+
+      override def newInstance(packageName: Option[String], fileName: String) = new ScalaFile(
+        fileName
+      )
     }
 
     module match {

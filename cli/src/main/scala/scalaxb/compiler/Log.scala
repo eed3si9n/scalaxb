@@ -21,16 +21,17 @@
  */
 package scalaxb.compiler
 
-import org.apache.logging.log4j.{Logger, LogManager, Level}
+import org.apache.logging.log4j.{ Logger, LogManager, Level }
 import org.apache.logging.log4j.core.appender.ConsoleAppender
-import org.apache.logging.log4j.core.layout.{PatternLayout, AbstractStringLayout}
+import org.apache.logging.log4j.core.layout.{ PatternLayout, AbstractStringLayout }
 import org.apache.logging.log4j.core.LogEvent
+
 
 case class Log(logger: Logger) {
   def info(message: String, args: Any*): Unit = {
     if (args.isEmpty) logger.info(message)
     else try {
-      logger.info(message.format(args: _*))
+      logger.info(message.format(args*))
     }
     catch {
       case _: Throwable => logger.info(message)
@@ -40,7 +41,7 @@ case class Log(logger: Logger) {
   def debug(message: String, args: Any*): Unit = {
     if (args.isEmpty) logger.debug(message)
     else try {
-      logger.debug(message.format(args: _*))
+      logger.debug(message.format(args*))
     }
     catch {
       case _: Throwable => logger.debug(message)
@@ -50,7 +51,7 @@ case class Log(logger: Logger) {
   def warn(message: String, args: Any*): Unit = {
     if (args.isEmpty) logger.warn(message)
     else try {
-      logger.warn(message.format(args: _*))
+      logger.warn(message.format(args*))
     }
     catch {
       case _: Throwable => logger.warn(message)
@@ -60,7 +61,7 @@ case class Log(logger: Logger) {
   def error(message: String, args: Any*): Unit = {
     if (args.isEmpty) logger.error(message)
     else try {
-      logger.error(message.format(args: _*))
+      logger.error(message.format(args*))
     }
     catch {
       case _: Throwable => logger.error(message)
@@ -70,7 +71,7 @@ case class Log(logger: Logger) {
   def fatal(message: String, args: Any*): Unit = {
     if (args.isEmpty) logger.fatal(message)
     else try {
-      logger.fatal(message.format(args: _*))
+      logger.fatal(message.format(args*))
     }
     catch {
       case _: Throwable => logger.fatal(message)
@@ -93,9 +94,7 @@ object Log {
     root.addAppender(console)
   }
 
-  /**
-   * Formats log messages. Prepends a '!' to each line of an exception.
-   */
+  /** Formats log messages. Prepends a '!' to each line of an exception. */
   class Formatter extends AbstractStringLayout(PatternLayout.createDefaultLayout().getCharset) {
 
     override def toSerializable(event: LogEvent): String = {

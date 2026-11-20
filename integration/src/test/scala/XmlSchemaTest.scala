@@ -1,13 +1,16 @@
 import java.io.File
 import scalaxb.compiler.Config
 import scalaxb.compiler.xsd.Driver
-import scalaxb.compiler.ConfigEntry._
+import scalaxb.compiler.ConfigEntry.*
+
 
 class XmlSchemaTest extends TestBase {
   // override val module = new Driver with Verbose
-  val inFile  = new File("integration/src/test/resources/XMLSchema.xsd")
+  val inFile = new File("integration/src/test/resources/XMLSchema.xsd")
 
-  val config = Config.default.update(PackageNames(Map(Some("http://www.w3.org/2001/XMLSchema") -> Some("org.w3.xmlschema")))).
+  val config = Config.default.update(
+    PackageNames(Map(Some("http://www.w3.org/2001/XMLSchema") -> Some("org.w3.xmlschema")))
+  ).
     update(Outdir(tmp)).
     update(ClassPrefix("X")).
     update(ParamPrefix("m"))

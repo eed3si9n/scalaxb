@@ -1,13 +1,14 @@
 import scalaxb.compiler.Config
-import scalaxb.compiler.ConfigEntry._
+import scalaxb.compiler.ConfigEntry.*
+
 
 class MutableTest extends TestBase {
   val pkgname = "mutabletest"
-  val ns      = "http://simple/main"
+  val ns = "http://simple/main"
 
   val schema = resource("anotherSimpleSchema.xsd")
-  val targetXml =
-    (<n:aElem xmlns:n={ns}>
+
+  val targetXml = (<n:aElem xmlns:n={ns}>
       <n:bElem>
         <n:cElem>Foo</n:cElem>
       </n:bElem>
@@ -42,7 +43,7 @@ class MutableTest extends TestBase {
       .update(PackageNames(Map(None -> Some(pkgname))))
       .update(Outdir(tmp))
       .update(GenerateMutable)
-      .remove(VarArg)  // VarArg is removed automatically in the command line app
+      .remove(VarArg) // VarArg is removed automatically in the command line app
   )
 
   "It should be possible to modify the nodes" in repl(generated)(s"""

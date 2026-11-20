@@ -1,9 +1,10 @@
-import java.io.{File}
+import java.io.{ File }
 import scalaxb.compiler.Config
-import scalaxb.compiler.ConfigEntry._
+import scalaxb.compiler.ConfigEntry.*
+
 
 class CrossNamespaceTest extends TestBase {
-  val ipoxsd    = new File("integration/src/test/resources/ipo.xsd")
+  val ipoxsd = new File("integration/src/test/resources/ipo.xsd")
   val xnxsd = new File("integration/src/test/resources/xn.xsd")
 
   lazy val generated = module.processFiles(
@@ -17,6 +18,9 @@ class CrossNamespaceTest extends TestBase {
         <xn:name/>
       </xn:human>
     </xn:foo>).toString"""),
-     generated) must evaluateTo("CrossNamespaceChoice(DataRecord({http://www.example.com/xn}human,Human()))", outdir = "./tmp")
+     generated) must evaluateTo(
+       "CrossNamespaceChoice(DataRecord({http://www.example.com/xn}human,Human()))",
+       outdir = "./tmp",
+     )
   }
 }

@@ -1,9 +1,10 @@
-import java.io.{File}
+import java.io.{ File }
+
 
 class WithBigDecimalTest extends TestBase {
-  val inFile  = new File("integration/src/test/resources/withbigdecimal.xsd")
+  val inFile = new File("integration/src/test/resources/withbigdecimal.xsd")
   lazy val generated = module.process(inFile, "bigdecimal", tmp)
-  
+
   "withbigdecimal.scala must properly format BigDecimal attributes" in {
     (List("import scalaxb._",
       "import bigdecimal._",

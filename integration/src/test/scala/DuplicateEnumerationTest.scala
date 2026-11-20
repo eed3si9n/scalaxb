@@ -1,15 +1,19 @@
 import scalaxb.compiler.Config
-import scalaxb.compiler.ConfigEntry._
+import scalaxb.compiler.ConfigEntry.*
+
 
 class DuplicateEnumerationTest extends TestBase {
   val config = Config.default.update(PackageNames(Map(None -> Some("dupenum")))).
     update(Outdir(tmp)).
     update(GeneratePackageDir).
     update(PrependFamilyName)
+
   lazy val generated = module.processNode(dupeEnums, config)
 
   "dupenum.scala file should compile" in {
-    """case x: String if x == scalaxb\.fromXML\[String\]\(scala.xml.Text\("N"\)\) => dupenum\.NValue""".r.findAllIn(generated(1)).size must beEqualTo(1)
+    """case x: String if x == scalaxb\.fromXML\[String\]\(scala.xml.Text\("N"\)\) => dupenum\.NValue""".r.findAllIn(
+      generated(1)
+    ).size must beEqualTo(1)
     """case object NValue""".r.findAllIn(generated(0)).size must beEqualTo(1)
   }
 
